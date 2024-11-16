@@ -23,6 +23,7 @@ pub struct ZStack<Seq> {
 }
 
 impl<Seq> ZStack<Seq> {
+    #[must_use]
     pub fn alignment(mut self, alignment: impl Into<Alignment>) -> Self {
         self.alignment = alignment.into();
         self
@@ -55,7 +56,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: crate::core::Mut<Self::Element>,
+        mut element: Mut<Self::Element>,
     ) {
         if self.alignment != prev.alignment {
             widget::ZStack::set_alignment(&mut element, self.alignment);
@@ -71,7 +72,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: crate::core::Mut<Self::Element>,
+        element: Mut<Self::Element>,
     ) {
         let mut splice = StackSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
@@ -108,8 +109,8 @@ impl SuperElement<ZStackElement, ViewCtx> for ZStackElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: crate::core::Mut<Self>,
-        f: impl FnOnce(crate::core::Mut<ZStackElement>) -> R,
+        mut this: Mut<Self>,
+        f: impl FnOnce(Mut<ZStackElement>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -129,8 +130,8 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: crate::core::Mut<Self>,
-        f: impl FnOnce(crate::core::Mut<Pod<W>>) -> R,
+        mut this: Mut<Self>,
+        f: impl FnOnce(Mut<Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
             let mut child = widget::ZStack::child_mut(&mut this.parent, this.idx)
