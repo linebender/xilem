@@ -17,7 +17,7 @@ env:
   # Only some of our examples support Android (primarily due to extra required boilerplate).
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
   # Whether the workspace contains Rust code using the debug_assertions configuration option.
-  USING_DEBUG_ASSERTIONS: false
+  USING_DEBUG_ASSERTIONS: "false"
 
 
 # Rationale
@@ -136,13 +136,13 @@ jobs:
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
       - name: cargo clippy (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
 
       - name: cargo clippy (auxiliary) (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
@@ -177,13 +177,13 @@ jobs:
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
       - name: cargo clippy (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
 
       - name: cargo clippy (auxiliary) (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
@@ -369,7 +369,7 @@ jobs:
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
 
       - name: cargo check (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
@@ -400,7 +400,7 @@ jobs:
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
 
       - name: cargo check (no debug_assertions)
-        if: env.USING_DEBUG_ASSERTIONS
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
