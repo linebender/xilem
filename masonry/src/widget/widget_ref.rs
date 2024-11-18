@@ -165,9 +165,10 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
+        let local_pos = self.ctx.widget_state.window_transform.inverse() * pos;
         let mut innermost_widget = *self;
 
-        if !self.ctx.window_layout_rect().contains(pos) {
+        if !self.ctx.size().to_rect().contains(local_pos) {
             return None;
         }
 

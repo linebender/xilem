@@ -413,6 +413,10 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
         self.as_mut_dyn_any()
     }
+
+    fn transform(&self) -> Affine {
+        Affine::IDENTITY
+    }
 }
 
 impl ReplaceChild {
@@ -612,5 +616,9 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
         self.child.as_mut_any()
+    }
+
+    fn transform(&self) -> Affine {
+        self.child.transform()
     }
 }

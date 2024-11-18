@@ -12,6 +12,7 @@ use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{trace_span, Span};
+use vello::kurbo::Affine;
 use vello::Scene;
 
 use crate::contexts::ComposeCtx;
@@ -178,6 +179,10 @@ pub trait Widget: AsAny {
     /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
+    fn transform(&self) -> Affine {
+        Affine::IDENTITY
+    }
+
     /// Whether this widget gets pointer events and hovered status. True by default.
     ///
     /// If false, the widget will be treated as "transparent" for the pointer, meaning
@@ -308,10 +313,10 @@ pub(crate) fn get_child_at_pos<'c>(
     ctx: QueryCtx<'c>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
-    let relative_pos = pos - ctx.window_origin().to_vec2();
+    let local_pos = ctx.widget_state.window_transform.inverse() * pos;
     if !ctx
         .clip_path()
-        .map_or(true, |clip| clip.contains(relative_pos))
+        .map_or(true, |clip| clip.contains(local_pos))
     {
         return None;
     }
@@ -320,12 +325,13 @@ pub(crate) fn get_child_at_pos<'c>(
     // of overlapping children.
     for child_id in widget.children_ids().iter().rev() {
         let child = ctx.get(*child_id);
+        let local_pos = child.ctx().widget_state.window_transform.inverse() * pos;
 
         // The position must be inside the child's layout and inside the child's clip path (if
         // any).
         if !child.ctx().is_stashed()
             && child.ctx().accepts_pointer_interaction()
-            && child.ctx().window_layout_rect().contains(pos)
+            && child.ctx().size().to_rect().contains(local_pos)
         {
             return Some(child);
         }
@@ -506,5 +512,9 @@ impl Widget for Box<dyn Widget> {
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.deref_mut().as_mut_any()
+    }
+
+    fn transform(&self) -> Affine {
+        self.deref().transform()
     }
 }

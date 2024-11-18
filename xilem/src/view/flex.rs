@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::widget::{self, WidgetMut};
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
-use masonry::Widget;
+use masonry::{Affine, Widget};
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -19,6 +19,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     Flex {
         sequence,
         axis: Axis::Vertical,
+        transform: Affine::IDENTITY,
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
@@ -31,6 +32,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
 pub struct Flex<Seq, State, Action = ()> {
     sequence: Seq,
     axis: Axis,
+    transform: Affine,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
@@ -85,6 +87,12 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     }
 }
 
+impl<Seq, State, Action> Transformable for Flex<Seq, State, Action> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
+}
+
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
@@ -102,7 +110,8 @@ where
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
-            .main_axis_alignment(self.main_axis_alignment);
+            .main_axis_alignment(self.main_axis_alignment)
+            .with_transform(self.transform);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
             widget = match child {
@@ -125,6 +134,9 @@ where
     ) {
         if prev.axis != self.axis {
             widget::Flex::set_direction(&mut element, self.axis);
+        }
+        if prev.transform != self.transform {
+            widget::Flex::set_transform(&mut element, self.transform);
         }
         if prev.cross_axis_alignment != self.cross_axis_alignment {
             widget::Flex::set_cross_axis_alignment(&mut element, self.cross_axis_alignment);
@@ -633,6 +645,8 @@ mod hidden {
     }
 }
 use hidden::AnyFlexChildState;
+
+use super::Transformable;
 
 impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>

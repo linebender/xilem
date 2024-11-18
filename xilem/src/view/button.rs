@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::text::ArcStr;
-use masonry::widget;
 pub use masonry::PointerButton;
+use masonry::{widget, Affine};
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx, ViewId};
+
+use super::Transformable;
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(
@@ -16,6 +18,7 @@ pub fn button<State, Action>(
 {
     Button {
         label: label.into(),
+        transform: Affine::IDENTITY,
         callback: move |state: &mut State, button| match button {
             PointerButton::Primary => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
@@ -31,6 +34,7 @@ pub fn button_any_pointer<State, Action>(
 {
     Button {
         label: label.into(),
+        transform: Affine::IDENTITY,
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
     }
 }
@@ -38,7 +42,14 @@ pub fn button_any_pointer<State, Action>(
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button<F> {
     label: ArcStr,
+    transform: Affine,
     callback: F,
+}
+
+impl<F> Transformable for Button<F> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
 }
 
 impl<F> ViewMarker for Button<F> {}
@@ -50,7 +61,9 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::Button::new(self.label.clone())))
+        ctx.with_leaf_action_widget(|ctx| {
+            ctx.new_pod(widget::Button::new(self.label.clone()).with_transform(self.transform))
+        })
     }
 
     fn rebuild(
@@ -62,6 +75,10 @@ where
     ) {
         if prev.label != self.label {
             widget::Button::set_text(&mut element, self.label.clone());
+        }
+
+        if prev.transform != self.transform {
+            widget::Button::set_transform(&mut element, self.transform);
         }
     }
 

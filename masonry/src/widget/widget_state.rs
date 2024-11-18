@@ -3,7 +3,7 @@
 
 #![cfg(not(tarpaulin_include))]
 
-use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
+use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::WidgetId;
 
@@ -79,9 +79,11 @@ pub(crate) struct WidgetState {
     // efficiently hold an arbitrary shape.
     pub(crate) clip_path: Option<Rect>,
 
-    // TODO - Handle matrix transforms
+    /// This is being computed out of the descendant transforms and `translation`
+    pub(crate) window_transform: Affine,
+    // TODO - Handle matrix transforms correctly
     pub(crate) translation: Vec2,
-    pub(crate) translation_changed: bool,
+    pub(crate) transform_changed: bool,
 
     // --- PASSES ---
     /// `WidgetAdded` hasn't been sent to this widget yet.
@@ -166,7 +168,7 @@ impl WidgetState {
             ime_area: None,
             clip_path: Default::default(),
             translation: Vec2::ZERO,
-            translation_changed: false,
+            transform_changed: false,
             is_explicitly_disabled: false,
             is_explicitly_stashed: false,
             is_disabled: false,
@@ -192,6 +194,7 @@ impl WidgetState {
             update_focus_chain: true,
             #[cfg(debug_assertions)]
             widget_name,
+            window_transform: Affine::IDENTITY,
         }
     }
 
@@ -265,6 +268,7 @@ impl WidgetState {
     ///
     /// By default, returns the same as [`Self::window_layout_rect`].
     pub(crate) fn get_ime_area(&self) -> Rect {
+        // TODO correctly calculate IME area based on transform
         self.ime_area.unwrap_or_else(|| self.size.to_rect()) + self.window_origin.to_vec2()
     }
 

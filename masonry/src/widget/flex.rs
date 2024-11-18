@@ -21,6 +21,7 @@ use crate::{
 /// This widget is the foundation of most layouts, and is highly configurable.
 pub struct Flex {
     direction: Axis,
+    transform: Affine,
     cross_alignment: CrossAxisAlignment,
     main_alignment: MainAxisAlignment,
     fill_major_axis: bool,
@@ -128,6 +129,7 @@ impl Flex {
             fill_major_axis: false,
             old_bc: BoxConstraints::tight(Size::ZERO),
             gap: None,
+            transform: Affine::IDENTITY,
         }
     }
 
@@ -162,6 +164,11 @@ impl Flex {
     /// to fill the available space on its main axis.
     pub fn must_fill_main_axis(mut self, fill: bool) -> Self {
         self.fill_major_axis = fill;
+        self
+    }
+
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = transform;
         self
     }
 
@@ -326,6 +333,12 @@ impl Flex {
     pub fn set_must_fill_main_axis(this: &mut WidgetMut<'_, Self>, fill: bool) {
         this.widget.fill_major_axis = fill;
         this.ctx.request_layout();
+    }
+
+    /// Set the transform (see [`Affine`]).
+    pub fn set_transform(this: &mut WidgetMut<'_, Self>, transform: Affine) {
+        this.widget.transform = transform;
+        this.ctx.transform_changed();
     }
 
     /// Set the spacing along the major axis between any two elements in logical pixels.
@@ -1203,6 +1216,10 @@ impl Widget for Flex {
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!("Flex", id = ctx.widget_id().trace())
+    }
+
+    fn transform(&self) -> Affine {
+        self.transform
     }
 }
 

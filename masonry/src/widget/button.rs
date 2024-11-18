@@ -6,6 +6,7 @@
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
+use vello::kurbo::Affine;
 use vello::Scene;
 
 use crate::action::Action;
@@ -28,6 +29,7 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// Emits [`Action::ButtonPressed`] when pressed.
 pub struct Button {
     label: WidgetPod<Label>,
+    transform: Affine,
 }
 
 // --- MARK: BUILDERS ---
@@ -41,7 +43,7 @@ impl Button {
     ///
     /// let button = Button::new("Increment");
     /// ```
-    pub fn new(text: impl Into<ArcStr>) -> Button {
+    pub fn new(text: impl Into<ArcStr>) -> Self {
         Button::from_label(Label::new(text))
     }
 
@@ -56,10 +58,16 @@ impl Button {
     /// let label = Label::new("Increment").with_brush(Color::rgb(0.5, 0.5, 0.5));
     /// let button = Button::from_label(label);
     /// ```
-    pub fn from_label(label: Label) -> Button {
+    pub fn from_label(label: Label) -> Self {
         Button {
             label: WidgetPod::new(label),
+            transform: Affine::IDENTITY,
         }
+    }
+
+    pub fn with_transform(mut self, transform: Affine) -> Self {
+        self.transform = transform;
+        self
     }
 }
 
@@ -72,6 +80,11 @@ impl Button {
 
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.label)
+    }
+
+    pub fn set_transform(this: &mut WidgetMut<'_, Self>, transform: Affine) {
+        this.widget.transform = transform;
+        this.ctx.transform_changed();
     }
 }
 
@@ -212,6 +225,10 @@ impl Widget for Button {
     #[cfg(FALSE)]
     fn get_debug_text(&self) -> Option<String> {
         Some(self.label.as_ref().text().as_ref().to_string())
+    }
+
+    fn transform(&self) -> Affine {
+        self.transform
     }
 }
 

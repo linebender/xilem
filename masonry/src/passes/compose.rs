@@ -3,7 +3,7 @@
 
 use tracing::info_span;
 use tree_arena::ArenaMut;
-use vello::kurbo::Vec2;
+use vello::kurbo::Affine;
 
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
@@ -14,8 +14,8 @@ fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    parent_moved: bool,
-    parent_translation: Vec2,
+    parent_transformed: bool,
+    parent_window_transform: Affine,
 ) {
     let _span = enter_span_if(
         global_state.trace.compose,
@@ -24,13 +24,16 @@ fn compose_widget(
         state.reborrow(),
     );
 
-    let moved = parent_moved || state.item.translation_changed;
-    let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();
-    state.item.window_origin = translation.to_point();
+    let transformed = parent_transformed || state.item.transform_changed;
 
-    if !parent_moved && !state.item.translation_changed && !state.item.needs_compose {
+    if !transformed && !state.item.needs_compose {
         return;
     }
+
+    state.item.window_transform = parent_window_transform
+        .then_translate(state.item.translation + state.item.origin.to_vec2())
+        * widget.item.transform();
+    state.item.window_origin = state.item.window_transform.translation().to_point();
 
     let mut ctx = ComposeCtx {
         global_state,
@@ -43,7 +46,7 @@ fn compose_widget(
     }
 
     // TODO - Add unit tests for this.
-    if moved && state.item.accepts_text_input && global_state.is_focused(state.item.id) {
+    if transformed && state.item.accepts_text_input && global_state.is_focused(state.item.id) {
         let ime_area = state.item.get_ime_area();
         global_state.emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
     }
@@ -55,9 +58,10 @@ fn compose_widget(
 
     state.item.needs_compose = false;
     state.item.request_compose = false;
-    state.item.translation_changed = false;
+    state.item.transform_changed = false;
 
     let id = state.item.id;
+    let parent_transform = state.item.window_transform;
     let parent_state = state.item;
     recurse_on_children(
         id,
@@ -68,8 +72,8 @@ fn compose_widget(
                 global_state,
                 widget,
                 state.reborrow_mut(),
-                moved,
-                translation,
+                transformed,
+                parent_transform,
             );
             parent_state.merge_up(state.item);
         },
@@ -92,6 +96,6 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
         root_widget,
         root_state,
         false,
-        Vec2::ZERO,
+        Affine::IDENTITY,
     );
 }

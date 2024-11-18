@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Affine, Stroke};
+use vello::kurbo::Stroke;
 use vello::peniko::Mix;
 use vello::Scene;
 
@@ -53,7 +53,7 @@ fn paint_widget(
 
     let clip = state.item.clip_path;
     let has_clip = clip.is_some();
-    let transform = Affine::translate(state.item.window_origin.to_vec2());
+    let transform = state.item.window_transform;
     let scene = scenes.get(&id).unwrap();
 
     if let Some(clip) = clip {

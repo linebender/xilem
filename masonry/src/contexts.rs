@@ -537,6 +537,12 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.widget_state.request_compose = true;
     }
 
+    pub fn transform_changed(&mut self) {
+        trace!("transform_changed");
+        self.widget_state.transform_changed = true;
+        self.request_compose();
+    }
+
     /// Request an animation frame.
     pub fn request_anim_frame(&mut self) {
         trace!("request_anim_frame");
@@ -1092,7 +1098,7 @@ impl LayoutCtx<'_> {
         }
         if origin != self.get_child_state_mut(child).origin {
             self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).translation_changed = true;
+            self.get_child_state_mut(child).transform_changed = true;
         }
         self.get_child_state_mut(child)
             .is_expecting_place_child_call = false;
@@ -1133,7 +1139,7 @@ impl ComposeCtx<'_> {
         let child = self.get_child_state_mut(child);
         if translation != child.translation {
             child.translation = translation;
-            child.translation_changed = true;
+            child.transform_changed = true;
         }
     }
 }
