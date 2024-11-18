@@ -2,57 +2,34 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::parley::fontique::Weight;
-use masonry::parley::style::{FontFamily, FontStack, GenericFamily};
-use masonry::text::{ArcStr, TextBrush};
-use masonry::widget;
+use masonry::parley::style::FontStack;
+use masonry::text::ArcStr;
+use masonry::{widget, TextAlignment};
+use vello::peniko::Brush;
+use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, TextWeight, View, ViewCtx, ViewId};
+
+use super::{label, Label};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
-pub fn variable_label(label: impl Into<ArcStr>) -> VariableLabel {
+pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
     VariableLabel {
-        label: label.into(),
-        text_brush: Color::WHITE.into(),
-        alignment: TextAlignment::default(),
-        text_size: masonry::theme::TEXT_SIZE_NORMAL,
+        label: label(text),
         target_weight: Weight::NORMAL,
         over_millis: 0.,
-        font: FontStack::Single(FontFamily::Generic(GenericFamily::SystemUi)),
     }
 }
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct VariableLabel {
-    label: ArcStr,
-
-    text_brush: TextBrush,
-    alignment: TextAlignment,
-    text_size: f32,
+    label: Label,
     target_weight: Weight,
     over_millis: f32,
-    font: FontStack<'static>,
-    // TODO: add more attributes of `masonry::widget::Label`
 }
 
 impl VariableLabel {
-    #[doc(alias = "color")]
-    pub fn brush(mut self, brush: impl Into<TextBrush>) -> Self {
-        self.text_brush = brush.into();
-        self
-    }
-
-    pub fn alignment(mut self, alignment: TextAlignment) -> Self {
-        self.alignment = alignment;
-        self
-    }
-
-    #[doc(alias = "font_size")]
-    pub fn text_size(mut self, text_size: f32) -> Self {
-        self.text_size = text_size;
-        self
-    }
-
     /// Set the weight this label will target.
     ///
     /// If this change is animated, it will occur over `over_millis` milliseconds.
@@ -78,19 +55,37 @@ impl VariableLabel {
     /// A font stack allows for providing fallbacks. If there is no matching font
     /// for a character, a system font will be used (if the system fonts are enabled).
     ///
-    /// This currently requires a `FontStack<'static>`, because it is stored in
-    /// the view, and Parley doesn't support an owned or `Arc` based `FontStack`.
-    /// In most cases, a fontstack value can be static-promoted, but otherwise
-    /// you will currently have to [leak](String::leak) a value and manually keep
-    /// the value.
-    ///
     /// This should be a font stack with variable font support,
     /// although non-variable fonts will work, just without the smooth animation support.
-    pub fn with_font(mut self, font: FontStack<'static>) -> Self {
-        self.font = font;
+    pub fn with_font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.label.font = font.into();
+        self
+    }
+
+    #[doc(alias = "color")]
+    pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
+        self.label.text_brush = brush.into();
+        self
+    }
+
+    pub fn alignment(mut self, alignment: TextAlignment) -> Self {
+        self.label.alignment = alignment;
+        self
+    }
+
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.label.text_size = text_size;
+        self
+    }
+
+    pub fn weight(mut self, weight: TextWeight) -> Self {
+        self.label.weight = weight;
         self
     }
 }
+
+impl VariableLabel {}
 
 impl ViewMarker for VariableLabel {}
 impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
@@ -98,12 +93,11 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (label, ()) = ctx.with_id(ViewId::new(0), |ctx| {
+            View::<State, Action, _, _>::build(&self.label, ctx)
+        });
         let widget_pod = ctx.new_pod(
-            widget::VariableLabel::new(self.label.clone())
-                .with_text_brush(self.text_brush.clone())
-                .with_text_alignment(self.alignment)
-                .with_font(self.font)
-                .with_text_size(self.text_size)
+            widget::VariableLabel::from_label_pod(label.inner)
                 .with_initial_weight(self.target_weight.value()),
         );
         (widget_pod, ())
@@ -113,32 +107,25 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        _ctx: &mut ViewCtx,
+        ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.label != self.label {
-            widget::VariableLabel::set_text(&mut element, self.label.clone());
-        }
-        if prev.text_brush != self.text_brush {
-            widget::VariableLabel::set_text_brush(&mut element, self.text_brush.clone());
-        }
-        if prev.alignment != self.alignment {
-            widget::VariableLabel::set_alignment(&mut element, self.alignment);
-        }
-        if prev.text_size != self.text_size {
-            widget::VariableLabel::set_text_size(&mut element, self.text_size);
-        }
+        ctx.with_id(ViewId::new(0), |ctx| {
+            View::<State, Action, _, _>::rebuild(
+                &self.label,
+                &prev.label,
+                &mut (),
+                ctx,
+                widget::VariableLabel::label_mut(&mut element),
+            );
+        });
+
         if prev.target_weight != self.target_weight {
             widget::VariableLabel::set_target_weight(
                 &mut element,
                 self.target_weight.value(),
                 self.over_millis,
             );
-        }
-        // First perform a fast filter, then perform a full comparison if that suggests a possible change.
-        let fonts_eq = fonts_eq_fastpath(prev.font, self.font) || prev.font == self.font;
-        if !fonts_eq {
-            widget::VariableLabel::set_font(&mut element, self.font);
         }
     }
 
@@ -147,32 +134,16 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _id_path: &[ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
-        _app_state: &mut State,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
-        MessageResult::Stale(message)
-    }
-}
-
-/// Because all the `FontStack`s we use are 'static, we expect the value to never change.
-///
-/// Because of this, we compare the inner pointer value first.
-/// This function has false negatives, but no false positives.
-///
-/// It should be used with a secondary direct comparison using `==`
-/// if it returns false. If the value does change, this is potentially more expensive.
-fn fonts_eq_fastpath(lhs: FontStack<'static>, rhs: FontStack<'static>) -> bool {
-    match (lhs, rhs) {
-        (FontStack::Source(lhs), FontStack::Source(rhs)) => {
-            // Slices/strs are properly compared by length
-            core::ptr::eq(lhs.as_ptr(), rhs.as_ptr())
+        if let Some((first, remainder)) = id_path.split_first() {
+            assert_eq!(first.routing_id(), 0);
+            self.label.message(&mut (), remainder, message, app_state)
+        } else {
+            tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
+            MessageResult::Stale(message)
         }
-        (FontStack::Single(FontFamily::Named(lhs)), FontStack::Single(FontFamily::Named(rhs))) => {
-            core::ptr::eq(lhs.as_ptr(), rhs.as_ptr())
-        }
-        (FontStack::List(lhs), FontStack::List(rhs)) => core::ptr::eq(lhs.as_ptr(), rhs.as_ptr()),
-        _ => false,
     }
 }

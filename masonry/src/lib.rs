@@ -135,10 +135,6 @@
 #![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
 #![expect(clippy::missing_panics_doc, reason = "Can be quite noisy?")]
 #![expect(
-    clippy::partial_pub_fields,
-    reason = "Potentially controversial code style"
-)]
-#![expect(
     clippy::shadow_unrelated,
     reason = "Potentially controversial code style"
 )]

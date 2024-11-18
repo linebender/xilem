@@ -8,6 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::dpi::LogicalSize;
+use masonry::text::StyleProperty;
 use masonry::widget::{Button, Flex, Label, RootWidget};
 use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 use parley::fontique::Weight;
@@ -32,8 +33,9 @@ impl AppDriver for Driver {
 
 fn main() {
     let label = Label::new("Hello")
-        .with_text_size(32.0)
-        .with_weight(Weight::BOLD);
+        .with_style(StyleProperty::FontSize(32.0))
+        // Ideally there's be an Into in Parley for this
+        .with_style(StyleProperty::FontWeight(Weight::BOLD));
     let button = Button::new("Say hello");
 
     // Arrange the two widgets vertically, with some padding

@@ -5,25 +5,22 @@
 
 use std::cmp::Ordering;
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use parley::fontique::Weight;
-use parley::layout::Alignment;
-use parley::style::{FontFamily, FontStack};
-use smallvec::SmallVec;
+use parley::StyleProperty;
+use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Size};
-use vello::peniko::BlendMode;
+use vello::kurbo::{Point, Size};
 use vello::Scene;
 
-use crate::text::{ArcStr, Hinting, TextBrush, TextLayout};
-use crate::widget::{LineBreaking, WidgetMut};
+use crate::text::ArcStr;
+use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
-// added padding between the edges of the widget and the text.
-pub(super) const LABEL_X_PADDING: f64 = 2.0;
+use super::{Label, WidgetPod};
 
 /// An `f32` value which can move towards a target value at a linear rate over time.
 #[derive(Clone, Debug)]
@@ -46,11 +43,6 @@ impl AnimatedF32 {
             value,
             rate_per_millisecond: 0.,
         }
-    }
-
-    /// Is this animation finished?
-    pub fn is_completed(&self) -> bool {
-        self.target == self.value
     }
 
     /// Move this value to the `target` over `over_millis` milliseconds.
@@ -131,146 +123,49 @@ impl AnimationStatus {
     }
 }
 
-// TODO: Make this a wrapper (around `Label`?)
 /// A widget displaying non-editable text, with a variable [weight](parley::style::FontWeight).
 pub struct VariableLabel {
-    text: ArcStr,
-    text_changed: bool,
-    text_layout: TextLayout,
-    line_break_mode: LineBreaking,
-    show_disabled: bool,
-    brush: TextBrush,
+    label: WidgetPod<Label>,
     weight: AnimatedF32,
 }
 
 // --- MARK: BUILDERS ---
 impl VariableLabel {
-    /// Create a new label.
+    /// Create a new variable label from the given text.
     pub fn new(text: impl Into<ArcStr>) -> Self {
+        Self::from_label_pod(WidgetPod::new(Label::new(text)))
+    }
+
+    pub fn from_label(label: Label) -> Self {
+        Self::from_label_pod(WidgetPod::new(label))
+    }
+
+    pub fn from_label_pod(label: WidgetPod<Label>) -> Self {
         Self {
-            text: text.into(),
-            text_changed: false,
-            text_layout: TextLayout::new(crate::theme::TEXT_SIZE_NORMAL),
-            line_break_mode: LineBreaking::Overflow,
-            show_disabled: true,
-            brush: crate::theme::TEXT_COLOR.into(),
+            label,
             weight: AnimatedF32::stable(Weight::NORMAL.value()),
         }
     }
 
-    pub fn text(&self) -> &ArcStr {
-        &self.text
-    }
-
-    #[doc(alias = "with_text_color")]
-    pub fn with_text_brush(mut self, brush: impl Into<TextBrush>) -> Self {
-        self.text_layout.set_brush(brush);
-        self
-    }
-
-    #[doc(alias = "with_font_size")]
-    pub fn with_text_size(mut self, size: f32) -> Self {
-        self.text_layout.set_text_size(size);
-        self
-    }
-
-    pub fn with_text_alignment(mut self, alignment: Alignment) -> Self {
-        self.text_layout.set_text_alignment(alignment);
-        self
-    }
-
-    pub fn with_font(mut self, font: FontStack<'static>) -> Self {
-        self.text_layout.set_font(font);
-        self
-    }
-    pub fn with_font_family(self, font: FontFamily<'static>) -> Self {
-        self.with_font(FontStack::Single(font))
-    }
-
-    pub fn with_line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
-        self.line_break_mode = line_break_mode;
-        self
-    }
     /// Set the initial font weight for this text.
     pub fn with_initial_weight(mut self, weight: f32) -> Self {
         self.weight = AnimatedF32::stable(weight);
         self
     }
-
-    /// Create a label with empty text.
-    pub fn empty() -> Self {
-        Self::new("")
-    }
-
-    fn brush(&self, disabled: bool) -> TextBrush {
-        if disabled {
-            crate::theme::DISABLED_TEXT_COLOR.into()
-        } else {
-            let mut brush = self.brush.clone();
-            if !self.weight.is_completed() {
-                brush.set_hinting(Hinting::No);
-            }
-            // N.B. if hinting is No externally, we don't want to overwrite it to yes.
-            brush
-        }
-    }
 }
 
 // --- MARK: WIDGETMUT ---
 impl VariableLabel {
-    /// Set a property on the underlying text.
-    ///
-    /// This cannot be used to set attributes.
-    pub fn set_text_properties<R>(
-        this: &mut WidgetMut<'_, Self>,
-        f: impl FnOnce(&mut TextLayout) -> R,
-    ) -> R {
-        let ret = f(&mut this.widget.text_layout);
-        if this.widget.text_layout.needs_rebuild() {
-            this.ctx.request_layout();
-        }
-        ret
+    /// Get the underlying label for this widget.
+    pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
+        this.ctx.get_mut(&mut this.widget.label)
     }
 
-    /// Modify the underlying text.
+    /// Set the text of this label.
     pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
-        let new_text = new_text.into();
-        this.widget.text = new_text;
-        this.widget.text_changed = true;
-        this.ctx.request_layout();
+        Label::set_text(&mut Self::label_mut(this), new_text);
     }
 
-    #[doc(alias = "set_text_color")]
-    /// Set the brush of the text, normally used for the colour.
-    pub fn set_text_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<TextBrush>) {
-        let brush = brush.into();
-        this.widget.brush = brush;
-        if !this.ctx.is_disabled() {
-            this.widget.text_layout.invalidate();
-            this.ctx.request_layout();
-        }
-    }
-    /// Set the font size for this text.
-    pub fn set_text_size(this: &mut WidgetMut<'_, Self>, size: f32) {
-        Self::set_text_properties(this, |layout| layout.set_text_size(size));
-    }
-    /// Set the text alignment of the contained text
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
-        Self::set_text_properties(this, |layout| layout.set_text_alignment(alignment));
-    }
-    /// Set the font (potentially with fallbacks) which will be used for this text.
-    pub fn set_font(this: &mut WidgetMut<'_, Self>, font_stack: FontStack<'static>) {
-        Self::set_text_properties(this, |layout| layout.set_font(font_stack));
-    }
-    /// A helper method to use a single font family.
-    pub fn set_font_family(this: &mut WidgetMut<'_, Self>, family: FontFamily<'static>) {
-        Self::set_font(this, FontStack::Single(family));
-    }
-    /// How to handle overflowing lines.
-    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
-        this.widget.line_break_mode = line_break_mode;
-        this.ctx.request_layout();
-    }
     /// Set the weight which this font will target.
     pub fn set_target_weight(this: &mut WidgetMut<'_, Self>, target: f32, over_millis: f32) {
         this.widget.weight.move_to(target, over_millis);
@@ -281,142 +176,65 @@ impl VariableLabel {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for VariableLabel {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, event: &PointerEvent) {
-        match event {
-            PointerEvent::PointerMove(_point) => {
-                // TODO: Set cursor if over link
-            }
-            PointerEvent::PointerDown(_button, _state) => {
-                // TODO: Start tracking currently pressed
-                // (i.e. don't press)
-            }
-            PointerEvent::PointerUp(_button, _state) => {
-                // TODO: Follow link (if not now dragging ?)
-            }
-            _ => {}
-        }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        false
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {
-        // If focused on a link and enter pressed, follow it?
-        // TODO: This sure looks like each link needs its own widget, although I guess the challenge there is
-        // that the bounding boxes can go e.g. across line boundaries?
-    }
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+
+    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.label);
+    }
 
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
         let millis = (interval as f64 / 1_000_000.) as f32;
         let result = self.weight.advance(millis);
-        self.text_layout.invalidate();
+        let new_weight = self.weight.value;
+        // The ergonomics of child widgets are quite bad - ideally, this wouldn't need a mutate pass, since we
+        // can set the required invalidation anyway.
+        ctx.mutate_later(&mut self.label, move |mut label| {
+            // TODO: Should this be configurable?
+            if result.is_completed() {
+                Label::set_hint(&mut label, true);
+            } else {
+                Label::set_hint(&mut label, false);
+            }
+            Label::insert_style(
+                &mut label,
+                StyleProperty::FontWeight(Weight::new(new_weight)),
+            );
+        });
         if !result.is_completed() {
             ctx.request_anim_frame();
-        }
-        ctx.request_layout();
-    }
-
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
-
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
-        match event {
-            Update::FocusChanged(_) => {
-                // TODO: Focus on first link
-            }
-            Update::DisabledChanged(disabled) => {
-                if self.show_disabled {
-                    if *disabled {
-                        self.text_layout
-                            .set_brush(crate::theme::DISABLED_TEXT_COLOR);
-                    } else {
-                        self.text_layout.set_brush(self.brush.clone());
-                    }
-                }
-                // TODO: Parley seems to require a relayout when colours change
-                ctx.request_layout();
-            }
-            _ => {}
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        // Compute max_advance from box constraints
-        let max_advance = if self.line_break_mode != LineBreaking::WordWrap {
-            None
-        } else if bc.max().width.is_finite() {
-            Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
-        } else if bc.min().width.is_sign_negative() {
-            Some(0.0)
-        } else {
-            None
-        };
-        self.text_layout.set_max_advance(max_advance);
-        if self.text_layout.needs_rebuild() {
-            self.text_layout
-                .set_brush(self.brush(ctx.widget_state.is_disabled));
-            let (font_ctx, layout_ctx) = ctx.text_contexts();
-            self.text_layout.rebuild_with_attributes(
-                font_ctx,
-                layout_ctx,
-                &self.text,
-                self.text_changed,
-                |mut builder| {
-                    builder.push_default(&parley::style::StyleProperty::FontWeight(Weight::new(
-                        self.weight.value,
-                    )));
-                    // builder.push_default(&parley::style::StyleProperty::FontVariations(
-                    //     parley::style::FontSettings::List(&[]),
-                    // ));
-                    builder
-                },
-            );
-            self.text_changed = false;
-        }
-        // We ignore trailing whitespace for a label
-        let text_size = self.text_layout.size();
-        let label_size = Size {
-            height: text_size.height,
-            width: text_size.width + 2. * LABEL_X_PADDING,
-        };
-        bc.constrain(label_size)
+        let size = ctx.run_layout(&mut self.label, bc);
+        ctx.place_child(&mut self.label, Point::ORIGIN);
+        size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        if self.text_layout.needs_rebuild() {
-            debug_panic!(
-                "Called {name}::paint with invalid layout",
-                name = self.short_type_name()
-            );
-        }
-        if self.line_break_mode == LineBreaking::Clip {
-            let clip_rect = ctx.size().to_rect();
-            scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
-        }
-        self.text_layout
-            .draw(scene, Point::new(LABEL_X_PADDING, 0.0));
-
-        if self.line_break_mode == LineBreaking::Clip {
-            scene.pop_layer();
-        }
-    }
+    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
-        Role::Label
+        Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
-        node.set_name(self.text().as_ref().to_string());
-    }
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+        smallvec![self.label.id()]
     }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!("VariableLabel", id = ctx.widget_id().trace())
-    }
-
-    fn get_debug_text(&self) -> Option<String> {
-        Some(self.text.to_string())
     }
 }
 

@@ -10,8 +10,8 @@ use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
 use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
 use tracing::debug;
-use vello::util::RenderContext;
-use vello::{block_on_wgpu, RendererOptions};
+use vello::util::{block_on_wgpu, RenderContext};
+use vello::RendererOptions;
 use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
     TextureDescriptor, TextureFormat, TextureUsages,

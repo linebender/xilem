@@ -7,7 +7,7 @@ use std::num::NonZeroU64;
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
@@ -162,7 +162,7 @@ pub trait Widget: AsAny {
 
     fn accessibility_role(&self) -> Role;
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node);
 
     /// Return ids of this widget's children.
     ///
@@ -452,7 +452,7 @@ impl Widget for Box<dyn Widget> {
         self.deref().accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
         self.deref_mut().accessibility(ctx, node);
     }
 

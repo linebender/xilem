@@ -5,7 +5,7 @@
 
 use std::ops::Range;
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Rect, Size, Vec2};
@@ -435,7 +435,7 @@ impl<W: Widget> Widget for Portal<W> {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
         // TODO - Double check this code
         // Not sure about these values
         if false {

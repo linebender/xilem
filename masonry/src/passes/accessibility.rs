@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{NodeBuilder, NodeId, Tree, TreeUpdate};
+use accesskit::{Node, NodeId, Tree, TreeUpdate};
 use tracing::{debug, info_span, trace};
 use vello::kurbo::Rect;
 
@@ -53,16 +53,10 @@ fn build_accessibility_tree(
         };
         let mut node = build_access_node(widget.item, &mut ctx);
         widget.item.accessibility(&mut ctx, &mut node);
-        let node = node.build();
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {
-            trace!(
-                "Built node {} with role={:?}, default_action={:?}",
-                id.0,
-                node.role(),
-                node.default_action_verb(),
-            );
+            trace!("Built node {} with role={:?}", id.0, node.role());
         }
         ctx.tree_update.nodes.push((id, node));
     }
@@ -93,8 +87,8 @@ fn build_accessibility_tree(
 }
 
 // --- MARK: BUILD NODE ---
-fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> NodeBuilder {
-    let mut node = NodeBuilder::new(widget.accessibility_role());
+fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
+    let mut node = Node::new(widget.accessibility_role());
     node.set_bounds(to_accesskit_rect(
         ctx.widget_state.window_layout_rect(),
         ctx.scale_factor,
@@ -111,9 +105,6 @@ fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> NodeBuilde
 
     // Note - These WidgetState flags can be modified by other passes.
     // When that happens, the other pass should set flags to request an accessibility pass.
-    if ctx.is_hovered() {
-        node.set_hovered();
-    }
     if ctx.is_disabled() {
         node.set_disabled();
     }

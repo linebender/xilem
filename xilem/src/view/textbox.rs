@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::TextBrush;
 use masonry::widget;
+use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
@@ -33,7 +33,7 @@ pub struct Textbox<State, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
-    text_brush: TextBrush,
+    text_brush: Brush,
     alignment: TextAlignment,
     disabled: bool,
     // TODO: add more attributes of `masonry::widget::Label`
@@ -41,7 +41,7 @@ pub struct Textbox<State, Action> {
 
 impl<State, Action> Textbox<State, Action> {
     #[doc(alias = "color")]
-    pub fn brush(mut self, color: impl Into<TextBrush>) -> Self {
+    pub fn brush(mut self, color: impl Into<Brush>) -> Self {
         self.text_brush = color.into();
         self
     }
@@ -74,8 +74,8 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         ctx.with_leaf_action_widget(|ctx| {
             ctx.new_pod(
                 widget::Textbox::new(self.contents.clone())
-                    .with_text_brush(self.text_brush.clone())
-                    .with_text_alignment(self.alignment),
+                    .with_brush(self.text_brush.clone())
+                    .with_alignment(self.alignment),
             )
         })
     }
@@ -99,7 +99,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         }
 
         if prev.text_brush != self.text_brush {
-            widget::Textbox::set_text_brush(&mut element, self.text_brush.clone());
+            widget::Textbox::set_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
             widget::Textbox::set_alignment(&mut element, self.alignment);

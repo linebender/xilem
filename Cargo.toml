@@ -28,7 +28,7 @@ homepage = "https://xilem.dev/"
 
 [workspace.lints]
 # unsafe code is not allowed in Xilem or Masonry
-# We would like to set this to `forbid`, but we have to use `deny` because `android_activity` 
+# We would like to set this to `forbid`, but we have to use `deny` because `android_activity`
 # requires us to use the unsafe `#[no_mangle]` attribute
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
@@ -104,11 +104,13 @@ clippy.duplicated_attributes = "allow"
 [workspace.dependencies]
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
-vello = "0.2.1"
-wgpu = "0.20.1"
+vello = "0.3"
+wgpu = "22.1.0"
 kurbo = "0.11.1"
-parley = "0.1.0"
-peniko = "0.1.1"
+parley = { git = "https://github.com/linebender/parley", rev = "217f243aa61178229da694b1d2b0598afcf29aff", features = [
+    "accesskit",
+] }
+peniko = "0.2.0"
 winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
@@ -116,7 +118,7 @@ dpi = "0.1.1"
 image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.6.0"
-accesskit = "0.16.0"
-accesskit_winit = "0.22.0"
+accesskit = "0.17.0"
+accesskit_winit = "0.23.0"
 nv-flip = "0.1.2"
 time = "0.3.36"

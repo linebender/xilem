@@ -410,7 +410,7 @@ impl TextEvent {
 impl AccessEvent {
     pub fn short_name(&self) -> &'static str {
         match self.action {
-            accesskit::Action::Default => "Default",
+            accesskit::Action::Click => "Click",
             accesskit::Action::Focus => "Focus",
             accesskit::Action::Blur => "Blur",
             accesskit::Action::Collapse => "Collapse",

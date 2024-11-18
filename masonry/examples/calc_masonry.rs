@@ -12,8 +12,9 @@
 )]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
-use accesskit::{DefaultActionVerb, NodeBuilder, Role};
+use accesskit::{Node, Role};
 use masonry::dpi::LogicalSize;
+use masonry::text::StyleProperty;
 use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
     AccessCtx, AccessEvent, Action, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
@@ -178,7 +179,7 @@ impl Widget for CalcButton {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
-                accesskit::Action::Default => {
+                accesskit::Action::Click => {
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                 }
                 _ => {}
@@ -230,14 +231,14 @@ impl Widget for CalcButton {
         Role::Button
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),
         };
         // We may want to add a name if it doesn't interfere with the child label
         // ctx.current_node().set_name(name);
-        node.set_default_action_verb(DefaultActionVerb::Click);
+        node.add_action(accesskit::Action::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -274,9 +275,11 @@ fn op_button_with_label(op: char, label: String) -> CalcButton {
     const LIGHT_BLUE: Color = Color::rgb8(0x5c, 0xc4, 0xff);
 
     CalcButton::new(
-        SizedBox::new(Align::centered(Label::new(label).with_text_size(24.)))
-            .background(BLUE)
-            .expand(),
+        SizedBox::new(Align::centered(
+            Label::new(label).with_style(StyleProperty::FontSize(24.)),
+        ))
+        .background(BLUE)
+        .expand(),
         CalcAction::Op(op),
         BLUE,
         LIGHT_BLUE,
@@ -292,7 +295,7 @@ fn digit_button(digit: u8) -> CalcButton {
     const LIGHT_GRAY: Color = Color::rgb8(0x71, 0x71, 0x71);
     CalcButton::new(
         SizedBox::new(Align::centered(
-            Label::new(format!("{digit}")).with_text_size(24.),
+            Label::new(format!("{digit}")).with_style(StyleProperty::FontSize(24.)),
         ))
         .background(GRAY)
         .expand(),
@@ -320,7 +323,7 @@ fn flex_row(
 }
 
 fn build_calc() -> impl Widget {
-    let display = Label::new(String::new()).with_text_size(32.0);
+    let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
     Flex::column()
         .gap(0.0)
         .with_flex_spacer(0.2)

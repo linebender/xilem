@@ -3,7 +3,7 @@
 
 //! A button widget.
 
-use accesskit::{DefaultActionVerb, NodeBuilder, Role};
+use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -53,7 +53,7 @@ impl Button {
     /// use masonry::Color;
     /// use masonry::widget::{Button, Label};
     ///
-    /// let label = Label::new("Increment").with_text_brush(Color::rgb(0.5, 0.5, 0.5));
+    /// let label = Label::new("Increment").with_brush(Color::rgb(0.5, 0.5, 0.5));
     /// let button = Button::from_label(label);
     /// ```
     pub fn from_label(label: Label) -> Button {
@@ -104,7 +104,7 @@ impl Widget for Button {
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
-                accesskit::Action::Default => {
+                accesskit::Action::Click => {
                     ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
                 }
                 _ => {}
@@ -188,16 +188,16 @@ impl Widget for Button {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut NodeBuilder) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
         if false {
             let label = ctx.get_raw_ref(&self.label);
             let name = label.widget().text().as_ref().to_string();
-            node.set_name(name);
+            node.set_value(name);
         }
-        node.set_default_action_verb(DefaultActionVerb::Click);
+        node.add_action(accesskit::Action::Click);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -223,6 +223,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::text::StyleProperty;
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]
@@ -248,8 +249,8 @@ mod tests {
     fn edit_button() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_text_brush(PRIMARY_LIGHT)
-                .with_text_size(20.0);
+                .with_brush(PRIMARY_LIGHT)
+                .with_style(StyleProperty::FontSize(20.0));
             let button = Button::from_label(label);
 
             let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
@@ -267,10 +268,8 @@ mod tests {
                 Button::set_text(&mut button, "The quick brown fox jumps over the lazy dog");
 
                 let mut label = Button::label_mut(&mut button);
-                Label::set_text_properties(&mut label, |props| {
-                    props.set_brush(PRIMARY_LIGHT);
-                    props.set_text_size(20.0);
-                });
+                Label::set_brush(&mut label, PRIMARY_LIGHT);
+                Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 
             harness.render()

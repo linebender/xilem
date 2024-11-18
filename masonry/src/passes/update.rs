@@ -598,8 +598,6 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
                 if ctx.widget_state.is_hovered != is_hovered {
                     widget.update(ctx, &Update::HoveredChanged(is_hovered));
-                    ctx.widget_state.request_accessibility = true;
-                    ctx.widget_state.needs_accessibility = true;
                 }
                 ctx.widget_state.is_hovered = is_hovered;
             });

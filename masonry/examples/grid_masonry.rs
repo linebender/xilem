@@ -7,6 +7,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::dpi::LogicalSize;
+use masonry::text::StyleProperty;
 use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox};
 use masonry::{Action, AppDriver, Color, DriverCtx, PointerButton, WidgetId};
 use parley::layout::Alignment;
@@ -44,8 +45,8 @@ fn grid_button(params: GridParams) -> Button {
 fn main() {
     let label = SizedBox::new(
         Prose::new("Change spacing by right and left clicking on the buttons")
-            .with_text_size(14.0)
-            .with_text_alignment(Alignment::Middle),
+            .with_style(StyleProperty::FontSize(14.0))
+            .with_alignment(Alignment::Middle),
     )
     .border(Color::rgb8(40, 40, 80), 1.0);
     let button_inputs = vec![

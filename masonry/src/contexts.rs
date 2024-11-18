@@ -16,7 +16,7 @@ use winit::window::ResizeDirection;
 use crate::action::Action;
 use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
-use crate::text::TextBrush;
+use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
 use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
@@ -199,6 +199,26 @@ impl_context_method!(
     }
 );
 
+// Methods for all exclusive context types (i.e. those which have exclusive access to the global state).
+impl_context_method! {
+    AccessCtx<'_>,
+    ComposeCtx<'_>,
+    EventCtx<'_>,
+    LayoutCtx<'_>,
+    MutateCtx<'_>,
+    PaintCtx<'_>,
+    UpdateCtx<'_>,
+    {
+        /// Get the contexts needed to build and paint text sections.
+        ///
+        /// Note that in many cases, these contexts are.
+        pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
+        (
+            &mut self.global_state.font_context,
+            &mut self.global_state.text_layout_context,
+        )
+    }
+}}
 // --- MARK: GET LAYOUT ---
 // Methods on all context types except LayoutCtx
 // These methods access layout info calculated during the layout pass.
@@ -1118,17 +1138,6 @@ impl ComposeCtx<'_> {
         }
     }
 }
-
-// --- MARK: OTHER STUFF ---
-impl_context_method!(LayoutCtx<'_>, PaintCtx<'_>, {
-    /// Get the contexts needed to build and paint text sections.
-    pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<TextBrush>) {
-        (
-            &mut self.global_state.font_context,
-            &mut self.global_state.text_layout_context,
-        )
-    }
-});
 
 impl PaintCtx<'_> {
     /// Whether debug paint is enabled.
