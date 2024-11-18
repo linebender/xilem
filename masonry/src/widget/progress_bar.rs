@@ -26,7 +26,6 @@ pub struct ProgressBar {
     /// `None` variant can be used to show a progress bar without a percentage.
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
     progress: Option<f64>,
-    progress_changed: bool,
     label: WidgetPod<Label>,
 }
 
@@ -41,20 +40,7 @@ impl ProgressBar {
         let label = WidgetPod::new(
             Label::new(Self::value(progress)).with_line_break_mode(LineBreaking::Overflow),
         );
-        Self {
-            progress,
-            progress_changed: false,
-            label,
-        }
-    }
-
-    fn set_progress_inner(&mut self, mut progress: Option<f64>) {
-        clamp_progress(&mut progress);
-        // check to see if we can avoid doing work
-        if self.progress != progress {
-            self.progress = progress;
-            self.progress_changed = true;
-        }
+        Self { progress, label }
     }
 
     fn value_accessibility(&self) -> Box<str> {
@@ -76,8 +62,14 @@ impl ProgressBar {
 
 // --- MARK: WIDGETMUT ---
 impl ProgressBar {
-    pub fn set_progress(this: &mut WidgetMut<'_, Self>, progress: Option<f64>) {
-        this.widget.set_progress_inner(progress);
+    pub fn set_progress(this: &mut WidgetMut<'_, Self>, mut progress: Option<f64>) {
+        clamp_progress(&mut progress);
+        let progress_changed = this.widget.progress != progress;
+        if progress_changed {
+            this.widget.progress = progress;
+            let mut label = this.ctx.get_mut(&mut this.widget.label);
+            Label::set_text(&mut label, Self::value(progress));
+        }
         this.ctx.request_layout();
         this.ctx.request_render();
     }
@@ -200,8 +192,6 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
 
-    // TODO - Add WidgetMut test
-
     #[test]
     fn indeterminate_progressbar() {
         let [progressbar_id] = widget_ids();
@@ -261,5 +251,32 @@ mod tests {
         let mut harness = TestHarness::create(widget);
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "100_percent_progressbar");
+    }
+
+    #[test]
+    fn edit_progressbar() {
+        let image_1 = {
+            let bar = ProgressBar::new(Some(0.5));
+
+            let mut harness = TestHarness::create_with_size(bar, Size::new(60.0, 20.0));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let bar = ProgressBar::new(None);
+
+            let mut harness = TestHarness::create_with_size(bar, Size::new(60.0, 20.0));
+
+            harness.edit_root_widget(|mut label| {
+                let mut bar = label.downcast::<ProgressBar>();
+                ProgressBar::set_progress(&mut bar, Some(0.5));
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
     }
 }
