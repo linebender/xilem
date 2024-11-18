@@ -107,8 +107,7 @@ xilem_core = { version = "0.1.0", path = "xilem_core" }
 vello = "0.3"
 wgpu = "22.1.0"
 kurbo = "0.11.1"
-# https://github.com/linebender/parley/pull/176
-parley = { git = "https://github.com/linebender/parley", rev = "41d951fa9bd5a7c10a2820870d6df4813bd5122f", features = [
+parley = { git = "https://github.com/linebender/parley", rev = "217f243aa61178229da694b1d2b0598afcf29aff", features = [
     "accesskit",
 ] }
 peniko = "0.2.0"
