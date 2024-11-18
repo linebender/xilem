@@ -763,7 +763,7 @@ impl<'a> StringCursor<'a> {
     }
 }
 
-impl<'a> StringCursor<'a> {
+impl StringCursor<'_> {
     /// Set cursor position.
     pub(crate) fn set(&mut self, position: usize) {
         self.position = position;

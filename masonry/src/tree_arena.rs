@@ -93,21 +93,21 @@ pub struct ArenaMapMut<'a> {
 
 // -- MARK: IMPLS ---
 
-impl<'a, Item> Clone for ArenaRef<'a, Item> {
+impl<Item> Clone for ArenaRef<'_, Item> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, Item> Copy for ArenaRef<'a, Item> {}
+impl<Item> Copy for ArenaRef<'_, Item> {}
 
-impl<'a, Item> Clone for ArenaRefChildren<'a, Item> {
+impl<Item> Clone for ArenaRefChildren<'_, Item> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, Item> Copy for ArenaRefChildren<'a, Item> {}
+impl<Item> Copy for ArenaRefChildren<'_, Item> {}
 
 impl<Item> TreeArena<Item> {
     /// Create an empty tree.
@@ -213,7 +213,7 @@ impl<Item> TreeNode<Item> {
     }
 }
 
-impl<'a, Item> ArenaRef<'a, Item> {
+impl<Item> ArenaRef<'_, Item> {
     /// Id of the item this handle is associated with.
     pub fn id(&self) -> u64 {
         // ArenaRefChildren always has an id when it's a member of ArenaRef
@@ -221,7 +221,7 @@ impl<'a, Item> ArenaRef<'a, Item> {
     }
 }
 
-impl<'a, Item> ArenaMut<'a, Item> {
+impl<Item> ArenaMut<'_, Item> {
     /// Id of the item this handle is associated with.
     pub fn id(&self) -> u64 {
         // ArenaMutChildren always has an id when it's a member of ArenaMut
@@ -486,7 +486,7 @@ impl<'a, Item> ArenaMutChildren<'a, Item> {
     }
 }
 
-impl<'a> ArenaMapRef<'a> {
+impl ArenaMapRef<'_> {
     /// Construct the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
@@ -519,7 +519,7 @@ impl<'a> ArenaMapRef<'a> {
         path
     }
 }
-impl<'a> ArenaMapMut<'a> {
+impl ArenaMapMut<'_> {
     /// Returns a shared handle equivalent to this one.
     pub fn reborrow(&self) -> ArenaMapRef<'_> {
         ArenaMapRef {

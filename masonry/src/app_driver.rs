@@ -26,7 +26,7 @@ pub trait AppDriver {
     fn on_start(&mut self, state: &mut MasonryState) {}
 }
 
-impl<'a> DriverCtx<'a> {
+impl DriverCtx<'_> {
     // TODO - Add method to create timer
 
     /// Return a [`WidgetMut`] to the root widget.

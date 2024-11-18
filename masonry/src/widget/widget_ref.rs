@@ -28,7 +28,7 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 // --- TRAIT IMPLS ---
 
 #[allow(clippy::non_canonical_clone_impl)]
-impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
+impl<W: Widget + ?Sized> Clone for WidgetRef<'_, W> {
     fn clone(&self) -> Self {
         Self {
             ctx: self.ctx,
@@ -37,9 +37,9 @@ impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
     }
 }
 
-impl<'w, W: Widget + ?Sized> Copy for WidgetRef<'w, W> {}
+impl<W: Widget + ?Sized> Copy for WidgetRef<'_, W> {}
 
-impl<'w, W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'w, W> {
+impl<W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'_, W> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let widget_name = self.widget.short_type_name();
         let display_name = if let Some(debug_text) = self.widget.get_debug_text() {
@@ -62,7 +62,7 @@ impl<'w, W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'w, W> {
     }
 }
 
-impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
+impl<W: Widget + ?Sized> Deref for WidgetRef<'_, W> {
     type Target = W;
 
     fn deref(&self) -> &Self::Target {

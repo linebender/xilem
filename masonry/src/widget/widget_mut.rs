@@ -38,7 +38,7 @@ impl<W: Widget> Drop for WidgetMut<'_, W> {
     }
 }
 
-impl<'w, W: Widget> WidgetMut<'w, W> {
+impl<W: Widget> WidgetMut<'_, W> {
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;
@@ -49,7 +49,7 @@ impl<'w, W: Widget> WidgetMut<'w, W> {
     }
 }
 
-impl<'a> WidgetMut<'a, Box<dyn Widget>> {
+impl WidgetMut<'_, Box<dyn Widget>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
     pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
         Some(WidgetMut {

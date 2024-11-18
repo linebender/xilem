@@ -15,6 +15,10 @@ pub struct UnitPoint {
     v: f64,
 }
 
+#[expect(
+    single_use_lifetimes,
+    reason = "Anonymous lifetimes in `impl Trait` are unstable"
+)]
 pub fn stroke<'b>(
     scene: &mut Scene,
     path: &impl Shape,
