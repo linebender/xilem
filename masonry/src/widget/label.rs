@@ -346,7 +346,6 @@ impl Widget for Label {
                 builder.push_default(prop.to_owned());
             }
             builder.build_into(&mut self.text_layout, &self.text);
-            // TODO(DJM): Build self.text_layout
             self.styles_changed = false;
         }
 

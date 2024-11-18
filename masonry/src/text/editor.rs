@@ -65,7 +65,7 @@ where
     // clean layout, and not all operations trigger a layout.
     layout_dirty: bool,
     // TODO: We could avoid redoing the full text layout if linebreaking or
-    // alignment were unsupported
+    // alignment were unchanged
     // linebreak_dirty: bool,
     // alignment_dirty: bool,
     alignment: Alignment,
