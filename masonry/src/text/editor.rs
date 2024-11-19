@@ -14,10 +14,12 @@ use parley::{
         cursor::{Cursor, Selection, VisualMode},
         Affinity, Alignment, Layout, Line,
     },
-    style::{Brush, StyleProperty},
+    style::Brush,
     FontContext, LayoutContext, Rect,
 };
-use std::{borrow::ToOwned, string::String, sync::Arc, vec::Vec};
+use std::{borrow::ToOwned, string::String, vec::Vec};
+
+use super::styleset::StyleSet;
 
 #[derive(Copy, Clone, Debug)]
 pub enum ActiveText<'a> {
@@ -50,7 +52,7 @@ pub struct PlainEditor<T>
 where
     T: Brush + Clone + Debug + PartialEq + Default,
 {
-    default_style: Arc<[StyleProperty<'static, T>]>,
+    default_style: StyleSet<T>,
     buffer: String,
     layout: Layout<T>,
     layout_access: LayoutAccessibility,
@@ -72,14 +74,13 @@ where
     generation: Generation,
 }
 
-// TODO: When MSRV >= 1.80 we can remove this. Default was not implemented for Arc<[T]> where T: !Default until 1.80
-impl<T> Default for PlainEditor<T>
+impl<T> PlainEditor<T>
 where
-    T: Brush + Clone + Debug + PartialEq + Default,
+    T: Brush,
 {
-    fn default() -> Self {
+    pub fn new(font_size: f32) -> Self {
         Self {
-            default_style: Arc::new([]),
+            default_style: StyleSet::new(font_size),
             buffer: Default::default(),
             layout: Default::default(),
             layout_access: Default::default(),
@@ -138,9 +139,9 @@ where
     }
 
     /// Set the default style for the layout.
-    pub fn set_default_style(&mut self, style: Arc<[StyleProperty<'static, T>]>) {
-        self.editor.default_style = style;
+    pub fn edit_styles(&mut self) -> &mut StyleSet<T> {
         self.editor.layout_dirty = true;
+        &mut self.editor.default_style
     }
 
     /// Insert at cursor, or replace selection.
@@ -510,26 +511,39 @@ impl<T> PlainEditor<T>
 where
     T: Brush + Clone + Debug + PartialEq + Default,
 {
-    /// Run a series of [`PlainEditorTxn`] methods, updating the layout
-    /// if necessary.
+    /// Run a series of [`PlainEditorTxn`] methods.
+    ///
+    /// This is a utility shorthand around [`transaction`](Self::transaction);
     pub fn transact<R>(
         &mut self,
         font_cx: &mut FontContext,
         layout_cx: &mut LayoutContext<T>,
         callback: impl FnOnce(&mut PlainEditorTxn<'_, T>) -> R,
     ) -> R {
-        let mut txn = PlainEditorTxn {
+        let mut txn = self.transaction(font_cx, layout_cx);
+        callback(&mut txn)
+    }
+
+    /// Run a series of [`PlainEditorTxn`] methods, updating the layout
+    /// if necessary.
+    ///
+    /// This is a utility shorthand to simplify methods which require the editor
+    /// and the provided contexts.
+    pub fn transaction<'txn>(
+        &'txn mut self,
+        font_cx: &'txn mut FontContext,
+        layout_cx: &'txn mut LayoutContext<T>,
+    ) -> PlainEditorTxn<'txn, T> {
+        PlainEditorTxn {
             editor: self,
             font_cx,
             layout_cx,
-        };
-        let ret = callback(&mut txn);
-        txn.update_layout();
-        ret
+        }
     }
 
     /// Make a cursor at a given byte index
     fn cursor_at(&self, index: usize) -> Cursor {
+        // TODO: Do we need to be non-dirty?
         // FIXME: `Selection` should make this easier
         if index >= self.buffer.len() {
             Cursor::from_index(
@@ -548,6 +562,7 @@ where
         layout_cx: &mut LayoutContext<T>,
         s: &str,
     ) {
+        // TODO: Do we need to be non-dirty?
         let range = self.selection.text_range();
         let start = range.start;
         if self.selection.is_collapsed() {
@@ -618,8 +633,27 @@ where
         self.generation
     }
 
-    /// Get the full read-only details from the layout.
-    pub fn layout(&self) -> &Layout<T> {
+    /// Get the full read-only details from the layout
+    pub fn layout(
+        &mut self,
+        font_cx: &mut FontContext,
+        layout_cx: &mut LayoutContext<T>,
+    ) -> &Layout<T> {
+        self.refresh_layout(font_cx, layout_cx);
+        &self.layout
+    }
+
+    /// Get the full read-only details from the layout, if valid.
+    pub fn get_layout(&self) -> Option<&Layout<T>> {
+        if self.layout_dirty {
+            None
+        } else {
+            Some(&self.layout)
+        }
+    }
+
+    /// Get the (potentially invalid) details from the layout.
+    pub fn layout_raw(&self) -> &Layout<T> {
         &self.layout
     }
 
@@ -633,7 +667,7 @@ where
     /// Update the layout.
     fn update_layout(&mut self, font_cx: &mut FontContext, layout_cx: &mut LayoutContext<T>) {
         let mut builder = layout_cx.ranged_builder(font_cx, &self.buffer, self.scale);
-        for prop in self.default_style.iter() {
+        for prop in self.default_style.inner().values() {
             builder.push_default(prop.to_owned());
         }
         builder.build_into(&mut self.layout, &self.buffer);
