@@ -4,17 +4,17 @@
 use std::mem::Discriminant;
 use std::time::Instant;
 
+use crate::kurbo::{Affine, Point, Size};
 use crate::text::{render_text, Generation, PlainEditor};
 use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
 
-use crate::text::{ArcStr, BrushIndex, StyleProperty, StyleSet};
+use crate::text::{BrushIndex, StyleProperty};
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
@@ -29,35 +29,22 @@ use crate::{
 /// The EDITABLE parameter is fixed at compile time because Masonry doesn't allow changing the
 /// `accepts_text_input` property at runtime.
 // TODO: RichTextBox 👀
-pub struct TextRegion<const EDITABLE: bool> {
+// TODO: Support for links - https://github.com/linebender/xilem/issues/360
+pub struct TextRegion<const USER_EDITABLE: bool> {
     editor: PlainEditor<BrushIndex>,
     rendered_generation: Generation,
 
     last_click_time: Option<Instant>,
     click_count: u32,
 
-    /// The text which was first set in this area.
-    ///
-    /// This is needed at the start because there is no way to add text to a `PlainEditor`.
-    ///
-    /// This will never be `Some` after the first `layout` call (and so will always have
-    /// been consumed by the time an event handler runs)
-    initial_text: Option<ArcStr>,
-
-    // TODO: Support for links?
-    // https://github.com/linebender/xilem/issues/360
-    // TODO: Make this be part of the `PlainEditor` instead?
-    // That effectively forces us to expose a similar transaction API?
-    styles: StyleSet,
-
     /// Whether to wrap words in this region.
     ///
-    /// Note that if clipping is desired, that should be added by the parent view.
+    /// Note that if clipping is desired, that should be added by the parent widget.
     wrap_words: bool,
-    alignment: Alignment,
-    /// The value of `max_advance` when this layout was last calculated.
+    /// The amount of horizontal space available when [layout](Widget::layout) was
+    /// last performed.
     ///
-    /// If it has changed, we need to re-perform line-breaking.
+    /// If word wrapping is enabled, we use this for line breaking.
     last_available_width: Option<f32>,
 
     /// The brush for drawing this label's text.
@@ -74,33 +61,32 @@ pub struct TextRegion<const EDITABLE: bool> {
     /// Should be disabled whilst an animation involving this text is ongoing.
     // TODO: What classes of animations? I.e does scrolling count?
     hint: bool,
+    // TODO: Internal padding?
 }
 
 // --- MARK: BUILDERS ---
 impl TextRegion<true> {
-    pub fn new_editable(text: impl Into<ArcStr>) -> Self {
+    pub fn new_editable(text: &str) -> Self {
         Self::new(text)
     }
 }
 
 impl TextRegion<false> {
-    pub fn new_immutable(text: impl Into<ArcStr>) -> Self {
+    pub fn new_immutable(text: &str) -> Self {
         Self::new(text)
     }
 }
 
 impl<const EDITABLE: bool> TextRegion<EDITABLE> {
-    pub fn new(text: impl Into<ArcStr>) -> Self {
-        let editor = PlainEditor::default();
+    pub fn new(text: &str) -> Self {
+        let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
+        editor.set_text(text);
         TextRegion {
             editor,
             rendered_generation: Generation::default(),
-            initial_text: Some(text.into()),
             last_click_time: None,
             click_count: 0,
-            styles: StyleSet::new(theme::TEXT_SIZE_NORMAL),
             wrap_words: true,
-            alignment: Alignment::Start,
             last_available_width: None,
             brush: theme::TEXT_COLOR.into(),
             disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
@@ -122,6 +108,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     /// Use `with_brush` instead.
     ///
     /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
+    #[track_caller]
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
         self.insert_style_inner(property.into());
         self
@@ -141,7 +128,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     /// Set how line breaks will be handled by this label.
     ///
     /// To modify this on an active label, use [`set_line_break_mode`](Self::set_line_break_mode).
-    pub fn with_line_break_mode(mut self, wrap_words: bool) -> Self {
+    pub fn with_word_wrap(mut self, wrap_words: bool) -> Self {
         self.wrap_words = wrap_words;
         self
     }
@@ -151,7 +138,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     /// Text alignment might have unexpected results when the label has no horizontal constraints.
     /// To modify this on an active label, use [`set_alignment`](Self::set_alignment).
     pub fn with_alignment(mut self, alignment: Alignment) -> Self {
-        self.alignment = alignment;
+        self.editor.set_alignment(alignment);
         self
     }
 
@@ -196,13 +183,14 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     }
 
     /// Shared logic between `with_style` and `insert_style`
+    #[track_caller]
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
         if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
             debug_panic!(
-                "Can't set a non-zero brush index ({idx:?}) on a `Label`, as it only supports global styling."
+                "Can't set a non-zero brush index ({idx:?}) on a `TextRegion`, as it only supports global styling."
             );
         }
-        self.styles.insert(property)
+        self.editor.edit_styles().insert(property)
     }
 }
 
@@ -213,6 +201,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
     /// Use [`set_brush`](Self::set_brush) instead.
+    #[track_caller]
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
@@ -230,7 +219,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     ///
     /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
-        this.widget.styles.retain(f);
+        this.widget.editor.edit_styles().retain(f);
 
         this.ctx.request_layout();
     }
@@ -249,7 +238,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
         this: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,
     ) -> Option<StyleProperty> {
-        let old = this.widget.styles.remove(property);
+        let old = this.widget.editor.edit_styles().remove(property);
 
         this.ctx.request_layout();
         old
@@ -257,22 +246,27 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
 
     /// This is likely to be disruptive if the user is focused on this widget,
     /// and so should be avoided if possible.
-    pub fn reset_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
-        this.widget.initial_text = Some(new_text.into());
+    pub fn reset_text(this: &mut WidgetMut<'_, Self>, new_text: &str) {
+        this.widget.editor.set_text(new_text);
 
         this.ctx.request_layout();
     }
 
-    /// The runtime requivalent of [`with_line_break_mode`](Self::with_line_break_mode).
-    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, wrap_words: bool) {
+    /// The runtime requivalent of [`with_word_wrap`](Self::with_word_wrap).
+    pub fn set_word_wrap(this: &mut WidgetMut<'_, Self>, wrap_words: bool) {
         this.widget.wrap_words = wrap_words;
-        // We don't need to set an internal invalidation, as `max_advance` is always recalculated
+        let width = if wrap_words {
+            this.widget.last_available_width
+        } else {
+            None
+        };
+        this.widget.editor.set_width(width);
         this.ctx.request_layout();
     }
 
     /// The runtime requivalent of [`with_alignment`](Self::with_alignment).
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
-        this.widget.alignment = alignment;
+        this.widget.editor.set_alignment(alignment);
 
         this.ctx.request_layout();
     }
@@ -309,9 +303,6 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
 // --- MARK: IMPL WIDGET ---
 impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        if self.initial_text.is_some() {
-            debug_panic!("An event arrived at `set_text` before the first layout");
-        }
         let window_origin = ctx.widget_state.window_origin();
         let inner_origin = Point::new(window_origin.x, window_origin.y);
         match event {
@@ -365,9 +356,6 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
     }
 
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        if self.initial_text.is_some() {
-            debug_panic!("An event arrived at `set_text` before the first layout");
-        }
         match event {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
                 if !key_event.state.is_pressed() {
@@ -602,28 +590,24 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
         } else {
             None
         };
-        self.last_available_width = available_width;
         let max_advance = if self.wrap_words {
-            self.last_available_width
+            available_width
         } else {
             None
         };
-        self.editor.transact(fctx, lctx, |txn| {
-            if let Some(initial_text) = self.initial_text.take() {
-                txn.select_to_text_start();
-                txn.collapse_selection();
-                txn.set_text(&initial_text);
-            }
+        if self.last_available_width != available_width && self.wrap_words {
+            self.editor.set_width(max_advance);
+        }
+        self.last_available_width = available_width;
 
-            txn.set_width(max_advance);
-        });
         let new_generation = self.editor.generation();
         if new_generation != self.rendered_generation {
             self.rendered_generation = new_generation;
         }
 
-        let text_width = max_advance.unwrap_or(self.editor.layout().full_width());
-        let text_size = Size::new(text_width.into(), self.editor.layout().height().into());
+        let layout = self.editor.layout(fctx, lctx);
+        let text_width = max_advance.unwrap_or(layout.full_width());
+        let text_size = Size::new(text_width.into(), layout.height().into());
 
         let textbox_size = Size {
             height: text_size.height,
@@ -658,7 +642,14 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
         } else {
             self.brush.clone()
         };
-        render_text(scene, transform, self.editor.layout(), &[brush], self.hint);
+        let layout = if let Some(layout) = self.editor.get_layout() {
+            layout
+        } else {
+            debug_panic!("Layout ");
+            let (fctx, lctx) = ctx.text_contexts();
+            self.editor.layout(fctx, lctx)
+        };
+        render_text(scene, transform, layout, &[brush], self.hint);
     }
 
     fn get_cursor(&self, _ctx: &QueryCtx, _pos: Point) -> CursorIcon {
@@ -697,45 +688,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
     }
 }
 
-// TODO - Add more tests
-#[cfg(test)]
-mod tests {
-    use parley::{layout::Alignment, StyleProperty};
-    use vello::kurbo::Size;
-
-    use crate::{
-        assert_render_snapshot,
-        testing::TestHarness,
-        widget::{CrossAxisAlignment, Flex, LineBreaking, Prose},
-    };
-
-    #[test]
-    /// A wrapping prose's alignment should be respected, regardkess of
-    /// its parent's alignment.
-    fn prose_alignment_flex() {
-        fn base_label() -> Prose {
-            // Trailing whitespace is displayed when laying out prose.
-            Prose::new("Hello  ")
-                .with_style(StyleProperty::FontSize(10.0))
-                .with_line_break_mode(LineBreaking::WordWrap)
-        }
-        let label1 = base_label().with_alignment(Alignment::Start);
-        let label2 = base_label().with_alignment(Alignment::Middle);
-        let label3 = base_label().with_alignment(Alignment::End);
-        let label4 = base_label().with_alignment(Alignment::Start);
-        let label5 = base_label().with_alignment(Alignment::Middle);
-        let label6 = base_label().with_alignment(Alignment::End);
-        let flex = Flex::column()
-            .with_flex_child(label1, CrossAxisAlignment::Start)
-            .with_flex_child(label2, CrossAxisAlignment::Start)
-            .with_flex_child(label3, CrossAxisAlignment::Start)
-            .with_flex_child(label4, CrossAxisAlignment::Center)
-            .with_flex_child(label5, CrossAxisAlignment::Center)
-            .with_flex_child(label6, CrossAxisAlignment::Center)
-            .gap(0.0);
-
-        let mut harness = TestHarness::create_with_size(flex, Size::new(80.0, 80.0));
-
-        assert_render_snapshot!(harness, "prose_alignment_flex");
-    }
-}
+// TODO: What tests can we have? Some options:
+// 1) Editing the properties is consistent (sets the right flags, etc.)
+// 2) Clicking in the right place changes the selection as expected?
+// 3) Keyboard actions have expected results?

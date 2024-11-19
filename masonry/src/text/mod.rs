@@ -12,8 +12,7 @@
 
 mod editor;
 mod render_text;
-
-use std::{collections::HashMap, mem::Discriminant};
+mod styleset;
 
 pub use editor::{ActiveText, Generation, PlainEditor, PlainEditorTxn};
 pub use render_text::render_text;
@@ -29,30 +28,4 @@ pub struct BrushIndex(pub usize);
 
 pub type StyleProperty = parley::StyleProperty<'static, BrushIndex>;
 
-/// A set of Parley styles.
-pub struct StyleSet(HashMap<Discriminant<StyleProperty>, StyleProperty>);
-
-impl StyleSet {
-    pub fn new(font_size: f32) -> Self {
-        let mut this = Self(Default::default());
-        this.insert(StyleProperty::FontSize(font_size));
-        this
-    }
-
-    pub fn insert(&mut self, style: StyleProperty) -> Option<StyleProperty> {
-        let discriminant = std::mem::discriminant(&style);
-        self.0.insert(discriminant, style)
-    }
-
-    pub fn retain(&mut self, mut f: impl FnMut(&StyleProperty) -> bool) {
-        self.0.retain(|_, v| f(v));
-    }
-
-    pub fn remove(&mut self, property: Discriminant<StyleProperty>) -> Option<StyleProperty> {
-        self.0.remove(&property)
-    }
-
-    pub fn inner(&self) -> &HashMap<Discriminant<StyleProperty>, StyleProperty> {
-        &self.0
-    }
-}
+pub type StyleSet = styleset::StyleSet<BrushIndex>;

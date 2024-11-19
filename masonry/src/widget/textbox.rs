@@ -84,7 +84,7 @@ pub struct Textbox {
 // --- MARK: BUILDERS ---
 impl Textbox {
     pub fn new(text: impl Into<ArcStr>) -> Self {
-        let editor = PlainEditor::default();
+        let editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
         Textbox {
             editor,
             rendered_generation: Generation::default(),

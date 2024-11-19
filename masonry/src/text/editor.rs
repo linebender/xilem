@@ -86,9 +86,9 @@ where
             layout_access: Default::default(),
             selection: Default::default(),
             cursor_mode: Default::default(),
-            width: Default::default(),
+            width: None,
             scale: 1.0,
-            layout_dirty: Default::default(),
+            layout_dirty: false,
             alignment: Alignment::Start,
             // We don't use the `default` value to start with, as our consumers
             // will choose to use that as their initial value, but will probably need
@@ -113,37 +113,7 @@ impl<T> PlainEditorTxn<'_, T>
 where
     T: Brush + Clone + Debug + PartialEq + Default,
 {
-    /// Replace the whole text buffer.
-    pub fn set_text(&mut self, is: &str) {
-        self.editor.buffer.clear();
-        self.editor.buffer.push_str(is);
-        self.editor.layout_dirty = true;
-    }
-
-    /// Set the width of the layout.
-    pub fn set_width(&mut self, width: Option<f32>) {
-        self.editor.width = width;
-        self.editor.layout_dirty = true;
-    }
-
-    /// Set the alignment of the layout.
-    pub fn set_alignment(&mut self, alignment: Alignment) {
-        self.editor.alignment = alignment;
-        self.editor.layout_dirty = true;
-    }
-
-    /// Set the scale for the layout.
-    pub fn set_scale(&mut self, scale: f32) {
-        self.editor.scale = scale;
-        self.editor.layout_dirty = true;
-    }
-
-    /// Set the default style for the layout.
-    pub fn edit_styles(&mut self) -> &mut StyleSet<T> {
-        self.editor.layout_dirty = true;
-        &mut self.editor.default_style
-    }
-
+    // --- MARK: Forced relayout ---
     /// Insert at cursor, or replace selection.
     pub fn insert_or_replace_selection(&mut self, s: &str) {
         self.editor
@@ -240,6 +210,7 @@ where
         }
     }
 
+    // --- MARK: Cursor Movement ---
     /// Move the cursor to the cluster boundary nearest this point in the layout.
     pub fn move_to_point(&mut self, x: f32, y: f32) {
         self.refresh_layout();
@@ -498,6 +469,7 @@ where
         }
     }
 
+    // --- MARK: Internal helpers ---
     fn update_layout(&mut self) {
         self.editor.update_layout(self.font_cx, self.layout_cx);
     }
@@ -655,6 +627,38 @@ where
     /// Get the (potentially invalid) details from the layout.
     pub fn layout_raw(&self) -> &Layout<T> {
         &self.layout
+    }
+
+    /// Replace the whole text buffer.
+    pub fn set_text(&mut self, is: &str) {
+        self.buffer.clear();
+        self.buffer.push_str(is);
+        self.layout_dirty = true;
+    }
+
+    /// Set the width of the layout.
+    // TODO: If this is infinite, is the width used for alignnment the min width?
+    pub fn set_width(&mut self, width: Option<f32>) {
+        self.width = width;
+        self.layout_dirty = true;
+    }
+
+    /// Set the alignment of the layout.
+    pub fn set_alignment(&mut self, alignment: Alignment) {
+        self.alignment = alignment;
+        self.layout_dirty = true;
+    }
+
+    /// Set the scale for the layout.
+    pub fn set_scale(&mut self, scale: f32) {
+        self.scale = scale;
+        self.layout_dirty = true;
+    }
+
+    /// Set the default style for the layout.
+    pub fn edit_styles(&mut self) -> &mut StyleSet<T> {
+        self.layout_dirty = true;
+        &mut self.default_style
     }
 
     /// Update the layout if it is dirty.
