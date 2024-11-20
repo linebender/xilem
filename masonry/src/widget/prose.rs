@@ -4,7 +4,7 @@
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
-use vello::kurbo::{Rect, Size};
+use vello::kurbo::{Point, Rect, Size};
 use vello::Scene;
 
 use crate::widget::WidgetMut;
@@ -13,13 +13,13 @@ use crate::{
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
-use super::{TextRegion, WidgetPod};
+use super::{Padding, TextRegion, WidgetPod};
 
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
 ///
 /// This gives the text the smallest amount of breathing room.
-const PROSE_X_PADDING: f64 = 2.0;
+const PROSE_PADDING: Padding = Padding::horizontal(2.0);
 
 /// The prose widget displays immutable text which can be
 /// selected within.
@@ -49,6 +49,7 @@ impl Prose {
 
     /// Create a new `Prose` from a styled text area.
     pub fn from_text_region(text: TextRegion<false>) -> Self {
+        let text = text.with_padding_if_default(PROSE_PADDING);
         Self {
             text: WidgetPod::new(text),
             clip: false,
@@ -58,7 +59,7 @@ impl Prose {
     /// Whether to clip the text.
     ///
     /// If this is set to true, it is recommended, but not required, that this
-    ///  wraps a text area with [word wrapping](TextRegion::with_word_wrap) enabled.
+    /// wraps a text area with [word wrapping](TextRegion::with_word_wrap) enabled.
     pub fn with_clip(mut self, clip: bool) -> Self {
         self.clip = clip;
         self
@@ -69,8 +70,8 @@ impl Prose {
 impl Prose {
     /// Edit the underlying text area.
     ///
-    /// Warning: [`TextRegion::set_word_wrap`] will have no effect.
-    /// Use [`Self::set_line_break_mode`] instead.
+    /// If this is set to true, it is recommended, but not required, that this
+    /// wraps a text area with [word wrapping](TextRegion::set_word_wrap) enabled.
     pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextRegion<false>> {
         this.ctx.get_mut(&mut this.widget.text)
     }
@@ -97,13 +98,13 @@ impl Widget for Prose {
     fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size_diff = Size::new(PROSE_X_PADDING * 2., 0.);
-        let bc = bc.shrink(size_diff);
-        let size = ctx.run_layout(&mut self.text, &bc);
+        // TODO: Set minimum to deal with alignment
+        let size = ctx.run_layout(&mut self.text, bc);
+        ctx.place_child(&mut self.text, Point::ORIGIN);
         if self.clip {
-            ctx.set_clip_path(Rect::from_origin_size((PROSE_X_PADDING, 0.), size));
+            ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
         }
-        size + size_diff
+        size
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {

@@ -1,6 +1,6 @@
 use std::{collections::HashMap, mem::Discriminant};
 
-type StyleProperty<Brush: parley::Brush> = parley::StyleProperty<'static, Brush>;
+type StyleProperty<Brush> = parley::StyleProperty<'static, Brush>;
 
 /// A set of Parley styles.
 #[derive(Clone, Debug)]

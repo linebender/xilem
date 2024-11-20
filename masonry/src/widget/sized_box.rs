@@ -82,6 +82,20 @@ impl Padding {
     /// A padding of zero for all edges.
     pub const ZERO: Padding = Padding::all(0.);
 
+    /// An padding which can be detected using, allowing parent views to determine if the padding is under user control.
+    ///
+    /// To detect if a padding is unset, use [`is_unset`](Self::is_unset).
+    /// Otherwise, this padding will behave as [`Padding::ZERO`].
+    pub const UNSET: Padding = Padding::all(-0.0);
+
+    /// Determine if self is [`Padding::UNSET`].
+    pub fn is_unset(self) -> bool {
+        is_negative_zero(self.top)
+            && is_negative_zero(self.leading)
+            && is_negative_zero(self.trailing)
+            && is_negative_zero(self.bottom)
+    }
+
     /// Constructs a new `Padding` with equal amount of padding for all edges.
     pub const fn all(padding: f64) -> Self {
         Self::new(padding, padding, padding, padding)
@@ -118,6 +132,28 @@ impl Padding {
     pub const fn leading(padding: f64) -> Self {
         Self::new(0., 0., 0., padding)
     }
+
+    /// Get the padding to the left, given whether we're in a right-to-left context.
+    pub const fn get_left(self, is_rtl: bool) -> f64 {
+        if is_rtl {
+            self.trailing
+        } else {
+            self.leading
+        }
+    }
+
+    /// Get the padding to the right, given whether we're in a right-to-left context.
+    pub const fn get_right(self, is_rtl: bool) -> f64 {
+        if is_rtl {
+            self.leading
+        } else {
+            self.trailing
+        }
+    }
+}
+
+fn is_negative_zero(val: f64) -> bool {
+    val == 0.0 && val.is_sign_negative()
 }
 
 impl From<f64> for Padding {

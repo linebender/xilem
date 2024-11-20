@@ -10,12 +10,13 @@ use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
+use vello::kurbo::Vec2;
 use vello::peniko::{Brush, Color, Fill};
 use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
 
 use crate::text::{BrushIndex, StyleProperty};
-use crate::widget::WidgetMut;
+use crate::widget::{Padding, WidgetMut};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
     PointerButton, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
@@ -31,6 +32,7 @@ use crate::{
 // TODO: RichTextBox 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
 pub struct TextRegion<const USER_EDITABLE: bool> {
+    // TODO: Placeholder text?
     editor: PlainEditor<BrushIndex>,
     rendered_generation: Generation,
 
@@ -61,7 +63,11 @@ pub struct TextRegion<const USER_EDITABLE: bool> {
     /// Should be disabled whilst an animation involving this text is ongoing.
     // TODO: What classes of animations? I.e does scrolling count?
     hint: bool,
-    // TODO: Internal padding?
+    /// The amount of Padding inside this text area.
+    ///
+    /// This is generally expected to be set by the parent, but
+    /// can also be overridden.
+    padding: Padding,
 }
 
 // --- MARK: BUILDERS ---
@@ -91,6 +97,9 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
             brush: theme::TEXT_COLOR.into(),
             disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
             hint: true,
+            // We use -0.0 to mark the default padding.
+            // This allows parent views to
+            padding: Padding::UNSET,
         }
     }
 
@@ -179,6 +188,24 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     // Alternatively, we should automate disabling hinting at the Vello layer when composing.
     pub fn with_hint(mut self, hint: bool) -> Self {
         self.hint = hint;
+        self
+    }
+
+    /// Set the padding around the text.
+    ///
+    /// This is the area where pointer events will impact this style.
+    pub fn with_padding(mut self, padding: impl Into<Padding>) -> Self {
+        self.padding = padding.into();
+        self
+    }
+
+    /// Adds `padding` unless [`with_padding`](Self::with_padding) was previously called.
+    ///
+    /// This is expected to be called when creating parent widgets.
+    pub fn with_padding_if_default(mut self, padding: Padding) -> Self {
+        if self.padding.is_unset() {
+            self.padding = padding;
+        }
         self
     }
 
@@ -298,13 +325,25 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
         this.widget.hint = hint;
         this.ctx.request_paint_only();
     }
+
+    pub fn set_padding(this: &mut WidgetMut<'_, Self>, padding: impl Into<Padding>) {
+        this.widget.padding = padding.into();
+        // TODO: We could reset the width available to the editor here directly.
+        // Determine whether there's any advantage to that
+        this.ctx.request_layout();
+    }
 }
 
 // --- MARK: IMPL WIDGET ---
 impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
-        let inner_origin = Point::new(window_origin.x, window_origin.y);
+        let (fctx, lctx) = ctx.text_contexts();
+        let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
+        let inner_origin = Point::new(
+            window_origin.x + self.padding.get_left(is_rtl),
+            window_origin.y + self.padding.top,
+        );
         match event {
             PointerEvent::PointerDown(button, state) => {
                 if !ctx.is_disabled() && *button == PointerButton::Primary {
@@ -379,6 +418,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
                     Key::Character(x)
                         if EDITABLE && action_mod && x.as_str().eq_ignore_ascii_case("x") =>
                     {
+                        edited = true;
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
                         // if let crate::text::ActiveText::Selection(_) = self.editor.active_text() {
                         //     let cb = ClipboardContext::new().unwrap();
@@ -401,6 +441,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
                     Key::Character(v)
                         if EDITABLE && action_mod && v.as_str().eq_ignore_ascii_case("v") =>
                     {
+                        edited = true;
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
                         // let cb = ClipboardContext::new().unwrap();
                         // let text = cb.get_text().unwrap_or_default();
@@ -490,6 +531,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
                                 txn.delete();
                             }
                         });
+                        edited = true;
                     }
                     Key::Named(NamedKey::Backspace) if EDITABLE => {
                         self.editor.transact(fctx, lctx, |txn| {
@@ -499,6 +541,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
                                 txn.backdelete();
                             }
                         });
+                        edited = true;
                     }
                     Key::Named(NamedKey::Enter) => {
                         // TODO: Multiline?
@@ -520,6 +563,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
                         Some(text) => {
                             self.editor
                                 .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(text));
+                            edited = true;
                         }
                         None => {}
                     },
@@ -569,10 +613,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            Update::FocusChanged(false) => {
-                ctx.request_render();
-            }
-            Update::FocusChanged(true) => {
+            Update::FocusChanged(_) => {
                 ctx.request_render();
             }
             Update::DisabledChanged(_) => {
@@ -584,9 +625,15 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let (fctx, lctx) = ctx.text_contexts();
+        // Shrink constraints by padding inset
+        let padding_size = Size::new(
+            self.padding.leading + self.padding.trailing,
+            self.padding.top + self.padding.bottom,
+        );
+        let sub_bc = bc.shrink(padding_size);
+
         let available_width = if bc.max().width.is_finite() {
-            Some((bc.max().width) as f32)
+            Some((sub_bc.max().width) as f32)
         } else {
             None
         };
@@ -599,32 +646,45 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
             self.editor.set_width(max_advance);
         }
         self.last_available_width = available_width;
+        // TODO: Use the minimum width in the bc for alignment
+        // TODO(DJM): Handle padding
 
         let new_generation = self.editor.generation();
         if new_generation != self.rendered_generation {
             self.rendered_generation = new_generation;
         }
 
+        let (fctx, lctx) = ctx.text_contexts();
         let layout = self.editor.layout(fctx, lctx);
         let text_width = max_advance.unwrap_or(layout.full_width());
         let text_size = Size::new(text_width.into(), layout.height().into());
 
-        let textbox_size = Size {
-            height: text_size.height,
-            width: text_size.width,
+        let region_size = Size {
+            height: text_size.height + padding_size.height,
+            width: text_size.width + padding_size.width,
         };
-        bc.constrain(textbox_size)
+        bc.constrain(region_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let transform = Affine::IDENTITY;
-        for rect in self.editor.selection_geometry().iter() {
-            // TODO: If window not focused, use a different color
-            // TODO: Make configurable
-            scene.fill(Fill::NonZero, transform, Color::STEEL_BLUE, None, &rect);
-        }
-
+        let layout = if let Some(layout) = self.editor.get_layout() {
+            layout
+        } else {
+            debug_panic!("Widget `layout` should have happened before paint");
+            let (fctx, lctx) = ctx.text_contexts();
+            // The `layout` method takes `&mut self`, so we get borrow-checker errors if we return it from this block.
+            self.editor.layout(fctx, lctx);
+            self.editor.layout_raw()
+        };
+        let is_rtl = layout.is_rtl();
+        let origin = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
+        let transform = Affine::translate(origin);
         if ctx.is_focused() {
+            for rect in self.editor.selection_geometry().iter() {
+                // TODO: If window not focused, use a different color
+                // TODO: Make configurable
+                scene.fill(Fill::NonZero, transform, Color::STEEL_BLUE, None, &rect);
+            }
             if let Some(cursor) = self.editor.selection_strong_geometry(1.5) {
                 // TODO: Make configurable
                 scene.fill(Fill::NonZero, transform, Color::WHITE, None, &cursor);
@@ -641,13 +701,6 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
                 .unwrap_or_else(|| self.brush.clone())
         } else {
             self.brush.clone()
-        };
-        let layout = if let Some(layout) = self.editor.get_layout() {
-            layout
-        } else {
-            debug_panic!("Layout ");
-            let (fctx, lctx) = ctx.text_contexts();
-            self.editor.layout(fctx, lctx)
         };
         render_text(scene, transform, layout, &[brush], self.hint);
     }
@@ -666,12 +719,15 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+        let (fctx, lctx) = ctx.text_contexts();
+        let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
+        let (x_offset, y_offset) = (self.padding.get_left(is_rtl), self.padding.top);
         self.editor.accessibility(
             ctx.tree_update,
             node,
             || NodeId::from(WidgetId::next()),
-            0.0,
-            0.0,
+            x_offset,
+            y_offset,
         );
     }
 

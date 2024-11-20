@@ -22,6 +22,7 @@ impl AppDriver for Driver {
 
 fn main() {
     let main_widget = Flex::column()
+        .gap(0.0)
         .with_child(Textbox::new(""))
         .with_child(Textbox::new(""))
         .with_spacer(VERTICAL_WIDGET_SPACING);
