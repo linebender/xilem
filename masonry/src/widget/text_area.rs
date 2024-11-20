@@ -26,64 +26,101 @@ use crate::{
 /// `TextArea` implements the core of interactive text.
 ///
 /// It is used to implement [`Textbox`](super::Textbox) and [`Prose`](super::Prose).
+/// It is rare that you will use a raw `TextArea` as a widget in your app; most users
+/// should prefer one of those wrappers.
 ///
-/// The EDITABLE parameter is fixed at compile time because Masonry doesn't allow changing the
-/// `accepts_text_input` property at runtime.
+/// This ensures that the editable and read-only text have the same text selection and
+/// copy/paste behaviour.
+///
+/// The `USER_EDITABLE` const generic parameter determines whether the text area's contents can be
+/// edited by the user of the app.
+/// This is true for `Textbox` and false for `Prose`.
 // TODO: RichTextBox 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
 pub struct TextArea<const USER_EDITABLE: bool> {
     // TODO: Placeholder text?
+    /// The underlying `PlainEditor`, which provides a high-level interface for us to dispatch into.
     editor: PlainEditor<BrushIndex>,
+    /// The generation of `editor` which we have rendered.
+    ///
+    /// TODO: Split into rendered and layout generation. This will make the `edited` mechanism in [`on_text_event`](Widget::on_text_event).
     rendered_generation: Generation,
 
+    /// The time when this element was last clicked.
+    ///
+    /// Used to detect double/triple clicks.
+    /// The long-term plan is for this to be provided by the platform (i.e. winit), as that has more context.
     last_click_time: Option<Instant>,
+    /// How many clicks have occurred in this click sequence.
     click_count: u32,
 
     /// Whether to wrap words in this region.
     ///
     /// Note that if clipping is desired, that should be added by the parent widget.
-    wrap_words: bool,
+    /// Can be set using [`set_word_wrap`](Self::set_word_wrap).
+    word_wrap: bool,
     /// The amount of horizontal space available when [layout](Widget::layout) was
     /// last performed.
     ///
     /// If word wrapping is enabled, we use this for line breaking.
+    /// We store this to avoid redoing work in layout and to set the
+    /// width when `word_wrap` is re-enabled.
     last_available_width: Option<f32>,
 
     /// The brush for drawing this label's text.
     ///
     /// Requires a new paint if edited whilst `disabled_brush` is not being used.
+    /// Can be set using [`set_brush`](Self::set_brush).
     brush: Brush,
     /// The brush to use whilst this widget is disabled.
     ///
     /// When this is `None`, `brush` will be used.
     /// Requires a new paint if edited whilst this widget is disabled.
+    /// /// Can be set using [`set_disabled_brush`](Self::set_disabled_brush).
     disabled_brush: Option<Brush>,
     /// Whether to hint whilst drawing the text.
     ///
     /// Should be disabled whilst an animation involving this text is ongoing.
+    /// Can be set using [`set_hint`](Self::set_hint).
     // TODO: What classes of animations? I.e does scrolling count?
     hint: bool,
     /// The amount of Padding inside this text area.
     ///
     /// This is generally expected to be set by the parent, but
     /// can also be overridden.
+    /// Can be set using [`set_padding`](Self::set_padding).
+    /// Immediate parent widgets should use [`with_padding_if_default`](Self::with_padding_if_default).
     padding: Padding,
 }
 
 // --- MARK: BUILDERS ---
 impl TextArea<true> {
+    /// Create a new `TextArea` which can be edited.
+    ///
+    /// Useful for creating a styled [Textbox](super::Textbox).
+    // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new_editable(text: &str) -> Self {
         Self::new(text)
     }
 }
 
 impl TextArea<false> {
+    /// Create a new `TextArea` which cannot be edited by the user.
+    ///
+    /// Useful for creating a styled [Prose](super::Prose).
+    // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new_immutable(text: &str) -> Self {
         Self::new(text)
     }
 }
 
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
+    /// Create a new `TextArea` with the given text and default settings.
+    ///
+    // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
+    /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: &str) -> Self {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
         editor.set_text(text);
@@ -92,38 +129,40 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             rendered_generation: Generation::default(),
             last_click_time: None,
             click_count: 0,
-            wrap_words: true,
+            word_wrap: true,
             last_available_width: None,
             brush: theme::TEXT_COLOR.into(),
             disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
             hint: true,
             // We use -0.0 to mark the default padding.
-            // This allows parent views to
+            // This allows parent views to overwrite it only if another source didn't configure it.
             padding: Padding::UNSET,
         }
     }
 
-    // TODO(DJM): Update doc comments from Label to TextArea.
-    /// Get the current text of this label.
+    /// Get the current text of this text area.
     ///
-    /// To update the text of an active label, use [`set_text`](Self::set_text).
+    /// To update the text of an active text area, use [`reset_text`](Self::reset_text).
     pub fn text(&self) -> &str {
         self.editor.text()
     }
 
-    /// Set a style property for the new label.
+    /// Set a style property for the new text area.
     ///
+    /// This is useful to configure most text styling, including the font size.
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use `with_brush` instead.
+    /// Use [`with_brush`](Self::with_brush) instead.
     ///
-    /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
+    /// To set a style property on an active text area, use [`insert_style`](Self::insert_style).
+    ///
+    /// Warning: This is not additive for font stacks, and instead overwrites any previously provided font stack.
     #[track_caller]
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
         self.insert_style_inner(property.into());
         self
     }
 
-    /// Set a style property for the new label, returning the old value.
+    /// Set a style property for the new text area, returning the old value.
     ///
     /// Most users should prefer [`with_style`](Self::with_style) instead.
     pub fn try_with_style(
@@ -134,35 +173,37 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         (self, old)
     }
 
-    /// Set how line breaks will be handled by this label.
+    /// Set whether word wrapping will automatically occur when the line length would be too long
+    /// for the available area.
     ///
-    /// To modify this on an active label, use [`set_line_break_mode`](Self::set_line_break_mode).
+    /// To modify this on an active text area, use [`set_word_wrap`](Self::set_word_wrap).
     pub fn with_word_wrap(mut self, wrap_words: bool) -> Self {
-        self.wrap_words = wrap_words;
+        self.word_wrap = wrap_words;
         self
     }
 
     /// Set the alignment of the text.
     ///
-    /// Text alignment might have unexpected results when the label has no horizontal constraints.
-    /// To modify this on an active label, use [`set_alignment`](Self::set_alignment).
+    /// Text alignment might have unexpected results when the text area has no horizontal constraints.
+    /// To modify this on an active text area, use [`set_alignment`](Self::set_alignment).
+    // TODO: Document behaviour based on provided minimum constraint?
     pub fn with_alignment(mut self, alignment: Alignment) -> Self {
         self.editor.set_alignment(alignment);
         self
     }
 
-    /// Set the brush used to paint this label.
+    /// Set the brush used to paint the text in this text area.
     ///
     /// In most cases, this will be the text's color, but gradients and images are also supported.
     ///
-    /// To modify this on an active label, use [`set_brush`](Self::set_brush).
+    /// To modify this on an active text area, use [`set_brush`](Self::set_brush).
     #[doc(alias = "with_color")]
     pub fn with_brush(mut self, brush: impl Into<Brush>) -> Self {
         self.brush = brush.into();
         self
     }
 
-    /// Set the brush which will be used to paint this label whilst it is disabled.
+    /// Set the brush which will be used to paint this text area whilst it is disabled.
     ///
     /// If this is `None`, the [normal brush](Self::with_brush) will be used.
     /// To modify this on an active label, use [`set_disabled_brush`](Self::set_disabled_brush).
@@ -172,18 +213,19 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self
     }
 
-    /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this label.
+    /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this text area.
     ///
     /// Hinting is a process where text is drawn "snapped" to pixel boundaries to improve fidelity.
     /// The default is true, i.e. hinting is enabled by default.
     ///
-    /// This should be set to false if the label will be animated at creation.
+    /// This should be set to false if the text area will be animated at creation.
     /// The kinds of relevant animations include changing variable font parameters,
     /// translating or scaling.
     /// Failing to do so will likely lead to an unpleasant shimmering effect, as different parts of the
     /// text "snap" at different times.
     ///
-    /// To modify this on an active label, use [`set_hint`](Self::set_hint).
+    /// To modify this on an active text area, use [`set_hint`](Self::set_hint).
+    /// You should do so as an animation starts and ends.
     // TODO: Should we tell each widget if smooth scrolling is ongoing so they can disable their hinting?
     // Alternatively, we should automate disabling hinting at the Vello layer when composing.
     pub fn with_hint(mut self, hint: bool) -> Self {
@@ -193,7 +235,8 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// Set the padding around the text.
     ///
-    /// This is the area where pointer events will impact this style.
+    /// This is the area outside the tight bound on the text where pointer events will be detected.
+    /// To modify this on an active text area, use [`set_padding`](Self::set_padding).
     pub fn with_padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
         self
@@ -228,6 +271,8 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
     /// Use [`set_brush`](Self::set_brush) instead.
+    ///
+    /// Warning: This is not additive for font stacks, and instead overwrites any previously provided font stack.
     #[track_caller]
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
@@ -281,7 +326,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// The runtime requivalent of [`with_word_wrap`](Self::with_word_wrap).
     pub fn set_word_wrap(this: &mut WidgetMut<'_, Self>, wrap_words: bool) {
-        this.widget.wrap_words = wrap_words;
+        this.widget.word_wrap = wrap_words;
         let width = if wrap_words {
             this.widget.last_available_width
         } else {
@@ -638,12 +683,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         } else {
             None
         };
-        let max_advance = if self.wrap_words {
+        let max_advance = if self.word_wrap {
             available_width
         } else {
             None
         };
-        if self.last_available_width != available_width && self.wrap_words {
+        if self.last_available_width != available_width && self.word_wrap {
             self.editor.set_width(max_advance);
         }
         self.last_available_width = available_width;

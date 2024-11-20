@@ -80,7 +80,7 @@ pub struct Label {
 impl Label {
     /// Create a new label with the given text.
     ///
-    // This is written out fully to appease rust-analyzer.
+    // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: impl Into<ArcStr>) -> Self {
         Self {
