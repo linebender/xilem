@@ -178,6 +178,7 @@ where
 /// Equivalent to [`WidgetPod<W>`], but in the [`xilem`](crate) crate to work around the orphan rule.
 pub struct Pod<W: Widget> {
     pub inner: WidgetPod<W>,
+    // TODO: Maybe this should just be a (WidgetId, W) pair.
 }
 
 impl<W: Widget> ViewElement for Pod<W> {
@@ -306,9 +307,14 @@ impl ViewCtx {
     pub fn with_action_widget<E: Widget>(&mut self, f: impl FnOnce(&mut Self) -> Pod<E>) -> Pod<E> {
         let value = f(self);
         let id = value.inner.id();
+        self.record_action(id);
+        value
+    }
+
+    /// Record that the actions from the widget `id` should be routed to this view.
+    pub fn record_action(&mut self, id: WidgetId) {
         let path = self.id_path.clone();
         self.widget_map.insert(id, path);
-        value
     }
 
     pub fn teardown_leaf<E: Widget>(&mut self, widget: WidgetMut<E>) {

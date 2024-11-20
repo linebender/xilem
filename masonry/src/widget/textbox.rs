@@ -53,6 +53,20 @@ impl Textbox {
         }
     }
 
+    /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
+    ///
+    /// Note that the default padding used for prose will not apply.
+    pub fn from_text_region_pod(text: WidgetPod<TextRegion<true>>) -> Self {
+        Self { text, clip: false }
+    }
+
+    /// Read the underlying text region.
+    ///
+    /// Useful for getting its ID, as most actions from the textbox will be sent by the child.
+    pub fn region_pod(&self) -> &WidgetPod<TextRegion<true>> {
+        &self.text
+    }
+
     /// Whether to clip the text.
     ///
     /// If this is set to true, it is recommended, but not required, that this

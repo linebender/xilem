@@ -63,18 +63,24 @@ impl Prose {
     }
 }
 
+fn line_break_clips(linebreaking: LineBreaking) -> bool {
+    matches!(linebreaking, LineBreaking::Clip | LineBreaking::WordWrap)
+}
+
 impl ViewMarker for Prose {}
 impl<State, Action> View<State, Action, ViewCtx> for Prose {
     type Element = Pod<widget::Prose>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let text_region = widget::TextRegion::new_immutable(&self.content)
+            .with_brush(self.text_brush.clone())
+            .with_alignment(self.alignment)
+            .with_style(StyleProperty::FontSize(self.text_size))
+            .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
         let widget_pod = ctx.new_pod(
-            widget::Prose::new(self.content.clone())
-                .with_brush(self.text_brush.clone())
-                .with_alignment(self.alignment)
-                .with_style(StyleProperty::FontSize(self.text_size))
-                .with_line_break_mode(self.line_break_mode),
+            widget::Prose::from_text_region(text_region)
+                .with_clip(line_break_clips(self.line_break_mode)),
         );
         (widget_pod, ())
     }
@@ -86,20 +92,26 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        let mut region = widget::Prose::text_mut(&mut element);
         if prev.content != self.content {
-            widget::Prose::set_text(&mut element, self.content.clone());
+            widget::TextRegion::reset_text(&mut region, &self.content);
         }
         if prev.text_brush != self.text_brush {
-            widget::Prose::set_brush(&mut element, self.text_brush.clone());
+            widget::TextRegion::set_brush(&mut region, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::Prose::set_alignment(&mut element, self.alignment);
+            widget::TextRegion::set_alignment(&mut region, self.alignment);
         }
         if prev.text_size != self.text_size {
-            widget::Prose::insert_style(&mut element, StyleProperty::FontSize(self.text_size));
+            widget::TextRegion::insert_style(&mut region, StyleProperty::FontSize(self.text_size));
         }
         if prev.line_break_mode != self.line_break_mode {
-            widget::Prose::set_line_break_mode(&mut element, self.line_break_mode);
+            widget::TextRegion::set_word_wrap(
+                &mut region,
+                self.line_break_mode == LineBreaking::WordWrap,
+            );
+            drop(region);
+            widget::Prose::set_clip(&mut element, line_break_clips(self.line_break_mode));
         }
     }
 

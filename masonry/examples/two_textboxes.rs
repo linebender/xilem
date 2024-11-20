@@ -23,9 +23,10 @@ impl AppDriver for Driver {
 fn main() {
     let main_widget = Flex::column()
         .gap(0.0)
+        .with_spacer(VERTICAL_WIDGET_SPACING)
         .with_child(Textbox::new(""))
-        .with_child(Textbox::new(""))
-        .with_spacer(VERTICAL_WIDGET_SPACING);
+        .with_spacer(VERTICAL_WIDGET_SPACING)
+        .with_child(Textbox::new(""));
 
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()

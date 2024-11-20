@@ -648,7 +648,6 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
         }
         self.last_available_width = available_width;
         // TODO: Use the minimum width in the bc for alignment
-        // TODO(DJM): Handle padding
 
         let new_generation = self.editor.generation();
         if new_generation != self.rendered_generation {
