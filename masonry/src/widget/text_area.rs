@@ -23,7 +23,7 @@ use crate::{
     WidgetId,
 };
 
-/// `TextRegion` implements the core of interactive text areas.
+/// `TextArea` implements the core of interactive text.
 ///
 /// It is used to implement [`Textbox`](super::Textbox) and [`Prose`](super::Prose).
 ///
@@ -31,7 +31,7 @@ use crate::{
 /// `accepts_text_input` property at runtime.
 // TODO: RichTextBox 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
-pub struct TextRegion<const USER_EDITABLE: bool> {
+pub struct TextArea<const USER_EDITABLE: bool> {
     // TODO: Placeholder text?
     editor: PlainEditor<BrushIndex>,
     rendered_generation: Generation,
@@ -71,23 +71,23 @@ pub struct TextRegion<const USER_EDITABLE: bool> {
 }
 
 // --- MARK: BUILDERS ---
-impl TextRegion<true> {
+impl TextArea<true> {
     pub fn new_editable(text: &str) -> Self {
         Self::new(text)
     }
 }
 
-impl TextRegion<false> {
+impl TextArea<false> {
     pub fn new_immutable(text: &str) -> Self {
         Self::new(text)
     }
 }
 
-impl<const EDITABLE: bool> TextRegion<EDITABLE> {
+impl<const EDITABLE: bool> TextArea<EDITABLE> {
     pub fn new(text: &str) -> Self {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
         editor.set_text(text);
-        TextRegion {
+        TextArea {
             editor,
             rendered_generation: Generation::default(),
             last_click_time: None,
@@ -103,7 +103,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
         }
     }
 
-    // TODO(DJM): Update doc comments from Label to TextRegion.
+    // TODO(DJM): Update doc comments from Label to TextArea.
     /// Get the current text of this label.
     ///
     /// To update the text of an active label, use [`set_text`](Self::set_text).
@@ -214,7 +214,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
         if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
             debug_panic!(
-                "Can't set a non-zero brush index ({idx:?}) on a `TextRegion`, as it only supports global styling."
+                "Can't set a non-zero brush index ({idx:?}) on a `TextArea`, as it only supports global styling."
             );
         }
         self.editor.edit_styles().insert(property)
@@ -222,7 +222,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
 }
 
 // --- MARK: WIDGETMUT ---
-impl<const EDITABLE: bool> TextRegion<EDITABLE> {
+impl<const EDITABLE: bool> TextArea<EDITABLE> {
     // Note: These docs are lazy, but also have a decreased likelihood of going out of date.
     /// The runtime requivalent of [`with_style`](Self::with_style).
     ///
@@ -335,7 +335,7 @@ impl<const EDITABLE: bool> TextRegion<EDITABLE> {
 }
 
 // --- MARK: IMPL WIDGET ---
-impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
+impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         let window_origin = ctx.widget_state.window_origin();
         let (fctx, lctx) = ctx.text_contexts();

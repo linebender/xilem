@@ -13,7 +13,7 @@ use crate::{
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
-use super::{Padding, TextRegion, WidgetPod};
+use super::{Padding, TextArea, WidgetPod};
 
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
@@ -28,12 +28,12 @@ const PROSE_PADDING: Padding = Padding::horizontal(2.0);
 /// Note that copying is not yet integrated.
 ///
 /// At runtime, most properties of the text will be set using [`text_mut`](Self::text_mut).
-/// This is because `Prose` largely serves as a wrapper around [`TextRegion`].
+/// This is because `Prose` largely serves as a wrapper around [`TextArea`].
 ///
 /// This should be preferred over [`Label`](super::Label) for most
 /// immutable text, other than that within other widgets.
 pub struct Prose {
-    text: WidgetPod<TextRegion<false>>,
+    text: WidgetPod<TextArea<false>>,
 
     /// Whether to clip the contained text.
     clip: bool,
@@ -44,11 +44,11 @@ impl Prose {
     ///
     /// To use non-default text properties, use [`from_text_region`](Self::from_text_region) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_region(TextRegion::new_immutable(text))
+        Self::from_text_region(TextArea::new_immutable(text))
     }
 
     /// Create a new `Prose` from a styled text area.
-    pub fn from_text_region(text: TextRegion<false>) -> Self {
+    pub fn from_text_region(text: TextArea<false>) -> Self {
         let text = text.with_padding_if_default(PROSE_PADDING);
         Self {
             text: WidgetPod::new(text),
@@ -59,19 +59,19 @@ impl Prose {
     /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
     ///
     /// Note that the default padding used for prose will not apply.
-    pub fn from_text_region_pod(text: WidgetPod<TextRegion<false>>) -> Self {
+    pub fn from_text_region_pod(text: WidgetPod<TextArea<false>>) -> Self {
         Self { text, clip: false }
     }
 
     /// Read the underlying text region. Useful for getting its ID.
-    pub fn region_pod(&self) -> &WidgetPod<TextRegion<false>> {
+    pub fn region_pod(&self) -> &WidgetPod<TextArea<false>> {
         &self.text
     }
 
     /// Whether to clip the text.
     ///
     /// If this is set to true, it is recommended, but not required, that this
-    /// wraps a text area with [word wrapping](TextRegion::with_word_wrap) enabled.
+    /// wraps a text area with [word wrapping](TextArea::with_word_wrap) enabled.
     pub fn with_clip(mut self, clip: bool) -> Self {
         self.clip = clip;
         self
@@ -83,8 +83,8 @@ impl Prose {
     /// Edit the underlying text area.
     ///
     /// If this is set to true, it is recommended, but not required, that this
-    /// wraps a text area with [word wrapping](TextRegion::set_word_wrap) enabled.
-    pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextRegion<false>> {
+    /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
+    pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextArea<false>> {
         this.ctx.get_mut(&mut this.widget.text)
     }
 
@@ -151,7 +151,7 @@ mod tests {
     use crate::{
         assert_render_snapshot,
         testing::TestHarness,
-        widget::{CrossAxisAlignment, Flex, Prose, TextRegion},
+        widget::{CrossAxisAlignment, Flex, Prose, TextArea},
     };
 
     #[test]
@@ -161,7 +161,7 @@ mod tests {
         fn base_prose(alignment: Alignment) -> Prose {
             // Trailing whitespace is displayed when laying out prose.
             Prose::from_text_region(
-                TextRegion::new_immutable("Hello  ")
+                TextArea::new_immutable("Hello  ")
                     .with_style(StyleProperty::FontSize(10.0))
                     .with_alignment(alignment)
                     .with_word_wrap(true),

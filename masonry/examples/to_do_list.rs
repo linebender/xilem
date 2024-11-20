@@ -9,7 +9,7 @@
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Flex, Label, Portal, RootWidget, TextRegion, Textbox, WidgetMut};
+use masonry::widget::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox, WidgetMut};
 use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 use winit::window::Window;
 
@@ -33,7 +33,7 @@ impl AppDriver for Driver {
                 let mut textbox = Flex::child_mut(&mut first_row, 0).unwrap();
                 let mut textbox = textbox.downcast::<Textbox>();
                 let mut text_region = Textbox::text_mut(&mut textbox);
-                TextRegion::reset_text(&mut text_region, "");
+                TextArea::reset_text(&mut text_region, "");
             }
             Action::TextChanged(new_text) => {
                 self.next_task = new_text.clone();

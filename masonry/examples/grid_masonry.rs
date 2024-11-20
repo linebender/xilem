@@ -8,7 +8,7 @@
 
 use masonry::dpi::LogicalSize;
 use masonry::text::StyleProperty;
-use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextRegion};
+use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
 use masonry::{Action, AppDriver, Color, DriverCtx, PointerButton, WidgetId};
 use parley::layout::Alignment;
 use winit::window::Window;
@@ -44,7 +44,7 @@ fn grid_button(params: GridParams) -> Button {
 
 fn main() {
     let label = SizedBox::new(Prose::from_text_region(
-        TextRegion::new_immutable("Change spacing by right and left clicking on the buttons")
+        TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
             .with_alignment(Alignment::Middle),
     ))

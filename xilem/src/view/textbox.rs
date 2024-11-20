@@ -65,13 +65,13 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        // TODO: Maybe we want a shared TextRegion View?
-        let text_region = widget::TextRegion::new_editable(&self.contents)
+        // TODO: Maybe we want a shared TextArea View?
+        let text_region = widget::TextArea::new_editable(&self.contents)
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment);
         let textbox = widget::Textbox::from_text_region(text_region);
 
-        // Ensure that the actions from the *inner* textregion get routed correctly.
+        // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.region_pod().id();
         ctx.record_action(id);
         let widget_pod = ctx.new_pod(textbox);
@@ -95,14 +95,14 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
 
         // This is probably not the right behaviour, but determining what is the right behaviour is hard
         if self.contents != region.widget.text() {
-            widget::TextRegion::reset_text(&mut region, &self.contents);
+            widget::TextArea::reset_text(&mut region, &self.contents);
         }
 
         if prev.text_brush != self.text_brush {
-            widget::TextRegion::set_brush(&mut region, self.text_brush.clone());
+            widget::TextArea::set_brush(&mut region, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::TextRegion::set_alignment(&mut region, self.alignment);
+            widget::TextArea::set_alignment(&mut region, self.alignment);
         }
     }
 

@@ -73,7 +73,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let text_region = widget::TextRegion::new_immutable(&self.content)
+        let text_region = widget::TextArea::new_immutable(&self.content)
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
@@ -94,19 +94,19 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     ) {
         let mut region = widget::Prose::text_mut(&mut element);
         if prev.content != self.content {
-            widget::TextRegion::reset_text(&mut region, &self.content);
+            widget::TextArea::reset_text(&mut region, &self.content);
         }
         if prev.text_brush != self.text_brush {
-            widget::TextRegion::set_brush(&mut region, self.text_brush.clone());
+            widget::TextArea::set_brush(&mut region, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::TextRegion::set_alignment(&mut region, self.alignment);
+            widget::TextArea::set_alignment(&mut region, self.alignment);
         }
         if prev.text_size != self.text_size {
-            widget::TextRegion::insert_style(&mut region, StyleProperty::FontSize(self.text_size));
+            widget::TextArea::insert_style(&mut region, StyleProperty::FontSize(self.text_size));
         }
         if prev.line_break_mode != self.line_break_mode {
-            widget::TextRegion::set_word_wrap(
+            widget::TextArea::set_word_wrap(
                 &mut region,
                 self.line_break_mode == LineBreaking::WordWrap,
             );
