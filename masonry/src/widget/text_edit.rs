@@ -558,6 +558,7 @@ impl<const EDITABLE: bool> Widget for TextRegion<EDITABLE> {
                     Key::Named(NamedKey::Space) => {
                         self.editor
                             .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
+                        edited = true;
                     }
                     _ if EDITABLE => match &key_event.text {
                         Some(text) => {
