@@ -893,11 +893,16 @@ mod tests {
 
             let without_wrapping = harness.render();
 
-            // We don't use assert_eq because we don't want rich assert
-            assert!(
-                base_with_wrapping != without_wrapping,
-                "Word wrapping being disabled should be obvious"
-            );
+            // Hack: If we are using `SKIP_RENDER_TESTS`, the output image is a 1x1 white pixel
+            // This means that the not equal comparison won't work, so we skip it.
+            // We should have a more principled solution here (or even better, get render tests working on windows)
+            if !std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
+                // We don't use assert_eq because we don't want rich assert
+                assert!(
+                    base_with_wrapping != without_wrapping,
+                    "Word wrapping being disabled should be obvious"
+                );
+            }
 
             harness.edit_root_widget(|mut root| {
                 let mut area = root.downcast::<TextArea<false>>();
@@ -949,11 +954,15 @@ mod tests {
 
             let with_updated_brush = harness.render();
 
-            // We don't use assert_eq because we don't want rich assert
-            assert!(
-                base_target != with_updated_brush,
-                "Updating the brush should have a visible change"
-            );
+            // Hack: If we are using `SKIP_RENDER_TESTS`, the output image is a 1x1 white pixel
+            // This means that the not equal comparison won't work, so we skip it.
+            if !std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
+                // We don't use assert_eq because we don't want rich assert
+                assert!(
+                    base_target != with_updated_brush,
+                    "Updating the brush should have a visible change"
+                );
+            }
         };
     }
 }
