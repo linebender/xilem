@@ -126,7 +126,9 @@ impl Widget for Prose {
         let size = ctx.run_layout(&mut self.text, bc);
         ctx.place_child(&mut self.text, Point::ORIGIN);
         if self.clip {
-            ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
+            // Workaround for https://github.com/linebender/parley/issues/165
+            let clip_size = Size::new(size.width, size.height + 20.);
+            ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, clip_size));
         }
         size
     }
