@@ -668,16 +668,28 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
                         edited = true;
                     }
+                    Key::Named(NamedKey::Tab) => {
+                        // Intentionally do nothing so that tabbing from a textbox/Prose works.
+                        // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
+                        return;
+                    }
                     _ if EDITABLE => match &key_event.text {
                         Some(text) => {
                             self.editor
                                 .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(text));
                             edited = true;
                         }
-                        None => {}
+                        None => {
+                            // Do nothing, don't set as handled.
+                            return;
+                        }
                     },
-                    _ => {}
+                    _ => {
+                        // Do nothing, don't set as handled.
+                        return;
+                    }
                 }
+                ctx.set_handled();
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     if edited {
