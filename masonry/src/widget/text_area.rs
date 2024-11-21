@@ -705,7 +705,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             TextEvent::FocusChange(_) => {}
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
-                tracing::warn!(event = ?e, "Prose doesn't accept IME");
+                tracing::warn!(event = ?e, "TextArea doesn't accept IME");
             }
             TextEvent::ModifierChange(_) => {}
         }
