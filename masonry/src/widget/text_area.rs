@@ -401,7 +401,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.widget.brush = brush;
 
         // We need to repaint unless the disabled brush is currently being used.
-        if this.widget.disabled_brush.is_none() || this.ctx.is_disabled() {
+        if this.widget.disabled_brush.is_none() || !this.ctx.is_disabled() {
             this.ctx.request_paint_only();
         }
     }
@@ -864,7 +864,96 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 }
 
-// TODO: What tests can we have? Some options:
-// 1) Editing the properties is consistent (sets the right flags, etc.)
-// 2) Clicking in the right place changes the selection as expected?
-// 3) Keyboard actions have expected results?
+// TODO: What other tests can we have? Some options:
+// - Clicking in the right place changes the selection as expected?
+// - Keyboard actions have expected results?
+
+#[cfg(test)]
+mod tests {
+    use vello::{kurbo::Size, peniko::Color};
+
+    use super::*;
+    use crate::testing::TestHarness;
+    // Tests of alignment happen in Prose.
+
+    #[test]
+    fn edit_wordwrap() {
+        let base_with_wrapping = {
+            let area = TextArea::new_immutable("String which will wrap").with_word_wrap(true);
+
+            let mut harness = TestHarness::create_with_size(area, Size::new(60.0, 40.0));
+
+            harness.render()
+        };
+
+        {
+            let area = TextArea::new_immutable("String which will wrap").with_word_wrap(false);
+
+            let mut harness = TestHarness::create_with_size(area, Size::new(60.0, 40.0));
+
+            let without_wrapping = harness.render();
+
+            // We don't use assert_eq because we don't want rich assert
+            assert!(
+                base_with_wrapping != without_wrapping,
+                "Word wrapping being disabled should be obvious"
+            );
+
+            harness.edit_root_widget(|mut root| {
+                let mut area = root.downcast::<TextArea<false>>();
+                TextArea::set_word_wrap(&mut area, true);
+            });
+
+            let with_enabled_wrap = harness.render();
+
+            // We don't use assert_eq because we don't want rich assert
+            assert!(
+                base_with_wrapping == with_enabled_wrap,
+                "Updating the word wrap should correctly update"
+            );
+        };
+    }
+
+    #[test]
+    fn edit_textarea() {
+        let base_target = {
+            let area = TextArea::new_immutable("Test string").with_brush(Color::AZURE);
+
+            let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
+
+            harness.render()
+        };
+
+        {
+            let area = TextArea::new_immutable("Different string").with_brush(Color::AZURE);
+
+            let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
+
+            harness.edit_root_widget(|mut root| {
+                let mut area = root.downcast::<TextArea<false>>();
+                TextArea::reset_text(&mut area, "Test string");
+            });
+
+            let with_updated_text = harness.render();
+
+            // We don't use assert_eq because we don't want rich assert
+            assert!(
+                base_target == with_updated_text,
+                "Updating the text should match with base text"
+            );
+
+            harness.edit_root_widget(|mut root| {
+                let mut area = root.downcast::<TextArea<false>>();
+                TextArea::set_brush(&mut area, Color::BROWN);
+            });
+
+            let with_updated_brush = harness.render();
+
+            // We don't use assert_eq because we don't want rich assert
+            assert!(
+                base_target != with_updated_brush,
+                "Updating the brush should have a visible change"
+            );
+        };
+    }
+}

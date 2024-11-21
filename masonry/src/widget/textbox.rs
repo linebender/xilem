@@ -176,45 +176,22 @@ impl Widget for Textbox {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use parley::{layout::Alignment, StyleProperty};
     use vello::kurbo::Size;
 
+    use super::*;
     use crate::{
-        assert_render_snapshot,
-        testing::TestHarness,
-        widget::{CrossAxisAlignment, Flex, Prose, TextArea},
+        assert_render_snapshot, testing::TestHarness, text::StyleProperty, widget::TextArea,
     };
 
     #[test]
     /// A wrapping prose's alignment should be respected, regardless of
     /// its parent's alignment.
-    fn prose_alignment_flex() {
-        fn base_prose(alignment: Alignment) -> Prose {
-            // Trailing whitespace is displayed when laying out prose.
-            Prose::from_text_area(
-                TextArea::new_immutable("Hello  ")
-                    .with_style(StyleProperty::FontSize(10.0))
-                    .with_alignment(alignment)
-                    .with_word_wrap(true),
-            )
-        }
-        let label1 = base_prose(Alignment::Start);
-        let label2 = base_prose(Alignment::Middle);
-        let label3 = base_prose(Alignment::End);
-        let label4 = base_prose(Alignment::Start);
-        let label5 = base_prose(Alignment::Middle);
-        let label6 = base_prose(Alignment::End);
-        let flex = Flex::column()
-            .with_flex_child(label1, CrossAxisAlignment::Start)
-            .with_flex_child(label2, CrossAxisAlignment::Start)
-            .with_flex_child(label3, CrossAxisAlignment::Start)
-            .with_flex_child(label4, CrossAxisAlignment::Center)
-            .with_flex_child(label5, CrossAxisAlignment::Center)
-            .with_flex_child(label6, CrossAxisAlignment::Center)
-            .gap(0.0);
+    fn textbox_outline() {
+        let textbox = Textbox::from_text_area(
+            TextArea::new_editable("Textbox contents").with_style(StyleProperty::FontSize(10.0)),
+        );
+        let mut harness = TestHarness::create_with_size(textbox, Size::new(150.0, 20.0));
 
-        let mut harness = TestHarness::create_with_size(flex, Size::new(80.0, 80.0));
-
-        assert_render_snapshot!(harness, "prose_alignment_flex");
+        assert_render_snapshot!(harness, "textbox_outline");
     }
 }

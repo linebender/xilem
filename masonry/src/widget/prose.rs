@@ -160,11 +160,30 @@ mod tests {
     use parley::{layout::Alignment, StyleProperty};
     use vello::kurbo::Size;
 
+    use super::*;
     use crate::{
         assert_render_snapshot,
         testing::TestHarness,
-        widget::{CrossAxisAlignment, Flex, Prose, TextArea},
+        widget::{CrossAxisAlignment, Flex, SizedBox, TextArea},
     };
+
+    #[test]
+    /// A wrapping prose's alignment should be respected, regardless of
+    /// its parent's alignment.
+    fn prose_clipping() {
+        let prose = Prose::from_text_area(
+            TextArea::new_immutable("Hello this text should be truncated")
+                .with_style(StyleProperty::FontSize(10.0))
+                .with_word_wrap(false),
+        )
+        .with_clip(true);
+
+        let sized_box = Flex::row().with_child(SizedBox::new(prose).width(60.));
+
+        let mut harness = TestHarness::create_with_size(sized_box, Size::new(80.0, 15.0));
+
+        assert_render_snapshot!(harness, "prose_clipping");
+    }
 
     #[test]
     /// A wrapping prose's alignment should be respected, regardless of
@@ -179,19 +198,19 @@ mod tests {
                     .with_word_wrap(true),
             )
         }
-        let label1 = base_prose(Alignment::Start);
-        let label2 = base_prose(Alignment::Middle);
-        let label3 = base_prose(Alignment::End);
-        let label4 = base_prose(Alignment::Start);
-        let label5 = base_prose(Alignment::Middle);
-        let label6 = base_prose(Alignment::End);
+        let prose1 = base_prose(Alignment::Start);
+        let prose2 = base_prose(Alignment::Middle);
+        let prose3 = base_prose(Alignment::End);
+        let prose4 = base_prose(Alignment::Start);
+        let prose5 = base_prose(Alignment::Middle);
+        let prose6 = base_prose(Alignment::End);
         let flex = Flex::column()
-            .with_flex_child(label1, CrossAxisAlignment::Start)
-            .with_flex_child(label2, CrossAxisAlignment::Start)
-            .with_flex_child(label3, CrossAxisAlignment::Start)
-            .with_flex_child(label4, CrossAxisAlignment::Center)
-            .with_flex_child(label5, CrossAxisAlignment::Center)
-            .with_flex_child(label6, CrossAxisAlignment::Center)
+            .with_flex_child(prose1, CrossAxisAlignment::Start)
+            .with_flex_child(prose2, CrossAxisAlignment::Start)
+            .with_flex_child(prose3, CrossAxisAlignment::Start)
+            .with_flex_child(prose4, CrossAxisAlignment::Center)
+            .with_flex_child(prose5, CrossAxisAlignment::Center)
+            .with_flex_child(prose6, CrossAxisAlignment::Center)
             .gap(0.0);
 
         let mut harness = TestHarness::create_with_size(flex, Size::new(80.0, 80.0));

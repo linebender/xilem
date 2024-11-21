@@ -229,11 +229,11 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use parley::StyleProperty;
 
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::text::StyleProperty;
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]
