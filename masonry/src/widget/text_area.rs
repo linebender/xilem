@@ -1,6 +1,8 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 use std::mem::Discriminant;
 use std::time::Instant;
 
@@ -35,6 +37,9 @@ use crate::{
 /// The `USER_EDITABLE` const generic parameter determines whether the text area's contents can be
 /// edited by the user of the app.
 /// This is true for `Textbox` and false for `Prose`.
+///
+/// The exact semantics of how much horizontal space this widget takes up has not been determined.
+/// In particular, this has consequences when the alignment is set.
 // TODO: RichTextBox 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
 pub struct TextArea<const USER_EDITABLE: bool> {
@@ -149,13 +154,18 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// Set a style property for the new text area.
     ///
-    /// This is useful to configure most text styling, including the font size.
+    /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
+    /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
+    /// and [variable font parameters](parley::StyleProperty::FontVariations).
+    /// The styles inserted here apply to the entire text; we currently do not
+    /// support inline rich text.
+    ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`with_brush`](Self::with_brush) instead.
+    /// Use [`set_brush`](Self::set_brush) instead.
+    /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
+    /// instead overwrites any previous font stack.
     ///
     /// To set a style property on an active text area, use [`insert_style`](Self::insert_style).
-    ///
-    /// Warning: This is not additive for font stacks, and instead overwrites any previously provided font stack.
     #[track_caller]
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
         self.insert_style_inner(property.into());
@@ -173,8 +183,14 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         (self, old)
     }
 
-    /// Set whether word wrapping will automatically occur when the line length would be too long
-    /// for the available area.
+    /// Control [word wrapping](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap) for the new text area.
+    ///
+    /// When enabled, the text will be laid out to fit within the available width.
+    /// If word wrapping is disabled, the text will likely flow past the available area.
+    /// Note that parent widgets will often clip this, so the overflow will not be visible.
+    ///
+    /// This widget does not currently support scrolling to the cursor,
+    /// so it is recommended to leave word wrapping enabled.
     ///
     /// To modify this on an active text area, use [`set_word_wrap`](Self::set_word_wrap).
     pub fn with_word_wrap(mut self, wrap_words: bool) -> Self {
@@ -182,9 +198,10 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self
     }
 
-    /// Set the alignment of the text.
+    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     ///
     /// Text alignment might have unexpected results when the text area has no horizontal constraints.
+    ///
     /// To modify this on an active text area, use [`set_alignment`](Self::set_alignment).
     // TODO: Document behaviour based on provided minimum constraint?
     pub fn with_alignment(mut self, alignment: Alignment) -> Self {
@@ -206,7 +223,8 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Set the brush which will be used to paint this text area whilst it is disabled.
     ///
     /// If this is `None`, the [normal brush](Self::with_brush) will be used.
-    /// To modify this on an active label, use [`set_disabled_brush`](Self::set_disabled_brush).
+    ///
+    /// To modify this on an active text area, use [`set_disabled_brush`](Self::set_disabled_brush).
     #[doc(alias = "with_color")]
     pub fn with_disabled_brush(mut self, disabled_brush: impl Into<Option<Brush>>) -> Self {
         self.disabled_brush = disabled_brush.into();
@@ -236,6 +254,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Set the padding around the text.
     ///
     /// This is the area outside the tight bound on the text where pointer events will be detected.
+    ///
     /// To modify this on an active text area, use [`set_padding`](Self::set_padding).
     pub fn with_padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
@@ -257,22 +276,32 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
         if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
             debug_panic!(
-                "Can't set a non-zero brush index ({idx:?}) on a `TextArea`, as it only supports global styling."
+                "Can't set a non-zero brush index ({idx:?}) on a `TextArea`, as it only supports global styling.\n\
+                To modify the active brush, use `set_brush` or `with_brush` instead"
             );
+            None
+        } else {
+            self.editor.edit_styles().insert(property)
         }
-        self.editor.edit_styles().insert(property)
     }
 }
 
 // --- MARK: WIDGETMUT ---
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
-    // Note: These docs are lazy, but also have a decreased likelihood of going out of date.
-    /// The runtime requivalent of [`with_style`](Self::with_style).
+    /// Set font styling for an active text area.
+    ///
+    /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
+    /// [font family](parley::StyleProperty::FontStack), [font weight](parley::StyleProperty::FontWeight),
+    /// and [variable font parameters](parley::StyleProperty::FontVariations).
+    /// The styles inserted here apply to the entire text; we currently do not
+    /// support inline rich text.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
     /// Use [`set_brush`](Self::set_brush) instead.
+    /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
+    /// instead overwrites any previous font stack.
     ///
-    /// Warning: This is not additive for font stacks, and instead overwrites any previously provided font stack.
+    /// This is the runtime equivalent of [`with_style`](Self::with_style).
     #[track_caller]
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
@@ -284,7 +313,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         old
     }
 
-    /// Keep only the styles for which `f` returns true.
+    /// [Retain](std::vec::Vec::retain) only the styles for which `f` returns true.
     ///
     /// Styles which are removed return to Parley's default values.
     /// In most cases, these are the defaults for this widget.
@@ -298,12 +327,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
     /// Remove the style with the discriminant `property`.
     ///
+    /// Styles which are removed return to Parley's default values.
+    /// In most cases, these are the defaults for this widget.
+    ///
     /// To get the discriminant requires constructing a valid `StyleProperty` for the
     /// the desired property and passing it to [`core::mem::discriminant`].
     /// Getting this discriminant is usually possible in a `const` context.
-    ///
-    /// Styles which are removed return to Parley's default values.
-    /// In most cases, these are the defaults for this widget.
     ///
     /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn remove_style(
@@ -316,15 +345,26 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         old
     }
 
+    /// Set the text displayed in this widget.
+    ///
     /// This is likely to be disruptive if the user is focused on this widget,
-    /// and so should be avoided if possible.
+    /// as it does not retain selections, and may cause undesirable interactions with IME.
     pub fn reset_text(this: &mut WidgetMut<'_, Self>, new_text: &str) {
         this.widget.editor.set_text(new_text);
 
         this.ctx.request_layout();
     }
 
-    /// The runtime requivalent of [`with_word_wrap`](Self::with_word_wrap).
+    /// Control [word wrapping](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap) for the text area.
+    ///
+    /// When enabled, the text will be laid out to fit within the available width.
+    /// If word wrapping is disabled, the text will likely flow past the available area.
+    /// Note that parent widgets will often clip this, so the overflow will not be visible.
+    ///
+    /// This widget does not currently support scrolling to the cursor,
+    /// so it is recommended to leave word wrapping enabled.
+    ///
+    /// The runtime equivalent of [`with_word_wrap`](Self::with_word_wrap).
     pub fn set_word_wrap(this: &mut WidgetMut<'_, Self>, wrap_words: bool) {
         this.widget.word_wrap = wrap_words;
         let width = if wrap_words {
@@ -336,7 +376,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_layout();
     }
 
-    /// The runtime requivalent of [`with_alignment`](Self::with_alignment).
+    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    ///
+    /// Text alignment might have unexpected results when the text area has no horizontal constraints.
+    ///
+    /// The runtime equivalent of [`with_alignment`](Self::with_alignment).
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
         this.widget.editor.set_alignment(alignment);
 
@@ -344,7 +388,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     }
 
     #[doc(alias = "set_color")]
-    /// The runtime requivalent of [`with_brush`](Self::with_brush).
+    /// Set the brush used to paint the text in this text area.
+    ///
+    /// In most cases, this will be the text's color, but gradients and images are also supported.
+    ///
+    /// The runtime equivalent of [`with_brush`](Self::with_brush).
     pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         let brush = brush.into();
         this.widget.brush = brush;
@@ -355,7 +403,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         }
     }
 
-    /// The runtime requivalent of [`with_disabled_brush`](Self::with_disabled_brush).
+    /// Set the brush used to paint this text area whilst it is disabled.
+    ///
+    /// If this is `None`, the [normal brush](Self::set_brush) will be used.
+    ///
+    /// The runtime equivalent of [`with_disabled_brush`](Self::with_disabled_brush).
     pub fn set_disabled_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
         let brush = brush.into();
         this.widget.disabled_brush = brush;
@@ -365,12 +417,20 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         }
     }
 
-    /// The runtime requivalent of [`with_hint`](Self::with_hint).
+    /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this text area.
+    ///
+    /// The runtime equivalent of [`with_hint`](Self::with_hint).
+    /// For full documentation, see that method.
     pub fn set_hint(this: &mut WidgetMut<'_, Self>, hint: bool) {
         this.widget.hint = hint;
         this.ctx.request_paint_only();
     }
 
+    /// Set the padding around the text.
+    ///
+    /// This is the area outside the tight bound on the text where pointer events will be detected.
+    ///
+    /// The runtime equivalent of [`with_padding`](Self::with_padding).
     pub fn set_padding(this: &mut WidgetMut<'_, Self>, padding: impl Into<Padding>) {
         this.widget.padding = padding.into();
         // TODO: We could reset the width available to the editor here directly.
