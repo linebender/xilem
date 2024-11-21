@@ -32,8 +32,8 @@ impl AppDriver for Driver {
                 let mut first_row = first_row.downcast::<Flex>();
                 let mut textbox = Flex::child_mut(&mut first_row, 0).unwrap();
                 let mut textbox = textbox.downcast::<Textbox>();
-                let mut text_region = Textbox::text_mut(&mut textbox);
-                TextArea::reset_text(&mut text_region, "");
+                let mut text_area = Textbox::text_mut(&mut textbox);
+                TextArea::reset_text(&mut text_area, "");
             }
             Action::TextChanged(new_text) => {
                 self.next_task = new_text.clone();

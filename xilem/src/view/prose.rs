@@ -73,13 +73,13 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let text_region = widget::TextArea::new_immutable(&self.content)
+        let text_area = widget::TextArea::new_immutable(&self.content)
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
         let widget_pod = ctx.new_pod(
-            widget::Prose::from_text_region(text_region)
+            widget::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );
         (widget_pod, ())

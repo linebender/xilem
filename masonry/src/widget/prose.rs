@@ -45,13 +45,13 @@ pub struct Prose {
 impl Prose {
     /// Create a new `Prose` with the given text.
     ///
-    /// To use non-default text properties, use [`from_text_region`](Self::from_text_region) instead.
+    /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_region(TextArea::new_immutable(text))
+        Self::from_text_area(TextArea::new_immutable(text))
     }
 
     /// Create a new `Prose` from a styled text area.
-    pub fn from_text_region(text: TextArea<false>) -> Self {
+    pub fn from_text_area(text: TextArea<false>) -> Self {
         let text = text.with_padding_if_default(PROSE_PADDING);
         Self {
             text: WidgetPod::new(text),
@@ -62,7 +62,7 @@ impl Prose {
     /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
     ///
     /// Note that the default padding used for prose will not be applied.
-    pub fn from_text_region_pod(text: WidgetPod<TextArea<false>>) -> Self {
+    pub fn from_text_area_pod(text: WidgetPod<TextArea<false>>) -> Self {
         Self { text, clip: false }
     }
 
@@ -77,8 +77,8 @@ impl Prose {
         self
     }
 
-    /// Read the underlying text region. Useful for getting its ID.
-    // This is a bit of a hack, to work around `from_text_region_pod` not being
+    /// Read the underlying text area. Useful for getting its ID.
+    // This is a bit of a hack, to work around `from_text_area_pod` not being
     // able to set padding.
     pub fn region_pod(&self) -> &WidgetPod<TextArea<false>> {
         &self.text
@@ -171,7 +171,7 @@ mod tests {
     fn prose_alignment_flex() {
         fn base_prose(alignment: Alignment) -> Prose {
             // Trailing whitespace is displayed when laying out prose.
-            Prose::from_text_region(
+            Prose::from_text_area(
                 TextArea::new_immutable("Hello  ")
                     .with_style(StyleProperty::FontSize(10.0))
                     .with_alignment(alignment)

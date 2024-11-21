@@ -43,7 +43,7 @@ fn grid_button(params: GridParams) -> Button {
 }
 
 fn main() {
-    let label = SizedBox::new(Prose::from_text_region(
+    let label = SizedBox::new(Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
             .with_alignment(Alignment::Middle),

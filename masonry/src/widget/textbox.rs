@@ -33,7 +33,7 @@ const TEXTBOX_MARGIN: Padding = Padding::horizontal(2.0);
 ///
 /// This widget itself does not emit any actions.
 /// However, the child widget will do so, as it is user editable.
-/// The ID of the child can be accessed using [`region_pod`](Self::region_pod).
+/// The ID of the child can be accessed using [`area_pod`](Self::area_pod).
 ///
 /// At runtime, most properties of the text will be set using [`text_mut`](Self::text_mut).
 /// This is because `Textbox` largely serves as a wrapper around a [`TextArea`].
@@ -47,13 +47,13 @@ pub struct Textbox {
 impl Textbox {
     /// Create a new `Prose` with the given text.
     ///
-    /// To use non-default text properties, use [`from_text_region`](Self::from_text_region) instead.
+    /// To use non-default text properties, use [`from_area_region`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_region(TextArea::new_editable(text))
+        Self::from_text_area(TextArea::new_editable(text))
     }
 
     /// Create a new `Prose` from a styled text area.
-    pub fn from_text_region(text: TextArea<true>) -> Self {
+    pub fn from_text_area(text: TextArea<true>) -> Self {
         let text = text.with_padding_if_default(TEXTBOX_PADDING);
         Self {
             text: WidgetPod::new(text),
@@ -64,7 +64,7 @@ impl Textbox {
     /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
     ///
     /// Note that the default padding used for prose will not apply.
-    pub fn from_text_region_pod(text: WidgetPod<TextArea<true>>) -> Self {
+    pub fn from_text_area_pod(text: WidgetPod<TextArea<true>>) -> Self {
         Self { text, clip: false }
     }
 
@@ -79,10 +79,10 @@ impl Textbox {
         self
     }
 
-    /// Read the underlying text region.
+    /// Read the underlying text area.
     ///
     /// Useful for getting its ID, as most actions from the textbox will be sent by the child.
-    pub fn region_pod(&self) -> &WidgetPod<TextArea<true>> {
+    pub fn area_pod(&self) -> &WidgetPod<TextArea<true>> {
         &self.text
     }
 }
@@ -191,7 +191,7 @@ mod tests {
     fn prose_alignment_flex() {
         fn base_prose(alignment: Alignment) -> Prose {
             // Trailing whitespace is displayed when laying out prose.
-            Prose::from_text_region(
+            Prose::from_text_area(
                 TextArea::new_immutable("Hello  ")
                     .with_style(StyleProperty::FontSize(10.0))
                     .with_alignment(alignment)

@@ -66,13 +66,13 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         // TODO: Maybe we want a shared TextArea View?
-        let text_region = widget::TextArea::new_editable(&self.contents)
+        let text_area = widget::TextArea::new_editable(&self.contents)
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment);
-        let textbox = widget::Textbox::from_text_region(text_region);
+        let textbox = widget::Textbox::from_text_area(text_area);
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
-        let id = textbox.region_pod().id();
+        let id = textbox.area_pod().id();
         ctx.record_action(id);
         let widget_pod = ctx.new_pod(textbox);
         (widget_pod, ())
