@@ -19,8 +19,9 @@ use super::{Padding, TextArea, WidgetPod};
 /// and the text in logical pixels.
 ///
 /// This gives the text the some slight breathing room.
+const PROSE_PADDING: Padding = Padding::horizontal(2.0);
 // The bottom padding is to workaround https://github.com/linebender/parley/issues/165
-const PROSE_PADDING: Padding = Padding::new(0.0, 2.0, 5.0, 2.0);
+// const PROSE_PADDING: Padding = Padding::new(0.0, 2.0, 5.0, 2.0);
 
 /// The prose widget displays immutable text which can be
 /// selected within.
