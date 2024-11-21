@@ -716,7 +716,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 
     fn accepts_text_input(&self) -> bool {
-        // TODO(DJM): Implement IME, then flip back to EDITABLE.
+        // TODO: Implement IME, then flip back to EDITABLE.
         false
     }
 
