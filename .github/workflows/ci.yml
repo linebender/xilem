@@ -16,12 +16,6 @@ env:
   NO_WASM_PKGS: "--exclude masonry --exclude xilem"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
-  # We do not run the masonry snapshot tests, because those currently require a specific font stack
-  # See https://github.com/linebender/xilem/pull/233
-  SKIP_RENDER_SNAPSHOTS: 1
-  # We do not run the masonry render tests, because those require Vello rendering to be working
-  # See also https://github.com/linebender/vello/pull/610
-  SKIP_RENDER_TESTS: 1
 
 
 # Rationale
@@ -259,6 +253,9 @@ jobs:
       - name: cargo nextest
         run: cargo nextest run --workspace --locked --all-features --no-fail-fast
         env:
+          # We do not run the masonry render tests on platforms without a working GPU,
+          # because those require Vello rendering to be working
+          # See also https://github.com/linebender/vello/pull/610
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
       
       - name: Upload test results due to failure

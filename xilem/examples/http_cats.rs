@@ -200,8 +200,9 @@ impl Status {
             image,
             // TODO: Overlay on top of the image?
             // HACK: Trailing padding workaround scrollbar covering content
+            // HACK: Bottom padding to workaround https://github.com/linebender/parley/issues/165
             sized_box(prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End))
-                .padding(Padding::trailing(15.)),
+                .padding(Padding::new(0., 15., 10., 0.)),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }

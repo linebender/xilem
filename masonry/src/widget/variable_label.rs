@@ -7,13 +7,12 @@ use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
 use parley::fontique::Weight;
-use parley::StyleProperty;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Size};
 use vello::Scene;
 
-use crate::text::ArcStr;
+use crate::text::{ArcStr, StyleProperty};
 use crate::widget::WidgetMut;
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,

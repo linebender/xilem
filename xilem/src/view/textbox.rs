@@ -24,7 +24,7 @@ where
         on_enter: None,
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        disabled: false,
+        // TODO?: disabled: false,
     }
 }
 
@@ -35,8 +35,7 @@ pub struct Textbox<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_brush: Brush,
     alignment: TextAlignment,
-    disabled: bool,
-    // TODO: add more attributes of `masonry::widget::Label`
+    // TODO: add more attributes of `masonry::widget::TextBox`
 }
 
 impl<State, Action> Textbox<State, Action> {
@@ -48,11 +47,6 @@ impl<State, Action> Textbox<State, Action> {
 
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
         self.alignment = alignment;
-        self
-    }
-
-    pub fn disabled(mut self) -> Self {
-        self.disabled = true;
         self
     }
 
@@ -71,13 +65,17 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(
-                widget::Textbox::new(self.contents.clone())
-                    .with_brush(self.text_brush.clone())
-                    .with_alignment(self.alignment),
-            )
-        })
+        // TODO: Maybe we want a shared TextArea View?
+        let text_area = widget::TextArea::new_editable(&self.contents)
+            .with_brush(self.text_brush.clone())
+            .with_alignment(self.alignment);
+        let textbox = widget::Textbox::from_text_area(text_area);
+
+        // Ensure that the actions from the *inner* TextArea get routed correctly.
+        let id = textbox.area_pod().id();
+        ctx.record_action(id);
+        let widget_pod = ctx.new_pod(textbox);
+        (widget_pod, ())
     }
 
     fn rebuild(
@@ -87,6 +85,8 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        let mut text_area = widget::Textbox::text_mut(&mut element);
+
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
         // cases like "Previous data says contents is 'fooba', user presses 'r',
@@ -94,15 +94,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // without calling `set_text`.
 
         // This is probably not the right behaviour, but determining what is the right behaviour is hard
-        if self.contents != element.widget.text() {
-            widget::Textbox::reset_text(&mut element, self.contents.clone());
+        if self.contents != text_area.widget.text() {
+            widget::TextArea::reset_text(&mut text_area, &self.contents);
         }
 
         if prev.text_brush != self.text_brush {
-            widget::Textbox::set_brush(&mut element, self.text_brush.clone());
+            widget::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::Textbox::set_alignment(&mut element, self.alignment);
+            widget::TextArea::set_alignment(&mut text_area, self.alignment);
         }
     }
 
