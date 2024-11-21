@@ -1,8 +1,6 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![warn(missing_docs)]
-
 use std::mem::Discriminant;
 use std::time::Instant;
 
@@ -37,6 +35,11 @@ use crate::{
 /// The `USER_EDITABLE` const generic parameter determines whether the text area's contents can be
 /// edited by the user of the app.
 /// This is true for `Textbox` and false for `Prose`.
+///
+/// This widget emits the following actions only when `USER_EDITABLE` is true:
+///
+/// - `TextEntered`, which is sent when the enter key is pressed
+/// - `TextChanged`, which is sent whenever the text is changed
 ///
 /// The exact semantics of how much horizontal space this widget takes up has not been determined.
 /// In particular, this has consequences when the alignment is set.

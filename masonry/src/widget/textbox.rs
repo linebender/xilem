@@ -22,13 +22,21 @@ use super::{Padding, TextArea, WidgetPod};
 /// This makes it so that the surrounding box isn't crowding out the text.
 const TEXTBOX_PADDING: Padding = Padding::all(5.0);
 
-/// The margin added around textboxes to allow the boundaries to visible inside the window edge.
+/// The margin added around textboxes to allow the boundaries to be visible inside the window edge.
 const TEXTBOX_MARGIN: Padding = Padding::horizontal(2.0);
 
+/// The textbox widget displays text which can be edited by the user,
+/// inside a surrounding box.
+///
+/// This currently does not support newlines entered by the user,
+/// although pre-existing newlines are handled correctly.
+///
+/// This widget itself does not emit any actions.
+/// However, the child widget will do so, as it is user editable.
+/// The ID of the child can be accessed using [`region_pod`](Self::region_pod).
 ///
 /// At runtime, most properties of the text will be set using [`text_mut`](Self::text_mut).
-/// This is because `Prose` largely serves as a wrapper around [`TextArea`].
-///
+/// This is because `Textbox` largely serves as a wrapper around a [`TextArea`].
 pub struct Textbox {
     text: WidgetPod<TextArea<true>>,
 
@@ -60,20 +68,22 @@ impl Textbox {
         Self { text, clip: false }
     }
 
+    /// Whether to clip the text to the drawn boundaries.
+    ///
+    /// If this is set to true, it is recommended, but not required, that this
+    /// wraps a text area with [word wrapping](TextArea::with_word_wrap) enabled.
+    ///
+    /// To modify this on active textbox, use [`set_clip`](Self::set_clip).
+    pub fn with_clip(mut self, clip: bool) -> Self {
+        self.clip = clip;
+        self
+    }
+
     /// Read the underlying text region.
     ///
     /// Useful for getting its ID, as most actions from the textbox will be sent by the child.
     pub fn region_pod(&self) -> &WidgetPod<TextArea<true>> {
         &self.text
-    }
-
-    /// Whether to clip the text.
-    ///
-    /// If this is set to true, it is recommended, but not required, that this
-    /// wraps a text area with [word wrapping](TextArea::with_word_wrap) enabled.
-    pub fn with_clip(mut self, clip: bool) -> Self {
-        self.clip = clip;
-        self
     }
 }
 
@@ -81,13 +91,17 @@ impl Textbox {
 impl Textbox {
     /// Edit the underlying text area.
     ///
-    /// If this is set to true, it is recommended, but not required, that this
-    /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
+    /// Used to modify most properties of the text.
     pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextArea<true>> {
         this.ctx.get_mut(&mut this.widget.text)
     }
 
-    /// The runtime requivalent of [`with_hint`](Self::with_hint).
+    /// Whether to clip the text to the drawn boundaries.
+    ///
+    /// If this is set to true, it is recommended, but not required, that this
+    /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
+    ///
+    /// The runtime requivalent of [`with_clip`](Self::with_clip).
     pub fn set_clip(this: &mut WidgetMut<'_, Self>, clip: bool) {
         this.widget.clip = clip;
         this.ctx.request_layout();

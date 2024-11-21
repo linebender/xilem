@@ -18,20 +18,22 @@ use super::{Padding, TextArea, WidgetPod};
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
 ///
-/// This gives the text the smallest amount of breathing room.
+/// This gives the text the some slight breathing room.
 const PROSE_PADDING: Padding = Padding::horizontal(2.0);
 
 /// The prose widget displays immutable text which can be
 /// selected within.
 ///
 /// The text can also be copied from, but cannot be modified by the user.
-/// Note that copying is not yet integrated.
+/// Note that copying is not yet implemented.
 ///
 /// At runtime, most properties of the text will be set using [`text_mut`](Self::text_mut).
-/// This is because `Prose` largely serves as a wrapper around [`TextArea`].
+/// This is because `Prose` largely serves as a wrapper around a [`TextArea`].
 ///
-/// This should be preferred over [`Label`](super::Label) for most
-/// immutable text, other than that within other widgets.
+/// This should be used instead of [`Label`](super::Label) for immutable text,
+/// as it enables users to copy/paste from the text.
+///
+/// This widget has no actions.
 pub struct Prose {
     text: WidgetPod<TextArea<false>>,
 
@@ -58,23 +60,27 @@ impl Prose {
 
     /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
     ///
-    /// Note that the default padding used for prose will not apply.
+    /// Note that the default padding used for prose will not be applied.
     pub fn from_text_region_pod(text: WidgetPod<TextArea<false>>) -> Self {
         Self { text, clip: false }
     }
 
-    /// Read the underlying text region. Useful for getting its ID.
-    pub fn region_pod(&self) -> &WidgetPod<TextArea<false>> {
-        &self.text
-    }
-
-    /// Whether to clip the text.
+    /// Whether to clip the text to the available space.
     ///
     /// If this is set to true, it is recommended, but not required, that this
     /// wraps a text area with [word wrapping](TextArea::with_word_wrap) enabled.
+    ///
+    /// To modify this on active prose, use [`set_clip`](Self::set_clip).
     pub fn with_clip(mut self, clip: bool) -> Self {
         self.clip = clip;
         self
+    }
+
+    /// Read the underlying text region. Useful for getting its ID.
+    // This is a bit of a hack, to work around `from_text_region_pod` not being
+    // able to set padding.
+    pub fn region_pod(&self) -> &WidgetPod<TextArea<false>> {
+        &self.text
     }
 }
 
@@ -82,13 +88,17 @@ impl Prose {
 impl Prose {
     /// Edit the underlying text area.
     ///
-    /// If this is set to true, it is recommended, but not required, that this
-    /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
+    /// Used to modify most properties of the text.
     pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextArea<false>> {
         this.ctx.get_mut(&mut this.widget.text)
     }
 
-    /// The runtime requivalent of [`with_hint`](Self::with_hint).
+    /// Whether to clip the text to the available space.
+    ///
+    /// If this is set to true, it is recommended, but not required, that this
+    /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
+    ///
+    /// The runtime requivalent of [`with_clip`](Self::with_clip).
     pub fn set_clip(this: &mut WidgetMut<'_, Self>, clip: bool) {
         this.widget.clip = clip;
         this.ctx.request_layout();
