@@ -62,7 +62,7 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// How many clicks have occurred in this click sequence.
     click_count: u32,
 
-    /// Whether to wrap words in this region.
+    /// Whether to wrap words in this area.
     ///
     /// Note that if clipping is desired, that should be added by the parent widget.
     /// Can be set using [`set_word_wrap`](Self::set_word_wrap).
@@ -779,11 +779,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let text_width = max_advance.unwrap_or(layout.full_width());
         let text_size = Size::new(text_width.into(), layout.height().into());
 
-        let region_size = Size {
+        let area_size = Size {
             height: text_size.height + padding_size.height,
             width: text_size.width + padding_size.width,
         };
-        bc.constrain(region_size)
+        bc.constrain(area_size)
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {

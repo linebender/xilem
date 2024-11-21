@@ -81,7 +81,7 @@ impl Prose {
     /// Read the underlying text area. Useful for getting its ID.
     // This is a bit of a hack, to work around `from_text_area_pod` not being
     // able to set padding.
-    pub fn region_pod(&self) -> &WidgetPod<TextArea<false>> {
+    pub fn text_area_pod(&self) -> &WidgetPod<TextArea<false>> {
         &self.text
     }
 }

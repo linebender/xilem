@@ -92,25 +92,25 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut region = widget::Prose::text_mut(&mut element);
+        let mut text_area = widget::Prose::text_mut(&mut element);
         if prev.content != self.content {
-            widget::TextArea::reset_text(&mut region, &self.content);
+            widget::TextArea::reset_text(&mut text_area, &self.content);
         }
         if prev.text_brush != self.text_brush {
-            widget::TextArea::set_brush(&mut region, self.text_brush.clone());
+            widget::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::TextArea::set_alignment(&mut region, self.alignment);
+            widget::TextArea::set_alignment(&mut text_area, self.alignment);
         }
         if prev.text_size != self.text_size {
-            widget::TextArea::insert_style(&mut region, StyleProperty::FontSize(self.text_size));
+            widget::TextArea::insert_style(&mut text_area, StyleProperty::FontSize(self.text_size));
         }
         if prev.line_break_mode != self.line_break_mode {
             widget::TextArea::set_word_wrap(
-                &mut region,
+                &mut text_area,
                 self.line_break_mode == LineBreaking::WordWrap,
             );
-            drop(region);
+            drop(text_area);
             widget::Prose::set_clip(&mut element, line_break_clips(self.line_break_mode));
         }
     }

@@ -47,7 +47,7 @@ pub struct Textbox {
 impl Textbox {
     /// Create a new `Prose` with the given text.
     ///
-    /// To use non-default text properties, use [`from_area_region`](Self::from_text_area) instead.
+    /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
         Self::from_text_area(TextArea::new_editable(text))
     }

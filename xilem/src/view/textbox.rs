@@ -85,7 +85,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut region = widget::Textbox::text_mut(&mut element);
+        let mut text_area = widget::Textbox::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
@@ -94,15 +94,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // without calling `set_text`.
 
         // This is probably not the right behaviour, but determining what is the right behaviour is hard
-        if self.contents != region.widget.text() {
-            widget::TextArea::reset_text(&mut region, &self.contents);
+        if self.contents != text_area.widget.text() {
+            widget::TextArea::reset_text(&mut text_area, &self.contents);
         }
 
         if prev.text_brush != self.text_brush {
-            widget::TextArea::set_brush(&mut region, self.text_brush.clone());
+            widget::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::TextArea::set_alignment(&mut region, self.alignment);
+            widget::TextArea::set_alignment(&mut text_area, self.alignment);
         }
     }
 
