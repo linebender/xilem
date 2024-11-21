@@ -82,9 +82,11 @@ impl Padding {
     /// A padding of zero for all edges.
     pub const ZERO: Padding = Padding::all(0.);
 
-    /// An padding which can be detected using, allowing parent views to determine if the padding is under user control.
+    /// An empty padding which can be used as a sentinel value.
     ///
-    /// To detect if a padding is unset, use [`is_unset`](Self::is_unset).
+    /// If parent widgets wish to override a padding only if it has not been modified by the user,
+    /// they should use [`is_unset`](Self::is_unset) to determine that there were no modifications.
+    ///
     /// Otherwise, this padding will behave as [`Padding::ZERO`].
     pub const UNSET: Padding = Padding::all(-0.0);
 
