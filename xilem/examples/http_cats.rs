@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use masonry::widget::Alignment;
+use masonry::widget::{Alignment, LineBreaking};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -199,9 +199,18 @@ impl Status {
             FlexSpacer::Fixed(10.),
             zstack((
                 image,
+                sized_box(
+                    sized_box(
+                        prose("Copyright ©️ https://http.cat")
+                            .line_break_mode(LineBreaking::Clip)
+                            .alignment(TextAlignment::End),
+                    )
+                    .padding(4.)
+                    .rounded(4.)
+                    .background(Color::BLACK.multiply_alpha(0.5)),
+                )
                 // HACK: Trailing padding workaround scrollbar covering content
-                sized_box(prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End))
-                    .padding((30., 40., 0., 0.)),
+                .padding((30., 42., 0., 0.)),
             ))
             .alignment(Alignment::TopTrailing),
         ))
