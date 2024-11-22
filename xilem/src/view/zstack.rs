@@ -18,13 +18,18 @@ use masonry::{
 ///
 /// # Example
 ///
-/// This example shows how to add a text label on top of an image.
+/// This example shows how to add two text labels on top of each other.
 ///
 /// ```
-/// zstack((
-///     image(some_image),
-///     label("Overlay text")
-/// ))
+/// use xilem::WidgetView;
+/// use xilem::view::{zstack, label};
+///
+/// fn view() -> impl WidgetView<()> {
+///     zstack::<(), (), _>((
+///         label("Background"),
+///         label("Foreground")
+///     ))
+/// }
 /// ```
 pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) -> ZStack<Seq> {
     ZStack {
