@@ -13,6 +13,19 @@ use masonry::{
     Widget,
 };
 
+/// A widget that lays out its children on top of each other.
+/// The children are layed out back to front.
+///
+/// # Example
+///
+/// This example shows how to add a text label on top of an image.
+///
+/// ```
+/// zstack((
+///     image(some_image),
+///     label("Overlay text")
+/// ))
+/// ```
 pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) -> ZStack<Seq> {
     ZStack {
         sequence,
@@ -20,13 +33,17 @@ pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) 
     }
 }
 
+/// A view container that lays the child widgets on top of each other.
+///
+/// See [`zstack`] for more details.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct ZStack<Seq> {
     sequence: Seq,
     alignment: Alignment,
 }
 
 impl<Seq> ZStack<Seq> {
-    #[must_use]
+    /// Changes the alignment of the children.
     pub fn alignment(mut self, alignment: impl Into<Alignment>) -> Self {
         self.alignment = alignment.into();
         self
