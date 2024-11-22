@@ -666,16 +666,19 @@ impl TestHarness {
         // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
         // Have a warning for that case (i.e. differentiation between not-found and invalid format)
         // and a environment variable to ignore the test in that case.
-        if let Ok(reference_file) = ImageReader::open(reference_path) {
+        if let Ok(reference_file) = ImageReader::open(&reference_path) {
             let ref_image = reference_file.decode().unwrap().to_rgb8();
 
             if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
-                // Remove '<test_name>.new.png' '<test_name>.diff.png' files if they exist
-                let _ = std::fs::remove_file(&new_path);
-                let _ = std::fs::remove_file(&diff_path);
-                new_image.save(&new_path).unwrap();
-                diff_image.save(&diff_path).unwrap();
-                panic!("Snapshot test '{test_name}' failed: Images are different");
+                if std::env::var_os("MASONRY_TEST_BLESS").is_some_and(|it| !it.is_empty()) {
+                    let _ = std::fs::remove_file(&new_path);
+                    let _ = std::fs::remove_file(&diff_path);
+                    new_image.save(&reference_path).unwrap();
+                } else {
+                    new_image.save(&new_path).unwrap();
+                    diff_image.save(&diff_path).unwrap();
+                    panic!("Snapshot test '{test_name}' failed: Images are different");
+                }
             } else {
                 // Remove the vestigial new and diff images
                 let _ = std::fs::remove_file(&new_path);
