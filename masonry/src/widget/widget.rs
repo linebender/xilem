@@ -327,38 +327,6 @@ pub trait Widget: AsAny + AsDynWidget {
     }
 }
 
-pub(crate) fn get_child_at_pos<'c>(
-    widget: &(impl Widget + ?Sized),
-    ctx: QueryCtx<'c>,
-    pos: Point,
-) -> Option<WidgetRef<'c, dyn Widget>> {
-    let local_pos = ctx.widget_state.window_transform.inverse() * pos;
-    if !ctx
-        .clip_path()
-        .map_or(true, |clip| clip.contains(local_pos))
-    {
-        return None;
-    }
-
-    // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
-    // of overlapping children.
-    for child_id in widget.children_ids().iter().rev() {
-        let child = ctx.get(*child_id);
-        let local_pos = child.ctx().widget_state.window_transform.inverse() * pos;
-
-        // The position must be inside the child's layout and inside the child's clip path (if
-        // any).
-        if !child.ctx().is_stashed()
-            && child.ctx().accepts_pointer_interaction()
-            && child.ctx().size().to_rect().contains(local_pos)
-        {
-            return Some(child);
-        }
-    }
-
-    None
-}
-
 /// Marker trait for Widgets whose parents can get a raw mutable reference to them.
 ///
 /// "Raw mut" means using a mutable reference (eg `&mut MyWidget`) to the data

@@ -16,7 +16,7 @@ use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
-use widget::widget::{get_child_at_pos, AsDynWidget as _};
+use widget::widget::AsDynWidget as _;
 use widget::WidgetRef;
 
 use crate::event::{PointerEvent, TextEvent};
