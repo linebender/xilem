@@ -14,6 +14,8 @@ struct Child {
 }
 
 /// A widget container that lays the child widgets on top of each other.
+///
+/// The alignment of how the children are placed can be specified using [`with_alignment`][Self::with_alignment].
 #[derive(Default)]
 pub struct ZStack {
     children: Vec<Child>,
@@ -21,7 +23,8 @@ pub struct ZStack {
 }
 
 /// Alignment describes the position of a view layed on top of another view.
-/// See also [VerticalAlignment] and [HorizontalAlignment] for describing only a single axis.
+///
+/// See also [`VerticalAlignment`] and [`HorizontalAlignment`] for describing only a single axis.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Alignment {
     TopLeading,
@@ -36,7 +39,7 @@ pub enum Alignment {
     BottomTrailing,
 }
 
-/// VerticalAlignment describes the vertical position of a view layed on top of another view.
+/// Describes the vertical position of a view layed on top of another view.
 /// See also [Alignment].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerticalAlignment {
@@ -46,7 +49,7 @@ pub enum VerticalAlignment {
     Bottom,
 }
 
-/// VerticalAlignment describes the horizontal position of a view layed on top of another view.
+/// Describes the horizontal position of a view layed on top of another view.
 /// See also [Alignment].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HorizontalAlignment {
@@ -135,15 +138,19 @@ impl From<HorizontalAlignment> for Alignment {
 
 // --- MARK: IMPL ZSTACK ---
 impl ZStack {
+    /// Constructs a new empty `ZStack` widget.
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Changes the alignment of the children.
     pub fn with_alignment(mut self, alignment: impl Into<Alignment>) -> Self {
         self.alignment = alignment.into();
         self
     }
 
+    /// Appends a child widget to the `ZStack`.
+    /// The child are placed back to front, in the order they are added.
     pub fn with_child(self, child: impl Widget) -> Self {
         self.with_child_pod(WidgetPod::new(Box::new(child)))
     }
@@ -161,6 +168,10 @@ impl ZStack {
 
 // --- MARK: WIDGETMUT---
 impl ZStack {
+    /// Add a child widget to the `ZStack`.
+    /// The child are placed back to front, in the order they are added.
+    ///
+    /// See also [`with_child`][Self::with_child].
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
         Self::insert_child_pod(this, child_pod);
@@ -171,6 +182,7 @@ impl ZStack {
         Self::insert_child_pod(this, child_pod);
     }
 
+    /// Add a child widget to the `ZStack`.
     pub fn insert_child_pod(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<Box<dyn Widget>>) {
         let child = Child { widget };
         this.widget.children.push(child);
@@ -192,6 +204,9 @@ impl ZStack {
         Some(this.ctx.get_mut(child))
     }
 
+    /// Changes the alignment of the widget.
+    ///
+    /// See also [`with_alignment`][Self::with_alignment].
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: impl Into<Alignment>) {
         this.widget.alignment = alignment.into();
         this.ctx.request_layout();
