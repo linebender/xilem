@@ -13,18 +13,22 @@ struct Child {
     widget: WidgetPod<Box<dyn Widget>>,
 }
 
+/// A widget container that lays the child widgets on top of each other.
 #[derive(Default)]
 pub struct ZStack {
     children: Vec<Child>,
     alignment: Alignment,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Alignment describes the position of a view layed on top of another view.
+/// See also [VerticalAlignment] and [HorizontalAlignment] for describing only a single axis.
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Alignment {
     TopLeading,
     Top,
     TopTrailing,
     Leading,
+    #[default]
     Center,
     Trailing,
     BottomLeading,
@@ -32,16 +36,22 @@ pub enum Alignment {
     BottomTrailing,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// VerticalAlignment describes the vertical position of a view layed on top of another view.
+/// See also [Alignment].
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerticalAlignment {
     Top,
+    #[default]
     Center,
     Bottom,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// VerticalAlignment describes the horizontal position of a view layed on top of another view.
+/// See also [Alignment].
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HorizontalAlignment {
     Leading,
+    #[default]
     Center,
     Trailing,
 }
@@ -49,6 +59,7 @@ pub enum HorizontalAlignment {
 // --- MARK: IMPL ALIGNMENTS ---
 
 impl Alignment {
+    /// Constructs a new Alignment from a [vertical][VerticalAlignment] and [horizontal][HorizontalAlignment] alignment.
     pub fn new(vertical: VerticalAlignment, horizontal: HorizontalAlignment) -> Self {
         match (vertical, horizontal) {
             (VerticalAlignment::Top, HorizontalAlignment::Leading) => Self::TopLeading,
@@ -63,6 +74,7 @@ impl Alignment {
         }
     }
 
+    /// Gets the vertical component of the alignment.
     pub fn vertical(self) -> VerticalAlignment {
         match self {
             Alignment::Center | Alignment::Leading | Alignment::Trailing => {
@@ -77,6 +89,7 @@ impl Alignment {
         }
     }
 
+    /// Gets the horizontal component of the alignment.
     pub fn horizontal(self) -> HorizontalAlignment {
         match self {
             Alignment::Center | Alignment::Top | Alignment::Bottom => HorizontalAlignment::Center,
@@ -87,24 +100,6 @@ impl Alignment {
                 HorizontalAlignment::Trailing
             }
         }
-    }
-}
-
-impl Default for Alignment {
-    fn default() -> Self {
-        Self::Center
-    }
-}
-
-impl Default for VerticalAlignment {
-    fn default() -> Self {
-        Self::Center
-    }
-}
-
-impl Default for HorizontalAlignment {
-    fn default() -> Self {
-        Self::Center
     }
 }
 
@@ -141,10 +136,7 @@ impl From<HorizontalAlignment> for Alignment {
 // --- MARK: IMPL ZSTACK ---
 impl ZStack {
     pub fn new() -> Self {
-        ZStack {
-            children: Vec::new(),
-            alignment: Alignment::default(),
-        }
+        Self::default()
     }
 
     pub fn with_alignment(mut self, alignment: impl Into<Alignment>) -> Self {
@@ -209,13 +201,22 @@ impl ZStack {
 // --- MARK: IMPL WIDGET---
 impl Widget for ZStack {
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let total_size = bc.max();
-
+        // First pass: calculate the smallest bounds needed to layout the children.
+        let mut max_size = bc.min();
+        let loosened_bc = bc.loosen();
         for child in &mut self.children {
-            let child_bc = bc.loosen();
+            let child_size = ctx.run_layout(&mut child.widget, &loosened_bc);
+
+            max_size.width = child_size.width.max(max_size.width);
+            max_size.height = child_size.height.max(max_size.height);
+        }
+
+        // Second pass: place the children given the calculated max_size bounds.
+        let child_bc = BoxConstraints::new(Size::ZERO, max_size);
+        for child in &mut self.children {
             let child_size = ctx.run_layout(&mut child.widget, &child_bc);
 
-            let end = total_size - child_size;
+            let end = max_size - child_size;
             let end = Point::new(end.width, end.height);
 
             let center = Point::new(end.x / 2., end.y / 2.);
@@ -235,7 +236,7 @@ impl Widget for ZStack {
             ctx.place_child(&mut child.widget, origin);
         }
 
-        total_size
+        max_size
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
