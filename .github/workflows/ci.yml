@@ -139,13 +139,13 @@ jobs:
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
         env:
-          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
       - name: cargo clippy (auxiliary) (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
-          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   clippy-stable-wasm:
     name: cargo clippy (wasm32)
@@ -180,13 +180,13 @@ jobs:
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
         env:
-          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
       - name: cargo clippy (auxiliary) (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
-          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   prime-lfs-cache:
     name: Prime LFS Cache
@@ -372,7 +372,7 @@ jobs:
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
         env:
-          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   check-msrv-wasm:
     name: cargo check (msrv) (wasm32)
@@ -403,7 +403,7 @@ jobs:
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
         env:
-          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: false
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   doc:
     name: cargo doc
