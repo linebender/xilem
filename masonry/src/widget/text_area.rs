@@ -129,8 +129,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ///
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
-    pub fn new(text: &str) -> Self {
+    pub fn new(mut text: &str) -> Self {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
+        // HACK: Parley crashes if the *initial* text is empty; any subsequent version seems to be fine.
+        if text.is_empty() {
+            text = " ";
+        }
         editor.set_text(text);
         TextArea {
             editor,
@@ -808,13 +812,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 // TODO: Make configurable
                 scene.fill(Fill::NonZero, transform, Color::STEEL_BLUE, None, &rect);
             }
-            if let Some(cursor) = self.editor.selection_strong_geometry(1.5) {
+            if let Some(cursor) = self.editor.cursor_geometry(1.5) {
                 // TODO: Make configurable
                 scene.fill(Fill::NonZero, transform, Color::WHITE, None, &cursor);
-            };
-            if let Some(cursor) = self.editor.selection_weak_geometry(1.5) {
-                // TODO: Make configurable
-                scene.fill(Fill::NonZero, transform, Color::LIGHT_GRAY, None, &cursor);
             };
         }
 
