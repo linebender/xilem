@@ -16,6 +16,8 @@ env:
   NO_WASM_PKGS: "--exclude masonry --exclude xilem"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
+  # Whether the workspace contains Rust code using the debug_assertions configuration option.
+  USING_DEBUG_ASSERTIONS: "true"
 
 
 # Rationale
@@ -42,6 +44,9 @@ env:
 #
 # The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
 # running tests introduces dev dependencies which may require a higher MSRV than the bare package.
+#
+# If the workspace uses debug_assertions then we verify code twice, with it set to true or false.
+# We always keep it true for external dependencies so that we can reuse the cache for faster builds.
 #
 # We don't save caches in the merge-group cases, because those caches will never be re-used (apart
 # from the very rare cases where there are multiple PRs in the merge queue).
@@ -83,6 +88,9 @@ jobs:
       - name: check copyright headers
         run: bash .github/copyright.sh
 
+      - name: check debug_assertions presence
+        run: bash .github/debug_assertions.sh
+
       - name: install cargo-rdme
         uses: taiki-e/install-action@v2
         with:
@@ -122,15 +130,22 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: cargo clippy
-        run: cargo hack clippy --workspace --locked --optional-deps --each-feature -- -D warnings
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
 
       - name: cargo clippy (auxiliary)
-        run: cargo hack clippy --workspace --locked --optional-deps --each-feature --tests --benches --examples -- -D warnings
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
-      # Verify that we can build in release mode
-      # TODO: Find a way for this to share artifacts with the above job?
-      - name: cargo clippy (release)
-        run: cargo clippy --release --workspace --locked --all-targets -- -D warnings
+      - name: cargo clippy (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
+
+      - name: cargo clippy (auxiliary) (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   clippy-stable-wasm:
     name: cargo clippy (wasm32)
@@ -156,15 +171,22 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: cargo clippy
-        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
 
       - name: cargo clippy (auxiliary)
-        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
-      # Verify that we can build in release mode
-      # TODO: Find a way for this to share artifacts with the above job?
-      - name: cargo clippy (release)
-        run: cargo clippy --release --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
+      - name: cargo clippy (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
+
+      - name: cargo clippy (auxiliary) (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   prime-lfs-cache:
     name: Prime LFS Cache
@@ -344,7 +366,13 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --optional-deps --each-feature
+        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+
+      - name: cargo check (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   check-msrv-wasm:
     name: cargo check (msrv) (wasm32)
@@ -369,7 +397,13 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --optional-deps --each-feature
+        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+
+      - name: cargo check (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   doc:
     name: cargo doc
