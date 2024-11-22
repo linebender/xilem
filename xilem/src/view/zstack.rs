@@ -14,7 +14,7 @@ use masonry::{
 };
 
 /// A widget that lays out its children on top of each other.
-/// The children are layed out back to front.
+/// The children are laid out back to front.
 ///
 /// # Example
 ///

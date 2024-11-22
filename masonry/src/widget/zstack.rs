@@ -22,7 +22,7 @@ pub struct ZStack {
     alignment: Alignment,
 }
 
-/// Alignment describes the position of a view layed on top of another view.
+/// Alignment describes the position of a view laid on top of another view.
 ///
 /// See also [`VerticalAlignment`] and [`HorizontalAlignment`] for describing only a single axis.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
@@ -39,7 +39,7 @@ pub enum Alignment {
     BottomTrailing,
 }
 
-/// Describes the vertical position of a view layed on top of another view.
+/// Describes the vertical position of a view laid on top of another view.
 /// See also [Alignment].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerticalAlignment {
@@ -49,7 +49,7 @@ pub enum VerticalAlignment {
     Bottom,
 }
 
-/// Describes the horizontal position of a view layed on top of another view.
+/// Describes the horizontal position of a view laid on top of another view.
 /// See also [Alignment].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HorizontalAlignment {
