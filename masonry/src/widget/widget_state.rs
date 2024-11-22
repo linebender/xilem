@@ -53,6 +53,8 @@ pub(crate) struct WidgetState {
     // TODO - Document
     // The computed paint rect, in local coordinates.
     pub(crate) local_paint_rect: Rect,
+    /// An axis aligned bounding box (AABB), containing itself and all its descendents.
+    pub(crate) bbox: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
     ///
     /// In general, this will be zero; the bottom of the widget will be considered
@@ -195,6 +197,7 @@ impl WidgetState {
             #[cfg(debug_assertions)]
             widget_name,
             window_transform: Affine::IDENTITY,
+            bbox: Rect::ZERO,
         }
     }
 

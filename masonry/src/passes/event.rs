@@ -22,9 +22,10 @@ fn get_target_widget(
     if let Some(pointer_pos) = pointer_pos {
         // TODO - Apply scale?
         let pointer_pos = (pointer_pos.x, pointer_pos.y).into();
-        return root
-            .get_root_widget()
-            .find_widget_at_pos(pointer_pos)
+        let root_widget = root.get_root_widget();
+        return root_widget
+            .widget
+            .find_widget_at_pos(root_widget.ctx, pointer_pos)
             .map(|widget| widget.id());
     }
 

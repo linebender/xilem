@@ -16,7 +16,7 @@ use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
-use widget::widget::get_child_at_pos;
+use widget::widget::{get_child_at_pos, AsDynWidget as _};
 use widget::WidgetRef;
 
 use crate::event::{PointerEvent, TextEvent};
@@ -390,12 +390,16 @@ impl<S: 'static> Widget for ModularWidget<S> {
         CursorIcon::Default
     }
 
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        get_child_at_pos(self, ctx, pos)
+        (WidgetRef {
+            widget: self.as_dyn(),
+            ctx,
+        })
+        .find_widget_at_pos(pos)
     }
 
     fn type_name(&self) -> &'static str {
@@ -594,12 +598,12 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.get_cursor(ctx, pos)
     }
 
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.child.get_child_at_pos(ctx, pos)
+        self.child.find_widget_at_pos(ctx, pos)
     }
 
     fn type_name(&self) -> &'static str {

@@ -53,6 +53,21 @@ impl WidgetId {
     }
 }
 
+pub trait AsDynWidget {
+    fn as_dyn(&self) -> &dyn Widget;
+    fn as_mut_dyn(&mut self) -> &mut dyn Widget;
+}
+
+impl<T: Widget> AsDynWidget for T {
+    fn as_dyn(&self) -> &dyn Widget {
+        self as &dyn Widget
+    }
+
+    fn as_mut_dyn(&mut self) -> &mut dyn Widget {
+        self as &mut dyn Widget
+    }
+}
+
 // TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
 ///
@@ -75,7 +90,7 @@ impl WidgetId {
 /// widget is mutated either during a method call (eg `on_event` or `update`) or
 /// through a [`WidgetMut`](crate::widget::WidgetMut).
 #[allow(unused_variables)]
-pub trait Widget: AsAny {
+pub trait Widget: AsAny + AsDynWidget {
     /// Handle an event - usually user interaction.
     ///
     /// A number of different events (in the [`Event`] enum) are handled in this
@@ -261,12 +276,16 @@ pub trait Widget: AsAny {
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        get_child_at_pos(self, ctx, pos)
+        (WidgetRef {
+            widget: self.as_dyn(),
+            ctx,
+        })
+        .find_widget_at_pos(pos)
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -498,12 +517,12 @@ impl Widget for Box<dyn Widget> {
         self.deref().get_cursor(ctx, pos)
     }
 
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.deref().get_child_at_pos(ctx, pos)
+        self.deref().find_widget_at_pos(ctx, pos)
     }
 
     fn as_any(&self) -> &dyn Any {

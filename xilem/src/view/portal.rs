@@ -3,10 +3,12 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget;
+use masonry::{widget, Affine};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
+
+use super::Transformable;
 
 /// A view which puts `child` into a scrollable region.
 ///
@@ -17,6 +19,7 @@ where
 {
     Portal {
         child,
+        transform: Affine::IDENTITY,
         phantom: PhantomData,
     }
 }
@@ -24,6 +27,7 @@ where
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Portal<V, State, Action> {
     child: V,
+    transform: Affine,
     phantom: PhantomData<(State, Action)>,
 }
 
@@ -41,7 +45,8 @@ where
         // The Portal `View` doesn't get any messages directly (yet - scroll events?), so doesn't need to
         // use ctx.with_id.
         let (child, child_state) = self.child.build(ctx);
-        let widget_pod = ctx.new_pod(widget::Portal::new_pod(child.inner));
+        let widget_pod =
+            ctx.new_pod(widget::Portal::new_pod(child.inner).with_transform(self.transform));
         (widget_pod, child_state)
     }
 
@@ -52,6 +57,9 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            widget::Portal::set_transform(&mut element, self.transform);
+        }
         let child_element = widget::Portal::child_mut(&mut element);
         self.child
             .rebuild(&prev.child, view_state, ctx, child_element);
@@ -75,5 +83,11 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.child.message(view_state, id_path, message, app_state)
+    }
+}
+
+impl<V, State, Action> Transformable for Portal<V, State, Action> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
     }
 }

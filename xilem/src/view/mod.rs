@@ -28,9 +28,9 @@ pub trait Transformable: Sized {
     }
 
     #[must_use]
-    fn translate(mut self, v: masonry::Vec2) -> Self {
+    fn translate(mut self, v: impl Into<masonry::Vec2>) -> Self {
         let transform = self.transform_mut();
-        *transform = transform.then_translate(v);
+        *transform = transform.then_translate(v.into());
         self
     }
 }

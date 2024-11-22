@@ -30,10 +30,14 @@ fn compose_widget(
         return;
     }
 
-    state.item.window_transform = parent_window_transform
-        .then_translate(state.item.translation + state.item.origin.to_vec2())
-        * widget.item.transform();
+    let local_translation = state.item.translation + state.item.origin.to_vec2();
+    state.item.window_transform =
+        parent_window_transform * widget.item.transform().then_translate(local_translation);
     state.item.window_origin = state.item.window_transform.translation().to_point();
+    state.item.bbox = state
+        .item
+        .window_transform
+        .transform_rect_bbox(state.item.size.to_rect());
 
     let mut ctx = ComposeCtx {
         global_state,
@@ -75,6 +79,7 @@ fn compose_widget(
                 transformed,
                 parent_transform,
             );
+            parent_state.bbox = parent_state.bbox.union(state.item.bbox);
             parent_state.merge_up(state.item);
         },
     );

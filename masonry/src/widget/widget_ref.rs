@@ -159,30 +159,38 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     }
 
     /// Recursively find the innermost widget at the given position, using
-    /// [`Widget::get_child_at_pos`] to descend the widget tree. If `self` does not contain the
+    /// [`Widget::find_widget_at_pos`] to descend the widget tree. If `self` does not contain the
     /// given position in its layout rect or clip path, this returns `None`.
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
-        let local_pos = self.ctx.widget_state.window_transform.inverse() * pos;
-        let mut innermost_widget = *self;
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
+        if self.ctx.widget_state.bbox.contains(pos) {
+            let local_pos = self.ctx().widget_state.window_transform.inverse() * pos;
 
-        if !self.ctx.size().to_rect().contains(local_pos) {
-            return None;
+            if Some(false) == self.ctx.clip_path().map(|clip| clip.contains(local_pos)) {
+                return None;
+            }
+
+            // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+            // of overlapping children.
+            for child_id in self.children_ids().iter().rev() {
+                let child_ref = self.ctx.get(*child_id);
+                if let Some(child) = child_ref.widget.find_widget_at_pos(child_ref.ctx, pos) {
+                    return Some(child);
+                }
+            }
+            if !self.ctx.is_stashed()
+                && self.ctx.accepts_pointer_interaction()
+                && self.ctx.size().to_rect().contains(local_pos)
+            {
+                Some(*self)
+            } else {
+                None
+            }
+        } else {
+            None
         }
-
-        // TODO: add debug assertion to check whether the child returned by
-        // `Widget::get_child_at_pos` upholds the conditions of that method. See
-        // https://github.com/linebender/xilem/pull/565#discussion_r1756536870
-        while let Some(child) = innermost_widget
-            .widget
-            .get_child_at_pos(innermost_widget.ctx, pos)
-        {
-            innermost_widget = child;
-        }
-
-        Some(innermost_widget)
     }
 }
 

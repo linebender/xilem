@@ -141,7 +141,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
                 button("Unlimited Power", |data: &mut AppData| {
                     data.count = -1_000_000;
                 })
-                .translate((-100.0, -20.0).into())
+                .translate((-100.0, -20.0))
                 .rotate(secs_since_start)
                 .scale(secs_since_start.sin() + 1.5),
             ))

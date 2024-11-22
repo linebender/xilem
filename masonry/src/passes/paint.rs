@@ -5,10 +5,10 @@ use std::collections::HashMap;
 
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::Stroke;
 use vello::peniko::Mix;
 use vello::Scene;
 
+use crate::paint_scene_helpers::stroke;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
@@ -63,7 +63,7 @@ fn paint_widget(
     complete_scene.append(scene, Some(transform));
 
     let id = state.item.id;
-    let size = state.item.size;
+    let bbox = state.item.bbox;
     let parent_state = state.item;
     recurse_on_children(
         id,
@@ -93,9 +93,9 @@ fn paint_widget(
 
     if debug_paint {
         const BORDER_WIDTH: f64 = 1.0;
-        let rect = size.to_rect().inset(BORDER_WIDTH / -2.0);
         let color = get_debug_color(id.to_raw());
-        complete_scene.stroke(&Stroke::new(BORDER_WIDTH), transform, color, None, &rect);
+        let rect = bbox.inset(BORDER_WIDTH / -2.0);
+        stroke(complete_scene, &rect, color, BORDER_WIDTH);
     }
 
     if has_clip {
