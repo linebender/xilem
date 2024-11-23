@@ -189,11 +189,40 @@ where
 /// `init_stream` will be invoked again, when `data` changes.
 ///
 /// The update behavior can be controlled, by [`debounce_ms`](`MemoizedStream::debounce_ms`) and [`reset_debounce_on_update`](`MemoizedStream::reset_debounce_on_update`)
+///
+/// # Examples
+///
+/// ```
+/// use gloo_timers::future::TimeoutFuture;
+/// use async_stream::stream;
+/// use xilem_web::{core::fork, concurrent::memoized_stream, elements::html::div, interfaces::Element};
+///
+/// fn app_logic(state: &mut Vec<usize>) -> impl Element<Vec<usize>> {
+///     fork(
+///         html::div(format!("{state:?}")),
+///         memoized_stream(
+///             10,
+///             |n| {
+///                 let range = 0..*n;
+///                 stream! {
+///                     for i in range {
+///                         TimeoutFuture::new(500).await;
+///                          yield i;
+///                      }
+///                 }
+///             },
+///             |state: &mut Vec<usize>, item: usize| {
+///                 state.push(item);
+///             },
+///         ),
+///     )
+/// }
+/// ```
 pub fn memoized_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
     data: Data,
     init_future: InitStream,
     callback: Callback,
-) -> MemoizedAwait<State, Action, OA, InitStream, Data, Callback, F, StreamItem>
+) -> MemoizedStream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>
 where
     State: 'static,
     Action: 'static,
@@ -204,7 +233,7 @@ where
     OA: OptionalAction<Action> + 'static,
     Callback: Fn(&mut State, StreamItem) -> OA + 'static,
 {
-    MemoizedAwait(MemoizedInner {
+    MemoizedStream(MemoizedInner {
         init_future,
         data,
         callback,
