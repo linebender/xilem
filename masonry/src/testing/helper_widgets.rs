@@ -16,7 +16,7 @@ use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
-use widget::widget::AsDynWidget as _;
+use widget::widget::{find_widget_at_pos, AsDynWidget as _};
 use widget::WidgetRef;
 
 use crate::event::{PointerEvent, TextEvent};
@@ -395,11 +395,13 @@ impl<S: 'static> Widget for ModularWidget<S> {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        (WidgetRef {
-            widget: self.as_dyn(),
-            ctx,
-        })
-        .find_widget_at_pos(pos)
+        find_widget_at_pos(
+            &WidgetRef {
+                widget: self.as_dyn(),
+                ctx,
+            },
+            pos,
+        )
     }
 
     fn type_name(&self) -> &'static str {
