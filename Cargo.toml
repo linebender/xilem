@@ -39,7 +39,7 @@ rust.unexpected_cfgs = { level = "warn", check-cfg = [
     'cfg(tarpaulin_include)',
 ] }
 
-# LINEBENDER LINT SET - v1
+# LINEBENDER LINT SET - Cargo.toml - v2
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -87,6 +87,7 @@ clippy.semicolon_if_nothing_returned = "warn"
 clippy.shadow_unrelated = "warn"
 clippy.should_panic_without_expect = "warn"
 clippy.todo = "warn"
+clippy.trivially_copy_pass_by_ref = "warn"
 clippy.unseparated_literal_suffix = "warn"
 clippy.use_self = "warn"
 clippy.wildcard_imports = "warn"

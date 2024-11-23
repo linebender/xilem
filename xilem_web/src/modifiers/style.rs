@@ -529,6 +529,10 @@ impl<E, State, Action> Rotate<E, State, Action> {
     }
 }
 
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "Needs to fit the generic signature of Styles::update_with_modify_style"
+)]
 fn rotate_transform_modifier(transform: Option<&CowStr>, radians: &f64) -> StyleModifier {
     let value = if let Some(transform) = transform {
         format!("{transform} rotate({radians}rad)")
