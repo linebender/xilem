@@ -15,13 +15,13 @@ use crate::{
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the future.
 /// `init_future` will be invoked again, when `data` changes. Use [`memoized_await`] for construction of this [`View`]
 pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
-    MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
+    MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
 );
 
 /// Await a stream returned by `init_stream` invoked with the argument `data`, `callback` is called with the items of the stream.
 /// `init_stream` will be invoked again, when `data` changes. Use [`memoized_stream`] for construction of this [`View`]
 pub struct MemoizedStream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
-    MemoizedInner<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
+    MemoizedFuture<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
 );
 
 struct MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
@@ -34,7 +34,7 @@ struct MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
 }
 
 impl<State, Action, OA, InitFuture, Data, Callback, F, FOut>
-    MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut>
+    MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 where
     FOut: fmt::Debug + 'static,
     InitFuture: Fn(&Data) -> F,
@@ -103,7 +103,7 @@ where
 }
 
 fn init_future<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
-    m: &MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
+    m: &MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
     ctx: &mut ViewCtx,
     generation: u64,
 ) where
@@ -121,7 +121,7 @@ fn init_future<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
 }
 
 fn init_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
-    m: &MemoizedInner<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
+    m: &MemoizedFuture<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
     ctx: &mut ViewCtx,
     generation: u64,
 ) where
@@ -175,7 +175,7 @@ where
     OA: OptionalAction<Action> + 'static,
     Callback: Fn(&mut State, FOut) -> OA + 'static,
 {
-    MemoizedAwait(MemoizedInner {
+    MemoizedAwait(MemoizedFuture {
         init_future,
         data,
         callback,
@@ -233,7 +233,7 @@ where
     OA: OptionalAction<Action> + 'static,
     Callback: Fn(&mut State, StreamItem) -> OA + 'static,
 {
-    MemoizedStream(MemoizedInner {
+    MemoizedStream(MemoizedFuture {
         init_future,
         data,
         callback,
@@ -397,7 +397,7 @@ where
 }
 
 impl<State, Action, InitFuture, F, FOut, Data, CB, OA>
-    MemoizedInner<State, Action, OA, InitFuture, Data, CB, F, FOut>
+    MemoizedFuture<State, Action, OA, InitFuture, Data, CB, F, FOut>
 where
     State: 'static,
     Action: 'static,
