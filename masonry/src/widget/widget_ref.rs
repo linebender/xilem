@@ -165,32 +165,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
-        if self.ctx.widget_state.bbox.contains(pos) {
-            let local_pos = self.ctx().widget_state.window_transform.inverse() * pos;
-
-            if Some(false) == self.ctx.clip_path().map(|clip| clip.contains(local_pos)) {
-                return None;
-            }
-
-            // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
-            // of overlapping children.
-            for child_id in self.children_ids().iter().rev() {
-                let child_ref = self.ctx.get(*child_id);
-                if let Some(child) = child_ref.widget.find_widget_at_pos(child_ref.ctx, pos) {
-                    return Some(child);
-                }
-            }
-            if !self.ctx.is_stashed()
-                && self.ctx.accepts_pointer_interaction()
-                && self.ctx.size().to_rect().contains(local_pos)
-            {
-                Some(*self)
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        self.widget.find_widget_at_pos(self.ctx, pos)
     }
 }
 

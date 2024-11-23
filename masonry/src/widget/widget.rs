@@ -281,11 +281,13 @@ pub trait Widget: AsAny + AsDynWidget {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        (WidgetRef {
-            widget: self.as_dyn(),
-            ctx,
-        })
-        .find_widget_at_pos(pos)
+        find_widget_at_pos(
+            &WidgetRef {
+                widget: self.as_dyn(),
+                ctx,
+            },
+            pos,
+        )
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -324,6 +326,38 @@ pub trait Widget: AsAny + AsDynWidget {
     #[doc(hidden)]
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.as_mut_dyn_any()
+    }
+}
+
+pub(crate) fn find_widget_at_pos<'c>(
+    widget: &WidgetRef<'c, dyn Widget>,
+    pos: Point,
+) -> Option<WidgetRef<'c, dyn Widget>> {
+    if widget.ctx.widget_state.bbox.contains(pos) {
+        let local_pos = widget.ctx().widget_state.window_transform.inverse() * pos;
+
+        if Some(false) == widget.ctx.clip_path().map(|clip| clip.contains(local_pos)) {
+            return None;
+        }
+
+        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+        // of overlapping children.
+        for child_id in widget.children_ids().iter().rev() {
+            let child_ref = widget.ctx.get(*child_id);
+            if let Some(child) = child_ref.widget.find_widget_at_pos(child_ref.ctx, pos) {
+                return Some(child);
+            }
+        }
+        if !widget.ctx.is_stashed()
+            && widget.ctx.accepts_pointer_interaction()
+            && widget.ctx.size().to_rect().contains(local_pos)
+        {
+            Some(*widget)
+        } else {
+            None
+        }
+    } else {
+        None
     }
 }
 
