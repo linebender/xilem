@@ -188,7 +188,7 @@ where
 /// Await a stream returned by `init_stream` invoked with the argument `data`, `callback` is called with the items of the stream.
 /// `init_stream` will be invoked again, when `data` changes.
 ///
-/// The update behavior can be controlled, by [`debounce_ms`](`MemoizedStream::debounce_ms`) and [`reset_debounce_on_update`](`MemoizedStream::reset_debounce_on_update`)
+/// The behavior of the `init_stream` invocation by changes to `data` can be customized by [`debounce_ms`](`MemoizedStream::debounce_ms`) and [`reset_debounce_on_update`](`MemoizedStream::reset_debounce_on_update`).
 ///
 /// # Examples
 ///
