@@ -76,6 +76,32 @@ where
     }
 }
 
+impl<State, Action, OA, InitStream, Data, Callback, F, StreamItem>
+    MemoizedStream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>
+where
+    StreamItem: fmt::Debug + 'static,
+    F: Stream<Item = StreamItem> + 'static,
+    InitStream: Fn(&Data) -> F,
+{
+    /// Debounce the `init_stream` function, when `data` updates,
+    /// when `reset_debounce_on_update == false` then this throttles updates each `milliseconds`
+    ///
+    /// The default for this is `0`
+    pub fn debounce_ms(mut self, milliseconds: usize) -> Self {
+        self.0 = self.0.debounce_ms(milliseconds);
+        self
+    }
+
+    /// When `reset` is `true`, everytime `data` updates, the debounce timeout is cleared until `init_stream` is invoked.
+    /// This is only effective when `debounce > 0`
+    ///
+    /// The default for this is `true`
+    pub fn reset_debounce_on_update(mut self, reset: bool) -> Self {
+        self.0 = self.0.reset_debounce_on_update(reset);
+        self
+    }
+}
+
 fn init_future<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
     m: &MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
     ctx: &mut ViewCtx,
@@ -159,6 +185,10 @@ where
     })
 }
 
+/// Await a stream returned by `init_stream` invoked with the argument `data`, `callback` is called with the items of the stream.
+/// `init_stream` will be invoked again, when `data` changes.
+///
+/// The update behavior can be controlled, by [`debounce_ms`](`MemoizedStream::debounce_ms`) and [`reset_debounce_on_update`](`MemoizedStream::reset_debounce_on_update`)
 pub fn memoized_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
     data: Data,
     init_future: InitStream,
