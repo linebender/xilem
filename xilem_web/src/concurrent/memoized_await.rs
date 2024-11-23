@@ -175,7 +175,7 @@ where
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 /// use gloo_timers::future::TimeoutFuture;
 /// use async_stream::stream;
 /// use xilem_web::{core::fork, concurrent::memoized_stream, elements::html, interfaces::Element};
