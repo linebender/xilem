@@ -34,23 +34,6 @@ struct MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
 }
 
 impl<State, Action, OA, InitFuture, Data, Callback, F, FOut>
-    MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut>
-where
-    FOut: fmt::Debug + 'static,
-    InitFuture: Fn(&Data) -> F,
-{
-    fn debounce_ms(mut self, milliseconds: usize) -> Self {
-        self.debounce_ms = milliseconds;
-        self
-    }
-
-    fn reset_debounce_on_update(mut self, reset: bool) -> Self {
-        self.reset_debounce_on_update = reset;
-        self
-    }
-}
-
-impl<State, Action, OA, InitFuture, Data, Callback, F, FOut>
     MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 where
     FOut: fmt::Debug + 'static,
@@ -62,7 +45,7 @@ where
     ///
     /// The default for this is `0`
     pub fn debounce_ms(mut self, milliseconds: usize) -> Self {
-        self.0 = self.0.debounce_ms(milliseconds);
+        self.0.debounce_ms = milliseconds;
         self
     }
 
@@ -71,7 +54,7 @@ where
     ///
     /// The default for this is `true`
     pub fn reset_debounce_on_update(mut self, reset: bool) -> Self {
-        self.0 = self.0.reset_debounce_on_update(reset);
+        self.0.reset_debounce_on_update = reset;
         self
     }
 }
@@ -88,7 +71,7 @@ where
     ///
     /// The default for this is `0`
     pub fn debounce_ms(mut self, milliseconds: usize) -> Self {
-        self.0 = self.0.debounce_ms(milliseconds);
+        self.0.debounce_ms = milliseconds;
         self
     }
 
@@ -97,7 +80,7 @@ where
     ///
     /// The default for this is `true`
     pub fn reset_debounce_on_update(mut self, reset: bool) -> Self {
-        self.0 = self.0.reset_debounce_on_update(reset);
+        self.0.reset_debounce_on_update = reset;
         self
     }
 }
