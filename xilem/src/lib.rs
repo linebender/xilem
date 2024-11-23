@@ -1,14 +1,16 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![deny(clippy::trivially_copy_pass_by_ref)]
-// LINEBENDER LINT SET - v1
+//! An experimental Rust native UI framework.
+
+// LINEBENDER LINT SET - lib.rs - v1
 // See https://linebender.org/wiki/canonical-lints/
 // These lints aren't included in Cargo.toml because they
 // shouldn't apply to examples and tests
 #![warn(unused_crate_dependencies)]
 #![warn(clippy::print_stdout, clippy::print_stderr)]
+// END LINEBENDER LINT SET
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(
     test,
     expect(

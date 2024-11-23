@@ -1,3 +1,14 @@
+# LINEBENDER LINT SET - .clippy.toml - v1
+# See https://linebender.org/wiki/canonical-lints/
+
+# The default Clippy value is capped at 8 bytes, which was chosen to improve performance on 32-bit.
+# Given that we are building for the future and even low-end mobile phones have 64-bit CPUs,
+# it makes sense to optimize for 64-bit and accept the performance hits on 32-bit.
+# 16 bytes is the number of bytes that fits into two 64-bit CPU registers.
+trivial-copy-size-limit = 16
+
+# END LINEBENDER LINT SET
+
 # Don't warn about these identifiers when using clippy::doc_markdown.
 doc-valid-idents = ["MathML", ".."]
 

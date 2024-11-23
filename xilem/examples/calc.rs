@@ -25,7 +25,7 @@ enum MathOperator {
 }
 
 impl MathOperator {
-    fn as_str(&self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
             MathOperator::Add => "+",
             MathOperator::Subtract => "\u{2212}",
@@ -34,7 +34,7 @@ impl MathOperator {
         }
     }
 
-    fn perform_op(&self, num1: f64, num2: f64) -> f64 {
+    fn perform_op(self, num1: f64, num2: f64) -> f64 {
         match self {
             MathOperator::Add => num1 + num2,
             MathOperator::Subtract => num1 - num2,

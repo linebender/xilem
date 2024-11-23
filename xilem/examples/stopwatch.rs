@@ -101,7 +101,7 @@ impl Stopwatch {
     }
 }
 
-fn get_formatted_duration(dur: &Duration) -> String {
+fn get_formatted_duration(dur: Duration) -> String {
     let seconds = dur.as_secs_f64() % 60.0;
     let minutes = (dur.as_secs() / 60) % 60;
     let hours = (dur.as_secs() / 60) / 60;
@@ -112,7 +112,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
     fork(
         flex((
             FlexSpacer::Fixed(5.0),
-            label(get_formatted_duration(&data.displayed_duration)).text_size(70.0),
+            label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
             flex((lap_reset_button(data), start_stop_button(data))).direction(Axis::Horizontal),
             FlexSpacer::Fixed(1.0),
             laps_section(data),
@@ -145,14 +145,14 @@ fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> {
     let current_lap = data.completed_lap_splits.len();
     for (i, split_dur) in data.completed_lap_splits.iter().enumerate() {
         total_dur = total_dur.add(*split_dur);
-        items.push(single_lap(i, split_dur, &total_dur));
+        items.push(single_lap(i, *split_dur, total_dur));
     }
     let current_split_duration = data.get_current_duration().sub(total_dur);
     // Add the current lap, which is not stored in completed_lap_splits
     items.push(single_lap(
         current_lap,
-        &current_split_duration,
-        &data.get_current_duration(),
+        current_split_duration,
+        data.get_current_duration(),
     ));
     items.reverse();
     items
@@ -160,8 +160,8 @@ fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> {
 
 fn single_lap(
     lap_id: usize,
-    split_dur: &Duration,
-    total_dur: &Duration,
+    split_dur: Duration,
+    total_dur: Duration,
 ) -> impl WidgetView<Stopwatch> {
     flex((
         FlexSpacer::Flex(1.0),
