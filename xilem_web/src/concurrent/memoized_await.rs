@@ -1,16 +1,30 @@
 // Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::{fmt, future::Future, marker::PhantomData};
+
+use futures::{Stream, StreamExt};
+use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
+use wasm_bindgen_futures::spawn_local;
+
 use crate::{
     core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker},
     DynMessage, OptionalAction, ViewCtx,
 };
-use std::{future::Future, marker::PhantomData};
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
-use wasm_bindgen_futures::spawn_local;
 
-/// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the future. `init_future` will be invoked again, when `data` changes. Use [`memoized_await`] for construction of this [`View`]
-pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
+/// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the future.
+/// `init_future` will be invoked again, when `data` changes. Use [`memoized_await`] for construction of this [`View`]
+pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
+    MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
+);
+
+/// Await a stream returned by `init_stream` invoked with the argument `data`, `callback` is called with the items of the stream.
+/// `init_stream` will be invoked again, when `data` changes. Use [`memoized_stream`] for construction of this [`View`]
+pub struct MemoizedStream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
+    MemoizedInner<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
+);
+
+struct MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
     init_future: InitFuture,
     data: Data,
     callback: Callback,
@@ -20,9 +34,26 @@ pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 }
 
 impl<State, Action, OA, InitFuture, Data, Callback, F, FOut>
+    MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut>
+where
+    FOut: fmt::Debug + 'static,
+    InitFuture: Fn(&Data) -> F,
+{
+    fn debounce_ms(mut self, milliseconds: usize) -> Self {
+        self.debounce_ms = milliseconds;
+        self
+    }
+
+    fn reset_debounce_on_update(mut self, reset: bool) -> Self {
+        self.reset_debounce_on_update = reset;
+        self
+    }
+}
+
+impl<State, Action, OA, InitFuture, Data, Callback, F, FOut>
     MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 where
-    FOut: std::fmt::Debug + 'static,
+    FOut: fmt::Debug + 'static,
     F: Future<Output = FOut> + 'static,
     InitFuture: Fn(&Data) -> F,
 {
@@ -31,7 +62,7 @@ where
     ///
     /// The default for this is `0`
     pub fn debounce_ms(mut self, milliseconds: usize) -> Self {
-        self.debounce_ms = milliseconds;
+        self.0 = self.0.debounce_ms(milliseconds);
         self
     }
 
@@ -40,19 +71,47 @@ where
     ///
     /// The default for this is `true`
     pub fn reset_debounce_on_update(mut self, reset: bool) -> Self {
-        self.reset_debounce_on_update = reset;
+        self.0 = self.0.reset_debounce_on_update(reset);
         self
     }
+}
 
-    fn init_future(&self, ctx: &mut ViewCtx, generation: u64) {
-        ctx.with_id(ViewId::new(generation), |ctx| {
-            let thunk = ctx.message_thunk();
-            let future = (self.init_future)(&self.data);
-            spawn_local(async move {
-                thunk.push_message(MemoizedAwaitMessage::<FOut>::Output(future.await));
-            });
+fn init_future<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
+    m: &MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
+    ctx: &mut ViewCtx,
+    generation: u64,
+) where
+    InitFuture: Fn(&Data) -> F + 'static,
+    FOut: fmt::Debug + 'static,
+    F: Future<Output = FOut> + 'static,
+{
+    ctx.with_id(ViewId::new(generation), |ctx| {
+        let thunk = ctx.message_thunk();
+        let future = (m.init_future)(&m.data);
+        spawn_local(async move {
+            thunk.push_message(MemoizedAwaitMessage::<FOut>::Output(future.await));
         });
-    }
+    });
+}
+
+fn init_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
+    m: &MemoizedInner<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
+    ctx: &mut ViewCtx,
+    generation: u64,
+) where
+    InitStream: Fn(&Data) -> F + 'static,
+    StreamItem: fmt::Debug + 'static,
+    F: Stream<Item = StreamItem> + 'static,
+{
+    ctx.with_id(ViewId::new(generation), |ctx| {
+        let thunk = ctx.message_thunk();
+        let mut stream = Box::pin((m.init_future)(&m.data));
+        spawn_local(async move {
+            while let Some(item) = stream.next().await {
+                thunk.push_message(MemoizedAwaitMessage::<StreamItem>::Output(item));
+            }
+        });
+    });
 }
 
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the resolved future. `init_future` will be invoked again, when `data` changes.
@@ -84,20 +143,45 @@ where
     State: 'static,
     Action: 'static,
     Data: PartialEq + 'static,
-    FOut: std::fmt::Debug + 'static,
+    FOut: fmt::Debug + 'static,
     F: Future<Output = FOut> + 'static,
     InitFuture: Fn(&Data) -> F + 'static,
     OA: OptionalAction<Action> + 'static,
     Callback: Fn(&mut State, FOut) -> OA + 'static,
 {
-    MemoizedAwait {
+    MemoizedAwait(MemoizedInner {
         init_future,
         data,
         callback,
         debounce_ms: 0,
         reset_debounce_on_update: true,
         phantom: PhantomData,
-    }
+    })
+}
+
+pub fn memoized_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
+    data: Data,
+    init_future: InitStream,
+    callback: Callback,
+) -> MemoizedAwait<State, Action, OA, InitStream, Data, Callback, F, StreamItem>
+where
+    State: 'static,
+    Action: 'static,
+    Data: PartialEq + 'static,
+    StreamItem: fmt::Debug + 'static,
+    F: Stream<Item = StreamItem> + 'static,
+    InitStream: Fn(&Data) -> F + 'static,
+    OA: OptionalAction<Action> + 'static,
+    Callback: Fn(&mut State, StreamItem) -> OA + 'static,
+{
+    MemoizedAwait(MemoizedInner {
+        init_future,
+        data,
+        callback,
+        debounce_ms: 0,
+        reset_debounce_on_update: true,
+        phantom: PhantomData,
+    })
 }
 
 #[derive(Default)]
@@ -122,7 +206,7 @@ impl MemoizedAwaitState {
         self.schedule_update_fn = None;
     }
 
-    fn reset_debounce_timeout_and_schedule_update<FOut: std::fmt::Debug + 'static>(
+    fn reset_debounce_timeout_and_schedule_update<FOut: fmt::Debug + 'static>(
         &mut self,
         ctx: &mut ViewCtx,
         debounce_duration: usize,
@@ -148,7 +232,7 @@ impl MemoizedAwaitState {
 }
 
 #[derive(Debug)]
-enum MemoizedAwaitMessage<Output: std::fmt::Debug> {
+enum MemoizedAwaitMessage<Output: fmt::Debug> {
     Output(Output),
     ScheduleUpdate,
 }
@@ -157,6 +241,11 @@ impl<State, Action, OA, InitFuture, Data, CB, F, FOut> ViewMarker
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 {
 }
+impl<State, Action, OA, InitStream, Data, CB, F, StreamItem> ViewMarker
+    for MemoizedStream<State, Action, OA, InitStream, Data, CB, F, StreamItem>
+{
+}
+
 impl<State, Action, InitFuture, F, FOut, Data, CB, OA> View<State, Action, ViewCtx, DynMessage>
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 where
@@ -164,7 +253,7 @@ where
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
     InitFuture: Fn(&Data) -> F + 'static,
-    FOut: std::fmt::Debug + 'static,
+    FOut: fmt::Debug + 'static,
     Data: PartialEq + 'static,
     F: Future<Output = FOut> + 'static,
     CB: Fn(&mut State, FOut) -> OA + 'static,
@@ -174,15 +263,7 @@ where
     type ViewState = MemoizedAwaitState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let mut state = MemoizedAwaitState::default();
-
-        if self.debounce_ms > 0 {
-            state.reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce_ms);
-        } else {
-            self.init_future(ctx, state.generation);
-        }
-
-        (NoElement, state)
+        self.0.build(ctx, init_future)
     }
 
     fn rebuild(
@@ -192,6 +273,106 @@ where
         ctx: &mut ViewCtx,
         (): Mut<Self::Element>,
     ) {
+        self.0.rebuild(&prev.0, view_state, ctx, init_future);
+    }
+
+    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+        self.0.teardown(state);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action, DynMessage> {
+        self.0.message(view_state, id_path, message, app_state)
+    }
+}
+
+impl<State, Action, InitStream, F, StreamItem, Data, CB, OA>
+    View<State, Action, ViewCtx, DynMessage>
+    for MemoizedStream<State, Action, OA, InitStream, Data, CB, F, StreamItem>
+where
+    State: 'static,
+    Action: 'static,
+    OA: OptionalAction<Action> + 'static,
+    InitStream: Fn(&Data) -> F + 'static,
+    StreamItem: fmt::Debug + 'static,
+    Data: PartialEq + 'static,
+    F: Stream<Item = StreamItem> + 'static,
+    CB: Fn(&mut State, StreamItem) -> OA + 'static,
+{
+    type Element = NoElement;
+
+    type ViewState = MemoizedAwaitState;
+
+    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        self.0.build(ctx, init_stream)
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        (): Mut<Self::Element>,
+    ) {
+        self.0.rebuild(&prev.0, view_state, ctx, init_stream);
+    }
+
+    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+        self.0.teardown(state);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: DynMessage,
+        app_state: &mut State,
+    ) -> MessageResult<Action, DynMessage> {
+        self.0.message(view_state, id_path, message, app_state)
+    }
+}
+
+impl<State, Action, InitFuture, F, FOut, Data, CB, OA>
+    MemoizedInner<State, Action, OA, InitFuture, Data, CB, F, FOut>
+where
+    State: 'static,
+    Action: 'static,
+    OA: OptionalAction<Action> + 'static,
+    InitFuture: Fn(&Data) -> F + 'static,
+    FOut: fmt::Debug + 'static,
+    Data: PartialEq + 'static,
+    F: 'static,
+    CB: Fn(&mut State, FOut) -> OA + 'static,
+{
+    fn build<I>(&self, ctx: &mut ViewCtx, init_future: I) -> (NoElement, MemoizedAwaitState)
+    where
+        I: Fn(&Self, &mut ViewCtx, u64),
+    {
+        let mut state = MemoizedAwaitState::default();
+
+        if self.debounce_ms > 0 {
+            state.reset_debounce_timeout_and_schedule_update::<FOut>(ctx, self.debounce_ms);
+        } else {
+            init_future(self, ctx, state.generation);
+        }
+
+        (NoElement, state)
+    }
+
+    fn rebuild<I>(
+        &self,
+        prev: &Self,
+        view_state: &mut MemoizedAwaitState,
+        ctx: &mut ViewCtx,
+        init_future: I,
+    ) where
+        I: Fn(&Self, &mut ViewCtx, u64),
+    {
         let debounce_has_changed_and_update_is_scheduled = view_state.schedule_update
             && (prev.reset_debounce_on_update != self.reset_debounce_on_update
                 || prev.debounce_ms != self.debounce_ms);
@@ -221,18 +402,18 @@ where
                 // no debounce
                 view_state.generation += 1;
                 view_state.update = false;
-                self.init_future(ctx, view_state.generation);
+                init_future(self, ctx, view_state.generation);
             }
         }
     }
 
-    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+    fn teardown(&self, state: &mut MemoizedAwaitState) {
         state.clear_update_timeout();
     }
 
     fn message(
         &self,
-        view_state: &mut Self::ViewState,
+        view_state: &mut MemoizedAwaitState,
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
