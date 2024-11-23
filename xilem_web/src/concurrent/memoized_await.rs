@@ -24,7 +24,7 @@ pub struct MemoizedStream<State, Action, OA, InitStream, Data, Callback, F, Stre
     MemoizedInner<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
 );
 
-struct MemoizedInner<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
+struct MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
     init_future: InitFuture,
     data: Data,
     callback: Callback,
