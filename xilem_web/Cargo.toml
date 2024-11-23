@@ -181,3 +181,7 @@ features = [
 default = []
 # This interns some often used strings, such as element tags ("div" etc.), which slightly improves performance when creating elements at the cost of a bigger wasm binary
 intern_strings = ["wasm-bindgen/enable-interning"]
+
+[dev-dependencies]
+async-stream = "0.3.6"
+gloo-timers = { version = "0.3.0", features = ["futures"] }

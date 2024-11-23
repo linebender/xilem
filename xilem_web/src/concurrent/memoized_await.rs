@@ -195,7 +195,7 @@ where
 /// ```
 /// use gloo_timers::future::TimeoutFuture;
 /// use async_stream::stream;
-/// use xilem_web::{core::fork, concurrent::memoized_stream, elements::html::div, interfaces::Element};
+/// use xilem_web::{core::fork, concurrent::memoized_stream, elements::html, interfaces::Element};
 ///
 /// fn app_logic(state: &mut Vec<usize>) -> impl Element<Vec<usize>> {
 ///     fork(
