@@ -207,8 +207,8 @@ where
 ///                 stream! {
 ///                     for i in range {
 ///                         TimeoutFuture::new(500).await;
-///                          yield i;
-///                      }
+///                         yield i;
+///                     }
 ///                 }
 ///             },
 ///             |state: &mut Vec<usize>, item: usize| {
