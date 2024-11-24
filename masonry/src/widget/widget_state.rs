@@ -271,8 +271,8 @@ impl WidgetState {
     ///
     /// By default, returns the same as [`Self::window_layout_rect`].
     pub(crate) fn get_ime_area(&self) -> Rect {
-        // TODO correctly calculate IME area based on transform
-        self.ime_area.unwrap_or_else(|| self.size.to_rect()) + self.window_origin.to_vec2()
+        self.window_transform
+            .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size.to_rect()))
     }
 
     pub(crate) fn window_origin(&self) -> Point {
