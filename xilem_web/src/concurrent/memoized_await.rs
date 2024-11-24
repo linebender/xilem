@@ -117,7 +117,7 @@ fn init_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
         let mut stream = Box::pin((m.init_future)(&m.data));
         spawn_local(async move {
             while let Some(item) = stream.next().await {
-                thunk.push_message(MemoizedFutureMessage::<StreamItem>::Output(item))
+                thunk.push_message(MemoizedFutureMessage::<StreamItem>::Output(item));
             }
         });
     });
