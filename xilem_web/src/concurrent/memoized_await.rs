@@ -21,7 +21,7 @@ pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 /// Await a stream returned by `init_stream` invoked with the argument `data`, `callback` is called with the items of the stream.
 /// `init_stream` will be invoked again, when `data` changes. Use [`memoized_stream`] for construction of this [`View`]
 pub struct MemoizedStream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
-    MemoizedFuture<State, Action, OA, InitStream, Data, Callback, F, StreamMessage<StreamItem>>,
+    MemoizedFuture<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
 );
 
 struct MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
@@ -104,7 +104,7 @@ fn init_future<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
 }
 
 fn init_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
-    m: &MemoizedFuture<State, Action, OA, InitStream, Data, Callback, F, StreamMessage<StreamItem>>,
+    m: &MemoizedFuture<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
     ctx: &mut ViewCtx,
     generation: u64,
 ) where
@@ -116,42 +116,11 @@ fn init_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
         let thunk = ctx.message_thunk();
         let mut stream = Box::pin((m.init_future)(&m.data));
         spawn_local(async move {
-            let msg = StreamMessage::<StreamItem>::started();
-            thunk.push_message(msg);
-
             while let Some(item) = stream.next().await {
-                let msg = StreamMessage::<StreamItem>::update(item);
-                thunk.push_message(msg);
+                thunk.push_message(MemoizedFutureMessage::<StreamItem>::Output(item))
             }
-
-            let msg = StreamMessage::<StreamItem>::finished();
-            thunk.push_message(msg);
         });
     });
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum StreamMessage<T> {
-    Started,
-    Update(T),
-    Finished,
-}
-
-impl<T> StreamMessage<T>
-where
-    T: fmt::Debug,
-{
-    const fn started() -> MemoizedFutureMessage<StreamMessage<T>> {
-        MemoizedFutureMessage::Output(Self::Started)
-    }
-
-    const fn update(payload: T) -> MemoizedFutureMessage<StreamMessage<T>> {
-        MemoizedFutureMessage::Output(Self::Update(payload))
-    }
-
-    const fn finished() -> MemoizedFutureMessage<StreamMessage<T>> {
-        MemoizedFutureMessage::Output(Self::Finished)
-    }
 }
 
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the resolved future. `init_future` will be invoked again, when `data` changes.
@@ -225,14 +194,10 @@ where
 ///                     }
 ///                 }
 ///             },
-///             |state: &mut Vec<usize>, msg: StreamMessage<usize>| match msg {
-///                 StreamMessage::Started => (),
-///                 StreamMessage::Update(item) => {
-///                     state.push(item);
-///                 },
-///                 StreamMessage::Finished => ()
-///             },
-///         ),
+///             |state: &mut Vec<usize>, item: usize| {
+///                 state.push(item);
+///             }
+///         )
 ///     )
 /// }
 /// ```
@@ -249,7 +214,7 @@ where
     F: Stream<Item = StreamItem> + 'static,
     InitStream: Fn(&Data) -> F + 'static,
     OA: OptionalAction<Action> + 'static,
-    Callback: Fn(&mut State, StreamMessage<StreamItem>) -> OA + 'static,
+    Callback: Fn(&mut State, StreamItem) -> OA + 'static,
 {
     MemoizedStream(MemoizedFuture {
         init_future,
@@ -379,7 +344,7 @@ where
     StreamItem: fmt::Debug + 'static,
     Data: PartialEq + 'static,
     F: Stream<Item = StreamItem> + 'static,
-    CB: Fn(&mut State, StreamMessage<StreamItem>) -> OA + 'static,
+    CB: Fn(&mut State, StreamItem) -> OA + 'static,
 {
     type Element = NoElement;
 
