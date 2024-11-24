@@ -258,8 +258,9 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
-        pub fn window_layout_rect(&self) -> Rect {
-            self.widget_state.window_layout_rect()
+        /// The axis aligned bounding box of this widget in window coordinates.
+        pub fn bbox(&self) -> Rect {
+            self.widget_state.bbox()
         }
 
         pub fn paint_rect(&self) -> Rect {
@@ -278,7 +279,7 @@ impl_context_method!(
         ///
         /// The returned point is relative to the content area; it excludes window chrome.
         pub fn to_window(&self, widget_point: Point) -> Point {
-            self.window_origin() + widget_point.to_vec2()
+            self.widget_state.window_transform * widget_point
         }
     }
 );

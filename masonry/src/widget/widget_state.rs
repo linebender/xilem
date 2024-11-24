@@ -259,17 +259,14 @@ impl WidgetState {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    /// The [`layout_rect`](crate::WidgetPod::layout_rect) in window coordinates.
-    ///
-    /// This might not map to a visible area of the screen, eg if the widget is scrolled
-    /// away.
-    pub fn window_layout_rect(&self) -> Rect {
-        Rect::from_origin_size(self.window_origin(), self.size)
+    /// The axis aligned bounding box of this widget in window coordinates.
+    pub fn bbox(&self) -> Rect {
+        self.bbox
     }
 
     /// Returns the area being edited by an IME, in global coordinates.
     ///
-    /// By default, returns the same as [`Self::window_layout_rect`].
+    /// By default, returns the same as [`Self::bbox`].
     pub(crate) fn get_ime_area(&self) -> Rect {
         self.window_transform
             .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size.to_rect()))

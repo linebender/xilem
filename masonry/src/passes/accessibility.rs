@@ -91,7 +91,7 @@ fn build_accessibility_tree(
 // --- MARK: BUILD NODE ---
 fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
     let mut node = Node::new(widget.accessibility_role());
-    node.set_bounds(to_accesskit_rect(ctx.widget_state.window_layout_rect()));
+    node.set_bounds(to_accesskit_rect(ctx.widget_state.bbox()));
 
     node.set_children(
         widget
