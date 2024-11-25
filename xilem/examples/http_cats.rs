@@ -18,7 +18,7 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, zstack, Axis,
-    FlexExt, FlexSpacer, Padding,
+    FlexExt, FlexSpacer, Padding, ZStackExt,
 };
 use xilem::{palette, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
@@ -210,9 +210,9 @@ impl Status {
                     .background(Color::BLACK.multiply_alpha(0.5)),
                 )
                 // HACK: Trailing padding workaround scrollbar covering content
-                .padding((30., 42., 0., 0.)),
-            ))
-            .alignment(Alignment::TopTrailing),
+                .padding((30., 42., 0., 0.))
+                .alignment(Alignment::TopTrailing),
+            )),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }

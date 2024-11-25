@@ -11,6 +11,13 @@ use tracing::trace_span;
 
 struct Child {
     widget: WidgetPod<Box<dyn Widget>>,
+    alignment: ChildAlignment,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ChildAlignment {
+    ParentAligned,
+    SelfAligned(Alignment),
 }
 
 /// A widget container that lays the child widgets on top of each other.
@@ -136,6 +143,22 @@ impl From<HorizontalAlignment> for Alignment {
     }
 }
 
+impl From<Alignment> for ChildAlignment {
+    fn from(value: Alignment) -> Self {
+        ChildAlignment::SelfAligned(value)
+    }
+}
+
+impl Child {
+    fn new(widget: WidgetPod<Box<dyn Widget>>, alignment: ChildAlignment) -> Self {
+        Self { widget, alignment }
+    }
+
+    fn update_alignment(&mut self, alignment: ChildAlignment) {
+        self.alignment = alignment;
+    }
+}
+
 // --- MARK: IMPL ZSTACK ---
 impl ZStack {
     /// Constructs a new empty `ZStack` widget.
@@ -151,16 +174,25 @@ impl ZStack {
 
     /// Appends a child widget to the `ZStack`.
     /// The child are placed back to front, in the order they are added.
-    pub fn with_child(self, child: impl Widget) -> Self {
-        self.with_child_pod(WidgetPod::new(Box::new(child)))
+    pub fn with_child(self, child: impl Widget, alignment: impl Into<ChildAlignment>) -> Self {
+        self.with_child_pod(WidgetPod::new(Box::new(child)), alignment)
     }
 
-    pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id))
+    pub fn with_child_id(
+        self,
+        child: impl Widget,
+        id: WidgetId,
+        alignment: impl Into<ChildAlignment>,
+    ) -> Self {
+        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), alignment)
     }
 
-    pub fn with_child_pod(mut self, child: WidgetPod<Box<dyn Widget>>) -> Self {
-        let child = Child { widget: child };
+    pub fn with_child_pod(
+        mut self,
+        child: WidgetPod<Box<dyn Widget>>,
+        alignment: impl Into<ChildAlignment>,
+    ) -> Self {
+        let child = Child::new(child, alignment.into());
         self.children.push(child);
         self
     }
@@ -172,19 +204,32 @@ impl ZStack {
     /// The child are placed back to front, in the order they are added.
     ///
     /// See also [`with_child`][Self::with_child].
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
+    pub fn add_child(
+        this: &mut WidgetMut<'_, Self>,
+        child: impl Widget,
+        alignment: impl Into<ChildAlignment>,
+    ) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
-        Self::insert_child_pod(this, child_pod);
+        Self::insert_child_pod(this, child_pod, alignment);
     }
 
-    pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
+    pub fn add_child_id(
+        this: &mut WidgetMut<'_, Self>,
+        child: impl Widget,
+        id: WidgetId,
+        alignment: impl Into<ChildAlignment>,
+    ) {
         let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new_with_id(Box::new(child), id);
-        Self::insert_child_pod(this, child_pod);
+        Self::insert_child_pod(this, child_pod, alignment);
     }
 
     /// Add a child widget to the `ZStack`.
-    pub fn insert_child_pod(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<Box<dyn Widget>>) {
-        let child = Child { widget };
+    pub fn insert_child_pod(
+        this: &mut WidgetMut<'_, Self>,
+        widget: WidgetPod<Box<dyn Widget>>,
+        alignment: impl Into<ChildAlignment>,
+    ) {
+        let child = Child::new(widget, alignment.into());
         this.widget.children.push(child);
         this.ctx.children_changed();
         this.ctx.request_layout();
@@ -209,6 +254,16 @@ impl ZStack {
     /// See also [`with_alignment`][Self::with_alignment].
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: impl Into<Alignment>) {
         this.widget.alignment = alignment.into();
+        this.ctx.request_layout();
+    }
+
+    pub fn update_child_alignment(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        alignment: impl Into<ChildAlignment>,
+    ) {
+        let child = &mut this.widget.children[idx];
+        child.update_alignment(alignment.into());
         this.ctx.request_layout();
     }
 }
@@ -236,7 +291,12 @@ impl Widget for ZStack {
 
             let center = Point::new(end.x / 2., end.y / 2.);
 
-            let origin = match self.alignment {
+            let child_alignment = match child.alignment {
+                ChildAlignment::SelfAligned(alignment) => alignment,
+                ChildAlignment::ParentAligned => self.alignment,
+            };
+
+            let origin = match child_alignment {
                 Alignment::TopLeading => Point::ZERO,
                 Alignment::Top => Point::new(center.x, 0.),
                 Alignment::TopTrailing => Point::new(end.x, 0.),
@@ -292,7 +352,7 @@ mod tests {
     use crate::widget::{Label, SizedBox};
 
     #[test]
-    fn zstack_alignments() {
+    fn zstack_alignments_parent_aligned() {
         let widget = ZStack::new()
             .with_child(
                 SizedBox::new(Label::new("Background"))
@@ -300,11 +360,13 @@ mod tests {
                     .height(100.)
                     .background(Color::BLUE)
                     .border(Color::TEAL, 2.),
+                ChildAlignment::ParentAligned,
             )
             .with_child(
                 SizedBox::new(Label::new("Foreground"))
                     .background(Color::RED)
                     .border(Color::PINK, 2.),
+                ChildAlignment::ParentAligned,
             );
 
         let mut harness = TestHarness::create(widget);
@@ -336,5 +398,19 @@ mod tests {
                 &format!("zstack_alignment_{}_{}", vertical.0, horizontal.0)
             );
         }
+    }
+
+    #[test]
+    fn zstack_alignments_self_aligned() {
+        let widget = ZStack::new()
+            .with_alignment(Alignment::Center)
+            .with_child(Label::new("ParentAligned"), ChildAlignment::ParentAligned)
+            .with_child(Label::new("TopLeading"), Alignment::TopLeading)
+            .with_child(Label::new("TopTrailing"), Alignment::TopTrailing)
+            .with_child(Label::new("BottomLeading"), Alignment::BottomLeading)
+            .with_child(Label::new("BottomTrailing"), Alignment::BottomTrailing);
+
+        let mut harness = TestHarness::create(widget);
+        assert_render_snapshot!(harness, "zstack_alignments_self_aligned");
     }
 }
