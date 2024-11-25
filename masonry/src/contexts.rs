@@ -258,9 +258,9 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
-        /// The axis aligned bounding box of this widget in window coordinates.
-        pub fn bbox(&self) -> Rect {
-            self.widget_state.bbox()
+        /// The axis aligned bounding rect of this widget in window coordinates.
+        pub fn bounding_rect(&self) -> Rect {
+            self.widget_state.bounding_rect()
         }
 
         pub fn paint_rect(&self) -> Rect {
@@ -951,7 +951,7 @@ impl LayoutCtx<'_> {
     ) -> Insets {
         self.assert_layout_done(child, "compute_insets_from_child");
         self.assert_placed(child, "compute_insets_from_child");
-        let parent_bounds = Rect::ZERO.with_size(my_size);
+        let parent_bounds = my_size.to_rect();
         let union_paint_rect = self
             .get_child_state(child)
             .paint_rect()

@@ -53,8 +53,8 @@ pub(crate) struct WidgetState {
     // TODO - Document
     // The computed paint rect, in local coordinates.
     pub(crate) local_paint_rect: Rect,
-    /// An axis aligned bounding box (AABB), containing itself and all its descendents.
-    pub(crate) bbox: Rect,
+    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents.
+    pub(crate) bounding_rect: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
     ///
     /// In general, this will be zero; the bottom of the widget will be considered
@@ -81,9 +81,9 @@ pub(crate) struct WidgetState {
     // efficiently hold an arbitrary shape.
     pub(crate) clip_path: Option<Rect>,
 
-    /// This is being computed out of the descendant transforms and `translation`
+    // TODO is it worth to compute/cache the inverse as well (or does it just take valuable memory)?
+    /// This is being computed out of all ancestor transforms and `translation`
     pub(crate) window_transform: Affine,
-    // TODO - Handle matrix transforms correctly
     pub(crate) translation: Vec2,
     pub(crate) transform_changed: bool,
 
@@ -197,7 +197,7 @@ impl WidgetState {
             #[cfg(debug_assertions)]
             widget_name,
             window_transform: Affine::IDENTITY,
-            bbox: Rect::ZERO,
+            bounding_rect: Rect::ZERO,
         }
     }
 
@@ -259,14 +259,14 @@ impl WidgetState {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    /// The axis aligned bounding box of this widget in window coordinates.
-    pub fn bbox(&self) -> Rect {
-        self.bbox
+    /// The axis aligned bounding rect of this widget in window coordinates.
+    pub fn bounding_rect(&self) -> Rect {
+        self.bounding_rect
     }
 
     /// Returns the area being edited by an IME, in global coordinates.
     ///
-    /// By default, returns the same as [`Self::bbox`].
+    /// By default, returns the same as [`Self::bounding_rect`].
     pub(crate) fn get_ime_area(&self) -> Rect {
         self.window_transform
             .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size.to_rect()))

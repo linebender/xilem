@@ -333,7 +333,7 @@ pub(crate) fn find_widget_at_pos<'c>(
     widget: &WidgetRef<'c, dyn Widget>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
-    if widget.ctx.widget_state.bbox.contains(pos) {
+    if widget.ctx.widget_state.bounding_rect.contains(pos) {
         let local_pos = widget.ctx().widget_state.window_transform.inverse() * pos;
 
         if Some(false) == widget.ctx.clip_path().map(|clip| clip.contains(local_pos)) {

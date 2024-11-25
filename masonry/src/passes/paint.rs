@@ -63,7 +63,7 @@ fn paint_widget(
     complete_scene.append(scene, Some(transform));
 
     let id = state.item.id;
-    let bbox = state.item.bbox;
+    let bounding_rect = state.item.bounding_rect;
     let parent_state = state.item;
     recurse_on_children(
         id,
@@ -94,7 +94,7 @@ fn paint_widget(
     if debug_paint {
         const BORDER_WIDTH: f64 = 1.0;
         let color = get_debug_color(id.to_raw());
-        let rect = bbox.inset(BORDER_WIDTH / -2.0);
+        let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
         stroke(complete_scene, &rect, color, BORDER_WIDTH);
     }
 

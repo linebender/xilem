@@ -468,7 +468,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
         let (fctx, lctx) = ctx.text_contexts();
         let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
-        let padding = Point::new(self.padding.get_left(is_rtl), self.padding.top);
+        let padding = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
         match event {
             PointerEvent::PointerDown(button, _) => {
                 if !ctx.is_disabled() && *button == PointerButton::Primary {
