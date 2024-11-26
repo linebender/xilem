@@ -6,8 +6,8 @@ use vello::kurbo::Vec2;
 
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
-use crate::tree_arena::ArenaMut;
 use crate::{ComposeCtx, Widget, WidgetState};
+use tree_arena::ArenaMut;
 
 // --- MARK: RECURSE ---
 fn compose_widget(

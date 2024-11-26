@@ -39,6 +39,7 @@ vello.workspace = true
 wgpu.workspace = true
 parley.workspace = true
 winit.workspace = true
+tree_arena.workspace = true
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 image.workspace = true

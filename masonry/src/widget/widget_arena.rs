@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::tree_arena::{ArenaMut, ArenaRef, TreeArena};
 use crate::{Widget, WidgetId, WidgetState};
+use tree_arena::{ArenaMut, ArenaRef, TreeArena};
 
 pub(crate) struct WidgetArena {
     pub(crate) widgets: TreeArena<Box<dyn Widget>>,

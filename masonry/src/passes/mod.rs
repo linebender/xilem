@@ -4,9 +4,9 @@
 use tracing::span::EnteredSpan;
 
 use crate::render_root::RenderRootState;
-use crate::tree_arena::{ArenaMut, ArenaMutChildren, ArenaRef};
 use crate::widget::WidgetArena;
 use crate::{QueryCtx, Widget, WidgetId, WidgetState};
+use tree_arena::{ArenaMut, ArenaMutChildren, ArenaRef};
 
 pub(crate) mod accessibility;
 pub(crate) mod anim;

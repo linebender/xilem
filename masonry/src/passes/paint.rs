@@ -11,8 +11,8 @@ use vello::Scene;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
-use crate::tree_arena::ArenaMut;
 use crate::{PaintCtx, Widget, WidgetId, WidgetState};
+use tree_arena::ArenaMut;
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(

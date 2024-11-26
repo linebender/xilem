@@ -1978,6 +1978,7 @@ dependencies = [
  "tracing-subscriber",
  "tracing-tracy",
  "tracing_android_trace",
+ "tree_arena",
  "vello",
  "web-time",
  "wgpu",
@@ -3722,6 +3723,10 @@ dependencies = [
  "cc",
  "windows-targets 0.52.6",
 ]
+
+[[package]]
+name = "tree_arena"
+version = "0.1.0"
 
 [[package]]
 name = "try-lock"

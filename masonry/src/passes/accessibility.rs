@@ -7,8 +7,8 @@ use vello::kurbo::Rect;
 
 use crate::passes::recurse_on_children;
 use crate::render_root::{RenderRoot, RenderRootState};
-use crate::tree_arena::ArenaMut;
 use crate::{AccessCtx, Widget, WidgetState};
+use tree_arena::ArenaMut;
 
 use super::enter_span_if;
 

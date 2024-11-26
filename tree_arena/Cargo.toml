@@ -1,0 +1,20 @@
+[package]
+name = "tree_arena"
+version = "0.1.0"
+description = "An arena allocated tree designed for Linebender"
+keywords = ["arena", "tree"]
+categories = ["gui"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+
+[features]
+default = ["safe_tree"]
+safe_tree = []
+
+[lints]
+workspace = true

@@ -18,9 +18,9 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
-use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use tree_arena::{ArenaMutChildren, ArenaRefChildren};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
