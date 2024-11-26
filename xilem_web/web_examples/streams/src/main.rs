@@ -27,7 +27,7 @@ fn app_logic(state: &mut AppState) -> impl Element<AppState> {
     log::debug!("Run app logic");
 
     let search_stream = memoized_stream(
-        (state.search_term.clone(), state.db.clone()),
+        state.search_term.clone(),
         create_search_stream,
         handle_stream_message,
     )
@@ -65,12 +65,13 @@ fn on_search_input_keyup(state: &mut AppState, ev: web_sys::KeyboardEvent) {
 }
 
 fn create_search_stream(
-    (term, conn): &(String, MockConnection),
+    state: &mut AppState,
+    term: &String,
 ) -> Pin<Box<dyn Stream<Item = StreamMessage>>> {
     if term.is_empty() {
         Box::pin(stream::empty())
     } else {
-        Box::pin(conn.search(term.clone()))
+        Box::pin(state.db.search(term.to_owned()))
     }
 }
 

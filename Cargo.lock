@@ -1046,6 +1046,7 @@ dependencies = [
  "console_error_panic_hook",
  "console_log",
  "gloo-net",
+ "gloo-timers",
  "log",
  "serde",
  "wasm-bindgen",

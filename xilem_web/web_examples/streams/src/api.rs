@@ -18,7 +18,7 @@ pub(crate) enum StreamMessage {
     Finished,
 }
 
-#[derive(Debug, Default, PartialEq, Clone)]
+#[derive(Default)]
 pub(crate) struct MockConnection;
 
 impl MockConnection {
