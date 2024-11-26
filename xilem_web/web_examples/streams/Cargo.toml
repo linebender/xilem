@@ -1,0 +1,23 @@
+[package]
+name = "streams"
+version = "0.1.0"
+publish = false
+license.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1.0.93"
+async-stream = "0.3.6"
+console_error_panic_hook = "0.1"
+console_log = "1"
+futures = "0.3.31"
+getrandom = { version = "0.2.15", features = ["js"] }
+gloo-timers = { version = "0.3.0", features = ["futures"] }
+log = "0.4"
+rand = { version = "0.8.5", features = ["small_rng"] }
+web-sys = { version = "0.3.72", features = ["KeyboardEvent"] }
+xilem_web = { path = "../.." }
