@@ -328,16 +328,21 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
     /// O(depth) and the limiting factor for find methods
     /// not from the root
     fn is_descendant(&self, id: NodeId) -> bool {
-        // the id of the parent
-        let parent_id = self.id;
+        if self.parent_arena.items.contains_key(&id) {
+            // the id of the parent
+            let parent_id = self.id;
 
-        // The arena is derived from the root, and the id is in the tree
-        if parent_id.is_none() && self.parent_arena.items.contains_key(&id) {
-            return true;
+            // The arena is derived from the root, and the id is in the tree
+            if parent_id.is_none() {
+                return true;
+            }
+
+            // iff the path is empty, there is no path from id to self
+            !self.parent_arena.get_id_path(id, parent_id).is_empty()
+        } else {
+            // if the id is not in the tree, it is not a descendant
+            false
         }
-
-        // if the path is empty, there is no path from id to self
-        !self.parent_arena.get_id_path(id, parent_id).is_empty()
     }
 
     /// returns true if there is a child with the given id
