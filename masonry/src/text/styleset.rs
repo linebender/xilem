@@ -15,6 +15,10 @@ impl<Brush: parley::Brush> StyleSet<Brush> {
     pub fn new(font_size: f32) -> Self {
         let mut this = Self(Default::default());
         this.insert(StyleProperty::FontSize(font_size));
+        // Emulate: https://developer.mozilla.org/en-US/docs/Web/CSS/line-height#normal
+        // This is a more sensible default that Parley's default.
+        // We expect Parley to make a different choice here at some point?
+        this.insert(StyleProperty::LineHeight(1.2));
         this
     }
 
