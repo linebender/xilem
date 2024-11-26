@@ -53,22 +53,20 @@ fn run_targeted_update_pass(
 
 fn run_single_update_pass(
     root: &mut RenderRoot,
-    target: Option<WidgetId>,
+    target: WidgetId,
     mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx),
 ) {
-    if let Some(widget_id) = target {
-        let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
+    let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(target);
 
-        let mut ctx = UpdateCtx {
-            global_state: &mut root.global_state,
-            widget_state: state_mut.item,
-            widget_state_children: state_mut.children,
-            widget_children: widget_mut.children,
-        };
-        pass_fn(widget_mut.item, &mut ctx);
-    }
+    let mut ctx = UpdateCtx {
+        global_state: &mut root.global_state,
+        widget_state: state_mut.item,
+        widget_state_children: state_mut.children,
+        widget_children: widget_mut.children,
+    };
+    pass_fn(widget_mut.item, &mut ctx);
 
-    let mut current_id = target;
+    let mut current_id = Some(target);
     while let Some(widget_id) = current_id {
         merge_state_up(&mut root.widget_arena, widget_id);
         current_id = root.widget_arena.parent_of(widget_id);
@@ -471,16 +469,23 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 
         // We send FocusChange event to widget that lost and the widget that gained focus.
         // We also request accessibility, because build_access_node() depends on the focus state.
-        run_single_update_pass(root, prev_focused, |widget, ctx| {
-            widget.update(ctx, &Update::FocusChanged(false));
-            ctx.widget_state.request_accessibility = true;
-            ctx.widget_state.needs_accessibility = true;
-        });
-        run_single_update_pass(root, next_focused, |widget, ctx| {
-            widget.update(ctx, &Update::FocusChanged(true));
-            ctx.widget_state.request_accessibility = true;
-            ctx.widget_state.needs_accessibility = true;
-        });
+        if let Some(prev_focused) = prev_focused {
+            if root.widget_arena.has(prev_focused) {
+                run_single_update_pass(root, prev_focused, |widget, ctx| {
+                    widget.update(ctx, &Update::FocusChanged(false));
+                    ctx.widget_state.request_accessibility = true;
+                    ctx.widget_state.needs_accessibility = true;
+                });
+            }
+        }
+        if let Some(next_focused) = next_focused {
+            // We know that this widget definitely exists because of the `is_still_interactive` check above.
+            run_single_update_pass(root, next_focused, |widget, ctx| {
+                widget.update(ctx, &Update::FocusChanged(true));
+                ctx.widget_state.request_accessibility = true;
+                ctx.widget_state.needs_accessibility = true;
+            });
+        }
 
         if prev_focused.is_some() && was_ime_active {
             root.global_state.emit_signal(RenderRootSignal::EndIme);
