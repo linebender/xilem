@@ -9,6 +9,7 @@ use accesskit::TreeUpdate;
 use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
+use tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use vello::kurbo::Vec2;
 use vello::peniko::Color;
 use winit::window::ResizeDirection;
@@ -20,7 +21,6 @@ use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
-use tree_arena::{ArenaMutChildren, ArenaRefChildren};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)

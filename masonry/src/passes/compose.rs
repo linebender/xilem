@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::info_span;
+use tree_arena::ArenaMut;
 use vello::kurbo::Vec2;
 
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::{ComposeCtx, Widget, WidgetState};
-use tree_arena::ArenaMut;
 
 // --- MARK: RECURSE ---
 fn compose_widget(
