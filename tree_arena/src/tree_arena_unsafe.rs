@@ -64,22 +64,6 @@ pub struct ArenaRefChildren<'arena, T> {
     child_arr: &'arena [NodeId],
 }
 
-impl<Item> Clone for ArenaRef<'_, Item> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<Item> Copy for ArenaRef<'_, Item> {}
-
-impl<T> Clone for ArenaRefChildren<'_, T> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<Item> Copy for ArenaRefChildren<'_, Item> {}
-
 /// A reference type giving mutable access to an arena item and its children.
 ///
 /// When you borrow an item from a [`TreeArena`], it returns an `ArenaMut`.
@@ -119,6 +103,22 @@ pub struct ArenaMutChildren<'arena, T> {
     /// Array of children
     child_arr: &'arena mut Vec<NodeId>,
 }
+
+impl<Item> Clone for ArenaRef<'_, Item> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<Item> Copy for ArenaRef<'_, Item> {}
+
+impl<T> Clone for ArenaRefChildren<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<Item> Copy for ArenaRefChildren<'_, Item> {}
 
 impl<T> DataMap<T> {
     fn new() -> Self {
@@ -387,7 +387,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
     ///
     /// ## Complexity
     ///
-    /// O(Depth). In future implementations, this will be O(1).
+    /// O(Depth). except access from root which is O(1).
     pub fn find(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         // the id to search for
         let id: NodeId = id.into();
@@ -588,7 +588,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     ///
     /// ## Complexity
     ///
-    /// O(Depth). In future implementations, this will be O(1).
+    /// O(Depth). except access from root which is O(1).
     pub fn find(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         if self.is_descendant(id) {
@@ -604,7 +604,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     ///
     /// ## Complexity
     ///
-    /// O(Depth). In future implementations, this will be O(1).
+    /// O(Depth). except access from root which is O(1).
     pub fn find_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
         if self.is_descendant(id) {
