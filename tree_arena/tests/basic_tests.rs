@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::mem;
+
 use tree_arena::*;
 
 #[test]
@@ -79,26 +81,55 @@ fn parent_child_items() {
     assert_eq!(*node_2_item, 'd', "Node 2 item should be 'd'");
 }
 
+// test creating trees-
+// --1(a)--2(b)
+//   |
+//   3(c)--4(d)
+//
+// and
+//
+// --4(e)--3(f)
+//   |
+//   2(g)--1(h)
+//
+// and swapping references to the children of 1(a) and 4(e)
 #[test]
 fn mem_swap() {
-    let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
-    roots.insert_child(1_u64, 'a');
-    let mut node_1 = roots.get_child_mut(1_u64).expect("No child 1 found");
-    node_1.children.insert_child(2_u64, 'b');
-    let node_1_item = node_1.item;
-    let node_2 = node_1
+    let mut tree_a: TreeArena<char> = TreeArena::new();
+    let mut roots_a = tree_a.root_token_mut();
+    roots_a.insert_child(1_u64, 'a');
+    let mut node_1_a = roots_a.get_child_mut(1_u64).expect("No child 1 found");
+    node_1_a.children.insert_child(2_u64, 'b');
+    node_1_a.children.insert_child(3_u64, 'c');
+    let mut node_3_a = node_1_a
+        .children
+        .get_child_mut(3_u64)
+        .expect("No child 3 found");
+
+    node_3_a.children.insert_child(4_u64, 'd');
+
+    let mut tree_b: TreeArena<char> = TreeArena::new();
+    let mut roots_b = tree_b.root_token_mut();
+    roots_b.insert_child(4_u64, 'e');
+    let mut node_4_b = roots_b.get_child_mut(4_u64).expect("No child 4 found");
+    node_4_b.children.insert_child(3_u64, 'f');
+    node_4_b.children.insert_child(2_u64, 'g');
+    let mut node_2_b = node_4_b
         .children
         .get_child_mut(2_u64)
         .expect("No child 2 found");
-    let node_2_item = node_2.item;
-    *node_1_item = 'c';
-    *node_2_item = 'd';
-    #[expect(
-        clippy::drop_non_drop,
-        reason = "Drop glue may be added for future trees, and may differ between safe and unsafe versions"
-    )]
-    drop(node_2.children);
-    assert_eq!(*node_1_item, 'c', "Node 1 item should be 'c'");
-    assert_eq!(*node_2_item, 'd', "Node 2 item should be 'd'");
+    node_2_b.children.insert_child(1_u64, 'h');
+
+    mem::swap(&mut node_1_a.children, &mut node_4_b.children);
+
+    // node 1 from tree a now believes it is node 4 from tree b
+    assert_eq!(node_1_a.id(), 4_u64, "Node 1 id should be 4");
+    // however it still contains the item from tree a
+    assert_eq!(*node_1_a.item, 'a', "Node 1 item should be 'a'");
+    // and we can access the nodes in tree b, that node 4 was able to
+    assert_eq!(
+        *node_1_a.children.get_child(2_u64).unwrap().item,
+        'g',
+        "Node 2 item in tree b should be g"
+    );
 }
