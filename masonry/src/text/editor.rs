@@ -21,14 +21,6 @@ use std::{borrow::ToOwned, string::String, vec::Vec};
 
 use super::styleset::StyleSet;
 
-#[derive(Copy, Clone, Debug)]
-pub enum ActiveText<'a> {
-    /// The selection is empty and the cursor is a caret; this is the text of the cluster it is on.
-    FocusedCluster(Affinity, &'a str),
-    /// The selection contains this text.
-    Selection(&'a str),
-}
-
 /// Opaque representation of a generation.
 ///
 /// Obtained from [`PlainEditor::generation`].
@@ -572,19 +564,13 @@ where
         self.selection = new_sel;
     }
 
-    /// Get either the contents of the current selection, or the text of the cluster at the caret.
-    pub fn active_text(&self) -> ActiveText {
-        if self.selection.is_collapsed() {
-            // let range = self
-            //     .selection
-            //     .focus()
-            //     .cluster_path()
-            //     .cluster(&self.layout)
-            //     .map(|c| c.text_range())
-            //     .unwrap_or_default();
-            ActiveText::FocusedCluster(self.selection.focus().affinity(), "")
+    /// If the current selection is not collapsed, returns the text content of
+    /// that selection.
+    pub fn selected_text(&self) -> Option<&str> {
+        if !self.selection.is_collapsed() {
+            self.text().get(self.selection.text_range())
         } else {
-            ActiveText::Selection(&self.buffer[self.selection.text_range()])
+            None
         }
     }
 

@@ -1081,7 +1081,7 @@ dependencies = [
 [[package]]
 name = "fontique"
 version = "0.2.0"
-source = "git+https://github.com/linebender/parley?rev=a591d58aa1c5197421688c0f437fa30056756ded#a591d58aa1c5197421688c0f437fa30056756ded"
+source = "git+https://github.com/linebender/parley?rev=157878a165a0ac40c1961c009cb7382f32085301#157878a165a0ac40c1961c009cb7382f32085301"
 dependencies = [
  "core-foundation",
  "core-text",
@@ -2509,7 +2509,7 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.2.0"
-source = "git+https://github.com/linebender/parley?rev=a591d58aa1c5197421688c0f437fa30056756ded#a591d58aa1c5197421688c0f437fa30056756ded"
+source = "git+https://github.com/linebender/parley?rev=157878a165a0ac40c1961c009cb7382f32085301#157878a165a0ac40c1961c009cb7382f32085301"
 dependencies = [
  "accesskit",
  "fontique",

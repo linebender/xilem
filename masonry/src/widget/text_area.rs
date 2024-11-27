@@ -535,7 +535,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     {
                         edited = true;
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
-                        // if let crate::text::ActiveText::Selection(_) = self.editor.active_text() {
+                        // if let Some(text) = self.editor.selected_text() {
                         //     let cb = ClipboardContext::new().unwrap();
                         //     cb.set_text(text.to_owned()).ok();
                         //     self.editor.transact(fcx, lcx, |txn| txn.delete_selection());
@@ -546,7 +546,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
                     Key::Character(c) if action_mod && c.as_str().eq_ignore_ascii_case("c") => {
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
-                        // if let crate::text::ActiveText::Selection(_) = self.editor.active_text() {
+                        // if let Some(text) = self.editor.selected_text() {
                         //     let cb = ClipboardContext::new().unwrap();
                         //     cb.set_text(text.to_owned()).ok();
                         // }
