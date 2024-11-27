@@ -136,12 +136,8 @@ where
                 .map(|cluster| cluster.text_range())
                 .and_then(|range| (!range.is_empty()).then_some(range))
             {
-                let start = range.start;
                 self.editor.buffer.replace_range(range, "");
                 self.update_layout();
-                self.editor.set_selection(
-                    Cursor::from_byte_index(&self.editor.layout, start, Affinity::Upstream).into(),
-                );
             }
         } else {
             self.delete_selection();
@@ -180,9 +176,7 @@ where
             {
                 let range = cluster.text_range();
                 let end = range.end;
-                let start = if cluster.is_hard_line_break()
-                /* || cluster.info().is_emoji() */
-                {
+                let start = if cluster.is_hard_line_break() || cluster.is_emoji() {
                     // For newline sequences and emoji, delete the previous cluster
                     range.start
                 } else {
@@ -429,11 +423,8 @@ where
     /// Select the physical line at the point.
     pub fn select_line_at_point(&mut self, x: f32, y: f32) {
         self.refresh_layout();
-        let focus = Selection::from_point(&self.editor.layout, x, y)
-            .line_start(&self.editor.layout, true)
-            .focus();
-        self.editor
-            .set_selection(Selection::from(focus).line_end(&self.editor.layout, true));
+        let line = Selection::line_from_point(&self.editor.layout, x, y);
+        self.editor.set_selection(line);
     }
 
     /// Move the selection focus point to the cluster boundary closest to point.
