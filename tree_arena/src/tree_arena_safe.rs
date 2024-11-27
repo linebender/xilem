@@ -45,9 +45,9 @@ pub struct TreeArena<T> {
 pub struct ArenaRef<'arena, T> {
     /// The parent of this node
     pub parent_id: Option<NodeId>,
-    /// The item in the node
+    /// The payload of the node
     pub item: &'arena T,
-    /// The children of the node
+    /// Reference to the children of the node
     pub children: ArenaRefChildren<'arena, T>,
 }
 
@@ -67,9 +67,9 @@ pub struct ArenaRef<'arena, T> {
 pub struct ArenaMut<'arena, T> {
     /// The parent of the node
     pub parent_id: Option<NodeId>,
-    /// The itemn in the node
+    /// The payload of the node
     pub item: &'arena mut T,
-    /// The children of the node
+    /// Reference to the children of the node
     pub children: ArenaMutChildren<'arena, T>,
 }
 
