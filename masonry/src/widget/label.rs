@@ -187,7 +187,10 @@ impl Label {
 
     /// Shared logic between `with_style` and `insert_style`
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
-        if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
+        if let StyleProperty::Brush(idx @ BrushIndex(1..))
+        | StyleProperty::UnderlineBrush(Some(idx @ BrushIndex(1..)))
+        | StyleProperty::StrikethroughBrush(Some(idx @ BrushIndex(1..))) = &property
+        {
             debug_panic!(
                 "Can't set a non-zero brush index ({idx:?}) on a `Label`, as it only supports global styling."
             );
@@ -443,7 +446,7 @@ impl Widget for Label {
 mod tests {
     use insta::assert_debug_snapshot;
     use parley::style::GenericFamily;
-    use parley::FontFamily;
+    use parley::{FontFamily, StyleProperty};
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -473,6 +476,28 @@ mod tests {
         let mut harness = TestHarness::create_with_size(label, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "styled_label");
+    }
+
+    #[test]
+    fn underline_label() {
+        let label = Label::new("Emphasis")
+            .with_line_break_mode(LineBreaking::WordWrap)
+            .with_style(StyleProperty::Underline(true));
+
+        let mut harness = TestHarness::create_with_size(label, Size::new(100.0, 20.));
+
+        assert_render_snapshot!(harness, "underline_label");
+    }
+    #[test]
+    fn strikethrough_label() {
+        let label = Label::new("Tpyo")
+            .with_line_break_mode(LineBreaking::WordWrap)
+            .with_style(StyleProperty::Strikethrough(true))
+            .with_style(StyleProperty::StrikethroughSize(Some(4.)));
+
+        let mut harness = TestHarness::create_with_size(label, Size::new(100.0, 20.));
+
+        assert_render_snapshot!(harness, "strikethrough_label");
     }
 
     #[test]

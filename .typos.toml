@@ -17,7 +17,8 @@ extend-ignore-re = [
 # is treated as always incorrect.
 
 [default.extend-identifiers]
-wdth = "wdth"           # Variable font parameter
+wdth = "wdth" # Variable font parameter
+Tpyo = "Tpyo" # Intentional typo for a strikethrough test
 
 # Case insensitive
 [default.extend-words]
