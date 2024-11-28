@@ -1,6 +1,14 @@
 # Tree Arena
 
-This crate contains two implementations of a tree for use in masonry, one safe and the other unsafe. The safe tree is known to work, and serves a s the baseline implementation and is used by default. The unsafe tree leverages a hashmap as an arena and is designed for higher performance: it leverages unsafe code to achieve this. The unsafe tree is not yet fully tested, and is not used by default.
+This crate contains two implementations of a tree for use in masonry, one safe and the other unsafe. The safe tree is known to work, and serves as the baseline implementation and is used by default. The unsafe tree leverages a hashmap as an arena and is designed for higher performance: it leverages unsafe code to achieve this. The unsafe tree is not yet fully tested, and is not used by default.
+
+The safe tree is the priority. This means:
+
+* The safe version may have features / APIs that the unsafe version doesn't yet have.
+
+* If both versions are at feature parity, Masonry can switch on the unsafe version for best performance.
+
+* Otherwise, Masonry uses the safe version.
 
 ## Architecture
 
