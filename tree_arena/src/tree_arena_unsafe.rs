@@ -196,7 +196,6 @@ impl<T> DataMap<T> {
     ///
     /// If there is no path from `start_id` to id, returns the empty vector.
     fn get_id_path(&self, id: NodeId, start_id: Option<NodeId>) -> Vec<NodeId> {
-        let id: NodeId = id.into();
         let mut path = Vec::new();
 
         if !self.parents.contains_key(&id) {
