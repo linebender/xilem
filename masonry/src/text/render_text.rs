@@ -76,7 +76,7 @@ pub fn render_text(
                 // The `offset` is the distance from the baseline to the *top* of the underline
                 // so we move the line down by half the width
                 // Remember that we are using a y-down coordinate system
-                let y = glyph_run.baseline() - offset + width / 2.;
+                let y = glyph_run.baseline() - offset;
 
                 let line = Line::new(
                     (glyph_run.offset() as f64, y as f64),
@@ -104,7 +104,7 @@ pub fn render_text(
                 // The `offset` is the distance from the baseline to the *top* of the strikethrough
                 // so we move the line down by half the width
                 // Remember that we are using a y-down coordinate system
-                let y = glyph_run.baseline() - offset + width / 2.;
+                let y = glyph_run.baseline() - offset;
 
                 let line = Line::new(
                     (glyph_run.offset() as f64, y as f64),
