@@ -19,7 +19,7 @@ fn build_accessibility_tree(
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     rebuild_all: bool,
-    scale_factor: f64,
+    scale_factor: Option<f64>,
 ) {
     let _span = enter_span_if(
         global_state.trace.access,
@@ -49,10 +49,12 @@ fn build_accessibility_tree(
             widget_children: widget.children.reborrow_mut(),
             tree_update,
             rebuild_all,
-            scale_factor,
         };
         let mut node = build_access_node(widget.item, &mut ctx);
         widget.item.accessibility(&mut ctx, &mut node);
+        if let Some(scale_factor) = scale_factor {
+            node.set_transform(accesskit::Affine::scale(scale_factor));
+        }
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {
@@ -79,7 +81,7 @@ fn build_accessibility_tree(
                 widget,
                 state.reborrow_mut(),
                 rebuild_all,
-                scale_factor,
+                None,
             );
             parent_state.merge_up(state.item);
         },
@@ -168,7 +170,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         root_widget,
         root_state,
         root.rebuild_access_tree,
-        scale_factor,
+        Some(scale_factor),
     );
     root.rebuild_access_tree = false;
 

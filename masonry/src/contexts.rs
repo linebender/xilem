@@ -132,7 +132,6 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) rebuild_all: bool,
-    pub(crate) scale_factor: f64,
 }
 
 // --- MARK: GETTERS ---
@@ -1265,7 +1264,6 @@ impl<'s> AccessCtx<'s> {
             global_state: self.global_state,
             tree_update: self.tree_update,
             rebuild_all: self.rebuild_all,
-            scale_factor: self.scale_factor,
         };
         RawWrapper {
             ctx: child_ctx,
