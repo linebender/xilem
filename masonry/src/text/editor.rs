@@ -110,17 +110,23 @@ where
     // --- MARK: Forced relayout ---
     /// Insert at cursor, or replace selection.
     pub fn insert_or_replace_selection(&mut self, s: &str) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .replace_selection(self.font_cx, self.layout_cx, s);
     }
 
     /// Delete the selection.
     pub fn delete_selection(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.insert_or_replace_selection("");
     }
 
     /// Delete the selection or the next cluster (typical ‘delete’ behavior).
     pub fn delete(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         if self.editor.selection.is_collapsed() {
             // Upstream cluster range
             if let Some(range) = self
@@ -142,6 +148,8 @@ where
 
     /// Delete the selection or up to the next word boundary (typical ‘ctrl + delete’ behavior).
     pub fn delete_word(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         if self.editor.selection.is_collapsed() {
             let focus = self.editor.selection.focus();
             let start = focus.index();
@@ -161,6 +169,8 @@ where
 
     /// Delete the selection or the previous cluster (typical ‘backspace’ behavior).
     pub fn backdelete(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         if self.editor.selection.is_collapsed() {
             // Upstream cluster
             if let Some(cluster) = self
@@ -201,6 +211,8 @@ where
 
     /// Delete the selection or back to the previous word boundary (typical ‘ctrl + backspace’ behavior).
     pub fn backdelete_word(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         if self.editor.selection.is_collapsed() {
             let focus = self.editor.selection.focus();
             let end = focus.index();
@@ -285,6 +297,8 @@ where
     // --- MARK: Cursor Movement ---
     /// Move the cursor to the cluster boundary nearest this point in the layout.
     pub fn move_to_point(&mut self, x: f32, y: f32) {
+        debug_assert!(!self.editor.is_composing());
+
         self.refresh_layout();
         self.editor
             .set_selection(Selection::from_point(&self.editor.layout, x, y));
@@ -294,6 +308,8 @@ where
     ///
     /// No-op if index is not a char boundary.
     pub fn move_to_byte(&mut self, index: usize) {
+        debug_assert!(!self.editor.is_composing());
+
         if self.editor.buffer.is_char_boundary(index) {
             self.refresh_layout();
             self.editor
@@ -303,6 +319,8 @@ where
 
     /// Move the cursor to the start of the buffer.
     pub fn move_to_text_start(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(self.editor.selection.move_lines(
             &self.editor.layout,
             isize::MIN,
@@ -312,12 +330,16 @@ where
 
     /// Move the cursor to the start of the physical line.
     pub fn move_to_line_start(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .set_selection(self.editor.selection.line_start(&self.editor.layout, false));
     }
 
     /// Move the cursor to the end of the buffer.
     pub fn move_to_text_end(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(self.editor.selection.move_lines(
             &self.editor.layout,
             isize::MAX,
@@ -327,12 +349,16 @@ where
 
     /// Move the cursor to the end of the physical line.
     pub fn move_to_line_end(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .set_selection(self.editor.selection.line_end(&self.editor.layout, false));
     }
 
     /// Move up to the closest physical cluster boundary on the previous line, preserving the horizontal position for repeated movements.
     pub fn move_up(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -342,12 +368,16 @@ where
 
     /// Move down to the closest physical cluster boundary on the next line, preserving the horizontal position for repeated movements.
     pub fn move_down(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .set_selection(self.editor.selection.next_line(&self.editor.layout, false));
     }
 
     /// Move to the next cluster left in visual order.
     pub fn move_left(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -357,6 +387,8 @@ where
 
     /// Move to the next cluster right in visual order.
     pub fn move_right(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -366,6 +398,8 @@ where
 
     /// Move to the next word boundary left.
     pub fn move_word_left(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -375,6 +409,8 @@ where
 
     /// Move to the next word boundary right.
     pub fn move_word_right(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -384,6 +420,8 @@ where
 
     /// Select the whole buffer.
     pub fn select_all(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             Selection::from_byte_index(&self.editor.layout, 0_usize, Affinity::default())
                 .move_lines(&self.editor.layout, isize::MAX, true),
@@ -392,11 +430,15 @@ where
 
     /// Collapse selection into caret.
     pub fn collapse_selection(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(self.editor.selection.collapse());
     }
 
     /// Move the selection focus point to the start of the buffer.
     pub fn select_to_text_start(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(self.editor.selection.move_lines(
             &self.editor.layout,
             isize::MIN,
@@ -406,12 +448,16 @@ where
 
     /// Move the selection focus point to the start of the physical line.
     pub fn select_to_line_start(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .set_selection(self.editor.selection.line_start(&self.editor.layout, true));
     }
 
     /// Move the selection focus point to the end of the buffer.
     pub fn select_to_text_end(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(self.editor.selection.move_lines(
             &self.editor.layout,
             isize::MAX,
@@ -421,12 +467,16 @@ where
 
     /// Move the selection focus point to the end of the physical line.
     pub fn select_to_line_end(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .set_selection(self.editor.selection.line_end(&self.editor.layout, true));
     }
 
     /// Move the selection focus point up to the nearest cluster boundary on the previous line, preserving the horizontal position for repeated movements.
     pub fn select_up(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -436,12 +486,16 @@ where
 
     /// Move the selection focus point down to the nearest cluster boundary on the next line, preserving the horizontal position for repeated movements.
     pub fn select_down(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .set_selection(self.editor.selection.next_line(&self.editor.layout, true));
     }
 
     /// Move the selection focus point to the next cluster left in visual order.
     pub fn select_left(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -451,12 +505,16 @@ where
 
     /// Move the selection focus point to the next cluster right in visual order.
     pub fn select_right(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor
             .set_selection(self.editor.selection.next_visual(&self.editor.layout, true));
     }
 
     /// Move the selection focus point to the next word boundary left.
     pub fn select_word_left(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -466,6 +524,8 @@ where
 
     /// Move the selection focus point to the next word boundary right.
     pub fn select_word_right(&mut self) {
+        debug_assert!(!self.editor.is_composing());
+
         self.editor.set_selection(
             self.editor
                 .selection
@@ -475,6 +535,8 @@ where
 
     /// Select the word at the point.
     pub fn select_word_at_point(&mut self, x: f32, y: f32) {
+        debug_assert!(!self.editor.is_composing());
+
         self.refresh_layout();
         self.editor
             .set_selection(Selection::word_from_point(&self.editor.layout, x, y));
@@ -482,6 +544,8 @@ where
 
     /// Select the physical line at the point.
     pub fn select_line_at_point(&mut self, x: f32, y: f32) {
+        debug_assert!(!self.editor.is_composing());
+
         self.refresh_layout();
         let line = Selection::line_from_point(&self.editor.layout, x, y);
         self.editor.set_selection(line);
@@ -489,6 +553,8 @@ where
 
     /// Move the selection focus point to the cluster boundary closest to point.
     pub fn extend_selection_to_point(&mut self, x: f32, y: f32) {
+        debug_assert!(!self.editor.is_composing());
+
         self.refresh_layout();
         // FIXME: This is usually the wrong way to handle selection extension for mouse moves, but not a regression.
         self.editor.set_selection(
@@ -502,6 +568,8 @@ where
     ///
     /// No-op if index is not a char boundary.
     pub fn extend_selection_to_byte(&mut self, index: usize) {
+        debug_assert!(!self.editor.is_composing());
+
         if self.editor.buffer.is_char_boundary(index) {
             self.refresh_layout();
             self.editor
@@ -513,6 +581,8 @@ where
     ///
     /// No-op if either index is not a char boundary.
     pub fn select_byte_range(&mut self, start: usize, end: usize) {
+        debug_assert!(!self.editor.is_composing());
+
         if self.editor.buffer.is_char_boundary(start) && self.editor.buffer.is_char_boundary(end) {
             self.refresh_layout();
             self.editor.set_selection(Selection::new(
@@ -523,6 +593,8 @@ where
     }
 
     pub fn select_from_accesskit(&mut self, selection: &accesskit::TextSelection) {
+        debug_assert!(!self.editor.is_composing());
+
         self.refresh_layout();
         if let Some(selection) = Selection::from_access_selection(
             selection,
