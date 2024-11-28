@@ -102,9 +102,10 @@ pub fn render_text(
                     None => run_metrics.strikethrough_size,
                 };
                 // The `offset` is the distance from the baseline to the *top* of the strikethrough
-                // so we move the line down by half the width
+                // so we calculate the middle y-position of the strikethrough based on the font's
+                // standard strikethrough width.
                 // Remember that we are using a y-down coordinate system
-                let y = glyph_run.baseline() - offset;
+                let y = glyph_run.baseline() - offset + run_metrics.strikethrough_size / 2.;
 
                 let line = Line::new(
                     (glyph_run.offset() as f64, y as f64),
