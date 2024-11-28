@@ -78,7 +78,7 @@ where
             selection: Default::default(),
             width: None,
             scale: 1.0,
-            layout_dirty: false,
+            layout_dirty: true,
             alignment: Alignment::Start,
             // We don't use the `default` value to start with, as our consumers
             // will choose to use that as their initial value, but will probably need
@@ -630,7 +630,9 @@ where
     /// Set the width of the layout.
     // TODO: If this is infinite, is the width used for alignnment the min width?
     pub fn set_width(&mut self, width: Option<f32>) {
-        self.width = width;
+        // Don't allow empty widths:
+        // https://github.com/linebender/parley/issues/186
+        self.width = width.map(|width| if width > 10. { width } else { 10. });
         self.layout_dirty = true;
     }
 
@@ -665,7 +667,7 @@ where
         for prop in self.default_style.inner().values() {
             builder.push_default(prop.to_owned());
         }
-        builder.build_into(&mut self.layout, &self.buffer);
+        self.layout = builder.build(&self.buffer);
         self.layout.break_all_lines(self.width);
         self.layout.align(self.width, self.alignment);
         self.selection = self.selection.refresh(&self.layout);

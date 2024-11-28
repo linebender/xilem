@@ -131,10 +131,10 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(mut text: &str) -> Self {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
-        // HACK: Parley crashes if the *initial* text is empty; any subsequent version seems to be fine.
-        if text.is_empty() {
-            text = " ";
-        }
+        // // HACK: Parley crashes if the *initial* text is empty; any subsequent version seems to be fine.
+        // if text.is_empty() {
+        //     text = " ";
+        // }
         editor.set_text(text);
         TextArea {
             editor,
