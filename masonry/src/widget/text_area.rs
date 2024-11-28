@@ -654,6 +654,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         });
                         edited = true;
                     }
+                    Key::Named(NamedKey::Space) if EDITABLE => {
+                        self.editor
+                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
+                        edited = true;
+                    }
                     Key::Named(NamedKey::Enter) => {
                         // TODO: Multiline?
                         let multiline = false;
@@ -666,11 +671,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             ctx.submit_action(crate::Action::TextEntered(self.text().to_string()));
                         }
                     }
-                    Key::Named(NamedKey::Space) => {
-                        self.editor
-                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
-                        edited = true;
-                    }
+
                     Key::Named(NamedKey::Tab) => {
                         // Intentionally do nothing so that tabbing from a textbox/Prose works.
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
