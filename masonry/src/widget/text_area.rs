@@ -750,7 +750,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
                 ctx.set_handled();
                 if let Some(text) = submit_text {
-                    ctx.submit_action(dbg!(crate::Action::TextChanged(text)));
+                    ctx.submit_action(crate::Action::TextChanged(text));
                 }
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
