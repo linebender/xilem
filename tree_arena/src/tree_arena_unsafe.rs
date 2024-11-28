@@ -59,9 +59,6 @@ pub struct ArenaRefChildren<'arena, T> {
     parent_arena: &'arena DataMap<T>,
     /// The parent id for these children
     id: Option<NodeId>,
-    /// Array of children
-    #[expect(dead_code, reason = "Kept for possible future use")]
-    child_arr: &'arena [NodeId],
 }
 
 /// A reference type giving mutable access to an arena item and its children.
@@ -141,26 +138,20 @@ impl<T> DataMap<T> {
         // Thus this is safe
         let id: NodeId = id.into();
         let parent_id = *self.parents.get(&id)?;
-        self.items
-            .get(&id)
-            .and_then(|item| unsafe { item.get().as_ref() })
-            .map(
-                |TreeNode {
-                     item,
-                     children: child_arr,
-                 }| {
-                    let children = ArenaRefChildren {
-                        parent_arena: self,
-                        id: Some(id),
-                        child_arr,
-                    };
-                    ArenaRef {
-                        parent_id,
-                        item,
-                        children,
-                    }
-                },
-            )
+        let node_cell = self.items.get(&id)?;
+
+        let TreeNode { item, .. } = unsafe { node_cell.get().as_ref()? };
+
+        let children = ArenaRefChildren {
+            parent_arena: self,
+            id: Some(id),
+        };
+
+        Some(ArenaRef {
+            parent_id,
+            item,
+            children,
+        })
     }
 
     /// Find an item in the tree.
@@ -177,26 +168,21 @@ impl<T> DataMap<T> {
     unsafe fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         let id: NodeId = id.into();
         let parent_id = *self.parents.get(&id)?;
-        self.items
-            .get(&id)
-            .and_then(|item| unsafe { item.get().as_mut() })
-            .map(
-                |TreeNode {
-                     item,
-                     children: child_arr,
-                 }| {
-                    let children = ArenaMutChildren {
-                        parent_arena: self,
-                        id: Some(id),
-                        child_arr,
-                    };
-                    ArenaMut {
-                        parent_id,
-                        item,
-                        children,
-                    }
-                },
-            )
+        let node_cell = self.items.get(&id)?;
+
+        let TreeNode { item, children } = unsafe { node_cell.get().as_mut()? };
+
+        let children = ArenaMutChildren {
+            parent_arena: self,
+            id: Some(id),
+            child_arr: children,
+        };
+
+        Some(ArenaMut {
+            parent_id,
+            item,
+            children,
+        })
     }
 
     /// Construct the path of items from the given item to the root of the tree.
@@ -245,12 +231,9 @@ impl<T> TreeArena<T> {
 
     /// Returns a handle whose children are the roots, if any, of the tree.
     pub fn root_token(&self) -> ArenaRefChildren<'_, T> {
-        // safe as the roots are derived from the arena itself (same as safety for find for non root nodes)
-        let roots = &self.roots;
         ArenaRefChildren {
             parent_arena: &self.data_map,
             id: None,
-            child_arr: roots,
         }
     }
 
@@ -559,7 +542,6 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         ArenaRefChildren {
             parent_arena: self.parent_arena,
             id: self.id,
-            child_arr: self.child_arr,
         }
     }
 
