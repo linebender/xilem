@@ -24,6 +24,39 @@ pub fn render_text(
             let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
                 continue;
             };
+            let style = glyph_run.style();
+            // We draw underlines under the text, then the strikethrough on top, following:
+            // https://drafts.csswg.org/css-text-decor/#painting-order
+            if let Some(underline) = &style.underline {
+                let underline_brush = &brushes[underline.brush.0];
+                let run_metrics = glyph_run.run().metrics();
+                let offset = match underline.offset {
+                    Some(offset) => offset,
+                    None => run_metrics.underline_offset,
+                };
+                let width = match underline.size {
+                    Some(size) => size,
+                    None => run_metrics.underline_size,
+                };
+                // The `offset` is the distance from the baseline to the top of the underline
+                // so we move the line down by half the width
+                // Remember that we are using a y-down coordinate system
+                // If there's a custom width, because this is an underline, we want the custom
+                // width to go down from the default expectation
+                let y = glyph_run.baseline() - offset + width / 2.;
+
+                let line = Line::new(
+                    (glyph_run.offset() as f64, y as f64),
+                    ((glyph_run.offset() + glyph_run.advance()) as f64, y as f64),
+                );
+                scene.stroke(
+                    &Stroke::new(width.into()),
+                    transform,
+                    underline_brush,
+                    None,
+                    &line,
+                );
+            }
             let mut x = glyph_run.offset();
             let y = glyph_run.baseline();
             let run = glyph_run.run();
@@ -38,7 +71,6 @@ pub fn render_text(
                 .iter()
                 .map(|coord| vello::skrifa::instance::NormalizedCoord::from_bits(*coord))
                 .collect::<Vec<_>>();
-            let style = glyph_run.style();
             let brush = &brushes[style.brush.0];
             scene
                 .draw_glyphs(font)
@@ -61,35 +93,7 @@ pub fn render_text(
                         }
                     }),
                 );
-            // We want to draw the underline/strikethrough on top of the glyphs, so we draw it later
-            if let Some(underline) = &style.underline {
-                let underline_brush = &brushes[underline.brush.0];
-                let run_metrics = glyph_run.run().metrics();
-                let offset = match underline.offset {
-                    Some(offset) => offset,
-                    None => run_metrics.underline_offset,
-                };
-                let width = match underline.size {
-                    Some(size) => size,
-                    None => run_metrics.underline_size,
-                };
-                // The `offset` is the distance from the baseline to the *top* of the underline
-                // so we move the line down by half the width
-                // Remember that we are using a y-down coordinate system
-                let y = glyph_run.baseline() - offset;
 
-                let line = Line::new(
-                    (glyph_run.offset() as f64, y as f64),
-                    ((glyph_run.offset() + glyph_run.advance()) as f64, y as f64),
-                );
-                scene.stroke(
-                    &Stroke::new(width.into()),
-                    transform,
-                    underline_brush,
-                    None,
-                    &line,
-                );
-            }
             if let Some(strikethrough) = &style.strikethrough {
                 let strikethrough_brush = &brushes[strikethrough.brush.0];
                 let run_metrics = glyph_run.run().metrics();
