@@ -130,8 +130,7 @@ impl<T> DataMap<T> {
     /// Returns a shared reference to the item if present.
     ///
     /// Time Complexity O(1)
-    fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
-        let id: NodeId = id.into();
+    fn find_inner(&self, id: NodeId) -> Option<ArenaRef<'_, T>> {
         let parent_id = *self.parents.get(&id)?;
         let node_cell = self.items.get(&id)?;
 
@@ -160,9 +159,7 @@ impl<T> DataMap<T> {
     /// Returns a mutable reference to the item if present.
     ///
     /// Time Complexity O(1)
-
-    fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
-        let id: NodeId = id.into();
+    fn find_mut_inner(&mut self, id: NodeId) -> Option<ArenaMut<'_, T>> {
         let parent_id = *self.parents.get(&id)?;
         let node_cell = self.items.get(&id)?;
 
@@ -198,7 +195,7 @@ impl<T> DataMap<T> {
     /// If `start_id` is Some, the path ends just before that id instead; `start_id` is not included.
     ///
     /// If there is no path from `start_id` to id, returns the empty vector.
-    fn get_id_path(&self, id: impl Into<NodeId>, start_id: Option<NodeId>) -> Vec<NodeId> {
+    fn get_id_path(&self, id: NodeId, start_id: Option<NodeId>) -> Vec<NodeId> {
         let id: NodeId = id.into();
         let mut path = Vec::new();
 
@@ -264,7 +261,7 @@ impl<T> TreeArena<T> {
     ///
     /// O(1).
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
-        self.data_map.find(id)
+        self.data_map.find_inner(id.into())
     }
 
     /// Find an item in the tree.
@@ -272,7 +269,7 @@ impl<T> TreeArena<T> {
     /// Returns a mutable reference to the item if present.
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         // safe as derived from the arena itself and has assoc lifetime with the arena
-        self.data_map.find_mut(id)
+        self.data_map.find_mut_inner(id.into())
     }
 
     /// Construct the path of items from the given item to the root of the tree.
@@ -282,7 +279,7 @@ impl<T> TreeArena<T> {
     ///
     /// If the id is not in the tree, returns an empty vector.
     pub fn get_id_path(&self, id: impl Into<NodeId>) -> Vec<NodeId> {
-        self.data_map.get_id_path(id, None)
+        self.data_map.get_id_path(id.into(), None)
     }
 }
 
@@ -325,7 +322,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
         }
     }
 
-    /// returns true if there is a child with the given id
+    /// Returns true if there is a child with the given id
     pub fn has_child(&self, id: impl Into<NodeId>) -> bool {
         let child_id = id.into();
         let parent_id = self.id;
@@ -342,7 +339,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
     pub fn get_child(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         if self.has_child(id) {
-            self.parent_arena.find(id)
+            self.parent_arena.find_inner(id)
         } else {
             None
         }
@@ -355,7 +352,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
     pub fn into_child(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         if self.has_child(id) {
-            self.parent_arena.find(id)
+            self.parent_arena.find_inner(id)
         } else {
             None
         }
@@ -373,7 +370,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
         let id: NodeId = id.into();
 
         if self.is_descendant(id) {
-            self.parent_arena.find(id)
+            self.parent_arena.find_inner(id)
         } else {
             None
         }
@@ -437,7 +434,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     pub fn get_child(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         if self.has_child(id) {
-            self.parent_arena.find(id)
+            self.parent_arena.find_inner(id)
         } else {
             None
         }
@@ -451,7 +448,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         let id = id.into();
         if self.has_child(id) {
             // safe as we check the node is a direct child node
-            self.parent_arena.find_mut(id)
+            self.parent_arena.find_mut_inner(id)
         } else {
             None
         }
@@ -464,7 +461,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     pub fn into_child(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         if self.has_child(id) {
-            self.parent_arena.find(id)
+            self.parent_arena.find_inner(id)
         } else {
             None
         }
@@ -478,7 +475,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         let id = id.into();
         if self.has_child(id) {
             // safe as we check the node is a direct child node
-            self.parent_arena.find_mut(id)
+            self.parent_arena.find_mut_inner(id)
         } else {
             None
         }
@@ -571,7 +568,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     pub fn find(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         if self.is_descendant(id) {
-            self.parent_arena.find(id)
+            self.parent_arena.find_inner(id)
         } else {
             None
         }
@@ -588,7 +585,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         let id = id.into();
         if self.is_descendant(id) {
             // safe as we check the node is a descendant
-            self.parent_arena.find_mut(id)
+            self.parent_arena.find_mut_inner(id)
         } else {
             None
         }
