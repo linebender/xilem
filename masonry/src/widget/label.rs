@@ -424,8 +424,8 @@ impl Widget for Label {
             ctx.tree_update,
             node,
             || NodeId::from(WidgetId::next()),
-            (window_origin.x + LABEL_X_PADDING) * ctx.scale_factor,
-            window_origin.y * ctx.scale_factor,
+            window_origin.x + LABEL_X_PADDING,
+            window_origin.y,
         );
     }
 

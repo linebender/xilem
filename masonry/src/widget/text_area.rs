@@ -844,16 +844,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let (fctx, lctx) = ctx.text_contexts();
         let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
         let origin = ctx.window_origin();
-        let (x_offset, y_offset) = (
-            origin.x + self.padding.get_left(is_rtl),
-            origin.y + self.padding.top,
-        );
         self.editor.accessibility(
             ctx.tree_update,
             node,
             || NodeId::from(WidgetId::next()),
-            ctx.scale_factor * x_offset,
-            ctx.scale_factor * y_offset,
+            origin.x + self.padding.get_left(is_rtl),
+            origin.y + self.padding.top,
         );
     }
 
