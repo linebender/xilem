@@ -653,7 +653,7 @@ where
     fn cursor_at(&self, index: usize) -> Cursor {
         // TODO: Do we need to be non-dirty?
         // FIXME: `Selection` should make this easier
-        if index > self.buffer.len() {
+        if index >= self.buffer.len() {
             Cursor::from_byte_index(&self.layout, self.buffer.len(), Affinity::Upstream)
         } else {
             Cursor::from_byte_index(&self.layout, index, Affinity::Downstream)
