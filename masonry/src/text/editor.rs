@@ -436,10 +436,8 @@ where
     pub fn extend_selection_to_byte(&mut self, index: usize) {
         if self.editor.buffer.is_char_boundary(index) {
             self.refresh_layout();
-            self.editor.set_selection(extend_selection(
-                &self.editor.selection,
-                self.editor.cursor_at(index),
-            ));
+            self.editor
+                .set_selection(self.editor.selection.extend(self.editor.cursor_at(index)));
         }
     }
 
@@ -475,10 +473,6 @@ where
     fn refresh_layout(&mut self) {
         self.editor.refresh_layout(self.font_cx, self.layout_cx);
     }
-}
-
-fn extend_selection(selection: &Selection, focus: Cursor) -> Selection {
-    Selection::new(selection.anchor(), focus)
 }
 
 impl<T> PlainEditor<T>
