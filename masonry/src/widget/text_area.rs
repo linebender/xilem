@@ -448,6 +448,10 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 // --- MARK: IMPL WIDGET ---
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+        if self.editor.is_composing() {
+            return;
+        }
+
         let window_origin = ctx.widget_state.window_origin();
         let (fctx, lctx) = ctx.text_contexts();
         let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
@@ -508,7 +512,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         match event {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
-                if !key_event.state.is_pressed() {
+                if !key_event.state.is_pressed() || self.editor.is_composing() {
                     return;
                 }
                 #[allow(unused)]
@@ -709,7 +713,50 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             TextEvent::FocusChange(_) => {}
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
-                tracing::warn!(event = ?e, "TextArea doesn't accept IME");
+                let (fctx, lctx) = ctx.text_contexts();
+                // The text to submit as the TextChanged action. We do not send a TextChange action
+                // for the "virtual" preedit text.
+                let mut submit_text = None;
+                match e {
+                    winit::event::Ime::Disabled => {
+                        self.editor.transact(fctx, lctx, |txn| txn.clear_compose());
+                    }
+                    winit::event::Ime::Preedit(text, cursor) => {
+                        if text.is_empty() {
+                            self.editor.transact(fctx, lctx, |txn| txn.clear_compose());
+                        } else {
+                            if !self.editor.is_composing() && self.editor.selected_text().is_some()
+                            {
+                                // The IME has started composing. Delete the current selection and
+                                // send a TextChange event with the selection removed, but without
+                                // the composing preedit text.
+                                self.editor.transact(fctx, lctx, |txn| {
+                                    txn.delete_selection();
+                                });
+                                submit_text = Some(self.text().to_string());
+                            }
+
+                            self.editor
+                                .transact(fctx, lctx, |txn| txn.set_compose(text, *cursor));
+                        }
+                    }
+                    winit::event::Ime::Commit(text) => {
+                        self.editor
+                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(text));
+                        submit_text = Some(self.text().to_string());
+                    }
+                    _ => {}
+                }
+
+                ctx.set_handled();
+                if let Some(text) = submit_text {
+                    ctx.submit_action(dbg!(crate::Action::TextChanged(text)));
+                }
+                let new_generation = self.editor.generation();
+                if new_generation != self.rendered_generation {
+                    ctx.request_layout();
+                    self.rendered_generation = new_generation;
+                }
             }
             TextEvent::ModifierChange(_) => {}
         }
@@ -720,12 +767,15 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 
     fn accepts_text_input(&self) -> bool {
-        // TODO: Implement IME, then flip back to EDITABLE.
-        false
+        EDITABLE
     }
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
         if event.action == accesskit::Action::SetTextSelection {
+            if self.editor.is_composing() {
+                return;
+            }
+
             if let Some(accesskit::ActionData::SetTextSelection(selection)) = &event.data {
                 let (fctx, lctx) = ctx.text_contexts();
                 self.editor
@@ -738,8 +788,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            Update::FocusChanged(_) => {
-                ctx.request_render();
+            Update::FocusChanged(focused) => {
+                // HACK: currently, when moving focus away from a text area, the Ime::Disabled
+                // event is routed to the newly focused widget. Do IME clean up here.
+                if !focused && self.editor.is_composing() {
+                    let (fctx, lctx) = ctx.text_contexts();
+                    self.editor.transact(fctx, lctx, |txn| txn.clear_compose());
+                    self.rendered_generation = self.editor.generation();
+                    ctx.request_layout();
+                } else {
+                    ctx.request_render();
+                }
             }
             Update::DisabledChanged(_) => {
                 // We might need to use the disabled brush, and stop displaying the selection.

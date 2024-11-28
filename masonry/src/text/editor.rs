@@ -5,7 +5,7 @@
 
 //! Import of Parley's `PlainEditor` as the version in Parley is insufficient for our needs.
 
-use core::{cmp::PartialEq, default::Default, fmt::Debug};
+use core::{cmp::PartialEq, default::Default, fmt::Debug, ops::Range};
 
 use accesskit::{Node, NodeId, TreeUpdate};
 use parley::layout::LayoutAccessibility;
@@ -49,6 +49,9 @@ where
     layout: Layout<T>,
     layout_access: LayoutAccessibility,
     selection: Selection,
+    /// Byte offsets of IME composing preedit text in the text buffer.
+    /// `None` if the IME is not currently composing.
+    compose: Option<Range<usize>>,
     width: Option<f32>,
     scale: f32,
     // Simple tracking of when the layout needs to be updated
@@ -76,6 +79,7 @@ where
             layout: Default::default(),
             layout_access: Default::default(),
             selection: Default::default(),
+            compose: None,
             width: None,
             scale: 1.0,
             layout_dirty: true,
@@ -211,6 +215,70 @@ where
             }
         } else {
             self.delete_selection();
+        }
+    }
+
+    // --- MARK: IME ---
+    /// Set the IME preedit composing text.
+    ///
+    /// This starts composing. Composing is reset by calling [`PlainEditorTxn::clear_compose`].
+    /// While composing, it is a logic error to call anything other than
+    /// [`PlainEditorTxn::set_compose`] or [`PlainEditorTxn::clear_compose`].
+    ///
+    /// The preedit text replaces the current selection if this call starts composing.
+    ///
+    /// The selection is updated based on `cursor`, which contains the byte offsets relative to the
+    /// start of the preedit text. If `cursor` is `None`, the selection is collapsed to a caret in
+    /// front of the preedit text.
+    pub fn set_compose(&mut self, text: &str, cursor: Option<(usize, usize)>) {
+        debug_assert!(!text.is_empty());
+        debug_assert!(cursor.map(|cursor| cursor.1 <= text.len()).unwrap_or(true));
+
+        let start = if let Some(preedit_range) = self.editor.compose.clone() {
+            self.editor
+                .buffer
+                .replace_range(preedit_range.clone(), text);
+            preedit_range.start
+        } else {
+            if self.editor.selection.is_collapsed() {
+                self.editor
+                    .buffer
+                    .insert_str(self.editor.selection.text_range().start, text);
+            } else {
+                self.editor
+                    .buffer
+                    .replace_range(self.editor.selection.text_range(), text);
+            }
+            self.editor.selection.text_range().start
+        };
+        self.editor.compose = Some(start..start + text.len());
+        self.update_layout();
+
+        if let Some(cursor) = cursor {
+            // Select the location indicated by the IME.
+            self.editor.set_selection(Selection::new(
+                self.editor.cursor_at(start + cursor.0),
+                self.editor.cursor_at(start + cursor.1),
+            ));
+        } else {
+            // IME indicates nothing is to be selected: collapse the selection to a
+            // caret just in front of the preedit.
+            self.editor
+                .set_selection(self.editor.cursor_at(start).into());
+        }
+    }
+
+    /// Stop IME composing.
+    ///
+    /// This removes the IME preedit text.
+    pub fn clear_compose(&mut self) {
+        if let Some(preedit_range) = self.editor.compose.clone() {
+            self.editor.buffer.replace_range(preedit_range.clone(), "");
+            self.editor.compose = None;
+            self.update_layout();
+
+            self.editor
+                .set_selection(self.editor.cursor_at(preedit_range.start).into());
         }
     }
 
@@ -513,12 +581,8 @@ where
     fn cursor_at(&self, index: usize) -> Cursor {
         // TODO: Do we need to be non-dirty?
         // FIXME: `Selection` should make this easier
-        if index >= self.buffer.len() {
-            Cursor::from_byte_index(
-                &self.layout,
-                self.buffer.len().saturating_sub(1),
-                Affinity::Upstream,
-            )
+        if index > self.buffer.len() {
+            Cursor::from_byte_index(&self.layout, self.buffer.len(), Affinity::Upstream)
         } else {
             Cursor::from_byte_index(&self.layout, index, Affinity::Downstream)
         }
@@ -667,12 +731,28 @@ where
         for prop in self.default_style.inner().values() {
             builder.push_default(prop.to_owned());
         }
+        if let Some(ref preedit_range) = self.compose {
+            // TODO: underline currently doesn't show up, maybe the brush is invisible?
+            builder.push(
+                parley::style::StyleProperty::UnderlineBrush(Some(T::default())),
+                preedit_range.clone(),
+            );
+            builder.push(
+                parley::style::StyleProperty::Underline(true),
+                preedit_range.clone(),
+            );
+        }
         self.layout = builder.build(&self.buffer);
         self.layout.break_all_lines(self.width);
         self.layout.align(self.width, self.alignment);
         self.selection = self.selection.refresh(&self.layout);
         self.layout_dirty = false;
         self.generation.nudge();
+    }
+
+    /// Whether the editor is currently in IME composing mode.
+    pub fn is_composing(&self) -> bool {
+        self.compose.is_some()
     }
 
     pub fn accessibility(
