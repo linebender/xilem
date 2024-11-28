@@ -89,10 +89,7 @@ fn build_accessibility_tree(
 // --- MARK: BUILD NODE ---
 fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
     let mut node = Node::new(widget.accessibility_role());
-    node.set_bounds(to_accesskit_rect(
-        ctx.widget_state.window_layout_rect(),
-        ctx.scale_factor,
-    ));
+    node.set_bounds(to_accesskit_rect(ctx.widget_state.window_layout_rect()));
 
     node.set_children(
         widget
@@ -124,9 +121,8 @@ fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
     node
 }
 
-fn to_accesskit_rect(r: Rect, scale_factor: f64) -> accesskit::Rect {
-    let sr = r.scale_from_origin(scale_factor);
-    accesskit::Rect::new(sr.x0, sr.y0, sr.x1, sr.y1)
+fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
+    accesskit::Rect::new(r.x0, r.y0, r.x1, r.y1)
 }
 
 // --- MARK: ROOT ---

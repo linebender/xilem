@@ -59,7 +59,9 @@ impl<W: Widget> Widget for RootWidget<W> {
         Role::Window
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+        node.set_transform(accesskit::Affine::scale(ctx.scale_factor));
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.pod.id()]
