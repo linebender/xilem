@@ -61,7 +61,7 @@ pub fn render_text(
                         }
                     }),
                 );
-            // Draw the underline/strikethrough on top of the
+            // We want to draw the underline/strikethrough on top of the glyphs, so we draw it later
             if let Some(underline) = &style.underline {
                 let underline_brush = &brushes[underline.brush.0];
                 let run_metrics = glyph_run.run().metrics();
