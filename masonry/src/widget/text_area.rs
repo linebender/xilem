@@ -531,7 +531,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     {
                         edited = true;
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
-                        // if let crate::text::ActiveText::Selection(_) = self.editor.active_text() {
+                        // if let Some(text) = self.editor.selected_text() {
                         //     let cb = ClipboardContext::new().unwrap();
                         //     cb.set_text(text.to_owned()).ok();
                         //     self.editor.transact(fcx, lcx, |txn| txn.delete_selection());
@@ -542,7 +542,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
                     Key::Character(c) if action_mod && c.as_str().eq_ignore_ascii_case("c") => {
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
-                        // if let crate::text::ActiveText::Selection(_) = self.editor.active_text() {
+                        // if let Some(text) = self.editor.selected_text() {
                         //     let cb = ClipboardContext::new().unwrap();
                         //     cb.set_text(text.to_owned()).ok();
                         // }
@@ -654,6 +654,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         });
                         edited = true;
                     }
+                    Key::Named(NamedKey::Space) if EDITABLE => {
+                        self.editor
+                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
+                        edited = true;
+                    }
                     Key::Named(NamedKey::Enter) => {
                         // TODO: Multiline?
                         let multiline = false;
@@ -666,11 +671,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             ctx.submit_action(crate::Action::TextEntered(self.text().to_string()));
                         }
                     }
-                    Key::Named(NamedKey::Space) => {
-                        self.editor
-                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
-                        edited = true;
-                    }
+
                     Key::Named(NamedKey::Tab) => {
                         // Intentionally do nothing so that tabbing from a textbox/Prose works.
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
@@ -808,13 +809,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 // TODO: Make configurable
                 scene.fill(Fill::NonZero, transform, Color::STEEL_BLUE, None, &rect);
             }
-            if let Some(cursor) = self.editor.selection_strong_geometry(1.5) {
+            if let Some(cursor) = self.editor.cursor_geometry(1.5) {
                 // TODO: Make configurable
                 scene.fill(Fill::NonZero, transform, Color::WHITE, None, &cursor);
-            };
-            if let Some(cursor) = self.editor.selection_weak_geometry(1.5) {
-                // TODO: Make configurable
-                scene.fill(Fill::NonZero, transform, Color::LIGHT_GRAY, None, &cursor);
             };
         }
 
@@ -842,15 +839,18 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+        if !EDITABLE {
+            node.set_read_only();
+        }
         let (fctx, lctx) = ctx.text_contexts();
         let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
-        let (x_offset, y_offset) = (self.padding.get_left(is_rtl), self.padding.top);
+        let origin = ctx.window_origin();
         self.editor.accessibility(
             ctx.tree_update,
             node,
             || NodeId::from(WidgetId::next()),
-            x_offset,
-            y_offset,
+            origin.x + self.padding.get_left(is_rtl),
+            origin.y + self.padding.top,
         );
     }
 

@@ -11,7 +11,7 @@ use accesskit::{Node, NodeId, TreeUpdate};
 use parley::layout::LayoutAccessibility;
 use parley::{
     layout::{
-        cursor::{Cursor, Selection, VisualMode},
+        cursor::{Cursor, Selection},
         Affinity, Alignment, Layout, Line,
     },
     style::Brush,
@@ -20,14 +20,6 @@ use parley::{
 use std::{borrow::ToOwned, string::String, vec::Vec};
 
 use super::styleset::StyleSet;
-
-#[derive(Copy, Clone, Debug)]
-pub enum ActiveText<'a> {
-    /// The selection is empty and the cursor is a caret; this is the text of the cluster it is on.
-    FocusedCluster(Affinity, &'a str),
-    /// The selection contains this text.
-    Selection(&'a str),
-}
 
 /// Opaque representation of a generation.
 ///
@@ -57,7 +49,6 @@ where
     layout: Layout<T>,
     layout_access: LayoutAccessibility,
     selection: Selection,
-    cursor_mode: VisualMode,
     width: Option<f32>,
     scale: f32,
     // Simple tracking of when the layout needs to be updated
@@ -85,10 +76,9 @@ where
             layout: Default::default(),
             layout_access: Default::default(),
             selection: Default::default(),
-            cursor_mode: Default::default(),
             width: None,
             scale: 1.0,
-            layout_dirty: false,
+            layout_dirty: true,
             alignment: Alignment::Start,
             // We don't use the `default` value to start with, as our consumers
             // will choose to use that as their initial value, but will probably need
@@ -128,13 +118,18 @@ where
     /// Delete the selection or the next cluster (typical ‘delete’ behavior).
     pub fn delete(&mut self) {
         if self.editor.selection.is_collapsed() {
-            let range = self.editor.selection.focus().text_range();
-            if !range.is_empty() {
-                let start = range.start;
+            // Upstream cluster range
+            if let Some(range) = self
+                .editor
+                .selection
+                .focus()
+                .logical_clusters(&self.editor.layout)[1]
+                .as_ref()
+                .map(|cluster| cluster.text_range())
+                .and_then(|range| (!range.is_empty()).then_some(range))
+            {
                 self.editor.buffer.replace_range(range, "");
                 self.update_layout();
-                self.editor
-                    .set_selection(self.editor.cursor_at(start).into());
             }
         } else {
             self.delete_selection();
@@ -143,18 +138,18 @@ where
 
     /// Delete the selection or up to the next word boundary (typical ‘ctrl + delete’ behavior).
     pub fn delete_word(&mut self) {
-        let start = self.editor.selection.focus().text_range().start;
         if self.editor.selection.is_collapsed() {
-            let end = self
-                .editor
-                .cursor_at(start)
-                .next_word(&self.editor.layout)
-                .index();
-
-            self.editor.buffer.replace_range(start..end, "");
-            self.update_layout();
-            self.editor
-                .set_selection(self.editor.cursor_at(start).into());
+            let focus = self.editor.selection.focus();
+            let start = focus.index();
+            let end = focus.next_logical_word(&self.editor.layout).index();
+            if self.editor.text().get(start..end).is_some() {
+                self.editor.buffer.replace_range(start..end, "");
+                self.update_layout();
+                self.editor.set_selection(
+                    Cursor::from_byte_index(&self.editor.layout, start, Affinity::Downstream)
+                        .into(),
+                );
+            }
         } else {
             self.delete_selection();
         }
@@ -162,27 +157,38 @@ where
 
     /// Delete the selection or the previous cluster (typical ‘backspace’ behavior).
     pub fn backdelete(&mut self) {
-        let end = self.editor.selection.focus().text_range().start;
         if self.editor.selection.is_collapsed() {
-            if let Some(start) = self
+            // Upstream cluster
+            if let Some(cluster) = self
                 .editor
                 .selection
                 .focus()
-                .cluster_path()
-                .cluster(&self.editor.layout)
-                .map(|x| {
-                    if self.editor.selection.focus().affinity() == Affinity::Upstream {
-                        Some(x)
-                    } else {
-                        x.previous_logical()
-                    }
-                })
-                .and_then(|c| c.map(|x| x.text_range().start))
+                .logical_clusters(&self.editor.layout)[0]
+                .clone()
             {
+                let range = cluster.text_range();
+                let end = range.end;
+                let start = if cluster.is_hard_line_break() || cluster.is_emoji() {
+                    // For newline sequences and emoji, delete the previous cluster
+                    range.start
+                } else {
+                    // Otherwise, delete the previous character
+                    let Some((start, _)) = self
+                        .editor
+                        .text()
+                        .get(..end)
+                        .and_then(|str| str.char_indices().next_back())
+                    else {
+                        return;
+                    };
+                    start
+                };
                 self.editor.buffer.replace_range(start..end, "");
                 self.update_layout();
-                self.editor
-                    .set_selection(self.editor.cursor_at(start).into());
+                self.editor.set_selection(
+                    Cursor::from_byte_index(&self.editor.layout, start, Affinity::Downstream)
+                        .into(),
+                );
             }
         } else {
             self.delete_selection();
@@ -191,20 +197,18 @@ where
 
     /// Delete the selection or back to the previous word boundary (typical ‘ctrl + backspace’ behavior).
     pub fn backdelete_word(&mut self) {
-        let end = self.editor.selection.focus().text_range().start;
         if self.editor.selection.is_collapsed() {
-            let start = self
-                .editor
-                .selection
-                .focus()
-                .previous_word(&self.editor.layout)
-                .text_range()
-                .start;
-
-            self.editor.buffer.replace_range(start..end, "");
-            self.update_layout();
-            self.editor
-                .set_selection(self.editor.cursor_at(start).into());
+            let focus = self.editor.selection.focus();
+            let end = focus.index();
+            let start = focus.previous_logical_word(&self.editor.layout).index();
+            if self.editor.text().get(start..end).is_some() {
+                self.editor.buffer.replace_range(start..end, "");
+                self.update_layout();
+                self.editor.set_selection(
+                    Cursor::from_byte_index(&self.editor.layout, start, Affinity::Downstream)
+                        .into(),
+                );
+            }
         } else {
             self.delete_selection();
         }
@@ -276,21 +280,20 @@ where
 
     /// Move to the next cluster left in visual order.
     pub fn move_left(&mut self) {
-        self.editor
-            .set_selection(self.editor.selection.previous_visual(
-                &self.editor.layout,
-                self.editor.cursor_mode,
-                false,
-            ));
+        self.editor.set_selection(
+            self.editor
+                .selection
+                .previous_visual(&self.editor.layout, false),
+        );
     }
 
     /// Move to the next cluster right in visual order.
     pub fn move_right(&mut self) {
-        self.editor.set_selection(self.editor.selection.next_visual(
-            &self.editor.layout,
-            self.editor.cursor_mode,
-            false,
-        ));
+        self.editor.set_selection(
+            self.editor
+                .selection
+                .next_visual(&self.editor.layout, false),
+        );
     }
 
     /// Move to the next word boundary left.
@@ -298,24 +301,24 @@ where
         self.editor.set_selection(
             self.editor
                 .selection
-                .previous_word(&self.editor.layout, false),
+                .previous_visual_word(&self.editor.layout, false),
         );
     }
 
     /// Move to the next word boundary right.
     pub fn move_word_right(&mut self) {
-        self.editor
-            .set_selection(self.editor.selection.next_word(&self.editor.layout, false));
+        self.editor.set_selection(
+            self.editor
+                .selection
+                .next_visual_word(&self.editor.layout, false),
+        );
     }
 
     /// Select the whole buffer.
     pub fn select_all(&mut self) {
         self.editor.set_selection(
-            Selection::from_index(&self.editor.layout, 0, Affinity::default()).move_lines(
-                &self.editor.layout,
-                isize::MAX,
-                true,
-            ),
+            Selection::from_byte_index(&self.editor.layout, 0_usize, Affinity::default())
+                .move_lines(&self.editor.layout, isize::MAX, true),
         );
     }
 
@@ -371,21 +374,17 @@ where
 
     /// Move the selection focus point to the next cluster left in visual order.
     pub fn select_left(&mut self) {
-        self.editor
-            .set_selection(self.editor.selection.previous_visual(
-                &self.editor.layout,
-                self.editor.cursor_mode,
-                true,
-            ));
+        self.editor.set_selection(
+            self.editor
+                .selection
+                .previous_visual(&self.editor.layout, true),
+        );
     }
 
     /// Move the selection focus point to the next cluster right in visual order.
     pub fn select_right(&mut self) {
-        self.editor.set_selection(self.editor.selection.next_visual(
-            &self.editor.layout,
-            self.editor.cursor_mode,
-            true,
-        ));
+        self.editor
+            .set_selection(self.editor.selection.next_visual(&self.editor.layout, true));
     }
 
     /// Move the selection focus point to the next word boundary left.
@@ -393,14 +392,17 @@ where
         self.editor.set_selection(
             self.editor
                 .selection
-                .previous_word(&self.editor.layout, true),
+                .previous_visual_word(&self.editor.layout, true),
         );
     }
 
     /// Move the selection focus point to the next word boundary right.
     pub fn select_word_right(&mut self) {
-        self.editor
-            .set_selection(self.editor.selection.next_word(&self.editor.layout, true));
+        self.editor.set_selection(
+            self.editor
+                .selection
+                .next_visual_word(&self.editor.layout, true),
+        );
     }
 
     /// Select the word at the point.
@@ -413,11 +415,8 @@ where
     /// Select the physical line at the point.
     pub fn select_line_at_point(&mut self, x: f32, y: f32) {
         self.refresh_layout();
-        let focus = *Selection::from_point(&self.editor.layout, x, y)
-            .line_start(&self.editor.layout, true)
-            .focus();
-        self.editor
-            .set_selection(Selection::from(focus).line_end(&self.editor.layout, true));
+        let line = Selection::line_from_point(&self.editor.layout, x, y);
+        self.editor.set_selection(line);
     }
 
     /// Move the selection focus point to the cluster boundary closest to point.
@@ -437,11 +436,8 @@ where
     pub fn extend_selection_to_byte(&mut self, index: usize) {
         if self.editor.buffer.is_char_boundary(index) {
             self.refresh_layout();
-            self.editor.set_selection(
-                self.editor
-                    .selection
-                    .maybe_extend(self.editor.cursor_at(index), true),
-            );
+            self.editor
+                .set_selection(self.editor.selection.extend(self.editor.cursor_at(index)));
         }
     }
 
@@ -451,10 +447,10 @@ where
     pub fn select_byte_range(&mut self, start: usize, end: usize) {
         if self.editor.buffer.is_char_boundary(start) && self.editor.buffer.is_char_boundary(end) {
             self.refresh_layout();
-            self.editor.set_selection(
-                Selection::from(self.editor.cursor_at(start))
-                    .maybe_extend(self.editor.cursor_at(end), true),
-            );
+            self.editor.set_selection(Selection::new(
+                self.editor.cursor_at(start),
+                self.editor.cursor_at(end),
+            ));
         }
     }
 
@@ -518,13 +514,13 @@ where
         // TODO: Do we need to be non-dirty?
         // FIXME: `Selection` should make this easier
         if index >= self.buffer.len() {
-            Cursor::from_index(
+            Cursor::from_byte_index(
                 &self.layout,
                 self.buffer.len().saturating_sub(1),
                 Affinity::Upstream,
             )
         } else {
-            Cursor::from_index(&self.layout, index, Affinity::Downstream)
+            Cursor::from_byte_index(&self.layout, index, Affinity::Downstream)
         }
     }
 
@@ -534,7 +530,6 @@ where
         layout_cx: &mut LayoutContext<T>,
         s: &str,
     ) {
-        // TODO: Do we need to be non-dirty?
         let range = self.selection.text_range();
         let start = range.start;
         if self.selection.is_collapsed() {
@@ -544,7 +539,13 @@ where
         }
 
         self.update_layout(font_cx, layout_cx);
-        self.set_selection(self.cursor_at(start.saturating_add(s.len())).into());
+        let new_index = start.saturating_add(s.len());
+        let affinity = if s.ends_with("\n") {
+            Affinity::Downstream
+        } else {
+            Affinity::Upstream
+        };
+        self.set_selection(Cursor::from_byte_index(&self.layout, new_index, affinity).into());
     }
 
     /// Update the selection, and nudge the `Generation` if something other than `h_pos` changed.
@@ -557,19 +558,13 @@ where
         self.selection = new_sel;
     }
 
-    /// Get either the contents of the current selection, or the text of the cluster at the caret.
-    pub fn active_text(&self) -> ActiveText {
-        if self.selection.is_collapsed() {
-            let range = self
-                .selection
-                .focus()
-                .cluster_path()
-                .cluster(&self.layout)
-                .map(|c| c.text_range())
-                .unwrap_or_default();
-            ActiveText::FocusedCluster(self.selection.focus().affinity(), &self.buffer[range])
+    /// If the current selection is not collapsed, returns the text content of
+    /// that selection.
+    pub fn selected_text(&self) -> Option<&str> {
+        if !self.selection.is_collapsed() {
+            self.text().get(self.selection.text_range())
         } else {
-            ActiveText::Selection(&self.buffer[self.selection.text_range()])
+            None
         }
     }
 
@@ -579,12 +574,8 @@ where
     }
 
     /// Get a rectangle representing the current caret cursor position.
-    pub fn selection_strong_geometry(&self, size: f32) -> Option<Rect> {
-        self.selection.focus().strong_geometry(&self.layout, size)
-    }
-
-    pub fn selection_weak_geometry(&self, size: f32) -> Option<Rect> {
-        self.selection.focus().weak_geometry(&self.layout, size)
+    pub fn cursor_geometry(&self, size: f32) -> Option<Rect> {
+        Some(self.selection.focus().geometry(&self.layout, size))
     }
 
     /// Get the lines from the `Layout`.
@@ -639,7 +630,9 @@ where
     /// Set the width of the layout.
     // TODO: If this is infinite, is the width used for alignnment the min width?
     pub fn set_width(&mut self, width: Option<f32>) {
-        self.width = width;
+        // Don't allow empty widths:
+        // https://github.com/linebender/parley/issues/186
+        self.width = width.map(|width| if width > 10. { width } else { 10. });
         self.layout_dirty = true;
     }
 
@@ -674,7 +667,7 @@ where
         for prop in self.default_style.inner().values() {
             builder.push_default(prop.to_owned());
         }
-        builder.build_into(&mut self.layout, &self.buffer);
+        self.layout = builder.build(&self.buffer);
         self.layout.break_all_lines(self.width);
         self.layout.align(self.width, self.alignment);
         self.selection = self.selection.refresh(&self.layout);

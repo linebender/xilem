@@ -14,7 +14,7 @@ mod editor;
 mod render_text;
 mod styleset;
 
-pub use editor::{ActiveText, Generation, PlainEditor, PlainEditorTxn};
+pub use editor::{Generation, PlainEditor, PlainEditorTxn};
 pub use render_text::render_text;
 
 /// A reference counted string slice.

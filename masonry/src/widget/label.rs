@@ -416,15 +416,16 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+        let window_origin = ctx.window_origin();
         self.accessibility.build_nodes(
             self.text.as_ref(),
             &self.text_layout,
-            _ctx.tree_update,
+            ctx.tree_update,
             node,
             || NodeId::from(WidgetId::next()),
-            LABEL_X_PADDING,
-            0.0,
+            window_origin.x + LABEL_X_PADDING,
+            window_origin.y,
         );
     }
 
