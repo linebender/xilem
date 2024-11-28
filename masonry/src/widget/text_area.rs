@@ -277,7 +277,10 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Shared logic between `with_style` and `insert_style`
     #[track_caller]
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
-        if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
+        if let StyleProperty::Brush(idx @ BrushIndex(1..))
+        | StyleProperty::UnderlineBrush(Some(idx @ BrushIndex(1..)))
+        | StyleProperty::StrikethroughBrush(Some(idx @ BrushIndex(1..))) = &property
+        {
             debug_panic!(
                 "Can't set a non-zero brush index ({idx:?}) on a `TextArea`, as it only supports global styling.\n\
                 To modify the active brush, use `set_brush` or `with_brush` instead"
