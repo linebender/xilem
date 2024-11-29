@@ -403,6 +403,19 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     }
 
     let prev_focused = root.global_state.focused_widget;
+    let was_ime_active = root.global_state.is_ime_active;
+
+    let synthesize_ime_disabled =
+        was_ime_active && prev_focused != root.global_state.next_focused_widget;
+    if synthesize_ime_disabled {
+        // IME was active, but the next focused widget is going to receive the
+        // Ime::Disabled event. Synthesize an Ime::Disabled event here and send it to
+        // the widget about to be unfocused.
+        run_on_text_event_pass(root, &TextEvent::Ime(winit::event::Ime::Disabled));
+    }
+
+    // Note: handling of the Ime::Disabled event sent above may have changed the next focused
+    // widget.
     let next_focused = root.global_state.next_focused_widget;
 
     // "Focused path" means the focused widget, and all its parents.
@@ -459,8 +472,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         }
     }
 
-    if prev_focused != next_focused {
-        let was_ime_active = root.global_state.is_ime_active;
+    // Refocus if the focused widget changed. Or, if the focused widget was going to change, the
+    // handling of the synthesized Ime::Disabled event above may have changed the focus back to the
+    // original widget. In that case, also refocus. This is messy.
+    if prev_focused != next_focused || synthesize_ime_disabled {
         let is_ime_active = if let Some(id) = next_focused {
             root.widget_arena.get_state(id).item.accepts_text_input
         } else {
@@ -472,12 +487,6 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // We also request accessibility, because build_access_node() depends on the focus state.
         if let Some(prev_focused) = prev_focused {
             if root.widget_arena.has(prev_focused) {
-                if was_ime_active {
-                    // IME was active, but the next focused widget is going to receive the
-                    // Ime::Disabled event. Synthesize an Ime::Disabled event here and send it to
-                    // the widget about to be unfocused.
-                    run_on_text_event_pass(root, &TextEvent::Ime(winit::event::Ime::Disabled));
-                }
                 run_single_update_pass(root, prev_focused, |widget, ctx| {
                     widget.update(ctx, &Update::FocusChanged(false));
                     ctx.widget_state.request_accessibility = true;
@@ -508,7 +517,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         }
     }
 
-    root.global_state.focused_widget = root.global_state.next_focused_widget;
+    root.global_state.focused_widget = next_focused;
     root.global_state.focused_path = next_focused_path;
 }
 
