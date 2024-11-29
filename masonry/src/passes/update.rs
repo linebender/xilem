@@ -11,8 +11,11 @@ use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_childr
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::tree_arena::ArenaMut;
 use crate::{
-    PointerEvent, QueryCtx, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetState,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetState,
 };
+
+use super::event::run_on_text_event_pass;
 
 // --- MARK: HELPERS ---
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
@@ -471,6 +474,12 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // We also request accessibility, because build_access_node() depends on the focus state.
         if let Some(prev_focused) = prev_focused {
             if root.widget_arena.has(prev_focused) {
+                if was_ime_active {
+                    // IME was active, but the next focused widget is going to receive the
+                    // Ime::Disabled event. Synthesize an Ime::Disabled event here and send it to
+                    // the widget about to be unfocused.
+                    run_on_text_event_pass(root, &TextEvent::Ime(winit::event::Ime::Disabled));
+                }
                 run_single_update_pass(root, prev_focused, |widget, ctx| {
                     widget.update(ctx, &Update::FocusChanged(false));
                     ctx.widget_state.request_accessibility = true;

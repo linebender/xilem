@@ -788,17 +788,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            Update::FocusChanged(focused) => {
-                // HACK: currently, when moving focus away from a text area, the Ime::Disabled
-                // event is routed to the newly focused widget. Do IME clean up here.
-                if !focused && self.editor.is_composing() {
-                    let (fctx, lctx) = ctx.text_contexts();
-                    self.editor.transact(fctx, lctx, |txn| txn.clear_compose());
-                    self.rendered_generation = self.editor.generation();
-                    ctx.request_layout();
-                } else {
-                    ctx.request_render();
-                }
+            Update::FocusChanged(_) => {
+                ctx.request_render();
             }
             Update::DisabledChanged(_) => {
                 // We might need to use the disabled brush, and stop displaying the selection.
