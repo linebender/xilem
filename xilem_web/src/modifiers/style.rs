@@ -154,6 +154,8 @@ fn set_style(element: &web_sys::Element, name: &str, value: &str) {
         el.style().set_property(name, value).unwrap_throw();
     } else if let Some(el) = element.dyn_ref::<web_sys::SvgElement>() {
         el.style().set_property(name, value).unwrap_throw();
+    } else if let Some(el) = element.dyn_ref::<web_sys::MathMlElement>() {
+        el.style().set_property(name, value).unwrap_throw();
     }
 }
 
@@ -161,6 +163,8 @@ fn remove_style(element: &web_sys::Element, name: &str) {
     if let Some(el) = element.dyn_ref::<web_sys::HtmlElement>() {
         el.style().remove_property(name).unwrap_throw();
     } else if let Some(el) = element.dyn_ref::<web_sys::SvgElement>() {
+        el.style().remove_property(name).unwrap_throw();
+    } else if let Some(el) = element.dyn_ref::<web_sys::MathMlElement>() {
         el.style().remove_property(name).unwrap_throw();
     }
 }
