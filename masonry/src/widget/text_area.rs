@@ -745,7 +745,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(text));
                         submit_text = Some(self.text().to_string());
                     }
-                    _ => {}
+                    winit::event::Ime::Enabled => {}
                 }
 
                 ctx.set_handled();
