@@ -804,11 +804,6 @@ where
             builder.push_default(prop.to_owned());
         }
         if let Some(ref preedit_range) = self.compose {
-            // TODO: underline currently doesn't show up, maybe the brush is invisible?
-            builder.push(
-                parley::style::StyleProperty::UnderlineBrush(Some(T::default())),
-                preedit_range.clone(),
-            );
             builder.push(
                 parley::style::StyleProperty::Underline(true),
                 preedit_range.clone(),
