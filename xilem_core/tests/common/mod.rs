@@ -9,7 +9,6 @@
 #![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
 
 use xilem_core::*;
 

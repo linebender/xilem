@@ -24,7 +24,6 @@
 #![cfg_attr(not(test), no_std)]
 #![forbid(unsafe_code)]
 // TODO: Remove any items listed as "Deferred"
-#![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
 #![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
 #![expect(
     clippy::shadow_unrelated,
