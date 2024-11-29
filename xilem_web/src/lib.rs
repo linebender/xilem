@@ -24,7 +24,6 @@
 #![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(unused_qualifications, reason = "Deferred: Noisy")]
-#![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
 #![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
