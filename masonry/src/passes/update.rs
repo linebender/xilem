@@ -405,13 +405,13 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let prev_focused = root.global_state.focused_widget;
     let was_ime_active = root.global_state.is_ime_active;
 
-    let synthesize_ime_disabled =
-        was_ime_active && prev_focused != root.global_state.next_focused_widget;
-    if synthesize_ime_disabled {
-        // IME was active, but the next focused widget is going to receive the
-        // Ime::Disabled event. Synthesize an Ime::Disabled event here and send it to
-        // the widget about to be unfocused.
+    let disable_ime = was_ime_active && prev_focused != root.global_state.next_focused_widget;
+    if disable_ime {
+        // IME was active, but the next focused widget is going to receive the Ime::Disabled event
+        // sent by the platform. Synthesize an Ime::Disabled event here and send it to the widget
+        // about to be unfocused.
         run_on_text_event_pass(root, &TextEvent::Ime(winit::event::Ime::Disabled));
+        root.global_state.emit_signal(RenderRootSignal::EndIme);
     }
 
     // Note: handling of the Ime::Disabled event sent above may have changed the next focused
@@ -475,14 +475,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     // Refocus if the focused widget changed. Or, if the focused widget was going to change, the
     // handling of the synthesized Ime::Disabled event above may have changed the focus back to the
     // original widget. In that case, also refocus. This is messy.
-    if prev_focused != next_focused || synthesize_ime_disabled {
-        let is_ime_active = if let Some(id) = next_focused {
-            root.widget_arena.get_state(id).item.accepts_text_input
-        } else {
-            false
-        };
-        root.global_state.is_ime_active = is_ime_active;
-
+    if prev_focused != next_focused || disable_ime {
         // We send FocusChange event to widget that lost and the widget that gained focus.
         // We also request accessibility, because build_access_node() depends on the focus state.
         if let Some(prev_focused) = prev_focused {
@@ -501,19 +494,20 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
                 ctx.widget_state.request_accessibility = true;
                 ctx.widget_state.needs_accessibility = true;
             });
-        }
 
-        if prev_focused.is_some() && was_ime_active {
-            root.global_state.emit_signal(RenderRootSignal::EndIme);
-        }
-        if next_focused.is_some() && is_ime_active {
-            root.global_state.emit_signal(RenderRootSignal::StartIme);
-        }
+            let widget_state = root.widget_arena.get_state(next_focused).item;
 
-        if let Some(id) = next_focused {
-            let ime_area = root.widget_arena.get_state(id).item.get_ime_area();
+            root.global_state.is_ime_active = widget_state.accepts_text_input;
+            if widget_state.accepts_text_input {
+                root.global_state.emit_signal(RenderRootSignal::StartIme);
+            }
+
             root.global_state
-                .emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
+                .emit_signal(RenderRootSignal::new_ime_moved_signal(
+                    widget_state.get_ime_area(),
+                ));
+        } else {
+            root.global_state.is_ime_active = false;
         }
     }
 
