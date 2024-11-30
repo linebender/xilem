@@ -394,6 +394,13 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 // --- MARK: UPDATE FOCUS ---
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus").entered();
+    // If the next-focused widget is disabled, stashed or removed, we set
+    // the focused id to None
+    if let Some(id) = root.global_state.next_focused_widget {
+        if !root.is_still_interactive(id) {
+            root.global_state.next_focused_widget = None;
+        }
+    }
 
     let prev_focused = root.global_state.focused_widget;
     let was_ime_active = root.global_state.is_ime_active;
@@ -417,6 +424,13 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // re-enabled for this widget. Re-enable IME here; the resultant `Ime::Enabled` event sent
         // by the platform will be routed to this widget as it remains the focused widget. We don't
         // handle this as above to avoid loops.
+        //
+        // First do the disabled, stashed or removed check again.
+        if let Some(id) = root.global_state.next_focused_widget {
+            if !root.is_still_interactive(id) {
+                root.global_state.next_focused_widget = None;
+            }
+        }
         if prev_focused == root.global_state.next_focused_widget {
             tracing::warn!(
                 id = prev_focused.map(|id| id.trace()),
@@ -426,13 +440,6 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         }
     }
 
-    // If the focused widget is disabled, stashed or removed, we set
-    // the focused id to None
-    if let Some(id) = root.global_state.next_focused_widget {
-        if !root.is_still_interactive(id) {
-            root.global_state.next_focused_widget = None;
-        }
-    }
     let next_focused = root.global_state.next_focused_widget;
 
     // "Focused path" means the focused widget, and all its parents.
