@@ -405,22 +405,30 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let prev_focused = root.global_state.focused_widget;
     let was_ime_active = root.global_state.is_ime_active;
 
-    let disable_ime = was_ime_active && prev_focused != root.global_state.next_focused_widget;
-    if disable_ime {
+    if was_ime_active && prev_focused != root.global_state.next_focused_widget {
         // IME was active, but the next focused widget is going to receive the Ime::Disabled event
-        // sent by the platform. Synthesize an Ime::Disabled event here and send it to the widget
+        // sent by the platform. Synthesize an `Ime::Disabled` event here and send it to the widget
         // about to be unfocused.
         run_on_text_event_pass(root, &TextEvent::Ime(winit::event::Ime::Disabled));
-        // Disable the IME, which was enabled specifically for this widget.
-        // Note that if the newly focused widget also requires IME, we will request it 
-        // again - this resets the platform's state, ensuring that partial IME 
-        // inputs do not "travel" between widgets
+
+        // Disable the IME, which was enabled specifically for this widget. Note that if the newly
+        // focused widget also requires IME, we will request it again - this resets the platform's
+        // state, ensuring that partial IME inputs do not "travel" between widgets
         root.global_state.emit_signal(RenderRootSignal::EndIme);
+
+        // Note: handling of the Ime::Disabled event sent above may have changed the next focused
+        // widget. In particular, focus may have changed back to the original widget we just
+        // disabled IME for.
+        //
+        // In this unlikely case, the rest of this handler will short-circuit, and IME would not be
+        // re-enabled for this widget. Re-enable IME here; the resultant `Ime::Enabled` event sent
+        // by the platform will be routed to this widget as it remains the focused widget. We don't
+        // handle this as above to avoid loops.
         if prev_focused == root.global_state.next_focused_widget {
-             tracing::warn!(id = prev_focused.map(|id| id.trace()), "request_focus called whilst handling Ime::Disabled");
-             // In this unlikely case, the rest of this handler will short-circuit, and IME will never be re-enabled 
-             // for this widget. The resultant `ImeEnabled` event will be routed to this widget as it is the focused
-             // widget. We don't handle this as above to avoid loops
+            tracing::warn!(
+                id = prev_focused.map(|id| id.trace()),
+                "request_focus called whilst handling Ime::Disabled"
+            );
             root.global_state.emit_signal(RenderRootSignal::StartIme);
         }
     }
@@ -483,10 +491,8 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         }
     }
 
-    // Refocus if the focused widget changed. Or, if the focused widget was going to change, the
-    // handling of the synthesized Ime::Disabled event above may have changed the focus back to the
-    // original widget. In that case, also refocus. This is messy.
-    if prev_focused != next_focused || disable_ime {
+    // Refocus if the focused widget changed.
+    if prev_focused != next_focused {
         // We send FocusChange event to widget that lost and the widget that gained focus.
         // We also request accessibility, because build_access_node() depends on the focus state.
         if let Some(prev_focused) = prev_focused {
