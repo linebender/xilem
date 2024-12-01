@@ -10,5 +10,5 @@ rust-version.workspace = true
 console_error_panic_hook = "0.1"
 console_log = "1.0.0"
 log = "0.4.22"
-web-sys = "0.3.69"
+web-sys = "0.3.74"
 xilem_web = { path = "../.." }
