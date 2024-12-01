@@ -23,8 +23,8 @@ workspace = true
 [dependencies]
 futures = "0.3.31"
 peniko.workspace = true
-wasm-bindgen = "0.2.96"
-wasm-bindgen-futures = "0.4.46"
+wasm-bindgen = "0.2.97"
+wasm-bindgen-futures = "0.4.47"
 xilem_core = { workspace = true, features = ["kurbo"] }
 
 [dependencies.web-sys]
