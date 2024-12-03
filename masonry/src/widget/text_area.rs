@@ -9,7 +9,7 @@ use std::time::Instant;
 use crate::kurbo::{Affine, Point, Size};
 use crate::text::{default_styles, render_text};
 use accesskit::{Node, NodeId, Role};
-use parley::editor::Generation;
+use parley::editor::{Generation, SplitString};
 use parley::layout::Alignment;
 use parley::PlainEditor;
 use smallvec::SmallVec;
@@ -156,7 +156,9 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Get the current text of this text area.
     ///
     /// To update the text of an active text area, use [`reset_text`](Self::reset_text).
-    pub fn text(&self) -> &str {
+    ///
+    /// The return value is not just `&str` to handle IME preedits.
+    pub fn text(&self) -> SplitString<'_> {
         self.editor.text()
     }
 
@@ -366,9 +368,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         // preedit will show up again when the platform updates it.
         if this.widget.editor.is_composing() {
             let (fctx, lctx) = this.ctx.text_contexts();
-            this.widget
-                .editor
-                .transact(fctx, lctx, |txn| txn.clear_compose());
+            this.widget.editor.driver(fctx, lctx).clear_compose();
         }
         this.widget.editor.set_text(new_text);
 
@@ -490,12 +490,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     let click_count = self.click_count;
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
                     let (fctx, lctx) = ctx.text_contexts();
-                    self.editor.drive(fctx, lctx, |drv| match click_count {
+                    let mut drv = self.editor.driver(fctx, lctx);
+                    match click_count {
                         2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         3 => drv.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         _ => drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),
-                    });
-
+                    }
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
                         ctx.request_render();
@@ -509,9 +509,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
                     let (fctx, lctx) = ctx.text_contexts();
-                    self.editor.drive(fctx, lctx, |drv| {
-                        drv.extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
-                    });
+                    self.editor
+                        .driver(fctx, lctx)
+                        .extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
                         ctx.request_render();
@@ -578,15 +578,16 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         // edited = true;
                     }
                     Key::Character(a) if action_mod && a.as_str().eq_ignore_ascii_case("a") => {
-                        self.editor.drive(fctx, lctx, |drv| {
-                            if shift {
-                                drv.collapse_selection();
-                            } else {
-                                drv.select_all();
-                            }
-                        });
+                        let mut drv = self.editor.driver(fctx, lctx);
+
+                        if shift {
+                            drv.collapse_selection();
+                        } else {
+                            drv.select_all();
+                        }
                     }
-                    Key::Named(NamedKey::ArrowLeft) => self.editor.drive(fctx, lctx, |drv| {
+                    Key::Named(NamedKey::ArrowLeft) => {
+                        let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
                                 drv.select_word_left();
@@ -598,8 +599,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         } else {
                             drv.move_left();
                         }
-                    }),
-                    Key::Named(NamedKey::ArrowRight) => self.editor.drive(fctx, lctx, |drv| {
+                    }
+                    Key::Named(NamedKey::ArrowRight) => {
+                        let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
                                 drv.select_word_right();
@@ -611,22 +613,25 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         } else {
                             drv.move_right();
                         }
-                    }),
-                    Key::Named(NamedKey::ArrowUp) => self.editor.drive(fctx, lctx, |drv| {
+                    }
+                    Key::Named(NamedKey::ArrowUp) => {
+                        let mut drv = self.editor.driver(fctx, lctx);
                         if shift {
                             drv.select_up();
                         } else {
                             drv.move_up();
                         }
-                    }),
-                    Key::Named(NamedKey::ArrowDown) => self.editor.drive(fctx, lctx, |drv| {
+                    }
+                    Key::Named(NamedKey::ArrowDown) => {
+                        let mut drv = self.editor.driver(fctx, lctx);
                         if shift {
                             drv.select_down();
                         } else {
                             drv.move_down();
                         }
-                    }),
-                    Key::Named(NamedKey::Home) => self.editor.drive(fctx, lctx, |drv| {
+                    }
+                    Key::Named(NamedKey::Home) => {
+                        let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
                                 drv.select_to_text_start();
@@ -638,8 +643,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         } else {
                             drv.move_to_line_start();
                         }
-                    }),
-                    Key::Named(NamedKey::End) => self.editor.drive(fctx, lctx, |drv| {
+                    }
+                    Key::Named(NamedKey::End) => {
+                        let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
                                 drv.select_to_text_end();
@@ -651,30 +657,31 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         } else {
                             drv.move_to_line_end();
                         }
-                    }),
+                    }
                     Key::Named(NamedKey::Delete) if EDITABLE => {
-                        self.editor.drive(fctx, lctx, |drv| {
-                            if action_mod {
-                                drv.delete_word();
-                            } else {
-                                drv.delete();
-                            }
-                        });
+                        let mut drv = self.editor.driver(fctx, lctx);
+                        if action_mod {
+                            drv.delete_word();
+                        } else {
+                            drv.delete();
+                        }
+
                         edited = true;
                     }
                     Key::Named(NamedKey::Backspace) if EDITABLE => {
-                        self.editor.drive(fctx, lctx, |drv| {
-                            if action_mod {
-                                drv.backdelete_word();
-                            } else {
-                                drv.backdelete();
-                            }
-                        });
+                        let mut drv = self.editor.driver(fctx, lctx);
+                        if action_mod {
+                            drv.backdelete_word();
+                        } else {
+                            drv.backdelete();
+                        }
+
                         edited = true;
                     }
                     Key::Named(NamedKey::Space) if EDITABLE => {
                         self.editor
-                            .drive(fctx, lctx, |drv| drv.insert_or_replace_selection(" "));
+                            .driver(fctx, lctx)
+                            .insert_or_replace_selection(" ");
                         edited = true;
                     }
                     Key::Named(NamedKey::Enter) => {
@@ -683,7 +690,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         if multiline {
                             let (fctx, lctx) = ctx.text_contexts();
                             self.editor
-                                .drive(fctx, lctx, |drv| drv.insert_or_replace_selection("\n"));
+                                .driver(fctx, lctx)
+                                .insert_or_replace_selection("\n");
                             edited = true;
                         } else {
                             ctx.submit_action(crate::Action::TextEntered(self.text().to_string()));
@@ -698,7 +706,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     _ if EDITABLE => match &key_event.text {
                         Some(text) => {
                             self.editor
-                                .drive(fctx, lctx, |drv| drv.insert_or_replace_selection(text));
+                                .driver(fctx, lctx)
+                                .insert_or_replace_selection(text);
                             edited = true;
                         }
                         None => {
@@ -715,7 +724,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     if edited {
-                        ctx.submit_action(crate::Action::TextChanged(self.text().to_string()));
+                        ctx.submit_action(crate::Action::TextChanged(
+                            self.text().into_iter().collect(),
+                        ));
                         ctx.request_layout();
                     } else {
                         ctx.request_render();
@@ -728,44 +739,37 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
                 let (fctx, lctx) = ctx.text_contexts();
-                // The text to submit as the TextChanged action. We do not send a TextChange action
-                // for the "virtual" preedit text.
-                let mut submit_text = None;
+
+                // Whether the returned text has changed.
+                // We don't send a TextChanged when the preedit changes
+                let mut edited = false;
                 match e {
                     winit::event::Ime::Disabled => {
-                        self.editor.drive(fctx, lctx, |drv| drv.clear_compose());
+                        self.editor.driver(fctx, lctx).clear_compose();
                     }
                     winit::event::Ime::Preedit(text, cursor) => {
                         if text.is_empty() {
-                            self.editor.drive(fctx, lctx, |drv| drv.clear_compose());
+                            self.editor.driver(fctx, lctx).clear_compose();
                         } else {
-                            if !self.editor.is_composing() && self.editor.selected_text().is_some()
-                            {
-                                // The IME has started composing. Delete the current selection and
-                                // send a TextChange event with the selection removed, but without
-                                // the composing preedit text.
-                                self.editor.drive(fctx, lctx, |drv| {
-                                    drv.delete_selection();
-                                });
-                                submit_text = Some(self.text().to_string());
-                            }
-
-                            self.editor
-                                .drive(fctx, lctx, |drv| drv.set_compose(text, *cursor));
+                            self.editor.driver(fctx, lctx).set_compose(text, *cursor);
+                            edited = true;
                         }
                     }
                     winit::event::Ime::Commit(text) => {
                         self.editor
-                            .drive(fctx, lctx, |drv| drv.insert_or_replace_selection(text));
-                        submit_text = Some(self.text().to_string());
+                            .driver(fctx, lctx)
+                            .insert_or_replace_selection(text);
+                        edited = true;
                     }
                     winit::event::Ime::Enabled => {}
                 }
 
                 ctx.set_handled();
-                if let Some(text) = submit_text {
+                if edited {
+                    let text = self.text().into_iter().collect();
                     ctx.submit_action(crate::Action::TextChanged(text));
                 }
+
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     ctx.request_layout();
@@ -793,7 +797,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             if let Some(accesskit::ActionData::SetTextSelection(selection)) = &event.data {
                 let (fctx, lctx) = ctx.text_contexts();
                 self.editor
-                    .drive(fctx, lctx, |drv| drv.select_from_accesskit(selection));
+                    .driver(fctx, lctx)
+                    .select_from_accesskit(selection);
             }
         }
     }

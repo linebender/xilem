@@ -94,7 +94,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // without calling `set_text`.
 
         // This is probably not the right behaviour, but determining what is the right behaviour is hard
-        if self.contents != text_area.widget.text() {
+        if text_area.widget.text() != &self.contents {
             widget::TextArea::reset_text(&mut text_area, &self.contents);
         }
 

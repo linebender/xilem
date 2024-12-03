@@ -109,7 +109,7 @@ vello = "0.3"
 wgpu = "22.1.0"
 kurbo = "0.11.1"
 # https://github.com/linebender/parley/pull/192
-parley = { git = "https://github.com/linebender/parley", rev = "dd778df2c4fcb984cd618dd0a46cc0d17970573c", features = [
+parley = { git = "https://github.com/linebender/parley", rev = "399794c302e0615c396469ee6918f48143fc8c22", features = [
     "accesskit",
 ] }
 peniko = "0.2.0"
