@@ -356,6 +356,15 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// This is likely to be disruptive if the user is focused on this widget,
     /// as it does not retain selections, and may cause undesirable interactions with IME.
     pub fn reset_text(this: &mut WidgetMut<'_, Self>, new_text: &str) {
+        // If the IME is currently composing, we need to clear the compose first. This is quite
+        // disruptive, but we've warned about that. The platform's state is not reset, and the
+        // preedit will show up again when the platform updates it.
+        if this.widget.editor.is_composing() {
+            let (fctx, lctx) = this.ctx.text_contexts();
+            this.widget
+                .editor
+                .transact(fctx, lctx, |txn| txn.clear_compose());
+        }
         this.widget.editor.set_text(new_text);
 
         this.ctx.request_layout();
