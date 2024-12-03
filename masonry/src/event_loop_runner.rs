@@ -471,7 +471,11 @@ impl MasonryState<'_> {
                 };
                 accesskit_adapter.update_if_active(|| tree_update);
             }
-            WinitWindowEvent::CloseRequested => event_loop.exit(),
+            WinitWindowEvent::CloseRequested => {
+                //
+                window.set_ime_allowed(false);
+                event_loop.exit();
+            }
             WinitWindowEvent::Resized(size) => {
                 self.render_root
                     .handle_window_event(WindowEvent::Resize(size));
