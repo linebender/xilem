@@ -1,13 +1,17 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 use std::mem::Discriminant;
 use std::time::Instant;
 
 use crate::kurbo::{Affine, Point, Size};
-use crate::text::{render_text, Generation, PlainEditor};
+use crate::text::{default_styles, render_text};
 use accesskit::{Node, NodeId, Role};
+use parley::editor::Generation;
 use parley::layout::Alignment;
+use parley::PlainEditor;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::Vec2;
@@ -131,6 +135,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: &str) -> Self {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
+        default_styles(editor.edit_styles());
         editor.set_text(text);
         TextArea {
             editor,
@@ -485,10 +490,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     let click_count = self.click_count;
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
                     let (fctx, lctx) = ctx.text_contexts();
-                    self.editor.transact(fctx, lctx, |txn| match click_count {
-                        2 => txn.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
-                        3 => txn.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
-                        _ => txn.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),
+                    self.editor.drive(fctx, lctx, |drv| match click_count {
+                        2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
+                        3 => drv.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
+                        _ => drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),
                     });
 
                     let new_generation = self.editor.generation();
@@ -504,8 +509,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 if !ctx.is_disabled() && ctx.has_pointer_capture() {
                     let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
                     let (fctx, lctx) = ctx.text_contexts();
-                    self.editor.transact(fctx, lctx, |txn| {
-                        txn.extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
+                    self.editor.drive(fctx, lctx, |drv| {
+                        drv.extend_selection_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
                     });
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
@@ -547,7 +552,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         // if let Some(text) = self.editor.selected_text() {
                         //     let cb = ClipboardContext::new().unwrap();
                         //     cb.set_text(text.to_owned()).ok();
-                        //     self.editor.transact(fcx, lcx, |txn| txn.delete_selection());
+                        //     self.editor.drive(fcx, lcx, |drv| drv.delete_selection());
                         // }
                         // edited = true;
                     }
@@ -569,107 +574,107 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
                         // let cb = ClipboardContext::new().unwrap();
                         // let text = cb.get_text().unwrap_or_default();
-                        // self.editor.transact(fcx, lcx, |txn| txn.insert_or_replace_selection(&text));
+                        // self.editor.drive(fcx, lcx, |drv| drv.insert_or_replace_selection(&text));
                         // edited = true;
                     }
                     Key::Character(a) if action_mod && a.as_str().eq_ignore_ascii_case("a") => {
-                        self.editor.transact(fctx, lctx, |txn| {
+                        self.editor.drive(fctx, lctx, |drv| {
                             if shift {
-                                txn.collapse_selection();
+                                drv.collapse_selection();
                             } else {
-                                txn.select_all();
+                                drv.select_all();
                             }
                         });
                     }
-                    Key::Named(NamedKey::ArrowLeft) => self.editor.transact(fctx, lctx, |txn| {
+                    Key::Named(NamedKey::ArrowLeft) => self.editor.drive(fctx, lctx, |drv| {
                         if action_mod {
                             if shift {
-                                txn.select_word_left();
+                                drv.select_word_left();
                             } else {
-                                txn.move_word_left();
+                                drv.move_word_left();
                             }
                         } else if shift {
-                            txn.select_left();
+                            drv.select_left();
                         } else {
-                            txn.move_left();
+                            drv.move_left();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowRight) => self.editor.transact(fctx, lctx, |txn| {
+                    Key::Named(NamedKey::ArrowRight) => self.editor.drive(fctx, lctx, |drv| {
                         if action_mod {
                             if shift {
-                                txn.select_word_right();
+                                drv.select_word_right();
                             } else {
-                                txn.move_word_right();
+                                drv.move_word_right();
                             }
                         } else if shift {
-                            txn.select_right();
+                            drv.select_right();
                         } else {
-                            txn.move_right();
+                            drv.move_right();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowUp) => self.editor.transact(fctx, lctx, |txn| {
+                    Key::Named(NamedKey::ArrowUp) => self.editor.drive(fctx, lctx, |drv| {
                         if shift {
-                            txn.select_up();
+                            drv.select_up();
                         } else {
-                            txn.move_up();
+                            drv.move_up();
                         }
                     }),
-                    Key::Named(NamedKey::ArrowDown) => self.editor.transact(fctx, lctx, |txn| {
+                    Key::Named(NamedKey::ArrowDown) => self.editor.drive(fctx, lctx, |drv| {
                         if shift {
-                            txn.select_down();
+                            drv.select_down();
                         } else {
-                            txn.move_down();
+                            drv.move_down();
                         }
                     }),
-                    Key::Named(NamedKey::Home) => self.editor.transact(fctx, lctx, |txn| {
+                    Key::Named(NamedKey::Home) => self.editor.drive(fctx, lctx, |drv| {
                         if action_mod {
                             if shift {
-                                txn.select_to_text_start();
+                                drv.select_to_text_start();
                             } else {
-                                txn.move_to_text_start();
+                                drv.move_to_text_start();
                             }
                         } else if shift {
-                            txn.select_to_line_start();
+                            drv.select_to_line_start();
                         } else {
-                            txn.move_to_line_start();
+                            drv.move_to_line_start();
                         }
                     }),
-                    Key::Named(NamedKey::End) => self.editor.transact(fctx, lctx, |txn| {
+                    Key::Named(NamedKey::End) => self.editor.drive(fctx, lctx, |drv| {
                         if action_mod {
                             if shift {
-                                txn.select_to_text_end();
+                                drv.select_to_text_end();
                             } else {
-                                txn.move_to_text_end();
+                                drv.move_to_text_end();
                             }
                         } else if shift {
-                            txn.select_to_line_end();
+                            drv.select_to_line_end();
                         } else {
-                            txn.move_to_line_end();
+                            drv.move_to_line_end();
                         }
                     }),
                     Key::Named(NamedKey::Delete) if EDITABLE => {
-                        self.editor.transact(fctx, lctx, |txn| {
+                        self.editor.drive(fctx, lctx, |drv| {
                             if action_mod {
-                                txn.delete_word();
+                                drv.delete_word();
                             } else {
-                                txn.delete();
+                                drv.delete();
                             }
                         });
                         edited = true;
                     }
                     Key::Named(NamedKey::Backspace) if EDITABLE => {
-                        self.editor.transact(fctx, lctx, |txn| {
+                        self.editor.drive(fctx, lctx, |drv| {
                             if action_mod {
-                                txn.backdelete_word();
+                                drv.backdelete_word();
                             } else {
-                                txn.backdelete();
+                                drv.backdelete();
                             }
                         });
                         edited = true;
                     }
                     Key::Named(NamedKey::Space) if EDITABLE => {
                         self.editor
-                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(" "));
+                            .drive(fctx, lctx, |drv| drv.insert_or_replace_selection(" "));
                         edited = true;
                     }
                     Key::Named(NamedKey::Enter) => {
@@ -678,7 +683,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         if multiline {
                             let (fctx, lctx) = ctx.text_contexts();
                             self.editor
-                                .transact(fctx, lctx, |txn| txn.insert_or_replace_selection("\n"));
+                                .drive(fctx, lctx, |drv| drv.insert_or_replace_selection("\n"));
                             edited = true;
                         } else {
                             ctx.submit_action(crate::Action::TextEntered(self.text().to_string()));
@@ -693,7 +698,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     _ if EDITABLE => match &key_event.text {
                         Some(text) => {
                             self.editor
-                                .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(text));
+                                .drive(fctx, lctx, |drv| drv.insert_or_replace_selection(text));
                             edited = true;
                         }
                         None => {
@@ -728,30 +733,30 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let mut submit_text = None;
                 match e {
                     winit::event::Ime::Disabled => {
-                        self.editor.transact(fctx, lctx, |txn| txn.clear_compose());
+                        self.editor.drive(fctx, lctx, |drv| drv.clear_compose());
                     }
                     winit::event::Ime::Preedit(text, cursor) => {
                         if text.is_empty() {
-                            self.editor.transact(fctx, lctx, |txn| txn.clear_compose());
+                            self.editor.drive(fctx, lctx, |drv| drv.clear_compose());
                         } else {
                             if !self.editor.is_composing() && self.editor.selected_text().is_some()
                             {
                                 // The IME has started composing. Delete the current selection and
                                 // send a TextChange event with the selection removed, but without
                                 // the composing preedit text.
-                                self.editor.transact(fctx, lctx, |txn| {
-                                    txn.delete_selection();
+                                self.editor.drive(fctx, lctx, |drv| {
+                                    drv.delete_selection();
                                 });
                                 submit_text = Some(self.text().to_string());
                             }
 
                             self.editor
-                                .transact(fctx, lctx, |txn| txn.set_compose(text, *cursor));
+                                .drive(fctx, lctx, |drv| drv.set_compose(text, *cursor));
                         }
                     }
                     winit::event::Ime::Commit(text) => {
                         self.editor
-                            .transact(fctx, lctx, |txn| txn.insert_or_replace_selection(text));
+                            .drive(fctx, lctx, |drv| drv.insert_or_replace_selection(text));
                         submit_text = Some(self.text().to_string());
                     }
                     winit::event::Ime::Enabled => {}
@@ -788,7 +793,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             if let Some(accesskit::ActionData::SetTextSelection(selection)) = &event.data {
                 let (fctx, lctx) = ctx.text_contexts();
                 self.editor
-                    .transact(fctx, lctx, |txn| txn.select_from_accesskit(selection));
+                    .drive(fctx, lctx, |drv| drv.select_from_accesskit(selection));
             }
         }
     }
@@ -850,14 +855,14 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let layout = if let Some(layout) = self.editor.get_layout() {
+        let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
             debug_panic!("Widget `layout` should have happened before paint");
             let (fctx, lctx) = ctx.text_contexts();
             // The `layout` method takes `&mut self`, so we get borrow-checker errors if we return it from this block.
-            self.editor.layout(fctx, lctx);
-            self.editor.layout_raw()
+            self.editor.refresh_layout(fctx, lctx);
+            self.editor.try_layout().unwrap()
         };
         let is_rtl = layout.is_rtl();
         let origin = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
@@ -902,15 +907,18 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             node.set_read_only();
         }
         let (fctx, lctx) = ctx.text_contexts();
-        let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
+        let layout = self.editor.layout(fctx, lctx);
+        let is_rtl = layout.is_rtl();
         let origin = ctx.window_origin();
-        self.editor.accessibility(
-            ctx.tree_update,
-            node,
-            || NodeId::from(WidgetId::next()),
-            origin.x + self.padding.get_left(is_rtl),
-            origin.y + self.padding.top,
-        );
+        self.editor
+            .try_accessibility(
+                ctx.tree_update,
+                node,
+                || NodeId::from(WidgetId::next()),
+                origin.x + self.padding.get_left(is_rtl),
+                origin.y + self.padding.top,
+            )
+            .expect("We just performed a layout");
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

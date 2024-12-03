@@ -1,6 +1,8 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 //! A label widget.
 
 use std::mem::Discriminant;
@@ -14,7 +16,7 @@ use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Brush};
 use vello::Scene;
 
-use crate::text::{render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
+use crate::text::{default_styles, render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
@@ -83,11 +85,13 @@ impl Label {
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: impl Into<ArcStr>) -> Self {
+        let mut styles = StyleSet::new(theme::TEXT_SIZE_NORMAL);
+        default_styles(&mut styles);
         Self {
             text_layout: Layout::new(),
             accessibility: Default::default(),
             text: text.into(),
-            styles: StyleSet::new(theme::TEXT_SIZE_NORMAL),
+            styles,
             styles_changed: true,
             line_break_mode: LineBreaking::Overflow,
             alignment: Alignment::Start,

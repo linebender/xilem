@@ -11,12 +11,14 @@ use vello::Scene;
 use super::BrushIndex;
 
 /// A function that renders laid out glyphs to a [`Scene`].
+///
+/// The `BrushIndex` values of the runs are indices into `brushes`.
 pub fn render_text(
     scene: &mut Scene,
     transform: Affine,
     layout: &Layout<BrushIndex>,
     brushes: &[Brush],
-    // TODO: Should this be part of `BrushIndex`?
+    // TODO: Should this be part of `BrushIndex` (i.e. `brushes`)?
     hint: bool,
 ) {
     for line in layout.lines() {
