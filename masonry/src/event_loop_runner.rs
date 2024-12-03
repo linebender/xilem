@@ -471,7 +471,13 @@ impl MasonryState<'_> {
                 };
                 accesskit_adapter.update_if_active(|| tree_update);
             }
-            WinitWindowEvent::CloseRequested => event_loop.exit(),
+            WinitWindowEvent::CloseRequested => {
+                // HACK: When we exit, on some systems (known to happen with Wayland on KDE),
+                // the IME state gets preserved until the app next opens. We work around this by force-deleting
+                // the IME state just before exiting.
+                window.set_ime_allowed(false);
+                event_loop.exit();
+            }
             WinitWindowEvent::Resized(size) => {
                 self.render_root
                     .handle_window_event(WindowEvent::Resize(size));
