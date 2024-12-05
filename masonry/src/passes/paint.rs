@@ -4,6 +4,7 @@
 use std::collections::HashMap;
 
 use tracing::{info_span, trace};
+use tree_arena::ArenaMut;
 use vello::kurbo::{Affine, Stroke};
 use vello::peniko::Mix;
 use vello::Scene;
@@ -11,7 +12,6 @@ use vello::Scene;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
-use crate::tree_arena::ArenaMut;
 use crate::{PaintCtx, Widget, WidgetId, WidgetState};
 
 // --- MARK: PAINT WIDGET ---

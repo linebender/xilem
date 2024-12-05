@@ -162,7 +162,6 @@ mod paint_scene_helpers;
 mod passes;
 mod render_root;
 mod tracing_backend;
-mod tree_arena;
 
 pub mod event_loop_runner;
 pub mod testing;

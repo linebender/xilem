@@ -1,0 +1,34 @@
+[package]
+name = "tree_arena"
+version = "0.1.0"
+description = "An arena allocated tree designed for Linebender"
+keywords = ["arena", "tree"]
+categories = ["gui"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+
+[package.metadata.docs.rs]
+all-features = true # all features are enabled - this means that the generated docs are for the safe version
+# There are no platform specific docs.
+default-target = "x86_64-unknown-linux-gnu"
+targets = []
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+# cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"] # no examples yet
+
+
+[dependencies]
+
+[features]
+# This crate contains two implementations of a tree for use in masonry, one safe and the other unsafe.
+# The safe tree is known to work, and serves as the baseline implementation and is used by default.
+# The unsafe tree leverages a hashmap as an arena and is designed for higher performance: it leverages unsafe code to achieve this.
+# The unsafe tree is not yet fully tested, and is not used by default.
+default = ["safe_tree"]
+safe_tree = []
+
+[lints]
+workspace = true

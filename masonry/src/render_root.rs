@@ -7,6 +7,7 @@ use accesskit::{ActionRequest, TreeUpdate};
 use parley::fontique::{self, Collection, CollectionOptions};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
+use tree_arena::{ArenaMut, TreeArena};
 use vello::kurbo::{self, Rect};
 use vello::Scene;
 use winit::window::ResizeDirection;
@@ -35,7 +36,6 @@ use crate::passes::update::{
 };
 use crate::passes::{recurse_on_children, PassTracing};
 use crate::text::BrushIndex;
-use crate::tree_arena::{ArenaMut, TreeArena};
 use crate::widget::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
 use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
 

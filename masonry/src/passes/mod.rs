@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::span::EnteredSpan;
+use tree_arena::{ArenaMut, ArenaMutChildren, ArenaRef};
 
 use crate::render_root::RenderRootState;
-use crate::tree_arena::{ArenaMut, ArenaMutChildren, ArenaRef};
 use crate::widget::WidgetArena;
 use crate::{QueryCtx, Widget, WidgetId, WidgetState};
 

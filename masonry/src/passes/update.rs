@@ -5,11 +5,11 @@ use std::collections::HashSet;
 
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
+use tree_arena::ArenaMut;
 
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
-use crate::tree_arena::ArenaMut;
 use crate::{
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
     WidgetState,
