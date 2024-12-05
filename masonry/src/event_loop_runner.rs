@@ -479,6 +479,12 @@ impl MasonryState<'_> {
                 event_loop.exit();
             }
             WinitWindowEvent::Resized(size) => {
+                if size.width == 0 || size.height == 0 {
+                    self.handle_suspended(event_loop);
+                    return;
+                } else if let WindowState::Suspended { .. } = &mut self.window {
+                    self.handle_resumed(event_loop);
+                }
                 self.render_root
                     .handle_window_event(WindowEvent::Resize(size));
             }
