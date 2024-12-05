@@ -98,7 +98,7 @@ jobs:
 
       - name: cargo rdme masonry
         run: |
-          cargo rdme --check --workspace-project=masonry
+          cargo rdme --check --heading-base-level=0 --workspace-project=masonry
 
       - name: cargo rdme tree_arena
         run: |
