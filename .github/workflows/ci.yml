@@ -96,9 +96,13 @@ jobs:
         with:
           tool: cargo-rdme
 
-      - name: cargo rdme
+      - name: cargo rdme masonry
         run: |
           cargo rdme --check --workspace-project=masonry
+
+      - name: cargo rdme tree_arena
+        run: |
+          cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
 
   clippy-stable:
     name: cargo clippy
@@ -195,7 +199,7 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
     - name: Cache git lfs
       id: lfs-cache
       uses: actions/cache@v4
@@ -209,7 +213,7 @@ jobs:
     - name: Fetch lfs data
       if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
       run: git lfs fetch
-        
+
   test-stable:
     name: cargo test
     needs: prime-lfs-cache
@@ -279,7 +283,7 @@ jobs:
           # because those require Vello rendering to be working
           # See also https://github.com/linebender/vello/pull/610
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
-      
+
       - name: Upload test results due to failure
         uses: actions/upload-artifact@v4
         if: failure()
