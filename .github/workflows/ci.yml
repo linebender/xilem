@@ -102,7 +102,7 @@ jobs:
 
       - name: cargo rdme tree_arena
         run: |
-          cargo rdme --check --workspace-project=tree_arena
+          cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
 
   clippy-stable:
     name: cargo clippy

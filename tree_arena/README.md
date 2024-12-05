@@ -4,6 +4,11 @@
 [![Linebender Zulip chat.](https://img.shields.io/badge/Linebender-%23masonry-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/317477-masonry)
 [![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
 
+<!-- We use cargo-rdme to update the README with the contents of lib.rs.
+To edit the following section, update it in lib.rs, then run:
+cargo rdme --workspace-project=color --heading-base-level=0
+Full documentation at https://github.com/orium/cargo-rdme -->
+
 <!-- cargo-rdme start -->
 
 This crate contains two implementations of a tree for use in [Masonry], one safe and the other unsafe. The safe tree is known to work, and serves as the baseline implementation and is used by default.
