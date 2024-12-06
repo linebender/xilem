@@ -19,7 +19,7 @@ use std::collections::HashMap;
 struct TreeNode<T> {
     id: NodeId,
     item: T,
-    children: Vec<TreeNode<T>>,
+    children: HashMap<NodeId, TreeNode<T>>,
 }
 
 // TODO - ArenaRefChildren and ArenaMutChildren might be easier to document if they were
@@ -33,7 +33,7 @@ struct TreeNode<T> {
 /// and its children.
 #[derive(Debug, Default)]
 pub struct TreeArena<T> {
-    roots: Vec<TreeNode<T>>,
+    roots: HashMap<NodeId, TreeNode<T>>,
     parents_map: HashMap<NodeId, Option<NodeId>>,
 }
 
@@ -79,7 +79,7 @@ pub struct ArenaMut<'arena, T> {
 #[derive(Debug)]
 pub struct ArenaRefChildren<'arena, T> {
     id: Option<NodeId>,
-    children: &'arena Vec<TreeNode<T>>,
+    children: &'arena HashMap<NodeId, TreeNode<T>>,
     parents_map: ArenaMapRef<'arena>,
 }
 
@@ -89,7 +89,7 @@ pub struct ArenaRefChildren<'arena, T> {
 #[derive(Debug)]
 pub struct ArenaMutChildren<'arena, T> {
     id: Option<NodeId>,
-    children: &'arena mut Vec<TreeNode<T>>,
+    children: &'arena mut HashMap<NodeId, TreeNode<T>>,
     parents_map: ArenaMapMut<'arena>,
 }
 
@@ -127,7 +127,7 @@ impl<T> TreeArena<T> {
     /// Create an empty tree.
     pub fn new() -> Self {
         Self {
-            roots: Vec::new(),
+            roots: HashMap::new(),
             parents_map: HashMap::new(),
         }
     }
@@ -273,7 +273,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
     /// Returns true if the handle has a child with the given id.
     pub fn has_child(self, id: impl Into<NodeId>) -> bool {
         let id = id.into();
-        self.children.iter().any(|child| child.id == id)
+        self.children.contains_key(&id)
     }
 
     /// Get the child of the item this handle is associated with, which has the given id.
@@ -283,8 +283,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
     pub fn get_child(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         self.children
-            .iter()
-            .find(|child| child.id == id)
+            .get(&id)
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
@@ -295,8 +294,7 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
     pub fn into_child(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         self.children
-            .iter()
-            .find(|child| child.id == id)
+            .get(&id)
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
@@ -324,13 +322,10 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
         let mut node_children = self.children;
         while let Some((ancestor_id, new_id_path)) = id_path.split_last() {
             id_path = new_id_path;
-            node_children = &node_children
-                .iter()
-                .find(|child| child.id == *ancestor_id)?
-                .children;
+            node_children = &node_children.get(ancestor_id)?.children;
         }
 
-        let node = node_children.iter().find(|child| child.id == id)?;
+        let node = node_children.get(&id)?;
         Some(node.arena_ref(*parent_id, self.parents_map.parents_map))
     }
 }
@@ -343,8 +338,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     pub fn get_child(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
         self.children
-            .iter()
-            .find(|child| child.id == id)
+            .get(&id)
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
@@ -355,8 +349,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     pub fn get_child_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
         self.children
-            .iter_mut()
-            .find(|child| child.id == id)
+            .get_mut(&id)
             .map(|child| child.arena_mut(self.id, self.parents_map.parents_map))
     }
 
@@ -367,8 +360,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     pub fn into_child(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
         self.children
-            .iter()
-            .find(|child| child.id == id)
+            .get(&id)
             .map(|child| child.arena_ref(self.id, self.parents_map.parents_map))
     }
 
@@ -379,8 +371,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     pub fn into_child_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
         self.children
-            .iter_mut()
-            .find(|child| child.id == id)
+            .get_mut(&id)
             .map(|child| child.arena_mut(self.id, self.parents_map.parents_map))
     }
 
@@ -403,11 +394,14 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         );
         self.parents_map.parents_map.insert(child_id, self.id);
 
-        self.children.push(TreeNode {
-            id: child_id,
-            item: value,
-            children: Vec::new(),
-        });
+        self.children.insert(
+            child_id,
+            TreeNode {
+                id: child_id,
+                item: value,
+                children: HashMap::new(),
+            },
+        );
     }
 
     // TODO - How to handle when a subtree is removed?
@@ -420,23 +414,19 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     #[must_use]
     pub fn remove_child(&mut self, child_id: impl Into<NodeId>) -> Option<T> {
         let child_id = child_id.into();
-        let i = self
-            .children
-            .iter()
-            .position(|child| child.id == child_id)?;
+        let child = self.children.remove(&child_id)?;
 
-        fn remove_children<I>(
+        fn remove_children_from_map<I>(
             node: &TreeNode<I>,
             parents_map: &mut HashMap<NodeId, Option<NodeId>>,
         ) {
             for child in &node.children {
-                remove_children(child, parents_map);
+                remove_children_from_map(child.1, parents_map);
             }
             parents_map.remove(&node.id);
         }
 
-        let child = self.children.remove(i);
-        remove_children(&child, self.parents_map.parents_map);
+        remove_children_from_map(&child, self.parents_map.parents_map);
 
         Some(child.item)
     }
@@ -496,13 +486,10 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         let mut node_children: &'arena mut _ = &mut *self.children;
         while let Some((ancestor_id, new_id_path)) = id_path.split_last() {
             id_path = new_id_path;
-            node_children = &mut node_children
-                .iter_mut()
-                .find(|child| child.id == *ancestor_id)?
-                .children;
+            node_children = &mut node_children.get_mut(ancestor_id)?.children;
         }
 
-        let node = node_children.iter_mut().find(|child| child.id == id)?;
+        let node = node_children.get_mut(&id)?;
         Some(node.arena_mut(*parent_id, &mut *self.parents_map.parents_map))
     }
 }
