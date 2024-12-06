@@ -250,6 +250,45 @@ impl MasonryState<'_> {
         }
     }
 
+    fn configure_window(&mut self, window: Arc<winit::window::Window>, accesskit_adapter: Adapter) {
+        // https://github.com/rust-windowing/winit/issues/2308
+        let size = if cfg!(target_os = "ios") {
+            window.outer_size()
+        } else {
+            window.inner_size()
+        };
+
+        let mut surface = pollster::block_on(self.render_cx.create_surface(
+            window.clone(),
+            size.width,
+            size.height,
+            PresentMode::AutoVsync,
+        ))
+        .unwrap();
+
+        // Although the adapter is stored in the device handle in Vello 0.2, it is private and there is no accessor for it.
+        // And so, here we initialize the adapter the same way that Vello does.
+        let adapter = pollster::block_on(wgpu::util::initialize_adapter_from_env_or_default(
+            &self.render_cx.instance,
+            Some(&surface.surface),
+        ))
+        .unwrap();
+        let capabilities = surface.surface.get_capabilities(&adapter);
+        if capabilities
+            .present_modes
+            .contains(&wgpu::PresentMode::Mailbox)
+        {
+            self.render_cx
+                .set_present_mode(&mut surface, wgpu::PresentMode::Mailbox);
+        }
+
+        self.window = WindowState::Rendering {
+            window,
+            surface,
+            accesskit_adapter,
+        }
+    }
+
     // --- MARK: RESUMED ---
     pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop) {
         match std::mem::replace(
@@ -265,50 +304,19 @@ impl MasonryState<'_> {
 
                 let adapter = Adapter::with_event_loop_proxy(&window, self.proxy.clone());
                 window.set_visible(visible);
-                let window = Arc::new(window);
-                // https://github.com/rust-windowing/winit/issues/2308
-                #[cfg(target_os = "ios")]
-                let size = window.outer_size();
-                #[cfg(not(target_os = "ios"))]
-                let size = window.inner_size();
-                let surface = pollster::block_on(self.render_cx.create_surface(
-                    window.clone(),
-                    size.width,
-                    size.height,
-                    PresentMode::AutoVsync,
-                ))
-                .unwrap();
                 let scale_factor = window.scale_factor();
-                self.window = WindowState::Rendering {
-                    window,
-                    surface,
-                    accesskit_adapter: adapter,
-                };
+
+                let window = Arc::new(window);
+
+                self.configure_window(window, adapter);
+
                 self.render_root
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WindowState::Suspended {
                 window,
                 accesskit_adapter,
-            } => {
-                // https://github.com/rust-windowing/winit/issues/2308
-                #[cfg(target_os = "ios")]
-                let size = window.outer_size();
-                #[cfg(not(target_os = "ios"))]
-                let size = window.inner_size();
-                let surface = pollster::block_on(self.render_cx.create_surface(
-                    window.clone(),
-                    size.width,
-                    size.height,
-                    PresentMode::AutoVsync,
-                ))
-                .unwrap();
-                self.window = WindowState::Rendering {
-                    window,
-                    surface,
-                    accesskit_adapter,
-                }
-            }
+            } => self.configure_window(window, accesskit_adapter),
             _ => {
                 // We have received a redundant resumed event. That's allowed by winit
             }
