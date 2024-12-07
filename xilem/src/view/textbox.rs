@@ -1,11 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget;
+use masonry::{widget, Affine};
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+
+use super::Transformable;
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -24,6 +26,7 @@ where
         on_enter: None,
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
+        transform: Affine::IDENTITY,
         // TODO?: disabled: false,
     }
 }
@@ -35,6 +38,7 @@ pub struct Textbox<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_brush: Brush,
     alignment: TextAlignment,
+    transform: Affine,
     // TODO: add more attributes of `masonry::widget::TextBox`
 }
 
@@ -56,6 +60,12 @@ impl<State, Action> Textbox<State, Action> {
     {
         self.on_enter = Some(Box::new(on_enter));
         self
+    }
+}
+
+impl<State, Action> Transformable for Textbox<State, Action> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
     }
 }
 
@@ -85,6 +95,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         let mut text_area = widget::Textbox::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;
