@@ -12,7 +12,6 @@ use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{trace_span, Span};
-use vello::kurbo::Affine;
 use vello::Scene;
 
 use crate::contexts::ComposeCtx;
