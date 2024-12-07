@@ -33,7 +33,7 @@ fn compose_widget(
     let local_translation = state.item.translation + state.item.origin.to_vec2();
 
     state.item.window_transform =
-        parent_window_transform * widget.item.transform().then_translate(local_translation);
+        parent_window_transform * state.item.transform.then_translate(local_translation);
     state.item.window_origin = state.item.window_transform.translation().to_point();
 
     let local_rect = state.item.size.to_rect();

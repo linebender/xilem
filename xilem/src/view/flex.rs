@@ -110,8 +110,7 @@ where
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
-            .main_axis_alignment(self.main_axis_alignment)
-            .with_transform(self.transform);
+            .main_axis_alignment(self.main_axis_alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
             widget = match child {
@@ -122,7 +121,8 @@ where
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        (ctx.new_pod(widget), seq_state)
+        let pod = ctx.new_pod_with_transform(widget, self.transform);
+        (pod, seq_state)
     }
 
     fn rebuild(
@@ -132,11 +132,11 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         if prev.axis != self.axis {
             widget::Flex::set_direction(&mut element, self.axis);
-        }
-        if prev.transform != self.transform {
-            widget::Flex::set_transform(&mut element, self.transform);
         }
         if prev.cross_axis_alignment != self.cross_axis_alignment {
             widget::Flex::set_cross_axis_alignment(&mut element, self.cross_axis_alignment);

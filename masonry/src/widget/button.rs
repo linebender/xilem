@@ -6,7 +6,6 @@
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
-use vello::kurbo::Affine;
 use vello::Scene;
 
 use crate::action::Action;
@@ -29,7 +28,6 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// Emits [`Action::ButtonPressed`] when pressed.
 pub struct Button {
     label: WidgetPod<Label>,
-    transform: Affine,
 }
 
 // --- MARK: BUILDERS ---
@@ -61,13 +59,7 @@ impl Button {
     pub fn from_label(label: Label) -> Self {
         Button {
             label: WidgetPod::new(label),
-            transform: Affine::IDENTITY,
         }
-    }
-
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = transform;
-        self
     }
 }
 
@@ -80,11 +72,6 @@ impl Button {
 
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.label)
-    }
-
-    pub fn set_transform(this: &mut WidgetMut<'_, Self>, transform: Affine) {
-        this.widget.transform = transform;
-        this.ctx.transform_changed();
     }
 }
 
@@ -225,10 +212,6 @@ impl Widget for Button {
     #[cfg(FALSE)]
     fn get_debug_text(&self) -> Option<String> {
         Some(self.label.as_ref().text().as_ref().to_string())
-    }
-
-    fn transform(&self) -> Affine {
-        self.transform
     }
 }
 

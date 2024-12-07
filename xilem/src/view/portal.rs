@@ -46,7 +46,7 @@ where
         // use ctx.with_id.
         let (child, child_state) = self.child.build(ctx);
         let widget_pod =
-            ctx.new_pod(widget::Portal::new_pod(child.inner).with_transform(self.transform));
+            ctx.new_pod_with_transform(widget::Portal::new_pod(child.inner), self.transform);
         (widget_pod, child_state)
     }
 
@@ -58,7 +58,7 @@ where
         mut element: Mut<Self::Element>,
     ) {
         if prev.transform != self.transform {
-            widget::Portal::set_transform(&mut element, self.transform);
+            element.set_transform(self.transform);
         }
         let child_element = widget::Portal::child_mut(&mut element);
         self.child

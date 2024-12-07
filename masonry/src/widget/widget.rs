@@ -194,10 +194,6 @@ pub trait Widget: AsAny + AsDynWidget {
     /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 
-    fn transform(&self) -> Affine {
-        Affine::IDENTITY
-    }
-
     /// Whether this widget gets pointer events and hovered status. True by default.
     ///
     /// If false, the widget will be treated as "transparent" for the pointer, meaning
@@ -533,9 +529,5 @@ impl Widget for Box<dyn Widget> {
 
     fn as_mut_any(&mut self) -> &mut dyn Any {
         self.deref_mut().as_mut_any()
-    }
-
-    fn transform(&self) -> Affine {
-        self.deref().transform()
     }
 }

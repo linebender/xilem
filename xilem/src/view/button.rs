@@ -62,7 +62,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(widget::Button::new(self.label.clone()).with_transform(self.transform))
+            ctx.new_pod_with_transform(widget::Button::new(self.label.clone()), self.transform)
         })
     }
 
@@ -73,12 +73,12 @@ where
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.label != self.label {
-            widget::Button::set_text(&mut element, self.label.clone());
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
         }
 
-        if prev.transform != self.transform {
-            widget::Button::set_transform(&mut element, self.transform);
+        if prev.label != self.label {
+            widget::Button::set_text(&mut element, self.label.clone());
         }
     }
 

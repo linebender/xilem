@@ -84,6 +84,7 @@ pub(crate) struct WidgetState {
     // TODO is it worth to compute/cache the inverse as well (or does it just take valuable memory)?
     /// This is being computed out of all ancestor transforms and `translation`
     pub(crate) window_transform: Affine,
+    pub(crate) transform: Affine,
     pub(crate) translation: Vec2,
     pub(crate) transform_changed: bool,
 
@@ -198,6 +199,7 @@ impl WidgetState {
             widget_name,
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
+            transform: Affine::IDENTITY,
         }
     }
 

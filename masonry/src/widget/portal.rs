@@ -8,7 +8,7 @@ use std::ops::Range;
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
+use vello::kurbo::{Point, Rect, Size, Vec2};
 use vello::Scene;
 
 use crate::widget::{Axis, ScrollBar, WidgetMut};
@@ -37,7 +37,6 @@ pub struct Portal<W: Widget> {
     scrollbar_horizontal_visible: bool,
     scrollbar_vertical: WidgetPod<ScrollBar>,
     scrollbar_vertical_visible: bool,
-    transform: Affine,
 }
 
 // --- MARK: BUILDERS ---
@@ -58,7 +57,6 @@ impl<W: Widget> Portal<W> {
             scrollbar_horizontal_visible: false,
             scrollbar_vertical: WidgetPod::new(ScrollBar::new(Axis::Vertical, 1.0, 1.0)),
             scrollbar_vertical_visible: false,
-            transform: Affine::IDENTITY,
         }
     }
 
@@ -99,11 +97,6 @@ impl<W: Widget> Portal<W> {
     /// the `ClipBox`.
     pub fn content_must_fill(mut self, must_fill: bool) -> Self {
         self.must_fill = must_fill;
-        self
-    }
-
-    pub fn with_transform(mut self, transform: Affine) -> Self {
-        self.transform = transform;
         self
     }
 }
@@ -259,11 +252,6 @@ impl<W: Widget> Portal<W> {
         .start;
 
         Self::set_viewport_pos(this, Point::new(new_pos_x, new_pos_y))
-    }
-
-    pub fn set_transform(this: &mut WidgetMut<'_, Self>, transform: Affine) {
-        this.widget.transform = transform;
-        this.ctx.transform_changed();
     }
 }
 
@@ -481,10 +469,6 @@ impl<W: Widget> Widget for Portal<W> {
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!("Portal", id = ctx.widget_id().trace())
-    }
-
-    fn transform(&self) -> Affine {
-        self.transform
     }
 }
 

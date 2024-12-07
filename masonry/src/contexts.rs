@@ -10,7 +10,6 @@ use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMutChildren, ArenaRefChildren};
-use vello::kurbo::Vec2;
 use vello::peniko::Color;
 use winit::window::ResizeDirection;
 
@@ -19,8 +18,11 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
-use crate::widget::{WidgetMut, WidgetRef, WidgetState};
-use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::widget::{CreatedWidget, WidgetMut, WidgetRef, WidgetState};
+use crate::{
+    Affine, AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Vec2, Widget, WidgetId,
+    WidgetPod,
+};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -591,6 +593,11 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.widget_state.needs_update_disabled = true;
         self.widget_state.is_explicitly_disabled = disabled;
     }
+
+    pub fn set_transform(&mut self, transform: Affine) {
+        self.widget_state.transform = transform;
+        self.transform_changed();
+    }
 });
 
 // --- MARK: OTHER METHODS ---
@@ -858,7 +865,7 @@ impl RegisterCtx<'_> {
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
-        let Some(widget) = child.take_inner() else {
+        let Some(CreatedWidget { widget, transform }) = child.take_inner() else {
             return;
         };
 
@@ -868,7 +875,8 @@ impl RegisterCtx<'_> {
         }
 
         let id = child.id();
-        let state = WidgetState::new(child.id(), widget.short_type_name());
+        let mut state = WidgetState::new(child.id(), widget.short_type_name());
+        state.transform = transform;
 
         self.widget_children.insert_child(id, Box::new(widget));
         self.widget_state_children.insert_child(id, state);
