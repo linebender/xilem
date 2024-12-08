@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{Widget, WidgetId};
+use crate::{Affine, Widget, WidgetId};
 
 // TODO - rewrite links in doc
 
@@ -24,8 +24,13 @@ pub struct WidgetPod<W> {
 // through context methods where they already have access to the arena.
 // Implementing that requires solving non-trivial design questions.
 
+pub(crate) struct CreatedWidget<W> {
+    pub(crate) widget: W,
+    pub(crate) transform: Affine,
+}
+
 enum WidgetPodInner<W> {
-    Created(W),
+    Created(CreatedWidget<W>),
     Inserted,
 }
 
@@ -41,9 +46,21 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Create a new widget pod with fixed id.
     pub fn new_with_id(inner: W, id: WidgetId) -> WidgetPod<W> {
+        Self::new_with_id_and_transform(inner, id, Affine::IDENTITY)
+    }
+
+    /// Create a new widget pod with a custom transform.
+    pub fn new_with_transform(inner: W, transform: Affine) -> WidgetPod<W> {
+        Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
+    }
+
+    pub fn new_with_id_and_transform(inner: W, id: WidgetId, transform: Affine) -> WidgetPod<W> {
         WidgetPod {
             id,
-            inner: WidgetPodInner::Created(inner),
+            inner: WidgetPodInner::Created(CreatedWidget {
+                widget: inner,
+                transform,
+            }),
         }
     }
 
@@ -51,7 +68,7 @@ impl<W: Widget> WidgetPod<W> {
         matches!(self.inner, WidgetPodInner::Created(_))
     }
 
-    pub(crate) fn take_inner(&mut self) -> Option<W> {
+    pub(crate) fn take_inner(&mut self) -> Option<CreatedWidget<W>> {
         match std::mem::replace(&mut self.inner, WidgetPodInner::Inserted) {
             WidgetPodInner::Created(widget) => Some(widget),
             WidgetPodInner::Inserted => None,
@@ -71,7 +88,11 @@ impl<W: Widget + 'static> WidgetPod<W> {
     /// into a dynamically boxed widget.
     pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
         match self.inner {
-            WidgetPodInner::Created(inner) => WidgetPod::new_with_id(Box::new(inner), self.id),
+            WidgetPodInner::Created(inner) => WidgetPod::new_with_id_and_transform(
+                Box::new(inner.widget),
+                self.id,
+                inner.transform,
+            ),
             WidgetPodInner::Inserted => {
                 panic!("Cannot box a widget after it has been inserted into the widget graph")
             }

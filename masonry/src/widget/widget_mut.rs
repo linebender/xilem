@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::contexts::MutateCtx;
-use crate::Widget;
+use crate::{Affine, Widget};
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
@@ -46,6 +46,10 @@ impl<W: Widget> WidgetMut<'_, W> {
             ctx: self.ctx.reborrow_mut(),
             widget,
         }
+    }
+
+    pub fn set_transform(&mut self, transform: Affine) {
+        self.ctx.set_transform(transform);
     }
 }
 

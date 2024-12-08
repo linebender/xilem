@@ -3,11 +3,13 @@
 
 use masonry::parley::FontStack;
 use masonry::text::{ArcStr, StyleProperty};
-use masonry::widget;
+use masonry::{widget, Affine};
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, TextWeight, View, ViewCtx, ViewId};
+
+use super::Transformable;
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -17,6 +19,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: TextWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
+        transform: Affine::IDENTITY,
     }
 }
 
@@ -30,6 +33,7 @@ pub struct Label {
     pub(in crate::view) text_size: f32,
     pub(in crate::view) weight: TextWeight,
     pub(in crate::view) font: FontStack<'static>, // TODO: add more attributes of `masonry::widget::Label`
+    pub(in crate::view) transform: Affine,
 }
 
 impl Label {
@@ -65,19 +69,26 @@ impl Label {
     }
 }
 
+impl Transformable for Label {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
+}
+
 impl ViewMarker for Label {}
 impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widget::Label>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.new_pod_with_transform(
             widget::Label::new(self.label.clone())
                 .with_brush(self.text_brush.clone())
                 .with_alignment(self.alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
                 .with_style(StyleProperty::FontStack(self.font.clone())),
+            self.transform,
         );
         (widget_pod, ())
     }
@@ -89,6 +100,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         if prev.label != self.label {
             widget::Label::set_text(&mut element, self.label.clone());
         }
