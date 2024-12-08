@@ -125,7 +125,7 @@ jobs:
           tool: cargo-hack
 
       - name: Install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
       - name: Restore cache
@@ -255,12 +255,12 @@ jobs:
           toolchain: ${{ env.RUST_STABLE_VER }}
 
       - name: Install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
       # Adapted from https://github.com/bevyengine/bevy/blob/b446374392adc70aceb92621b080d1a6cf7a7392/.github/workflows/validation-jobs.yml#L74-L79
       - name: Install xvfb, llvmpipe and lavapipe
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         # https://launchpad.net/~kisak/+archive/ubuntu/turtle
         run: |
           sudo apt-get update -y -qq
@@ -366,7 +366,7 @@ jobs:
           tool: cargo-hack
 
       - name: Install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
       - name: Restore cache
