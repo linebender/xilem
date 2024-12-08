@@ -5,7 +5,8 @@
 use super::NodeId;
 
 use std::cell::UnsafeCell;
-use std::collections::HashMap;
+
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 struct TreeNode<T> {

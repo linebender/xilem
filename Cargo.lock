@@ -3722,6 +3722,9 @@ dependencies = [
 [[package]]
 name = "tree_arena"
 version = "0.1.0"
+dependencies = [
+ "hashbrown 0.15.2",
+]
 
 [[package]]
 name = "try-lock"
