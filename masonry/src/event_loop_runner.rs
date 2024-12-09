@@ -264,7 +264,6 @@ impl MasonryState<'_> {
                 let window = event_loop.create_window(attributes).unwrap();
 
                 let adapter = Adapter::with_event_loop_proxy(&window, self.proxy.clone());
-                window.set_visible(visible);
                 let window = Arc::new(window);
                 // https://github.com/rust-windowing/winit/issues/2308
                 #[cfg(target_os = "ios")]
@@ -280,12 +279,18 @@ impl MasonryState<'_> {
                 .unwrap();
                 let scale_factor = window.scale_factor();
                 self.window = WindowState::Rendering {
-                    window,
+                    window: window.clone(),
                     surface,
                     accesskit_adapter: adapter,
                 };
                 self.render_root
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
+                // Render one frame before showing the window to avoid flashing
+                if visible {
+                    let (scene, _tree_update) = self.render_root.redraw();
+                    self.render(scene);
+                    window.set_visible(true);
+                }
             }
             WindowState::Suspended {
                 window,
