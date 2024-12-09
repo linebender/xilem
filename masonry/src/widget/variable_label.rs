@@ -6,7 +6,6 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
-use parley::fontique::Weight;
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Size};
@@ -15,8 +14,8 @@ use vello::Scene;
 use crate::text::{ArcStr, StyleProperty};
 use crate::widget::WidgetMut;
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FontWeight, LayoutCtx, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
 use super::{Label, WidgetPod};
@@ -142,7 +141,7 @@ impl VariableLabel {
     pub fn from_label_pod(label: WidgetPod<Label>) -> Self {
         Self {
             label,
-            weight: AnimatedF32::stable(Weight::NORMAL.value()),
+            weight: AnimatedF32::stable(FontWeight::NORMAL.value()),
         }
     }
 
@@ -206,7 +205,7 @@ impl Widget for VariableLabel {
             }
             Label::insert_style(
                 &mut label,
-                StyleProperty::FontWeight(Weight::new(new_weight)),
+                StyleProperty::FontWeight(FontWeight::new(new_weight)),
             );
         });
         if !result.is_completed() {

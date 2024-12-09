@@ -10,8 +10,7 @@
 use masonry::dpi::LogicalSize;
 use masonry::text::StyleProperty;
 use masonry::widget::{Button, Flex, Label, RootWidget};
-use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-use parley::fontique::Weight;
+use masonry::{Action, AppDriver, DriverCtx, FontWeight, WidgetId};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -35,7 +34,7 @@ fn main() {
     let label = Label::new("Hello")
         .with_style(StyleProperty::FontSize(32.0))
         // Ideally there's be an Into in Parley for this
-        .with_style(StyleProperty::FontWeight(Weight::BOLD));
+        .with_style(StyleProperty::FontWeight(FontWeight::BOLD));
     let button = Button::new("Say hello");
 
     // Arrange the two widgets vertically, with some padding
