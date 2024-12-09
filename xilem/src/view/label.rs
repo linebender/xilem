@@ -1,13 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::parley::FontStack;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::text::{ArcStr, StyleProperty};
 use masonry::widget;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, TextWeight, View, ViewCtx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -15,7 +15,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
-        weight: TextWeight::NORMAL,
+        weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
     }
 }
@@ -28,7 +28,7 @@ pub struct Label {
     pub(in crate::view) text_brush: Brush,
     pub(in crate::view) alignment: TextAlignment,
     pub(in crate::view) text_size: f32,
-    pub(in crate::view) weight: TextWeight,
+    pub(in crate::view) weight: FontWeight,
     pub(in crate::view) font: FontStack<'static>, // TODO: add more attributes of `masonry::widget::Label`
 }
 
@@ -50,7 +50,7 @@ impl Label {
         self
     }
 
-    pub fn weight(mut self, weight: TextWeight) -> Self {
+    pub fn weight(mut self, weight: FontWeight) -> Self {
         self.weight = weight;
         self
     }

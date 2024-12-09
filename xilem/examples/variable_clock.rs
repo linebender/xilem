@@ -6,7 +6,6 @@
 
 use std::time::Duration;
 
-use masonry::parley::fontique::Weight;
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
@@ -16,11 +15,11 @@ use xilem::view::{
     button, flex, inline_prose, label, portal, prose, sized_box, task, variable_label, Axis,
     FlexExt, FlexSpacer,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{Color, EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
-    /// The font [weight](Weight) used for the values.
+    /// The font [weight](FontWeight) used for the values.
     weight: f32,
     /// The current UTC offset on this machine.
     local_offset: Result<UtcOffset, IndeterminateOffset>,
@@ -182,7 +181,7 @@ const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Clocks {
-        weight: Weight::BLACK.value(),
+        weight: FontWeight::BLACK.value(),
         // TODO: We can't get this on Android, because
         local_offset: UtcOffset::current_local_offset(),
         now_utc: OffsetDateTime::now_utc(),

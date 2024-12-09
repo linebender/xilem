@@ -1,15 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::parley::fontique::Weight;
-use masonry::parley::style::FontStack;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::text::ArcStr;
 use masonry::{widget, TextAlignment};
 use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, TextWeight, View, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 use super::{label, Label};
 
@@ -17,7 +16,7 @@ use super::{label, Label};
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
     VariableLabel {
         label: label(text),
-        target_weight: Weight::NORMAL,
+        target_weight: FontWeight::NORMAL,
         over_millis: 0.,
     }
 }
@@ -25,7 +24,7 @@ pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct VariableLabel {
     label: Label,
-    target_weight: Weight,
+    target_weight: FontWeight,
     over_millis: f32,
 }
 
@@ -45,7 +44,7 @@ impl VariableLabel {
     /// If `weight` is non-finite.
     pub fn target_weight(mut self, weight: f32, over_millis: f32) -> Self {
         assert!(weight.is_finite(), "Invalid target weight {weight}.");
-        self.target_weight = Weight::new(weight);
+        self.target_weight = FontWeight::new(weight);
         self.over_millis = over_millis;
         self
     }
@@ -79,7 +78,7 @@ impl VariableLabel {
         self
     }
 
-    pub fn weight(mut self, weight: TextWeight) -> Self {
+    pub fn weight(mut self, weight: FontWeight) -> Self {
         self.label.weight = weight;
         self
     }
