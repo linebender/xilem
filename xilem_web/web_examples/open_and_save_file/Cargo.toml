@@ -1,5 +1,5 @@
 [package]
-name = "up_and_download"
+name = "open_and_save_file"
 version = "0.1.0"
 publish = false
 license.workspace = true
