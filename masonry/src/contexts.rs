@@ -10,7 +10,6 @@ use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMutChildren, ArenaRefChildren};
-use vello::kurbo::Vec2;
 use vello::peniko::Color;
 use winit::window::ResizeDirection;
 
@@ -19,8 +18,11 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
-use crate::widget::{WidgetMut, WidgetRef, WidgetState};
-use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::widget::{CreatedWidget, WidgetMut, WidgetRef, WidgetState};
+use crate::{
+    Affine, AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Vec2, Widget, WidgetId,
+    WidgetPod,
+};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -258,8 +260,9 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
-        pub fn window_layout_rect(&self) -> Rect {
-            self.widget_state.window_layout_rect()
+        /// The axis aligned bounding rect of this widget in window coordinates.
+        pub fn bounding_rect(&self) -> Rect {
+            self.widget_state.bounding_rect()
         }
 
         pub fn paint_rect(&self) -> Rect {
@@ -278,7 +281,7 @@ impl_context_method!(
         ///
         /// The returned point is relative to the content area; it excludes window chrome.
         pub fn to_window(&self, widget_point: Point) -> Point {
-            self.window_origin() + widget_point.to_vec2()
+            self.widget_state.window_transform * widget_point
         }
     }
 );
@@ -537,6 +540,12 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.widget_state.request_compose = true;
     }
 
+    pub fn transform_changed(&mut self) {
+        trace!("transform_changed");
+        self.widget_state.transform_changed = true;
+        self.request_compose();
+    }
+
     /// Request an animation frame.
     pub fn request_anim_frame(&mut self) {
         trace!("request_anim_frame");
@@ -583,6 +592,11 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     pub fn set_disabled(&mut self, disabled: bool) {
         self.widget_state.needs_update_disabled = true;
         self.widget_state.is_explicitly_disabled = disabled;
+    }
+
+    pub fn set_transform(&mut self, transform: Affine) {
+        self.widget_state.transform = transform;
+        self.transform_changed();
     }
 });
 
@@ -851,7 +865,7 @@ impl RegisterCtx<'_> {
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
-        let Some(widget) = child.take_inner() else {
+        let Some(CreatedWidget { widget, transform }) = child.take_inner() else {
             return;
         };
 
@@ -861,7 +875,8 @@ impl RegisterCtx<'_> {
         }
 
         let id = child.id();
-        let state = WidgetState::new(child.id(), widget.short_type_name());
+        let mut state = WidgetState::new(child.id(), widget.short_type_name());
+        state.transform = transform;
 
         self.widget_children.insert_child(id, Box::new(widget));
         self.widget_state_children.insert_child(id, state);
@@ -944,7 +959,7 @@ impl LayoutCtx<'_> {
     ) -> Insets {
         self.assert_layout_done(child, "compute_insets_from_child");
         self.assert_placed(child, "compute_insets_from_child");
-        let parent_bounds = Rect::ZERO.with_size(my_size);
+        let parent_bounds = my_size.to_rect();
         let union_paint_rect = self
             .get_child_state(child)
             .paint_rect()
@@ -1092,7 +1107,7 @@ impl LayoutCtx<'_> {
         }
         if origin != self.get_child_state_mut(child).origin {
             self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).translation_changed = true;
+            self.get_child_state_mut(child).transform_changed = true;
         }
         self.get_child_state_mut(child)
             .is_expecting_place_child_call = false;
@@ -1133,7 +1148,7 @@ impl ComposeCtx<'_> {
         let child = self.get_child_state_mut(child);
         if translation != child.translation {
             child.translation = translation;
-            child.translation_changed = true;
+            child.transform_changed = true;
         }
     }
 }

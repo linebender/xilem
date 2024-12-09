@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::text::ArcStr;
-use masonry::widget;
+use masonry::{widget, Affine};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+
+use super::Transformable;
 
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
@@ -19,6 +21,7 @@ where
         label: label.into(),
         callback,
         checked,
+        transform: Affine::IDENTITY,
     }
 }
 
@@ -27,6 +30,13 @@ pub struct Checkbox<F> {
     label: ArcStr,
     checked: bool,
     callback: F,
+    transform: Affine,
+}
+
+impl<F> Transformable for Checkbox<F> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
 }
 
 impl<F> ViewMarker for Checkbox<F> {}
@@ -39,7 +49,10 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(widget::Checkbox::new(self.checked, self.label.clone()))
+            ctx.new_pod_with_transform(
+                widget::Checkbox::new(self.checked, self.label.clone()),
+                self.transform,
+            )
         })
     }
 
@@ -50,6 +63,9 @@ where
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         if prev.label != self.label {
             widget::Checkbox::set_text(&mut element, self.label.clone());
         }

@@ -45,7 +45,7 @@ use std::sync::Arc;
 
 use masonry::dpi::LogicalSize;
 use masonry::widget::{RootWidget, WidgetMut};
-use masonry::{event_loop_runner, Widget, WidgetId, WidgetPod};
+use masonry::{event_loop_runner, Affine, Widget, WidgetId, WidgetPod};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
 
@@ -290,6 +290,12 @@ impl ViewCtx {
     pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
         Pod {
             inner: WidgetPod::new(widget),
+        }
+    }
+
+    pub fn new_pod_with_transform<W: Widget>(&mut self, widget: W, transform: Affine) -> Pod<W> {
+        Pod {
+            inner: WidgetPod::new_with_transform(widget, transform),
         }
     }
 

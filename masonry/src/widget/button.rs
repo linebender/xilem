@@ -41,7 +41,7 @@ impl Button {
     ///
     /// let button = Button::new("Increment");
     /// ```
-    pub fn new(text: impl Into<ArcStr>) -> Button {
+    pub fn new(text: impl Into<ArcStr>) -> Self {
         Button::from_label(Label::new(text))
     }
 
@@ -56,7 +56,7 @@ impl Button {
     /// let label = Label::new("Increment").with_brush(Color::rgb(0.5, 0.5, 0.5));
     /// let button = Button::from_label(label);
     /// ```
-    pub fn from_label(label: Label) -> Button {
+    pub fn from_label(label: Label) -> Self {
         Button {
             label: WidgetPod::new(label),
         }

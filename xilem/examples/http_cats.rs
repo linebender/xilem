@@ -8,6 +8,7 @@
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
+use std::f64::consts::PI;
 use std::sync::Arc;
 
 use vello::peniko::{Blob, Image};
@@ -18,7 +19,7 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
-    FlexSpacer, Padding,
+    FlexSpacer, Padding, Transformable,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
@@ -47,13 +48,17 @@ enum ImageState {
 
 impl HttpCats {
     fn view(&mut self) -> impl WidgetView<HttpCats> {
-        let left_column = sized_box(portal(flex((
-            prose("Status"),
-            self.statuses
-                .iter_mut()
-                .map(Status::list_view)
-                .collect::<Vec<_>>(),
-        ))))
+        let left_column = sized_box(
+            portal(flex((
+                prose("Status"),
+                self.statuses
+                    .iter_mut()
+                    .map(Status::list_view)
+                    .collect::<Vec<_>>(),
+            )))
+            .rotate(PI * 0.125)
+            .translate((200.0, 0.0)),
+        )
         .padding(Padding::leading(5.));
 
         let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
