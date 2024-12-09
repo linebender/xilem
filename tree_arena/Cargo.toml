@@ -21,6 +21,7 @@ targets = []
 
 
 [dependencies]
+hashbrown.workspace = true
 
 [features]
 # This crate contains two implementations of a tree for use in masonry, one safe and the other unsafe.
