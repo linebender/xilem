@@ -279,7 +279,7 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: Run cargo nextest
-        run: cargo nextest run --workspace --locked --all-features --no-fail-fast
+        run: cargo nextest run --workspace --locked --cargo-profile ci --all-features --no-fail-fast
         env:
           # We do not run the masonry render tests on platforms without a working GPU,
           # because those require Vello rendering to be working
@@ -294,7 +294,7 @@ jobs:
           path: masonry/src/widget/screenshots
 
       - name: Run cargo test --doc
-        run: cargo test --doc --workspace --locked --all-features --no-fail-fast
+        run: cargo test --doc --workspace --locked --profile ci --all-features --no-fail-fast
 
   test-stable-wasm:
     name: cargo test (wasm32)
@@ -316,7 +316,7 @@ jobs:
 
       # TODO: Find a way to make tests work. Until then the tests are merely compiled.
       - name: Run cargo test --no-run
-        run: cargo test --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-features --no-run
+        run: cargo test --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --all-features --no-run
 
   check-stable-android:
     name: cargo check (aarch64-android)
@@ -434,7 +434,7 @@ jobs:
 
       # We test documentation using nightly to match docs.rs.
       - name: Run cargo doc
-        run: cargo doc --workspace --locked --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+        run: cargo doc --workspace --locked --profile ci --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
         env:
           RUSTDOCFLAGS: '--cfg docsrs -D warnings'
 
