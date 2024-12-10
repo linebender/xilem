@@ -279,7 +279,7 @@ impl MasonryState<'_> {
                 .unwrap();
                 let scale_factor = window.scale_factor();
                 self.window = WindowState::Rendering {
-                    window: window.clone(),
+                    window,
                     surface,
                     accesskit_adapter: adapter,
                 };
@@ -287,9 +287,17 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
                 // Render one frame before showing the window to avoid flashing
                 if visible {
-                    let (scene, _tree_update) = self.render_root.redraw();
+                    let (scene, tree_update) = self.render_root.redraw();
                     self.render(scene);
-                    window.set_visible(true);
+                    if let WindowState::Rendering {
+                        window,
+                        accesskit_adapter,
+                        ..
+                    } = &mut self.window
+                    {
+                        accesskit_adapter.update_if_active(|| tree_update);
+                        window.set_visible(true);
+                    };
                 }
             }
             WindowState::Suspended {
