@@ -199,7 +199,7 @@ impl_context_method!(
 );
 
 // Methods for all exclusive context types (i.e. those which have exclusive access to the global state).
-impl_context_method! {
+impl_context_method!(
     AccessCtx<'_>,
     ComposeCtx<'_>,
     EventCtx<'_>,
@@ -212,12 +212,14 @@ impl_context_method! {
         ///
         /// Note that in many cases, these contexts are.
         pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
-        (
-            &mut self.global_state.font_context,
-            &mut self.global_state.text_layout_context,
-        )
+            (
+                &mut self.global_state.font_context,
+                &mut self.global_state.text_layout_context,
+            )
+        }
     }
-}}
+);
+
 // --- MARK: GET LAYOUT ---
 // Methods on all context types except LayoutCtx
 // These methods access layout info calculated during the layout pass.
