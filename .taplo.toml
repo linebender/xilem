@@ -1,3 +1,6 @@
+# See https://taplo.tamasfe.dev/configuration/file.html
+# and https://taplo.tamasfe.dev/configuration/formatter-options.html
+
 [formatting]
 # This is a matter of taste, but expanded inline arrays make tables harder to read.
 array_auto_collapse = true

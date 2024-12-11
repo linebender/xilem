@@ -79,6 +79,14 @@ jobs:
       - name: Run cargo fmt
         run: cargo fmt --all --check
 
+      - name: Install Taplo
+        uses: uncenter/setup-taplo@v1
+        with:
+          version: "0.9.3"
+
+      - name: run `taplo fmt`
+        run: taplo fmt --check --diff
+
       - name: Install ripgrep
         run: |
           sudo apt update
