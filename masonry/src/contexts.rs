@@ -195,6 +195,21 @@ impl_context_method!(
                 .expect("get_child_state_mut: child not found");
             child_state_mut.item
         }
+
+        /// Set the IME cursor area.
+        ///
+        /// The reported IME area can be used by the platform to, for example, place a candidate
+        /// box near that area, while ensuring the area is not obscured.
+        pub fn set_ime_area(&mut self, ime_area: Rect) {
+            self.widget_state.ime_area = Some(ime_area);
+        }
+
+        /// Remove the IME cursor area.
+        ///
+        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
+        pub fn clear_ime_area(&mut self) {
+            self.widget_state.ime_area = None;
+        }
     }
 );
 

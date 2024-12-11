@@ -523,11 +523,6 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             if widget_state.accepts_text_input {
                 root.global_state.emit_signal(RenderRootSignal::StartIme);
             }
-
-            root.global_state
-                .emit_signal(RenderRootSignal::new_ime_moved_signal(
-                    widget_state.get_ime_area(),
-                ));
         } else {
             root.global_state.is_ime_active = false;
         }
