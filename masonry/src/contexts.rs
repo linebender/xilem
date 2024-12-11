@@ -198,8 +198,12 @@ impl_context_method!(
 
         /// Set the IME cursor area.
         ///
-        /// The reported IME area can be used by the platform to, for example, place a candidate
-        /// box near that area, while ensuring the area is not obscured.
+        /// When this widget is [focused] and [accepts text input], the reported IME area is sent
+        /// to the platform. The area can be used by the platform to, for example, place a
+        /// candidate box near that area, while ensuring the area is not obscured.
+        ///
+        /// [focused]: EventCtx::request_focus
+        /// [accepts text input]: Widget::accepts_text_input
         pub fn set_ime_area(&mut self, ime_area: Rect) {
             self.widget_state.ime_area = Some(ime_area);
         }
