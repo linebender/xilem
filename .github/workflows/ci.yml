@@ -9,9 +9,6 @@ env:
   # Be sure to also update the rust-version property in the workspace Cargo.toml file,
   # plus all the README.md files of the affected packages.
   RUST_MIN_VER: "1.81"
-  # List of packages that will be checked with the minimum supported Rust version.
-  # This should be limited to packages that are intended for publishing.
-  RUST_MIN_VER_PKGS: "-p xilem -p xilem_core -p masonry"
   # List of packages that can not target Wasm.
   NO_WASM_PKGS: "--exclude masonry --exclude xilem"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
@@ -44,6 +41,7 @@ env:
 #
 # The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
 # running tests introduces dev dependencies which may require a higher MSRV than the bare package.
+# Checking is limited to packages that are intended for publishing to keep MSRV as low as possible.
 #
 # If the workspace uses debug_assertions then we verify code twice, with it set to true or false.
 # We always keep it true for external dependencies so that we can reuse the cache for faster builds.
@@ -375,11 +373,11 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: Run cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
 
       - name: Run cargo check (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
@@ -407,11 +405,11 @@ jobs:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       - name: Run cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
 
       - name: Run cargo check (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
