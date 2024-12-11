@@ -39,6 +39,10 @@ use crate::text::BrushIndex;
 use crate::widget::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
 use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
 
+/// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
+/// IME area as the `last_sent_ime_area`.
+const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN);
+
 // --- MARK: STRUCTS ---
 
 pub struct RenderRoot {
@@ -74,6 +78,10 @@ pub(crate) struct RenderRootState {
     pub(crate) text_layout_context: LayoutContext<BrushIndex>,
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
     pub(crate) is_ime_active: bool,
+    /// The IME area last sent to the platform.
+    ///
+    /// This allows only sending the area to the platform when the area has changed.
+    pub(crate) last_sent_ime_area: Rect,
     pub(crate) scenes: HashMap<WidgetId, Scene>,
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
@@ -170,6 +178,7 @@ impl RenderRoot {
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
                 is_ime_active: false,
+                last_sent_ime_area: INVALID_IME_AREA,
                 scenes: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
@@ -263,6 +272,12 @@ impl RenderRoot {
         let _span = info_span!("text_event");
         let handled = run_on_text_event_pass(self, &event);
         run_update_focus_pass(self);
+
+        if matches!(event, TextEvent::Ime(winit::event::Ime::Enabled)) {
+            // Reset the last sent IME area, as the platform reset the IME state and may have
+            // forgotten it.
+            self.global_state.last_sent_ime_area = INVALID_IME_AREA;
+        }
         self.run_rewrite_passes();
 
         handled
@@ -489,6 +504,19 @@ impl RenderRoot {
             self.global_state
                 .emit_signal(RenderRootSignal::RequestRedraw);
         }
+
+        if self.global_state.is_ime_active {
+            let widget = self
+                .global_state
+                .focused_widget
+                .expect("IME is active without a focused widget");
+            let ime_area = self.widget_arena.get_state(widget).item.get_ime_area();
+            if self.global_state.last_sent_ime_area != ime_area {
+                self.global_state.last_sent_ime_area = ime_area;
+                self.global_state
+                    .emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
+            }
+        }
     }
 
     pub(crate) fn request_render_all(&mut self) {
@@ -580,6 +608,10 @@ impl RenderRootState {
         self.focused_widget != self.next_focused_widget
     }
 
+    #[expect(
+        dead_code,
+        reason = "no longer used, but may be useful again in the future"
+    )]
     pub(crate) fn is_focused(&self, id: WidgetId) -> bool {
         self.focused_widget == Some(id)
     }
@@ -594,7 +626,7 @@ impl RenderRootSignal {
         RenderRootSignal::ImeMoved(
             LogicalPosition {
                 x: area.origin().x,
-                y: area.origin().y + area.size().height,
+                y: area.origin().y,
             },
             LogicalSize {
                 width: area.size().width,
