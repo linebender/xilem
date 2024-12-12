@@ -35,10 +35,7 @@ homepage = "https://xilem.dev/"
 rust.unsafe_code = "deny"
 
 # Intentional break from the lint set. Intended to be temporary
-rust.unexpected_cfgs = { level = "warn", check-cfg = [
-    'cfg(FALSE)',
-    'cfg(tarpaulin_include)',
-] }
+rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaulin_include)'] }
 
 # LINEBENDER LINT SET - Cargo.toml - v2
 # See https://linebender.org/wiki/canonical-lints/
