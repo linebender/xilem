@@ -84,7 +84,7 @@ jobs:
         with:
           version: "0.9.3"
 
-      - name: Run `taplo fmt`
+      - name: Run taplo fmt
         run: taplo fmt --check --diff
 
       - name: Install ripgrep
