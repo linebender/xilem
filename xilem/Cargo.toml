@@ -97,9 +97,9 @@ time = { workspace = true, features = ["local-offset"] }
 
 # Used for http_cats
 reqwest = { version = "0.12.7", default-features = false, features = [
-  # We use rustls as Android doesn't ship with openssl
-  # and this is likely to be easiest to get working.
-  "rustls-tls",
+    # We use rustls as Android doesn't ship with openssl
+    # and this is likely to be easiest to get working.
+    "rustls-tls",
 ] }
 image = { workspace = true, features = ["jpeg"] }
 

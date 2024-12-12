@@ -9,3 +9,7 @@ inline_table_expand = false
 # Aligning comments with the largest line creates
 # diff noise when neighboring lines are changed.
 align_comments = false
+
+# Matches how rustfmt formats Rust code
+column_width = 100
+indent_string = "    "
