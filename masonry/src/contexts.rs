@@ -227,9 +227,11 @@ impl_context_method!(
     PaintCtx<'_>,
     UpdateCtx<'_>,
     {
-        /// Get the contexts needed to build and paint text sections.
+        /// Get the Parley contexts needed to build and paint text sections.
         ///
-        /// Note that in many cases, these contexts are.
+        /// Note that most users should embed the [`Label`](crate::widget::Label) widget as a child
+        /// for non-interactive text.
+        /// These contexts could however be useful for custom text editing, such as for rich text editing.
         pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
             (
                 &mut self.global_state.font_context,
