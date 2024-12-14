@@ -187,7 +187,8 @@ impl BoxConstraints {
     ///
     /// ## Panics
     ///
-    /// Panics if `aspect_ratio` or `width` are not finite or are negative.
+    /// Panics if `aspect_ratio` or `width` are NaN, infinite or negative.
+    #[track_caller]
     pub fn constrain_aspect_ratio(&self, aspect_ratio: f64, width: f64) -> Size {
         assert!(aspect_ratio.is_finite());
         assert!(width.is_finite());
