@@ -46,14 +46,14 @@ pub struct Textbox {
 }
 
 impl Textbox {
-    /// Create a new `Prose` with the given text.
+    /// Create a new `Textbox` with the given text.
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
         Self::from_text_area(TextArea::new_editable(text))
     }
 
-    /// Create a new `Prose` from a styled text area.
+    /// Create a new `Textbox` from a styled text area.
     pub fn from_text_area(text: TextArea<true>) -> Self {
         let text = text.with_padding_if_default(TEXTBOX_PADDING);
         Self {
@@ -62,9 +62,9 @@ impl Textbox {
         }
     }
 
-    /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
+    /// Create a new `Textbox` from a styled text area in a [`WidgetPod`].
     ///
-    /// Note that the default padding used for prose will not apply.
+    /// Note that the default padding used for textbox will not apply.
     pub fn from_text_area_pod(text: WidgetPod<TextArea<true>>) -> Self {
         Self { text, clip: false }
     }
@@ -185,8 +185,6 @@ mod tests {
     };
 
     #[test]
-    /// A wrapping prose's alignment should be respected, regardless of
-    /// its parent's alignment.
     fn textbox_outline() {
         let textbox = Textbox::from_text_area(
             TextArea::new_editable("Textbox contents").with_style(StyleProperty::FontSize(10.0)),

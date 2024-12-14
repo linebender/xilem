@@ -3,8 +3,6 @@
 
 //! The context types that are passed into various widget methods.
 
-use std::time::Duration;
-
 use accesskit::TreeUpdate;
 use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
@@ -710,14 +708,6 @@ impl_context_method!(
                 .push_back(RenderRootSignal::ShowWindowMenu(position));
         }
 
-        /// Request a timer event.
-        ///
-        /// The return value is a token, which can be used to associate the
-        /// request with the event.
-        pub fn request_timer(&mut self, _deadline: Duration) -> TimerToken {
-            todo!("request_timer");
-        }
-
         /// Mark child widget as stashed.
         ///
         /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
@@ -737,9 +727,6 @@ impl_context_method!(
         }
     }
 );
-
-// FIXME - Remove
-pub struct TimerToken;
 
 impl EventCtx<'_> {
     // TODO - clearly document all semantics of pointer capture when they've been decided on

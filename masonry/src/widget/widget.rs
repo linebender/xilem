@@ -216,7 +216,6 @@ pub trait Widget: AsAny {
     /// As methods recurse through the widget tree, trace spans are added for each child
     /// widget visited, and popped when control flow goes back to the parent. This method
     /// returns a static span (that you can use to filter traces and logs).
-    // TODO: Make include the widget's id?
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!(
             "Widget",

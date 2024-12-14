@@ -16,15 +16,14 @@ use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
-use widget::widget::get_child_at_pos;
-use widget::WidgetRef;
 
 use crate::event::{PointerEvent, TextEvent};
-use crate::widget::SizedBox;
-
-// TODO: Expect doesn't work here
-#[allow(clippy::wildcard_imports, reason = "Deferred: Noisy")]
-use crate::*;
+use crate::widget::widget::get_child_at_pos;
+use crate::widget::{SizedBox, WidgetRef};
+use crate::{
+    AccessCtx, AccessEvent, AsAny, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx,
+    PaintCtx, Point, QueryCtx, RegisterCtx, Size, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+};
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
@@ -284,13 +283,13 @@ impl<S> ModularWidget<S> {
 
 #[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         if let Some(f) = self.on_pointer_event.as_mut() {
             f(&mut self.state, ctx, event);
         }
     }
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         if let Some(f) = self.on_text_event.as_mut() {
             f(&mut self.state, ctx, event);
         }
@@ -441,9 +440,9 @@ impl Widget for ReplaceChild {
         self.child.on_event(ctx, event)
     }
 
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &event::PointerEvent) {}
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &event::TextEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
@@ -507,12 +506,12 @@ impl Recording {
 
 #[warn(clippy::missing_trait_methods)]
 impl<W: Widget> Widget for Recorder<W> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &event::PointerEvent) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         self.recording.push(Record::PE(event.clone()));
         self.child.on_pointer_event(ctx, event);
     }
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &event::TextEvent) {
+    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
         self.recording.push(Record::TE(event.clone()));
         self.child.on_text_event(ctx, event);
     }

@@ -1,8 +1,6 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![cfg(not(tarpaulin_include))]
-
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::WidgetId;

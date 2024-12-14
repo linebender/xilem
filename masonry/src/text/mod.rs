@@ -4,7 +4,7 @@
 //! Support for text display and rendering
 //!
 //! There are three kinds of text commonly needed:
-//!  1) Entirely display text (e.g. a button)
+//!  1) Non interactive text (e.g. a button's label)
 //!  2) Selectable text (e.g. a paragraph of content)
 //!  3) Editable text (e.g. a search bar)
 //!
