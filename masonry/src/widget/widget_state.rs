@@ -27,10 +27,19 @@ use crate::WidgetId;
 /// ## Naming scheme
 ///
 /// Some fields follow a naming scheme:
-/// - `request_xxx`: this specific widget has requested the xxx pass to run on it
-/// - `needs_xxx`: this widget or a descendant has requested the xxx pass to run on it
-/// - `is_xxx`: this widget has the xxx property
-/// - `has_xxx`: this widget or an ancestor has the xxx property
+/// - `request_xxx`: this specific widget has requested the xxx pass to run on it.
+/// - `needs_xxx`: this widget or a descendant has requested the xxx pass to run on it.
+/// - `is_xxx`: this widget has the xxx property.
+/// - `has_xxx`: this widget or a descendant has the xxx property.
+///
+/// ## Resetting flags
+///
+/// Generally, the `needs_foobar` and `request_foobar` flags will be reset to
+/// false during the "foobar" pass after calling the "foobar" method.
+///
+/// In principle this shouldn't be a problem because most passes shouldn't be
+/// able to request themselves. The exception is the anim pass: an anim frame can
+/// (and usually will) request a new anim frame.
 ///
 /// [`WidgetMut`]: crate::widget::WidgetMut
 #[derive(Clone, Debug)]
