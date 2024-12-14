@@ -28,6 +28,7 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// Emits [`Action::ButtonPressed`] when pressed.
 pub struct Button {
     label: WidgetPod<Label>,
+    expand: bool,
 }
 
 // --- MARK: BUILDERS ---
@@ -59,6 +60,7 @@ impl Button {
     pub fn from_label(label: Label) -> Button {
         Button {
             label: WidgetPod::new(label),
+            expand: true,
         }
     }
 }
@@ -138,10 +140,14 @@ impl Widget for Button {
         // we make sure we will have at least the same height as the default textbox.
         let min_height = theme::BORDERED_WIDGET_HEIGHT;
 
-        let button_size = bc.constrain(Size::new(
-            label_size.width + padding.width,
-            (label_size.height + padding.height).max(min_height),
-        ));
+        let button_size = if self.expand {
+            bc.max()
+        } else {
+            bc.constrain(Size::new(
+                label_size.width + padding.width,
+                (label_size.height + padding.height).max(min_height),
+            ))
+        };
 
         let label_offset = (button_size.to_vec2() - label_size.to_vec2()) / 2.0;
         ctx.place_child(&mut self.label, label_offset.to_point());

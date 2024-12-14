@@ -539,7 +539,7 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let size = self.child.layout(ctx, bc);
-        self.recording.push(Record::Layout(size));
+        self.recording.push(Record::Layout(bc.max()));
         size
     }
 

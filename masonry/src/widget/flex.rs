@@ -915,7 +915,7 @@ impl Widget for Flex {
         let loosened_bc = bc;
 
         // minor-axis values for all children
-        let mut minor = 0_f64;
+        let mut minor = self.direction.minor(bc.max());
         // these two are calculated but only used if we're baseline aligned
         let mut max_above_baseline = 0_f64;
         let mut max_below_baseline = 0_f64;
@@ -1357,6 +1357,7 @@ mod tests {
         harness.edit_root_widget(|mut flex| {
             let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Center);
+            Flex::set_must_fill_main_axis(&mut flex, true);
         });
         assert_render_snapshot!(harness, "row_main_axis_center");
 
@@ -1462,6 +1463,7 @@ mod tests {
         harness.edit_root_widget(|mut flex| {
             let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Center);
+            Flex::set_must_fill_main_axis(&mut flex, true);
         });
         assert_render_snapshot!(harness, "col_main_axis_center");
 
