@@ -29,12 +29,6 @@ use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 
-/// Default canvas size for tests.
-pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
-
-/// Default background color for tests.
-pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
-
 /// A safe headless environment to test widgets in.
 ///
 /// `TestHarness` is a type that simulates a [`RenderRoot`] for testing.
@@ -118,6 +112,11 @@ pub struct TestHarness {
     title: String,
 }
 
+pub struct TestHarnessParams {
+    pub window_size: Size,
+    pub background_color: Color,
+}
+
 /// Assert a snapshot of a rendered frame of your app.
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
@@ -142,32 +141,44 @@ macro_rules! assert_render_snapshot {
 }
 
 impl TestHarness {
+    /// Default canvas size for tests.
+    pub const DEFAULT_SIZE: Size = Size::new(400., 400.);
+
+    /// Default background color for tests.
+    pub const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
+
     /// Builds harness with given root widget.
     ///
-    /// Window size will be [`HARNESS_DEFAULT_SIZE`].
-    /// Background color will be [`HARNESS_DEFAULT_BACKGROUND_COLOR`].
+    /// Window size will be [`Self::DEFAULT_SIZE`].
+    /// Background color will be [`Self::DEFAULT_BACKGROUND_COLOR`].
     pub fn create(root_widget: impl Widget) -> Self {
         Self::create_with(
             root_widget,
-            HARNESS_DEFAULT_SIZE,
-            HARNESS_DEFAULT_BACKGROUND_COLOR,
+            TestHarnessParams {
+                window_size: Self::DEFAULT_SIZE,
+                background_color: Self::DEFAULT_BACKGROUND_COLOR,
+            },
         )
     }
 
-    // TODO - Remove
     /// Builds harness with given root widget and window size.
     pub fn create_with_size(root_widget: impl Widget, window_size: Size) -> Self {
-        Self::create_with(root_widget, window_size, HARNESS_DEFAULT_BACKGROUND_COLOR)
+        Self::create_with(
+            root_widget,
+            TestHarnessParams {
+                window_size,
+                background_color: Self::DEFAULT_BACKGROUND_COLOR,
+            },
+        )
     }
 
     /// Builds harness with given root widget, canvas size and background color.
-    pub fn create_with(
-        root_widget: impl Widget,
-        window_size: Size,
-        background_color: Color,
-    ) -> Self {
+    pub fn create_with(root_widget: impl Widget, params: TestHarnessParams) -> Self {
         let mouse_state = PointerState::empty();
-        let window_size = PhysicalSize::new(window_size.width as _, window_size.height as _);
+        let window_size = PhysicalSize::new(
+            params.window_size.width as _,
+            params.window_size.height as _,
+        );
 
         // If there is no default tracing subscriber, we set our own. If one has
         // already been set, we get an error which we swallow.
@@ -194,7 +205,7 @@ impl TestHarness {
             ),
             mouse_state,
             window_size,
-            background_color,
+            background_color: params.background_color,
             action_queue: VecDeque::new(),
             has_ime_session: false,
             ime_rect: Default::default(),
@@ -306,7 +317,6 @@ impl TestHarness {
         // TODO - fix window_size
         let (width, height) = (self.window_size.width, self.window_size.height);
         let render_params = vello::RenderParams {
-            // TODO - Parameterize
             base_color: self.background_color,
             width,
             height,
@@ -417,21 +427,49 @@ impl TestHarness {
     /// Send events that lead to a given widget being clicked.
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
+    ///
+    /// ## Panics
+    ///
+    /// - If the widget is not found in the tree.
+    /// - If the widget is stashed.
+    /// - If the widget doesn't accept pointer events.
+    /// - If the widget is scrolled out of view.
+    #[track_caller]
     pub fn mouse_click_on(&mut self, id: WidgetId) {
-        let widget_rect = self.get_widget(id).ctx().window_layout_rect();
-        let widget_center = widget_rect.center();
-
-        self.mouse_move(widget_center);
+        self.mouse_move_to(id);
         self.mouse_button_press(PointerButton::Primary);
         self.mouse_button_release(PointerButton::Primary);
     }
 
     /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
+    ///
+    /// ## Panics
+    ///
+    /// - If the widget is not found in the tree.
+    /// - If the widget is stashed.
+    /// - If the widget doesn't accept pointer events.
+    /// - If the widget is scrolled out of view.
+    #[track_caller]
     pub fn mouse_move_to(&mut self, id: WidgetId) {
-        // FIXME - handle case where the widget isn't visible
-        // FIXME - assert that the widget correctly receives the event otherwise?
-        let widget_rect = self.get_widget(id).ctx().window_layout_rect();
+        let widget = self.get_widget(id);
+        let widget_rect = widget.ctx().window_layout_rect();
         let widget_center = widget_rect.center();
+
+        if !widget.ctx().accepts_pointer_interaction() {
+            panic!("Widget {id} doesn't accept pointer events");
+        }
+        if widget.ctx().is_disabled() {
+            panic!("Widget {id} is disabled");
+        }
+        if self
+            .render_root
+            .get_root_widget()
+            .find_widget_at_pos(widget_center)
+            .map(|w| w.id())
+            != Some(id)
+        {
+            panic!("Widget {id} is not visible");
+        }
 
         self.mouse_move(widget_center);
     }
@@ -472,34 +510,11 @@ impl TestHarness {
         self.process_signals();
     }
 
-    // TODO - Fold into move_timers_forward
     /// Run an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
         run_update_anim_pass(&mut self.render_root, ms * 1_000_000);
         self.render_root.run_rewrite_passes();
         self.process_signals();
-    }
-
-    #[cfg(FALSE)]
-    /// Simulate the passage of time.
-    ///
-    /// If you create any timer in a widget, this method is the only way to trigger
-    /// them in unit tests. The testing model assumes that everything else executes
-    /// instantly, and timers are never triggered "spontaneously".
-    ///
-    /// **(TODO - Doesn't move animations forward.)**
-    pub fn move_timers_forward(&mut self, duration: Duration) {
-        // TODO - handle animations
-        let tokens = self
-            .mock_app
-            .window
-            .mock_timer_queue
-            .as_mut()
-            .unwrap()
-            .move_forward(duration);
-        for token in tokens {
-            self.process_event(Event::Timer(token));
-        }
     }
 
     // --- MARK: GETTERS ---
@@ -582,9 +597,7 @@ impl TestHarness {
         self.render_root.edit_widget(id, f)
     }
 
-    /// Pop the next action from the queue.
-    ///
-    /// **Note:** Actions are still a WIP feature.
+    /// Pop the oldest [`Action`] emitted by the widget tree.
     pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
         self.action_queue.pop_front()
     }
