@@ -125,7 +125,7 @@ pub trait Widget: AsAny {
     /// changes in the widget graph or in the state of your specific widget.
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {}
 
-    /// Compute layout.
+    /// Compute layout and return the widget's size.
     ///
     /// A leaf widget should determine its size (subject to the provided
     /// constraints) and return it.
@@ -147,7 +147,9 @@ pub trait Widget: AsAny {
     /// **Container widgets should not add or remove children during layout.**
     /// Doing so is a logic error and may trigger a debug assertion.
     ///
-    /// The layout strategy is strongly inspired by Flutter.
+    /// While each widget should try to return a size that fits the input constraints,
+    /// **any widget may return a size that doesn't fit its constraints**, and container
+    /// widgets should handle those cases gracefully.
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}

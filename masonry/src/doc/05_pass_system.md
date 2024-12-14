@@ -106,6 +106,13 @@ It is called when new widgets are added to the tree, or existing widgets are rem
 
 It will call the `register_children()` widget method on container widgets whose children changed, then the `update()` method with the `WidgetAdded` event on new widgets.
 
+<!-- TODO - document UPDATE DISABLED --- -->
+<!-- TODO - document UPDATE STASHED --- -->
+<!-- TODO - document UPDATE FOCUS CHAIN --- -->
+<!-- TODO - document UPDATE FOCUS --- (document iteration order) -->
+<!-- TODO - document UPDATE SCROLL --- -->
+<!-- TODO - document UPDATE POINTER --- (document iteration order) -->
+
 ### Layout pass
 
 The layout pass runs bidirectionally, passing constraints from the top down and getting back sizes and other layout info from the bottom up.

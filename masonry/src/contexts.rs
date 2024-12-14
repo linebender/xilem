@@ -574,7 +574,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     pub fn children_changed(&mut self) {
         trace!("children_changed");
         self.widget_state.children_changed = true;
-        self.widget_state.update_focus_chain = true;
+        self.widget_state.needs_update_focus_chain = true;
         self.request_layout();
     }
 
