@@ -140,25 +140,30 @@ macro_rules! assert_render_snapshot {
     };
 }
 
-impl TestHarness {
+impl TestHarnessParams {
     /// Default canvas size for tests.
     pub const DEFAULT_SIZE: Size = Size::new(400., 400.);
 
     /// Default background color for tests.
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
+}
 
+impl Default for TestHarnessParams {
+    fn default() -> Self {
+        Self {
+            window_size: Self::DEFAULT_SIZE,
+            background_color: Self::DEFAULT_BACKGROUND_COLOR,
+        }
+    }
+}
+
+impl TestHarness {
     /// Builds harness with given root widget.
     ///
     /// Window size will be [`Self::DEFAULT_SIZE`].
     /// Background color will be [`Self::DEFAULT_BACKGROUND_COLOR`].
     pub fn create(root_widget: impl Widget) -> Self {
-        Self::create_with(
-            root_widget,
-            TestHarnessParams {
-                window_size: Self::DEFAULT_SIZE,
-                background_color: Self::DEFAULT_BACKGROUND_COLOR,
-            },
-        )
+        Self::create_with(root_widget, TestHarnessParams::default())
     }
 
     /// Builds harness with given root widget and window size.
@@ -167,7 +172,7 @@ impl TestHarness {
             root_widget,
             TestHarnessParams {
                 window_size,
-                background_color: Self::DEFAULT_BACKGROUND_COLOR,
+                ..Default::default()
             },
         )
     }
