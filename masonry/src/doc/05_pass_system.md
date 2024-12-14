@@ -12,15 +12,15 @@
 
 </div>
 
-Masonry has a set of **passes**, which are computations run over a subset of the widget tree during every frame.
+Masonry's internal architecture is based on a set of **passes**, which are computations run over a subset of the widget tree during every frame.
 
 Passes can be split into roughly three categories:
 
-- **Event passes:** triggered by user interaction.
-- **Rewrite passes:** run after every event pass, may run multiple times until all invalidation flags are cleared.
-- **Render passes:** run just before rendering a new frame.
+- **Event passes** are triggered by user interaction.
+- **Rewrite passes** run after every event pass, may run multiple times until all invalidation flags are cleared.
+- **Render passes** run just before rendering a new frame.
 
-Note: unless otherwise specified, all passes run over widgets in depth-first preorder.
+Note that unless otherwise specified, all passes run over widgets in depth-first preorder, where child order is determined by their position in the `children_ids()` array.
 
 
 ## Event passes
@@ -68,7 +68,7 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 The layout and compose passes have methods with matching names in the Widget trait.
 The update_xxx passes call the widgets' update method.
 
-By default, each of these passes completes immediately, unless pass-dependent invalidation flags are set.
+By default, each of these passes completes without doing any work, unless pass-dependent invalidation flags are set.
 Each pass can generally request work for later passes; for instance, the mutate pass can invalidate the layout of a widget, in which case the layout pass will run on that widget and its children and parents.
 
 Passes may also request work for *previous* passes, in which case all rewrite passes are run again in sequence.
@@ -126,8 +126,6 @@ Because the compose pass is more limited than layout, it's easier to recompute i
 
 For instance, if a widget in a list changes size, its siblings and parents must be re-laid out to account for the change; whereas changing a given widget's transform only affects its children.
 
-Masonry automatically calls the `compose` methods of all widgets in the tree, in depth-first preorder, where child order is determined by their position in the `children_ids()` array.
-
 
 ## Render passes
 
@@ -144,17 +142,16 @@ These nodes together form the accessibility tree.
 Methods for these passes should be written under the assumption that they can be skipped or called multiple times for arbitrary reasons.
 Therefore, their ability to affect the widget tree is limited.
 
-Masonry automatically calls these methods for all widgets in the tree in depth-first preorder.
 
 ## External mutation
 
 Code with mutable access to the `RenderRoot`, like the Xilem app runner, can get mutable access to the root widget and all its children through the `edit_root_widget()` method, which takes a callback and passes it a `WidgetMut` to the root widget.
 
-This is in effect a MUTATE pass which only processes one callback.
+This is in effect a "mutate" pass which only processes one callback.
 
 External mutation is how Xilem applies any changes to the widget tree produced by its reactive step.
 
-Calling the `edit_root_widget()` method, or any similar direct-mutation method, triggers the entire set of rewrite passes.
+`RenderRoot::edit_root_widget()` triggers the entire set of rewrite passes before returning.
 
 
 ## Pass context types
@@ -164,7 +161,7 @@ Some notes about pass context types:
 - Render passes should be pure and can be skipped occasionally, therefore their context types ([`PaintCtx`] and [`AccessCtx`]) can't set invalidation flags or send signals.
 - The `layout` and `compose` passes lay out all widgets, which are transiently invalid during the passes, therefore [`LayoutCtx`]and [`ComposeCtx`] cannot access the size and position of the `self` widget.
 They can access the layout of children if they have already been laid out.
-- For the same reason, `LayoutCtx`and `ComposeCtx` cannot create a `WidgetRef` reference to a child.
+- For the same reason, [`LayoutCtx`]and [`ComposeCtx`] cannot create a `WidgetRef` reference to a child.
 - [`MutateCtx`], [`EventCtx`] and [`UpdateCtx`] can let you add and remove children.
 - [`RegisterCtx`] can't do anything except register children.
 - [`QueryCtx`] provides read-only information about the widget.
