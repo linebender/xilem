@@ -10,7 +10,8 @@ use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::contexts::TimerToken;
+use crate::contexts::TimerId;
+use crate::event::TimerEvent;
 use crate::kurbo::Size;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text::ArcStr;
@@ -33,7 +34,7 @@ pub struct ProgressBar {
     animate: bool,
     anim_pixel_position: f64,
     anim_prev_interval: Option<u64>,
-    next_anim_token: Option<TimerToken>,
+    next_anim_token: Option<TimerId>,
 }
 
 impl ProgressBar {
@@ -57,6 +58,7 @@ impl ProgressBar {
         }
     }
 
+    /// Note - if calling this in a lifecycle method, you must also request an anim frame.
     pub fn animate(mut self, animate: bool) -> Self {
         if !animate {
             self.reset_animation();
@@ -148,7 +150,13 @@ impl Widget for ProgressBar {
         ctx.register_child(&mut self.label);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+        if matches!(event, Update::WidgetAdded) {
+            if self.animate {
+                ctx.request_anim_frame();
+            }
+        }
+    }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
@@ -222,7 +230,15 @@ impl Widget for ProgressBar {
         smallvec![self.label.id()]
     }
 
+    fn on_timer_expired(&mut self, ctx: &mut EventCtx, _event: &TimerEvent) {
+        println!("on_timer_expired");
+        self.reset_animation();
+        ctx.request_anim_frame();
+        ctx.request_paint_only();
+    }
+
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+        println!("on_anim_frame");
         // pixel per 1ms
         const NS_PER_PIXEL: f64 = 1_000_000.;
         const DURATION_BETWEEN_ANIMATIONS: Duration = Duration::from_millis(2_500);
