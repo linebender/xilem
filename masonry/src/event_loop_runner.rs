@@ -1,8 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::num::NonZeroUsize;
 use std::sync::Arc;
+use std::time::Instant;
 
 use accesskit_winit::Adapter;
 use tracing::{debug, info_span, warn};
@@ -80,6 +83,8 @@ pub struct MasonryState<'a> {
     proxy: EventLoopProxy,
     #[cfg(feature = "tracy")]
     frame: Option<tracing_tracy::client::Frame>,
+    // timers as a min priority queue
+    timers: BinaryHeap<Reverse<Instant>>,
 
     // Per-Window state
     // In future, this will support multiple windows
@@ -156,6 +161,22 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_suspended(event_loop);
+    }
+
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: StartCause) {
+        // check if timers have elapsed and set event loop to wake at next timer deadline
+        let now = Instant::now();
+        loop {
+            let Some(next_timer) = self.masonry_state.timers.peek().cloned() else {
+                break;
+            };
+            let next_timer = next_timer.0;
+            if next_timer > now {
+                break;
+            }
+            // timer has elapsed - remove from heap and handle
+            self.masonry_state.timers.pop();
+        }
     }
 
     fn window_event(

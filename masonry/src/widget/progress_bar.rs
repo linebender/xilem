@@ -3,11 +3,14 @@
 
 //! A progress bar widget.
 
+use std::time::Duration;
+
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;
 
+use crate::contexts::TimerToken;
 use crate::kurbo::Size;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text::ArcStr;
@@ -27,6 +30,10 @@ pub struct ProgressBar {
     /// It is also used if an invalid float (outside of [0, 1]) is passed.
     progress: Option<f64>,
     label: WidgetPod<Label>,
+    animate: bool,
+    anim_pixel_position: f64,
+    anim_prev_interval: Option<u64>,
+    next_anim_token: Option<TimerToken>,
 }
 
 impl ProgressBar {
@@ -40,7 +47,39 @@ impl ProgressBar {
         let label = WidgetPod::new(
             Label::new(Self::value(progress)).with_line_break_mode(LineBreaking::Overflow),
         );
-        Self { progress, label }
+        Self {
+            progress,
+            label,
+            animate: false,
+            anim_pixel_position: 0.,
+            anim_prev_interval: None,
+            next_anim_token: None,
+        }
+    }
+
+    pub fn animate(mut self, animate: bool) -> Self {
+        if !animate {
+            self.reset_animation();
+        }
+        self.animate = animate;
+        self
+    }
+
+    fn reset_animation(&mut self) {
+        self.anim_pixel_position = 0.;
+        self.anim_prev_interval = None;
+        self.next_anim_token = None;
+    }
+
+    // Sync the animation state with the new widget state, if necessary.
+    fn sync_animation(&mut self, bar_width: f64) {
+        if !self.animate {
+            // don't do anything if we're not animating (position should already be 0)
+            return;
+        }
+        self.anim_pixel_position = self
+            .anim_pixel_position
+            .clamp(0., self.bar_end_proportion() * bar_width);
     }
 
     fn value_accessibility(&self) -> Box<str> {
@@ -58,6 +97,14 @@ impl ProgressBar {
             "".into()
         }
     }
+
+    fn bar_end_proportion(&self) -> f64 {
+        self.progress.unwrap_or(1.)
+    }
+
+    fn bar_end(&self, width: f64) -> f64 {
+        self.bar_end_proportion() * width
+    }
 }
 
 // --- MARK: WIDGETMUT ---
@@ -67,6 +114,7 @@ impl ProgressBar {
         let progress_changed = this.widget.progress != progress;
         if progress_changed {
             this.widget.progress = progress;
+            this.widget.sync_animation(this.ctx.size().width);
             let mut label = this.ctx.get_mut(&mut this.widget.label);
             Label::set_text(&mut label, Self::value(progress));
         }
@@ -172,6 +220,33 @@ impl Widget for ProgressBar {
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.label.id()]
+    }
+
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+        // pixel per 1ms
+        const NS_PER_PIXEL: f64 = 1_000_000.;
+        const DURATION_BETWEEN_ANIMATIONS: Duration = Duration::from_millis(2_500);
+        let Some(prev_interval) = self.anim_prev_interval else {
+            // lost interval somehow - restart animation
+            self.anim_prev_interval = Some(interval);
+            self.anim_pixel_position = 0.;
+            ctx.request_anim_frame();
+            ctx.request_paint_only();
+            return;
+        };
+
+        let diff_interval = interval.saturating_sub(prev_interval);
+        let new_position = self.anim_pixel_position + diff_interval as f64 * NS_PER_PIXEL;
+        let bar_end = self.bar_end(ctx.size().width);
+        if new_position >= bar_end {
+            // animation finished;
+            self.anim_pixel_position = 0.;
+            self.anim_prev_interval = None;
+            ctx.request_timer(DURATION_BETWEEN_ANIMATIONS);
+        } else {
+            ctx.request_anim_frame();
+            ctx.request_paint_only();
+        }
     }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
