@@ -87,7 +87,7 @@ impl Widget for Image {
         // the image.
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
         if image_size.is_zero_area() {
-            let size = bc.min();
+            let size = Size::ZERO;
             return size;
         }
         let image_aspect_ratio = image_size.height / image_size.width;

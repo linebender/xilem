@@ -225,7 +225,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
 
     let window_size = root.get_kurbo_size();
     let bc = match root.size_policy {
-        WindowSizePolicy::User => BoxConstraints::tight(window_size),
+        WindowSizePolicy::User => BoxConstraints::new(window_size),
         WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
     };
 
