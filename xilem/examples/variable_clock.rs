@@ -9,13 +9,14 @@ use std::time::Duration;
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
+use vello::peniko::color::palette;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::view::{
     button, flex, inline_prose, label, portal, prose, sized_box, task, variable_label, Axis,
     FlexExt, FlexSpacer,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
@@ -73,7 +74,10 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
         (None, offset)
     } else {
         (
-            Some(prose("Could not determine local UTC offset, using UTC").brush(Color::ORANGE_RED)),
+            Some(
+                prose("Could not determine local UTC offset, using UTC")
+                    .brush(palette::css::ORANGE_RED),
+            ),
             UtcOffset::UTC,
         )
     };
@@ -118,7 +122,7 @@ impl TimeZone {
                 label(format!("UTC{}", self.offset)).brush(
                     if data.local_offset.is_ok_and(|it| it == self.offset) {
                         // TODO: Consider accessibility here.
-                        Color::ORANGE
+                        palette::css::ORANGE
                     } else {
                         masonry::theme::TEXT_COLOR
                     },

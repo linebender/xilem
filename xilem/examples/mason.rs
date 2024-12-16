@@ -9,6 +9,7 @@
 
 use std::time::Duration;
 
+use vello::peniko::color::palette;
 use winit::error::EventLoopError;
 use xilem::core::{fork, run_once};
 use xilem::tokio::time;
@@ -65,7 +66,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     fork(
         flex((
             flex((
-                label("Label").brush(Color::REBECCA_PURPLE),
+                label("Label").brush(palette::css::REBECCA_PURPLE),
                 label("Bold Label").weight(FontWeight::BOLD),
                 // TODO masonry doesn't allow setting disabled manually anymore?
                 // label("Disabled label").disabled(),
@@ -149,7 +150,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
 
     Xilem::new(data, app_logic)
-        .background_color(Color::rgb8(0x20, 0x20, 0x20))
+        .background_color(Color::from_rgba8(0x20, 0x20, 0x20, 0xff))
         .run_windowed(event_loop, "First Example".into())
 }
 

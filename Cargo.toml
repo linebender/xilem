@@ -22,7 +22,7 @@ members = [
 [workspace.package]
 edition = "2021"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
-rust-version = "1.81"
+rust-version = "1.82"
 license = "Apache-2.0"
 repository = "https://github.com/linebender/xilem"
 homepage = "https://xilem.dev/"
@@ -104,13 +104,13 @@ clippy.duplicated_attributes = "allow"
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
-vello = "0.3"
-wgpu = "22.1.0"
+vello = { git = "https://github.com/linebender/vello", rev = "a71236c7c8da10a6eaad4602267663339620835a" }
+wgpu = "23.0.1"
 kurbo = "0.11.1"
-parley = { git = "https://github.com/linebender/parley", rev = "1a8740d8d86ebf751201e45e89bb71019340137d", features = [
+parley = { git = "https://github.com/linebender/parley", rev = "16b62518d467487ee15cb230fdb28530d89a8cf6", features = [
     "accesskit",
 ] }
-peniko = "0.2.0"
+peniko = "0.3.0"
 winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
