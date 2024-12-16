@@ -215,11 +215,7 @@ impl Grid {
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
     ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
-        let child = match this.widget.children[idx].widget_mut() {
-            Some(widget) => widget,
-            None => return None,
-        };
-
+        let child = this.widget.children[idx].widget_mut()?;
         Some(this.ctx.get_mut(child))
     }
 
