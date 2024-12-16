@@ -144,7 +144,7 @@ impl Widget for Image {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use vello::peniko::Format;
+    use vello::peniko::ImageFormat;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -154,7 +154,7 @@ mod tests {
     #[test]
     fn empty_paint() {
         // TODO - Blob::empty() function?
-        let image_data = ImageBuf::new(Vec::new().into(), vello::peniko::Format::Rgba8, 0, 0);
+        let image_data = ImageBuf::new(Vec::new().into(), ImageFormat::Rgba8, 0, 0);
 
         let image_widget = Image::new(image_data);
         let mut harness = TestHarness::create(image_widget);
@@ -177,7 +177,7 @@ mod tests {
             .flatten()
             .collect::<Vec<_>>()
             .into(),
-            Format::Rgba8,
+            ImageFormat::Rgba8,
             2,
             2,
         );
@@ -189,7 +189,7 @@ mod tests {
 
     #[test]
     fn edit_image() {
-        let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), Format::Rgba8, 8, 8);
+        let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
 
         let render_1 = {
             let image_widget = Image::new(image_data.clone());
@@ -200,7 +200,8 @@ mod tests {
         };
 
         let render_2 = {
-            let other_image_data = ImageBuf::new(vec![10; 4 * 8 * 8].into(), Format::Rgba8, 8, 8);
+            let other_image_data =
+                ImageBuf::new(vec![10; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
             let image_widget = Image::new(other_image_data);
 
             let mut harness = TestHarness::create_with_size(image_widget, Size::new(40.0, 60.0));
@@ -220,7 +221,7 @@ mod tests {
 
     #[test]
     fn layout() {
-        let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), Format::Rgba8, 8, 8);
+        let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
         let harness_size = Size::new(100.0, 50.0);
 
         // Contain.

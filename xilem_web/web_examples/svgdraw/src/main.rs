@@ -22,17 +22,17 @@ use xilem_web::{
 };
 
 const RAINBOW_COLORS: [Color; 11] = [
-    Color::rgb8(228, 3, 3),     // Red
-    Color::rgb8(255, 140, 0),   // Orange
-    Color::rgb8(255, 237, 0),   // Yellow
-    Color::rgb8(0, 128, 38),    // Green
-    Color::rgb8(0, 76, 255),    // Indigo
-    Color::rgb8(115, 41, 130),  // Violet
-    Color::rgb8(214, 2, 112),   // Magenta
-    Color::rgb8(155, 79, 150),  // Lavender
-    Color::rgb8(0, 56, 168),    // Blue
-    Color::rgb8(91, 206, 250),  // Light Blue
-    Color::rgb8(245, 169, 184), // Pink
+    Color::from_rgba8(228, 3, 3, 255),     // Red
+    Color::from_rgba8(255, 140, 0, 255),   // Orange
+    Color::from_rgba8(255, 237, 0, 255),   // Yellow
+    Color::from_rgba8(0, 128, 38, 255),    // Green
+    Color::from_rgba8(0, 76, 255, 255),    // Indigo
+    Color::from_rgba8(115, 41, 130, 255),  // Violet
+    Color::from_rgba8(214, 2, 112, 255),   // Magenta
+    Color::from_rgba8(155, 79, 150, 255),  // Lavender
+    Color::from_rgba8(0, 56, 168, 255),    // Blue
+    Color::from_rgba8(91, 206, 250, 255),  // Light Blue
+    Color::from_rgba8(245, 169, 184, 255), // Pink
 ];
 
 struct SplineLine {
@@ -183,10 +183,7 @@ impl Draw {
                     .name("color")
                     .checked(self.selected_color == i)
                     .on_input(move |state: &mut Self, _| state.selected_color = i),
-                div(()).style(s(
-                    "background-color",
-                    format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b),
-                )),
+                div(()).style(s("background-color", format!("{:x}", color.to_rgba8()))),
             ))
             .class("color");
             i += 1;

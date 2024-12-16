@@ -10,6 +10,7 @@
 
 use std::sync::Arc;
 
+use vello::peniko::color::palette;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -20,7 +21,7 @@ use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
     FlexSpacer, Padding,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
 /// The main state of the application.
 struct HttpCats {
@@ -82,7 +83,7 @@ impl HttpCats {
                             "Status code {selected_code} selected, but this was not found."
                         ))
                         .alignment(TextAlignment::Middle)
-                        .brush(Color::YELLOW),
+                        .brush(palette::css::YELLOW),
                     ),
                     None,
                 )
@@ -157,7 +158,7 @@ async fn image_from_url(url: &str) -> anyhow::Result<Image> {
     let data = image.into_vec();
     Ok(Image::new(
         Blob::new(Arc::new(data)),
-        vello::peniko::Format::Rgba8,
+        vello::peniko::ImageFormat::Rgba8,
         width,
         height,
     ))
