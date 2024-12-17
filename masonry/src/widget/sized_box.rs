@@ -7,7 +7,7 @@ use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
-use vello::peniko::{Brush, Color, Fill};
+use vello::peniko::{Brush, Fill};
 use vello::Scene;
 
 use crate::paint_scene_helpers::stroke;
@@ -22,7 +22,7 @@ use crate::{
 /// Something that can be used as the border for a widget.
 struct BorderStyle {
     width: f64,
-    color: Color,
+    brush: Brush,
 }
 
 /// Padding specifies the spacing between the edges of the box and the child view.
@@ -292,10 +292,10 @@ impl SizedBox {
         self
     }
 
-    /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, color: impl Into<Color>, width: impl Into<f64>) -> Self {
+    /// Builder-style method for painting a border around the widget with a brush and width.
+    pub fn border(mut self, brush: impl Into<Brush>, width: impl Into<f64>) -> Self {
         self.border = Some(BorderStyle {
-            color: color.into(),
+            brush: brush.into(),
             width: width.into(),
         });
         self
@@ -386,14 +386,14 @@ impl SizedBox {
         this.ctx.request_paint_only();
     }
 
-    /// Paint a border around the widget with a color and width.
+    /// Paint a border around the widget with a brush and width.
     pub fn set_border(
         this: &mut WidgetMut<'_, Self>,
-        color: impl Into<Color>,
+        brush: impl Into<Brush>,
         width: impl Into<f64>,
     ) {
         this.widget.border = Some(BorderStyle {
-            color: color.into(),
+            brush: brush.into(),
             width: width.into(),
         });
         this.ctx.request_layout();
@@ -547,7 +547,7 @@ impl Widget for SizedBox {
                 .to_rect()
                 .inset(border_width / -2.0)
                 .to_rounded_rect(corner_radius);
-            stroke(scene, &border_rect, border.color, border_width);
+            stroke(scene, &border_rect, &border.brush, border_width);
         };
     }
 
@@ -574,7 +574,7 @@ impl Widget for SizedBox {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use vello::peniko::Gradient;
+    use vello::peniko::{Color, Gradient};
 
     use super::*;
     use crate::assert_render_snapshot;
