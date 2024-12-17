@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use masonry::widget;
 pub use masonry::widget::Padding;
 use vello::kurbo::RoundedRectRadii;
-use vello::peniko::{Brush, Color};
+use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
@@ -92,16 +92,17 @@ impl<V, State, Action> SizedBox<V, State, Action> {
     /// This can be passed anything which can be represented by a [`Brush`];
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
+    /// [`Color`]: vello::peniko::Color
     /// [`Image`]: vello::peniko::Image
     pub fn background(mut self, brush: impl Into<Brush>) -> Self {
         self.background = Some(brush.into());
         self
     }
 
-    /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, color: impl Into<Color>, width: impl Into<f64>) -> Self {
+    /// Builder-style method for painting a border around the widget with a brush and width.
+    pub fn border(mut self, brush: impl Into<Brush>, width: impl Into<f64>) -> Self {
         self.border = Some(BorderStyle {
-            color: color.into(),
+            brush: brush.into(),
             width: width.into(),
         });
         self
@@ -141,7 +142,7 @@ where
             widget = widget.background(background.clone());
         }
         if let Some(border) = &self.border {
-            widget = widget.border(border.color, border.width);
+            widget = widget.border(border.brush.clone(), border.width);
         }
         (ctx.new_pod(widget), child_state)
     }
@@ -176,7 +177,7 @@ where
         if self.border != prev.border {
             match &self.border {
                 Some(border) => {
-                    widget::SizedBox::set_border(&mut element, border.color, border.width);
+                    widget::SizedBox::set_border(&mut element, border.brush.clone(), border.width);
                 }
                 None => widget::SizedBox::clear_border(&mut element),
             }
@@ -221,5 +222,5 @@ where
 #[derive(PartialEq)]
 struct BorderStyle {
     width: f64,
-    color: Color,
+    brush: Brush,
 }
