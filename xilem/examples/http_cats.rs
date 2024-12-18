@@ -16,7 +16,8 @@ use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
-    button, flex, image, inline_prose, label, portal, prose, sized_box, spinner, worker, Axis, FlexExt, FlexSpacer, Padding
+    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
+    FlexSpacer, Padding,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
@@ -171,7 +172,7 @@ impl Status {
             FlexSpacer::Flex(1.),
             // TODO: Spinner if image pending?
             // TODO: Tick if image loaded?
-            button(label("Select"), move |state: &mut HttpCats| {
+            button("Select", move |state: &mut HttpCats| {
                 state.selected_code = Some(code);
             }),
             FlexSpacer::Fixed(masonry::theme::SCROLLBAR_WIDTH),
