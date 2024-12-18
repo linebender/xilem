@@ -53,7 +53,7 @@ fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
 /// A button component which transitions to a specified `target_state`
 /// and appends its value to the history when pressed.
 fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView<StateMachine> {
-    button(value, move |app_data: &mut StateMachine| {
+    button(label(value), move |app_data: &mut StateMachine| {
         app_data.state = target_state;
         app_data.history.push_str(value);
     })
@@ -61,7 +61,7 @@ fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView
 
 fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
     flex((
-        button("Reset", |app_data: &mut StateMachine| {
+        button(label("Reset"), |app_data: &mut StateMachine| {
             app_data.history.clear();
             app_data.state = IsEven::Initial;
         }),

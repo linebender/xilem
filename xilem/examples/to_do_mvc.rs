@@ -8,7 +8,7 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use winit::error::EventLoopError;
-use xilem::view::{button, checkbox, flex, textbox, Axis, FlexSpacer};
+use xilem::view::{button, checkbox, flex, label, textbox, Axis, FlexSpacer};
 use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 struct Task {
@@ -45,7 +45,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
     });
     let first_line = flex((
         input_box,
-        button("Add task".to_string(), |task_list: &mut TaskList| {
+        button(label("Add task"), |task_list: &mut TaskList| {
             task_list.add_task();
         }),
     ))
@@ -63,7 +63,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
                     data.tasks[i].done = checked;
                 },
             );
-            let delete_button = button("Delete", move |data: &mut TaskList| {
+            let delete_button = button(label("Delete"), move |data: &mut TaskList| {
                 data.tasks.remove(i);
             });
             flex((checkbox, delete_button)).direction(Axis::Horizontal)

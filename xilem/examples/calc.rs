@@ -258,7 +258,7 @@ fn expanded_button(
     text: &str,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Calculator> + '_ {
-    sized_box(button(text, callback)).expand()
+    sized_box(button(label(text), callback)).expand()
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,
