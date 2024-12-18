@@ -11,28 +11,27 @@ use crate::view::Label;
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(
-    label: Label,
+    label: impl Into<Label>,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
 {
     Button {
-        label,
+        label: label.into(),
         callback: move |state: &mut State, button| match button {
             PointerButton::Primary => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
     }
 }
-// button(label("Text"), callback)
 
 /// A button which calls `callback` when pressed.
 pub fn button_any_pointer<State, Action>(
-    label: Label,
+    label: impl Into<Label>,
     callback: impl Fn(&mut State, PointerButton) -> Action + Send + 'static,
 ) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
 {
     Button {
-        label,
+        label: label.into(),
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
     }
 }
@@ -65,11 +64,11 @@ where
     fn rebuild(
         &self,
         prev: &Self,
-        _: &mut Self::ViewState,
+        _state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.label.label != self.label.label {
+        if prev.label != self.label {
             widget::Button::set_text(&mut element, self.label.label.clone());
         }
     }

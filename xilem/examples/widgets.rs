@@ -9,7 +9,7 @@ use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, label, progress_bar, sized_box, Axis, FlexSpacer};
+use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
 use xilem::{Color, WidgetView, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
@@ -36,7 +36,7 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
                 }
             },
         ),
-        button(label("change progress"), |state: &mut Option<f64>| match state {
+        button("change progress", |state: &mut Option<f64>| match state {
             Some(ref mut v) => *v = (*v + 0.1).rem_euclid(1.),
             None => *state = Some(0.5),
         }),

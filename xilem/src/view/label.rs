@@ -21,6 +21,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 }
 
 #[must_use = "View values do nothing unless provided to Xilem."]
+#[derive(PartialEq)]
 pub struct Label {
     pub(in crate::view) label: ArcStr,
 
@@ -63,6 +64,18 @@ impl Label {
         self.font = font.into();
         self
     }
+}
+
+impl Into<Label> for &str {
+   fn into(self) -> Label {
+       label(self)
+   }
+}
+
+impl Into<Label> for String {
+   fn into(self) -> Label {
+       label(self)
+   }
 }
 
 impl ViewMarker for Label {}

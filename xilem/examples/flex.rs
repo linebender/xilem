@@ -4,18 +4,17 @@
 //! Flex properties can be set in Xilem.
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-use masonry::text::ArcStr;
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer};
+use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
 use xilem::{EventLoop, WidgetView, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
-    text: impl Into<ArcStr>,
+    label: impl Into<Label>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
-    sized_box(button(label(text), callback)).width(40.).height(40.)
+    sized_box(button(label, callback)).width(40.).height(40.)
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> {

@@ -10,22 +10,21 @@
 use std::sync::Arc;
 
 use masonry::event_loop_runner::MasonryUserEvent;
-use masonry::text::ArcStr;
 use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::{AppDriver, Color};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
-use xilem::view::{button, flex, label, sized_box, Axis};
+use xilem::view::{button, flex, label, sized_box, Axis, Label};
 use xilem::{EventLoop, MasonryProxy, WidgetView, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
-    text: impl Into<ArcStr>,
+    label: impl Into<Label>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
-    sized_box(button(label(text), callback)).width(40.).height(40.)
+    sized_box(button(label, callback)).width(40.).height(40.)
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
