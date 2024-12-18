@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Tests for [`SequenceView`] with arrays.
+
 #![expect(
     clippy::shadow_unrelated,
     reason = "Deferred: Noisy. Fix is to use scopes"
