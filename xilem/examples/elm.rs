@@ -29,8 +29,8 @@ enum CountMessage {
 fn elm_counter<T: 'static>(count: i32) -> impl WidgetView<T, CountMessage> {
     flex((
         label(format!("elm count: {count}")),
-        button("+", |_| CountMessage::Increment),
-        button("-", |_| CountMessage::Decrement),
+        button(label("+"), |_| CountMessage::Increment),
+        button(label("-"), |_| CountMessage::Decrement),
     ))
 }
 
@@ -46,18 +46,18 @@ fn adapt_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
     flex((
         flex((
             label(format!("adapt count: {count}")),
-            button("+", |count| {
+            button(label("+"), |count| {
                 *count += 1;
                 AdaptMessage::Changed
             }),
-            button("-", |count| {
+            button(label("-"), |count| {
                 *count -= 1;
                 AdaptMessage::Changed
             }),
         )),
         flex((
-            button("reset all", |_| AdaptMessage::Reset),
-            button("do nothing (and don't rebuild the view tree)", |_| {
+            button(label("reset all"), |_| AdaptMessage::Reset),
+            button(label("do nothing (and don't rebuild the view tree)"), |_| {
                 AdaptMessage::Nop
             }),
         )),

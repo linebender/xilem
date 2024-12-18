@@ -41,7 +41,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     let flex_sequence = (0..count)
         .map(|x| {
             (
-                button(format!("+{x}"), move |data: &mut AppData| data.count += x),
+                button(label(format!("+{x}")), move |data: &mut AppData| data.count += x),
                 if data.active {
                     FlexSpacer::Flex(x as f64)
                 } else {
@@ -53,7 +53,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
 
     let fizz_buzz_flex_sequence = [(3, "Fizz"), (5, "Buzz")].map(|c| {
         if data.count.abs() % c.0 == 0 {
-            button(c.1, move |data: &mut AppData| {
+            button(label(c.1), move |data: &mut AppData| {
                 data.count += 1;
             })
             .into_any_flex()
@@ -79,7 +79,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             ))
             .direction(Axis::Horizontal),
             prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
-            button_any_pointer(button_label, |data: &mut AppData, button| match button {
+            button_any_pointer(label(button_label), |data: &mut AppData, button| match button {
                 masonry::PointerButton::None => tracing::warn!("Got unexpected None from button"),
                 masonry::PointerButton::Primary => data.count += 1,
                 masonry::PointerButton::Secondary => data.count -= 1,
@@ -90,8 +90,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
                 data.active = checked;
             }),
             toggleable(data),
-            button("Decrement", |data: &mut AppData| data.count -= 1),
-            button("Reset", |data: &mut AppData| data.count = 0),
+            button(label("Decrement"), |data: &mut AppData| data.count -= 1),
+            button(label("Reset"), |data: &mut AppData| data.count = 0),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
         // The following `task` view only exists whilst the example is in the "active" state, so
@@ -119,10 +119,10 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
     if data.active {
         fork(
             flex((
-                button("Deactivate", |data: &mut AppData| {
+                button(label("Deactivate"), |data: &mut AppData| {
                     data.active = false;
                 }),
-                button("Unlimited Power", |data: &mut AppData| {
+                button(label("Unlimited Power"), |data: &mut AppData| {
                     data.count = -1_000_000;
                 }),
             ))
@@ -131,7 +131,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
         )
         .boxed()
     } else {
-        button("Activate", |data: &mut AppData| data.active = true).boxed()
+        button(label("Activate"), |data: &mut AppData| data.active = true).boxed()
     }
 }
 

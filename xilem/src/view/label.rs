@@ -22,7 +22,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Label {
-    label: ArcStr,
+    pub(in crate::view) label: ArcStr,
 
     // Public for variable_label as a semi-interims state.
     pub(in crate::view) text_brush: Brush,

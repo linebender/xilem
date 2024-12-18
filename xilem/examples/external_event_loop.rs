@@ -22,10 +22,10 @@ use xilem::{EventLoop, MasonryProxy, WidgetView, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
-    label: impl Into<ArcStr>,
+    text: impl Into<ArcStr>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
-    sized_box(button(label, callback)).width(40.).height(40.)
+    sized_box(button(label(text), callback)).width(40.).height(40.)
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
