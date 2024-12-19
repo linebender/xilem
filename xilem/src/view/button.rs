@@ -53,6 +53,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
             ctx.new_pod(widget::Button::from_label(
+                // TODO: Use `Label::build` here - currently impossible because `Pod` uses `WidgetPod` internally
                 widget::Label::new(self.label.label.clone())
                     .with_brush(self.label.text_brush.clone())
                     .with_alignment(self.label.alignment)
@@ -70,16 +71,13 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.label != self.label {
-            let child = widget::Button::label_mut(&mut element);
-            <Label as View<State, Action, ViewCtx>>::rebuild(
-                &self.label,
-                &prev.label,
-                state,
-                ctx,
-                child,
-            );
-        }
+        <Label as View<State, Action, ViewCtx>>::rebuild(
+            &self.label,
+            &prev.label,
+            state,
+            ctx,
+            widget::Button::label_mut(&mut element),
+        );
     }
 
     fn teardown(&self, _: &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
