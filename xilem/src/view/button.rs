@@ -66,12 +66,19 @@ where
     fn rebuild(
         &self,
         prev: &Self,
-        _state: &mut Self::ViewState,
-        _ctx: &mut ViewCtx,
+        state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
         if prev.label != self.label {
-            widget::Button::set_text(&mut element, self.label.label.clone());
+            let child = widget::Button::label_mut(&mut element);
+            <Label as View<State, Action, ViewCtx>>::rebuild(
+                &self.label,
+                &prev.label,
+                state,
+                ctx,
+                child,
+            );
         }
     }
 
