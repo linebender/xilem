@@ -25,6 +25,7 @@ use crate::passes::anim::run_update_anim_pass;
 use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use crate::testing::screenshots::get_image_diff;
 use crate::testing::snapshot_utils::get_cargo_workspace;
+use crate::timers::TimerQueue;
 use crate::tracing_backend::try_init_test_tracing;
 use crate::widget::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
@@ -116,6 +117,7 @@ pub struct TestHarness {
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
     title: String,
+    timers: TimerQueue,
 }
 
 /// Assert a snapshot of a rendered frame of your app.
@@ -199,6 +201,7 @@ impl TestHarness {
             has_ime_session: false,
             ime_rect: Default::default(),
             title: String::new(),
+            timers: TimerQueue::new(),
         };
         harness.process_window_event(WindowEvent::Resize(window_size));
 
@@ -243,6 +246,9 @@ impl TestHarness {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
                     self.action_queue.push_back((action, widget_id));
+                }
+                RenderRootSignal::TimerRequested(timer) => {
+                    self.timers.push(timer);
                 }
                 RenderRootSignal::StartIme => {
                     self.has_ime_session = true;
