@@ -32,8 +32,8 @@ pub struct Spinner {
 // --- MARK: BUILDERS ---
 impl Spinner {
     /// Create a spinner widget
-    pub fn new() -> Spinner {
-        Spinner::default()
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Builder-style method for setting the spinner's color.
@@ -47,7 +47,7 @@ const DEFAULT_SPINNER_COLOR: Color = theme::TEXT_COLOR;
 
 impl Default for Spinner {
     fn default() -> Self {
-        Spinner {
+        Self {
             t: 0.0,
             color: DEFAULT_SPINNER_COLOR,
         }

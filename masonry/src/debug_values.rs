@@ -76,49 +76,49 @@ pub struct Timeline {
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::Empty => write!(f, ""),
-            Value::String(string) => write!(f, "{}", string),
-            Value::Bool(b) => write!(f, "{}", b),
-            Value::Rect(rect) => write!(f, "{:?}", rect),
-            Value::Id(id) => write!(f, "{}", id),
-            Value::LogId(_) => write!(f, "<snapshot>"),
+            Self::Empty => write!(f, ""),
+            Self::String(string) => write!(f, "{}", string),
+            Self::Bool(b) => write!(f, "{}", b),
+            Self::Rect(rect) => write!(f, "{:?}", rect),
+            Self::Id(id) => write!(f, "{}", id),
+            Self::LogId(_) => write!(f, "<snapshot>"),
         }
     }
 }
 
 impl From<String> for Value {
-    fn from(value: String) -> Value {
-        Value::String(value)
+    fn from(value: String) -> Self {
+        Self::String(value)
     }
 }
 
 impl From<bool> for Value {
-    fn from(value: bool) -> Value {
-        Value::Bool(value)
+    fn from(value: bool) -> Self {
+        Self::Bool(value)
     }
 }
 
 impl From<Rect> for Value {
-    fn from(value: Rect) -> Value {
-        Value::Rect(value)
+    fn from(value: Rect) -> Self {
+        Self::Rect(value)
     }
 }
 
 impl From<MyWidgetId> for Value {
-    fn from(value: MyWidgetId) -> Value {
-        Value::Id(value)
+    fn from(value: MyWidgetId) -> Self {
+        Self::Id(value)
     }
 }
 
 impl From<LogId> for Value {
-    fn from(value: LogId) -> Value {
-        Value::LogId(value)
+    fn from(value: LogId) -> Self {
+        Self::LogId(value)
     }
 }
 
 impl StateTree {
     pub fn new(name: impl Into<String>, value: impl Into<Value>) -> Self {
-        StateTree {
+        Self {
             name: name.into(),
             value: value.into(),
             folded_by_default: false,

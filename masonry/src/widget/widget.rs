@@ -361,10 +361,10 @@ impl WidgetId {
     ///
     /// You must ensure that a given `WidgetId` is only ever used for one
     /// widget at a time.
-    pub fn next() -> WidgetId {
+    pub fn next() -> Self {
         static WIDGET_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
         let id = WIDGET_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-        WidgetId(id.try_into().unwrap())
+        Self(id.try_into().unwrap())
     }
 
     // TODO - Remove
@@ -377,10 +377,10 @@ impl WidgetId {
     /// be the same as the raw value that is passed in; it will be
     /// `u64::max_value() - raw`.
     #[allow(clippy::missing_panics_doc)] // Can never panic
-    pub const fn reserved(raw: u16) -> WidgetId {
+    pub const fn reserved(raw: u16) -> Self {
         let id = u64::MAX - raw as u64;
         match NonZeroU64::new(id) {
-            Some(id) => WidgetId(id),
+            Some(id) => Self(id),
             // panic safety: u64::MAX - any u16 can never be zero
             None => unreachable!(),
         }
@@ -392,14 +392,14 @@ impl WidgetId {
 }
 
 impl From<WidgetId> for u64 {
-    fn from(id: WidgetId) -> u64 {
+    fn from(id: WidgetId) -> Self {
         id.0.into()
     }
 }
 
 impl From<WidgetId> for accesskit::NodeId {
-    fn from(id: WidgetId) -> accesskit::NodeId {
-        accesskit::NodeId(id.0.into())
+    fn from(id: WidgetId) -> Self {
+        Self(id.0.into())
     }
 }
 

@@ -33,30 +33,30 @@ pub fn stroke<'b>(
 #[allow(unused)]
 impl UnitPoint {
     /// `(0.0, 0.0)`
-    pub const TOP_LEFT: UnitPoint = UnitPoint::new(0.0, 0.0);
+    pub const TOP_LEFT: Self = Self::new(0.0, 0.0);
     /// `(0.5, 0.0)`
-    pub const TOP: UnitPoint = UnitPoint::new(0.5, 0.0);
+    pub const TOP: Self = Self::new(0.5, 0.0);
     /// `(1.0, 0.0)`
-    pub const TOP_RIGHT: UnitPoint = UnitPoint::new(1.0, 0.0);
+    pub const TOP_RIGHT: Self = Self::new(1.0, 0.0);
     /// `(0.0, 0.5)`
-    pub const LEFT: UnitPoint = UnitPoint::new(0.0, 0.5);
+    pub const LEFT: Self = Self::new(0.0, 0.5);
     /// `(0.5, 0.5)`
-    pub const CENTER: UnitPoint = UnitPoint::new(0.5, 0.5);
+    pub const CENTER: Self = Self::new(0.5, 0.5);
     /// `(1.0, 0.5)`
-    pub const RIGHT: UnitPoint = UnitPoint::new(1.0, 0.5);
+    pub const RIGHT: Self = Self::new(1.0, 0.5);
     /// `(0.0, 1.0)`
-    pub const BOTTOM_LEFT: UnitPoint = UnitPoint::new(0.0, 1.0);
+    pub const BOTTOM_LEFT: Self = Self::new(0.0, 1.0);
     /// `(0.5, 1.0)`
-    pub const BOTTOM: UnitPoint = UnitPoint::new(0.5, 1.0);
+    pub const BOTTOM: Self = Self::new(0.5, 1.0);
     /// `(1.0, 1.0)`
-    pub const BOTTOM_RIGHT: UnitPoint = UnitPoint::new(1.0, 1.0);
+    pub const BOTTOM_RIGHT: Self = Self::new(1.0, 1.0);
 
     /// Create a new `UnitPoint`.
     ///
     /// The `u` and `v` coordinates describe the point, with (0.0, 0.0) being
     /// the top-left, and (1.0, 1.0) being the bottom-right.
-    pub const fn new(u: f64, v: f64) -> UnitPoint {
-        UnitPoint { u, v }
+    pub const fn new(u: f64, v: f64) -> Self {
+        Self { u, v }
     }
 
     /// Given a rectangle, resolve the point within the rectangle.

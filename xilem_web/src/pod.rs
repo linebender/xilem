@@ -21,11 +21,11 @@ pub type AnyPod = Pod<Box<dyn AnyNode>>;
 
 impl<N: DomNode> Pod<N> {
     pub const fn new(node: N, props: N::Props, flags: PodFlags) -> Self {
-        Pod { node, props, flags }
+        Self { node, props, flags }
     }
 
     /// Erases the type of this [`Pod`] and applies props if necessary.
-    pub fn into_any_pod(mut pod: Pod<N>) -> AnyPod {
+    pub fn into_any_pod(mut pod: Self) -> AnyPod {
         pod.apply_changes();
         Pod {
             node: Box::new(pod.node),
@@ -113,8 +113,8 @@ impl<'a, N: DomNode> PodMut<'a, N> {
         flags: &'a mut PodFlags,
         parent: Option<&'a web_sys::Node>,
         was_removed: bool,
-    ) -> PodMut<'a, N> {
-        PodMut {
+    ) -> Self {
+        Self {
             node,
             props,
             flags,
@@ -187,9 +187,9 @@ impl PodFlags {
 
     pub(crate) fn new(in_hydration: bool) -> Self {
         if in_hydration {
-            PodFlags(Self::WAS_CREATED | Self::IN_HYDRATION)
+            Self(Self::WAS_CREATED | Self::IN_HYDRATION)
         } else {
-            PodFlags(Self::WAS_CREATED)
+            Self(Self::WAS_CREATED)
         }
     }
 

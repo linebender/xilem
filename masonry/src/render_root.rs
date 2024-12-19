@@ -150,7 +150,7 @@ impl RenderRoot {
             test_font,
         }: RenderRootOptions,
     ) -> Self {
-        let mut root = RenderRoot {
+        let mut root = Self {
             root: WidgetPod::new(root_widget).boxed(),
             size_policy,
             size: PhysicalSize::new(0, 0),
@@ -623,7 +623,7 @@ impl RenderRootState {
 
 impl RenderRootSignal {
     pub(crate) fn new_ime_moved_signal(area: Rect) -> Self {
-        RenderRootSignal::ImeMoved(
+        Self::ImeMoved(
             LogicalPosition {
                 x: area.origin().x,
                 y: area.origin().y,

@@ -36,7 +36,7 @@ impl AnimatedF32 {
     /// Create a value which is not changing.
     pub fn stable(value: f32) -> Self {
         assert!(value.is_finite());
-        AnimatedF32 {
+        Self {
             target: value,
             value,
             rate_per_millisecond: 0.,
@@ -117,7 +117,7 @@ pub enum AnimationStatus {
 
 impl AnimationStatus {
     pub fn is_completed(self) -> bool {
-        matches!(self, AnimationStatus::Completed)
+        matches!(self, Self::Completed)
     }
 }
 

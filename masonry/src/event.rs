@@ -67,8 +67,8 @@ fn button_bit(button: PointerButton) -> u8 {
 impl PointerButtons {
     /// Create a new empty set.
     #[inline]
-    pub fn new() -> PointerButtons {
-        PointerButtons(0)
+    pub fn new() -> Self {
+        Self(0)
     }
 
     /// Add the `button` to the set.
@@ -97,12 +97,12 @@ impl PointerButtons {
 
     /// Returns `true` if all the `buttons` are in the set.
     #[inline]
-    pub fn contains_all(self, buttons: PointerButtons) -> bool {
+    pub fn contains_all(self, buttons: Self) -> bool {
         self.0 & buttons.0 == buttons.0
     }
 
     /// Adds all the `buttons` to the set.
-    pub fn extend(&mut self, buttons: PointerButtons) {
+    pub fn extend(&mut self, buttons: Self) {
         self.0 |= buttons.0;
     }
 
@@ -325,58 +325,58 @@ impl PointerEvent {
             focus: false,
             force: None,
         };
-        PointerEvent::PointerLeave(pointer_state)
+        Self::PointerLeave(pointer_state)
     }
 
     pub fn pointer_state(&self) -> &PointerState {
         match self {
-            PointerEvent::PointerDown(_, state)
-            | PointerEvent::PointerUp(_, state)
-            | PointerEvent::PointerMove(state)
-            | PointerEvent::PointerEnter(state)
-            | PointerEvent::PointerLeave(state)
-            | PointerEvent::MouseWheel(_, state)
-            | PointerEvent::HoverFile(_, state)
-            | PointerEvent::DropFile(_, state)
-            | PointerEvent::HoverFileCancel(state)
-            | PointerEvent::Pinch(_, state) => state,
+            Self::PointerDown(_, state)
+            | Self::PointerUp(_, state)
+            | Self::PointerMove(state)
+            | Self::PointerEnter(state)
+            | Self::PointerLeave(state)
+            | Self::MouseWheel(_, state)
+            | Self::HoverFile(_, state)
+            | Self::DropFile(_, state)
+            | Self::HoverFileCancel(state)
+            | Self::Pinch(_, state) => state,
         }
     }
 
     pub fn position(&self) -> Option<LogicalPosition<f64>> {
         match self {
-            PointerEvent::PointerLeave(_) | PointerEvent::HoverFileCancel(_) => None,
+            Self::PointerLeave(_) | Self::HoverFileCancel(_) => None,
             _ => Some(self.pointer_state().position),
         }
     }
 
     pub fn short_name(&self) -> &'static str {
         match self {
-            PointerEvent::PointerDown(_, _) => "PointerDown",
-            PointerEvent::PointerUp(_, _) => "PointerUp",
-            PointerEvent::PointerMove(_) => "PointerMove",
-            PointerEvent::PointerEnter(_) => "PointerEnter",
-            PointerEvent::PointerLeave(_) => "PointerLeave",
-            PointerEvent::MouseWheel(_, _) => "MouseWheel",
-            PointerEvent::HoverFile(_, _) => "HoverFile",
-            PointerEvent::DropFile(_, _) => "DropFile",
-            PointerEvent::HoverFileCancel(_) => "HoverFileCancel",
-            PointerEvent::Pinch(_, _) => "Pinch",
+            Self::PointerDown(_, _) => "PointerDown",
+            Self::PointerUp(_, _) => "PointerUp",
+            Self::PointerMove(_) => "PointerMove",
+            Self::PointerEnter(_) => "PointerEnter",
+            Self::PointerLeave(_) => "PointerLeave",
+            Self::MouseWheel(_, _) => "MouseWheel",
+            Self::HoverFile(_, _) => "HoverFile",
+            Self::DropFile(_, _) => "DropFile",
+            Self::HoverFileCancel(_) => "HoverFileCancel",
+            Self::Pinch(_, _) => "Pinch",
         }
     }
 
     pub fn is_high_density(&self) -> bool {
         match self {
-            PointerEvent::PointerDown(_, _) => false,
-            PointerEvent::PointerUp(_, _) => false,
-            PointerEvent::PointerMove(_) => true,
-            PointerEvent::PointerEnter(_) => false,
-            PointerEvent::PointerLeave(_) => false,
-            PointerEvent::MouseWheel(_, _) => true,
-            PointerEvent::HoverFile(_, _) => true,
-            PointerEvent::DropFile(_, _) => false,
-            PointerEvent::HoverFileCancel(_) => false,
-            PointerEvent::Pinch(_, _) => true,
+            Self::PointerDown(_, _) => false,
+            Self::PointerUp(_, _) => false,
+            Self::PointerMove(_) => true,
+            Self::PointerEnter(_) => false,
+            Self::PointerLeave(_) => false,
+            Self::MouseWheel(_, _) => true,
+            Self::HoverFile(_, _) => true,
+            Self::DropFile(_, _) => false,
+            Self::HoverFileCancel(_) => false,
+            Self::Pinch(_, _) => true,
         }
     }
 }
@@ -384,25 +384,25 @@ impl PointerEvent {
 impl TextEvent {
     pub fn short_name(&self) -> &'static str {
         match self {
-            TextEvent::KeyboardKey(KeyEvent { repeat: true, .. }, _) => "KeyboardKey (repeat)",
-            TextEvent::KeyboardKey(_, _) => "KeyboardKey",
-            TextEvent::Ime(Ime::Disabled) => "Ime::Disabled",
-            TextEvent::Ime(Ime::Enabled) => "Ime::Enabled",
-            TextEvent::Ime(Ime::Commit(_)) => "Ime::Commit",
-            TextEvent::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
-            TextEvent::Ime(Ime::Preedit(_, _)) => "Ime::Preedit",
-            TextEvent::ModifierChange(_) => "ModifierChange",
-            TextEvent::FocusChange(_) => "FocusChange",
+            Self::KeyboardKey(KeyEvent { repeat: true, .. }, _) => "KeyboardKey (repeat)",
+            Self::KeyboardKey(_, _) => "KeyboardKey",
+            Self::Ime(Ime::Disabled) => "Ime::Disabled",
+            Self::Ime(Ime::Enabled) => "Ime::Enabled",
+            Self::Ime(Ime::Commit(_)) => "Ime::Commit",
+            Self::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
+            Self::Ime(Ime::Preedit(_, _)) => "Ime::Preedit",
+            Self::ModifierChange(_) => "ModifierChange",
+            Self::FocusChange(_) => "FocusChange",
         }
     }
 
     pub fn is_high_density(&self) -> bool {
         match self {
-            TextEvent::KeyboardKey(_, _) => false,
-            TextEvent::Ime(_) => false,
+            Self::KeyboardKey(_, _) => false,
+            Self::Ime(_) => false,
             // Basically every mouse click/scroll event seems to produce a modifier change event.
-            TextEvent::ModifierChange(_) => true,
-            TextEvent::FocusChange(_) => false,
+            Self::ModifierChange(_) => true,
+            Self::FocusChange(_) => false,
         }
     }
 }
@@ -451,7 +451,7 @@ impl PointerState {
         // It would be a lot better if winit could just make this constructor safe.
         let device_id = unsafe { DeviceId::dummy() };
 
-        PointerState {
+        Self {
             physical_position: PhysicalPosition::new(0.0, 0.0),
             position: LogicalPosition::new(0.0, 0.0),
             buttons: Default::default(),
@@ -469,13 +469,13 @@ impl Update {
     /// Essentially returns the enum variant name.
     pub fn short_name(&self) -> &str {
         match self {
-            Update::WidgetAdded => "WidgetAdded",
-            Update::DisabledChanged(_) => "DisabledChanged",
-            Update::StashedChanged(_) => "StashedChanged",
-            Update::RequestPanToChild(_) => "RequestPanToChild",
-            Update::HoveredChanged(_) => "HoveredChanged",
-            Update::FocusChanged(_) => "FocusChanged",
-            Update::ChildFocusChanged(_) => "ChildFocusChanged",
+            Self::WidgetAdded => "WidgetAdded",
+            Self::DisabledChanged(_) => "DisabledChanged",
+            Self::StashedChanged(_) => "StashedChanged",
+            Self::RequestPanToChild(_) => "RequestPanToChild",
+            Self::HoveredChanged(_) => "HoveredChanged",
+            Self::FocusChanged(_) => "FocusChanged",
+            Self::ChildFocusChanged(_) => "ChildFocusChanged",
         }
     }
 }
