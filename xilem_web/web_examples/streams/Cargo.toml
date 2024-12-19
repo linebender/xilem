@@ -1,5 +1,5 @@
 [package]
-name = "fetch"
+name = "streams"
 version = "0.1.0"
 publish = false
 license.workspace = true
@@ -10,12 +10,14 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+anyhow = "1.0.93"
+async-stream = "0.3.6"
 console_error_panic_hook = "0.1"
 console_log = "1"
-gloo-net = { version = "0.6.0", default-features = false, features = ["http", "json", "serde"] }
+futures = "0.3.31"
+getrandom = { version = "0.2.15", features = ["js"] }
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 log = "0.4"
-serde = { version = "1", features = ["derive"] }
-web-sys = { version = "0.3.74", features = ["Event", "HtmlInputElement"] }
-wasm-bindgen = "0.2.97"
+rand = { version = "0.8.5", features = ["small_rng"] }
+web-sys = { version = "0.3.72", features = ["KeyboardEvent"] }
 xilem_web = { path = "../.." }
