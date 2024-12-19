@@ -14,12 +14,12 @@ mod screenshots;
 #[cfg(not(tarpaulin_include))]
 mod snapshot_utils;
 
-pub use harness::{TestHarness, HARNESS_DEFAULT_BACKGROUND_COLOR, HARNESS_DEFAULT_SIZE};
+pub use harness::{TestHarness, TestHarnessParams};
 pub use helper_widgets::{ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt};
 
 use crate::WidgetId;
 
-/// Convenience function to return an arrays of unique widget ids.
+/// Convenience function to return an array of unique widget ids.
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
     std::array::from_fn(|_| WidgetId::next())
 }
