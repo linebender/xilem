@@ -68,7 +68,7 @@ impl<T> From<T> for Label
 where
     T: Into<ArcStr>,
 {
-    fn from(text: T) -> Label {
+    fn from(text: T) -> Self {
         label(text)
     }
 }
