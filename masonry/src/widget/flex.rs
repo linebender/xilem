@@ -32,10 +32,9 @@ pub struct Flex {
 /// Optional parameters for an item in a [`Flex`] container (row or column).
 ///
 /// Generally, when you would like to add a flexible child to a container,
-/// you can simply call [`with_flex_child`](Flex::with_flex_child), passing the
-/// child and the desired flex factor as a `f64`, which has an impl of
+/// you can simply call [`with_flex_child`](Flex::with_flex_child) or [`add_flex_child`](Flex::add_flex_child),
+/// passing the child and the desired flex factor as a `f64`, which has an impl of
 /// `Into<FlexParams>`.
-// FIXME - "with_flex_child or [`add_flex_child`](FlexMut::add_flex_child)"
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct FlexParams {
     flex: Option<f64>,
@@ -540,7 +539,6 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    // FIXME - Remove Box
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,

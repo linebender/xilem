@@ -5,7 +5,8 @@ use std::any::Any;
 
 use crate::event::PointerButton;
 
-// TODO - Refactor - See issue https://github.com/linebender/xilem/issues/335
+// TODO - Replace actions with an associated type on the Widget trait
+// See https://github.com/linebender/xilem/issues/664
 
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
 #[non_exhaustive]

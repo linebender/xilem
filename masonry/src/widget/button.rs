@@ -18,7 +18,7 @@ use crate::{
     PointerEvent, QueryCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
 
-// the minimum padding added to a button.
+// The minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
 // should be reevaluated at some point.
 const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
@@ -206,12 +206,6 @@ impl Widget for Button {
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!("Button", id = ctx.widget_id().trace())
-    }
-
-    // FIXME
-    #[cfg(FALSE)]
-    fn get_debug_text(&self) -> Option<String> {
-        Some(self.label.as_ref().text().as_ref().to_string())
     }
 }
 

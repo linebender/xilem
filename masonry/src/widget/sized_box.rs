@@ -324,8 +324,6 @@ impl SizedBox {
         self.padding = padding.into();
         self
     }
-
-    // TODO - child()
 }
 
 // --- MARK: WIDGETMUT ---

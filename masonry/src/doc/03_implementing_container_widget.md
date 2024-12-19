@@ -254,11 +254,11 @@ Doesn't `VerticalStack::paint` need to call `paint` on its children, for instanc
 
 It doesn't.
 
-In Masonry, most passes are automatically propagated to children, without container widgets having to implement code iterating over their children.
+In Masonry, most passes are automatically propagated to children, and so container widgets do not need to *and cannot* call the pass methods on their children.
 
 So for instance, if `VerticalStack::children_ids()` returns a list of three children, the paint pass will automatically call `paint` on all three children after `VerticalStack::paint()`.
 
-So various methods in container widgets should only implement the logic that is specific to the container itself.
+Pass methods in container widgets should only implement the logic that is specific to the container itself.
 For instance, a container widget with a background color should implement `paint` to draw the background.
 
 [`Widget`]: crate::Widget

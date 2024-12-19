@@ -184,7 +184,17 @@ impl BoxConstraints {
     ///
     /// Use this function when maintaining an aspect ratio is more important than minimizing the
     /// distance between input and output size width and height.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if `aspect_ratio` or `width` are NaN, infinite or negative.
+    #[track_caller]
     pub fn constrain_aspect_ratio(&self, aspect_ratio: f64, width: f64) -> Size {
+        assert!(aspect_ratio.is_finite());
+        assert!(width.is_finite());
+        assert!(aspect_ratio >= 0.0);
+        assert!(width >= 0.0);
+
         // Minimizing/maximizing based on aspect ratio seems complicated, but in reality everything
         // is linear, so the amount of work to do is low.
         let ideal_size = Size {
@@ -201,8 +211,6 @@ impl BoxConstraints {
             return ideal_size;
         }
 
-        // Then we check if any `Size`s with our desired aspect ratio are inside the constraints.
-        // TODO this currently outputs garbage when things are < 0 - See https://github.com/linebender/xilem/issues/377
         let min_w_min_h = self.min.height / self.min.width;
         let max_w_min_h = self.min.height / self.max.width;
         let min_w_max_h = self.max.height / self.min.width;

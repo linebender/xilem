@@ -11,7 +11,7 @@ use crate::render_root::RenderRoot;
 use crate::{AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId};
 
 // --- MARK: HELPERS ---
-fn get_target_widget(
+fn get_pointer_target(
     root: &RenderRoot,
     pointer_pos: Option<LogicalPosition<f64>>,
 ) -> Option<WidgetId> {
@@ -89,8 +89,8 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
     if event.is_high_density() {
         // We still want to record that this pass occurred in the debug file log.
-        // However, we choose not record any other tracing for this event,
-        // as that would have a lot of noise.
+        // However, we choose not to record any other tracing for this event,
+        // as that would create a lot of noise.
         trace!("Running ON_POINTER_EVENT pass with {}", event.short_name());
     } else {
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
@@ -101,7 +101,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         root.last_mouse_pos = event.position();
     }
 
-    let target_widget_id = get_target_widget(root, event.position());
+    let target_widget_id = get_pointer_target(root, event.position());
 
     let handled = run_event_pass(
         root,
@@ -134,11 +134,6 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
     handled
 }
-
-// TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
-// - If a Widget gets a keyboard event or an ImeStateChange, then
-// focus is on it, its child or its parent.
-// - If a Widget has focus, then none of its parents is hidden
 
 // --- MARK: TEXT EVENT ---
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {

@@ -102,7 +102,7 @@ fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
             .collect::<Vec<NodeId>>(),
     );
 
-    // Note - These WidgetState flags can be modified by other passes.
+    // Note - The values returned by these methods can be modified by other passes.
     // When that happens, the other pass should set flags to request an accessibility pass.
     if ctx.is_disabled() {
         node.set_disabled();

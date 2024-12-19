@@ -161,22 +161,6 @@ pub(crate) fn run_layout_on<W: Widget>(
                     child_state.id,
                 );
             }
-
-            // TODO - This check might be redundant with the code updating local_paint_rect
-            let child_rect = child_state.paint_rect();
-            if !state.item.local_paint_rect.contains_rect(child_rect)
-                && state.item.clip_path.is_none()
-            {
-                debug_panic!(
-                    "Error in '{}' {}: paint_rect {:?} doesn't contain paint_rect {:?} of child widget '{}' {}",
-                    name,
-                    pod.id(),
-                    state.item.local_paint_rect,
-                    child_rect,
-                    child_state.widget_name,
-                    child_state.id,
-                );
-            }
         }
 
         let new_children_ids = widget.item.children_ids();
@@ -197,16 +181,6 @@ pub(crate) fn run_layout_on<W: Widget>(
             );
         }
     }
-
-    // TODO - Figure out how to deal with the overflow problem, eg:
-    // What happens if a widget returns a size larger than the allowed constraints?
-    // Some possibilities are:
-    // - Always clip: might be expensive
-    // - Display it anyway: might lead to graphical bugs
-    // - Panic: too harsh?
-    // Also, we need to avoid spurious crashes when we initialize the app and the
-    // size is (0,0)
-    // See https://github.com/linebender/xilem/issues/377
 
     let state_mut = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
     parent_ctx.widget_state.merge_up(state_mut.item);

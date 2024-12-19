@@ -114,8 +114,8 @@ Because our widget tree only has one button and one textbox, there is no possibl
 When handling `ButtonPressed`:
 
 - `ctx.get_root()` returns a `WidgetMut<RootWidget<...>>`.
-- `root.child_mut()` returns a `WidgetMut<Portal<...>>` for the `Portal`.
-- `portal.child_mut()` returns a `WidgetMut<Flex>` for the `Flex`.
+- `root.child_mut()` returns a `WidgetMut<Portal<...>>`.
+- `portal.child_mut()` returns a `WidgetMut<Flex>`.
 
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
 It's set up to automatically propagate update flags and update internal state when dropped.
@@ -211,7 +211,7 @@ fn main() {
         next_task: String::new(),
     };
 
-use masonry::dpi::LogicalSize;
+    use masonry::dpi::LogicalSize;
     use winit::window::Window;
 
     let window_attributes = Window::default_attributes()

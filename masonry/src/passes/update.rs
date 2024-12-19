@@ -74,7 +74,7 @@ fn run_single_update_pass(
     }
 }
 
-// --- MARK: UPDATE TREE ---
+// --- MARK: TREE ---
 fn update_widget_tree(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -188,7 +188,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE DISABLED ---
+// --- MARK: DISABLED ---
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -214,7 +214,7 @@ fn update_disabled_for_widget(
             .item
             .update(&mut ctx, &Update::DisabledChanged(disabled));
         state.item.is_disabled = disabled;
-        state.item.update_focus_chain = true;
+        state.item.needs_update_focus_chain = true;
         state.item.request_accessibility = true;
         state.item.needs_accessibility = true;
     }
@@ -252,7 +252,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 // The stereotypical use case would be the contents of hidden tabs in a "tab group" widget.
 // Scrolled-out widgets are *not* stashed.
 
-// --- MARK: UPDATE STASHED ---
+// --- MARK: STASHED ---
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -278,7 +278,7 @@ fn update_stashed_for_widget(
             .item
             .update(&mut ctx, &Update::StashedChanged(stashed));
         state.item.is_stashed = stashed;
-        state.item.update_focus_chain = true;
+        state.item.needs_update_focus_chain = true;
         // Note: We don't need request_repaint because stashing doesn't actually change
         // how widgets are painted, only how the Scenes they create are composed.
         state.item.needs_paint = true;
@@ -315,7 +315,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE FOCUS CHAIN ---
+// --- MARK: FOCUS CHAIN ---
 
 // TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
 // - A widget only receives BuildFocusChain if none of its parents are hidden.
@@ -332,7 +332,7 @@ fn update_focus_chain_for_widget(
     let _span = enter_span(global_state, widget.reborrow(), state.reborrow());
     let id = state.item.id;
 
-    if !state.item.update_focus_chain {
+    if !state.item.needs_update_focus_chain {
         return;
     }
 
@@ -344,7 +344,7 @@ fn update_focus_chain_for_widget(
     if state.item.accepts_focus {
         state.item.focus_chain.push(id);
     }
-    state.item.update_focus_chain = false;
+    state.item.needs_update_focus_chain = false;
 
     let parent_state = &mut *state.item;
     recurse_on_children(
@@ -391,7 +391,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE FOCUS ---
+// --- MARK: FOCUS ---
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus").entered();
     // If the next-focused widget is disabled, stashed or removed, we set
@@ -448,6 +448,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 
     // We don't just compare `prev_focused` and `next_focused` they could be the same widget
     // but one of their ancestors could have been reparented.
+    // (assuming we ever implement reparenting)
     if prev_focused_path != next_focused_path {
         let mut focused_set = HashSet::new();
         for widget_id in &next_focused_path {
@@ -534,7 +535,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE SCROLL ---
+// --- MARK: SCROLL ---
 // This pass will update scroll positions in cases where a widget has requested to be
 // scrolled into view (usually a textbox getting text events).
 // Each parent that implements scrolling will update its scroll position to ensure the
@@ -547,6 +548,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
     for (target, rect) in scroll_request_targets {
         let mut target_rect = rect;
 
+        // TODO - Run top-down instead of bottom-up.
         run_targeted_update_pass(root, Some(target), |widget, ctx| {
             let event = Update::RequestPanToChild(rect);
             widget.update(ctx, &event);
@@ -563,7 +565,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE POINTER ---
+// --- MARK: POINTER ---
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if !root.global_state.needs_pointer_pass {
         return;
@@ -604,6 +606,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     // We don't just compare `prev_focused` and `next_focused` they could be the same widget
     // but one of their ancestors could have been reparented.
+    // (assuming we ever implement reparenting)
     if prev_hovered_path != next_hovered_path {
         let mut hovered_set = HashSet::new();
         for widget_id in &next_hovered_path {
@@ -655,17 +658,17 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         }
     }
 
-    // -- UPDATE CURSOR --
+    // -- UPDATE CURSOR ICON --
 
-    // If the pointer is captured, its cursor always reflects the
+    // If the pointer is captured, its icon always reflects the
     // capture target, even when not hovered.
-    let cursor_source = root
+    let icon_source = root
         .global_state
         .pointer_capture_target
         .or(next_hovered_widget);
 
-    let new_cursor = if let (Some(cursor_source), Some(pos)) = (cursor_source, pointer_pos) {
-        let (widget, state) = root.widget_arena.get_pair(cursor_source);
+    let new_icon = if let (Some(icon_source), Some(pos)) = (icon_source, pointer_pos) {
+        let (widget, state) = root.widget_arena.get_pair(icon_source);
 
         let ctx = QueryCtx {
             global_state: &root.global_state,
@@ -683,11 +686,11 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         CursorIcon::Default
     };
 
-    if root.global_state.cursor_icon != new_cursor {
+    if root.global_state.cursor_icon != new_icon {
         root.global_state
-            .emit_signal(RenderRootSignal::SetCursor(new_cursor));
+            .emit_signal(RenderRootSignal::SetCursor(new_icon));
     }
 
-    root.global_state.cursor_icon = new_cursor;
+    root.global_state.cursor_icon = new_icon;
     root.global_state.hovered_path = next_hovered_path;
 }

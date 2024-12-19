@@ -10,9 +10,9 @@ use crate::{QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
-/// Widgets in Masonry are bundled with additional metadata called [`WidgetState`].
+/// Widgets in Masonry are bundled with additional metadata.
 ///
-/// A `WidgetRef` to a widget carries both a reference to the widget and to its `WidgetState`. It can [`Deref`] to the referenced widget.
+/// A `WidgetRef` to a widget carries both a reference to the widget and to its metadata. It can [`Deref`] to the referenced widget.
 ///
 /// This type is mostly used for debugging, to query a certain widget in the widget
 /// graph, get their layout, etc. It also implements [`std::fmt::Debug`] for convenience;

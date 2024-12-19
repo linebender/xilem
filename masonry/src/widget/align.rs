@@ -164,7 +164,6 @@ fn log_size_warnings(size: Size) {
 }
 
 // --- MARK: TESTS ---
-// --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
