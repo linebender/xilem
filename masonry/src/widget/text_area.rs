@@ -137,7 +137,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
         default_styles(editor.edit_styles());
         editor.set_text(text);
-        TextArea {
+        Self {
             editor,
             rendered_generation: Generation::default(),
             last_click_time: None,

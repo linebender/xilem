@@ -77,7 +77,7 @@ pub struct ShutdownSignal {
 impl ShutdownSignal {
     fn new() -> (Self, AbortHandle) {
         let (abort_tx, shutdown_rx) = oneshot::channel();
-        (ShutdownSignal { shutdown_rx }, AbortHandle { abort_tx })
+        (Self { shutdown_rx }, AbortHandle { abort_tx })
     }
 
     /// Detect whether the view has disappeared and

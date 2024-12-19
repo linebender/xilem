@@ -46,7 +46,7 @@ impl<W: Widget> Portal<W> {
     }
 
     pub fn new_pod(child: WidgetPod<W>) -> Self {
-        Portal {
+        Self {
             child,
             viewport_pos: Point::ORIGIN,
             constrain_horizontal: false,

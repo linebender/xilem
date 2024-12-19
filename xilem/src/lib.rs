@@ -28,7 +28,6 @@
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
@@ -85,7 +84,7 @@ where
 {
     pub fn new(state: State, logic: Logic) -> Self {
         let runtime = tokio::runtime::Runtime::new().unwrap();
-        Xilem {
+        Self {
             state,
             logic,
             runtime,

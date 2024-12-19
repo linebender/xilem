@@ -38,7 +38,7 @@ impl Image {
     /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
     #[inline]
     pub fn new(image_data: ImageBuf) -> Self {
-        Image {
+        Self {
             image_data,
             object_fit: ObjectFit::default(),
         }

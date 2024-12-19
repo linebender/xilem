@@ -80,7 +80,7 @@ impl Padding {
     }
 
     /// A padding of zero for all edges.
-    pub const ZERO: Padding = Padding::all(0.);
+    pub const ZERO: Self = Self::all(0.);
 
     /// An empty padding which can be used as a sentinel value.
     ///
@@ -88,7 +88,7 @@ impl Padding {
     /// they should use [`is_unset`](Self::is_unset) to determine that there were no modifications.
     ///
     /// Otherwise, this padding will behave as [`Padding::ZERO`].
-    pub const UNSET: Padding = Padding::all(-0.0);
+    pub const UNSET: Self = Self::all(-0.0);
 
     /// Determine if self is [`Padding::UNSET`].
     pub fn is_unset(self) -> bool {

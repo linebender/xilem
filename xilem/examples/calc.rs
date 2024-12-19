@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple calculator example
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
@@ -27,19 +26,19 @@ enum MathOperator {
 impl MathOperator {
     fn as_str(self) -> &'static str {
         match self {
-            MathOperator::Add => "+",
-            MathOperator::Subtract => "\u{2212}",
-            MathOperator::Multiply => "×",
-            MathOperator::Divide => "÷",
+            Self::Add => "+",
+            Self::Subtract => "\u{2212}",
+            Self::Multiply => "×",
+            Self::Divide => "÷",
         }
     }
 
     fn perform_op(self, num1: f64, num2: f64) -> f64 {
         match self {
-            MathOperator::Add => num1 + num2,
-            MathOperator::Subtract => num1 - num2,
-            MathOperator::Multiply => num1 * num2,
-            MathOperator::Divide => num1 / num2,
+            Self::Add => num1 + num2,
+            Self::Subtract => num1 - num2,
+            Self::Multiply => num1 * num2,
+            Self::Divide => num1 / num2,
         }
     }
 }

@@ -32,13 +32,13 @@ pub enum StyleModifier {
 impl StyleModifier {
     /// Returns the property name of this modifier.
     pub fn name(&self) -> &CowStr {
-        let (StyleModifier::Set(name, _) | StyleModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 
     /// Convert this modifier into its property name.
     pub fn into_name(self) -> CowStr {
-        let (StyleModifier::Set(name, _) | StyleModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 }
@@ -46,8 +46,8 @@ impl StyleModifier {
 impl<V: Into<Option<CowStr>>, K: Into<CowStr>> From<(K, V)> for StyleModifier {
     fn from((name, value): (K, V)) -> Self {
         match value.into() {
-            Some(value) => StyleModifier::Set(name.into(), value),
-            None => StyleModifier::Remove(name.into()),
+            Some(value) => Self::Set(name.into(), value),
+            None => Self::Remove(name.into()),
         }
     }
 }
@@ -81,7 +81,7 @@ where
     T2: Into<Option<CowStr>> + Clone + PartialEq + Debug + 'static,
 {
     fn styles_iter(&self) -> impl Iterator<Item = (CowStr, Option<CowStr>)> {
-        let StyleTuple(key, value) = self;
+        let Self(key, value) = self;
         std::iter::once((key.clone().into(), value.clone().into()))
     }
 }
@@ -452,7 +452,7 @@ impl<E, S, T, A> Style<E, S, T, A> {
     ///
     /// Usually [`Element::style`](`crate::interfaces::Element::style`) should be used instead of this function.
     pub fn new(el: E, styles: S) -> Self {
-        Style {
+        Self {
             el,
             styles,
             phantom: PhantomData,
@@ -525,7 +525,7 @@ pub struct Rotate<E, State, Action> {
 
 impl<E, State, Action> Rotate<E, State, Action> {
     pub(crate) fn new(element: E, radians: f64) -> Self {
-        Rotate {
+        Self {
             el: element,
             phantom: PhantomData,
             radians,
@@ -619,27 +619,27 @@ pub enum ScaleValue {
 impl Display for ScaleValue {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ScaleValue::Uniform(uniform) => write!(f, "{uniform}"),
-            ScaleValue::NonUniform(x, y) => write!(f, "{x}, {y}"),
+            Self::Uniform(uniform) => write!(f, "{uniform}"),
+            Self::NonUniform(x, y) => write!(f, "{x}, {y}"),
         }
     }
 }
 
 impl From<f64> for ScaleValue {
     fn from(value: f64) -> Self {
-        ScaleValue::Uniform(value)
+        Self::Uniform(value)
     }
 }
 
 impl From<(f64, f64)> for ScaleValue {
     fn from(value: (f64, f64)) -> Self {
-        ScaleValue::NonUniform(value.0, value.1)
+        Self::NonUniform(value.0, value.1)
     }
 }
 
 impl From<Vec2> for ScaleValue {
     fn from(value: Vec2) -> Self {
-        ScaleValue::NonUniform(value.x, value.y)
+        Self::NonUniform(value.x, value.y)
     }
 }
 
@@ -652,7 +652,7 @@ pub struct Scale<E, State, Action> {
 
 impl<E, State, Action> Scale<E, State, Action> {
     pub(crate) fn new(element: E, scale: impl Into<ScaleValue>) -> Self {
-        Scale {
+        Self {
             el: element,
             phantom: PhantomData,
             scale: scale.into(),

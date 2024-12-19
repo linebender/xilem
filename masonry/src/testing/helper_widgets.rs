@@ -143,7 +143,7 @@ impl<S> ModularWidget<S> {
     /// By default none of its methods do anything, and its layout method returns
     /// a static 100x100 size.
     pub fn new(state: S) -> Self {
-        ModularWidget {
+        Self {
             state,
             accepts_pointer_interaction: true,
             accepts_focus: false,
@@ -321,7 +321,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let ModularWidget {
+        let Self {
             ref mut state,
             ref mut layout,
             ..
@@ -423,7 +423,7 @@ impl ReplaceChild {
     pub fn new<W: Widget + 'static>(child: impl Widget, f: impl Fn() -> W + 'static) -> Self {
         let child = WidgetPod::new(child).boxed();
         let replacer = Box::new(move || WidgetPod::new(f()).boxed());
-        ReplaceChild { child, replacer }
+        Self { child, replacer }
     }
 }
 

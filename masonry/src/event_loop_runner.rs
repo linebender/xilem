@@ -42,14 +42,14 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
 impl From<WinitMouseButton> for PointerButton {
     fn from(button: WinitMouseButton) -> Self {
         match button {
-            WinitMouseButton::Left => PointerButton::Primary,
-            WinitMouseButton::Right => PointerButton::Secondary,
-            WinitMouseButton::Middle => PointerButton::Auxiliary,
-            WinitMouseButton::Back => PointerButton::X1,
-            WinitMouseButton::Forward => PointerButton::X2,
+            WinitMouseButton::Left => Self::Primary,
+            WinitMouseButton::Right => Self::Secondary,
+            WinitMouseButton::Middle => Self::Auxiliary,
+            WinitMouseButton::Back => Self::X1,
+            WinitMouseButton::Forward => Self::X2,
             WinitMouseButton::Other(other) => {
                 warn!("Got winit MouseButton::Other({other}) which is not yet fully supported.");
-                PointerButton::Other
+                Self::Other
             }
         }
     }

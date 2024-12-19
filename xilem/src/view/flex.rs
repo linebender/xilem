@@ -199,14 +199,14 @@ impl ViewElement for FlexElement {
     type Mut<'w> = FlexElementMut<'w>;
 }
 
-impl SuperElement<FlexElement, ViewCtx> for FlexElement {
-    fn upcast(_ctx: &mut ViewCtx, child: FlexElement) -> Self {
+impl SuperElement<Self, ViewCtx> for FlexElement {
+    fn upcast(_ctx: &mut ViewCtx, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         mut this: Mut<Self>,
-        f: impl FnOnce(Mut<FlexElement>) -> R,
+        f: impl FnOnce(Mut<Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -222,7 +222,7 @@ impl SuperElement<FlexElement, ViewCtx> for FlexElement {
 
 impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        FlexElement::Child(ctx.boxed_pod(child), FlexParams::default())
+        Self::Child(ctx.boxed_pod(child), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -437,7 +437,7 @@ where
     V: WidgetView<State, Action, ViewState: 'static>,
 {
     fn from(value: FlexItem<V, State, Action>) -> Self {
-        AnyFlexChild::Item(flex_item(value.view.boxed(), value.params))
+        Self::Item(flex_item(value.view.boxed(), value.params))
     }
 }
 
@@ -510,7 +510,7 @@ pub enum FlexSpacer {
 
 impl<State, Action> From<FlexSpacer> for AnyFlexChild<State, Action> {
     fn from(spacer: FlexSpacer) -> Self {
-        AnyFlexChild::Spacer(spacer)
+        Self::Spacer(spacer)
     }
 }
 
@@ -524,8 +524,8 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
 
     fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let el = match self {
-            FlexSpacer::Fixed(len) => FlexElement::FixedSpacer(*len),
-            FlexSpacer::Flex(flex) => FlexElement::FlexSpacer(*flex),
+            Self::Fixed(len) => FlexElement::FixedSpacer(*len),
+            Self::Flex(flex) => FlexElement::FlexSpacer(*flex),
         };
         (el, ())
     }
@@ -539,10 +539,10 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
     ) {
         if self != prev {
             match self {
-                FlexSpacer::Fixed(len) => {
+                Self::Fixed(len) => {
                     widget::Flex::update_spacer_fixed(&mut element.parent, element.idx, *len);
                 }
-                FlexSpacer::Flex(flex) => {
+                Self::Flex(flex) => {
                     widget::Flex::update_spacer_flex(&mut element.parent, element.idx, *flex);
                 }
             };
@@ -647,12 +647,12 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, view_state) = match self {
-            AnyFlexChild::Item(flex_item) => {
+            Self::Item(flex_item) => {
                 let (element, state) =
                     ctx.with_id(ViewId::new(generation), |ctx| flex_item.build(ctx));
                 (element, Some(state))
             }
-            AnyFlexChild::Spacer(spacer) => {
+            Self::Spacer(spacer) => {
                 // We know that the spacer doesn't need any id, as it doesn't receive or sends any messages
                 // (Similar to `None` as a ViewSequence)
                 let (element, ()) = View::<(), (), ViewCtx>::build(spacer, ctx);
@@ -676,15 +676,15 @@ where
         mut element: Mut<Self::Element>,
     ) {
         match (prev, self) {
-            (AnyFlexChild::Item(prev), AnyFlexChild::Item(this)) => {
+            (Self::Item(prev), Self::Item(this)) => {
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
                     this.rebuild(prev, view_state.inner.as_mut().unwrap(), ctx, element);
                 });
             }
-            (AnyFlexChild::Spacer(prev), AnyFlexChild::Spacer(this)) => {
+            (Self::Spacer(prev), Self::Spacer(this)) => {
                 View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element);
             }
-            (AnyFlexChild::Item(prev_flex_item), AnyFlexChild::Spacer(new_spacer)) => {
+            (Self::Item(prev_flex_item), Self::Spacer(new_spacer)) => {
                 // Run teardown with the old path
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
                     prev_flex_item.teardown(
@@ -718,7 +718,7 @@ where
                     FlexElement::Child(_, _) => unreachable!(),
                 };
             }
-            (AnyFlexChild::Spacer(prev_spacer), AnyFlexChild::Item(new_flex_item)) => {
+            (Self::Spacer(prev_spacer), Self::Item(new_flex_item)) => {
                 View::<(), (), ViewCtx>::teardown(
                     prev_spacer,
                     &mut (),
@@ -756,10 +756,10 @@ where
         element: Mut<Self::Element>,
     ) {
         match self {
-            AnyFlexChild::Item(flex_item) => {
+            Self::Item(flex_item) => {
                 flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element);
             }
-            AnyFlexChild::Spacer(spacer) => {
+            Self::Spacer(spacer) => {
                 View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element);
             }
         }
@@ -779,7 +779,7 @@ where
             // The message was sent to a previous edition of the inner value
             return MessageResult::Stale(message);
         }
-        let AnyFlexChild::Item(flex_item) = self else {
+        let Self::Item(flex_item) = self else {
             unreachable!(
                 "this should be unreachable as the generation was increased on the falling edge"
             )

@@ -25,7 +25,7 @@ pub enum ClassModifier {
 impl ClassModifier {
     /// Returns the class name of this modifier.
     pub fn name(&self) -> &CowStr {
-        let (ClassModifier::Add(name) | ClassModifier::Remove(name)) = self;
+        let (Self::Add(name) | Self::Remove(name)) = self;
         name
     }
 }
@@ -65,7 +65,7 @@ impl ClassIter for &'static str {
 }
 
 impl ClassIter for CowStr {
-    fn class_iter(&self) -> impl Iterator<Item = CowStr> {
+    fn class_iter(&self) -> impl Iterator<Item = Self> {
         std::iter::once(self.clone())
     }
 }
@@ -270,16 +270,16 @@ impl Classes {
         for change in diff_iters(prev, next) {
             match change {
                 Diff::Add(modifier) => {
-                    Classes::insert(this, modifier);
+                    Self::insert(this, modifier);
                     new_len += 1;
                 }
-                Diff::Remove(count) => Classes::delete(this, count),
+                Diff::Remove(count) => Self::delete(this, count),
                 Diff::Change(new_modifier) => {
-                    Classes::mutate(this, |modifier| *modifier = new_modifier);
+                    Self::mutate(this, |modifier| *modifier = new_modifier);
                     new_len += 1;
                 }
                 Diff::Skip(count) => {
-                    Classes::skip(this, count);
+                    Self::skip(this, count);
                     new_len += count;
                 }
             }
@@ -298,11 +298,11 @@ impl Classes {
         next: &T,
     ) -> usize {
         if this.flags.was_created() {
-            Classes::extend(this, next.add_class_iter())
+            Self::extend(this, next.add_class_iter())
         } else if next != prev {
-            Classes::apply_diff(this, prev.add_class_iter(), next.add_class_iter())
+            Self::apply_diff(this, prev.add_class_iter(), next.add_class_iter())
         } else {
-            Classes::skip(this, prev_len);
+            Self::skip(this, prev_len);
             prev_len
         }
     }
@@ -323,7 +323,7 @@ impl<E, C, T, A> Class<E, C, T, A> {
     ///
     /// Usually [`Element::class`](`crate::interfaces::Element::class`) should be used instead of this function.
     pub fn new(el: E, classes: C) -> Self {
-        Class {
+        Self {
             el,
             classes,
             phantom: PhantomData,

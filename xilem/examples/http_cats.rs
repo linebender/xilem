@@ -4,7 +4,6 @@
 //! An example demonstrating the use of Async web requests in Xilem to access the <https://http.cat/> API.
 //! This also demonstrates image loading.
 
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
@@ -46,7 +45,7 @@ enum ImageState {
 }
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<HttpCats> {
+    fn view(&mut self) -> impl WidgetView<Self> {
         let left_column = sized_box(portal(flex((
             prose("Status"),
             self.statuses
@@ -135,7 +134,7 @@ impl HttpCats {
                         }
                     }
                 },
-                |state: &mut HttpCats, (code, image): (u32, Image)| {
+                |state: &mut Self, (code, image): (u32, Image)| {
                     if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
                         status.image = ImageState::Available(image);
                     } else {
@@ -231,7 +230,7 @@ impl Status {
         let mut lines = STATUS_CODES_CSV.lines();
         let first_line = lines.next();
         assert_eq!(first_line, Some("code,message"));
-        lines.flat_map(Status::parse_single).collect()
+        lines.flat_map(Self::parse_single).collect()
     }
 
     fn parse_single(line: &'static str) -> Option<Self> {

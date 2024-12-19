@@ -58,7 +58,7 @@ impl HtmlInputElement {
 
 impl FromWithContext<Pod<web_sys::Element>> for Pod<web_sys::HtmlInputElement> {
     fn from_with_ctx(value: Pod<web_sys::Element>, _ctx: &mut ViewCtx) -> Self {
-        Pod {
+        Self {
             node: value.node.unchecked_into(),
             flags: value.flags,
             props: HtmlInputElement {

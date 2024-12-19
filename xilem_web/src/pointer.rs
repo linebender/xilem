@@ -52,19 +52,19 @@ pub enum PointerMsg {
 impl PointerMsg {
     pub fn position(&self) -> Point {
         match self {
-            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.position,
+            Self::Down(p) | Self::Move(p) | Self::Up(p) => p.position,
         }
     }
 
     pub fn button(&self) -> i16 {
         match self {
-            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.button,
+            Self::Down(p) | Self::Move(p) | Self::Up(p) => p.button,
         }
     }
 
     pub fn id(&self) -> i32 {
         match self {
-            PointerMsg::Down(p) | PointerMsg::Move(p) | PointerMsg::Up(p) => p.id,
+            Self::Down(p) | Self::Move(p) | Self::Up(p) => p.id,
         }
     }
 }
@@ -79,7 +79,7 @@ pub struct PointerDetails {
 
 impl PointerDetails {
     fn from_pointer_event(e: &PointerEvent) -> Self {
-        PointerDetails {
+        Self {
             id: e.pointer_id(),
             button: e.button(),
             position: Point::new(e.client_x() as f64, e.client_y() as f64),

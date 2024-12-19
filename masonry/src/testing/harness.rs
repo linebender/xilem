@@ -182,7 +182,7 @@ impl TestHarness {
         ));
         let data = ROBOTO.to_vec();
 
-        let mut harness = TestHarness {
+        let mut harness = Self {
             render_root: RenderRoot::new(
                 root_widget,
                 RenderRootOptions {

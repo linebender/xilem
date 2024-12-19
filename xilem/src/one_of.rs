@@ -177,61 +177,61 @@ impl<
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         match self {
-            OneOfWidget::A(w) => ctx.register_child(w),
-            OneOfWidget::B(w) => ctx.register_child(w),
-            OneOfWidget::C(w) => ctx.register_child(w),
-            OneOfWidget::D(w) => ctx.register_child(w),
-            OneOfWidget::E(w) => ctx.register_child(w),
-            OneOfWidget::F(w) => ctx.register_child(w),
-            OneOfWidget::G(w) => ctx.register_child(w),
-            OneOfWidget::H(w) => ctx.register_child(w),
-            OneOfWidget::I(w) => ctx.register_child(w),
+            Self::A(w) => ctx.register_child(w),
+            Self::B(w) => ctx.register_child(w),
+            Self::C(w) => ctx.register_child(w),
+            Self::D(w) => ctx.register_child(w),
+            Self::E(w) => ctx.register_child(w),
+            Self::F(w) => ctx.register_child(w),
+            Self::G(w) => ctx.register_child(w),
+            Self::H(w) => ctx.register_child(w),
+            Self::I(w) => ctx.register_child(w),
         }
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         match self {
-            OneOfWidget::A(w) => {
+            Self::A(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::B(w) => {
+            Self::B(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::C(w) => {
+            Self::C(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::D(w) => {
+            Self::D(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::E(w) => {
+            Self::E(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::F(w) => {
+            Self::F(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::G(w) => {
+            Self::G(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::H(w) => {
+            Self::H(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
             }
-            OneOfWidget::I(w) => {
+            Self::I(w) => {
                 let size = ctx.run_layout(w, bc);
                 ctx.place_child(w, Point::ORIGIN);
                 size
@@ -249,15 +249,15 @@ impl<
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         match self {
-            OneOfWidget::A(w) => smallvec![w.id()],
-            OneOfWidget::B(w) => smallvec![w.id()],
-            OneOfWidget::C(w) => smallvec![w.id()],
-            OneOfWidget::D(w) => smallvec![w.id()],
-            OneOfWidget::E(w) => smallvec![w.id()],
-            OneOfWidget::F(w) => smallvec![w.id()],
-            OneOfWidget::G(w) => smallvec![w.id()],
-            OneOfWidget::H(w) => smallvec![w.id()],
-            OneOfWidget::I(w) => smallvec![w.id()],
+            Self::A(w) => smallvec![w.id()],
+            Self::B(w) => smallvec![w.id()],
+            Self::C(w) => smallvec![w.id()],
+            Self::D(w) => smallvec![w.id()],
+            Self::E(w) => smallvec![w.id()],
+            Self::F(w) => smallvec![w.id()],
+            Self::G(w) => smallvec![w.id()],
+            Self::H(w) => smallvec![w.id()],
+            Self::I(w) => smallvec![w.id()],
         }
     }
 }
