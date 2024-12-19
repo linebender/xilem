@@ -11,7 +11,7 @@
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Image, ObjectFit, RootWidget};
 use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-use vello::peniko::{Format, Image as ImageBuf};
+use vello::peniko::{Image as ImageBuf, ImageFormat};
 use winit::window::Window;
 
 struct Driver;
@@ -24,7 +24,12 @@ fn main() {
     let image_bytes = include_bytes!("./assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();
-    let png_data = ImageBuf::new(image_data.to_vec().into(), Format::Rgba8, width, height);
+    let png_data = ImageBuf::new(
+        image_data.to_vec().into(),
+        ImageFormat::Rgba8,
+        width,
+        height,
+    );
     let image = Image::new(png_data).fit_mode(ObjectFit::Contain);
 
     let window_size = LogicalSize::new(650.0, 450.0);

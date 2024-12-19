@@ -64,13 +64,18 @@ fn join(iter: &mut impl Iterator<Item: std::fmt::Display>, sep: &str) -> String 
     }
 }
 
+/// Convert a Brush for a color into the hex string.
+///
+/// This will not include any alpha, if present,
+/// as it is handled separately via the opacity attribute
+/// instead.
 fn brush_to_string(brush: &Brush) -> String {
     match brush {
         Brush::Solid(color) => {
-            if color.a == 0 {
+            if color.components[3] == 0.0 {
                 "none".into()
             } else {
-                format!("#{:02x}{:02x}{:02x}", color.r, color.g, color.b)
+                format!("{:x}", color.discard_alpha().to_rgba8())
             }
         }
         _ => todo!("gradients not implemented"),
@@ -79,7 +84,14 @@ fn brush_to_string(brush: &Brush) -> String {
 
 fn opacity_attr_modifier(attr: &'static str, brush: &Brush) -> AttributeModifier {
     let opacity = match brush {
-        Brush::Solid(color) if color.a != u8::MAX => Some(color.a as f64 / 255.0),
+        Brush::Solid(color) => {
+            let a = color.components[3];
+            if a < 1.0 {
+                Some(a as f64)
+            } else {
+                None
+            }
+        }
         _ => None,
     };
 
@@ -278,5 +290,23 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
         self.child.message(view_state, id_path, message, app_state)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::brush_to_string;
+    use peniko::{color::palette, Brush};
+
+    #[test]
+    fn color_brush_to_string() {
+        let transparent: Brush = palette::css::TRANSPARENT.into();
+        assert_eq!(brush_to_string(&transparent), "none");
+
+        let red: Brush = palette::css::RED.into();
+        assert_eq!(brush_to_string(&red), "#ff0000");
+
+        let lime: Brush = palette::css::LIME.with_alpha(0.5).into();
+        assert_eq!(brush_to_string(&lime), "#00ff00");
     }
 }

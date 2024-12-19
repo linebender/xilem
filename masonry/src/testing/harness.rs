@@ -33,7 +33,7 @@ use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 pub const HARNESS_DEFAULT_SIZE: Size = Size::new(400., 400.);
 
 /// Default background color for tests.
-pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
+pub const HARNESS_DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgba8(0x29, 0x29, 0x29, 0xff);
 
 /// A safe headless environment to test widgets in.
 ///
