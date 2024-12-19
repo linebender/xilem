@@ -66,16 +66,13 @@ impl Label {
     }
 }
 
-impl Into<Label> for &str {
-   fn into(self) -> Label {
-       label(self)
-   }
-}
-
-impl Into<Label> for String {
-   fn into(self) -> Label {
-       label(self)
-   }
+impl<T> From<T> for Label
+where
+    T: Into<ArcStr>,
+{
+    fn from(text: T) -> Label {
+        label(text)
+    }
 }
 
 impl ViewMarker for Label {}
