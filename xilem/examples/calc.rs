@@ -12,9 +12,9 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::view::{
     button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
-    GridSequence,
+    GridSequence, Label,
 };
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -50,6 +50,7 @@ struct Calculator {
     numbers: [String; 2],
     result: Option<String>,
     operation: Option<MathOperator>,
+    clear_button: Color,
 }
 
 impl Calculator {
@@ -72,6 +73,7 @@ impl Calculator {
 
     fn clear_entry(&mut self) {
         self.clear_current_entry_on_input = false;
+        self.clear_button = Color::MEDIUM_VIOLET_RED;
         if self.result.is_some() {
             self.clear_all();
             return;
@@ -80,6 +82,9 @@ impl Calculator {
     }
 
     fn on_entered_digit(&mut self, digit: &str) {
+        if self.clear_button != Color::WHITE {
+            self.clear_button = Color::WHITE;
+        }
         if self.result.is_some() {
             self.clear_all();
         } else if self.clear_current_entry_on_input {
@@ -199,6 +204,7 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
 fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
+    let label = label("CE").brush(data.clear_button);
     grid(
         (
             // Display
@@ -216,7 +222,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             ))
             .grid_item(GridParams::new(0, 0, 4, 1)),
             // Top row
-            expanded_button("CE", Calculator::clear_entry).grid_pos(0, 1),
+            expanded_button(label, Calculator::clear_entry).grid_pos(0, 1),
             expanded_button("C", Calculator::clear_all).grid_pos(1, 1),
             expanded_button("DEL", Calculator::on_delete).grid_pos(2, 1),
             operator_button(MathOperator::Divide).grid_pos(3, 1),
@@ -256,9 +262,9 @@ fn display_label(text: &str) -> impl WidgetView<Calculator> {
 /// Returns a button contained in an expanded box. Useful for the buttons so that
 /// they take up all available space in flex containers.
 fn expanded_button(
-    text: &str,
+    text: impl Into<Label>,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
-) -> impl WidgetView<Calculator> + '_ {
+) -> impl WidgetView<Calculator> {
     sized_box(button(text, callback)).expand()
 }
 
@@ -284,6 +290,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         numbers: ["".into(), "".into()],
         result: None,
         operation: None,
+        clear_button: Color::WHITE,
     };
 
     let app = Xilem::new(data, app_logic);
