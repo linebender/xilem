@@ -6,8 +6,8 @@ use masonry::widget;
 pub use masonry::PointerButton;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
-use crate::{MessageResult, Pod, ViewCtx, ViewId};
 use crate::view::Label;
+use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(
@@ -51,14 +51,16 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(
-            widget::Button::from_label(widget::Label::new(self.label.label.clone())
-                .with_brush(self.label.text_brush.clone())
-                .with_alignment(self.label.alignment)
-                .with_style(StyleProperty::FontSize(self.label.text_size))
-                .with_style(StyleProperty::FontWeight(self.label.weight))
-                .with_style(StyleProperty::FontStack(self.label.font.clone())),
-        )))
+        ctx.with_leaf_action_widget(|ctx| {
+            ctx.new_pod(widget::Button::from_label(
+                widget::Label::new(self.label.label.clone())
+                    .with_brush(self.label.text_brush.clone())
+                    .with_alignment(self.label.alignment)
+                    .with_style(StyleProperty::FontSize(self.label.text_size))
+                    .with_style(StyleProperty::FontWeight(self.label.weight))
+                    .with_style(StyleProperty::FontStack(self.label.font.clone())),
+            ))
+        })
     }
 
     fn rebuild(
