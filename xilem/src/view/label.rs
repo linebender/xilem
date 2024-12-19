@@ -21,11 +21,9 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 }
 
 #[must_use = "View values do nothing unless provided to Xilem."]
-#[derive(PartialEq)]
 pub struct Label {
+    // Public for button and variable_label as a semi-interim state.
     pub(in crate::view) label: ArcStr,
-
-    // Public for variable_label as a semi-interims state.
     pub(in crate::view) text_brush: Brush,
     pub(in crate::view) alignment: TextAlignment,
     pub(in crate::view) text_size: f32,
