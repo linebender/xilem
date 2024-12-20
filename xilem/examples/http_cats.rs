@@ -209,7 +209,6 @@ impl Status {
                     .rounded(4.)
                     .background(Color::BLACK.multiply_alpha(0.5)),
                 )
-                // HACK: Trailing padding workaround scrollbar covering content
                 .padding((30., 42., 0., 0.))
                 .alignment(Alignment::TopTrailing),
             )),
