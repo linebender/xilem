@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 use std::marker::PhantomData;
 
 use crate::{
@@ -25,12 +27,12 @@ use xilem_core::{MessageResult, ViewId};
 ///
 /// ```
 /// use xilem::WidgetView;
-/// use xilem::view::{zstack, label};
+/// use xilem::view::{zstack, label, button};
 ///
-/// fn view() -> impl WidgetView<()> {
-///     zstack::<(), (), _>((
+/// fn view<State: 'static>() -> impl WidgetView<State> {
+///     zstack((
 ///         label("Background"),
-///         label("Foreground")
+///         button("Click me", |_| {})
 ///     ))
 /// }
 /// ```
@@ -90,7 +92,7 @@ where
             widget::ZStack::set_alignment(&mut element, self.alignment);
         }
 
-        let mut splice = StackSplice::new(element);
+        let mut splice = ZStackSplice::new(element);
         self.sequence
             .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
         debug_assert!(splice.scratch.is_empty());
@@ -102,7 +104,7 @@ where
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
     ) {
-        let mut splice = StackSplice::new(element);
+        let mut splice = ZStackSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
         debug_assert!(splice.scratch.into_inner().is_empty());
     }
@@ -121,7 +123,11 @@ where
 
 // --- MARK: ZStackExt ---
 
+/// A trait that extends a [`WidgetView`] with methods to provide parameters for a parent [`ZStack`].
 pub trait ZStackExt<State, Action>: WidgetView<State, Action> {
+    /// Applies [`ChildAlignment`] to this view.
+    /// This allows the view to override the default [`Alignment`] of the parent [`ZStack`].
+    /// This can only be used on views that are direct children of a [`ZStack`].
     fn alignment(self, alignment: impl Into<ChildAlignment>) -> ZStackItem<Self, State, Action>
     where
         State: 'static,
@@ -134,12 +140,16 @@ pub trait ZStackExt<State, Action>: WidgetView<State, Action> {
 
 impl<State, Action, V: WidgetView<State, Action>> ZStackExt<State, Action> for V {}
 
+/// A wrapper around a [`WidgetView`], with a specified [`ChildAlignment`].
+/// This struct is most often constructed indrectly using [`ZStackExt::alignment`].
 pub struct ZStackItem<V, State, Action> {
     view: V,
     alignment: ChildAlignment,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
+/// Constructs a new `ZStackItem`.
+/// See also [`ZStackExt::alignment`], for constructing a `ZStackItem` from an existing view.
 pub fn zstack_item<V, State, Action>(
     view: V,
     alignment: impl Into<ChildAlignment>,
@@ -221,11 +231,14 @@ where
 }
 
 // --- MARK: ZStackElement ---
+
+/// A struct implementing [`ViewElement`] for a `ZStack`.
 pub struct ZStackElement {
     widget: Pod<Box<dyn Widget>>,
     alignment: ChildAlignment,
 }
 
+/// A mutable version of `ZStackElement`.
 pub struct ZStackElementMut<'w> {
     parent: WidgetMut<'w, widget::ZStack>,
     idx: usize,
@@ -283,6 +296,8 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
 }
 
 // MARK: Sequence
+
+/// A trait implementing `ViewSequence` for `ZStackElements`.
 pub trait ZStackSequence<State, Action = ()>:
     ViewSequence<State, Action, ViewCtx, ZStackElement>
 {
@@ -295,13 +310,14 @@ impl<Seq, State, Action> ZStackSequence<State, Action> for Seq where
 
 // MARK: Splice
 
-pub struct StackSplice<'w> {
+/// An implementation of [`ElementSplice`] for `ZStackElements`.
+pub struct ZStackSplice<'w> {
     idx: usize,
     element: WidgetMut<'w, widget::ZStack>,
     scratch: AppendVec<ZStackElement>,
 }
 
-impl<'w> StackSplice<'w> {
+impl<'w> ZStackSplice<'w> {
     fn new(element: WidgetMut<'w, widget::ZStack>) -> Self {
         Self {
             idx: 0,
@@ -311,7 +327,7 @@ impl<'w> StackSplice<'w> {
     }
 }
 
-impl ElementSplice<ZStackElement> for StackSplice<'_> {
+impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<ZStackElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {

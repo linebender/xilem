@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 use crate::{
     vello::Scene, widget::WidgetMut, AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, Point,
     QueryCtx, RegisterCtx, Size, Widget, WidgetId, WidgetPod,
@@ -14,15 +16,19 @@ struct Child {
     alignment: ChildAlignment,
 }
 
+/// An option specifying how a child widget is aligned within a [`ZStack`].
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ChildAlignment {
+    /// Specifies that the child should use the global alignment as specified by the parent [`ZStack`] widget.
     ParentAligned,
+    /// Specifies that the child should override the global alignment specified by the parent [`ZStack`] widget.
     SelfAligned(Alignment),
 }
 
 /// A widget container that lays the child widgets on top of each other.
 ///
-/// The alignment of how the children are placed can be specified using [`with_alignment`][Self::with_alignment].
+/// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
+/// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
 #[derive(Default)]
 pub struct ZStack {
     children: Vec<Child>,
@@ -34,15 +40,24 @@ pub struct ZStack {
 /// See also [`VerticalAlignment`] and [`HorizontalAlignment`] for describing only a single axis.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Alignment {
+    /// Align to the top leading corner.
     TopLeading,
+    /// Align to the center of the top edge.
     Top,
+    /// Align to the top trailing corner.
     TopTrailing,
+    /// Align to the center of the leading edge.
     Leading,
+    /// Align to the center.
     #[default]
     Center,
+    /// Align to the center of the trailing edge.
     Trailing,
+    /// Align to the bottom leading corner.
     BottomLeading,
+    /// Align to the center of the bottom edge.
     Bottom,
+    /// Align to the bottom trailing corner.
     BottomTrailing,
 }
 
@@ -50,9 +65,12 @@ pub enum Alignment {
 /// See also [Alignment].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerticalAlignment {
+    /// Align to the top edge.
     Top,
+    /// Align to the center.
     #[default]
     Center,
+    /// Align to the bottom edge.
     Bottom,
 }
 
@@ -60,9 +78,12 @@ pub enum VerticalAlignment {
 /// See also [Alignment].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HorizontalAlignment {
+    /// Align to the leading edge.
     Leading,
     #[default]
+    /// Align to the center.
     Center,
+    /// Align to the trailing edge.
     Trailing,
 }
 
@@ -178,6 +199,7 @@ impl ZStack {
         self.with_child_pod(WidgetPod::new(Box::new(child)), alignment)
     }
 
+    /// Appends a child widget with a given `id` to the `ZStack`.
     pub fn with_child_id(
         self,
         child: impl Widget,
@@ -187,6 +209,9 @@ impl ZStack {
         self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), alignment)
     }
 
+    /// Appends a child widget pod to the `ZStack`.
+    ///
+    /// See also [`Self::with_child`] if the widget is not already wrapped in a [`WidgetPod`].
     pub fn with_child_pod(
         mut self,
         child: WidgetPod<Box<dyn Widget>>,
@@ -213,6 +238,9 @@ impl ZStack {
         Self::insert_child_pod(this, child_pod, alignment);
     }
 
+    /// Add a child widget with a given `id` to the `ZStack`.
+    ///
+    /// See [`Self::add_child`] for more details.
     pub fn add_child_id(
         this: &mut WidgetMut<'_, Self>,
         child: impl Widget,
@@ -235,12 +263,14 @@ impl ZStack {
         this.ctx.request_layout();
     }
 
+    /// Remove a child from the `ZStack`.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
         this.ctx.request_layout();
     }
 
+    /// Get a mutable reference to a child of the `ZStack`.
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
@@ -249,7 +279,7 @@ impl ZStack {
         Some(this.ctx.get_mut(child))
     }
 
-    /// Changes the alignment of the widget.
+    /// Change the alignment of the `ZStack`.
     ///
     /// See also [`with_alignment`][Self::with_alignment].
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: impl Into<Alignment>) {
@@ -257,6 +287,7 @@ impl ZStack {
         this.ctx.request_layout();
     }
 
+    /// Change the alignment of a child of the `ZStack`.
     pub fn update_child_alignment(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -282,9 +313,8 @@ impl Widget for ZStack {
         }
 
         // Second pass: place the children given the calculated max_size bounds.
-        let child_bc = BoxConstraints::new(Size::ZERO, max_size);
         for child in &mut self.children {
-            let child_size = ctx.run_layout(&mut child.widget, &child_bc);
+            let child_size = ctx.child_size(&child.widget);
 
             let end = max_size - child_size;
             let end = Point::new(end.width, end.height);
