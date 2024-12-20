@@ -30,11 +30,11 @@ fn compose_widget(
         return;
     }
 
-    let local_translation = state.item.translation + state.item.origin.to_vec2();
+    // the translation needs to be applied *after* applying the transform, as translation by scrolling should be within the transformed coordinate space. Same is true for the (layout) origin, to behave similar as in CSS.
+    let local_translation = state.item.scroll_translation + state.item.origin.to_vec2();
 
     state.item.window_transform =
         parent_window_transform * state.item.transform.then_translate(local_translation);
-    state.item.window_origin = state.item.window_transform.translation().to_point();
 
     let local_rect = state.item.size.to_rect();
     state.item.bounding_rect = state.item.window_transform.transform_rect_bbox(local_rect);
@@ -79,7 +79,20 @@ fn compose_widget(
                 transformed,
                 parent_transform,
             );
-            parent_state.bounding_rect = parent_state.bounding_rect.union(state.item.bounding_rect);
+            let parent_bounding_rect = parent_state.bounding_rect;
+
+            // This could be further optimized by more tightly clipping the child bounding rect according to the clip path.
+            let clipped_child_bounding_rect = if let Some(clip_path) = parent_state.clip_path {
+                let clip_path_bounding_rect =
+                    parent_state.window_transform.transform_rect_bbox(clip_path);
+                state.item.bounding_rect.intersect(clip_path_bounding_rect)
+            } else {
+                state.item.bounding_rect
+            };
+            if !clipped_child_bounding_rect.is_zero_area() {
+                parent_state.bounding_rect =
+                    parent_bounding_rect.union(clipped_child_bounding_rect);
+            }
             parent_state.merge_up(state.item);
         },
     );

@@ -52,6 +52,7 @@ impl WidgetId {
     }
 }
 
+/// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
 pub trait AsDynWidget {
     fn as_dyn(&self) -> &dyn Widget;
     fn as_mut_dyn(&mut self) -> &mut dyn Widget;
@@ -260,11 +261,10 @@ pub trait Widget: AsAny + AsDynWidget {
 
     // --- Auto-generated implementations ---
 
-    /// Return which child, if any, has the given `pos` in its layout rect. In case of overlapping
-    /// children, the last child as determined by [`Widget::children_ids`] is chosen. No child is
-    /// returned if `pos` is outside the widget's clip path.
+    /// Return the first innermost widget composed by this (including `self`), that contains/intersects with `pos` and accepts pointer interaction, if any.
     ///
-    /// The child returned is a direct child, not e.g. a grand-child.
+    /// In case of overlapping children, the last child as determined by [`Widget::children_ids`] is chosen. No widget is
+    /// returned if `pos` is outside the widget's clip path.
     ///
     /// Has a default implementation that can be overridden to search children more efficiently.
     /// Custom implementations must uphold the conditions outlined above.
@@ -324,14 +324,17 @@ pub trait Widget: AsAny + AsDynWidget {
     }
 }
 
-pub(crate) fn find_widget_at_pos<'c>(
+/// See [`Widget::find_widget_at_pos`] for more details.
+pub fn find_widget_at_pos<'c>(
     widget: &WidgetRef<'c, dyn Widget>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
     if widget.ctx.widget_state.bounding_rect.contains(pos) {
         let local_pos = widget.ctx().widget_state.window_transform.inverse() * pos;
 
-        if Some(false) == widget.ctx.clip_path().map(|clip| clip.contains(local_pos)) {
+        if widget.ctx.is_stashed()
+            || Some(false) == widget.ctx.clip_path().map(|clip| clip.contains(local_pos))
+        {
             return None;
         }
 
@@ -343,8 +346,7 @@ pub(crate) fn find_widget_at_pos<'c>(
                 return Some(child);
             }
         }
-        if !widget.ctx.is_stashed()
-            && widget.ctx.accepts_pointer_interaction()
+        if widget.ctx.accepts_pointer_interaction()
             && widget.ctx.size().to_rect().contains(local_pos)
         {
             Some(*widget)

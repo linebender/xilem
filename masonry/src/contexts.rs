@@ -1127,7 +1127,7 @@ impl ComposeCtx<'_> {
     /// Set a translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
-    pub fn set_child_translation<W: Widget>(
+    pub fn set_child_scroll_translation<W: Widget>(
         &mut self,
         child: &mut WidgetPod<W>,
         translation: Vec2,
@@ -1138,7 +1138,7 @@ impl ComposeCtx<'_> {
             || translation.y.is_infinite()
         {
             debug_panic!(
-                "Error in {}: trying to call 'set_child_translation' with child '{}' {} with invalid translation {:?}",
+                "Error in {}: trying to call 'set_child_scroll_translation' with child '{}' {} with invalid translation {:?}",
                 self.widget_id(),
                 self.get_child(child).short_type_name(),
                 child.id(),
@@ -1146,8 +1146,8 @@ impl ComposeCtx<'_> {
             );
         }
         let child = self.get_child_state_mut(child);
-        if translation != child.translation {
-            child.translation = translation;
+        if translation != child.scroll_translation {
+            child.scroll_translation = translation;
             child.transform_changed = true;
         }
     }

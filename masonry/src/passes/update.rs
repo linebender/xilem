@@ -561,7 +561,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
             // is more accurate.
 
             let state = &ctx.widget_state;
-            target_rect = target_rect + state.translation + state.origin.to_vec2();
+            target_rect = target_rect + state.scroll_translation + state.origin.to_vec2();
         });
     }
 }

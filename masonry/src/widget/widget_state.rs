@@ -44,8 +44,6 @@ pub(crate) struct WidgetState {
     /// The origin of the widget in the parent's coordinate space; together with
     /// `size` these constitute the widget's layout rect.
     pub(crate) origin: Point,
-    /// The origin of the widget in the window coordinate space;
-    pub(crate) window_origin: Point,
     /// The insets applied to the layout rect to generate the paint rect.
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
@@ -53,7 +51,7 @@ pub(crate) struct WidgetState {
     // TODO - Document
     // The computed paint rect, in local coordinates.
     pub(crate) local_paint_rect: Rect,
-    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents.
+    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates.
     pub(crate) bounding_rect: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
     ///
@@ -81,11 +79,10 @@ pub(crate) struct WidgetState {
     // efficiently hold an arbitrary shape.
     pub(crate) clip_path: Option<Rect>,
 
-    // TODO is it worth to compute/cache the inverse as well (or does it just take valuable memory)?
     /// This is being computed out of all ancestor transforms and `translation`
     pub(crate) window_transform: Affine,
     pub(crate) transform: Affine,
-    pub(crate) translation: Vec2,
+    pub(crate) scroll_translation: Vec2,
     pub(crate) transform_changed: bool,
 
     // --- PASSES ---
@@ -160,7 +157,6 @@ impl WidgetState {
         WidgetState {
             id,
             origin: Point::ORIGIN,
-            window_origin: Point::ORIGIN,
             size: Size::ZERO,
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
@@ -170,7 +166,7 @@ impl WidgetState {
             accepts_text_input: false,
             ime_area: None,
             clip_path: Default::default(),
-            translation: Vec2::ZERO,
+            scroll_translation: Vec2::ZERO,
             transform_changed: false,
             is_explicitly_disabled: false,
             is_explicitly_stashed: false,
@@ -275,7 +271,7 @@ impl WidgetState {
     }
 
     pub(crate) fn window_origin(&self) -> Point {
-        self.window_origin
+        self.window_transform.translation().to_point()
     }
 
     pub(crate) fn needs_rewrite_passes(&self) -> bool {

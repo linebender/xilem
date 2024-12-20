@@ -418,8 +418,9 @@ impl TestHarness {
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
     pub fn mouse_click_on(&mut self, id: WidgetId) {
-        let widget_rect = self.get_widget(id).ctx().bounding_rect();
-        let widget_center = widget_rect.center();
+        let widget = self.get_widget(id);
+        let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
+        let widget_center = widget.ctx().widget_state.window_transform * local_widget_center;
 
         self.mouse_move(widget_center);
         self.mouse_button_press(PointerButton::Primary);
