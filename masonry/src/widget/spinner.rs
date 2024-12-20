@@ -153,9 +153,8 @@ impl Widget for Spinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    use crate::vello::peniko::color::palette;
+    use crate::{assert_render_snapshot, palette};
 
     #[test]
     fn simple_spinner() {

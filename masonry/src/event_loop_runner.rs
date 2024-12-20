@@ -7,7 +7,6 @@ use std::sync::Arc;
 use accesskit_winit::Adapter;
 use tracing::{debug, info_span, warn};
 use vello::kurbo::Affine;
-use vello::peniko::Color;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
@@ -24,7 +23,7 @@ use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
 use crate::event::{PointerButton, PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
-use crate::{PointerEvent, TextEvent, Widget, WidgetId};
+use crate::{Color, PointerEvent, TextEvent, Widget, WidgetId};
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {

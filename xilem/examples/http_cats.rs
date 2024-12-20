@@ -9,7 +9,6 @@
 
 use std::sync::Arc;
 
-use vello::peniko::color::palette;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -20,7 +19,7 @@ use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
     FlexSpacer, Padding,
 };
-use xilem::{EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
+use xilem::{palette, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
 /// The main state of the application.
 struct HttpCats {

@@ -5,9 +5,7 @@
 
 #![allow(missing_docs)]
 
-use vello::peniko::Color;
-
-use crate::Insets;
+use crate::{Color, Insets};
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)

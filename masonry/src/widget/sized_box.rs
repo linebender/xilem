@@ -574,13 +574,12 @@ impl Widget for SizedBox {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use vello::peniko::color::palette;
     use vello::peniko::Gradient;
 
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
     use crate::widget::Label;
+    use crate::{assert_render_snapshot, palette};
 
     // TODO - Add WidgetMut tests
 

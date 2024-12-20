@@ -15,16 +15,16 @@ use parley::PlainEditor;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Rect, Vec2};
-use vello::peniko::{color::palette, Brush, Fill};
+use vello::peniko::{Brush, Fill};
 use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
 
 use crate::text::{BrushIndex, StyleProperty};
 use crate::widget::{Padding, WidgetMut};
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId,
+    palette, theme, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx,
+    PaintCtx, PointerButton, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId,
 };
 
 /// `TextArea` implements the core of interactive text.
@@ -975,7 +975,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
 #[cfg(test)]
 mod tests {
-    use vello::{kurbo::Size, peniko::color::palette};
+    use vello::kurbo::Size;
 
     use super::*;
     use crate::testing::TestHarness;
