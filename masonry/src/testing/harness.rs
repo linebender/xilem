@@ -145,7 +145,7 @@ impl TestHarnessParams {
     pub const DEFAULT_SIZE: Size = Size::new(400., 400.);
 
     /// Default background color for tests.
-    pub const DEFAULT_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
+    pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgba8(0x29, 0x29, 0x29, 0xff);
 }
 
 impl Default for TestHarnessParams {

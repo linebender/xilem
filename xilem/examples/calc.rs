@@ -6,6 +6,7 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
+use vello::peniko::color::palette;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
@@ -13,7 +14,7 @@ use xilem::view::{
     button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
     GridSequence, Label,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -221,9 +222,9 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             // Top row
             expanded_button(
                 label("CE").brush(if data.get_current_number().is_empty() {
-                    Color::MEDIUM_VIOLET_RED
+                    palette::css::MEDIUM_VIOLET_RED
                 } else {
-                    Color::WHITE
+                    palette::css::WHITE
                 }),
                 Calculator::clear_entry,
             )

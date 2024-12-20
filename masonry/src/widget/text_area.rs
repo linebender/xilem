@@ -15,7 +15,7 @@ use parley::PlainEditor;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::kurbo::{Rect, Vec2};
-use vello::peniko::{Brush, Color, Fill};
+use vello::peniko::{color::palette, Brush, Fill};
 use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
 
@@ -900,11 +900,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             for rect in self.editor.selection_geometry().iter() {
                 // TODO: If window not focused, use a different color
                 // TODO: Make configurable
-                scene.fill(Fill::NonZero, transform, Color::STEEL_BLUE, None, &rect);
+                scene.fill(
+                    Fill::NonZero,
+                    transform,
+                    palette::css::STEEL_BLUE,
+                    None,
+                    &rect,
+                );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5) {
                 // TODO: Make configurable
-                scene.fill(Fill::NonZero, transform, Color::WHITE, None, &cursor);
+                scene.fill(Fill::NonZero, transform, palette::css::WHITE, None, &cursor);
             };
         }
 
@@ -969,7 +975,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
 #[cfg(test)]
 mod tests {
-    use vello::{kurbo::Size, peniko::Color};
+    use vello::{kurbo::Size, peniko::color::palette};
 
     use super::*;
     use crate::testing::TestHarness;
@@ -1021,7 +1027,7 @@ mod tests {
     #[test]
     fn edit_textarea() {
         let base_target = {
-            let area = TextArea::new_immutable("Test string").with_brush(Color::AZURE);
+            let area = TextArea::new_immutable("Test string").with_brush(palette::css::AZURE);
 
             let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
 
@@ -1029,7 +1035,7 @@ mod tests {
         };
 
         {
-            let area = TextArea::new_immutable("Different string").with_brush(Color::AZURE);
+            let area = TextArea::new_immutable("Different string").with_brush(palette::css::AZURE);
 
             let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
 
@@ -1048,7 +1054,7 @@ mod tests {
 
             harness.edit_root_widget(|mut root| {
                 let mut area = root.downcast::<TextArea<false>>();
-                TextArea::set_brush(&mut area, Color::BROWN);
+                TextArea::set_brush(&mut area, palette::css::BROWN);
             });
 
             let with_updated_brush = harness.render();

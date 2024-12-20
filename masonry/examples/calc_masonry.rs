@@ -271,8 +271,8 @@ impl AppDriver for CalcState {
 // ---
 
 fn op_button_with_label(op: char, label: String) -> CalcButton {
-    const BLUE: Color = Color::rgb8(0x00, 0x8d, 0xdd);
-    const LIGHT_BLUE: Color = Color::rgb8(0x5c, 0xc4, 0xff);
+    const BLUE: Color = Color::from_rgba8(0x00, 0x8d, 0xdd, 0xff);
+    const LIGHT_BLUE: Color = Color::from_rgba8(0x5c, 0xc4, 0xff, 0xff);
 
     CalcButton::new(
         SizedBox::new(Align::centered(
@@ -291,8 +291,8 @@ fn op_button(op: char) -> CalcButton {
 }
 
 fn digit_button(digit: u8) -> CalcButton {
-    const GRAY: Color = Color::rgb8(0x3a, 0x3a, 0x3a);
-    const LIGHT_GRAY: Color = Color::rgb8(0x71, 0x71, 0x71);
+    const GRAY: Color = Color::from_rgba8(0x3a, 0x3a, 0x3a, 0xff);
+    const LIGHT_GRAY: Color = Color::from_rgba8(0x71, 0x71, 0x71, 0xff);
     CalcButton::new(
         SizedBox::new(Align::centered(
             Label::new(format!("{digit}")).with_style(StyleProperty::FontSize(24.)),
