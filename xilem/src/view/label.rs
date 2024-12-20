@@ -22,9 +22,8 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Label {
-    label: ArcStr,
-
-    // Public for variable_label as a semi-interims state.
+    // Public for button and variable_label as a semi-interim state.
+    pub(in crate::view) label: ArcStr,
     pub(in crate::view) text_brush: Brush,
     pub(in crate::view) alignment: TextAlignment,
     pub(in crate::view) text_size: f32,
@@ -62,6 +61,15 @@ impl Label {
     pub fn with_font(mut self, font: impl Into<FontStack<'static>>) -> Self {
         self.font = font.into();
         self
+    }
+}
+
+impl<T> From<T> for Label
+where
+    T: Into<ArcStr>,
+{
+    fn from(text: T) -> Self {
+        label(text)
     }
 }
 
