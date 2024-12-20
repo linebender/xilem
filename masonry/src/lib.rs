@@ -178,7 +178,7 @@ pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use parley::layout::Alignment as TextAlignment;
 pub use parley::style::FontWeight;
-pub use vello::peniko::{Color, Gradient};
+pub use vello::peniko::{color::palette, Color, Gradient};
 
 pub use action::Action;
 pub use app_driver::{AppDriver, DriverCtx};

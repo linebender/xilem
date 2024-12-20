@@ -14,15 +14,15 @@ use accesskit::{Node, Role};
 use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
-    AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
-    LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size, TextEvent, Widget,
-    WidgetId,
+    palette, AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx,
+    EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size,
+    TextEvent, Widget, WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::peniko::{color::palette, Fill, Image, ImageFormat};
+use vello::peniko::{Fill, Image, ImageFormat};
 use vello::Scene;
 use winit::window::Window;
 

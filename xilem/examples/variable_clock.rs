@@ -9,14 +9,13 @@ use std::time::Duration;
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
-use vello::peniko::color::palette;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::view::{
     button, flex, inline_prose, label, portal, prose, sized_box, task, variable_label, Axis,
     FlexExt, FlexSpacer,
 };
-use xilem::{EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
+use xilem::{palette, EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {

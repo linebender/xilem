@@ -53,7 +53,7 @@ use crate::core::{
     ViewPathTracker, ViewSequence,
 };
 pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-pub use masonry::{dpi, Color, FontWeight, TextAlignment};
+pub use masonry::{dpi, palette, Color, FontWeight, TextAlignment};
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.

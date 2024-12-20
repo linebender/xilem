@@ -6,7 +6,6 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
-use vello::peniko::color::palette;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
@@ -14,7 +13,7 @@ use xilem::view::{
     button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
     GridSequence, Label,
 };
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{palette, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
