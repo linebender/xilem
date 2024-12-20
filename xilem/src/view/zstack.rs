@@ -254,14 +254,14 @@ impl ViewElement for ZStackElement {
     type Mut<'a> = ZStackElementMut<'a>;
 }
 
-impl SuperElement<ZStackElement, ViewCtx> for ZStackElement {
-    fn upcast(_ctx: &mut ViewCtx, child: ZStackElement) -> Self {
+impl SuperElement<Self, ViewCtx> for ZStackElement {
+    fn upcast(_ctx: &mut ViewCtx, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         mut this: Mut<Self>,
-        f: impl FnOnce(Mut<ZStackElement>) -> R,
+        f: impl FnOnce(Mut<Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -277,7 +277,7 @@ impl SuperElement<ZStackElement, ViewCtx> for ZStackElement {
 
 impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        ZStackElement::new(ctx.boxed_pod(child), ChildAlignment::ParentAligned)
+        Self::new(ctx.boxed_pod(child), ChildAlignment::ParentAligned)
     }
 
     fn with_downcast_val<R>(

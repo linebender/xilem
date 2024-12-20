@@ -108,26 +108,18 @@ impl Alignment {
     /// Gets the vertical component of the alignment.
     pub fn vertical(self) -> VerticalAlignment {
         match self {
-            Alignment::Center | Alignment::Leading | Alignment::Trailing => {
-                VerticalAlignment::Center
-            }
-            Alignment::Top | Alignment::TopLeading | Alignment::TopTrailing => {
-                VerticalAlignment::Top
-            }
-            Alignment::Bottom | Alignment::BottomLeading | Alignment::BottomTrailing => {
-                VerticalAlignment::Bottom
-            }
+            Self::Center | Self::Leading | Self::Trailing => VerticalAlignment::Center,
+            Self::Top | Self::TopLeading | Self::TopTrailing => VerticalAlignment::Top,
+            Self::Bottom | Self::BottomLeading | Self::BottomTrailing => VerticalAlignment::Bottom,
         }
     }
 
     /// Gets the horizontal component of the alignment.
     pub fn horizontal(self) -> HorizontalAlignment {
         match self {
-            Alignment::Center | Alignment::Top | Alignment::Bottom => HorizontalAlignment::Center,
-            Alignment::Leading | Alignment::TopLeading | Alignment::BottomLeading => {
-                HorizontalAlignment::Leading
-            }
-            Alignment::Trailing | Alignment::TopTrailing | Alignment::BottomTrailing => {
+            Self::Center | Self::Top | Self::Bottom => HorizontalAlignment::Center,
+            Self::Leading | Self::TopLeading | Self::BottomLeading => HorizontalAlignment::Leading,
+            Self::Trailing | Self::TopTrailing | Self::BottomTrailing => {
                 HorizontalAlignment::Trailing
             }
         }
@@ -148,25 +140,25 @@ impl From<Alignment> for HorizontalAlignment {
 
 impl From<(VerticalAlignment, HorizontalAlignment)> for Alignment {
     fn from((vertical, horizontal): (VerticalAlignment, HorizontalAlignment)) -> Self {
-        Alignment::new(vertical, horizontal)
+        Self::new(vertical, horizontal)
     }
 }
 
 impl From<VerticalAlignment> for Alignment {
     fn from(vertical: VerticalAlignment) -> Self {
-        Alignment::new(vertical, HorizontalAlignment::Center)
+        Self::new(vertical, HorizontalAlignment::Center)
     }
 }
 
 impl From<HorizontalAlignment> for Alignment {
     fn from(horizontal: HorizontalAlignment) -> Self {
-        Alignment::new(VerticalAlignment::Center, horizontal)
+        Self::new(VerticalAlignment::Center, horizontal)
     }
 }
 
 impl From<Alignment> for ChildAlignment {
     fn from(value: Alignment) -> Self {
-        ChildAlignment::SelfAligned(value)
+        Self::SelfAligned(value)
     }
 }
 
