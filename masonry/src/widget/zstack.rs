@@ -366,6 +366,7 @@ impl Widget for ZStack {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
+    use vello::peniko::color::palette;
     use vello::peniko::Color;
 
     use super::*;
@@ -380,14 +381,14 @@ mod tests {
                 SizedBox::new(Label::new("Background"))
                     .width(200.)
                     .height(100.)
-                    .background(Color::BLUE)
-                    .border(Color::TEAL, 2.),
+                    .background(palette::css::BLUE)
+                    .border(palette::css::TEAL, 2.),
                 ChildAlignment::ParentAligned,
             )
             .with_child(
                 SizedBox::new(Label::new("Foreground"))
-                    .background(Color::RED)
-                    .border(Color::PINK, 2.),
+                    .background(palette::css::RED)
+                    .border(palette::css::PINK, 2.),
                 ChildAlignment::ParentAligned,
             );
 

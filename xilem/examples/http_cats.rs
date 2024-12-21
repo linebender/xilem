@@ -207,7 +207,7 @@ impl Status {
                     )
                     .padding(4.)
                     .rounded(4.)
-                    .background(Color::BLACK.multiply_alpha(0.5)),
+                    .background(palette::css::BLACK.multiply_alpha(0.5)),
                 )
                 .padding((30., 42., 0., 0.))
                 .alignment(Alignment::TopTrailing),
