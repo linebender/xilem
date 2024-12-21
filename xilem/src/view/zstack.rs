@@ -297,7 +297,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
 
 // MARK: Sequence
 
-/// A trait implementing `ViewSequence` for `ZStackElements`.
+/// A trait implementing `ViewSequence` for `ZStackElement`.
 pub trait ZStackSequence<State, Action = ()>:
     ViewSequence<State, Action, ViewCtx, ZStackElement>
 {
@@ -310,7 +310,7 @@ impl<Seq, State, Action> ZStackSequence<State, Action> for Seq where
 
 // MARK: Splice
 
-/// An implementation of [`ElementSplice`] for `ZStackElements`.
+/// An implementation of [`ElementSplice`] for `ZStackElement`.
 pub struct ZStackSplice<'w> {
     idx: usize,
     element: WidgetMut<'w, widget::ZStack>,
