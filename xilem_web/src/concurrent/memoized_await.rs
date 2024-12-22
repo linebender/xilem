@@ -38,7 +38,7 @@ impl<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 where
     FOut: fmt::Debug + 'static,
     F: Future<Output = FOut> + 'static,
-    InitFuture: Fn(&mut State, &Data) -> F,
+    InitFuture: Fn(State, &Data) -> F,
 {
     /// Debounce the `init_future` function, when `data` updates,
     /// when `reset_debounce_on_update == false` then this throttles updates each `milliseconds`
@@ -64,7 +64,7 @@ impl<State, Action, OA, InitStream, Data, Callback, F, StreamItem>
 where
     StreamItem: fmt::Debug + 'static,
     F: Stream<Item = StreamItem> + 'static,
-    InitStream: Fn(&mut State, &Data) -> F,
+    InitStream: Fn(State, &Data) -> F,
 {
     /// Debounce the `init_stream` function, when `data` updates,
     /// when `reset_debounce_on_update == false` then this throttles updates each `milliseconds`
@@ -88,9 +88,9 @@ where
 fn init_future<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
     m: &MemoizedFuture<State, Action, OA, InitFuture, Data, Callback, F, FOut>,
     thunk: Rc<MessageThunk>,
-    state: &mut State,
+    state: &State,
 ) where
-    InitFuture: Fn(&mut State, &Data) -> F + 'static,
+    InitFuture: Fn(&State, &Data) -> F + 'static,
     FOut: fmt::Debug + 'static,
     F: Future<Output = FOut> + 'static,
 {
@@ -103,9 +103,9 @@ fn init_future<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
 fn init_stream<State, Action, OA, InitStream, Data, Callback, F, StreamItem>(
     m: &MemoizedFuture<State, Action, OA, InitStream, Data, Callback, F, StreamItem>,
     thunk: Rc<MessageThunk>,
-    state: &mut State,
+    state: &State,
 ) where
-    InitStream: Fn(&mut State, &Data) -> F + 'static,
+    InitStream: Fn(&State, &Data) -> F + 'static,
     StreamItem: fmt::Debug + 'static,
     F: Stream<Item = StreamItem> + 'static,
 {
@@ -148,7 +148,7 @@ where
     Data: PartialEq + 'static,
     FOut: fmt::Debug + 'static,
     F: Future<Output = FOut> + 'static,
-    InitFuture: Fn(&mut State, &Data) -> F + 'static,
+    InitFuture: Fn(&State, &Data) -> F + 'static,
     OA: OptionalAction<Action> + 'static,
     Callback: Fn(&mut State, FOut) -> OA + 'static,
 {
@@ -206,7 +206,7 @@ where
     Data: PartialEq + 'static,
     StreamItem: fmt::Debug + 'static,
     F: Stream<Item = StreamItem> + 'static,
-    InitStream: Fn(&mut State, &Data) -> F + 'static,
+    InitStream: Fn(&State, &Data) -> F + 'static,
     OA: OptionalAction<Action> + 'static,
     Callback: Fn(&mut State, StreamItem) -> OA + 'static,
 {
@@ -312,7 +312,7 @@ where
     State: 'static,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
-    InitFuture: Fn(&mut State, &Data) -> F + 'static,
+    InitFuture: Fn(&State, &Data) -> F + 'static,
     FOut: fmt::Debug + 'static,
     Data: PartialEq + 'static,
     F: Future<Output = FOut> + 'static,
@@ -359,7 +359,7 @@ where
     State: 'static,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
-    InitStream: Fn(&mut State, &Data) -> F + 'static,
+    InitStream: Fn(&State, &Data) -> F + 'static,
     StreamItem: fmt::Debug + 'static,
     Data: PartialEq + 'static,
     F: Stream<Item = StreamItem> + 'static,
@@ -405,7 +405,7 @@ where
     State: 'static,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
-    InitFuture: Fn(&mut State, &Data) -> F + 'static,
+    InitFuture: Fn(&State, &Data) -> F + 'static,
     FOut: fmt::Debug + 'static,
     Data: PartialEq + 'static,
     F: 'static,
@@ -472,7 +472,7 @@ where
         init_future: I,
     ) -> MessageResult<Action, DynMessage>
     where
-        I: Fn(&Self, Rc<MessageThunk>, &mut State),
+        I: Fn(&Self, Rc<MessageThunk>, &State),
     {
         assert_eq!(id_path.len(), 1);
         if id_path[0].routing_id() == view_state.generation {
