@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::info_span;
+use tree_arena::ArenaMut;
 
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
-use crate::tree_arena::ArenaMut;
 use crate::{UpdateCtx, Widget, WidgetState};
 
 // --- MARK: UPDATE ANIM ---

@@ -32,8 +32,8 @@ pub struct Spinner {
 // --- MARK: BUILDERS ---
 impl Spinner {
     /// Create a spinner widget
-    pub fn new() -> Spinner {
-        Spinner::default()
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Builder-style method for setting the spinner's color.
@@ -47,7 +47,7 @@ const DEFAULT_SPINNER_COLOR: Color = theme::TEXT_COLOR;
 
 impl Default for Spinner {
     fn default() -> Self {
-        Spinner {
+        Self {
             t: 0.0,
             color: DEFAULT_SPINNER_COLOR,
         }
@@ -111,10 +111,6 @@ impl Widget for Spinner {
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
         let center = Point::new(width / 2.0, height / 2.0);
-        let (r, g, b, original_alpha) = {
-            let c = self.color;
-            (c.r, c.g, c.b, c.a)
-        };
         let scale_factor = width.min(height) / 40.0;
 
         for step in 1..=12 {
@@ -124,8 +120,7 @@ impl Widget for Spinner {
             let angle = Vec2::from_angle((step / 12.0) * -2.0 * PI);
             let ambit_start = center + (10.0 * scale_factor * angle);
             let ambit_end = center + (20.0 * scale_factor * angle);
-            let alpha = (fade * original_alpha as f64) as u8;
-            let color = Color::rgba8(r, g, b, alpha);
+            let color = self.color.multiply_alpha(fade as f32);
 
             scene.stroke(
                 &Stroke::new(3.0 * scale_factor).with_caps(Cap::Square),
@@ -158,8 +153,8 @@ impl Widget for Spinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
+    use crate::{assert_render_snapshot, palette};
 
     #[test]
     fn simple_spinner() {
@@ -178,7 +173,7 @@ mod tests {
     #[test]
     fn edit_spinner() {
         let image_1 = {
-            let spinner = Spinner::new().with_color(Color::PURPLE);
+            let spinner = Spinner::new().with_color(palette::css::PURPLE);
 
             let mut harness = TestHarness::create_with_size(spinner, Size::new(30.0, 30.0));
             harness.render()
@@ -191,7 +186,7 @@ mod tests {
 
             harness.edit_root_widget(|mut spinner| {
                 let mut spinner = spinner.downcast::<Spinner>();
-                Spinner::set_color(&mut spinner, Color::PURPLE);
+                Spinner::set_color(&mut spinner, palette::css::PURPLE);
             });
 
             harness.render()

@@ -1,14 +1,16 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![deny(clippy::trivially_copy_pass_by_ref)]
-// LINEBENDER LINT SET - v1
+//! An experimental Rust native UI framework.
+
+// LINEBENDER LINT SET - lib.rs - v1
 // See https://linebender.org/wiki/canonical-lints/
 // These lints aren't included in Cargo.toml because they
 // shouldn't apply to examples and tests
 #![warn(unused_crate_dependencies)]
 #![warn(clippy::print_stdout, clippy::print_stderr)]
+// END LINEBENDER LINT SET
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(
     test,
     expect(
@@ -26,7 +28,6 @@
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
@@ -52,7 +53,7 @@ use crate::core::{
     ViewPathTracker, ViewSequence,
 };
 pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-pub use masonry::{dpi, Color, TextAlignment, TextWeight};
+pub use masonry::{dpi, palette, Color, FontWeight, TextAlignment};
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.
@@ -83,7 +84,7 @@ where
 {
     pub fn new(state: State, logic: Logic) -> Self {
         let runtime = tokio::runtime::Runtime::new().unwrap();
-        Xilem {
+        Self {
             state,
             logic,
             runtime,

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple calculator example
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
@@ -12,9 +11,9 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::view::{
     button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
-    GridSequence,
+    GridSequence, Label,
 };
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{palette, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -25,21 +24,21 @@ enum MathOperator {
 }
 
 impl MathOperator {
-    fn as_str(&self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
-            MathOperator::Add => "+",
-            MathOperator::Subtract => "\u{2212}",
-            MathOperator::Multiply => "×",
-            MathOperator::Divide => "÷",
+            Self::Add => "+",
+            Self::Subtract => "\u{2212}",
+            Self::Multiply => "×",
+            Self::Divide => "÷",
         }
     }
 
-    fn perform_op(&self, num1: f64, num2: f64) -> f64 {
+    fn perform_op(self, num1: f64, num2: f64) -> f64 {
         match self {
-            MathOperator::Add => num1 + num2,
-            MathOperator::Subtract => num1 - num2,
-            MathOperator::Multiply => num1 * num2,
-            MathOperator::Divide => num1 / num2,
+            Self::Add => num1 + num2,
+            Self::Subtract => num1 - num2,
+            Self::Multiply => num1 * num2,
+            Self::Divide => num1 / num2,
         }
     }
 }
@@ -54,7 +53,11 @@ struct Calculator {
 
 impl Calculator {
     fn get_current_number(&self) -> String {
-        self.numbers[self.current_num_index].clone()
+        self.current_number().to_string()
+    }
+
+    fn current_number(&self) -> &str {
+        &self.numbers[self.current_num_index]
     }
 
     fn set_current_number(&mut self, new_num: String) {
@@ -216,7 +219,15 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             ))
             .grid_item(GridParams::new(0, 0, 4, 1)),
             // Top row
-            expanded_button("CE", Calculator::clear_entry).grid_pos(0, 1),
+            expanded_button(
+                label("CE").brush(if data.get_current_number().is_empty() {
+                    palette::css::MEDIUM_VIOLET_RED
+                } else {
+                    palette::css::WHITE
+                }),
+                Calculator::clear_entry,
+            )
+            .grid_pos(0, 1),
             expanded_button("C", Calculator::clear_all).grid_pos(1, 1),
             expanded_button("DEL", Calculator::on_delete).grid_pos(2, 1),
             operator_button(MathOperator::Divide).grid_pos(3, 1),
@@ -256,9 +267,9 @@ fn display_label(text: &str) -> impl WidgetView<Calculator> {
 /// Returns a button contained in an expanded box. Useful for the buttons so that
 /// they take up all available space in flex containers.
 fn expanded_button(
-    text: &str,
+    text: impl Into<Label>,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
-) -> impl WidgetView<Calculator> + '_ {
+) -> impl WidgetView<Calculator> {
     sized_box(button(text, callback)).expand()
 }
 

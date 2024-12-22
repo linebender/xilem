@@ -10,11 +10,10 @@
 //!
 //! All of these have the same set of global styling options, and can contain rich text
 
-mod editor;
+#![warn(missing_docs)]
 mod render_text;
-mod styleset;
 
-pub use editor::{ActiveText, Generation, PlainEditor, PlainEditorTxn};
+use parley::GenericFamily;
 pub use render_text::render_text;
 
 /// A reference counted string slice.
@@ -23,9 +22,21 @@ pub use render_text::render_text;
 /// it cannot be mutated, but unlike `String` it can be cheaply cloned.
 pub type ArcStr = std::sync::Arc<str>;
 
+/// The Parley [`parley::Brush`] used within Masonry.
+///
+/// This enables updating of brush details without performing relayouts;
+/// the inner values are indexes into the `brushes` argument to [`render_text`].
 #[derive(Clone, PartialEq, Default, Debug)]
 pub struct BrushIndex(pub usize);
 
+/// A style property specialised for use within Masonry.
 pub type StyleProperty = parley::StyleProperty<'static, BrushIndex>;
 
-pub type StyleSet = styleset::StyleSet<BrushIndex>;
+/// A set of styles specialised for use within Masonry.
+pub type StyleSet = parley::StyleSet<BrushIndex>;
+
+/// Applies the default text styles for Masonry into `styles`.
+pub(crate) fn default_styles(styles: &mut StyleSet) {
+    styles.insert(StyleProperty::LineHeight(1.2));
+    styles.insert(GenericFamily::SystemUi.into());
+}

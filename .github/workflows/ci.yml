@@ -3,15 +3,12 @@ env:
   # version like 1.70. Note that we only specify MAJOR.MINOR and not PATCH so that bugfixes still
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
-  RUST_STABLE_VER: "1.82" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
+  RUST_STABLE_VER: "1.83" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
   # The purpose of checking with the minimum supported Rust toolchain is to detect its staleness.
   # If the compilation fails, then the version specified here needs to be bumped up to reality.
   # Be sure to also update the rust-version property in the workspace Cargo.toml file,
   # plus all the README.md files of the affected packages.
-  RUST_MIN_VER: "1.81"
-  # List of packages that will be checked with the minimum supported Rust version.
-  # This should be limited to packages that are intended for publishing.
-  RUST_MIN_VER_PKGS: "-p xilem -p xilem_core -p masonry"
+  RUST_MIN_VER: "1.82"
   # List of packages that can not target Wasm.
   NO_WASM_PKGS: "--exclude masonry --exclude xilem"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
@@ -44,6 +41,7 @@ env:
 #
 # The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
 # running tests introduces dev dependencies which may require a higher MSRV than the bare package.
+# Checking is limited to packages that are intended for publishing to keep MSRV as low as possible.
 #
 # If the workspace uses debug_assertions then we verify code twice, with it set to true or false.
 # We always keep it true for external dependencies so that we can reuse the cache for faster builds.
@@ -69,36 +67,47 @@ jobs:
     name: formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           components: rustfmt
 
-      - name: cargo fmt
+      - name: Run cargo fmt
         run: cargo fmt --all --check
 
-      - name: install ripgrep
+      - name: Install Taplo
+        uses: uncenter/setup-taplo@09968a8ae38d66ddd3d23802c44bf6122d7aa991 # v1
+        with:
+          version: "0.9.3"
+
+      - name: Run taplo fmt
+        run: taplo fmt --check --diff
+
+      - name: Install ripgrep
         run: |
           sudo apt update
           sudo apt install ripgrep
 
-      - name: check copyright headers
+      - name: Check copyright headers
         run: bash .github/copyright.sh
 
-      - name: check debug_assertions presence
+      - name: Check debug_assertions presence
         run: bash .github/debug_assertions.sh
 
-      - name: install cargo-rdme
+      - name: Install cargo-rdme
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-rdme
 
-      - name: cargo rdme
-        run: |
-          cargo rdme --check --workspace-project=masonry
+      - name: Run cargo rdme (masonry)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry
+
+      - name: Run cargo rdme (tree_arena)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
 
   clippy-stable:
     name: cargo clippy
@@ -107,41 +116,42 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           components: clippy
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo clippy
+      - name: Run cargo clippy
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
 
-      - name: cargo clippy (auxiliary)
+      - name: Run cargo clippy (auxiliary)
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
-      - name: cargo clippy (no debug_assertions)
+      - name: Run cargo clippy (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
-      - name: cargo clippy (auxiliary) (no debug_assertions)
+      - name: Run cargo clippy (auxiliary) (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
@@ -151,38 +161,39 @@ jobs:
     name: cargo clippy (wasm32)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: wasm32-unknown-unknown
           components: clippy
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo clippy
+      - name: Run cargo clippy
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
 
-      - name: cargo clippy (auxiliary)
+      - name: Run cargo clippy (auxiliary)
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
 
-      - name: cargo clippy (no debug_assertions)
+      - name: Run cargo clippy (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
-      - name: cargo clippy (auxiliary) (no debug_assertions)
+      - name: Run cargo clippy (auxiliary) (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
         run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
         env:
@@ -195,8 +206,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
-    - name: Cache git lfs
+
+    - name: Cache git LFS
       id: lfs-cache
       uses: actions/cache@v4
       with:
@@ -206,10 +217,10 @@ jobs:
         restore-keys: masonry-lfs-
         enableCrossOsArchive: true
 
-    - name: Fetch lfs data
+    - name: Fetch LFS data
       if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
       run: git lfs fetch
-        
+
   test-stable:
     name: cargo test
     needs: prime-lfs-cache
@@ -227,10 +238,11 @@ jobs:
           - os: ubuntu-latest
             skip_gpu: ''
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
 
-      - name: Restore lfs cache
+      - name: Restore LFS cache
         id: lfs-cache
         uses: actions/cache/restore@v4
         with:
@@ -243,18 +255,18 @@ jobs:
         run: git lfs checkout
         continue-on-error: true
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
 
-      - name: install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
       # Adapted from https://github.com/bevyengine/bevy/blob/b446374392adc70aceb92621b080d1a6cf7a7392/.github/workflows/validation-jobs.yml#L74-L79
-      - name: install xvfb, llvmpipe and lavapipe
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install xvfb, llvmpipe and lavapipe
+        if: runner.os == 'Linux'
         # https://launchpad.net/~kisak/+archive/ubuntu/turtle
         run: |
           sudo apt-get update -y -qq
@@ -262,24 +274,24 @@ jobs:
           sudo apt-get update
           sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
 
-      - name: install cargo-nextest
+      - name: Install cargo-nextest
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo nextest
-        run: cargo nextest run --workspace --locked --all-features --no-fail-fast
+      - name: Run cargo nextest
+        run: cargo nextest run --workspace --locked --cargo-profile ci --all-features --no-fail-fast
         env:
           # We do not run the masonry render tests on platforms without a working GPU,
           # because those require Vello rendering to be working
           # See also https://github.com/linebender/vello/pull/610
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
-      
+
       - name: Upload test results due to failure
         uses: actions/upload-artifact@v4
         if: failure()
@@ -287,51 +299,53 @@ jobs:
           name: masonry-snapshot-tests-${{ matrix.os }}
           path: masonry/src/widget/screenshots
 
-      - name: cargo test --doc
-        run: cargo test --doc --workspace --locked --all-features --no-fail-fast
+      - name: Run cargo test --doc
+        run: cargo test --doc --workspace --locked --profile ci --all-features --no-fail-fast
 
   test-stable-wasm:
     name: cargo test (wasm32)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: wasm32-unknown-unknown
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       # TODO: Find a way to make tests work. Until then the tests are merely compiled.
-      - name: cargo test compile
-        run: cargo test --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-features --no-run
+      - name: Run cargo test --no-run
+        run: cargo test --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --all-features --no-run
 
   check-stable-android:
     name: cargo check (aarch64-android)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: aarch64-linux-android
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: install cargo apk
+      - name: Install cargo-apk
         run: cargo install cargo-apk
 
-      - name: cargo apk check (android)
+      - name: Run cargo apk check
         run: cargo apk check ${{ env.ANDROID_TARGETS }}
         env:
           # This is a bit of a hack, but cargo apk doesn't seem to allow customising this otherwise
@@ -344,33 +358,34 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install msrv toolchain
+      - name: Install Rust ${{ env.RUST_MIN_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_MIN_VER }}
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+      - name: Run cargo check
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
 
-      - name: cargo check (no debug_assertions)
+      - name: Run cargo check (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --profile ci --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
@@ -378,30 +393,31 @@ jobs:
     name: cargo check (msrv) (wasm32)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install msrv toolchain
+      - name: Install Rust ${{ env.RUST_MIN_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_MIN_VER }}
           targets: wasm32-unknown-unknown
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+      - name: Run cargo check
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
 
-      - name: cargo check (no debug_assertions)
+      - name: Run cargo check (no debug_assertions)
         if: env.USING_DEBUG_ASSERTIONS == 'true'
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
@@ -411,19 +427,20 @@ jobs:
     #       If we get per-platform docs (win/macos/linux/wasm32/..) then doc jobs should match that.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install nightly toolchain
+      - name: Install Rust nightly
         uses: dtolnay/rust-toolchain@nightly
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
       # We test documentation using nightly to match docs.rs.
-      - name: cargo doc
-        run: cargo doc --workspace --locked --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+      - name: Run cargo doc
+        run: cargo doc --workspace --locked --profile ci --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
         env:
           RUSTDOCFLAGS: '--cfg docsrs -D warnings'
 
@@ -431,7 +448,8 @@ jobs:
   typos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: check typos
-        uses: crate-ci/typos@v1.27.0
+      - name: Check typos
+        uses: crate-ci/typos@v1.28.3

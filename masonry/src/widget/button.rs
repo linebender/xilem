@@ -41,8 +41,8 @@ impl Button {
     ///
     /// let button = Button::new("Increment");
     /// ```
-    pub fn new(text: impl Into<ArcStr>) -> Button {
-        Button::from_label(Label::new(text))
+    pub fn new(text: impl Into<ArcStr>) -> Self {
+        Self::from_label(Label::new(text))
     }
 
     /// Create a new button with the provided [`Label`].
@@ -53,11 +53,11 @@ impl Button {
     /// use masonry::Color;
     /// use masonry::widget::{Button, Label};
     ///
-    /// let label = Label::new("Increment").with_brush(Color::rgb(0.5, 0.5, 0.5));
+    /// let label = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
     /// let button = Button::from_label(label);
     /// ```
-    pub fn from_label(label: Label) -> Button {
-        Button {
+    pub fn from_label(label: Label) -> Self {
+        Self {
             label: WidgetPod::new(label),
         }
     }

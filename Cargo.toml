@@ -17,12 +17,13 @@ members = [
     "xilem_web/web_examples/streams",
     "xilem_web/web_examples/svgtoy",
     "xilem_web/web_examples/svgdraw",
+    "tree_arena",
 ]
 
 [workspace.package]
 edition = "2021"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
-rust-version = "1.81"
+rust-version = "1.82"
 license = "Apache-2.0"
 repository = "https://github.com/linebender/xilem"
 homepage = "https://xilem.dev/"
@@ -35,12 +36,9 @@ homepage = "https://xilem.dev/"
 rust.unsafe_code = "deny"
 
 # Intentional break from the lint set. Intended to be temporary
-rust.unexpected_cfgs = { level = "warn", check-cfg = [
-    'cfg(FALSE)',
-    'cfg(tarpaulin_include)',
-] }
+rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)', 'cfg(tarpaulin_include)'] }
 
-# LINEBENDER LINT SET - v1
+# LINEBENDER LINT SET - Cargo.toml - v2
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -88,6 +86,7 @@ clippy.semicolon_if_nothing_returned = "warn"
 clippy.shadow_unrelated = "warn"
 clippy.should_panic_without_expect = "warn"
 clippy.todo = "warn"
+clippy.trivially_copy_pass_by_ref = "warn"
 clippy.unseparated_literal_suffix = "warn"
 clippy.use_self = "warn"
 clippy.wildcard_imports = "warn"
@@ -105,16 +104,18 @@ clippy.duplicated_attributes = "allow"
 [workspace.dependencies]
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
-vello = "0.3"
-wgpu = "22.1.0"
+tree_arena = { version = "0.1.0", path = "tree_arena" }
+vello = { git = "https://github.com/linebender/vello", rev = "a71236c7c8da10a6eaad4602267663339620835a" }
+wgpu = "23.0.1"
 kurbo = "0.11.1"
-parley = { git = "https://github.com/linebender/parley", rev = "217f243aa61178229da694b1d2b0598afcf29aff", features = [
+parley = { git = "https://github.com/linebender/parley", rev = "16b62518d467487ee15cb230fdb28530d89a8cf6", features = [
     "accesskit",
 ] }
-peniko = "0.2.0"
+peniko = "0.3.0"
 winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
+hashbrown = "0.15.2"
 dpi = "0.1.1"
 image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
@@ -126,5 +127,7 @@ time = "0.3.36"
 
 [profile.ci]
 inherits = "dev"
+debug = 0 # Don't compile debug info to reduce compilation artifact size for cache benefits.
+strip = "debuginfo" # Implied by debug = 0 since Rust 1.77, but still needed for an older MSRV.
 [profile.ci.package."*"]
 debug-assertions = true # Keep always on for dependencies for cache reuse.

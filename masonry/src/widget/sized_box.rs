@@ -7,7 +7,7 @@ use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
-use vello::peniko::{Brush, Color, Fill};
+use vello::peniko::{Brush, Fill};
 use vello::Scene;
 
 use crate::paint_scene_helpers::stroke;
@@ -22,7 +22,7 @@ use crate::{
 /// Something that can be used as the border for a widget.
 struct BorderStyle {
     width: f64,
-    color: Color,
+    brush: Brush,
 }
 
 /// Padding specifies the spacing between the edges of the box and the child view.
@@ -80,7 +80,7 @@ impl Padding {
     }
 
     /// A padding of zero for all edges.
-    pub const ZERO: Padding = Padding::all(0.);
+    pub const ZERO: Self = Self::all(0.);
 
     /// An empty padding which can be used as a sentinel value.
     ///
@@ -88,7 +88,7 @@ impl Padding {
     /// they should use [`is_unset`](Self::is_unset) to determine that there were no modifications.
     ///
     /// Otherwise, this padding will behave as [`Padding::ZERO`].
-    pub const UNSET: Padding = Padding::all(-0.0);
+    pub const UNSET: Self = Self::all(-0.0);
 
     /// Determine if self is [`Padding::UNSET`].
     pub fn is_unset(self) -> bool {
@@ -292,10 +292,10 @@ impl SizedBox {
         self
     }
 
-    /// Builder-style method for painting a border around the widget with a color and width.
-    pub fn border(mut self, color: impl Into<Color>, width: impl Into<f64>) -> Self {
+    /// Builder-style method for painting a border around the widget with a brush and width.
+    pub fn border(mut self, brush: impl Into<Brush>, width: impl Into<f64>) -> Self {
         self.border = Some(BorderStyle {
-            color: color.into(),
+            brush: brush.into(),
             width: width.into(),
         });
         self
@@ -386,14 +386,14 @@ impl SizedBox {
         this.ctx.request_paint_only();
     }
 
-    /// Paint a border around the widget with a color and width.
+    /// Paint a border around the widget with a brush and width.
     pub fn set_border(
         this: &mut WidgetMut<'_, Self>,
-        color: impl Into<Color>,
+        brush: impl Into<Brush>,
         width: impl Into<f64>,
     ) {
         this.widget.border = Some(BorderStyle {
-            color: color.into(),
+            brush: brush.into(),
             width: width.into(),
         });
         this.ctx.request_layout();
@@ -547,7 +547,7 @@ impl Widget for SizedBox {
                 .to_rect()
                 .inset(border_width / -2.0)
                 .to_rounded_rect(corner_radius);
-            stroke(scene, &border_rect, border.color, border_width);
+            stroke(scene, &border_rect, &border.brush, border_width);
         };
     }
 
@@ -577,9 +577,9 @@ mod tests {
     use vello::peniko::Gradient;
 
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
     use crate::widget::Label;
+    use crate::{assert_render_snapshot, palette};
 
     // TODO - Add WidgetMut tests
 
@@ -605,7 +605,7 @@ mod tests {
         let widget = SizedBox::empty()
             .width(40.0)
             .height(40.0)
-            .border(Color::BLUE, 5.0)
+            .border(palette::css::BLUE, 5.0)
             .rounded(5.0);
 
         let mut harness = TestHarness::create(widget);
@@ -617,7 +617,7 @@ mod tests {
     #[test]
     fn label_box_no_size() {
         let widget = SizedBox::new(Label::new("hello"))
-            .border(Color::BLUE, 5.0)
+            .border(palette::css::BLUE, 5.0)
             .rounded(5.0);
 
         let mut harness = TestHarness::create(widget);
@@ -631,7 +631,7 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello"))
             .width(40.0)
             .height(40.0)
-            .border(Color::BLUE, 5.0)
+            .border(palette::css::BLUE, 5.0)
             .rounded(5.0);
 
         let mut harness = TestHarness::create(widget);
@@ -643,7 +643,7 @@ mod tests {
     #[test]
     fn label_box_with_padding() {
         let widget = SizedBox::new(Label::new("hello"))
-            .border(Color::BLUE, 5.0)
+            .border(palette::css::BLUE, 5.0)
             .rounded(5.0)
             .padding((60., 40.));
 
@@ -658,7 +658,7 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello"))
             .width(40.0)
             .height(40.0)
-            .background(Color::PLUM);
+            .background(palette::css::PLUM);
 
         let mut harness = TestHarness::create(widget);
 
@@ -672,14 +672,14 @@ mod tests {
             .width(40.)
             .height(40.)
             .rounded(20.)
-            .border(Color::LIGHT_SKY_BLUE, 5.)
+            .border(palette::css::LIGHT_SKY_BLUE, 5.)
             .background(
                 Gradient::new_sweep((30., 30.), 0., std::f32::consts::TAU).with_stops([
-                    (0., Color::WHITE),
-                    (0.25, Color::BLACK),
-                    (0.5, Color::RED),
-                    (0.75, Color::GREEN),
-                    (1., Color::WHITE),
+                    (0., palette::css::WHITE),
+                    (0.25, palette::css::BLACK),
+                    (0.5, palette::css::RED),
+                    (0.75, palette::css::GREEN),
+                    (1., palette::css::WHITE),
                 ]),
             );
 
@@ -694,8 +694,8 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello"))
             .width(40.0)
             .height(40.0)
-            .background(Color::PLUM)
-            .border(Color::LIGHT_SKY_BLUE, 5.)
+            .background(palette::css::PLUM)
+            .border(palette::css::LIGHT_SKY_BLUE, 5.)
             .padding(100.);
 
         let mut harness = TestHarness::create(widget);
@@ -710,8 +710,8 @@ mod tests {
             SizedBox::new(Label::new("hello"))
                 .width(40.0)
                 .height(40.0)
-                .background(Color::PLUM)
-                .border(Color::LIGHT_SKY_BLUE, 5.),
+                .background(palette::css::PLUM)
+                .border(palette::css::LIGHT_SKY_BLUE, 5.),
         )
         .padding(100.);
 

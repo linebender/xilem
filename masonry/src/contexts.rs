@@ -9,8 +9,8 @@ use accesskit::TreeUpdate;
 use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
+use tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use vello::kurbo::Vec2;
-use vello::peniko::Color;
 use winit::window::ResizeDirection;
 
 use crate::action::Action;
@@ -18,9 +18,10 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
-use crate::tree_arena::{ArenaMutChildren, ArenaRefChildren};
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
-use crate::{AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{
+    AllowRawMut, BoxConstraints, Color, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
+};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -132,7 +133,6 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) rebuild_all: bool,
-    pub(crate) scale_factor: f64,
 }
 
 // --- MARK: GETTERS ---
@@ -196,11 +196,30 @@ impl_context_method!(
                 .expect("get_child_state_mut: child not found");
             child_state_mut.item
         }
+
+        /// Set the IME cursor area.
+        ///
+        /// When this widget is [focused] and [accepts text input], the reported IME area is sent
+        /// to the platform. The area can be used by the platform to, for example, place a
+        /// candidate box near that area, while ensuring the area is not obscured.
+        ///
+        /// [focused]: EventCtx::request_focus
+        /// [accepts text input]: Widget::accepts_text_input
+        pub fn set_ime_area(&mut self, ime_area: Rect) {
+            self.widget_state.ime_area = Some(ime_area);
+        }
+
+        /// Remove the IME cursor area.
+        ///
+        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
+        pub fn clear_ime_area(&mut self) {
+            self.widget_state.ime_area = None;
+        }
     }
 );
 
 // Methods for all exclusive context types (i.e. those which have exclusive access to the global state).
-impl_context_method! {
+impl_context_method!(
     AccessCtx<'_>,
     ComposeCtx<'_>,
     EventCtx<'_>,
@@ -209,16 +228,20 @@ impl_context_method! {
     PaintCtx<'_>,
     UpdateCtx<'_>,
     {
-        /// Get the contexts needed to build and paint text sections.
+        /// Get the Parley contexts needed to build and paint text sections.
         ///
-        /// Note that in many cases, these contexts are.
+        /// Note that most users should embed the [`Label`](crate::widget::Label) widget as a child
+        /// for non-interactive text.
+        /// These contexts could however be useful for custom text editing, such as for rich text editing.
         pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
-        (
-            &mut self.global_state.font_context,
-            &mut self.global_state.text_layout_context,
-        )
+            (
+                &mut self.global_state.font_context,
+                &mut self.global_state.text_layout_context,
+            )
+        }
     }
-}}
+);
+
 // --- MARK: GET LAYOUT ---
 // Methods on all context types except LayoutCtx
 // These methods access layout info calculated during the layout pass.
@@ -410,7 +433,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
 
 // --- MARK: WIDGET_MUT ---
 // Methods to get a child WidgetMut from a parent.
-impl<'a> MutateCtx<'a> {
+impl MutateCtx<'_> {
     /// Return a [`WidgetMut`] to a child widget.
     pub fn get_mut<'c, Child: Widget>(
         &'c mut self,
@@ -1265,7 +1288,6 @@ impl<'s> AccessCtx<'s> {
             global_state: self.global_state,
             tree_update: self.tree_update,
             rebuild_all: self.rebuild_all,
-            scale_factor: self.scale_factor,
         };
         RawWrapper {
             ctx: child_ctx,
@@ -1305,7 +1327,7 @@ impl<Ctx: IsContext, W> RawWrapperMut<'_, Ctx, W> {
     }
 }
 
-impl<'a, Ctx: IsContext, W> Drop for RawWrapperMut<'a, Ctx, W> {
+impl<Ctx: IsContext, W> Drop for RawWrapperMut<'_, Ctx, W> {
     fn drop(&mut self) {
         self.parent_widget_state
             .merge_up(self.ctx.get_widget_state());

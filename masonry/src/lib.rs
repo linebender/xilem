@@ -12,7 +12,7 @@
 //! Masonry can currently be considered to be in an alpha state.
 //! Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
 //!
-//! # Example
+//! ## Example
 //!
 //! The to-do-list example looks like this:
 //!
@@ -77,7 +77,7 @@
 //!
 //! For more information, see [the documentation module](crate::doc).
 //!
-//! ## Crate feature flags
+//! ### Crate feature flags
 //!
 //! The following feature flags are available:
 //!
@@ -88,14 +88,15 @@
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
 
-#![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-// LINEBENDER LINT SET - v1
+// LINEBENDER LINT SET - lib.rs - v1
 // See https://linebender.org/wiki/canonical-lints/
 // These lints aren't included in Cargo.toml because they
 // shouldn't apply to examples and tests
 #![warn(unused_crate_dependencies)]
 #![warn(clippy::print_stdout, clippy::print_stderr)]
+// END LINEBENDER LINT SET
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(
     test,
     expect(
@@ -123,7 +124,6 @@
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
@@ -161,7 +161,6 @@ mod paint_scene_helpers;
 mod passes;
 mod render_root;
 mod tracing_backend;
-mod tree_arena;
 
 pub mod event_loop_runner;
 pub mod testing;
@@ -177,9 +176,9 @@ pub use vello::kurbo;
 
 pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use parley::fontique::Weight as TextWeight;
 pub use parley::layout::Alignment as TextAlignment;
-pub use vello::peniko::{Color, Gradient};
+pub use parley::style::FontWeight;
+pub use vello::peniko::{color::palette, Color, Gradient};
 
 pub use action::Action;
 pub use app_driver::{AppDriver, DriverCtx};

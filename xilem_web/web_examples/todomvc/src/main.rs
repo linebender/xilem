@@ -82,12 +82,6 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
 }
 
 fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
-    let item_str = if state.todos.len() == 1 {
-        "item"
-    } else {
-        "items"
-    };
-
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
         el::button("Clear completed")
             .class("clear-completed")
@@ -98,12 +92,11 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
 
     let filter_class = |filter| (state.filter == filter).then_some("selected");
 
+    let items_left = state.todos.iter().filter(|todo| !todo.completed).count();
+    let item_noun = if items_left == 1 { "item" } else { "items" };
+
     el::footer((
-        el::span((
-            el::strong(state.todos.len().to_string()),
-            format!(" {} left", item_str),
-        ))
-        .class("todo-count"),
+        el::span(format!("{items_left} {item_noun} left")).class("todo-count"),
         el::ul((
             el::li(Element::on_click(
                 el::a("All")

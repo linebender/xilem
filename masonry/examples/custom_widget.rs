@@ -14,15 +14,15 @@ use accesskit::{Node, Role};
 use masonry::kurbo::{BezPath, Stroke};
 use masonry::widget::{ObjectFit, RootWidget};
 use masonry::{
-    AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
-    LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size, TextEvent, Widget,
-    WidgetId,
+    palette, AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx,
+    EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size,
+    TextEvent, Widget, WidgetId,
 };
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::peniko::{Fill, Format, Image};
+use vello::peniko::{Fill, Image, ImageFormat};
 use vello::Scene;
 use winit::window::Window;
 
@@ -73,14 +73,20 @@ impl Widget for CustomWidget {
         // and we only want to clear this widget's area.
         let size = ctx.size();
         let rect = size.to_rect();
-        scene.fill(Fill::NonZero, Affine::IDENTITY, Color::WHITE, None, &rect);
+        scene.fill(
+            Fill::NonZero,
+            Affine::IDENTITY,
+            palette::css::WHITE,
+            None,
+            &rect,
+        );
 
         // Create an arbitrary bezier path
         let mut path = BezPath::new();
         path.move_to(Point::ORIGIN);
         path.quad_to((60.0, 120.0), (size.width, size.height));
         // Create a color
-        let stroke_color = Color::rgb8(0, 128, 0);
+        let stroke_color = Color::from_rgba8(0, 128, 0, 255);
         // Stroke the path with thickness 5.0
         scene.stroke(
             &Stroke::new(5.0),
@@ -92,8 +98,8 @@ impl Widget for CustomWidget {
 
         // Rectangles: the path for practical people
         let rect = Rect::from_origin_size((10.0, 10.0), (100.0, 100.0));
-        // Note the Color:rgba8 which includes an alpha channel (7F in this case)
-        let fill_color = Color::rgba8(0x00, 0x00, 0x00, 0x7F);
+        // Note the Color:from_rgba8 which includes an alpha channel (7F in this case)
+        let fill_color = Color::from_rgba8(0x00, 0x00, 0x00, 0x7F);
         scene.fill(Fill::NonZero, Affine::IDENTITY, fill_color, None, &rect);
 
         // To render text, we first create a LayoutBuilder and set the text properties.
@@ -120,7 +126,7 @@ impl Widget for CustomWidget {
 
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
-        let image_data = Image::new(image_data.into(), Format::Rgba8, 256, 256);
+        let image_data = Image::new(image_data.into(), ImageFormat::Rgba8, 256, 256);
         let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), size);
         scene.draw_image(&image_data, transform);
     }

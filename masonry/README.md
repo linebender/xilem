@@ -14,6 +14,13 @@
 
 </div>
 
+<!-- We use cargo-rdme to update the README with the contents of lib.rs.
+To edit the following section, update it in lib.rs, then run:
+cargo rdme --workspace-project=color --heading-base-level=0
+Full documentation at https://github.com/orium/cargo-rdme -->
+
+<!-- Intra-doc links used in lib.rs should be evaluated here.
+See https://linebender.org/blog/doc-include/ for related discussion. -->
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 <!-- cargo-rdme start -->
@@ -108,7 +115,7 @@ The following feature flags are available:
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Masonry has been verified to compile with **Rust 1.81** and later.
+This version of Masonry has been verified to compile with **Rust 1.82** and later.
 
 Future versions of Masonry might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

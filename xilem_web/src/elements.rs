@@ -147,7 +147,7 @@ impl<'a, 'b, 'c, 'd> DomChildrenSplice<'a, 'b, 'c, 'd> {
     }
 }
 
-impl<'a, 'b, 'c, 'd> ElementSplice<AnyPod> for DomChildrenSplice<'a, 'b, 'c, 'd> {
+impl ElementSplice<AnyPod> for DomChildrenSplice<'_, '_, '_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<AnyPod>) -> R) -> R {
         let ret = f(self.scratch);
         if !self.scratch.is_empty() {

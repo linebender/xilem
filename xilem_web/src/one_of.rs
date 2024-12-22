@@ -176,15 +176,15 @@ where
     >;
     fn apply_props(&self, props: &mut Self::Props, flags: &mut PodFlags) {
         match (self, props) {
-            (OneOf::A(el), OneOf::A(props)) => el.apply_props(props, flags),
-            (OneOf::B(el), OneOf::B(props)) => el.apply_props(props, flags),
-            (OneOf::C(el), OneOf::C(props)) => el.apply_props(props, flags),
-            (OneOf::D(el), OneOf::D(props)) => el.apply_props(props, flags),
-            (OneOf::E(el), OneOf::E(props)) => el.apply_props(props, flags),
-            (OneOf::F(el), OneOf::F(props)) => el.apply_props(props, flags),
-            (OneOf::G(el), OneOf::G(props)) => el.apply_props(props, flags),
-            (OneOf::H(el), OneOf::H(props)) => el.apply_props(props, flags),
-            (OneOf::I(el), OneOf::I(props)) => el.apply_props(props, flags),
+            (Self::A(el), OneOf::A(props)) => el.apply_props(props, flags),
+            (Self::B(el), OneOf::B(props)) => el.apply_props(props, flags),
+            (Self::C(el), OneOf::C(props)) => el.apply_props(props, flags),
+            (Self::D(el), OneOf::D(props)) => el.apply_props(props, flags),
+            (Self::E(el), OneOf::E(props)) => el.apply_props(props, flags),
+            (Self::F(el), OneOf::F(props)) => el.apply_props(props, flags),
+            (Self::G(el), OneOf::G(props)) => el.apply_props(props, flags),
+            (Self::H(el), OneOf::H(props)) => el.apply_props(props, flags),
+            (Self::I(el), OneOf::I(props)) => el.apply_props(props, flags),
             _ => unreachable!(),
         }
     }
@@ -214,5 +214,5 @@ impl DomNode for Noop {
         match *self {}
     }
 
-    type Props = Noop;
+    type Props = Self;
 }

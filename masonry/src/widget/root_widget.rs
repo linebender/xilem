@@ -20,15 +20,15 @@ pub struct RootWidget<W> {
 }
 
 impl<W: Widget> RootWidget<W> {
-    pub fn new(widget: W) -> RootWidget<W> {
-        RootWidget {
+    pub fn new(widget: W) -> Self {
+        Self {
             pod: WidgetPod::new(widget),
         }
     }
 
     // TODO - This help works around impedance mismatch between the types of Xilem and Masonry
-    pub fn from_pod(pod: WidgetPod<W>) -> RootWidget<W> {
-        RootWidget { pod }
+    pub fn from_pod(pod: WidgetPod<W>) -> Self {
+        Self { pod }
     }
 }
 

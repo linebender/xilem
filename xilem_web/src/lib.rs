@@ -11,26 +11,25 @@
 //! .rustdoc-hidden { display: none; }
 //! </style>
 #![doc = include_str!("../README.md")]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-// LINEBENDER LINT SET - v1
+// LINEBENDER LINT SET - lib.rs - v1
 // See https://linebender.org/wiki/canonical-lints/
 // These lints aren't included in Cargo.toml because they
 // shouldn't apply to examples and tests
 #![warn(unused_crate_dependencies)]
 #![warn(clippy::print_stdout, clippy::print_stderr)]
+// END LINEBENDER LINT SET
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 // TODO: Remove any items listed as "Deferred"
 #![cfg_attr(test, expect(clippy::print_stdout, reason = "Deferred: Noisy"))]
 #![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(unused_qualifications, reason = "Deferred: Noisy")]
-#![expect(single_use_lifetimes, reason = "Deferred: Noisy")]
 #![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 // expect doesn't work here: https://github.com/rust-lang/rust/pull/130025
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]

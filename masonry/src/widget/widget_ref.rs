@@ -28,7 +28,7 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 // --- TRAIT IMPLS ---
 
 #[allow(clippy::non_canonical_clone_impl)]
-impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
+impl<W: Widget + ?Sized> Clone for WidgetRef<'_, W> {
     fn clone(&self) -> Self {
         Self {
             ctx: self.ctx,
@@ -37,9 +37,9 @@ impl<'w, W: Widget + ?Sized> Clone for WidgetRef<'w, W> {
     }
 }
 
-impl<'w, W: Widget + ?Sized> Copy for WidgetRef<'w, W> {}
+impl<W: Widget + ?Sized> Copy for WidgetRef<'_, W> {}
 
-impl<'w, W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'w, W> {
+impl<W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'_, W> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         let widget_name = self.widget.short_type_name();
         let display_name = if let Some(debug_text) = self.widget.get_debug_text() {
@@ -62,7 +62,7 @@ impl<'w, W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'w, W> {
     }
 }
 
-impl<'w, W: Widget + ?Sized> Deref for WidgetRef<'w, W> {
+impl<W: Widget + ?Sized> Deref for WidgetRef<'_, W> {
     type Target = W;
 
     fn deref(&self) -> &Self::Target {
@@ -146,9 +146,9 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     }
 }
 
-impl<'w> WidgetRef<'w, dyn Widget> {
+impl WidgetRef<'_, dyn Widget> {
     /// Recursively find child widget with given id.
-    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
+    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<Self> {
         if self.ctx.widget_state.id == id {
             Some(*self)
         } else {
@@ -164,7 +164,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'_, dyn Widget>> {
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<Self> {
         let mut innermost_widget = *self;
 
         if !self.ctx.window_layout_rect().contains(pos) {

@@ -31,7 +31,7 @@ where
     Event: JsCast + 'static,
 {
     pub fn new(dom_view: V, event: impl Into<Cow<'static, str>>, handler: Callback) -> Self {
-        OnEvent {
+        Self {
             dom_view,
             event: event.into(),
             passive: true,

@@ -1,6 +1,8 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 //! A label widget.
 
 use std::mem::Discriminant;
@@ -14,7 +16,7 @@ use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Brush};
 use vello::Scene;
 
-use crate::text::{render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
+use crate::text::{default_styles, render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
 use crate::widget::WidgetMut;
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
@@ -83,11 +85,13 @@ impl Label {
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: impl Into<ArcStr>) -> Self {
+        let mut styles = StyleSet::new(theme::TEXT_SIZE_NORMAL);
+        default_styles(&mut styles);
         Self {
             text_layout: Layout::new(),
             accessibility: Default::default(),
             text: text.into(),
-            styles: StyleSet::new(theme::TEXT_SIZE_NORMAL),
+            styles,
             styles_changed: true,
             line_break_mode: LineBreaking::Overflow,
             alignment: Alignment::Start,
@@ -187,7 +191,10 @@ impl Label {
 
     /// Shared logic between `with_style` and `insert_style`
     fn insert_style_inner(&mut self, property: StyleProperty) -> Option<StyleProperty> {
-        if let StyleProperty::Brush(idx @ BrushIndex(1..)) = &property {
+        if let StyleProperty::Brush(idx @ BrushIndex(1..))
+        | StyleProperty::UnderlineBrush(Some(idx @ BrushIndex(1..)))
+        | StyleProperty::StrikethroughBrush(Some(idx @ BrushIndex(1..))) = &property
+        {
             debug_panic!(
                 "Can't set a non-zero brush index ({idx:?}) on a `Label`, as it only supports global styling."
             );
@@ -413,15 +420,16 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+        let window_origin = ctx.window_origin();
         self.accessibility.build_nodes(
             self.text.as_ref(),
             &self.text_layout,
-            _ctx.tree_update,
+            ctx.tree_update,
             node,
             || NodeId::from(WidgetId::next()),
-            LABEL_X_PADDING,
-            0.0,
+            window_origin.x + LABEL_X_PADDING,
+            window_origin.y,
         );
     }
 
@@ -443,7 +451,7 @@ impl Widget for Label {
 mod tests {
     use insta::assert_debug_snapshot;
     use parley::style::GenericFamily;
-    use parley::FontFamily;
+    use parley::{FontFamily, StyleProperty};
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -473,6 +481,28 @@ mod tests {
         let mut harness = TestHarness::create_with_size(label, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "styled_label");
+    }
+
+    #[test]
+    fn underline_label() {
+        let label = Label::new("Emphasis")
+            .with_line_break_mode(LineBreaking::WordWrap)
+            .with_style(StyleProperty::Underline(true));
+
+        let mut harness = TestHarness::create_with_size(label, Size::new(100.0, 20.));
+
+        assert_render_snapshot!(harness, "underline_label");
+    }
+    #[test]
+    fn strikethrough_label() {
+        let label = Label::new("Tpyo")
+            .with_line_break_mode(LineBreaking::WordWrap)
+            .with_style(StyleProperty::Strikethrough(true))
+            .with_style(StyleProperty::StrikethroughSize(Some(4.)));
+
+        let mut harness = TestHarness::create_with_size(label, Size::new(100.0, 20.));
+
+        assert_render_snapshot!(harness, "strikethrough_label");
     }
 
     #[test]

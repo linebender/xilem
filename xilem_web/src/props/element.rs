@@ -72,7 +72,7 @@ impl Pod<web_sys::Element> {
         }
 
         let props = Element::new(children, attr_size_hint, style_size_hint, class_size_hint);
-        Pod::new(element.unchecked_into(), props, PodFlags::new(false))
+        Self::new(element.unchecked_into(), props, PodFlags::new(false))
     }
 
     /// Creates a new Pod that hydrates an existing node (within the `ViewCtx`) as [`web_sys::Element`] and [`Element`] as its [`DomNode::Props`](`crate::DomNode::Props`).
@@ -83,7 +83,7 @@ impl Pod<web_sys::Element> {
         let element = ctx.hydrate_node().unwrap_throw();
 
         let props = Element::new(children, attr_size_hint, style_size_hint, class_size_hint);
-        Pod::new(element.unchecked_into(), props, PodFlags::new(true))
+        Self::new(element.unchecked_into(), props, PodFlags::new(true))
     }
 }
 

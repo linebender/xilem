@@ -62,7 +62,7 @@ pub struct ViewCtx {
 
 impl Default for ViewCtx {
     fn default() -> Self {
-        ViewCtx {
+        Self {
             id_path: Vec::default(),
             app_ref: None,
             fragment: Rc::new(crate::document().create_document_fragment()),
@@ -102,7 +102,7 @@ impl ViewCtx {
     /// });
     /// ```
     pub fn as_owned<R>(&mut self, f: impl FnOnce(Self) -> (Self, R)) -> R {
-        let temporary_owned_ctx = ViewCtx {
+        let temporary_owned_ctx = Self {
             id_path: std::mem::take(&mut self.id_path),
             app_ref: self.app_ref.as_ref().map(|app| app.clone_box()),
             fragment: self.fragment.clone(),

@@ -132,8 +132,8 @@ where
     }
 }
 
-impl<'a, ChildState, ChildAction, Context, ChildView, Message>
-    AdaptThunk<'a, ChildState, ChildAction, Context, ChildView, Message>
+impl<ChildState, ChildAction, Context, ChildView, Message>
+    AdaptThunk<'_, ChildState, ChildAction, Context, ChildView, Message>
 where
     Context: ViewPathTracker,
     ChildView: View<ChildState, ChildAction, Context, Message>,

@@ -7,7 +7,6 @@ use std::sync::Arc;
 use accesskit_winit::Adapter;
 use tracing::{debug, info_span, warn};
 use vello::kurbo::Affine;
-use vello::peniko::Color;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
@@ -24,7 +23,7 @@ use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
 use crate::event::{PointerButton, PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
-use crate::{PointerEvent, TextEvent, Widget, WidgetId};
+use crate::{Color, PointerEvent, TextEvent, Widget, WidgetId};
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
@@ -42,14 +41,14 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
 impl From<WinitMouseButton> for PointerButton {
     fn from(button: WinitMouseButton) -> Self {
         match button {
-            WinitMouseButton::Left => PointerButton::Primary,
-            WinitMouseButton::Right => PointerButton::Secondary,
-            WinitMouseButton::Middle => PointerButton::Auxiliary,
-            WinitMouseButton::Back => PointerButton::X1,
-            WinitMouseButton::Forward => PointerButton::X2,
+            WinitMouseButton::Left => Self::Primary,
+            WinitMouseButton::Right => Self::Secondary,
+            WinitMouseButton::Middle => Self::Auxiliary,
+            WinitMouseButton::Back => Self::X1,
+            WinitMouseButton::Forward => Self::X2,
             WinitMouseButton::Other(other) => {
                 warn!("Got winit MouseButton::Other({other}) which is not yet fully supported.");
-                PointerButton::Other
+                Self::Other
             }
         }
     }
@@ -264,7 +263,6 @@ impl MasonryState<'_> {
                 let window = event_loop.create_window(attributes).unwrap();
 
                 let adapter = Adapter::with_event_loop_proxy(&window, self.proxy.clone());
-                window.set_visible(visible);
                 let window = Arc::new(window);
                 // https://github.com/rust-windowing/winit/issues/2308
                 #[cfg(target_os = "ios")]
@@ -286,6 +284,20 @@ impl MasonryState<'_> {
                 };
                 self.render_root
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
+                // Render one frame before showing the window to avoid flashing
+                if visible {
+                    let (scene, tree_update) = self.render_root.redraw();
+                    self.render(scene);
+                    if let WindowState::Rendering {
+                        window,
+                        accesskit_adapter,
+                        ..
+                    } = &mut self.window
+                    {
+                        accesskit_adapter.update_if_active(|| tree_update);
+                        window.set_visible(true);
+                    };
+                }
             }
             WindowState::Suspended {
                 window,
@@ -471,7 +483,13 @@ impl MasonryState<'_> {
                 };
                 accesskit_adapter.update_if_active(|| tree_update);
             }
-            WinitWindowEvent::CloseRequested => event_loop.exit(),
+            WinitWindowEvent::CloseRequested => {
+                // HACK: When we exit, on some systems (known to happen with Wayland on KDE),
+                // the IME state gets preserved until the app next opens. We work around this by force-deleting
+                // the IME state just before exiting.
+                window.set_ime_allowed(false);
+                event_loop.exit();
+            }
             WinitWindowEvent::Resized(size) => {
                 self.render_root
                     .handle_window_event(WindowEvent::Resize(size));
