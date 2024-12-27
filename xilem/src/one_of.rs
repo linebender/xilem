@@ -157,15 +157,15 @@ where
 {
     fn transform_mut(&mut self) -> &mut Affine {
         match self {
-            OneOf::A(w) => w.transform_mut(),
-            OneOf::B(w) => w.transform_mut(),
-            OneOf::C(w) => w.transform_mut(),
-            OneOf::D(w) => w.transform_mut(),
-            OneOf::E(w) => w.transform_mut(),
-            OneOf::F(w) => w.transform_mut(),
-            OneOf::G(w) => w.transform_mut(),
-            OneOf::H(w) => w.transform_mut(),
-            OneOf::I(w) => w.transform_mut(),
+            Self::A(w) => w.transform_mut(),
+            Self::B(w) => w.transform_mut(),
+            Self::C(w) => w.transform_mut(),
+            Self::D(w) => w.transform_mut(),
+            Self::E(w) => w.transform_mut(),
+            Self::F(w) => w.transform_mut(),
+            Self::G(w) => w.transform_mut(),
+            Self::H(w) => w.transform_mut(),
+            Self::I(w) => w.transform_mut(),
         }
     }
 }
