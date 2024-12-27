@@ -159,29 +159,13 @@ impl WidgetRef<'_, dyn Widget> {
     }
 
     /// Recursively find the innermost widget at the given position, using
-    /// [`Widget::get_child_at_pos`] to descend the widget tree. If `self` does not contain the
+    /// [`Widget::find_widget_at_pos`] to descend the widget tree. If `self` does not contain the
     /// given position in its layout rect or clip path, this returns `None`.
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<Self> {
-        let mut innermost_widget = *self;
-
-        if !self.ctx.window_layout_rect().contains(pos) {
-            return None;
-        }
-
-        // TODO: add debug assertion to check whether the child returned by
-        // `Widget::get_child_at_pos` upholds the conditions of that method. See
-        // https://github.com/linebender/xilem/pull/565#discussion_r1756536870
-        while let Some(child) = innermost_widget
-            .widget
-            .get_child_at_pos(innermost_widget.ctx, pos)
-        {
-            innermost_widget = child;
-        }
-
-        Some(innermost_widget)
+        self.widget.find_widget_at_pos(self.ctx, pos)
     }
 }
 

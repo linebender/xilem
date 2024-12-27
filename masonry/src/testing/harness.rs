@@ -456,9 +456,11 @@ impl TestHarness {
     /// - If the widget is scrolled out of view.
     #[track_caller]
     pub fn mouse_move_to(&mut self, id: WidgetId) {
+        // FIXME - handle case where the widget isn't visible
+        // FIXME - assert that the widget correctly receives the event otherwise?
         let widget = self.get_widget(id);
-        let widget_rect = widget.ctx().window_layout_rect();
-        let widget_center = widget_rect.center();
+        let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
+        let widget_center = widget.ctx().widget_state.window_transform * local_widget_center;
 
         if !widget.ctx().accepts_pointer_interaction() {
             panic!("Widget {id} doesn't accept pointer events");

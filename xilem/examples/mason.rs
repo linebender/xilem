@@ -7,14 +7,13 @@
 #![windows_subsystem = "windows"]
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use std::time::Duration;
-
+use std::time::{Duration, Instant};
 use winit::error::EventLoopError;
 use xilem::core::{fork, run_once};
 use xilem::tokio::time;
 use xilem::view::{
     button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis, FlexExt as _,
-    FlexSpacer,
+    FlexSpacer, Transformable,
 };
 use xilem::{
     palette, Color, EventLoop, EventLoopBuilder, FontWeight, TextAlignment, WidgetView, Xilem,
@@ -98,10 +97,26 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
         )),
         // The following `task` view only exists whilst the example is in the "active" state, so
         // the updates it performs will only be running whilst we are in that state.
-        data.active.then(|| {
+        (
+            data.active.then(|| {
+                task(
+                    |proxy| async move {
+                        let mut interval = time::interval(Duration::from_secs(1));
+                        loop {
+                            interval.tick().await;
+                            let Ok(()) = proxy.message(()) else {
+                                break;
+                            };
+                        }
+                    },
+                    |data: &mut AppData, ()| {
+                        data.count += 1;
+                    },
+                )
+            }),
             task(
                 |proxy| async move {
-                    let mut interval = time::interval(Duration::from_secs(1));
+                    let mut interval = time::interval(Duration::from_secs_f64(1.0 / 60.0));
                     loop {
                         interval.tick().await;
                         let Ok(()) = proxy.message(()) else {
@@ -110,15 +125,16 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
                     }
                 },
                 |data: &mut AppData, ()| {
-                    data.count += 1;
+                    data.current_instant = Instant::now();
                 },
-            )
-        }),
+            ),
+        ),
     )
 }
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
     if data.active {
+        let secs_since_start = (data.current_instant - data.start_instant).as_secs_f64();
         fork(
             flex((
                 button("Deactivate", |data: &mut AppData| {
@@ -126,8 +142,12 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
                 }),
                 button("Unlimited Power", |data: &mut AppData| {
                     data.count = -1_000_000;
-                }),
+                })
+                .translate((-100.0, -20.0))
+                .rotate(secs_since_start)
+                .scale(secs_since_start.sin() + 1.5),
             ))
+            .scale(((secs_since_start + 0.5).sin() + 1.5) * 0.5)
             .direction(Axis::Horizontal),
             run_once(|| tracing::warn!("The pathway to unlimited power has been revealed")),
         )
@@ -139,6 +159,8 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
 
 struct AppData {
     textbox_contents: String,
+    current_instant: Instant,
+    start_instant: Instant,
     count: i32,
     active: bool,
 }
@@ -146,8 +168,10 @@ struct AppData {
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = AppData {
         count: 0,
+        current_instant: Instant::now(),
+        start_instant: Instant::now(),
         textbox_contents: "Not quite a placeholder".into(),
-        active: false,
+        active: true,
     };
 
     Xilem::new(data, app_logic)

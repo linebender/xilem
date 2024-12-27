@@ -3,7 +3,7 @@
 
 #![cfg(not(tarpaulin_include))]
 
-use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
+use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::WidgetId;
 
@@ -44,8 +44,6 @@ pub(crate) struct WidgetState {
     /// The origin of the widget in the parent's coordinate space; together with
     /// `size` these constitute the widget's layout rect.
     pub(crate) origin: Point,
-    /// The origin of the widget in the window coordinate space;
-    pub(crate) window_origin: Point,
     /// The insets applied to the layout rect to generate the paint rect.
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
@@ -53,6 +51,8 @@ pub(crate) struct WidgetState {
     // TODO - Document
     // The computed paint rect, in local coordinates.
     pub(crate) local_paint_rect: Rect,
+    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates.
+    pub(crate) bounding_rect: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
     ///
     /// In general, this will be zero; the bottom of the widget will be considered
@@ -79,9 +79,11 @@ pub(crate) struct WidgetState {
     // efficiently hold an arbitrary shape.
     pub(crate) clip_path: Option<Rect>,
 
-    // TODO - Handle matrix transforms
-    pub(crate) translation: Vec2,
-    pub(crate) translation_changed: bool,
+    /// This is being computed out of all ancestor transforms and `translation`
+    pub(crate) window_transform: Affine,
+    pub(crate) transform: Affine,
+    pub(crate) scroll_translation: Vec2,
+    pub(crate) transform_changed: bool,
 
     // --- PASSES ---
     /// `WidgetAdded` hasn't been sent to this widget yet.
@@ -151,11 +153,10 @@ pub(crate) struct WidgetState {
 }
 
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, widget_name: &'static str) -> Self {
+    pub(crate) fn new(id: WidgetId, widget_name: &'static str, transform: Affine) -> Self {
         Self {
             id,
             origin: Point::ORIGIN,
-            window_origin: Point::ORIGIN,
             size: Size::ZERO,
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
@@ -165,8 +166,8 @@ impl WidgetState {
             accepts_text_input: false,
             ime_area: None,
             clip_path: Default::default(),
-            translation: Vec2::ZERO,
-            translation_changed: false,
+            scroll_translation: Vec2::ZERO,
+            transform_changed: false,
             is_explicitly_disabled: false,
             is_explicitly_stashed: false,
             is_disabled: false,
@@ -192,6 +193,9 @@ impl WidgetState {
             update_focus_chain: true,
             #[cfg(debug_assertions)]
             widget_name,
+            window_transform: Affine::IDENTITY,
+            bounding_rect: Rect::ZERO,
+            transform,
         }
     }
 
@@ -215,7 +219,7 @@ impl WidgetState {
             needs_update_stashed: false,
             children_changed: false,
             update_focus_chain: false,
-            ..Self::new(id, "<root>")
+            ..Self::new(id, "<root>", Affine::IDENTITY)
         }
     }
 
@@ -253,23 +257,21 @@ impl WidgetState {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    /// The [`layout_rect`](crate::WidgetPod::layout_rect) in window coordinates.
-    ///
-    /// This might not map to a visible area of the screen, eg if the widget is scrolled
-    /// away.
-    pub fn window_layout_rect(&self) -> Rect {
-        Rect::from_origin_size(self.window_origin(), self.size)
+    /// The axis aligned bounding rect of this widget in window coordinates.
+    pub fn bounding_rect(&self) -> Rect {
+        self.bounding_rect
     }
 
     /// Returns the area being edited by an IME, in global coordinates.
     ///
-    /// By default, returns the same as [`Self::window_layout_rect`].
+    /// By default, returns the same as [`Self::bounding_rect`].
     pub(crate) fn get_ime_area(&self) -> Rect {
-        self.ime_area.unwrap_or_else(|| self.size.to_rect()) + self.window_origin.to_vec2()
+        self.window_transform
+            .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size.to_rect()))
     }
 
     pub(crate) fn window_origin(&self) -> Point {
-        self.window_origin
+        self.window_transform.translation().to_point()
     }
 
     pub(crate) fn needs_rewrite_passes(&self) -> bool {
