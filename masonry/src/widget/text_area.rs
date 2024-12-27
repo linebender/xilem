@@ -14,17 +14,17 @@ use parley::layout::Alignment;
 use parley::PlainEditor;
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
-use vello::kurbo::Vec2;
-use vello::peniko::{Brush, Color, Fill};
+use vello::kurbo::{Rect, Vec2};
+use vello::peniko::{Brush, Fill};
 use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
 
 use crate::text::{BrushIndex, StyleProperty};
 use crate::widget::{Padding, WidgetMut};
 use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId,
+    palette, theme, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx,
+    PaintCtx, PointerButton, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId,
 };
 
 /// `TextArea` implements the core of interactive text.
@@ -137,7 +137,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
         default_styles(editor.edit_styles());
         editor.set_text(text);
-        TextArea {
+        Self {
             editor,
             rendered_generation: Generation::default(),
             last_click_time: None,
@@ -296,6 +296,25 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         } else {
             self.editor.edit_styles().insert(property)
         }
+    }
+}
+
+// --- MARK: HELPERS ---
+impl<const EDITABLE: bool> TextArea<EDITABLE> {
+    /// Get the IME area from the editor, accounting for padding.
+    ///
+    /// This should only be called when the editor layout is available.
+    fn ime_area(&self) -> Rect {
+        debug_assert!(
+            self.editor.try_layout().is_some(),
+            "TextArea::ime_area should only be called when the editor layout is available"
+        );
+        let is_rtl = self
+            .editor
+            .try_layout()
+            .map(|layout| layout.is_rtl())
+            .unwrap_or(false);
+        self.editor.ime_cursor_area() + Vec2::new(self.padding.get_left(is_rtl), self.padding.top)
     }
 }
 
@@ -495,6 +514,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
                         ctx.request_render();
+                        ctx.set_ime_area(self.ime_area());
                         self.rendered_generation = new_generation;
                     }
                     ctx.request_focus();
@@ -511,6 +531,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
                         ctx.request_render();
+                        ctx.set_ime_area(self.ime_area());
                         self.rendered_generation = new_generation;
                     }
                 }
@@ -535,6 +556,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     },
                 );
                 let (fctx, lctx) = ctx.text_contexts();
+                // Whether the text was changed.
                 let mut edited = false;
                 // Ideally we'd use key_without_modifiers, but that's broken
                 match &key_event.logical_key {
@@ -726,6 +748,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         ctx.request_layout();
                     } else {
                         ctx.request_render();
+                        ctx.set_ime_area(self.ime_area());
                     }
                     self.rendered_generation = new_generation;
                 }
@@ -847,6 +870,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let layout = self.editor.layout(fctx, lctx);
         let text_width = max_advance.unwrap_or(layout.full_width());
         let text_size = Size::new(text_width.into(), layout.height().into());
+        ctx.set_ime_area(self.ime_area());
 
         let area_size = Size {
             height: text_size.height + padding_size.height,
@@ -872,11 +896,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             for rect in self.editor.selection_geometry().iter() {
                 // TODO: If window not focused, use a different color
                 // TODO: Make configurable
-                scene.fill(Fill::NonZero, transform, Color::STEEL_BLUE, None, &rect);
+                scene.fill(
+                    Fill::NonZero,
+                    transform,
+                    palette::css::STEEL_BLUE,
+                    None,
+                    &rect,
+                );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5) {
                 // TODO: Make configurable
-                scene.fill(Fill::NonZero, transform, Color::WHITE, None, &cursor);
+                scene.fill(Fill::NonZero, transform, palette::css::WHITE, None, &cursor);
             };
         }
 
@@ -941,7 +971,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
 #[cfg(test)]
 mod tests {
-    use vello::{kurbo::Size, peniko::Color};
+    use vello::kurbo::Size;
 
     use super::*;
     use crate::testing::TestHarness;
@@ -993,7 +1023,7 @@ mod tests {
     #[test]
     fn edit_textarea() {
         let base_target = {
-            let area = TextArea::new_immutable("Test string").with_brush(Color::AZURE);
+            let area = TextArea::new_immutable("Test string").with_brush(palette::css::AZURE);
 
             let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
 
@@ -1001,7 +1031,7 @@ mod tests {
         };
 
         {
-            let area = TextArea::new_immutable("Different string").with_brush(Color::AZURE);
+            let area = TextArea::new_immutable("Different string").with_brush(palette::css::AZURE);
 
             let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
 
@@ -1020,7 +1050,7 @@ mod tests {
 
             harness.edit_root_widget(|mut root| {
                 let mut area = root.downcast::<TextArea<false>>();
-                TextArea::set_brush(&mut area, Color::BROWN);
+                TextArea::set_brush(&mut area, palette::css::BROWN);
             });
 
             let with_updated_brush = harness.render();

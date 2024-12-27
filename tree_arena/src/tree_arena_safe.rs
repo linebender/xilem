@@ -13,7 +13,7 @@
 
 use super::NodeId;
 
-use std::collections::HashMap;
+use hashbrown::HashMap;
 
 #[derive(Debug)]
 struct TreeNode<T> {

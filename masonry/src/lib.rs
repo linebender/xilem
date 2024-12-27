@@ -124,7 +124,6 @@
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
@@ -177,9 +176,9 @@ pub use vello::kurbo;
 
 pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use parley::fontique::Weight as TextWeight;
 pub use parley::layout::Alignment as TextAlignment;
-pub use vello::peniko::{Color, Gradient};
+pub use parley::style::FontWeight;
+pub use vello::peniko::{color::palette, Color, Gradient};
 
 pub use action::Action;
 pub use app_driver::{AppDriver, DriverCtx};

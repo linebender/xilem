@@ -146,9 +146,9 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     }
 }
 
-impl<'w> WidgetRef<'w, dyn Widget> {
+impl WidgetRef<'_, dyn Widget> {
     /// Recursively find child widget with given id.
-    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<WidgetRef<'w, dyn Widget>> {
+    pub fn find_widget_by_id(&self, id: WidgetId) -> Option<Self> {
         if self.ctx.widget_state.id == id {
             Some(*self)
         } else {
@@ -164,7 +164,7 @@ impl<'w> WidgetRef<'w, dyn Widget> {
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<WidgetRef<'w, dyn Widget>> {
+    pub fn find_widget_at_pos(&self, pos: Point) -> Option<Self> {
         self.widget.find_widget_at_pos(self.ctx, pos)
     }
 }

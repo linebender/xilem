@@ -41,7 +41,7 @@ impl<State, Fragment: DomFragment<State>, InitFragment> Clone
     for App<State, Fragment, InitFragment>
 {
     fn clone(&self) -> Self {
-        App(self.0.clone())
+        Self(self.0.clone())
     }
 }
 
@@ -54,7 +54,7 @@ where
     /// Create an instance of your app with the given logic and initial state.
     pub fn new(root: impl AsRef<web_sys::Node>, data: State, app_logic: InitFragment) -> Self {
         let inner = AppInner::new(root.as_ref().clone(), data, app_logic);
-        let app = App(Rc::new(RefCell::new(inner)));
+        let app = Self(Rc::new(RefCell::new(inner)));
         app.0.borrow_mut().ctx.set_runner(app.clone());
         app
     }
@@ -75,7 +75,7 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
 {
     fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
         let ctx = ViewCtx::default();
-        AppInner {
+        Self {
             data,
             root,
             app_logic,

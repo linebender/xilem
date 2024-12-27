@@ -10,7 +10,6 @@ use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMutChildren, ArenaRefChildren};
-use vello::peniko::Color;
 use winit::window::ResizeDirection;
 
 use crate::action::Action;
@@ -20,7 +19,7 @@ use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
 use crate::widget::{CreateWidget, WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    Affine, AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Vec2, Widget, WidgetId,
+    Affine, AllowRawMut, BoxConstraints, Color, Insets, Point, Rect, Size, Vec2, Widget, WidgetId,
     WidgetPod,
 };
 
@@ -197,11 +196,30 @@ impl_context_method!(
                 .expect("get_child_state_mut: child not found");
             child_state_mut.item
         }
+
+        /// Set the IME cursor area.
+        ///
+        /// When this widget is [focused] and [accepts text input], the reported IME area is sent
+        /// to the platform. The area can be used by the platform to, for example, place a
+        /// candidate box near that area, while ensuring the area is not obscured.
+        ///
+        /// [focused]: EventCtx::request_focus
+        /// [accepts text input]: Widget::accepts_text_input
+        pub fn set_ime_area(&mut self, ime_area: Rect) {
+            self.widget_state.ime_area = Some(ime_area);
+        }
+
+        /// Remove the IME cursor area.
+        ///
+        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
+        pub fn clear_ime_area(&mut self) {
+            self.widget_state.ime_area = None;
+        }
     }
 );
 
 // Methods for all exclusive context types (i.e. those which have exclusive access to the global state).
-impl_context_method! {
+impl_context_method!(
     AccessCtx<'_>,
     ComposeCtx<'_>,
     EventCtx<'_>,
@@ -210,16 +228,20 @@ impl_context_method! {
     PaintCtx<'_>,
     UpdateCtx<'_>,
     {
-        /// Get the contexts needed to build and paint text sections.
+        /// Get the Parley contexts needed to build and paint text sections.
         ///
-        /// Note that in many cases, these contexts are.
+        /// Note that most users should embed the [`Label`](crate::widget::Label) widget as a child
+        /// for non-interactive text.
+        /// These contexts could however be useful for custom text editing, such as for rich text editing.
         pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
-        (
-            &mut self.global_state.font_context,
-            &mut self.global_state.text_layout_context,
-        )
+            (
+                &mut self.global_state.font_context,
+                &mut self.global_state.text_layout_context,
+            )
+        }
     }
-}}
+);
+
 // --- MARK: GET LAYOUT ---
 // Methods on all context types except LayoutCtx
 // These methods access layout info calculated during the layout pass.

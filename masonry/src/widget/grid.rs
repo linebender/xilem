@@ -39,7 +39,7 @@ pub struct GridParams {
 // --- MARK: IMPL GRID ---
 impl Grid {
     pub fn with_dimensions(width: i32, height: i32) -> Self {
-        Grid {
+        Self {
             children: Vec::new(),
             grid_width: width,
             grid_height: height,
@@ -109,7 +109,7 @@ fn new_grid_child(params: GridParams, widget: WidgetPod<Box<dyn Widget>>) -> Chi
 
 // --- MARK: IMPL GRIDPARAMS ---
 impl GridParams {
-    pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> GridParams {
+    pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> Self {
         if x < 0 {
             debug_panic!("Grid x value should be a non-negative number; got {}", x);
             x = 0;
@@ -132,7 +132,7 @@ impl GridParams {
             );
             height = 1;
         }
-        GridParams {
+        Self {
             x,
             y,
             width,
@@ -215,11 +215,7 @@ impl Grid {
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
     ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
-        let child = match this.widget.children[idx].widget_mut() {
-            Some(widget) => widget,
-            None => return None,
-        };
-
+        let child = this.widget.children[idx].widget_mut()?;
         Some(this.ctx.get_mut(child))
     }
 

@@ -153,8 +153,8 @@ pub(crate) struct WidgetState {
 }
 
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, widget_name: &'static str, transform: Affine) -> WidgetState {
-        WidgetState {
+    pub(crate) fn new(id: WidgetId, widget_name: &'static str, transform: Affine) -> Self {
+        Self {
             id,
             origin: Point::ORIGIN,
             size: Size::ZERO,
@@ -202,8 +202,8 @@ impl WidgetState {
     /// Create a dummy root state.
     ///
     /// This is useful for passes that need a parent state for the root widget.
-    pub(crate) fn synthetic(id: WidgetId, size: Size) -> WidgetState {
-        WidgetState {
+    pub(crate) fn synthetic(id: WidgetId, size: Size) -> Self {
+        Self {
             size,
             is_new: false,
             needs_layout: false,
@@ -219,7 +219,7 @@ impl WidgetState {
             needs_update_stashed: false,
             children_changed: false,
             update_focus_chain: false,
-            ..WidgetState::new(id, "<root>", Affine::IDENTITY)
+            ..Self::new(id, "<root>", Affine::IDENTITY)
         }
     }
 
@@ -230,7 +230,7 @@ impl WidgetState {
     // TODO: though this method takes child state mutably, child state currently isn't actually
     // mutated anymore. This method may start doing so again in the future, so keep taking &mut for
     // now.
-    pub(crate) fn merge_up(&mut self, child_state: &mut WidgetState) {
+    pub(crate) fn merge_up(&mut self, child_state: &mut Self) {
         self.needs_layout |= child_state.needs_layout;
         self.needs_compose |= child_state.needs_compose;
         self.needs_paint |= child_state.needs_paint;

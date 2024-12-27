@@ -6,7 +6,7 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
+use crate::render_root::{RenderRoot, RenderRootState};
 use crate::{ComposeCtx, Widget, WidgetState};
 
 // --- MARK: RECURSE ---
@@ -47,12 +47,6 @@ fn compose_widget(
     };
     if ctx.widget_state.request_compose {
         widget.item.compose(&mut ctx);
-    }
-
-    // TODO - Add unit tests for this.
-    if transformed && state.item.accepts_text_input && global_state.is_focused(state.item.id) {
-        let ime_area = state.item.get_ime_area();
-        global_state.emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
     }
 
     // We need to update the accessibility node's coordinates and repaint it at the new position.

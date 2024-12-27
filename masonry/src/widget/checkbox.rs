@@ -26,16 +26,16 @@ pub struct Checkbox {
 
 impl Checkbox {
     /// Create a new `Checkbox` with a text label.
-    pub fn new(checked: bool, text: impl Into<ArcStr>) -> Checkbox {
-        Checkbox {
+    pub fn new(checked: bool, text: impl Into<ArcStr>) -> Self {
+        Self {
             checked,
             label: WidgetPod::new(Label::new(text)),
         }
     }
 
     /// Create a new `Checkbox` with the given label.
-    pub fn from_label(checked: bool, label: Label) -> Checkbox {
-        Checkbox {
+    pub fn from_label(checked: bool, label: Label) -> Self {
+        Self {
             checked,
             label: WidgetPod::new(label),
         }
@@ -54,7 +54,7 @@ impl Checkbox {
     ///
     /// We enforce this to be an `ArcStr` to make the allocation explicit.
     pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: ArcStr) {
-        Label::set_text(&mut Checkbox::label_mut(this), new_text);
+        Label::set_text(&mut Self::label_mut(this), new_text);
     }
 
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {

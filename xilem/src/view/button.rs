@@ -1,18 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::ArcStr;
+use masonry::text::StyleProperty;
 pub use masonry::PointerButton;
 use masonry::{widget, Affine};
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::view::Label;
 use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
 use super::Transformable;
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(
-    label: impl Into<ArcStr>,
+    label: impl Into<Label>,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
 {
@@ -28,7 +29,7 @@ pub fn button<State, Action>(
 
 /// A button which calls `callback` when pressed.
 pub fn button_any_pointer<State, Action>(
-    label: impl Into<ArcStr>,
+    label: impl Into<Label>,
     callback: impl Fn(&mut State, PointerButton) -> Action + Send + 'static,
 ) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
 {
@@ -41,7 +42,7 @@ pub fn button_any_pointer<State, Action>(
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button<F> {
-    label: ArcStr,
+    label: Label,
     transform: Affine,
     callback: F,
 }
@@ -62,24 +63,39 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod_with_transform(widget::Button::new(self.label.clone()), self.transform)
+            ctx.new_pod_with_transform(
+                widget::Button::from_label(
+                    // TODO: Use `Label::build` here - currently impossible because `Pod` uses `WidgetPod` internally
+                    widget::Label::new(self.label.label.clone())
+                        .with_brush(self.label.text_brush.clone())
+                        .with_alignment(self.label.alignment)
+                        .with_style(StyleProperty::FontSize(self.label.text_size))
+                        .with_style(StyleProperty::FontWeight(self.label.weight))
+                        .with_style(StyleProperty::FontStack(self.label.font.clone())),
+                ),
+                self.transform,
+            )
         })
     }
 
     fn rebuild(
         &self,
         prev: &Self,
-        _: &mut Self::ViewState,
-        _ctx: &mut ViewCtx,
+        state: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
         if prev.transform != self.transform {
             element.set_transform(self.transform);
         }
 
-        if prev.label != self.label {
-            widget::Button::set_text(&mut element, self.label.clone());
-        }
+        <Label as View<State, Action, ViewCtx>>::rebuild(
+            &self.label,
+            &prev.label,
+            state,
+            ctx,
+            widget::Button::label_mut(&mut element),
+        );
     }
 
     fn teardown(&self, _: &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {

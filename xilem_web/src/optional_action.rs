@@ -33,7 +33,7 @@ impl<A: Action> OptionalAction<A> for A {
 
 impl<A: Action> sealed::Sealed for Option<A> {}
 impl<A: Action> OptionalAction<A> for Option<A> {
-    fn action(self) -> Option<A> {
+    fn action(self) -> Self {
         self
     }
 }

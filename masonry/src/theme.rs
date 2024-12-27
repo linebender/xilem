@@ -5,37 +5,36 @@
 
 #![allow(missing_docs)]
 
-use vello::peniko::Color;
-
-use crate::Insets;
+use crate::{Color, Insets};
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
 
-pub const WINDOW_BACKGROUND_COLOR: Color = Color::rgb8(0x29, 0x29, 0x29);
-pub const TEXT_COLOR: Color = Color::rgb8(0xf0, 0xf0, 0xea);
-pub const DISABLED_TEXT_COLOR: Color = Color::rgb8(0xa0, 0xa0, 0x9a);
-pub const PLACEHOLDER_COLOR: Color = Color::rgb8(0x80, 0x80, 0x80);
-pub const PRIMARY_LIGHT: Color = Color::rgb8(0x5c, 0xc4, 0xff);
-pub const PRIMARY_DARK: Color = Color::rgb8(0x00, 0x8d, 0xdd);
+pub const WINDOW_BACKGROUND_COLOR: Color = Color::from_rgba8(0x29, 0x29, 0x29, 0xff);
+pub const TEXT_COLOR: Color = Color::from_rgba8(0xf0, 0xf0, 0xea, 0xff);
+pub const DISABLED_TEXT_COLOR: Color = Color::from_rgba8(0xa0, 0xa0, 0x9a, 0xff);
+pub const PLACEHOLDER_COLOR: Color = Color::from_rgba8(0x80, 0x80, 0x80, 0xff);
+pub const PRIMARY_LIGHT: Color = Color::from_rgba8(0x5c, 0xc4, 0xff, 0xff);
+pub const PRIMARY_DARK: Color = Color::from_rgba8(0x00, 0x8d, 0xdd, 0xff);
 pub const PROGRESS_BAR_RADIUS: f64 = 4.;
-pub const BACKGROUND_LIGHT: Color = Color::rgb8(0x3a, 0x3a, 0x3a);
-pub const BACKGROUND_DARK: Color = Color::rgb8(0x31, 0x31, 0x31);
-pub const FOREGROUND_LIGHT: Color = Color::rgb8(0xf9, 0xf9, 0xf9);
-pub const FOREGROUND_DARK: Color = Color::rgb8(0xbf, 0xbf, 0xbf);
-pub const DISABLED_FOREGROUND_LIGHT: Color = Color::rgb8(0x89, 0x89, 0x89);
-pub const DISABLED_FOREGROUND_DARK: Color = Color::rgb8(0x6f, 0x6f, 0x6f);
+pub const BACKGROUND_LIGHT: Color = Color::from_rgba8(0x3a, 0x3a, 0x3a, 0xff);
+pub const BACKGROUND_DARK: Color = Color::from_rgba8(0x31, 0x31, 0x31, 0xff);
+pub const FOREGROUND_LIGHT: Color = Color::from_rgba8(0xf9, 0xf9, 0xf9, 0xff);
+pub const FOREGROUND_DARK: Color = Color::from_rgba8(0xbf, 0xbf, 0xbf, 0xff);
+pub const DISABLED_FOREGROUND_LIGHT: Color = Color::from_rgba8(0x89, 0x89, 0x89, 0xff);
+pub const DISABLED_FOREGROUND_DARK: Color = Color::from_rgba8(0x6f, 0x6f, 0x6f, 0xff);
 pub const BUTTON_DARK: Color = Color::BLACK;
-pub const BUTTON_LIGHT: Color = Color::rgb8(0x21, 0x21, 0x21);
-pub const DISABLED_BUTTON_DARK: Color = Color::rgb8(0x28, 0x28, 0x28);
-pub const DISABLED_BUTTON_LIGHT: Color = Color::rgb8(0x38, 0x38, 0x38);
+pub const BUTTON_LIGHT: Color = Color::from_rgba8(0x21, 0x21, 0x21, 0xff);
+pub const DISABLED_BUTTON_DARK: Color = Color::from_rgba8(0x28, 0x28, 0x28, 0xff);
+pub const DISABLED_BUTTON_LIGHT: Color = Color::from_rgba8(0x38, 0x38, 0x38, 0xff);
 pub const BUTTON_BORDER_RADIUS: f64 = 4.;
 pub const BUTTON_BORDER_WIDTH: f64 = 2.;
-pub const BORDER_DARK: Color = Color::rgb8(0x3a, 0x3a, 0x3a);
-pub const BORDER_LIGHT: Color = Color::rgb8(0xa1, 0xa1, 0xa1);
-pub const SELECTED_TEXT_BACKGROUND_COLOR: Color = Color::rgb8(0x43, 0x70, 0xA8);
-pub const SELECTED_TEXT_INACTIVE_BACKGROUND_COLOR: Color = Color::rgb8(0x74, 0x74, 0x74);
-pub const SELECTION_TEXT_COLOR: Color = Color::rgb8(0x00, 0x00, 0x00);
+pub const BORDER_DARK: Color = Color::from_rgba8(0x3a, 0x3a, 0x3a, 0xff);
+pub const BORDER_LIGHT: Color = Color::from_rgba8(0xa1, 0xa1, 0xa1, 0xff);
+pub const SELECTED_TEXT_BACKGROUND_COLOR: Color = Color::from_rgba8(0x43, 0x70, 0xA8, 0xff);
+pub const SELECTED_TEXT_INACTIVE_BACKGROUND_COLOR: Color =
+    Color::from_rgba8(0x74, 0x74, 0x74, 0xff);
+pub const SELECTION_TEXT_COLOR: Color = Color::from_rgba8(0x00, 0x00, 0x00, 0xff);
 pub const CURSOR_COLOR: Color = Color::WHITE;
 pub const TEXT_SIZE_NORMAL: f32 = 15.0;
 pub const TEXT_SIZE_LARGE: f32 = 24.0;
@@ -45,8 +44,8 @@ pub const BORDERED_WIDGET_HEIGHT: f64 = 24.0;
 pub const TEXTBOX_BORDER_RADIUS: f64 = 2.;
 pub const TEXTBOX_BORDER_WIDTH: f64 = 1.;
 pub const TEXTBOX_INSETS: Insets = Insets::new(4.0, 4.0, 4.0, 4.0);
-pub const SCROLLBAR_COLOR: Color = Color::rgb8(0xff, 0xff, 0xff);
-pub const SCROLLBAR_BORDER_COLOR: Color = Color::rgb8(0x77, 0x77, 0x77);
+pub const SCROLLBAR_COLOR: Color = Color::from_rgba8(0xff, 0xff, 0xff, 0xff);
+pub const SCROLLBAR_BORDER_COLOR: Color = Color::from_rgba8(0x77, 0x77, 0x77, 0xff);
 pub const SCROLLBAR_MAX_OPACITY: f64 = 0.7;
 pub const SCROLLBAR_FADE_DELAY: u64 = 1500;
 pub const SCROLLBAR_WIDTH: f64 = 8.;
@@ -59,24 +58,24 @@ pub const WIDGET_PADDING_HORIZONTAL: f64 = 8.0;
 pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
 
 static DEBUG_COLOR: &[Color] = &[
-    Color::rgb8(230, 25, 75),
-    Color::rgb8(60, 180, 75),
-    Color::rgb8(255, 225, 25),
-    Color::rgb8(0, 130, 200),
-    Color::rgb8(245, 130, 48),
-    Color::rgb8(70, 240, 240),
-    Color::rgb8(240, 50, 230),
-    Color::rgb8(250, 190, 190),
-    Color::rgb8(0, 128, 128),
-    Color::rgb8(230, 190, 255),
-    Color::rgb8(170, 110, 40),
-    Color::rgb8(255, 250, 200),
-    Color::rgb8(128, 0, 0),
-    Color::rgb8(170, 255, 195),
-    Color::rgb8(0, 0, 128),
-    Color::rgb8(128, 128, 128),
-    Color::rgb8(255, 255, 255),
-    Color::rgb8(0, 0, 0),
+    Color::from_rgba8(230, 25, 75, 255),
+    Color::from_rgba8(60, 180, 75, 255),
+    Color::from_rgba8(255, 225, 25, 255),
+    Color::from_rgba8(0, 130, 200, 255),
+    Color::from_rgba8(245, 130, 48, 255),
+    Color::from_rgba8(70, 240, 240, 255),
+    Color::from_rgba8(240, 50, 230, 255),
+    Color::from_rgba8(250, 190, 190, 255),
+    Color::from_rgba8(0, 128, 128, 255),
+    Color::from_rgba8(230, 190, 255, 255),
+    Color::from_rgba8(170, 110, 40, 255),
+    Color::from_rgba8(255, 250, 200, 255),
+    Color::from_rgba8(128, 0, 0, 255),
+    Color::from_rgba8(170, 255, 195, 255),
+    Color::from_rgba8(0, 0, 128, 255),
+    Color::from_rgba8(128, 128, 128, 255),
+    Color::from_rgba8(255, 255, 255, 255),
+    Color::from_rgba8(0, 0, 0, 255),
 ];
 
 /// A color used for debug painting.

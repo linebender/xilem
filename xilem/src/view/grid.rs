@@ -141,14 +141,14 @@ impl ViewElement for GridElement {
 }
 
 // Used to allow the item to be used as a generic item in ViewSequence.
-impl SuperElement<GridElement, ViewCtx> for GridElement {
-    fn upcast(_ctx: &mut ViewCtx, child: GridElement) -> Self {
+impl SuperElement<Self, ViewCtx> for GridElement {
+    fn upcast(_ctx: &mut ViewCtx, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         mut this: Mut<Self>,
-        f: impl FnOnce(Mut<GridElement>) -> R,
+        f: impl FnOnce(Mut<Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -169,7 +169,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for GridElement {
         // There is not much else, beyond purposefully failing, that can be done here,
         // because there isn't enough information to determine an appropriate spot
         // for the widget.
-        GridElement::Child(ctx.boxed_pod(child), GridParams::new(1, 1, 1, 1))
+        Self::Child(ctx.boxed_pod(child), GridParams::new(1, 1, 1, 1))
     }
 
     fn with_downcast_val<R>(

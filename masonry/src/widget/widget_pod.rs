@@ -40,22 +40,22 @@ impl<W: Widget> WidgetPod<W> {
     /// In a widget hierarchy, each widget is wrapped in a `WidgetPod`
     /// so it can participate in layout and event flow. The process of
     /// adding a child widget to a container should call this method.
-    pub fn new(inner: W) -> WidgetPod<W> {
+    pub fn new(inner: W) -> Self {
         Self::new_with_id(inner, WidgetId::next())
     }
 
     /// Create a new widget pod with fixed id.
-    pub fn new_with_id(inner: W, id: WidgetId) -> WidgetPod<W> {
+    pub fn new_with_id(inner: W, id: WidgetId) -> Self {
         Self::new_with_id_and_transform(inner, id, Affine::IDENTITY)
     }
 
     /// Create a new widget pod with a custom transform.
-    pub fn new_with_transform(inner: W, transform: Affine) -> WidgetPod<W> {
+    pub fn new_with_transform(inner: W, transform: Affine) -> Self {
         Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
     }
 
-    pub fn new_with_id_and_transform(inner: W, id: WidgetId, transform: Affine) -> WidgetPod<W> {
-        WidgetPod {
+    pub fn new_with_id_and_transform(inner: W, id: WidgetId, transform: Affine) -> Self {
+        Self {
             id,
             inner: WidgetPodInner::Create(CreateWidget {
                 widget: inner,

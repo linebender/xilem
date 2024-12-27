@@ -1,13 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::parley::FontStack;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::text::{ArcStr, StyleProperty};
 use masonry::{widget, Affine};
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, TextWeight, View, ViewCtx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 use super::Transformable;
 
@@ -17,7 +17,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
-        weight: TextWeight::NORMAL,
+        weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         transform: Affine::IDENTITY,
     }
@@ -25,13 +25,12 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Label {
-    label: ArcStr,
-
-    // Public for variable_label as a semi-interims state.
+    // Public for button and variable_label as a semi-interim state.
+    pub(in crate::view) label: ArcStr,
     pub(in crate::view) text_brush: Brush,
     pub(in crate::view) alignment: TextAlignment,
     pub(in crate::view) text_size: f32,
-    pub(in crate::view) weight: TextWeight,
+    pub(in crate::view) weight: FontWeight,
     pub(in crate::view) font: FontStack<'static>, // TODO: add more attributes of `masonry::widget::Label`
     pub(in crate::view) transform: Affine,
 }
@@ -54,7 +53,7 @@ impl Label {
         self
     }
 
-    pub fn weight(mut self, weight: TextWeight) -> Self {
+    pub fn weight(mut self, weight: FontWeight) -> Self {
         self.weight = weight;
         self
     }
@@ -72,6 +71,15 @@ impl Label {
 impl Transformable for Label {
     fn transform_mut(&mut self) -> &mut Affine {
         &mut self.transform
+    }
+}
+
+impl<T> From<T> for Label
+where
+    T: Into<ArcStr>,
+{
+    fn from(text: T) -> Self {
+        label(text)
     }
 }
 

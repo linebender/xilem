@@ -4,7 +4,6 @@
 //! An example demonstrating the use of Async web requests in Xilem to access the <https://http.cat/> API.
 //! This also demonstrates image loading.
 
-#![expect(clippy::use_self, reason = "Deferred: Noisy")]
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
@@ -21,7 +20,7 @@ use xilem::view::{
     button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
     FlexSpacer, Padding, Transformable,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
+use xilem::{palette, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
 /// The main state of the application.
 struct HttpCats {
@@ -47,7 +46,7 @@ enum ImageState {
 }
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<HttpCats> {
+    fn view(&mut self) -> impl WidgetView<Self> {
         let left_column = sized_box(
             portal(flex((
                 prose("Status"),
@@ -87,7 +86,7 @@ impl HttpCats {
                             "Status code {selected_code} selected, but this was not found."
                         ))
                         .alignment(TextAlignment::Middle)
-                        .brush(Color::YELLOW),
+                        .brush(palette::css::YELLOW),
                     ),
                     None,
                 )
@@ -140,7 +139,7 @@ impl HttpCats {
                         }
                     }
                 },
-                |state: &mut HttpCats, (code, image): (u32, Image)| {
+                |state: &mut Self, (code, image): (u32, Image)| {
                     if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
                         status.image = ImageState::Available(image);
                     } else {
@@ -162,7 +161,7 @@ async fn image_from_url(url: &str) -> anyhow::Result<Image> {
     let data = image.into_vec();
     Ok(Image::new(
         Blob::new(Arc::new(data)),
-        vello::peniko::Format::Rgba8,
+        vello::peniko::ImageFormat::Rgba8,
         width,
         height,
     ))
@@ -236,7 +235,7 @@ impl Status {
         let mut lines = STATUS_CODES_CSV.lines();
         let first_line = lines.next();
         assert_eq!(first_line, Some("code,message"));
-        lines.flat_map(Status::parse_single).collect()
+        lines.flat_map(Self::parse_single).collect()
     }
 
     fn parse_single(line: &'static str) -> Option<Self> {

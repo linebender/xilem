@@ -24,13 +24,13 @@ pub enum AttributeModifier {
 impl AttributeModifier {
     /// Returns the attribute name of this modifier.
     pub fn name(&self) -> &CowStr {
-        let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 
     /// Convert this modifier into its attribute name.
     pub fn into_name(self) -> CowStr {
-        let (AttributeModifier::Set(name, _) | AttributeModifier::Remove(name)) = self;
+        let (Self::Set(name, _) | Self::Remove(name)) = self;
         name
     }
 }
@@ -38,8 +38,8 @@ impl AttributeModifier {
 impl<K: Into<CowStr>, V: IntoAttributeValue> From<(K, V)> for AttributeModifier {
     fn from((name, value): (K, V)) -> Self {
         match value.into_attr_value() {
-            Some(value) => AttributeModifier::Set(name.into(), value),
-            None => AttributeModifier::Remove(name.into()),
+            Some(value) => Self::Set(name.into(), value),
+            None => Self::Remove(name.into()),
         }
     }
 }
@@ -198,11 +198,11 @@ impl Attributes {
         next: &AttributeModifier,
     ) {
         if this.flags.was_created() {
-            Attributes::push(this, next.clone());
+            Self::push(this, next.clone());
         } else if next != prev {
-            Attributes::mutate(this, |modifier| *modifier = next.clone());
+            Self::mutate(this, |modifier| *modifier = next.clone());
         } else {
-            Attributes::skip(this, 1);
+            Self::skip(this, 1);
         }
     }
 
@@ -214,11 +214,11 @@ impl Attributes {
         next: &Value,
     ) {
         if this.flags.was_created() {
-            Attributes::push(this, (key, next.clone()));
+            Self::push(this, (key, next.clone()));
         } else if next != prev {
-            Attributes::mutate(this, |modifier| *modifier = (key, next.clone()).into());
+            Self::mutate(this, |modifier| *modifier = (key, next.clone()).into());
         } else {
-            Attributes::skip(this, 1);
+            Self::skip(this, 1);
         }
     }
 }

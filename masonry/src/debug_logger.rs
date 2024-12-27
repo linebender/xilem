@@ -38,7 +38,7 @@ pub struct DebugLogger {
 
 impl DebugLogger {
     pub fn new(activated: bool) -> Self {
-        let mut new_self = DebugLogger {
+        let mut new_self = Self {
             activated,
             layout_tree: Default::default(),
             widget_states: Default::default(),

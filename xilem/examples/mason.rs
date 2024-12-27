@@ -15,7 +15,9 @@ use xilem::view::{
     button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis, FlexExt as _,
     FlexSpacer, Transformable,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, TextAlignment, TextWeight, WidgetView, Xilem};
+use xilem::{
+    palette, Color, EventLoop, EventLoopBuilder, FontWeight, TextAlignment, WidgetView, Xilem,
+};
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
 Phasellus in viverra dolor, vitae facilisis est. Maecenas malesuada massa vel ultricies feugiat. Vivamus venenatis et nibh nec pharetra. Phasellus vestibulum elit enim, nec scelerisque orci faucibus id. Vivamus consequat purus sit amet orci egestas, non iaculis massa porttitor. Vestibulum ut eros leo. In fermentum convallis magna in finibus. Donec justo leo, maximus ac laoreet id, volutpat ut elit. Mauris sed leo non neque laoreet faucibus. Aliquam orci arcu, faucibus in molestie eget, ornare non dui. Donec volutpat nulla in fringilla elementum. Aliquam vitae ante egestas ligula tempus vestibulum sit amet sed ante. ";
@@ -64,8 +66,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     fork(
         flex((
             flex((
-                label("Label").brush(Color::REBECCA_PURPLE),
-                label("Bold Label").weight(TextWeight::BOLD),
+                label("Label").brush(palette::css::REBECCA_PURPLE),
+                label("Bold Label").weight(FontWeight::BOLD),
                 // TODO masonry doesn't allow setting disabled manually anymore?
                 // label("Disabled label").disabled(),
             ))
@@ -173,7 +175,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
 
     Xilem::new(data, app_logic)
-        .background_color(Color::rgb8(0x20, 0x20, 0x20))
+        .background_color(Color::from_rgba8(0x20, 0x20, 0x20, 0xff))
         .run_windowed(event_loop, "First Example".into())
 }
 

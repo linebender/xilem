@@ -45,7 +45,7 @@ impl Split {
     /// Horizontal split axis means that the children are left and right.
     /// Vertical split axis means that the children are up and down.
     fn new(split_axis: Axis, child1: impl Widget + 'static, child2: impl Widget + 'static) -> Self {
-        Split {
+        Self {
             split_axis,
             split_point_chosen: 0.5,
             split_point_effective: 0.5,
