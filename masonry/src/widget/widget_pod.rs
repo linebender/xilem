@@ -24,13 +24,13 @@ pub struct WidgetPod<W> {
 // through context methods where they already have access to the arena.
 // Implementing that requires solving non-trivial design questions.
 
-pub(crate) struct CreatedWidget<W> {
+pub(crate) struct CreateWidget<W> {
     pub(crate) widget: W,
     pub(crate) transform: Affine,
 }
 
 enum WidgetPodInner<W> {
-    Created(CreatedWidget<W>),
+    Create(CreateWidget<W>),
     Inserted,
 }
 
@@ -57,7 +57,7 @@ impl<W: Widget> WidgetPod<W> {
     pub fn new_with_id_and_transform(inner: W, id: WidgetId, transform: Affine) -> WidgetPod<W> {
         WidgetPod {
             id,
-            inner: WidgetPodInner::Created(CreatedWidget {
+            inner: WidgetPodInner::Create(CreateWidget {
                 widget: inner,
                 transform,
             }),
@@ -65,12 +65,12 @@ impl<W: Widget> WidgetPod<W> {
     }
 
     pub(crate) fn incomplete(&self) -> bool {
-        matches!(self.inner, WidgetPodInner::Created(_))
+        matches!(self.inner, WidgetPodInner::Create(_))
     }
 
-    pub(crate) fn take_inner(&mut self) -> Option<CreatedWidget<W>> {
+    pub(crate) fn take_inner(&mut self) -> Option<CreateWidget<W>> {
         match std::mem::replace(&mut self.inner, WidgetPodInner::Inserted) {
-            WidgetPodInner::Created(widget) => Some(widget),
+            WidgetPodInner::Create(widget) => Some(widget),
             WidgetPodInner::Inserted => None,
         }
     }
@@ -87,15 +87,9 @@ impl<W: Widget + 'static> WidgetPod<W> {
     /// Convert a `WidgetPod` containing a widget of a specific concrete type
     /// into a dynamically boxed widget.
     pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
-        match self.inner {
-            WidgetPodInner::Created(inner) => WidgetPod::new_with_id_and_transform(
-                Box::new(inner.widget),
-                self.id,
-                inner.transform,
-            ),
-            WidgetPodInner::Inserted => {
-                panic!("Cannot box a widget after it has been inserted into the widget graph")
-            }
-        }
+        let WidgetPodInner::Create(inner) = self.inner else {
+            panic!("Cannot box a widget after it has been inserted into the widget graph")
+        };
+        WidgetPod::new_with_id_and_transform(Box::new(inner.widget), self.id, inner.transform)
     }
 }

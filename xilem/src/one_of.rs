@@ -13,7 +13,8 @@ use vello::Scene;
 
 use crate::core::one_of::OneOf;
 use crate::core::Mut;
-use crate::{Pod, ViewCtx};
+use crate::view::Transformable;
+use crate::{Affine, Pod, ViewCtx};
 
 impl<
         A: Widget,
@@ -139,6 +140,33 @@ impl<
             OneOfWidget::I(w) => elem_mut.ctx.remove_child(w),
         }
         elem_mut.ctx.children_changed();
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I> Transformable for OneOf<A, B, C, D, E, F, G, H, I>
+where
+    A: Transformable,
+    B: Transformable,
+    C: Transformable,
+    D: Transformable,
+    E: Transformable,
+    F: Transformable,
+    G: Transformable,
+    H: Transformable,
+    I: Transformable,
+{
+    fn transform_mut(&mut self) -> &mut Affine {
+        match self {
+            OneOf::A(w) => w.transform_mut(),
+            OneOf::B(w) => w.transform_mut(),
+            OneOf::C(w) => w.transform_mut(),
+            OneOf::D(w) => w.transform_mut(),
+            OneOf::E(w) => w.transform_mut(),
+            OneOf::F(w) => w.transform_mut(),
+            OneOf::G(w) => w.transform_mut(),
+            OneOf::H(w) => w.transform_mut(),
+            OneOf::I(w) => w.transform_mut(),
+        }
     }
 }
 

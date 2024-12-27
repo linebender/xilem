@@ -84,7 +84,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
         ctx.record_action(id);
-        let widget_pod = ctx.new_pod(textbox);
+        let widget_pod = ctx.new_pod_with_transform(textbox, self.transform);
         (widget_pod, ())
     }
 

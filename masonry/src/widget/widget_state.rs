@@ -153,7 +153,7 @@ pub(crate) struct WidgetState {
 }
 
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, widget_name: &'static str) -> WidgetState {
+    pub(crate) fn new(id: WidgetId, widget_name: &'static str, transform: Affine) -> WidgetState {
         WidgetState {
             id,
             origin: Point::ORIGIN,
@@ -195,7 +195,7 @@ impl WidgetState {
             widget_name,
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
-            transform: Affine::IDENTITY,
+            transform,
         }
     }
 
@@ -219,7 +219,7 @@ impl WidgetState {
             needs_update_stashed: false,
             children_changed: false,
             update_focus_chain: false,
-            ..WidgetState::new(id, "<root>")
+            ..WidgetState::new(id, "<root>", Affine::IDENTITY)
         }
     }
 

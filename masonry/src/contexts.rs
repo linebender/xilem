@@ -18,7 +18,7 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
-use crate::widget::{CreatedWidget, WidgetMut, WidgetRef, WidgetState};
+use crate::widget::{CreateWidget, WidgetMut, WidgetRef, WidgetState};
 use crate::{
     Affine, AllowRawMut, BoxConstraints, Insets, Point, Rect, Size, Vec2, Widget, WidgetId,
     WidgetPod,
@@ -865,7 +865,7 @@ impl RegisterCtx<'_> {
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
-        let Some(CreatedWidget { widget, transform }) = child.take_inner() else {
+        let Some(CreateWidget { widget, transform }) = child.take_inner() else {
             return;
         };
 
@@ -875,8 +875,7 @@ impl RegisterCtx<'_> {
         }
 
         let id = child.id();
-        let mut state = WidgetState::new(child.id(), widget.short_type_name());
-        state.transform = transform;
+        let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
 
         self.widget_children.insert_child(id, Box::new(widget));
         self.widget_state_children.insert_child(id, state);

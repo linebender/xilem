@@ -56,7 +56,7 @@ pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
 
 pub(crate) use widget_arena::WidgetArena;
-pub(crate) use widget_pod::CreatedWidget;
+pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
 
 use crate::{Affine, Size};
