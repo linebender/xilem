@@ -311,7 +311,7 @@ pub(crate) fn get_child_at_pos<'c>(
     let relative_pos = pos - ctx.window_origin().to_vec2();
     if !ctx
         .clip_path()
-        .map_or(true, |clip| clip.contains(relative_pos))
+        .is_none_or(|clip| clip.contains(relative_pos))
     {
         return None;
     }
