@@ -1,11 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget, Affine};
+use masonry::widget;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::{Affine, Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 use super::Transformable;
 

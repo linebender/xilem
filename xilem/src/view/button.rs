@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::text::StyleProperty;
+use masonry::widget;
 pub use masonry::PointerButton;
-use masonry::{widget, Affine};
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::view::Label;
-use crate::{MessageResult, Pod, ViewCtx, ViewId};
+use crate::{Affine, MessageResult, Pod, ViewCtx, ViewId};
 
 use super::Transformable;
 

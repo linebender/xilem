@@ -85,7 +85,7 @@ impl VariableLabel {
 }
 
 impl Transformable for VariableLabel {
-    fn transform_mut(&mut self) -> &mut masonry::Affine {
+    fn transform_mut(&mut self) -> &mut crate::Affine {
         &mut self.label.transform
     }
 }

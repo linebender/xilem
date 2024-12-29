@@ -3,10 +3,10 @@
 
 use std::marker::PhantomData;
 
-use masonry::{widget, Affine};
+use masonry::widget;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
+use crate::{Affine, MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
 
 use super::Transformable;
 

@@ -3,11 +3,11 @@
 
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::text::{ArcStr, StyleProperty};
-use masonry::{widget, Affine};
+use masonry::widget;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::{Affine, Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 use super::Transformable;
 

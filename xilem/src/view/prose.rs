@@ -3,11 +3,10 @@
 
 use masonry::text::{ArcStr, StyleProperty};
 use masonry::widget::{self, LineBreaking};
-use masonry::Affine;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::{Affine, Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
 use super::Transformable;
 
@@ -89,9 +88,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
             .with_alignment(self.alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.new_pod_with_transform(
             widget::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
+            self.transform,
         );
         (widget_pod, ())
     }

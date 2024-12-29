@@ -3,13 +3,13 @@
 
 use std::marker::PhantomData;
 
+use masonry::widget;
 pub use masonry::widget::Padding;
-use masonry::{widget, Affine};
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::{Affine, Pod, ViewCtx, WidgetView};
 
 use super::Transformable;
 

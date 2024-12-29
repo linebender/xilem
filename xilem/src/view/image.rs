@@ -4,10 +4,9 @@
 //! The bitmap image widget.
 
 use masonry::widget::{self, ObjectFit};
-use masonry::Affine;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::{Affine, MessageResult, Pod, View, ViewCtx, ViewId};
 
 use super::Transformable;
 

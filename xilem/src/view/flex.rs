@@ -5,13 +5,13 @@ use std::marker::PhantomData;
 
 use masonry::widget::{self, WidgetMut};
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
-use masonry::{Affine, Widget};
+use masonry::Widget;
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
-use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
+use crate::{Affine, AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,

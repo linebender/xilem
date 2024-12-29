@@ -4,13 +4,13 @@
 use std::marker::PhantomData;
 
 use masonry::widget::{self, GridParams, WidgetMut};
-use masonry::{Affine, Widget};
+use masonry::Widget;
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewSequence,
 };
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::{Affine, Pod, ViewCtx, WidgetView};
 
 use super::Transformable;
 

@@ -44,7 +44,7 @@ use std::sync::Arc;
 
 use masonry::dpi::LogicalSize;
 use masonry::widget::{RootWidget, WidgetMut};
-use masonry::{event_loop_runner, Affine, Widget, WidgetId, WidgetPod};
+use masonry::{event_loop_runner, Widget, WidgetId, WidgetPod};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
 
@@ -53,7 +53,7 @@ use crate::core::{
     ViewPathTracker, ViewSequence,
 };
 pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-pub use masonry::{dpi, palette, Color, FontWeight, TextAlignment};
+pub use masonry::{dpi, palette, Affine, Color, FontWeight, TextAlignment, Vec2};
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.
