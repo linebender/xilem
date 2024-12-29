@@ -847,6 +847,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 self.editor
                     .driver(fctx, lctx)
                     .select_from_accesskit(selection);
+                let new_generation = self.editor.generation();
+                if new_generation != self.rendered_generation {
+                    ctx.request_render();
+                    ctx.set_ime_area(self.ime_area());
+                    self.rendered_generation = new_generation;
+                }
             }
         }
     }
