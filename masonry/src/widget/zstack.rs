@@ -367,7 +367,6 @@ impl Widget for ZStack {
 #[cfg(test)]
 mod tests {
     use vello::peniko::color::palette;
-    use vello::peniko::Color;
 
     use super::*;
     use crate::assert_render_snapshot;
