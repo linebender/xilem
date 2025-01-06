@@ -457,11 +457,6 @@ impl SizedBox {
             Size::new(max_width, max_height),
         )
     }
-
-    #[allow(dead_code)]
-    pub(crate) fn width_and_height(&self) -> (Option<f64>, Option<f64>) {
-        (self.width, self.height)
-    }
 }
 
 // --- MARK: IMPL WIDGET ---
