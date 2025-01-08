@@ -9,6 +9,7 @@
 
 use std::sync::Arc;
 
+use masonry::widget::{Alignment, LineBreaking};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -16,8 +17,8 @@ use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
-    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, Axis, FlexExt,
-    FlexSpacer, Padding,
+    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, zstack, Axis,
+    FlexExt, FlexSpacer, Padding, ZStackExt,
 };
 use xilem::{palette, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
 
@@ -196,12 +197,21 @@ impl Status {
                 .text_size(20.)
                 .alignment(TextAlignment::Middle),
             FlexSpacer::Fixed(10.),
-            image,
-            // TODO: Overlay on top of the image?
-            // HACK: Trailing padding workaround scrollbar covering content
-            // HACK: Bottom padding to workaround https://github.com/linebender/parley/issues/165
-            sized_box(prose("Copyright ©️ https://http.cat").alignment(TextAlignment::End))
-                .padding(Padding::new(0., 15., 10., 0.)),
+            zstack((
+                image,
+                sized_box(
+                    sized_box(
+                        prose("Copyright ©️ https://http.cat")
+                            .line_break_mode(LineBreaking::Clip)
+                            .alignment(TextAlignment::End),
+                    )
+                    .padding(4.)
+                    .rounded(4.)
+                    .background(palette::css::BLACK.multiply_alpha(0.5)),
+                )
+                .padding((30., 42., 0., 0.))
+                .alignment(Alignment::TopTrailing),
+            )),
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }
