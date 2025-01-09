@@ -4,12 +4,14 @@
 //! Events.
 
 use std::path::PathBuf;
+use std::time::Instant;
 
 use winit::event::{Force, Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
 
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::Rect;
+use crate::timers::TimerId;
 
 // TODO - Occluded(bool) event
 // TODO - winit ActivationTokenDone thing
@@ -211,6 +213,12 @@ pub enum TextEvent {
 pub struct AccessEvent {
     pub action: accesskit::Action,
     pub data: Option<accesskit::ActionData>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TimerEvent {
+    pub id: TimerId,
+    pub deadline: Instant,
 }
 
 #[derive(Debug, Clone)]

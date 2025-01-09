@@ -6,8 +6,10 @@ use tracing::{debug, info_span, trace};
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
 
+use crate::event::TimerEvent;
 use crate::passes::{enter_span, merge_state_up};
 use crate::render_root::RenderRoot;
+use crate::timers::Timer;
 use crate::{AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId};
 
 // --- MARK: HELPERS ---
@@ -132,6 +134,26 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         );
     }
 
+    handled
+}
+
+pub(crate) fn run_on_elapsed_timer_pass(root: &mut RenderRoot, timer: &Timer) -> Handled {
+    let event = TimerEvent {
+        deadline: timer.deadline,
+        id: timer.id,
+    };
+    let handled = run_event_pass(
+        root,
+        Some(timer.widget_id),
+        &event,
+        false,
+        |widget, ctx, event| {
+            widget.on_timer_expired(ctx, event);
+            // don't traverse for this event
+            ctx.set_handled();
+        },
+        true,
+    );
     handled
 }
 

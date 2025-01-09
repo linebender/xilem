@@ -24,7 +24,8 @@ use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
 use crate::passes::compose::run_compose_pass;
 use crate::passes::event::{
-    run_on_access_event_pass, run_on_pointer_event_pass, run_on_text_event_pass,
+    run_on_access_event_pass, run_on_elapsed_timer_pass, run_on_pointer_event_pass,
+    run_on_text_event_pass,
 };
 use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
@@ -36,6 +37,7 @@ use crate::passes::update::{
 };
 use crate::passes::{recurse_on_children, PassTracing};
 use crate::text::BrushIndex;
+use crate::timers::Timer;
 use crate::widget::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
 use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
 
@@ -123,6 +125,7 @@ pub struct RenderRootOptions {
 
 pub enum RenderRootSignal {
     Action(Action, WidgetId),
+    TimerRequested(Timer),
     StartIme,
     EndIme,
     ImeMoved(LogicalPosition<f64>, LogicalSize<f64>),
@@ -259,6 +262,14 @@ impl RenderRoot {
     }
 
     // --- MARK: PUB FUNCTIONS ---
+    pub fn handle_elapsed_timer(&mut self, timer: Timer) -> Handled {
+        let _span = info_span!("elapsed_timer");
+        let handled = run_on_elapsed_timer_pass(self, &timer);
+        self.run_rewrite_passes();
+
+        handled
+    }
+
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let _span = info_span!("pointer_event");
         let handled = run_on_pointer_event_pass(self, &event);

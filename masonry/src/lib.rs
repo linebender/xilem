@@ -160,6 +160,7 @@ mod event;
 mod paint_scene_helpers;
 mod passes;
 mod render_root;
+mod timers;
 mod tracing_backend;
 
 pub mod event_loop_runner;

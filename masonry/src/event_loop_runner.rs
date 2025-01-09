@@ -3,6 +3,7 @@
 
 use std::num::NonZeroUsize;
 use std::sync::Arc;
+use std::time::Instant;
 
 use accesskit_winit::Adapter;
 use tracing::{debug, info_span, warn};
@@ -16,13 +17,14 @@ use winit::event::{
     DeviceEvent as WinitDeviceEvent, DeviceId, MouseButton as WinitMouseButton,
     WindowEvent as WinitWindowEvent,
 };
-use winit::event_loop::ActiveEventLoop;
+use winit::event_loop::{ActiveEventLoop, ControlFlow};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app_driver::{AppDriver, DriverCtx};
 use crate::dpi::LogicalPosition;
 use crate::event::{PointerButton, PointerState, WindowEvent};
 use crate::render_root::{self, RenderRoot, WindowSizePolicy};
+use crate::timers::TimerQueue;
 use crate::{Color, PointerEvent, TextEvent, Widget, WidgetId};
 
 #[derive(Debug)]
@@ -80,6 +82,7 @@ pub struct MasonryState<'a> {
     proxy: EventLoopProxy,
     #[cfg(feature = "tracy")]
     frame: Option<tracing_tracy::client::Frame>,
+    timers: TimerQueue,
 
     // Per-Window state
     // In future, this will support multiple windows
@@ -158,6 +161,14 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
         self.masonry_state.handle_suspended(event_loop);
     }
 
+    fn new_events(
+        &mut self,
+        event_loop: &winit::event_loop::ActiveEventLoop,
+        cause: winit::event::StartCause,
+    ) {
+        self.masonry_state.handle_new_events(event_loop, cause);
+    }
+
     fn window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -199,14 +210,6 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
         self.masonry_state.handle_about_to_wait(event_loop);
     }
 
-    fn new_events(
-        &mut self,
-        event_loop: &winit::event_loop::ActiveEventLoop,
-        cause: winit::event::StartCause,
-    ) {
-        self.masonry_state.handle_new_events(event_loop, cause);
-    }
-
     fn exiting(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
         self.masonry_state.handle_exiting(event_loop);
     }
@@ -243,6 +246,7 @@ impl MasonryState<'_> {
             frame: None,
             pointer_state: PointerState::empty(),
             proxy: event_loop.create_proxy(),
+            timers: TimerQueue::new(),
 
             window: WindowState::Uninitialized(window),
             background_color,
@@ -657,10 +661,35 @@ impl MasonryState<'_> {
         self.handle_signals(event_loop, app_driver);
     }
 
-    // --- MARK: EMPTY WINIT HANDLERS ---
-    pub fn handle_about_to_wait(&mut self, _: &ActiveEventLoop) {}
+    // --- MARK: TIMERS ---
+    pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {
+        // check if timers have elapsed and set event loop to wake at next timer deadline
+        let now = Instant::now();
+        loop {
+            let Some(next_timer) = self.timers.peek() else {
+                break;
+            };
+            if next_timer.deadline > now {
+                break;
+            }
+            // timer has elapsed - remove from heap and handle
+            let Some(elapsed_timer) = self.timers.pop() else {
+                debug_panic!("should be unreachable: peek was Some");
+                break;
+            };
+            self.render_root.handle_elapsed_timer(elapsed_timer);
+        }
+    }
 
-    pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {}
+    pub fn handle_about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
+        if let Some(next_timer) = self.timers.peek() {
+            event_loop.set_control_flow(ControlFlow::WaitUntil(next_timer.deadline));
+        } else {
+            event_loop.set_control_flow(ControlFlow::Wait);
+        }
+    }
+
+    // --- MARK: EMPTY WINIT HANDLERS ---
 
     pub fn handle_exiting(&mut self, _: &ActiveEventLoop) {}
 
@@ -684,6 +713,9 @@ impl MasonryState<'_> {
                         };
                         app_driver.on_action(&mut driver_ctx, widget_id, action);
                     });
+                }
+                render_root::RenderRootSignal::TimerRequested(timer) => {
+                    self.timers.push(timer);
                 }
                 render_root::RenderRootSignal::StartIme => {
                     window.set_ime_allowed(true);

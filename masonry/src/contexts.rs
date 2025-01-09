@@ -3,7 +3,7 @@
 
 //! The context types that are passed into various widget methods.
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use accesskit::TreeUpdate;
 use dpi::LogicalPosition;
@@ -18,6 +18,8 @@ use crate::passes::layout::run_layout_on;
 use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
+use crate::timers::Timer;
+pub use crate::timers::TimerId;
 use crate::widget::{WidgetMut, WidgetRef, WidgetState};
 use crate::{
     AllowRawMut, BoxConstraints, Color, Insets, Point, Rect, Size, Widget, WidgetId, WidgetPod,
@@ -714,8 +716,13 @@ impl_context_method!(
         ///
         /// The return value is a token, which can be used to associate the
         /// request with the event.
-        pub fn request_timer(&mut self, _deadline: Duration) -> TimerToken {
-            todo!("request_timer");
+        pub fn request_timer(&mut self, deadline: Duration) -> TimerId {
+            let deadline = Instant::now() + deadline;
+            let timer = Timer::new(self.widget_id(), deadline);
+            let id = timer.id;
+            self.global_state
+                .emit_signal(RenderRootSignal::TimerRequested(timer));
+            id
         }
 
         /// Mark child widget as stashed.
@@ -737,9 +744,6 @@ impl_context_method!(
         }
     }
 );
-
-// FIXME - Remove
-pub struct TimerToken;
 
 impl EventCtx<'_> {
     // TODO - clearly document all semantics of pointer capture when they've been decided on

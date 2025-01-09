@@ -15,7 +15,7 @@ use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::contexts::ComposeCtx;
-use crate::event::{AccessEvent, PointerEvent, TextEvent};
+use crate::event::{AccessEvent, PointerEvent, TextEvent, TimerEvent};
 use crate::widget::WidgetRef;
 use crate::{
     AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx,
@@ -85,6 +85,12 @@ pub trait Widget: AsAny {
 
     /// Handle an event from the platform's accessibility API.
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {}
+
+    /// Called when a timer set by this widget expires
+    ///
+    /// When you create a timer, you can stash the ID returned and compare it against
+    /// `event.id`.
+    fn on_timer_expired(&mut self, ctx: &mut EventCtx, event: &TimerEvent) {}
 
     /// Called at the beginning of a new animation frame.
     ///

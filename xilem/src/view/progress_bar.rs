@@ -20,7 +20,9 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::ProgressBar::new(self.progress)))
+        ctx.with_leaf_action_widget(|ctx| {
+            ctx.new_pod(widget::ProgressBar::new(self.progress).animate(true))
+        })
     }
 
     fn rebuild(
