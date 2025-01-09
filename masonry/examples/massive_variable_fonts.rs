@@ -95,7 +95,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         flex = flex.with_child(label);
     }
 
-    let window_attributes = Window::default_attributes().with_title("Simple image example");
+    let window_attributes = Window::default_attributes().with_title("Variable Fonts Stress Test");
 
     masonry::event_loop_runner::run(event_loop, window_attributes, RootWidget::new(flex), Driver)
 }
@@ -113,7 +113,8 @@ impl LoopingWeight {
                     .with_style(StyleProperty::FontWeight(FontWeight::new(200.)))
                     .with_style(StyleProperty::FontStack(parley::style::FontStack::Source(
                         "Hahmlet".into(),
-                    ))),
+                    )))
+                    .with_hint(false),
             ),
             frame_index: 0,
         }
