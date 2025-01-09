@@ -90,7 +90,7 @@ const HAHMLET_VARIABLE: &[u8] = include_bytes!(concat!(
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let mut flex = Flex::column();
-    for line in TEXT.iter().take(4) {
+    for line in TEXT.iter() {
         let label = LoopingWeight::new(*line);
         flex = flex.with_child(label);
     }

@@ -433,7 +433,7 @@ impl MasonryState<'_> {
                 .expect("failed to render to surface");
         }
         surface_texture.present();
-        device.poll(wgpu::Maintain::Wait);
+        device.poll(wgpu::Maintain::Poll);
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
     }
