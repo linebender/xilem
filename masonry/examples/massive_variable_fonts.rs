@@ -2,14 +2,15 @@
 
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
-use accesskit::{NodeBuilder, Role};
+use accesskit::{Node, Role};
 use masonry::{
     event_loop_runner::{EventLoop, EventLoopBuilder, MasonryState},
     text::ArcStr,
     widget::{Flex, Label, RootWidget},
-    AccessCtx, Action, AppDriver, BoxConstraints, DriverCtx, LayoutCtx, PaintCtx, Point,
-    RegisterCtx, Size, TextWeight, UpdateCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, Action, AppDriver, BoxConstraints, DriverCtx, FontWeight, LayoutCtx, PaintCtx,
+    Point, RegisterCtx, Size, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
+use parley::StyleProperty;
 use smallvec::SmallVec;
 use vello::Scene;
 use winit::{error::EventLoopError, window::Window};
@@ -109,8 +110,10 @@ impl LoopingWeight {
         Self {
             child: WidgetPod::new(
                 Label::new(text)
-                    .with_weight(TextWeight::new(200.))
-                    .with_font(parley::style::FontStack::Source("Hahmlet")),
+                    .with_style(StyleProperty::FontWeight(FontWeight::new(200.)))
+                    .with_style(StyleProperty::FontStack(parley::style::FontStack::Source(
+                        "Hahmlet".into(),
+                    ))),
             ),
             frame_index: 0,
         }
@@ -120,11 +123,11 @@ impl LoopingWeight {
 impl Widget for LoopingWeight {
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, _interval: u64) {
         let frame_number = (self.frame_index % 200) as f32;
-        let weight = TextWeight::new(200. + 3. * frame_number);
+        let weight = FontWeight::new(200. + 3. * frame_number);
         self.frame_index += 1;
 
         ctx.mutate_later(&mut self.child, move |mut child| {
-            Label::set_weight(&mut child, weight);
+            Label::insert_style(&mut child, StyleProperty::FontWeight(weight));
         });
         ctx.request_anim_frame();
     }
@@ -145,7 +148,7 @@ impl Widget for LoopingWeight {
             ctx.request_anim_frame();
         }
     }
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut NodeBuilder) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         [self.child.id()].as_slice().into()
     }
