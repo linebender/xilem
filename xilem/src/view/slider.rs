@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::widget::Slider as MasonrySlider;
-use xilem_core::{DynMessage, MessageResult, Mut, View, ViewCtx, ViewId, ViewMarker};
+use xilem_core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
 
 use crate::{Pod, ViewCtx, WidgetView};
 
