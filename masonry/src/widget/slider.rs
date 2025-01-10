@@ -144,8 +144,22 @@ impl Widget for Slider {
         node.set_value(Some(self.value));
     }
 
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.child);
+    }
+
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+        self.child.update(ctx, event);
+    }
+
+    fn compose(&mut self, ctx: &mut ComposeCtx) {
+        self.child.compose(ctx);
+    }
+
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+        let mut ids = SmallVec::new();
+        ids.push(self.child.id());
+        ids
     }
 }
 
