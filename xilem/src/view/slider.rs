@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::widget::Slider as MasonrySlider;
-use xilem_core::{MessageResult, View, ViewCtx};
+use xilem_core::{DynMessage, MessageResult, Mut, View, ViewCtx, ViewId, ViewMarker};
 
 use crate::{Pod, WidgetView};
 
@@ -35,6 +35,8 @@ pub struct Slider<State, Action> {
     on_change: Option<Box<dyn FnMut(f64) -> Action + Send + Sync>>,
     color: Option<masonry::Color>,
 }
+
+impl<State, Action> ViewMarker for Slider<State, Action> {}
 
 impl<State, Action> Slider<State, Action> {
     /// Set a callback for when the slider value changes.
@@ -78,10 +80,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Slider<State, Action> {
     fn rebuild(
         &self,
         prev: &Self,
-        mut element: xilem_core::Mut<Self::Element>,
-        _ctx: &mut ViewCtx,
         _state: &mut Self::ViewState,
-    ) -> MessageResult<Action> {
+        ctx: &mut ViewCtx,
+        mut element: Mut<Self::Element>,
+    ) {
         element.with_downcast_mut(|slider| {
             if self.value != prev.value {
                 slider.set_value(self.value);
@@ -92,7 +94,21 @@ impl<State, Action> View<State, Action, ViewCtx> for Slider<State, Action> {
                 }
             }
         });
-        MessageResult::Nop
+    }
+
+    fn teardown(&self, _state: &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
+        ctx.teardown_leaf(element);
+    }
+
+    fn message(
+        &self,
+        _state: &mut Self::ViewState,
+        _id_path: &[ViewId],
+        message: DynMessage,
+        _app_state: &mut State,
+    ) -> MessageResult<Action> {
+        tracing::error!("Message arrived in Slider::message, but Slider doesn't consume any messages, this is a bug");
+        MessageResult::Stale(message)
     }
 }
 
