@@ -17,7 +17,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///     .on_change(|value| println!("Slider value: {}", value))
 ///     .with_color(Color::rgb8(100, 150, 200));
 /// ```
-pub fn slider<State, Action>(min: f64, max: f64, value: f64) -> Slider<State, Action, impl Fn(&mut State, f64) -> Action + Send + Sync + 'static> {
+pub fn slider(min: f64, max: f64, value: f64) -> Slider<impl for<'a> Fn(&'a mut (), f64) -> MessageResult<()> + Send + 'static> {
     Slider {
         min,
         max,
@@ -28,7 +28,7 @@ pub fn slider<State, Action>(min: f64, max: f64, value: f64) -> Slider<State, Ac
 }
 
 /// A slider view that allows selecting a value within a range.
-pub struct Slider<State, Action, F> {
+pub struct Slider<F> {
     min: f64,
     max: f64,
     value: f64,
@@ -36,16 +36,21 @@ pub struct Slider<State, Action, F> {
     color: Option<masonry::Color>,
 }
 
-impl<State, Action, F> ViewMarker for Slider<State, Action, F> {}
+impl<F> ViewMarker for Slider<F> {}
 
-impl<State, Action, F> Slider<State, Action, F>
+impl<F> Slider<F>
 where
-    F: Fn(&mut State, f64) -> Action + Send + Sync + 'static,
+    F: for<'a> Fn(&'a mut (), f64) -> MessageResult<()> + Send + Sync + 'static,
 {
     /// Set a callback for when the slider value changes.
-    pub fn on_change(mut self, on_change: F) -> Self {
-        self.on_change = Some(on_change);
-        self
+    pub fn on_change<State, Action>(self, on_change: impl Fn(&mut State, f64) -> Action + Send + Sync + 'static) -> Slider<impl for<'a> Fn(&'a mut State, f64) -> MessageResult<Action> + Send + 'static> {
+        Slider {
+            min: self.min,
+            max: self.max,
+            value: self.value,
+            on_change: Some(move |state: &mut State, value| MessageResult::Action(on_change(state, value))),
+            color: self.color,
+        }
     }
 
     /// Set the slider's thumb color.
@@ -55,9 +60,9 @@ where
     }
 }
 
-impl<State, Action, F> View<State, Action, ViewCtx> for Slider<State, Action, F>
+impl<F, State, Action> View<State, Action, ViewCtx> for Slider<F>
 where
-    F: Fn(&mut State, f64) -> Action + Send + Sync + 'static,
+    F: Fn(&mut State, f64) -> MessageResult<Action> + Send + Sync + 'static,
 {
     type Element = Pod<MasonrySlider>;
     type ViewState = ();
