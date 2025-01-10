@@ -32,6 +32,8 @@ impl VariableLabel {
     /// Set the weight this label will target.
     ///
     /// If this change is animated, it will occur over `over_millis` milliseconds.
+    /// Note that this will also be used as the initial font weight when the label is
+    /// first created.
     ///
     /// Note that updating `over_millis` without changing `weight` will *not* change
     /// the length of time the weight change occurs over.
@@ -56,37 +58,32 @@ impl VariableLabel {
     ///
     /// This should be a font stack with variable font support,
     /// although non-variable fonts will work, just without the smooth animation support.
-    pub fn with_font(mut self, font: impl Into<FontStack<'static>>) -> Self {
-        self.label.font = font.into();
+    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.label = self.label.font(font);
         self
     }
 
     #[doc(alias = "color")]
     pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
-        self.label.text_brush = brush.into();
+        self.label = self.label.brush(brush);
         self
     }
 
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
-        self.label.alignment = alignment;
+        self.label = self.label.alignment(alignment);
         self
     }
 
     #[doc(alias = "font_size")]
     pub fn text_size(mut self, text_size: f32) -> Self {
-        self.label.text_size = text_size;
-        self
-    }
-
-    pub fn weight(mut self, weight: FontWeight) -> Self {
-        self.label.weight = weight;
+        self.label = self.label.text_size(text_size);
         self
     }
 }
 
 impl Transformable for VariableLabel {
     fn transform_mut(&mut self) -> &mut crate::Affine {
-        &mut self.label.transform
+        self.label.transform_mut()
     }
 }
 
@@ -132,7 +129,21 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<Self::Element>,
+    ) {
+        ctx.with_id(ViewId::new(0), |ctx| {
+            View::<State, Action, _, _>::teardown(
+                &self.label,
+                &mut (),
+                ctx,
+                widget::VariableLabel::label_mut(&mut element),
+            );
+        });
+    }
 
     fn message(
         &self,
