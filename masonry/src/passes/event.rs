@@ -15,6 +15,7 @@ fn get_pointer_target(
     root: &RenderRoot,
     pointer_pos: Option<LogicalPosition<f64>>,
 ) -> Option<WidgetId> {
+    // See the [pointer capture documentation](../doc/06_masonry_concepts.md#pointer-capture).
     if let Some(capture_target) = root.global_state.pointer_capture_target {
         return Some(capture_target);
     }
@@ -84,6 +85,7 @@ fn run_event_pass<E>(
 }
 
 // --- MARK: POINTER_EVENT ---
+/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
@@ -136,6 +138,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 }
 
 // --- MARK: TEXT EVENT ---
+/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::FocusChange(false)) {
         run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
@@ -192,6 +195,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 }
 
 // --- MARK: ACCESS EVENT ---
+/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_access_event_pass(
     root: &mut RenderRoot,
     event: &AccessEvent,

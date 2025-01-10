@@ -1,6 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Internal passes run by Masonry every frame.
+//!
+//! See the [passes documentation](../doc/05_pass_system.md) for more information.
+//!
+//! This file includes utility functions used by multiple passes.
+
 use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutChildren, ArenaRef};
 
