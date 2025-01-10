@@ -766,5 +766,49 @@ mod tests {
         assert_render_snapshot!(harness, "label_box_with_outer_padding");
     }
 
+    #[test]
+    fn label_box_with_shadow() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(40.0)
+            .height(40.0)
+            .background(palette::css::WHITE)
+            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_shadow");
+    }
+
+    #[test]
+    fn label_box_with_shadow_and_border() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(40.0)
+            .height(40.0)
+            .background(palette::css::WHITE)
+            .border(palette::css::BLUE, 2.0)
+            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_shadow_and_border");
+    }
+
+    #[test]
+    fn label_box_with_shadow_and_rounded_corners() {
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(40.0)
+            .height(40.0)
+            .background(palette::css::WHITE)
+            .rounded(10.0)
+            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "label_box_with_shadow_and_rounded_corners");
+    }
+
     // TODO - add screenshot tests for different brush types
 }
