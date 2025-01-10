@@ -408,6 +408,7 @@ The next one is about creating a container widgets, and the complications it add
 
 [`Widget`]: crate::Widget
 [`WidgetMut`]: crate::widget::WidgetMut
+[`PaintCtx::size()`]: crate::PaintCtx::size
 [`ButtonPressed`]: crate::Action::ButtonPressed
 [`vello::Scene`]: crate::vello::Scene
 [`Role::Button`]: accesskit::Role::Button
