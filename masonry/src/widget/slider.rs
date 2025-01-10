@@ -1,12 +1,11 @@
-use std::f64::consts::PI;
-
 use accesskit::Role;
 use vello::peniko::Color;
-use vello::Scene;
+use vello::{kurbo::Circle, Scene};
 
-use crate::contexts::{EventCtx, LayoutCtx, PaintCtx, UpdateCtx};
+use crate::contexts::{AccessCtx, EventCtx, LayoutCtx, PaintCtx, UpdateCtx};
+use crate::event::PointerEvent;
 use crate::widget::{AllowRawMut, Widget};
-use crate::{BoxConstraints, Point, Rect, Size, WidgetId, WidgetPod};
+use crate::{Affine, BoxConstraints, Point, Rect, Size, WidgetId, WidgetPod};
 
 /// A slider widget for selecting a value within a range.
 pub struct Slider {
