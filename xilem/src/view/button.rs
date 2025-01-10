@@ -1,9 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::StyleProperty;
 use masonry::widget;
 pub use masonry::PointerButton;
+use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::view::Label;
@@ -42,6 +42,8 @@ pub fn button_any_pointer<State, Action>(
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button<F> {
+    // N.B. This widget is *implemented* to handle any kind of view with an element
+    // type of `Label` even though it currently does not do so.
     label: Label,
     transform: Affine,
     callback: F,
@@ -53,6 +55,8 @@ impl<F> Transformable for Button<F> {
     }
 }
 
+const LABEL_VIEW_ID: ViewId = ViewId::new(0);
+
 impl<F> ViewMarker for Button<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
 where
@@ -62,17 +66,12 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let (child, ()) = ctx.with_id(LABEL_VIEW_ID, |ctx| {
+            View::<State, Action, _>::build(&self.label, ctx)
+        });
         ctx.with_leaf_action_widget(|ctx| {
             ctx.new_pod_with_transform(
-                widget::Button::from_label(
-                    // TODO: Use `Label::build` here - currently impossible because `Pod` uses `WidgetPod` internally
-                    widget::Label::new(self.label.label.clone())
-                        .with_brush(self.label.text_brush.clone())
-                        .with_alignment(self.label.alignment)
-                        .with_style(StyleProperty::FontSize(self.label.text_size))
-                        .with_style(StyleProperty::FontWeight(self.label.weight))
-                        .with_style(StyleProperty::FontStack(self.label.font.clone())),
-                ),
+                widget::Button::from_label_pod(child.into_widget_pod()),
                 self.transform,
             )
         })
@@ -89,16 +88,31 @@ where
             element.set_transform(self.transform);
         }
 
-        <Label as View<State, Action, ViewCtx>>::rebuild(
-            &self.label,
-            &prev.label,
-            state,
-            ctx,
-            widget::Button::label_mut(&mut element),
-        );
+        ctx.with_id(LABEL_VIEW_ID, |ctx| {
+            View::<State, Action, _>::rebuild(
+                &self.label,
+                &prev.label,
+                state,
+                ctx,
+                widget::Button::label_mut(&mut element),
+            );
+        });
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        mut element: Mut<Self::Element>,
+    ) {
+        ctx.with_id(LABEL_VIEW_ID, |ctx| {
+            View::<State, Action, _>::teardown(
+                &self.label,
+                &mut (),
+                ctx,
+                widget::Button::label_mut(&mut element),
+            );
+        });
         ctx.teardown_leaf(element);
     }
 
@@ -109,21 +123,24 @@ where
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        debug_assert!(
-            id_path.is_empty(),
-            "id path should be empty in Button::message"
-        );
-        match message.downcast::<masonry::Action>() {
-            Ok(action) => {
-                if let masonry::Action::ButtonPressed(button) = *action {
-                    (self.callback)(app_state, button)
-                } else {
-                    tracing::error!("Wrong action type in Button::message: {action:?}");
-                    MessageResult::Stale(action)
+        match id_path.split_first() {
+            Some((&LABEL_VIEW_ID, rest)) => self.label.message(&mut (), rest, message, app_state),
+            None => match message.downcast::<masonry::Action>() {
+                Ok(action) => {
+                    if let masonry::Action::ButtonPressed(button) = *action {
+                        (self.callback)(app_state, button)
+                    } else {
+                        tracing::error!("Wrong action type in Button::message: {action:?}");
+                        MessageResult::Stale(action)
+                    }
                 }
-            }
-            Err(message) => {
-                tracing::error!("Wrong message type in Button::message: {message:?}");
+                Err(message) => {
+                    tracing::error!("Wrong message type in Button::message: {message:?}");
+                    MessageResult::Stale(message)
+                }
+            },
+            _ => {
+                tracing::warn!("Got unexpected id path in Button::message");
                 MessageResult::Stale(message)
             }
         }

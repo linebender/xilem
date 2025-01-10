@@ -61,6 +61,13 @@ impl Button {
             label: WidgetPod::new(label),
         }
     }
+
+    /// Create a new button with the provided [`Label`] with a predetermined id.
+    ///
+    /// This constructor is useful for toolkits which use Masonry (such as Xilem).
+    pub fn from_label_pod(label: WidgetPod<Label>) -> Self {
+        Self { label }
+    }
 }
 
 // --- MARK: WIDGETMUT ---
