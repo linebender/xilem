@@ -82,12 +82,8 @@ As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to
 Most Widgets will implement methods that let their users "project" a WidgetMut from a parent to its child.
 For example, `WidgetMut<Portal<MyWidget>>` has a `get_child_mut()` method that returns a `WidgetMut<MyWidget>`.
 
-So far, we've seen one way to get a WidgetMut: the [`DriverCtx::get_root()`] method in `AppDriver` implementations.
+So far, we've seen one way to get a WidgetMut: the [`RenderRoot::edit_root_widget()`] method.
 This methods returns a WidgetMut to the root widget, which you can then project into a WidgetMut reference to its descendants.
-
-<!-- TODO - Change AppDriver trait to take a `&mut RenderRoot` instead, and rewrite above doc. -->
-
-<!-- TODO - Mention edit_root_widget, edit_widget. -->
 
 ### Using WidgetMut in your custom Widget code
 
@@ -330,7 +326,7 @@ The next one is about creating a container widgets, and the complications it add
 
 [`Widget`]: crate::Widget
 [`WidgetMut`]: crate::widget::WidgetMut
-[`DriverCtx::get_root()`]: crate::DriverCtx::get_root
 [`ButtonPressed`]: crate::Action::ButtonPressed
 [`vello::Scene`]: crate::vello::Scene
 [`Role::Button`]: accesskit::Role::Button
+[`RenderRoot::edit_root_widget()`]: crate::RenderRoot::edit_root_widget
