@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget;
+use masonry::{widget, Color, Vec2};
 pub use masonry::widget::Padding;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
@@ -25,6 +25,7 @@ where
         height: None,
         width: None,
         background: None,
+        shadow: None,
         border: None,
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
         padding: Padding::ZERO,
