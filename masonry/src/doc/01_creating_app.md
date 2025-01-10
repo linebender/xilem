@@ -118,8 +118,8 @@ When handling `ButtonPressed`:
 - `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
 - `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<Box<dyn Widget>>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
 - `root.downcast::<...>()` returns a `WidgetMut<RootWidget<...>>`.
-- `root.child_mut()` returns a `WidgetMut<Portal<...>>` for the `Portal`.
-- `portal.child_mut()` returns a `WidgetMut<Flex>` for the `Flex`.
+- `RootWidget::child_mut()` returns a `WidgetMut<Portal<...>>` for the `Portal`.
+- `Portal::child_mut()` returns a `WidgetMut<Flex>` for the `Flex`.
 
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
 It's set up to automatically propagate update flags and update internal state when dropped.
@@ -186,8 +186,7 @@ fn main() {
     );
     let main_widget = RootWidget::new(main_widget);
 
-    use masonry::app_driver::{AppDriver, DriverCtx};
-    use masonry::{Action, WidgetId};
+    use masonry::{Action, AppDriver, DriverCtx, WidgetId};
     use masonry::widget::{Label};
 
     struct Driver {
@@ -198,10 +197,12 @@ fn main() {
         fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
             match action {
                 Action::ButtonPressed(_) => {
-                    let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-                    let mut portal = root.child_mut();
-                    let mut flex = portal.child_mut();
-                    flex.add_child(Label::new(self.next_task.clone()));
+                    ctx.render_root().edit_root_widget(|mut root| {
+                        let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
+                        let mut portal = RootWidget::child_mut(&mut root);
+                        let mut flex = Portal::child_mut(&mut portal);
+                        Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                    });
                 }
                 Action::TextChanged(new_text) => {
                     self.next_task = new_text.clone();
