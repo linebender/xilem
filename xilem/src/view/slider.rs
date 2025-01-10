@@ -17,7 +17,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///     .on_change(|value| println!("Slider value: {}", value))
 ///     .with_color(Color::rgb8(100, 150, 200));
 /// ```
-pub fn slider(min: f64, max: f64, value: f64) -> Slider<impl for<'a> Fn(&'a mut (), f64) -> MessageResult<()> + Send + 'static> {
+pub fn slider<State, Action>(min: f64, max: f64, value: f64) -> Slider<impl for<'a> Fn(&'a mut State, f64) -> MessageResult<Action> + Send + 'static> {
     Slider {
         min,
         max,
