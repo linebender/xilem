@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::widget::Slider as MasonrySlider;
-use xilem_core::{DynMessage, MessageResult, Mut, View, ViewCtx, ViewId, ViewMarker};
+use xilem_core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
 
-use crate::{Pod, WidgetView};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A slider widget for selecting a value within a range.
 ///
