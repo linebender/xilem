@@ -106,12 +106,12 @@ It is called when new widgets are added to the tree, or existing widgets are rem
 
 It will call the `register_children()` widget method on container widgets whose children changed, then the `update()` method with the `WidgetAdded` event on new widgets.
 
-<!-- TODO - document UPDATE DISABLED --- -->
-<!-- TODO - document UPDATE STASHED --- -->
-<!-- TODO - document UPDATE FOCUS CHAIN --- -->
-<!-- TODO - document UPDATE FOCUS --- (document iteration order) -->
-<!-- TODO - document UPDATE SCROLL --- -->
-<!-- TODO - document UPDATE POINTER --- (document iteration order) -->
+<!-- TODO - document update disabled --- -->
+<!-- TODO - document update stashed --- -->
+<!-- TODO - document update focus chain --- -->
+<!-- TODO - document update focus --- (document iteration order) -->
+<!-- TODO - document update scroll --- -->
+<!-- TODO - document update pointer --- (document iteration order) -->
 
 ### Layout pass
 

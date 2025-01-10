@@ -312,22 +312,6 @@ pub enum Update {
 }
 
 impl PointerEvent {
-    /// Create a [`PointerEvent::PointerLeave`] event with dummy values.
-    pub fn new_pointer_leave() -> Self {
-        // TODO - The fact we're creating so many dummy values might be
-        // a sign we should refactor that struct
-        let pointer_state = PointerState {
-            physical_position: Default::default(),
-            position: Default::default(),
-            buttons: Default::default(),
-            mods: Default::default(),
-            count: 0,
-            focus: false,
-            force: None,
-        };
-        Self::PointerLeave(pointer_state)
-    }
-
     /// Returns the [`PointerState`] of the event.
     pub fn pointer_state(&self) -> &PointerState {
         match self {
@@ -387,6 +371,25 @@ impl PointerEvent {
             Self::HoverFileCancel(_) => false,
             Self::Pinch(_, _) => true,
         }
+    }
+
+    /// Create a [`PointerEvent::PointerLeave`] event with dummy values.
+    ///
+    /// This is used internally to create synthetic `PointerLeave` events when pointer
+    /// capture is lost.
+    pub fn new_pointer_leave() -> Self {
+        // TODO - The fact we're creating so many dummy values might be
+        // a sign we should refactor that struct
+        let pointer_state = PointerState {
+            physical_position: Default::default(),
+            position: Default::default(),
+            buttons: Default::default(),
+            mods: Default::default(),
+            count: 0,
+            focus: false,
+            force: None,
+        };
+        Self::PointerLeave(pointer_state)
     }
 }
 
