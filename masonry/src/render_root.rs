@@ -206,7 +206,16 @@ impl RenderRoot {
         root
     }
 
-    pub(crate) fn root_state(&mut self) -> &mut WidgetState {
+    pub(crate) fn root_state(&self) -> &WidgetState {
+        self.widget_arena
+            .widget_states
+            .root_token()
+            .into_child(self.root.id())
+            .expect("root widget not in widget tree")
+            .item
+    }
+
+    pub(crate) fn root_state_mut(&mut self) -> &mut WidgetState {
         self.widget_arena
             .widget_states
             .root_token_mut()
@@ -225,8 +234,8 @@ impl RenderRoot {
             }
             WindowEvent::Resize(size) => {
                 self.size = size;
-                self.root_state().request_layout = true;
-                self.root_state().needs_layout = true;
+                self.root_state_mut().request_layout = true;
+                self.root_state_mut().needs_layout = true;
                 self.run_rewrite_passes();
                 Handled::Yes
             }
@@ -592,8 +601,7 @@ impl RenderRoot {
         &self.root_state().focus_chain
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn needs_rewrite_passes(&mut self) -> bool {
+    pub(crate) fn needs_rewrite_passes(&self) -> bool {
         self.root_state().needs_rewrite_passes() || self.global_state.focus_changed()
     }
 }

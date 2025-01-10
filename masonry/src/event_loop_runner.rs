@@ -677,13 +677,11 @@ impl MasonryState<'_> {
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
                 render_root::RenderRootSignal::Action(action, widget_id) => {
-                    self.render_root.edit_root_widget(|root| {
-                        debug!("Action {:?} on widget {:?}", action, widget_id);
-                        let mut driver_ctx = DriverCtx {
-                            main_root_widget: root,
-                        };
-                        app_driver.on_action(&mut driver_ctx, widget_id, action);
-                    });
+                    let mut driver_ctx = DriverCtx {
+                        render_root: &mut self.render_root,
+                    };
+                    debug!("Action {:?} on widget {:?}", action, widget_id);
+                    app_driver.on_action(&mut driver_ctx, widget_id, action);
                 }
                 render_root::RenderRootSignal::StartIme => {
                     window.set_ime_allowed(true);
