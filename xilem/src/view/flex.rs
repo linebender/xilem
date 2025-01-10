@@ -115,7 +115,7 @@ where
         for child in elements.into_inner() {
             widget = match child {
                 FlexElement::Child(child, params) => {
-                    widget.with_flex_child_pod(child.inner, params)
+                    widget.with_flex_child_pod(child.into_widget_pod(), params)
                 }
                 FlexElement::FixedSpacer(size) => widget.with_spacer(size),
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
@@ -233,8 +233,8 @@ impl SuperElement<Self, ViewCtx> for FlexElement {
 }
 
 impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
-    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        Self::Child(ctx.boxed_pod(child), FlexParams::default())
+    fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
+        Self::Child(child.boxed(), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -259,7 +259,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                 widget::Flex::insert_flex_child_pod(
                     &mut self.element,
                     self.idx,
-                    child.inner,
+                    child.into_widget_pod(),
                     params,
                 );
             }
@@ -281,7 +281,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                     widget::Flex::insert_flex_child_pod(
                         &mut self.element,
                         self.idx,
-                        child.inner,
+                        child.into_widget_pod(),
                         params,
                     );
                 }
@@ -466,7 +466,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (FlexElement::Child(ctx.boxed_pod(pod), self.params), state)
+        (FlexElement::Child(pod.boxed(), self.params), state)
     }
 
     fn rebuild(
@@ -753,7 +753,7 @@ where
                     widget::Flex::insert_flex_child_pod(
                         &mut element.parent,
                         element.idx,
-                        child.inner,
+                        child.boxed_widget_pod(),
                         params,
                     );
                 } else {

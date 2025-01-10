@@ -27,9 +27,8 @@ pub type AnyWidgetView<State, Action = ()> =
 
 impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        let boxed_pod = ctx.boxed_pod(child);
         ctx.new_pod(DynWidget {
-            inner: boxed_pod.inner.boxed(),
+            inner: child.boxed_widget_pod(),
         })
     }
 
@@ -49,7 +48,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
 
 impl<W: Widget> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
-        DynWidget::replace_inner(&mut this, child.inner.boxed());
+        DynWidget::replace_inner(&mut this, child.boxed_widget_pod());
         this
     }
 }

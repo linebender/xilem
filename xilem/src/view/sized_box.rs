@@ -143,7 +143,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.inner.build(ctx);
-        let mut widget = widget::SizedBox::new_pod(child.inner.boxed())
+        let mut widget = widget::SizedBox::new_pod(child.boxed_widget_pod())
             .raw_width(self.width)
             .raw_height(self.height)
             .rounded(self.corner_radius)

@@ -26,7 +26,6 @@ impl<W: Widget> RootWidget<W> {
         }
     }
 
-    // TODO - This help works around impedance mismatch between the types of Xilem and Masonry
     pub fn from_pod(pod: WidgetPod<W>) -> Self {
         Self { pod }
     }
