@@ -233,6 +233,7 @@ impl SizedBox {
             height: None,
             background: None,
             border: None,
+            shadow: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
             padding: Padding::ZERO,
         }
