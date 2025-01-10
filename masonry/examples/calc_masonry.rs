@@ -254,11 +254,13 @@ impl AppDriver for CalcState {
             _ => unreachable!(),
         }
 
-        let mut root = ctx.get_root::<RootWidget<Flex>>();
-        let mut flex = RootWidget::child_mut(&mut root);
-        let mut label = Flex::child_mut(&mut flex, 1).unwrap();
-        let mut label = label.downcast::<Label>();
-        Label::set_text(&mut label, &*self.value);
+        ctx.render_root().edit_root_widget(|mut root| {
+            let mut root = root.downcast::<RootWidget<Flex>>();
+            let mut flex = RootWidget::child_mut(&mut root);
+            let mut label = Flex::child_mut(&mut flex, 1).unwrap();
+            let mut label = label.downcast::<Label>();
+            Label::set_text(&mut label, &*self.value);
+        });
     }
 }
 

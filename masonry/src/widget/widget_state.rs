@@ -278,8 +278,4 @@ impl WidgetState {
             || self.needs_update_disabled
             || self.needs_update_stashed
     }
-
-    pub(crate) fn needs_render(&self) -> bool {
-        self.needs_anim || self.needs_paint || self.needs_accessibility
-    }
 }

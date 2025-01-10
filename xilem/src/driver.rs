@@ -109,15 +109,16 @@ where
         if rebuild {
             let next_view = (self.logic)(&mut self.state);
 
-            let mut root = masonry_ctx.get_root::<RootWidget<View::Widget>>();
-
-            next_view.rebuild(
-                &self.current_view,
-                &mut self.view_state,
-                &mut self.ctx,
-                RootWidget::child_mut(&mut root),
-            );
-            self.current_view = next_view;
+            masonry_ctx.render_root().edit_root_widget(|mut root| {
+                let mut root = root.downcast::<RootWidget<View::Widget>>();
+                next_view.rebuild(
+                    &self.current_view,
+                    &mut self.view_state,
+                    &mut self.ctx,
+                    RootWidget::child_mut(&mut root),
+                );
+                self.current_view = next_view;
+            });
         }
         if cfg!(debug_assertions) && rebuild && !masonry_ctx.content_changed() {
             tracing::debug!("Nothing changed as result of action");
