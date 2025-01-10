@@ -36,7 +36,7 @@ Masonry was originally a fork of [Druid] that emerged from discussions within th
 Masonry can currently be considered to be in an alpha state.
 Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
 
-## Example
+### Example
 
 The to-do-list example looks like this:
 
@@ -54,10 +54,12 @@ impl AppDriver for Driver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::ButtonPressed(_) => {
-                let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-                let mut portal = RootWidget::child_mut(&mut root);
-                let mut flex = Portal::child_mut(&mut portal);
-                Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                ctx.render_root().edit_root_widget(|mut root| {
+                    let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
+                    let mut portal = RootWidget::child_mut(&mut root);
+                    let mut flex = Portal::child_mut(&mut portal);
+                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                });
             }
             Action::TextChanged(new_text) => {
                 self.next_task = new_text.clone();
@@ -100,7 +102,7 @@ fn main() {
 
 For more information, see [the documentation module](https://docs.rs/masonry/latest/masonry/doc/).
 
-### Crate feature flags
+#### Crate feature flags
 
 The following feature flags are available:
 
