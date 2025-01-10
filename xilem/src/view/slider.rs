@@ -1,10 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use core::ops::Range;
+
 use masonry::widget::Slider as MasonrySlider;
 use xilem_core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
 
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::{Pod, ViewCtx};
 
 /// A slider widget for selecting a value within a range.
 ///
@@ -18,15 +20,14 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///     .with_color(Color::rgb8(100, 150, 200));
 /// ```
 pub fn slider<State, Action>(
-    min: f64, 
-    max: f64, 
+    range: Range<f64>,
     value: f64,
     on_change: impl Fn(&mut State, f64) -> Action + Send + 'static,
 ) -> Slider<impl for<'a> Fn(&'a mut State, f64) -> MessageResult<Action> + Send + 'static> {
     Slider {
-        min,
-        max,
-        value: value.clamp(min, max),
+        min:range.start,
+        max:range.end,
+        value: value.clamp(range.start , range.end),
         on_change: move |state: &mut State, value| MessageResult::Action(on_change(state, value)),
         color: None,
     }
@@ -63,7 +64,7 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Pod<MasonrySlider>, ()) {
-        let slider = MasonrySlider::new(self.min, self.max, self.value);
+        let mut slider = MasonrySlider::new(self.min, self.max, self.value);
         if let Some(color) = self.color {
             slider = slider.with_color(color);
         }
@@ -74,19 +75,18 @@ where
         &self,
         prev: &Self,
         _state: &mut Self::ViewState,
-        ctx: &mut ViewCtx,
+        _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        element.with_downcast_mut(|slider| {
-            if self.value != prev.value {
-                slider.set_value(self.value);
+        let mut slider = element.reborrow_mut();
+        if self.value != prev.value {
+            MasonrySlider::set_value(&mut slider, self.value);
+        }
+        if self.color != prev.color {
+            if let Some(color) = self.color {
+                MasonrySlider::set_color(&mut slider, color);
             }
-            if self.color != prev.color {
-                if let Some(color) = self.color {
-                    slider.set_color(color);
-                }
-            }
-        });
+        }
     }
 
     fn teardown(&self, _state: &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
@@ -107,7 +107,7 @@ where
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
                 if let masonry::Action::SliderValueChanged(value) = *action {
-                    MessageResult::Action((self.on_change)(app_state, value))
+                    (self.on_change)(app_state, value)
                 } else {
                     tracing::error!("Wrong action type in Slider::message: {action:?}");
                     MessageResult::Stale(action)
@@ -121,9 +121,3 @@ where
     }
 }
 
-impl<State, Action, F> WidgetView<State, Action> for Slider<State, Action, F>
-where
-    F: Fn(&mut State, f64) -> Action + Send + Sync + 'static,
-{
-    type Widget = MasonrySlider;
-}
