@@ -7,8 +7,9 @@ use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, warn, Span};
 use vello::kurbo::{Affine, RoundedRectRadii};
-use vello::peniko::{Brush, Fill};
+use vello::peniko::{Brush, Fill, Color};
 use vello::Scene;
+use vello::kurbo::Vec2;
 
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
@@ -23,6 +24,18 @@ use crate::{
 struct BorderStyle {
     width: f64,
     brush: Brush,
+}
+
+/// Defines the style of a shadow
+struct ShadowStyle {
+    /// Shadow color
+    color: Color,
+    /// Shadow offset from the element
+    offset: Vec2,
+    /// Shadow blur radius
+    blur_radius: f64,
+    /// Shadow spread radius
+    spread_radius: f64,
 }
 
 /// Padding specifies the spacing between the edges of the box and the child view.
@@ -62,6 +75,7 @@ pub struct SizedBox {
     height: Option<f64>,
     background: Option<Brush>,
     border: Option<BorderStyle>,
+    shadow: Option<ShadowStyle>,
     corner_radius: RoundedRectRadii,
     padding: Padding,
 }
@@ -191,6 +205,7 @@ impl SizedBox {
             height: None,
             background: None,
             border: None,
+            shadow: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
             padding: Padding::ZERO,
         }
@@ -297,6 +312,23 @@ impl SizedBox {
         self.border = Some(BorderStyle {
             brush: brush.into(),
             width: width.into(),
+        });
+        self
+    }
+
+    /// Builder-style method for adding a shadow to the widget.
+    pub fn shadow(
+        mut self,
+        color: impl Into<Color>,
+        offset: impl Into<Vec2>,
+        blur_radius: impl Into<f64>,
+        spread_radius: impl Into<f64>,
+    ) -> Self {
+        self.shadow = Some(ShadowStyle {
+            color: color.into(),
+            offset: offset.into(),
+            blur_radius: blur_radius.into(),
+            spread_radius: spread_radius.into(),
         });
         self
     }
@@ -520,6 +552,24 @@ impl Widget for SizedBox {
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
         let corner_radius = self.corner_radius;
+        let size = ctx.size();
+
+        // Paint shadow if present
+        if let Some(shadow) = &self.shadow {
+            let shadow_rect = size
+                .to_rect()
+                .inset(-shadow.spread_radius)
+                .to_rounded_rect(corner_radius)
+                .translate(shadow.offset);
+            
+            scene.fill(
+                Fill::NonZero,
+                Affine::IDENTITY,
+                &shadow.color.with_alpha_factor(0.3), // Adjust alpha as needed
+                Some(Affine::IDENTITY),
+                &shadow_rect,
+            );
+        }
 
         if let Some(background) = self.background.as_mut() {
             let panel = ctx.size().to_rounded_rect(corner_radius);
