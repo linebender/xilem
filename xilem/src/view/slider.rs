@@ -32,7 +32,7 @@ pub struct Slider<State, Action> {
     min: f64,
     max: f64,
     value: f64,
-    on_change: Option<Box<dyn FnMut(f64) -> Action + Send + Sync>>,
+    on_change: Option<Box<dyn Fn(&mut State, f64) -> Action + Send + Sync>>,
     color: Option<masonry::Color>,
 }
 
@@ -42,7 +42,7 @@ impl<State, Action> Slider<State, Action> {
     /// Set a callback for when the slider value changes.
     pub fn on_change(
         mut self,
-        on_change: impl FnMut(f64) -> Action + Send + Sync + 'static,
+        on_change: impl Fn(&mut State, f64) -> Action + Send + Sync + 'static,
     ) -> Self {
         self.on_change = Some(Box::new(on_change));
         self
@@ -104,8 +104,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Slider<State, Action> {
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
                 if let masonry::Action::SliderValueChanged(value) = *action {
-                    if let Some(ref mut on_change) = self.on_change {
-                        MessageResult::Action((on_change)(value))
+                    if let Some(on_change) = &self.on_change {
+                        MessageResult::Action(on_change(app_state, value))
                     } else {
                         MessageResult::Nop
                     }
