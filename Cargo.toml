@@ -16,6 +16,7 @@ members = [
     "xilem_web/web_examples/spawn_tasks",
     "xilem_web/web_examples/svgtoy",
     "xilem_web/web_examples/svgdraw",
+    "xilem_web/web_examples/shadow",
     "tree_arena",
 ]
 
