@@ -36,7 +36,7 @@ Masonry was originally a fork of [Druid] that emerged from discussions within th
 Masonry can currently be considered to be in an alpha state.
 Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
 
-### Example
+## Example
 
 The to-do-list example looks like this:
 
@@ -102,7 +102,7 @@ fn main() {
 
 For more information, see [the documentation module](https://docs.rs/masonry/latest/masonry/doc/).
 
-#### Crate feature flags
+### Crate feature flags
 
 The following feature flags are available:
 
