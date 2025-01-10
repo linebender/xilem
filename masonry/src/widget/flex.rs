@@ -23,7 +23,6 @@ pub struct Flex {
     direction: Axis,
     cross_alignment: CrossAxisAlignment,
     main_alignment: MainAxisAlignment,
-    fill_major_axis: bool,
     children: Vec<Child>,
     old_bc: BoxConstraints,
     gap: Option<f64>,
@@ -124,7 +123,6 @@ impl Flex {
             children: Vec::new(),
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
-            fill_major_axis: false,
             old_bc: BoxConstraints::tight(Size::ZERO),
             gap: None,
         }
@@ -154,13 +152,6 @@ impl Flex {
     /// Builder-style method for specifying the childrens' [`MainAxisAlignment`].
     pub fn main_axis_alignment(mut self, alignment: MainAxisAlignment) -> Self {
         self.main_alignment = alignment;
-        self
-    }
-
-    /// Builder-style method for setting whether the container must expand
-    /// to fill the available space on its main axis.
-    pub fn must_fill_main_axis(mut self, fill: bool) -> Self {
-        self.fill_major_axis = fill;
         self
     }
 
@@ -317,13 +308,6 @@ impl Flex {
     /// Set the childrens' [`MainAxisAlignment`].
     pub fn set_main_axis_alignment(this: &mut WidgetMut<'_, Self>, alignment: MainAxisAlignment) {
         this.widget.main_alignment = alignment;
-        this.ctx.request_layout();
-    }
-
-    /// Set whether the container must expand to fill the available space on
-    /// its main axis.
-    pub fn set_must_fill_main_axis(this: &mut WidgetMut<'_, Self>, fill: bool) {
-        this.widget.fill_major_axis = fill;
         this.ctx.request_layout();
     }
 
@@ -1051,13 +1035,7 @@ impl Widget for Flex {
         }
 
         // figure out if we have extra space on major axis, and if so how to use it
-        let extra = if self.fill_major_axis {
-            (remaining - major_flex).max(0.0)
-        } else {
-            // if we are *not* expected to fill our available space this usually
-            // means we don't have any extra, unless dictated by our constraints.
-            (self.direction.major(bc.min()) - (major_non_flex + major_flex)).max(0.0)
-        };
+        let extra = (remaining - major_flex).max(0.0);
 
         let mut spacing = Spacing::new(self.main_alignment, extra, self.children.len());
 
@@ -1392,15 +1370,6 @@ mod tests {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "row_main_axis_spaceAround");
-
-        // FILL MAIN AXIS
-        // TODO - This doesn't seem to do anything?
-
-        harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
-            Flex::set_must_fill_main_axis(&mut flex, true);
-        });
-        assert_render_snapshot!(harness, "row_fill_main_axis");
     }
 
     #[test]
@@ -1497,15 +1466,6 @@ mod tests {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "col_main_axis_spaceAround");
-
-        // FILL MAIN AXIS
-        // TODO - This doesn't seem to do anything?
-
-        harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
-            Flex::set_must_fill_main_axis(&mut flex, true);
-        });
-        assert_render_snapshot!(harness, "col_fill_main_axis");
     }
 
     #[test]

@@ -101,7 +101,6 @@ where
         let mut widget = widget::Flex::for_axis(self.axis)
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
-            .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
@@ -131,9 +130,6 @@ where
         }
         if prev.main_axis_alignment != self.main_axis_alignment {
             widget::Flex::set_main_axis_alignment(&mut element, self.main_axis_alignment);
-        }
-        if prev.fill_major_axis != self.fill_major_axis {
-            widget::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
         }
         if prev.gap != self.gap {
             widget::Flex::set_raw_gap(&mut element, self.gap);
