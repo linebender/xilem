@@ -3,23 +3,19 @@
 
 use crate::{Widget, WidgetId};
 
-// TODO - rewrite links in doc
-
 /// A container for one widget in the hierarchy.
 ///
 /// Generally, container widgets don't contain other widgets directly,
 /// but rather contain a `WidgetPod`, which has additional state needed
 /// for layout and for the widget to participate in event flow.
-///
-/// `WidgetPod` will translate internal Masonry events to regular events,
-/// synthesize additional events of interest, and stop propagation when it makes sense.
+// TODO - Add reference to container tutorial
 pub struct WidgetPod<W> {
     id: WidgetId,
     inner: WidgetPodInner<W>,
 }
 
 // TODO - This is a simple state machine that lets users create WidgetPods
-// without immediate access to the widget arena. It's *extremely* inefficient
+// without immediate access to the widget arena. It's very inefficient
 // and leads to ugly code. The alternative is to force users to create WidgetPods
 // through context methods where they already have access to the arena.
 // Implementing that requires solving non-trivial design questions.

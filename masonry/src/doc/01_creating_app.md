@@ -118,8 +118,8 @@ When handling `ButtonPressed`:
 - `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
 - `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<Box<dyn Widget>>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
 - `root.downcast::<...>()` returns a `WidgetMut<RootWidget<...>>`.
-- `RootWidget::child_mut()` returns a `WidgetMut<Portal<...>>` for the `Portal`.
-- `Portal::child_mut()` returns a `WidgetMut<Flex>` for the `Flex`.
+- `RootWidget::child_mut()` returns a `WidgetMut<Portal<...>>`.
+- `Portal::child_mut()` returns a `WidgetMut<Flex>`.
 
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
 It's set up to automatically propagate update flags and update internal state when dropped.

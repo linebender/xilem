@@ -204,7 +204,7 @@ impl DebugLogger {
             StateTree::new("has_focus", w_state.has_focus),
             StateTree::new("request_anim", w_state.request_anim),
             StateTree::new("children_changed", w_state.children_changed),
-            StateTree::new("update_focus_chain", w_state.update_focus_chain),
+            StateTree::new("update_focus_chain", w_state.needs_update_focus_chain),
         ]
         .into();
         state

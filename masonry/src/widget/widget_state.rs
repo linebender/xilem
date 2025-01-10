@@ -1,8 +1,6 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![cfg(not(tarpaulin_include))]
-
 use vello::kurbo::{Insets, Point, Rect, Size, Vec2};
 
 use crate::WidgetId;
@@ -27,10 +25,29 @@ use crate::WidgetId;
 /// ## Naming scheme
 ///
 /// Some fields follow a naming scheme:
-/// - `request_xxx`: this specific widget has requested the xxx pass to run on it
-/// - `needs_xxx`: this widget or a descendant has requested the xxx pass to run on it
-/// - `is_xxx`: this widget has the xxx property
-/// - `has_xxx`: this widget or an ancestor has the xxx property
+/// - `request_xxx`: this specific widget has requested the xxx pass to run on it.
+/// - `needs_xxx`: this widget or a descendant has requested the xxx pass to run on it.
+/// - `is_xxx`: this widget has the xxx property.
+/// - `has_xxx`: this widget or a descendant has the xxx property.
+///
+/// ## Resetting flags
+///
+/// Generally, the `needs_foobar` and `request_foobar` flags will be reset to
+/// false during the "foobar" pass after calling the "foobar" method.
+///
+/// In principle this shouldn't be a problem because most passes shouldn't be
+/// able to request themselves. The exception is the anim pass: an anim frame can
+/// (and usually will) request a new anim frame.
+///
+/// ## Zombie flags
+///
+/// Masonry's passes should be designed to avoid what we'll call "zombie flags".
+///
+/// Zombie flags are when a pass "foobar" fails to clear `needs_foobar` flags of some
+/// widgets by the time it's complete. Even if the pass works correctly, failing to
+/// clear the flags means they'll be propagated up in [`WidgetState::merge_up`] by every
+/// other pass, which means the widget tree will keep requesting the same passes over
+/// and over. Zombie flags are terrible for performance and power-efficiency.
 ///
 /// [`WidgetMut`]: crate::widget::WidgetMut
 #[derive(Clone, Debug)]
@@ -120,7 +137,7 @@ pub(crate) struct WidgetState {
     /// This widget or a descendant changed its `is_explicitly_stashed` value
     pub(crate) needs_update_stashed: bool,
 
-    pub(crate) update_focus_chain: bool,
+    pub(crate) needs_update_focus_chain: bool,
 
     pub(crate) focus_chain: Vec<WidgetId>,
 
@@ -189,7 +206,7 @@ impl WidgetState {
             needs_update_stashed: true,
             focus_chain: Vec::new(),
             children_changed: true,
-            update_focus_chain: true,
+            needs_update_focus_chain: true,
             #[cfg(debug_assertions)]
             widget_name,
         }
@@ -214,7 +231,7 @@ impl WidgetState {
             needs_update_disabled: false,
             needs_update_stashed: false,
             children_changed: false,
-            update_focus_chain: false,
+            needs_update_focus_chain: false,
             ..Self::new(id, "<root>")
         }
     }
@@ -235,7 +252,7 @@ impl WidgetState {
         self.needs_update_disabled |= child_state.needs_update_disabled;
         self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
-        self.update_focus_chain |= child_state.update_focus_chain;
+        self.needs_update_focus_chain |= child_state.needs_update_focus_chain;
         self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
