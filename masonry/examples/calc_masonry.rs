@@ -198,17 +198,11 @@ impl Widget for CalcButton {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     SizedBox::set_border(&mut inner, Color::WHITE, 3.0);
                 });
-                // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
-                // Should be fixed once the pass spec RFC is implemented.
-                ctx.request_anim_frame();
             }
             Update::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     SizedBox::set_border(&mut inner, Color::TRANSPARENT, 3.0);
                 });
-                // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
-                // Should be fixed once the pass spec RFC is implemented.
-                ctx.request_anim_frame();
             }
             _ => (),
         }
