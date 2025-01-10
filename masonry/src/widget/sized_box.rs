@@ -447,6 +447,31 @@ impl SizedBox {
         this.ctx.request_layout();
     }
 
+    /// Add a shadow to the widget.
+    pub fn set_shadow(
+        this: &mut WidgetMut<'_, Self>,
+        color: impl Into<Color>,
+        offset: impl Into<Vec2>,
+        blur_radius: impl Into<f64>,
+        spread_radius: impl Into<f64>,
+        corner_radius: impl Into<Option<f64>>,
+    ) {
+        this.widget.shadow = Some(ShadowStyle {
+            color: color.into(),
+            offset: offset.into(),
+            blur_radius: blur_radius.into(),
+            spread_radius: spread_radius.into(),
+            corner_radius: corner_radius.into(),
+        });
+        this.ctx.request_paint_only();
+    }
+
+    /// Clears shadow.
+    pub fn clear_shadow(this: &mut WidgetMut<'_, Self>) {
+        this.widget.shadow = None;
+        this.ctx.request_paint_only();
+    }
+
     /// Round off corners of this container by setting a corner radius
     pub fn set_rounded(this: &mut WidgetMut<'_, Self>, radius: impl Into<RoundedRectRadii>) {
         this.widget.corner_radius = radius.into();
