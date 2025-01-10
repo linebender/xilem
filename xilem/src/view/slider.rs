@@ -17,12 +17,17 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///     .on_change(|value| println!("Slider value: {}", value))
 ///     .with_color(Color::rgb8(100, 150, 200));
 /// ```
-pub fn slider<State, Action>(min: f64, max: f64, value: f64) -> Slider<impl for<'a> Fn(&'a mut State, f64) -> MessageResult<Action> + Send + 'static> {
+pub fn slider<State, Action>(
+    min: f64, 
+    max: f64, 
+    value: f64,
+    on_change: impl Fn(&mut State, f64) -> Action + Send + 'static,
+) -> Slider<impl for<'a> Fn(&'a mut State, f64) -> MessageResult<Action> + Send + 'static> {
     Slider {
         min,
         max,
         value: value.clamp(min, max),
-        on_change: None,
+        on_change: move |state: &mut State, value| MessageResult::Action(on_change(state, value)),
         color: None,
     }
 }
@@ -32,7 +37,7 @@ pub struct Slider<F> {
     min: f64,
     max: f64,
     value: f64,
-    on_change: Option<F>,
+    on_change: F,
     color: Option<masonry::Color>,
 }
 
@@ -42,16 +47,6 @@ impl<F> Slider<F>
 where
     F: for<'a> Fn(&'a mut (), f64) -> MessageResult<()> + Send + Sync + 'static,
 {
-    /// Set a callback for when the slider value changes.
-    pub fn on_change<State, Action>(self, on_change: impl Fn(&mut State, f64) -> Action + Send + Sync + 'static) -> Slider<impl for<'a> Fn(&'a mut State, f64) -> MessageResult<Action> + Send + 'static> {
-        Slider {
-            min: self.min,
-            max: self.max,
-            value: self.value,
-            on_change: Some(move |state: &mut State, value| MessageResult::Action(on_change(state, value))),
-            color: self.color,
-        }
-    }
 
     /// Set the slider's thumb color.
     pub fn with_color(mut self, color: impl Into<masonry::Color>) -> Self {
@@ -112,11 +107,7 @@ where
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
                 if let masonry::Action::SliderValueChanged(value) = *action {
-                    if let Some(on_change) = &self.on_change {
-                        MessageResult::Action(on_change(app_state, value))
-                    } else {
-                        MessageResult::Nop
-                    }
+                    MessageResult::Action((self.on_change)(app_state, value))
                 } else {
                     tracing::error!("Wrong action type in Slider::message: {action:?}");
                     MessageResult::Stale(action)
