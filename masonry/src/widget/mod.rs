@@ -26,6 +26,7 @@ mod prose;
 mod root_widget;
 mod scroll_bar;
 mod sized_box;
+mod slider;
 mod spinner;
 mod split;
 mod text_area;
@@ -35,6 +36,7 @@ mod widget_arena;
 mod zstack;
 
 pub use self::image::Image;
+pub use slider::Slider;
 pub use align::Align;
 pub use button::Button;
 pub use checkbox::Checkbox;
