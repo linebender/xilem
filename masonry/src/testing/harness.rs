@@ -112,9 +112,19 @@ pub struct TestHarness {
     title: String,
 }
 
+/// Parameters for creating a [`TestHarness`].
+#[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub struct TestHarnessParams {
+    /// The size of the virtual window the harness renders into for snapshot testing.
+    /// Defaults to [`Self::DEFAULT_SIZE`].
     pub window_size: Size,
+    /// The background color of the virtual window.
+    /// Defaults to [`Self::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
+    /// The scale factor widgets are rendered at.
+    /// Defaults to 1.0.
+    pub scale_factor: f64,
 }
 
 /// Assert a snapshot of a rendered frame of your app.
@@ -153,6 +163,7 @@ impl Default for TestHarnessParams {
         Self {
             window_size: Self::DEFAULT_SIZE,
             background_color: Self::DEFAULT_BACKGROUND_COLOR,
+            scale_factor: 1.0,
         }
     }
 }
@@ -177,7 +188,7 @@ impl TestHarness {
         )
     }
 
-    /// Builds harness with given root widget, canvas size and background color.
+    /// Builds harness with given root widget and additional parameters.
     pub fn create_with(root_widget: impl Widget, params: TestHarnessParams) -> Self {
         let mouse_state = PointerState::empty();
         let window_size = PhysicalSize::new(
@@ -204,7 +215,7 @@ impl TestHarness {
                 RenderRootOptions {
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
-                    scale_factor: 1.0,
+                    scale_factor: params.scale_factor,
                     test_font: Some(data),
                 },
             ),
@@ -222,12 +233,10 @@ impl TestHarness {
     }
 
     // --- MARK: PROCESS EVENTS ---
-    // FIXME - The docs for these three functions are copy-pasted. Rewrite them.
 
     /// Send a [`WindowEvent`] to the simulated window.
     ///
-    /// If this event triggers rewrite passes, they will also run as normal.
-    // TODO - Link to tutorial about rewrite passes - See #632
+    /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
         let handled = self.render_root.handle_window_event(event);
         self.process_signals();
@@ -236,8 +245,7 @@ impl TestHarness {
 
     /// Send a [`PointerEvent`] to the simulated window.
     ///
-    /// If this event triggers rewrite passes, they will also run as normal.
-    // TODO - Link to tutorial about rewrite passes - See #632
+    /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let handled = self.render_root.handle_pointer_event(event);
         self.process_signals();
@@ -246,8 +254,7 @@ impl TestHarness {
 
     /// Send a [`TextEvent`] to the simulated window.
     ///
-    /// If this event triggers rewrite passes, they will also run as normal.
-    // TODO - Link to tutorial about rewrite passes - See #632
+    /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
         let handled = self.render_root.handle_text_event(event);
         self.process_signals();
@@ -490,12 +497,11 @@ impl TestHarness {
         }
     }
 
-    /// Sets the focused widget.
+    /// Sets the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
     ///
     /// ## Panics
     ///
     /// If the widget is not found in the tree or can't be focused.
-    // TODO - Link to focus definition in tutorial
     #[track_caller]
     pub fn focus_on(&mut self, id: Option<WidgetId>) {
         if let Some(id) = id {
@@ -547,20 +553,19 @@ impl TestHarness {
     }
 
     // TODO - Link to focus definition in tutorial
-    /// Return a [`WidgetRef`] to the widget that receives keyboard events.
+    /// Return a [`WidgetRef`] to the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()
             .find_widget_by_id(self.render_root.global_state.focused_widget?)
     }
 
-    /// Return a [`WidgetRef`] to the widget which captures pointer events.
-    // TODO - Link to pointer capture definition in tutorial
+    /// Return a [`WidgetRef`] to the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
             .get_widget(self.render_root.global_state.pointer_capture_target?)
     }
 
-    /// Return the id of the widget which captures pointer events.
+    /// Return the id of the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
     // TODO - This is kinda redundant with the above
     pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
         self.render_root.global_state.pointer_capture_target
