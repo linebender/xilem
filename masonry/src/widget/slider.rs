@@ -5,7 +5,7 @@ use vello::{kurbo::Circle, Scene};
 
 use crate::contexts::{AccessCtx, ComposeCtx, EventCtx, LayoutCtx, PaintCtx, RegisterCtx, UpdateCtx};
 use crate::event::{PointerEvent, Update};
-use crate::{AllowRawMut, BoxConstraints, Point, Rect, Size, Widget, WidgetId, WidgetPod};
+use crate::{Affine, AllowRawMut, BoxConstraints, Point, Rect, Size, Widget, WidgetId, WidgetPod};
 
 /// A slider widget for selecting a value within a range.
 pub struct Slider {
