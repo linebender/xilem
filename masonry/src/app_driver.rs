@@ -5,7 +5,7 @@ use crate::event_loop_runner::MasonryState;
 use crate::{Action, RenderRoot, WidgetId};
 
 pub struct DriverCtx<'a> {
-    render_root: &'a mut RenderRoot,
+    pub(crate) render_root: &'a mut RenderRoot,
 }
 
 pub trait AppDriver {
