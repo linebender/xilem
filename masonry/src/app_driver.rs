@@ -5,13 +5,7 @@ use crate::event_loop_runner::MasonryState;
 use crate::{Action, RenderRoot, WidgetId};
 
 pub struct DriverCtx<'a> {
-    // TODO
-    // This is exposed publicly for now to let people drive
-    // masonry on their own, but this is not expected to be
-    // stable or even supported. This is for short term
-    // expedience only while better solutions are devised.
-    #[doc(hidden)]
-    pub render_root: &'a mut RenderRoot,
+    render_root: &'a mut RenderRoot,
 }
 
 pub trait AppDriver {
@@ -28,7 +22,7 @@ pub trait AppDriver {
 impl DriverCtx<'_> {
     // TODO - Add method to create timer
 
-    /// Return a reference to the [`RenderRoot`].
+    /// Access the [`RenderRoot`].
     pub fn render_root(&mut self) -> &mut RenderRoot {
         self.render_root
     }
