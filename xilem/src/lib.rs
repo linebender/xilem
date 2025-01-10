@@ -178,7 +178,7 @@ where
 /// to be used with Xilem.
 ///
 /// This exists for two reasons:
-/// 1) The nearest equivalent type in Masonry, [`WidgetPod`](masonry::WidgetPod), can't have
+/// 1) The nearest equivalent type in Masonry, [`WidgetPod`], can't have
 ///    [Xilem Core](xilem_core) traits implemented on it due to Rust's orphan rules.
 /// 2) `WidgetPod` is also used during a Widget's lifetime to contain its children,
 ///    and so might not actually own the underlying widget value.
