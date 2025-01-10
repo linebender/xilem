@@ -219,6 +219,7 @@ impl SizedBox {
             height: None,
             background: None,
             border: None,
+            shadow: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
             padding: Padding::ZERO,
         }
@@ -249,6 +250,7 @@ impl SizedBox {
             height: None,
             background: None,
             border: None,
+            shadow: None,
             corner_radius: RoundedRectRadii::from_single_radius(0.0),
             padding: Padding::ZERO,
         }
@@ -559,13 +561,13 @@ impl Widget for SizedBox {
             let shadow_rect = size
                 .to_rect()
                 .inset(-shadow.spread_radius)
-                .to_rounded_rect(corner_radius)
-                .translate(shadow.offset);
+                .to_rounded_rect(corner_radius);
+            let shadow_transform = Affine::translate(shadow.offset);
             
             scene.fill(
                 Fill::NonZero,
                 Affine::IDENTITY,
-                &shadow.color.with_alpha_factor(0.3), // Adjust alpha as needed
+                &shadow.color.with_alpha(0.3), // Adjust alpha as needed
                 Some(Affine::IDENTITY),
                 &shadow_rect,
             );
