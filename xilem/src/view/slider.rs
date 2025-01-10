@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::widget::Slider as MasonrySlider;
-use xilem_core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use xilem_core::{DynMessage, MessageResult, Mut, View, ViewCtx, ViewId, ViewMarker};
 
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -60,21 +60,11 @@ impl<State, Action> View<State, Action, ViewCtx> for Slider<State, Action> {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Pod<MasonrySlider>, ()) {
-        let mut slider = MasonrySlider::new(self.min, self.max, self.value);
-        
-        if let Some(ref on_change) = self.on_change {
-            let on_change = on_change.clone();
-            slider = slider.on_change(move |value| {
-                let action = (on_change)(value);
-                ctx.proxy().send(action).unwrap();
-            });
-        }
-
+        let slider = MasonrySlider::new(self.min, self.max, self.value);
         if let Some(color) = self.color {
             slider = slider.with_color(color);
         }
-
-        (ctx.new_pod(slider), ())
+        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(slider))
     }
 
     fn rebuild(
@@ -103,12 +93,32 @@ impl<State, Action> View<State, Action, ViewCtx> for Slider<State, Action> {
     fn message(
         &self,
         _state: &mut Self::ViewState,
-        _id_path: &[ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
-        _app_state: &mut State,
+        app_state: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in Slider::message, but Slider doesn't consume any messages, this is a bug");
-        MessageResult::Stale(message)
+        debug_assert!(
+            id_path.is_empty(),
+            "id path should be empty in Slider::message"
+        );
+        match message.downcast::<masonry::Action>() {
+            Ok(action) => {
+                if let masonry::Action::SliderValueChanged(value) = *action {
+                    if let Some(ref mut on_change) = self.on_change {
+                        MessageResult::Action((on_change)(value))
+                    } else {
+                        MessageResult::Nop
+                    }
+                } else {
+                    tracing::error!("Wrong action type in Slider::message: {action:?}");
+                    MessageResult::Stale(action)
+                }
+            }
+            Err(message) => {
+                tracing::error!("Wrong message type in Slider::message: {message:?}");
+                MessageResult::Stale(message)
+            }
+        }
     }
 }
 
