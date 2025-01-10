@@ -6,10 +6,10 @@
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, warn, Span};
-use vello::kurbo::{Affine, RoundedRectRadii};
-use vello::peniko::{Brush, Fill, Color};
-use vello::Scene;
 use vello::kurbo::Vec2;
+use vello::kurbo::{Affine, RoundedRectRadii};
+use vello::peniko::{Brush, Color, Fill};
+use vello::Scene;
 
 use crate::paint_scene_helpers::stroke;
 use crate::widget::{WidgetMut, WidgetPod};
@@ -36,6 +36,11 @@ struct ShadowStyle {
     blur_radius: f64,
     /// Shadow spread radius
     spread_radius: f64,
+    /// The corner radius of the shadow.
+    ///
+    /// If `None`, the shadow will use the same corner radius as the widget's background.
+    /// If `Some(radius)`, the shadow will use the specified radius for its corners.
+    corner_radius: Option<f64>,
 }
 
 /// Padding specifies the spacing between the edges of the box and the child view.
@@ -326,12 +331,14 @@ impl SizedBox {
         offset: impl Into<Vec2>,
         blur_radius: impl Into<f64>,
         spread_radius: impl Into<f64>,
+        corner_radius: impl Into<Option<f64>>,
     ) -> Self {
         self.shadow = Some(ShadowStyle {
             color: color.into(),
             offset: offset.into(),
             blur_radius: blur_radius.into(),
             spread_radius: spread_radius.into(),
+            corner_radius: corner_radius.into(),
         });
         self
     }
@@ -563,14 +570,14 @@ impl Widget for SizedBox {
                 .to_rect()
                 .inset(-shadow.spread_radius)
                 .to_rounded_rect(corner_radius);
-            let shadow_transform = Affine::translate(shadow.offset);
-            
-            scene.fill(
-                Fill::NonZero,
-                Affine::IDENTITY,
-                &shadow.color.with_alpha(0.3), // Adjust alpha as needed
-                Some(Affine::IDENTITY),
+
+            scene.draw_blurred_rounded_rect_in(
                 &shadow_rect,
+                Affine::translate(shadow.offset),
+                shadow_rect.rect(),
+                shadow.color,
+                shadow.corner_radius.unwrap_or(corner_radius.top_left),
+                shadow.blur_radius,
             );
         }
 
@@ -775,7 +782,7 @@ mod tests {
             .width(40.0)
             .height(40.0)
             .background(palette::css::WHITE)
-            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0);
+            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0, None);
 
         let mut harness = TestHarness::create(widget);
 
@@ -790,7 +797,7 @@ mod tests {
             .height(40.0)
             .background(palette::css::WHITE)
             .border(palette::css::BLUE, 2.0)
-            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0);
+            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0, None);
 
         let mut harness = TestHarness::create(widget);
 
@@ -805,7 +812,7 @@ mod tests {
             .height(40.0)
             .background(palette::css::WHITE)
             .rounded(10.0)
-            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0);
+            .shadow(palette::css::BLACK, (5.0, 5.0), 10.0, 0.0, None);
 
         let mut harness = TestHarness::create(widget);
 
