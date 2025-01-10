@@ -236,7 +236,7 @@ pub trait Widget: AsAny {
 
     /// Return the cursor icon for this widget.
     ///
-    /// This will be called when the mouse moves or [`cursor_icon_changed`](MutateCtx::cursor_icon_changed) is called.
+    /// This will be called when the mouse moves or [`request_cursor_icon_change`](MutateCtx::request_cursor_icon_change) is called.
     ///
     /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
