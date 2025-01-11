@@ -4,11 +4,19 @@
 use crate::event_loop_runner::MasonryState;
 use crate::{Action, RenderRoot, WidgetId};
 
+/// Context for the [`AppDriver`] trait.
+///
+/// Currently holds a reference to the [`RenderRoot`].
 pub struct DriverCtx<'a> {
     pub(crate) render_root: &'a mut RenderRoot,
 }
 
+/// A trait for defining how your app interacts with the Masonry widget tree.
+///
+/// When launching your app with [`crate::event_loop_runner::run`], you need to provide
+/// a type that implements this trait.
 pub trait AppDriver {
+    /// A hook which will be executed when a widget emits an [`Action`].
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
 
     #[allow(unused_variables)]
@@ -27,6 +35,7 @@ impl DriverCtx<'_> {
         self.render_root
     }
 
+    /// Returns true if something happened that requires a rewrite pass or a re-render.
     pub fn content_changed(&self) -> bool {
         self.render_root.needs_rewrite_passes()
     }

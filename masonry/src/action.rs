@@ -14,11 +14,16 @@ use crate::event::PointerButton;
 ///
 /// Note: Actions are still a WIP feature.
 pub enum Action {
+    /// A button was pressed.
     ButtonPressed(PointerButton),
+    /// Text changed.
     TextChanged(String),
+    /// Text entered.
     TextEntered(String),
+    /// A checkbox was checked.
     CheckboxChecked(bool),
     // FIXME - This is a huge hack
+    /// Other.
     Other(Box<dyn Any + Send>),
 }
 

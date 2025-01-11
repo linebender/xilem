@@ -45,6 +45,12 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 
 // --- MARK: STRUCTS ---
 
+/// The composition root of Masonry.
+///
+/// This is the entry point for all user events, and the source of all signals to be sent to
+/// winit or similar event loop runners, as well as 2D scenes and accessibility information.
+///
+/// This is also the type that owns the widget tree.
 pub struct RenderRoot {
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
     pub(crate) size_policy: WindowSizePolicy,
@@ -106,9 +112,20 @@ pub enum WindowSizePolicy {
     User,
 }
 
+/// Options for creating a [`RenderRoot`].
 pub struct RenderRootOptions {
+    /// If true, `fontique` will provide access to system fonts
+    /// using platform-specific APIs.
     pub use_system_fonts: bool,
+
+    /// Defines how the window size should be determined.
     pub size_policy: WindowSizePolicy,
+
+    /// The scale factor to use for rendering.
+    ///
+    /// Useful for high-DPI displays.
+    ///
+    /// `1.0` is a sensible default.
     pub scale_factor: f64,
 
     /// Add a font from its raw data for use in tests.
@@ -121,35 +138,55 @@ pub struct RenderRootOptions {
     pub test_font: Option<Vec<u8>>,
 }
 
+/// Objects emitted by the [`RenderRoot`] to signal that something has changed or require external actions.
 pub enum RenderRootSignal {
+    /// A widget has emitted an action.
     Action(Action, WidgetId),
+    /// An IME session has been started.
     StartIme,
+    /// The IME session has ended.
     EndIme,
+    /// The IME area has been moved.
     ImeMoved(LogicalPosition<f64>, LogicalSize<f64>),
+    /// The window needs to be redrawn.
     RequestRedraw,
+    /// The window should be redrawn for an animation frame. Currently this isn't really different from `RequestRedraw`.
     RequestAnimFrame,
+    /// The window should take focus.
     TakeFocus,
+    /// The mouse icon has changed.
     SetCursor(CursorIcon),
+    /// The window size has changed.
     SetSize(PhysicalSize<u32>),
+    /// The window title has changed.
     SetTitle(String),
+    /// The window is being dragged.
     DragWindow,
+    /// The window is being resized.
     DragResizeWindow(ResizeDirection),
+    /// The window is being maximized.
     ToggleMaximized,
+    /// The window is being minimized.
     Minimize,
+    /// The window is being closed.
     Exit,
+    /// The window menu is being shown.
     ShowWindowMenu(LogicalPosition<f64>),
 }
 
 impl RenderRoot {
-    pub fn new(
-        root_widget: impl Widget,
-        RenderRootOptions {
+    /// Create a new `RenderRoot` with the given options.
+    ///
+    /// Note that this doesn't create a window or start the event loop.
+    ///
+    /// See [`crate::event_loop_runner::run`] for that.
+    pub fn new(root_widget: impl Widget, options: RenderRootOptions) -> Self {
+        let RenderRootOptions {
             use_system_fonts,
             size_policy,
             scale_factor,
             test_font,
-        }: RenderRootOptions,
-    ) -> Self {
+        } = options;
         let mut root = Self {
             root: WidgetPod::new(root_widget).boxed(),
             size_policy,
@@ -225,6 +262,7 @@ impl RenderRoot {
     }
 
     // --- MARK: WINDOW_EVENT ---
+    /// Handle a window event.
     pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
         match event {
             WindowEvent::Rescale(scale_factor) => {
@@ -268,6 +306,7 @@ impl RenderRoot {
     }
 
     // --- MARK: PUB FUNCTIONS ---
+    /// Handle a pointer event.
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let _span = info_span!("pointer_event");
         let handled = run_on_pointer_event_pass(self, &event);
@@ -277,6 +316,7 @@ impl RenderRoot {
         handled
     }
 
+    /// Handle a text event.
     pub fn handle_text_event(&mut self, event: TextEvent) -> Handled {
         let _span = info_span!("text_event");
         let handled = run_on_text_event_pass(self, &event);
@@ -292,6 +332,7 @@ impl RenderRoot {
         handled
     }
 
+    /// Handle an accesskit event.
     pub fn handle_access_event(&mut self, event: ActionRequest) {
         let _span = info_span!("access_event");
         let Ok(id) = event.target.0.try_into() else {
@@ -321,6 +362,10 @@ impl RenderRoot {
             .register_fonts(data)
     }
 
+    /// Redraw the window.
+    ///
+    /// Returns an update to the accessibility tree and a Vello scene representing
+    /// the widget tree's current state.
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
         if self.root_state().needs_layout {
             // TODO - Rewrite more clearly after run_rewrite_passes is rewritten
@@ -333,17 +378,23 @@ impl RenderRoot {
         }
 
         // TODO - Handle invalidation regions
-        // TODO - Improve caching of scenes.
         (
             run_paint_pass(self),
             run_accessibility_pass(self, self.scale_factor),
         )
     }
 
+    /// Pop the oldest signal from the queue.
     pub fn pop_signal(&mut self) -> Option<RenderRootSignal> {
         self.global_state.signal_queue.pop_front()
     }
 
+    /// Pop the oldest signal from the queue that matches the predicate.
+    ///
+    /// Doesn't affect other signals.
+    ///
+    /// Note that you should still use [`Self::pop_signal`] to avoid letting the queue
+    /// grow indefinitely.
     pub fn pop_signal_matching(
         &mut self,
         predicate: impl Fn(&RenderRootSignal) -> bool,
@@ -352,6 +403,7 @@ impl RenderRoot {
         self.global_state.signal_queue.remove(idx)
     }
 
+    /// Get the current icon that the mouse should display.
     pub fn cursor_icon(&self) -> CursorIcon {
         self.cursor_icon
     }

@@ -19,11 +19,17 @@ use crate::kurbo::Rect;
 // TODO - switch anim frames to being about age / an absolute timestamp
 // instead of time elapsed.
 // (this will help in cases where we want to skip anim frames)
+
+/// A global event.
 #[derive(Debug, Clone)]
 pub enum WindowEvent {
+    /// The window's DPI factor changed.
     Rescale(f64),
+    /// The window was resized.
     Resize(PhysicalSize<u32>),
+    /// The animation frame requested by this window must run.
     AnimFrame,
+    /// The accessibility tree must be rebuilt.
     RebuildAccessTree,
 }
 
@@ -181,53 +187,96 @@ impl From<PointerButton> for PointerButtons {
 // TODO - How can RenderRoot express "I started a drag-and-drop op"?
 // TODO - Touchpad, Touch, AxisMotion
 // TODO - How to handle CursorEntered?
+/// A pointer-related event.
+///
+/// A pointer in this context can be a mouse, a pen, a touch screen, etc. Though
+/// Masonry currently doesn't really support multiple pointers.
 #[derive(Debug, Clone)]
 pub enum PointerEvent {
+    /// A pointer was pressed.
     PointerDown(PointerButton, PointerState),
+    /// A pointer was released.
     PointerUp(PointerButton, PointerState),
+    /// A pointer was moved.
     PointerMove(PointerState),
+    /// A pointer entered the window.
     PointerEnter(PointerState),
+    /// A pointer left the window.
     PointerLeave(PointerState),
+    /// A mouse wheel event.
     MouseWheel(LogicalPosition<f64>, PointerState),
+    /// During a file drag-and-drop operation, a file was kept over the window.
     HoverFile(PathBuf, PointerState),
+    /// During a file drag-and-drop operation, a file was dropped on the window.
     DropFile(PathBuf, PointerState),
+    /// A file drag-and-drop operation was cancelled.
     HoverFileCancel(PointerState),
+    /// A pinch gesture was detected.
     Pinch(f64, PointerState),
 }
 
 // TODO - Clipboard Paste?
 // TODO skip is_synthetic=true events
+/// A text-related event.
 #[derive(Debug, Clone)]
 pub enum TextEvent {
+    /// A keyboard event.
     KeyboardKey(KeyEvent, ModifiersState),
+    /// An IME event.
     Ime(Ime),
+    /// Modifier keys (e.g. Shift, Ctrl, Alt) were pressed or released.
     ModifierChange(ModifiersState),
+    /// The window took or lost focus.
     // TODO - Document difference with Update focus change
     FocusChange(bool),
 }
 
+// TODO - Go into more detail.
+/// An accessibility event.
 #[derive(Debug, Clone)]
 pub struct AccessEvent {
+    /// The action that was performed.
     pub action: accesskit::Action,
+    /// The data associated with the action.
     pub data: Option<accesskit::ActionData>,
 }
 
+/// The persistent state of a pointer.
 #[derive(Debug, Clone)]
 pub struct PointerState {
     // TODO
     // pub device_id: DeviceId,
+    /// The position of the pointer in physical coordinates.
+    /// This is the number of pixels from the top and left of the window.
     pub physical_position: PhysicalPosition<f64>,
+
+    /// The position of the pointer in logical coordinates.
+    /// This is different from physical coordinates for high-DPI displays.
     pub position: LogicalPosition<f64>,
+
+    /// The buttons that are currently pressed (mostly useful for the mouse).
     pub buttons: PointerButtons,
+
+    /// The modifier keys (e.g. Shift, Ctrl, Alt) that are currently pressed.
     pub mods: Modifiers,
+
+    /// The number of successive clicks registered. This is used to detect e.g. double-clicks.
     pub count: u8,
+
+    // TODO - Find out why this was added, maybe remove it.
+    /// Currently unused.
     pub focus: bool,
+
+    /// The force of a touch event.
     pub force: Option<Force>,
 }
 
+/// The light/dark mode of the window.
 #[derive(Debug, Clone)]
 pub enum WindowTheme {
+    /// Light mode.
     Light,
+    /// Dark mode.
     Dark,
 }
 
@@ -461,6 +510,9 @@ impl AccessEvent {
 }
 
 impl PointerState {
+    /// Create a new [`PointerState`] with dummy values.
+    ///
+    /// Mostly used for testing.
     pub fn empty() -> Self {
         Self {
             physical_position: PhysicalPosition::new(0.0, 0.0),

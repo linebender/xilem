@@ -263,6 +263,7 @@ impl WidgetState {
         self.local_paint_rect + self.origin.to_vec2()
     }
 
+    // TODO - Remove
     /// The rectangle used when calculating layout with other widgets
     ///
     /// For more information, see [`WidgetPod::layout_rect`](crate::WidgetPod::layout_rect).
