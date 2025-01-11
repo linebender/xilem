@@ -89,6 +89,7 @@
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
+//! [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 // LINEBENDER LINT SET - lib.rs - v1
 // See https://linebender.org/wiki/canonical-lints/
@@ -109,10 +110,6 @@
 #![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 // TODO: Remove any items listed as "Deferred"
-#![expect(
-    rustdoc::broken_intra_doc_links,
-    reason = "Deferred: Noisy. Tracked in https://github.com/linebender/xilem/issues/449"
-)]
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
 #![expect(clippy::should_implement_trait, reason = "Deferred: Noisy")]
 #![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]

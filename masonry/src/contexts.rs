@@ -499,10 +499,6 @@ impl LayoutCtx<'_> {
     /// to paint outside of your layout bounds. In this case, the argument
     /// should be an [`Insets`] struct that indicates where your widget
     /// needs to overpaint, relative to its bounds.
-    ///
-    /// For more information, see [`WidgetPod::paint_insets`].
-    ///
-    /// [`WidgetPod::paint_insets`]: crate::widget::WidgetPod::paint_insets
     pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
         let insets = insets.into();
         self.widget_state.paint_insets = insets.nonnegative();
@@ -651,7 +647,7 @@ impl LayoutCtx<'_> {
 
 impl ComposeCtx<'_> {
     // TODO - Remove?
-    /// Returns whether [`ComposeCtx::compose`] will be called on this widget.
+    /// Returns whether [`Widget::compose`] will be called on this widget.
     pub fn needs_compose(&self) -> bool {
         self.widget_state.needs_compose
     }
@@ -798,24 +794,14 @@ impl_context_method!(
             self.global_state.pointer_capture_target == Some(self.widget_state.id)
         }
 
-        /// The focus status of a widget.
+        /// The [text focus] status of a widget.
+        ///
+        /// The focused widget is the one that receives keyboard events.
         ///
         /// Returns `true` if this specific widget is focused.
         /// To check if any descendants are focused use [`has_focus`].
         ///
-        /// Focus means that the widget receives keyboard events.
-        ///
-        /// A widget can request focus using the [`request_focus`] method.
-        /// It's also possible to register for automatic focus via [`register_for_focus`].
-        ///
-        /// If a widget gains or loses focus it will get a [`Update::FocusChanged`] event.
-        ///
-        /// Only one widget at a time is focused. However due to the way events are routed,
-        /// all ancestors of that widget will also receive keyboard events.
-        ///
-        /// [`request_focus`]: EventCtx::request_focus
-        /// [`register_for_focus`]: UpdateCtx::register_for_focus
-        /// [`Update::FocusChanged`]: crate::Update::FocusChanged
+        /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
         /// [`has_focus`]: Self::has_focus
         pub fn is_focused(&self) -> bool {
             self.global_state.focused_widget == Some(self.widget_id())
@@ -916,6 +902,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// Request a [`compose`] pass.
     ///
     /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
+    ///
     /// [`compose`]: crate::Widget::compose
     pub fn request_compose(&mut self) {
         trace!("request_compose");
