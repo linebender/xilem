@@ -506,7 +506,7 @@ impl TestHarness {
     pub fn focus_on(&mut self, id: Option<WidgetId>) {
         if let Some(id) = id {
             let arena = &self.render_root.widget_arena;
-            let Some(state) = arena.widget_states.find(id) else {
+            let Some(state) = arena.states.find(id) else {
                 panic!("Cannot focus widget {id}: widget not found in tree");
             };
             if state.item.is_stashed {

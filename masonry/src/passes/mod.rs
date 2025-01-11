@@ -81,7 +81,7 @@ pub(crate) fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId) {
         return;
     };
 
-    let mut parent_state_mut = arena.widget_states.find_mut(parent_id).unwrap();
+    let mut parent_state_mut = arena.states.find_mut(parent_id).unwrap();
     let child_state_mut = parent_state_mut.children.get_child_mut(widget_id).unwrap();
 
     parent_state_mut.item.merge_up(child_state_mut.item);

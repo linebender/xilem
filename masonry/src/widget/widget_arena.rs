@@ -7,8 +7,7 @@ use crate::{Widget, WidgetId, WidgetState};
 
 pub(crate) struct WidgetArena {
     pub(crate) widgets: TreeArena<Box<dyn Widget>>,
-    // TODO - Rename to "states"
-    pub(crate) widget_states: TreeArena<WidgetState>,
+    pub(crate) states: TreeArena<WidgetState>,
 }
 
 impl WidgetArena {
@@ -37,7 +36,7 @@ impl WidgetArena {
             .find(widget_id)
             .expect("get_pair: widget not in widget tree");
         let state = self
-            .widget_states
+            .states
             .find(widget_id)
             .expect("get_pair: widget state not in widget tree");
         (widget, state)
@@ -53,7 +52,7 @@ impl WidgetArena {
             .find_mut(widget_id)
             .expect("get_pair_mut: widget not in widget tree");
         let state = self
-            .widget_states
+            .states
             .find_mut(widget_id)
             .expect("get_pair_mut: widget state not in widget tree");
         (widget, state)
@@ -77,14 +76,14 @@ impl WidgetArena {
 
     #[track_caller]
     pub(crate) fn get_state(&mut self, widget_id: WidgetId) -> ArenaRef<WidgetState> {
-        self.widget_states
+        self.states
             .find(widget_id)
             .expect("get_state: widget state not in widget tree")
     }
 
     #[track_caller]
     pub(crate) fn get_state_mut(&mut self, widget_id: WidgetId) -> ArenaMut<WidgetState> {
-        self.widget_states
+        self.states
             .find_mut(widget_id)
             .expect("get_state_mut: widget state not in widget tree")
     }
