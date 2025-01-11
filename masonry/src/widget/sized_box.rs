@@ -324,8 +324,6 @@ impl SizedBox {
         self.padding = padding.into();
         self
     }
-
-    // TODO - child()
 }
 
 // --- MARK: WIDGETMUT ---
@@ -456,11 +454,6 @@ impl SizedBox {
             Size::new(min_width, min_height),
             Size::new(max_width, max_height),
         )
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn width_and_height(&self) -> (Option<f64>, Option<f64>) {
-        (self.width, self.height)
     }
 }
 

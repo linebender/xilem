@@ -182,7 +182,6 @@ impl From<PointerButton> for PointerButtons {
 // TODO - How can RenderRoot express "I started a drag-and-drop op"?
 // TODO - Touchpad, Touch, AxisMotion
 // TODO - How to handle CursorEntered?
-// Note to self: Events like "pointerenter", "pointerleave" are handled differently at the Widget level. But that's weird because WidgetPod can distribute them. Need to think about this again.
 #[derive(Debug, Clone)]
 pub enum PointerEvent {
     PointerDown(PointerButton, PointerState),
@@ -314,21 +313,7 @@ pub enum Update {
 }
 
 impl PointerEvent {
-    pub fn new_pointer_leave() -> Self {
-        // TODO - The fact we're creating so many dummy values might be
-        // a sign we should refactor that struct
-        let pointer_state = PointerState {
-            physical_position: Default::default(),
-            position: Default::default(),
-            buttons: Default::default(),
-            mods: Default::default(),
-            count: 0,
-            focus: false,
-            force: None,
-        };
-        Self::PointerLeave(pointer_state)
-    }
-
+    /// Returns the [`PointerState`] of the event.
     pub fn pointer_state(&self) -> &PointerState {
         match self {
             Self::PointerDown(_, state)
@@ -344,6 +329,7 @@ impl PointerEvent {
         }
     }
 
+    /// Returns the position of the pointer event, except for [`PointerEvent::PointerLeave`] and [`PointerEvent::HoverFileCancel`].
     pub fn position(&self) -> Option<LogicalPosition<f64>> {
         match self {
             Self::PointerLeave(_) | Self::HoverFileCancel(_) => None,
@@ -351,6 +337,9 @@ impl PointerEvent {
         }
     }
 
+    /// Short name, for debug logging.
+    ///
+    /// Returns the enum variant name.
     pub fn short_name(&self) -> &'static str {
         match self {
             Self::PointerDown(_, _) => "PointerDown",
@@ -366,6 +355,10 @@ impl PointerEvent {
         }
     }
 
+    /// Returns true if the event is likely to occur every frame.
+    ///
+    /// Developers should avoid logging during high-density events to avoid
+    /// cluttering the console.
     pub fn is_high_density(&self) -> bool {
         match self {
             Self::PointerDown(_, _) => false,
@@ -386,23 +379,47 @@ impl PointerEvent {
         let position = self.pointer_state().position;
         ctx.widget_state.window_transform.inverse() * Point::new(position.x, position.y)
     }
+
+    /// Create a [`PointerEvent::PointerLeave`] event with dummy values.
+    ///
+    /// This is used internally to create synthetic `PointerLeave` events when pointer
+    /// capture is lost.
+    pub fn new_pointer_leave() -> Self {
+        // TODO - The fact we're creating so many dummy values might be
+        // a sign we should refactor that struct
+        let pointer_state = PointerState {
+            physical_position: Default::default(),
+            position: Default::default(),
+            buttons: Default::default(),
+            mods: Default::default(),
+            count: 0,
+            focus: false,
+            force: None,
+        };
+        Self::PointerLeave(pointer_state)
+    }
 }
 
 impl TextEvent {
+    /// Short name, for debug logging.
     pub fn short_name(&self) -> &'static str {
         match self {
-            Self::KeyboardKey(KeyEvent { repeat: true, .. }, _) => "KeyboardKey (repeat)",
+            Self::KeyboardKey(KeyEvent { repeat: true, .. }, _) => "KeyboardKey(repeat)",
             Self::KeyboardKey(_, _) => "KeyboardKey",
             Self::Ime(Ime::Disabled) => "Ime::Disabled",
             Self::Ime(Ime::Enabled) => "Ime::Enabled",
             Self::Ime(Ime::Commit(_)) => "Ime::Commit",
             Self::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
-            Self::Ime(Ime::Preedit(_, _)) => "Ime::Preedit",
+            Self::Ime(Ime::Preedit(_, _)) => "Ime::Preedit(\"...\")",
             Self::ModifierChange(_) => "ModifierChange",
             Self::FocusChange(_) => "FocusChange",
         }
     }
 
+    /// Returns true if the event is likely to occur every frame.
+    ///
+    /// Developers should avoid logging during high-density events to avoid
+    /// cluttering the console.
     pub fn is_high_density(&self) -> bool {
         match self {
             Self::KeyboardKey(_, _) => false,
@@ -415,6 +432,9 @@ impl TextEvent {
 }
 
 impl AccessEvent {
+    /// Short name, for debug logging.
+    ///
+    /// Returns the enum variant name.
     pub fn short_name(&self) -> &'static str {
         match self.action {
             accesskit::Action::Click => "Click",
@@ -449,15 +469,6 @@ impl AccessEvent {
 
 impl PointerState {
     pub fn empty() -> Self {
-        #[cfg(FALSE)]
-        #[allow(unsafe_code)]
-        // SAFETY: Uuuuh, unclear. Winit says the dummy id should only be used in
-        // tests and should never be passed to winit. In principle, we're never
-        // passing this id to winit, but it's still visible to custom widgets which
-        // might do so if they tried really hard.
-        // It would be a lot better if winit could just make this constructor safe.
-        let device_id = unsafe { DeviceId::dummy() };
-
         Self {
             physical_position: PhysicalPosition::new(0.0, 0.0),
             position: LogicalPosition::new(0.0, 0.0),
@@ -473,7 +484,7 @@ impl PointerState {
 impl Update {
     /// Short name, for debug logging.
     ///
-    /// Essentially returns the enum variant name.
+    /// Returns the enum variant name.
     pub fn short_name(&self) -> &str {
         match self {
             Self::WidgetAdded => "WidgetAdded",

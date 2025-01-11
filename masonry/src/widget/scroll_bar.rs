@@ -17,18 +17,13 @@ use crate::{
     WidgetId,
 };
 
-// RULES
-// -
+// TODO
+// - Fade scrollbars? Find out how Linux/MacOS/Windows do it
+// - Rename cursor to oval/rect/bar/grabber/grabbybar
+// - Rename progress to something more descriptive
+// - Document names
+// - Document invariants
 
-// TODO - Document names:
-// - grabbybar
-// - empty_space
-// - _z
-// - _length
-
-// TODO - Fade scrollbars? Find out how Linux/MacOS/Windows do it
-// TODO - Rename cursor to oval/rect/bar/grabber/grabbybar
-// TODO - Rename progress to ???
 pub struct ScrollBar {
     axis: Axis,
     pub(crate) cursor_progress: f64,
@@ -283,41 +278,7 @@ mod tests {
         assert_render_snapshot!(harness, "scrollbar_horizontal_middle");
     }
 
-    // TODO - portal larger than content
+    // TODO - Add "portal larger than content" test
 
-    #[cfg(FALSE)]
-    #[test]
-    fn edit_button() {
-        let image_1 = {
-            let button = Button::from_label(
-                Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_text_color(PRIMARY_LIGHT)
-                    .with_text_size(20.0),
-            );
-
-            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
-
-            harness.render()
-        };
-
-        let image_2 = {
-            let button = Button::new("Hello world");
-
-            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
-
-            harness.edit_root_widget(|mut button, _| {
-                let mut button = button.downcast::<Button>().unwrap();
-                button.set_text("The quick brown fox jumps over the lazy dog");
-
-                let mut label = button.label_mut();
-                label.set_text_color(PRIMARY_LIGHT);
-                label.set_text_size(20.0);
-            });
-
-            harness.render()
-        };
-
-        // We don't use assert_eq because we don't want rich assert
-        assert!(image_1 == image_2);
-    }
+    // TODO - Add WidgetMut tests
 }

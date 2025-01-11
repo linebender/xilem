@@ -198,17 +198,11 @@ impl Widget for CalcButton {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     SizedBox::set_border(&mut inner, Color::WHITE, 3.0);
                 });
-                // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
-                // Should be fixed once the pass spec RFC is implemented.
-                ctx.request_anim_frame();
             }
             Update::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
                     SizedBox::set_border(&mut inner, Color::TRANSPARENT, 3.0);
                 });
-                // FIXME - This is a monkey-patch for a problem where the mutate pass isn't run after this.
-                // Should be fixed once the pass spec RFC is implemented.
-                ctx.request_anim_frame();
             }
             _ => (),
         }
@@ -260,11 +254,13 @@ impl AppDriver for CalcState {
             _ => unreachable!(),
         }
 
-        let mut root = ctx.get_root::<RootWidget<Flex>>();
-        let mut flex = RootWidget::child_mut(&mut root);
-        let mut label = Flex::child_mut(&mut flex, 1).unwrap();
-        let mut label = label.downcast::<Label>();
-        Label::set_text(&mut label, &*self.value);
+        ctx.render_root().edit_root_widget(|mut root| {
+            let mut root = root.downcast::<RootWidget<Flex>>();
+            let mut flex = RootWidget::child_mut(&mut root);
+            let mut label = Flex::child_mut(&mut flex, 1).unwrap();
+            let mut label = label.downcast::<Label>();
+            Label::set_text(&mut label, &*self.value);
+        });
     }
 }
 

@@ -90,10 +90,12 @@ impl AppDriver for Driver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::ButtonPressed(_) => {
-                let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-                let mut portal = RootWidget::child_mut(&mut root);
-                let mut flex = Portal::child_mut(&mut portal);
-                Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                ctx.render_root().edit_root_widget(|mut root| {
+                    let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
+                    let mut portal = RootWidget::child_mut(&mut root);
+                    let mut flex = Portal::child_mut(&mut portal);
+                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                });
             }
             Action::TextChanged(new_text) => {
                 self.next_task = new_text.clone();
@@ -113,9 +115,11 @@ Because our widget tree only has one button and one textbox, there is no possibl
 
 When handling `ButtonPressed`:
 
-- `ctx.get_root()` returns a `WidgetMut<RootWidget<...>>`.
-- `root.child_mut()` returns a `WidgetMut<Portal<...>>` for the `Portal`.
-- `portal.child_mut()` returns a `WidgetMut<Flex>` for the `Flex`.
+- `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
+- `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<Box<dyn Widget>>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
+- `root.downcast::<...>()` returns a `WidgetMut<RootWidget<...>>`.
+- `RootWidget::child_mut()` returns a `WidgetMut<Portal<...>>`.
+- `Portal::child_mut()` returns a `WidgetMut<Flex>`.
 
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
 It's set up to automatically propagate update flags and update internal state when dropped.
@@ -165,7 +169,7 @@ The last step is to create our Winit window and start our main loop.
 
 Our complete program therefore looks like this:
 
-```rust,ignore
+```rust
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
@@ -182,8 +186,7 @@ fn main() {
     );
     let main_widget = RootWidget::new(main_widget);
 
-    use masonry::app_driver::{AppDriver, DriverCtx};
-    use masonry::{Action, WidgetId};
+    use masonry::{Action, AppDriver, DriverCtx, WidgetId};
     use masonry::widget::{Label};
 
     struct Driver {
@@ -194,10 +197,12 @@ fn main() {
         fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
             match action {
                 Action::ButtonPressed(_) => {
-                    let mut root: WidgetMut<RootWidget<Portal<Flex>>> = ctx.get_root();
-                    let mut portal = root.child_mut();
-                    let mut flex = portal.child_mut();
-                    flex.add_child(Label::new(self.next_task.clone()));
+                    ctx.render_root().edit_root_widget(|mut root| {
+                        let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
+                        let mut portal = RootWidget::child_mut(&mut root);
+                        let mut flex = Portal::child_mut(&mut portal);
+                        Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                    });
                 }
                 Action::TextChanged(new_text) => {
                     self.next_task = new_text.clone();
@@ -211,13 +216,15 @@ fn main() {
         next_task: String::new(),
     };
 
-use masonry::dpi::LogicalSize;
+    use masonry::dpi::LogicalSize;
     use winit::window::Window;
 
     let window_attributes = Window::default_attributes()
         .with_title("To-do list")
         .with_resizable(true)
         .with_min_inner_size(LogicalSize::new(400.0, 400.0));
+
+    # return;
 
     masonry::event_loop_runner::run(
         masonry::event_loop_runner::EventLoop::with_user_event(),

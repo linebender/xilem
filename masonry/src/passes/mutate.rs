@@ -16,8 +16,8 @@ pub(crate) fn mutate_widget<R>(
     let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(id);
 
     let _span = info_span!("mutate_widget", name = widget_mut.item.short_type_name()).entered();
-    // NOTE - parent_widget_state can be None here, because the loop below will merge the
-    // state up to the root.
+    // NOTE - we can set parent_widget_state to None here, because the loop below will merge the
+    // states up to the root.
     let root_widget = WidgetMut {
         ctx: MutateCtx {
             global_state: &mut root.global_state,

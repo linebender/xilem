@@ -28,7 +28,8 @@ fn paint_widget(
 
     let id = state.item.id;
 
-    // TODO - Handle invalidation regions
+    // TODO - Handle damage regions
+    // https://github.com/linebender/xilem/issues/789
     let mut ctx = PaintCtx {
         global_state,
         widget_state: state.item,
@@ -71,7 +72,7 @@ fn paint_widget(
         state.children,
         |widget, mut state| {
             // TODO - We skip painting stashed items.
-            // This may have knock-on effects we'd need to document.
+            // This may lead to zombie flags in rare cases, we need to fix this.
             if state.item.is_stashed {
                 return;
             }

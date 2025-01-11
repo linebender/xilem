@@ -3,8 +3,6 @@
 
 //! The context types that are passed into various widget methods.
 
-use std::time::Duration;
-
 use accesskit::TreeUpdate;
 use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
@@ -174,7 +172,6 @@ impl_context_method!(
     }
 );
 
-// Methods for all mutable context types
 impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
@@ -196,241 +193,8 @@ impl_context_method!(
                 .expect("get_child_state_mut: child not found");
             child_state_mut.item
         }
-
-        /// Set the IME cursor area.
-        ///
-        /// When this widget is [focused] and [accepts text input], the reported IME area is sent
-        /// to the platform. The area can be used by the platform to, for example, place a
-        /// candidate box near that area, while ensuring the area is not obscured.
-        ///
-        /// [focused]: EventCtx::request_focus
-        /// [accepts text input]: Widget::accepts_text_input
-        pub fn set_ime_area(&mut self, ime_area: Rect) {
-            self.widget_state.ime_area = Some(ime_area);
-        }
-
-        /// Remove the IME cursor area.
-        ///
-        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
-        pub fn clear_ime_area(&mut self) {
-            self.widget_state.ime_area = None;
-        }
     }
 );
-
-// Methods for all exclusive context types (i.e. those which have exclusive access to the global state).
-impl_context_method!(
-    AccessCtx<'_>,
-    ComposeCtx<'_>,
-    EventCtx<'_>,
-    LayoutCtx<'_>,
-    MutateCtx<'_>,
-    PaintCtx<'_>,
-    UpdateCtx<'_>,
-    {
-        /// Get the Parley contexts needed to build and paint text sections.
-        ///
-        /// Note that most users should embed the [`Label`](crate::widget::Label) widget as a child
-        /// for non-interactive text.
-        /// These contexts could however be useful for custom text editing, such as for rich text editing.
-        pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
-            (
-                &mut self.global_state.font_context,
-                &mut self.global_state.text_layout_context,
-            )
-        }
-    }
-);
-
-// --- MARK: GET LAYOUT ---
-// Methods on all context types except LayoutCtx
-// These methods access layout info calculated during the layout pass.
-impl_context_method!(
-    MutateCtx<'_>,
-    QueryCtx<'_>,
-    EventCtx<'_>,
-    UpdateCtx<'_>,
-    ComposeCtx<'_>,
-    PaintCtx<'_>,
-    AccessCtx<'_>,
-    {
-        /// The layout size.
-        ///
-        /// This is the layout size as ultimately determined by the parent
-        /// container, on the previous layout pass.
-        ///
-        /// Generally it will be the same as the size returned by the child widget's
-        /// [`layout`] method.
-        ///
-        /// [`layout`]: Widget::layout
-        pub fn size(&self) -> Size {
-            self.widget_state.size
-        }
-
-        pub fn layout_rect(&self) -> Rect {
-            self.widget_state.layout_rect()
-        }
-
-        /// The offset of the baseline relative to the bottom of the widget.
-        pub fn baseline_offset(&self) -> f64 {
-            self.widget_state.baseline_offset
-        }
-
-        /// The origin of the widget in window coordinates, relative to the top left corner of the
-        /// content area.
-        pub fn window_origin(&self) -> Point {
-            self.widget_state.window_origin()
-        }
-
-        /// The axis aligned bounding rect of this widget in window coordinates.
-        pub fn bounding_rect(&self) -> Rect {
-            self.widget_state.bounding_rect()
-        }
-
-        pub fn paint_rect(&self) -> Rect {
-            self.widget_state.paint_rect()
-        }
-
-        /// The clip path of the widget, if any was set.
-        ///
-        /// For more information, see
-        /// [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
-        pub fn clip_path(&self) -> Option<Rect> {
-            self.widget_state.clip_path
-        }
-
-        /// Convert a point from the widget's coordinate space to the window's.
-        ///
-        /// The returned point is relative to the content area; it excludes window chrome.
-        pub fn to_window(&self, widget_point: Point) -> Point {
-            self.widget_state.window_transform * widget_point
-        }
-    }
-);
-
-// --- MARK: GET STATUS ---
-// Methods on all context types except LayoutCtx
-// Access status information (hovered/pointer captured/disabled/etc).
-impl_context_method!(
-    MutateCtx<'_>,
-    QueryCtx<'_>,
-    EventCtx<'_>,
-    UpdateCtx<'_>,
-    ComposeCtx<'_>,
-    PaintCtx<'_>,
-    AccessCtx<'_>,
-    {
-        /// The "hovered" status of a widget.
-        ///
-        /// A widget is "hovered" when the mouse is hovered over it. Widgets will
-        /// often change their appearance as a visual indication that they
-        /// will respond to mouse interaction.
-        ///
-        /// The hovered status is computed from the widget's layout rect. In a
-        /// container hierarchy, all widgets with layout rects containing the
-        /// mouse position have hovered status.
-        ///
-        /// Discussion: there is currently some confusion about whether a
-        /// widget can be considered hovered when some other widget has captured the
-        /// pointer (for example, when clicking one widget and dragging to the
-        /// next). The documentation should clearly state the resolution.
-        pub fn is_hovered(&self) -> bool {
-            self.widget_state.is_hovered
-        }
-
-        /// Whether the pointer is captured by this widget.
-        ///
-        /// See [`capture_pointer`] for more information about pointer capture.
-        ///
-        /// [`capture_pointer`]: EventCtx::capture_pointer
-        pub fn has_pointer_capture(&self) -> bool {
-            self.global_state.pointer_capture_target == Some(self.widget_state.id)
-        }
-
-        /// The focus status of a widget.
-        ///
-        /// Returns `true` if this specific widget is focused.
-        /// To check if any descendants are focused use [`has_focus`].
-        ///
-        /// Focus means that the widget receives keyboard events.
-        ///
-        /// A widget can request focus using the [`request_focus`] method.
-        /// It's also possible to register for automatic focus via [`register_for_focus`].
-        ///
-        /// If a widget gains or loses focus it will get a [`Update::FocusChanged`] event.
-        ///
-        /// Only one widget at a time is focused. However due to the way events are routed,
-        /// all ancestors of that widget will also receive keyboard events.
-        ///
-        /// [`request_focus`]: EventCtx::request_focus
-        /// [`register_for_focus`]: UpdateCtx::register_for_focus
-        /// [`Update::FocusChanged`]: crate::Update::FocusChanged
-        /// [`has_focus`]: Self::has_focus
-        pub fn is_focused(&self) -> bool {
-            self.global_state.focused_widget == Some(self.widget_id())
-        }
-
-        /// The (tree) focus status of a widget.
-        ///
-        /// Returns `true` if either this specific widget or any one of its descendants is focused.
-        /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
-        pub fn has_focus(&self) -> bool {
-            self.widget_state.has_focus
-        }
-
-        /// Whether this widget gets pointer events and hovered status.
-        pub fn accepts_pointer_interaction(&self) -> bool {
-            self.widget_state.accepts_pointer_interaction
-        }
-
-        /// Whether this widget gets text focus.
-        pub fn accepts_focus(&self) -> bool {
-            self.widget_state.accepts_focus
-        }
-
-        /// Whether this widget gets IME events.
-        pub fn accepts_text_input(&self) -> bool {
-            self.widget_state.accepts_text_input
-        }
-
-        /// The disabled state of a widget.
-        ///
-        /// Returns `true` if this widget or any of its ancestors is explicitly disabled.
-        /// To make this widget explicitly disabled use [`set_disabled`].
-        ///
-        /// Disabled means that this widget should not change the state of the application. What
-        /// that means is not entirely clear but in any it should not change its data. Therefore
-        /// others can use this as a safety mechanism to prevent the application from entering an
-        /// illegal state.
-        /// For an example the decrease button of a counter of type `usize` should be disabled if the
-        /// value is `0`.
-        ///
-        /// [`set_disabled`]: EventCtx::set_disabled
-        pub fn is_disabled(&self) -> bool {
-            self.widget_state.is_disabled
-        }
-
-        /// Check is widget is stashed.
-        ///
-        /// **Note:** Stashed widgets are a WIP feature.
-        pub fn is_stashed(&self) -> bool {
-            self.widget_state.is_stashed
-        }
-    }
-);
-
-// --- MARK: CURSOR ---
-// Cursor-related impls.
-impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
-    /// Notifies Masonry that the cursor returned by [`Widget::get_cursor`] has changed.
-    ///
-    /// This is mostly meant for cases where the cursor changes even if the pointer doesn't
-    /// move, because the nature of the widget has changed somehow.
-    pub fn cursor_icon_changed(&mut self) {
-        trace!("cursor_icon_changed");
-        self.global_state.needs_pointer_pass = true;
-    }
-});
 
 // --- MARK: WIDGET_MUT ---
 // Methods to get a child WidgetMut from a parent.
@@ -503,256 +267,31 @@ impl<'w> QueryCtx<'w> {
     }
 }
 
-// --- MARK: UPDATE FLAGS ---
-// Methods on MutateCtx, EventCtx, and UpdateCtx
-impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
-    /// Request a [`paint`](crate::Widget::paint) and an [`accessibility`](crate::Widget::accessibility) pass.
-    pub fn request_render(&mut self) {
-        trace!("request_render");
-        self.widget_state.request_paint = true;
-        self.widget_state.needs_paint = true;
-        self.widget_state.needs_accessibility = true;
-        self.widget_state.request_accessibility = true;
-    }
-
-    /// Request a [`paint`](crate::Widget::paint) pass.
-    ///
-    /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::Widget::accessibility) pass.
-    /// Use request_render unless you're sure an accessibility pass is not needed.
-    pub fn request_paint_only(&mut self) {
-        trace!("request_paint");
-        self.widget_state.request_paint = true;
-        self.widget_state.needs_paint = true;
-    }
-
-    /// Request an [`accessibility`](crate::Widget::accessibility) pass.
-    ///
-    /// This doesn't request a [`paint`](crate::Widget::paint) pass.
-    /// If you want to request both an accessibility pass and a paint pass, use [`request_render`](Self::request_render).
-    pub fn request_accessibility_update(&mut self) {
-        trace!("request_accessibility_update");
-        self.widget_state.needs_accessibility = true;
-        self.widget_state.request_accessibility = true;
-    }
-
-    /// Request a layout pass.
-    ///
-    /// A Widget's [`layout`] method is always called when the widget tree
-    /// changes, or the window is resized.
-    ///
-    /// If your widget would like to have layout called at any other time,
-    /// (such as if it would like to change the layout of children in
-    /// response to some event) it must call this method.
-    ///
-    /// [`layout`]: crate::Widget::layout
-    pub fn request_layout(&mut self) {
-        trace!("request_layout");
-        self.widget_state.request_layout = true;
-        self.widget_state.needs_layout = true;
-    }
-
-    // TODO - Document better
-    /// Request a [`compose`] pass.
-    ///
-    /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
-    /// [`compose`]: crate::Widget::compose
-    pub fn request_compose(&mut self) {
-        trace!("request_compose");
-        self.widget_state.needs_compose = true;
-        self.widget_state.request_compose = true;
-    }
-
-    pub fn transform_changed(&mut self) {
-        trace!("transform_changed");
-        self.widget_state.transform_changed = true;
-        self.request_compose();
-    }
-
-    /// Request an animation frame.
-    pub fn request_anim_frame(&mut self) {
-        trace!("request_anim_frame");
-        self.widget_state.request_anim = true;
-        self.widget_state.needs_anim = true;
-    }
-
-    /// Indicate that your children have changed.
-    ///
-    /// Widgets must call this method after adding a new child.
-    pub fn children_changed(&mut self) {
-        trace!("children_changed");
-        self.widget_state.children_changed = true;
-        self.widget_state.update_focus_chain = true;
-        self.request_layout();
-    }
-
-    /// Indicate that a child is about to be removed from the tree.
-    ///
-    /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
-    /// pass them to this method.
-    pub fn remove_child(&mut self, child: WidgetPod<impl Widget>) {
-        // TODO - Send recursive event to child
-        let id = child.id();
-        let _ = self
-            .widget_state_children
-            .remove_child(id)
-            .expect("remove_child: child not found");
-        let _ = self
-            .widget_children
-            .remove_child(id)
-            .expect("remove_child: child not found");
-        self.global_state.scenes.remove(&child.id());
-
-        self.children_changed();
-    }
-
-    /// Set the disabled state for this widget.
-    ///
-    /// Setting this to `false` does not mean a widget is not still disabled; for instance it may
-    /// still be disabled by an ancestor. See [`is_disabled`] for more information.
-    ///
-    /// [`is_disabled`]: EventCtx::is_disabled
-    pub fn set_disabled(&mut self, disabled: bool) {
-        self.widget_state.needs_update_disabled = true;
-        self.widget_state.is_explicitly_disabled = disabled;
-    }
-
-    pub fn set_transform(&mut self, transform: Affine) {
-        self.widget_state.transform = transform;
-        self.transform_changed();
-    }
-});
-
-// --- MARK: OTHER METHODS ---
-// Methods on all context types except PaintCtx and AccessCtx
+// Methods for all exclusive context types (i.e. those which have exclusive access to the global state).
 impl_context_method!(
     MutateCtx<'_>,
     EventCtx<'_>,
     UpdateCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
     {
-        // TODO - Remove from MutateCtx?
-        /// Queue a callback that will be called with a [`WidgetMut`] for this widget.
+        /// Get the Parley contexts needed to build and paint text sections.
         ///
-        /// The callbacks will be run in the order they were submitted during the mutate pass.
-        pub fn mutate_self_later(
-            &mut self,
-            f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
-        ) {
-            let callback = MutateCallback {
-                id: self.widget_state.id,
-                callback: Box::new(f),
-            };
-            self.global_state.mutate_callbacks.push(callback);
-        }
-
-        /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
-        ///
-        /// The callbacks will be run in the order they were submitted during the mutate pass.
-        pub fn mutate_later<W: Widget>(
-            &mut self,
-            child: &mut WidgetPod<W>,
-            f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
-        ) {
-            let callback = MutateCallback {
-                id: child.id(),
-                callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
-            };
-            self.global_state.mutate_callbacks.push(callback);
-        }
-
-        /// Submit an [`Action`].
-        ///
-        /// Note: Actions are still a WIP feature.
-        pub fn submit_action(&mut self, action: Action) {
-            trace!("submit_action");
-            self.global_state
-                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
-        }
-
-        /// Start a window drag.
-        ///
-        /// Moves the window with the left mouse button until the button is released.
-        pub fn drag_window(&mut self) {
-            trace!("drag_window");
-            self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::DragWindow);
-        }
-
-        /// Start a window resize.
-        ///
-        /// Resizes the window with the left mouse button until the button is released.
-        pub fn drag_resize_window(&mut self, direction: ResizeDirection) {
-            trace!("drag_resize_window");
-            self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::DragResizeWindow(direction));
-        }
-
-        /// Toggle the maximized state of the window.
-        pub fn toggle_maximized(&mut self) {
-            trace!("toggle_maximized");
-            self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::ToggleMaximized);
-        }
-
-        /// Minimize the window.
-        pub fn minimize(&mut self) {
-            trace!("minimize");
-            self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::Minimize);
-        }
-
-        /// Exit the application.
-        pub fn exit(&mut self) {
-            trace!("exit");
-            self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::Exit);
-        }
-
-        /// Show the window menu at a specified position.
-        pub fn show_window_menu(&mut self, position: LogicalPosition<f64>) {
-            trace!("show_window_menu");
-            self.global_state
-                .signal_queue
-                .push_back(RenderRootSignal::ShowWindowMenu(position));
-        }
-
-        /// Request a timer event.
-        ///
-        /// The return value is a token, which can be used to associate the
-        /// request with the event.
-        pub fn request_timer(&mut self, _deadline: Duration) -> TimerToken {
-            todo!("request_timer");
-        }
-
-        /// Mark child widget as stashed.
-        ///
-        /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
-        ///
-        /// This will *not* trigger a layout pass.
-        ///
-        /// **Note:** Stashed widgets are a WIP feature.
-        pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
-            let child_state = self.get_child_state_mut(child);
-            // Stashing is generally a property derived from the parent widget's state
-            // (rather than set imperatively), so it is likely to be set as part of passes.
-            // Therefore, we avoid re-running the update_stashed_pass in most cases.
-            if child_state.is_explicitly_stashed != stashed {
-                child_state.needs_update_stashed = true;
-                child_state.is_explicitly_stashed = stashed;
-            }
+        /// Note that most users should embed the [`Label`](crate::widget::Label) widget as a child
+        /// for non-interactive text.
+        /// These contexts could however be useful for custom text editing, such as for rich text editing.
+        pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
+            (
+                &mut self.global_state.font_context,
+                &mut self.global_state.text_layout_context,
+            )
         }
     }
 );
 
-// FIXME - Remove
-pub struct TimerToken;
-
+// --- MARK: EVENT HANDLING ---
 impl EventCtx<'_> {
     // TODO - clearly document all semantics of pointer capture when they've been decided on
     // TODO - Figure out cases where widget should be notified of pointer capture
@@ -881,29 +420,6 @@ impl EventCtx<'_> {
     }
 }
 
-impl RegisterCtx<'_> {
-    /// Register a child widget.
-    ///
-    /// Container widgets should call this on all their children in
-    /// their implementation of [`Widget::register_children`].
-    pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
-        let Some(CreateWidget { widget, transform }) = child.take_inner() else {
-            return;
-        };
-
-        #[cfg(debug_assertions)]
-        {
-            self.registered_ids.push(child.id());
-        }
-
-        let id = child.id();
-        let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
-
-        self.widget_children.insert_child(id, Box::new(widget));
-        self.widget_state_children.insert_child(id, state);
-    }
-}
-
 // --- MARK: UPDATE LAYOUT ---
 impl LayoutCtx<'_> {
     #[track_caller]
@@ -932,9 +448,6 @@ impl LayoutCtx<'_> {
         }
     }
 
-    // TODO - Reorder methods so that methods necessary for layout
-    // appear higher in documentation.
-
     /// Compute layout of a child widget.
     ///
     /// Container widgets must call this on every child as part of
@@ -943,6 +456,45 @@ impl LayoutCtx<'_> {
     /// [`layout`]: Widget::layout
     pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
         run_layout_on(self, child, bc)
+    }
+
+    /// Set the position of a child widget, in the parent's coordinate space.
+    /// This will affect the parent's display rect.
+    ///
+    /// Container widgets must call this method with each non-stashed child in their
+    /// layout method, after calling `ctx.run_layout(child, bc)`.
+    ///
+    /// ## Panics
+    ///
+    /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
+    /// the child.
+    #[track_caller]
+    pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
+        self.assert_layout_done(child, "place_child");
+        if origin.x.is_nan()
+            || origin.x.is_infinite()
+            || origin.y.is_nan()
+            || origin.y.is_infinite()
+        {
+            debug_panic!(
+                "Error in {}: trying to call 'place_child' with child '{}' {} with invalid origin {:?}",
+                self.widget_id(),
+                self.get_child(child).short_type_name(),
+                child.id(),
+                origin,
+            );
+        }
+        if origin != self.get_child_state_mut(child).origin {
+            self.get_child_state_mut(child).origin = origin;
+            self.get_child_state_mut(child).transform_changed = true;
+        }
+        self.get_child_state_mut(child)
+            .is_expecting_place_child_call = false;
+
+        self.widget_state.local_paint_rect = self
+            .widget_state
+            .local_paint_rect
+            .union(self.get_child_state(child).paint_rect());
     }
 
     /// Set explicit paint [`Insets`] for this widget.
@@ -1099,45 +651,6 @@ impl LayoutCtx<'_> {
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
     }
-
-    /// Set the position of a child widget, in the parent's coordinate space.
-    /// This will affect the parent's display rect.
-    ///
-    /// Container widgets must call this method with each non-stashed child in their
-    /// layout method, after calling `child.layout(...)`.
-    ///
-    /// ## Panics
-    ///
-    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
-    /// the child.
-    #[track_caller]
-    pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
-        self.assert_layout_done(child, "place_child");
-        if origin.x.is_nan()
-            || origin.x.is_infinite()
-            || origin.y.is_nan()
-            || origin.y.is_infinite()
-        {
-            debug_panic!(
-                "Error in {}: trying to call 'place_child' with child '{}' {} with invalid origin {:?}",
-                self.widget_id(),
-                self.get_child(child).short_type_name(),
-                child.id(),
-                origin,
-            );
-        }
-        if origin != self.get_child_state_mut(child).origin {
-            self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).transform_changed = true;
-        }
-        self.get_child_state_mut(child)
-            .is_expecting_place_child_call = false;
-
-        self.widget_state.local_paint_rect = self
-            .widget_state
-            .local_paint_rect
-            .union(self.get_child_state(child).paint_rect());
-    }
 }
 
 impl ComposeCtx<'_> {
@@ -1174,6 +687,473 @@ impl ComposeCtx<'_> {
     }
 }
 
+// --- MARK: GET LAYOUT ---
+// Methods on all context types except LayoutCtx
+// These methods access layout info calculated during the layout pass.
+impl_context_method!(
+    MutateCtx<'_>,
+    QueryCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    ComposeCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    {
+        /// The layout size.
+        ///
+        /// This is the layout size as ultimately determined by the parent
+        /// container, on the previous layout pass.
+        ///
+        /// Generally it will be the same as the size returned by the child widget's
+        /// [`layout`] method.
+        ///
+        /// [`layout`]: Widget::layout
+        pub fn size(&self) -> Size {
+            self.widget_state.size
+        }
+
+        pub fn layout_rect(&self) -> Rect {
+            self.widget_state.layout_rect()
+        }
+
+        /// The offset of the baseline relative to the bottom of the widget.
+        pub fn baseline_offset(&self) -> f64 {
+            self.widget_state.baseline_offset
+        }
+
+        /// The origin of the widget in window coordinates, relative to the top left corner of the
+        /// content area.
+        pub fn window_origin(&self) -> Point {
+            self.widget_state.window_origin()
+        }
+
+        /// The axis aligned bounding rect of this widget in window coordinates.
+        pub fn bounding_rect(&self) -> Rect {
+            self.widget_state.bounding_rect()
+        }
+
+        pub fn paint_rect(&self) -> Rect {
+            self.widget_state.paint_rect()
+        }
+
+        /// The clip path of the widget, if any was set.
+        ///
+        /// For more information, see
+        /// [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
+        pub fn clip_path(&self) -> Option<Rect> {
+            self.widget_state.clip_path
+        }
+
+        /// Convert a point from the widget's coordinate space to the window's.
+        ///
+        /// The returned point is relative to the content area; it excludes window chrome.
+        pub fn to_window(&self, widget_point: Point) -> Point {
+            self.widget_state.window_transform * widget_point
+        }
+    }
+);
+
+// Methods on all context types
+// Access status information (hovered/pointer captured/disabled/etc).
+impl_context_method!(
+    MutateCtx<'_>,
+    QueryCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    LayoutCtx<'_>,
+    ComposeCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    {
+        /// The "hovered" status of a widget.
+        ///
+        /// A widget is "hovered" when the mouse is hovered over it. Widgets will
+        /// often change their appearance as a visual indication that they
+        /// will respond to mouse interaction.
+        ///
+        /// The hovered status is computed from the widget's layout rect. In a
+        /// container hierarchy, all widgets with layout rects containing the
+        /// mouse position have hovered status.
+        ///
+        /// Discussion: there is currently some confusion about whether a
+        /// widget can be considered hovered when some other widget has captured the
+        /// pointer (for example, when clicking one widget and dragging to the
+        /// next). The documentation should clearly state the resolution.
+        pub fn is_hovered(&self) -> bool {
+            self.widget_state.is_hovered
+        }
+
+        /// Whether the pointer is captured by this widget.
+        ///
+        /// See [`capture_pointer`] for more information about pointer capture.
+        ///
+        /// [`capture_pointer`]: EventCtx::capture_pointer
+        pub fn has_pointer_capture(&self) -> bool {
+            self.global_state.pointer_capture_target == Some(self.widget_state.id)
+        }
+
+        /// The focus status of a widget.
+        ///
+        /// Returns `true` if this specific widget is focused.
+        /// To check if any descendants are focused use [`has_focus`].
+        ///
+        /// Focus means that the widget receives keyboard events.
+        ///
+        /// A widget can request focus using the [`request_focus`] method.
+        /// It's also possible to register for automatic focus via [`register_for_focus`].
+        ///
+        /// If a widget gains or loses focus it will get a [`Update::FocusChanged`] event.
+        ///
+        /// Only one widget at a time is focused. However due to the way events are routed,
+        /// all ancestors of that widget will also receive keyboard events.
+        ///
+        /// [`request_focus`]: EventCtx::request_focus
+        /// [`register_for_focus`]: UpdateCtx::register_for_focus
+        /// [`Update::FocusChanged`]: crate::Update::FocusChanged
+        /// [`has_focus`]: Self::has_focus
+        pub fn is_focused(&self) -> bool {
+            self.global_state.focused_widget == Some(self.widget_id())
+        }
+
+        /// The (tree) focus status of a widget.
+        ///
+        /// Returns `true` if either this specific widget or any one of its descendants is focused.
+        /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
+        pub fn has_focus(&self) -> bool {
+            self.widget_state.has_focus
+        }
+
+        /// Whether this widget gets pointer events and hovered status.
+        pub fn accepts_pointer_interaction(&self) -> bool {
+            self.widget_state.accepts_pointer_interaction
+        }
+
+        /// Whether this widget gets text focus.
+        pub fn accepts_focus(&self) -> bool {
+            self.widget_state.accepts_focus
+        }
+
+        /// Whether this widget gets IME events.
+        pub fn accepts_text_input(&self) -> bool {
+            self.widget_state.accepts_text_input
+        }
+
+        /// The disabled state of a widget.
+        ///
+        /// Returns `true` if this widget or any of its ancestors is explicitly disabled.
+        /// To make this widget explicitly disabled use [`set_disabled`].
+        ///
+        /// Disabled means that this widget should not change the state of the application. What
+        /// that means is not entirely clear but in any it should not change its data. Therefore
+        /// others can use this as a safety mechanism to prevent the application from entering an
+        /// illegal state.
+        /// For an example the decrease button of a counter of type `usize` should be disabled if the
+        /// value is `0`.
+        ///
+        /// [`set_disabled`]: EventCtx::set_disabled
+        pub fn is_disabled(&self) -> bool {
+            self.widget_state.is_disabled
+        }
+
+        /// Check is widget is stashed.
+        ///
+        /// **Note:** Stashed widgets are a WIP feature.
+        pub fn is_stashed(&self) -> bool {
+            self.widget_state.is_stashed
+        }
+    }
+);
+
+// --- MARK: UPDATE FLAGS ---
+// Methods on MutateCtx, EventCtx, and UpdateCtx
+impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
+    /// Request a [`paint`](crate::Widget::paint) and an [`accessibility`](crate::Widget::accessibility) pass.
+    pub fn request_render(&mut self) {
+        trace!("request_render");
+        self.widget_state.request_paint = true;
+        self.widget_state.needs_paint = true;
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.request_accessibility = true;
+    }
+
+    /// Request a [`paint`](crate::Widget::paint) pass.
+    ///
+    /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::Widget::accessibility) pass.
+    /// Use request_render unless you're sure an accessibility pass is not needed.
+    pub fn request_paint_only(&mut self) {
+        trace!("request_paint");
+        self.widget_state.request_paint = true;
+        self.widget_state.needs_paint = true;
+    }
+
+    /// Request an [`accessibility`](crate::Widget::accessibility) pass.
+    ///
+    /// This doesn't request a [`paint`](crate::Widget::paint) pass.
+    /// If you want to request both an accessibility pass and a paint pass, use [`request_render`](Self::request_render).
+    pub fn request_accessibility_update(&mut self) {
+        trace!("request_accessibility_update");
+        self.widget_state.needs_accessibility = true;
+        self.widget_state.request_accessibility = true;
+    }
+
+    /// Request a layout pass.
+    ///
+    /// A Widget's [`layout`] method is always called when the widget tree
+    /// changes, or the window is resized.
+    ///
+    /// If your widget would like to have layout called at any other time,
+    /// (such as if it would like to change the layout of children in
+    /// response to some event) it must call this method.
+    ///
+    /// [`layout`]: crate::Widget::layout
+    pub fn request_layout(&mut self) {
+        trace!("request_layout");
+        self.widget_state.request_layout = true;
+        self.widget_state.needs_layout = true;
+    }
+
+    // TODO - Document better
+    /// Request a [`compose`] pass.
+    ///
+    /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
+    /// [`compose`]: crate::Widget::compose
+    pub fn request_compose(&mut self) {
+        trace!("request_compose");
+        self.widget_state.needs_compose = true;
+        self.widget_state.request_compose = true;
+    }
+
+    /// Request an animation frame.
+    pub fn request_anim_frame(&mut self) {
+        trace!("request_anim_frame");
+        self.widget_state.request_anim = true;
+        self.widget_state.needs_anim = true;
+    }
+
+    /// Notifies Masonry that the cursor returned by [`Widget::get_cursor`] has changed.
+    ///
+    /// This is mostly meant for cases where the cursor changes even if the pointer doesn't
+    /// move, because the nature of the widget has changed somehow.
+    pub fn request_cursor_icon_change(&mut self) {
+        trace!("request_cursor_icon_change");
+        self.global_state.needs_pointer_pass = true;
+    }
+
+    /// Indicate that your children have changed.
+    ///
+    /// Widgets must call this method after adding a new child.
+    pub fn children_changed(&mut self) {
+        trace!("children_changed");
+        self.widget_state.children_changed = true;
+        self.widget_state.needs_update_focus_chain = true;
+        self.request_layout();
+    }
+
+    pub fn transform_changed(&mut self) {
+        trace!("transform_changed");
+        self.widget_state.transform_changed = true;
+        self.request_compose();
+    }
+
+    /// Indicate that a child is about to be removed from the tree.
+    ///
+    /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
+    /// pass them to this method.
+    pub fn remove_child(&mut self, child: WidgetPod<impl Widget>) {
+        // TODO - Send recursive event to child
+        let id = child.id();
+        let _ = self
+            .widget_state_children
+            .remove_child(id)
+            .expect("remove_child: child not found");
+        let _ = self
+            .widget_children
+            .remove_child(id)
+            .expect("remove_child: child not found");
+        self.global_state.scenes.remove(&child.id());
+
+        self.children_changed();
+    }
+
+    /// Set the disabled state for this widget.
+    ///
+    /// Setting this to `false` does not mean a widget is not still disabled; for instance it may
+    /// still be disabled by an ancestor. See [`is_disabled`] for more information.
+    ///
+    /// [`is_disabled`]: EventCtx::is_disabled
+    pub fn set_disabled(&mut self, disabled: bool) {
+        self.widget_state.needs_update_disabled = true;
+        self.widget_state.is_explicitly_disabled = disabled;
+    }
+
+    pub fn set_transform(&mut self, transform: Affine) {
+        self.widget_state.transform = transform;
+        self.transform_changed();
+    }
+});
+
+// --- MARK: OTHER METHODS ---
+// Methods on mutable context types
+impl_context_method!(
+    MutateCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    LayoutCtx<'_>,
+    ComposeCtx<'_>,
+    {
+        // TODO - Remove from LayoutCtx/ComposeCtx
+        /// Mark child widget as stashed.
+        ///
+        /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
+        ///
+        /// This will *not* trigger a layout pass.
+        pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
+            let child_state = self.get_child_state_mut(child);
+            // Stashing is generally a property derived from the parent widget's state
+            // (rather than set imperatively), so it is likely to be set as part of passes.
+            // Therefore, we avoid re-running the update_stashed_pass in most cases.
+            if child_state.is_explicitly_stashed != stashed {
+                child_state.needs_update_stashed = true;
+                child_state.is_explicitly_stashed = stashed;
+            }
+        }
+
+        // TODO - Remove from MutateCtx?
+        /// Queue a callback that will be called with a [`WidgetMut`] for this widget.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
+        pub fn mutate_self_later(
+            &mut self,
+            f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: self.widget_state.id,
+                callback: Box::new(f),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
+        /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
+        ///
+        /// The callbacks will be run in the order they were submitted during the mutate pass.
+        pub fn mutate_later<W: Widget>(
+            &mut self,
+            child: &mut WidgetPod<W>,
+            f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
+        ) {
+            let callback = MutateCallback {
+                id: child.id(),
+                callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
+            };
+            self.global_state.mutate_callbacks.push(callback);
+        }
+
+        /// Submit an [`Action`].
+        ///
+        /// Note: Actions are still a WIP feature.
+        pub fn submit_action(&mut self, action: Action) {
+            trace!("submit_action");
+            self.global_state
+                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
+        }
+
+        /// Set the IME cursor area.
+        ///
+        /// When this widget is [focused] and [accepts text input], the reported IME area is sent
+        /// to the platform. The area can be used by the platform to, for example, place a
+        /// candidate box near that area, while ensuring the area is not obscured.
+        ///
+        /// [focused]: EventCtx::request_focus
+        /// [accepts text input]: Widget::accepts_text_input
+        pub fn set_ime_area(&mut self, ime_area: Rect) {
+            self.widget_state.ime_area = Some(ime_area);
+        }
+
+        /// Remove the IME cursor area.
+        ///
+        /// See [`LayoutCtx::set_ime_area`](LayoutCtx::set_ime_area) for more details.
+        pub fn clear_ime_area(&mut self) {
+            self.widget_state.ime_area = None;
+        }
+
+        /// Start a window drag.
+        ///
+        /// Moves the window with the left mouse button until the button is released.
+        pub fn drag_window(&mut self) {
+            trace!("drag_window");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::DragWindow);
+        }
+
+        /// Start a window resize.
+        ///
+        /// Resizes the window with the left mouse button until the button is released.
+        pub fn drag_resize_window(&mut self, direction: ResizeDirection) {
+            trace!("drag_resize_window");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::DragResizeWindow(direction));
+        }
+
+        /// Toggle the maximized state of the window.
+        pub fn toggle_maximized(&mut self) {
+            trace!("toggle_maximized");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::ToggleMaximized);
+        }
+
+        /// Minimize the window.
+        pub fn minimize(&mut self) {
+            trace!("minimize");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::Minimize);
+        }
+
+        /// Exit the application.
+        pub fn exit(&mut self) {
+            trace!("exit");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::Exit);
+        }
+
+        /// Show the window menu at a specified position.
+        pub fn show_window_menu(&mut self, position: LogicalPosition<f64>) {
+            trace!("show_window_menu");
+            self.global_state
+                .signal_queue
+                .push_back(RenderRootSignal::ShowWindowMenu(position));
+        }
+    }
+);
+
+impl RegisterCtx<'_> {
+    /// Register a child widget.
+    ///
+    /// Container widgets should call this on all their children in
+    /// their implementation of [`Widget::register_children`].
+    pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
+        let Some(CreateWidget { widget, transform }) = child.take_inner() else {
+            return;
+        };
+
+        #[cfg(debug_assertions)]
+        {
+            self.registered_ids.push(child.id());
+        }
+
+        let id = child.id();
+        let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
+
+        self.widget_children.insert_child(id, Box::new(widget));
+        self.widget_state_children.insert_child(id, state);
+    }
+}
+
+// --- MARK: DEBUG PAINT ---
 impl PaintCtx<'_> {
     /// Whether debug paint is enabled.
     ///

@@ -141,7 +141,7 @@ pub trait Widget: AsAny + AsDynWidget {
     /// changes in the widget graph or in the state of your specific widget.
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {}
 
-    /// Compute layout.
+    /// Compute layout and return the widget's size.
     ///
     /// A leaf widget should determine its size (subject to the provided
     /// constraints) and return it.
@@ -163,7 +163,9 @@ pub trait Widget: AsAny + AsDynWidget {
     /// **Container widgets should not add or remove children during layout.**
     /// Doing so is a logic error and may trigger a debug assertion.
     ///
-    /// The layout strategy is strongly inspired by Flutter.
+    /// While each widget should try to return a size that fits the input constraints,
+    /// **any widget may return a size that doesn't fit its constraints**, and container
+    /// widgets should handle those cases gracefully.
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
@@ -230,7 +232,6 @@ pub trait Widget: AsAny + AsDynWidget {
     /// As methods recurse through the widget tree, trace spans are added for each child
     /// widget visited, and popped when control flow goes back to the parent. This method
     /// returns a static span (that you can use to filter traces and logs).
-    // TODO: Make include the widget's id?
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!(
             "Widget",
@@ -251,7 +252,7 @@ pub trait Widget: AsAny + AsDynWidget {
 
     /// Return the cursor icon for this widget.
     ///
-    /// This will be called when the mouse moves or [`cursor_icon_changed`](MutateCtx::cursor_icon_changed) is called.
+    /// This will be called when the mouse moves or [`request_cursor_icon_change`](MutateCtx::request_cursor_icon_change) is called.
     ///
     /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).

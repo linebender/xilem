@@ -48,6 +48,9 @@ pub use textbox::*;
 mod portal;
 pub use portal::*;
 
+mod zstack;
+pub use zstack::*;
+
 /// An extension trait, to allow common transformations of the views transform.
 pub trait Transformable: Sized {
     fn transform_mut(&mut self) -> &mut crate::Affine;
