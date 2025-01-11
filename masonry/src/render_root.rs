@@ -17,7 +17,6 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::debug_logger::DebugLogger;
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::event::{PointerEvent, TextEvent, WindowEvent};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -65,7 +64,6 @@ pub struct RenderRoot {
 
 // TODO - Document these fields.
 pub(crate) struct RenderRootState {
-    pub(crate) debug_logger: DebugLogger,
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) focused_path: Vec<WidgetId>,
@@ -159,7 +157,6 @@ impl RenderRoot {
             last_mouse_pos: None,
             cursor_icon: CursorIcon::Default,
             global_state: RenderRootState {
-                debug_logger: DebugLogger::new(false),
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
                 focused_path: Vec::new(),
