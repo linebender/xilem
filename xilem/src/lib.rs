@@ -53,6 +53,7 @@ use crate::core::{
     ViewPathTracker, ViewSequence,
 };
 pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
+pub use masonry::widget::LineBreaking;
 pub use masonry::{dpi, palette, Affine, Color, FontWeight, TextAlignment, Vec2};
 pub use xilem_core as core;
 
