@@ -6,8 +6,8 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
-use xilem::view::{button, grid, label, GridExt as _, Transformable as _};
-use xilem::{EventLoop, Vec2, WidgetView, Xilem};
+use xilem::view::{button, grid, label, sized_box, GridExt as _, Transformable as _};
+use xilem::{Color, EventLoop, Vec2, WidgetView, Xilem};
 
 struct TransformsGame {
     rotation: f64,
@@ -20,9 +20,12 @@ impl TransformsGame {
         let rotation_correct = (self.rotation % TAU).abs() < 0.001;
         let scale_correct = self.scale >= 0.99 && self.scale <= 1.01;
         let translation_correct = self.translation.x == 0.0 && self.translation.y == 0.0;
+        let everything_correct = rotation_correct && scale_correct && translation_correct;
 
-        let status = if rotation_correct && scale_correct && translation_correct {
+        let status = if everything_correct {
             label("Great success!")
+                .brush(Color::new([0.0, 0.0, 1.0, 1.0]))
+                .text_size(30.0)
         } else {
             let rotation_mark = if rotation_correct { "✓" } else { "⨯" };
             let scale_mark = if scale_correct { "✓" } else { "⨯" };
@@ -32,9 +35,17 @@ impl TransformsGame {
             ))
         };
 
+        let bg_color = if everything_correct {
+            [0.0, 1.0, 0.0, 1.0]
+        } else {
+            [1.0, 0.0, 0.0, 0.2]
+        };
+
         // Every view can be transformed similar as with CSS transforms in the web.
         // Currently only 2D transforms are supported.
-        let transformed_status = status
+        // Note that the order of the transformations is relevant.
+        let transformed_status = sized_box(status)
+            .background(Color::new(bg_color))
             .translate(self.translation)
             .rotate(self.rotation)
             .scale(self.scale);
