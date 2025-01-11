@@ -114,6 +114,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
                     },
                 )
             }),
+            // Rather hacky way to provide custom animations, this is not how it should be done long-term.
             task(
                 |proxy| async move {
                     let mut interval = time::interval(Duration::from_secs_f64(1.0 / 60.0));
