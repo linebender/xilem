@@ -5,10 +5,6 @@
 
 // We use allow because expect(missing_docs) is noisy with rust-analyzer.
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
-#![expect(
-    rustdoc::broken_intra_doc_links,
-    reason = "Deferred: Noisy. Tracked in https://github.com/linebender/xilem/issues/449"
-)]
 
 #[allow(clippy::module_inception)]
 pub(crate) mod widget;

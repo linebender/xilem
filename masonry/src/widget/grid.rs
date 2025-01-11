@@ -52,7 +52,7 @@ impl Grid {
         self
     }
 
-    /// Builder-style variant of [`WidgetMut::add_child`].
+    /// Builder-style variant of [`Grid::add_child`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
     pub fn with_child(self, child: impl Widget, params: GridParams) -> Self {
