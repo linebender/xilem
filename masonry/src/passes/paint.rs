@@ -92,6 +92,7 @@ fn paint_widget(
         },
     );
 
+    // draw the global axis aligned bounding rect of the widget
     if debug_paint {
         const BORDER_WIDTH: f64 = 1.0;
         let color = get_debug_color(id.to_raw());

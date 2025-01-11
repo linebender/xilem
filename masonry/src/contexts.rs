@@ -658,7 +658,7 @@ impl ComposeCtx<'_> {
         self.widget_state.needs_compose
     }
 
-    /// Set a translation for the child widget.
+    /// Set the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
     pub fn set_child_scroll_translation<W: Widget>(
@@ -949,6 +949,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.request_layout();
     }
 
+    /// Indicate that the transform of this widget has changed.
     pub fn transform_changed(&mut self) {
         trace!("transform_changed");
         self.widget_state.transform_changed = true;
@@ -986,6 +987,9 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.widget_state.is_explicitly_disabled = disabled;
     }
 
+    /// Set the transform for this widget.
+    ///
+    /// It behaves similarly as CSS transforms
     pub fn set_transform(&mut self, transform: Affine) {
         self.widget_state.transform = transform;
         self.transform_changed();

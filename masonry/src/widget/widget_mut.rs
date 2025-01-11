@@ -48,6 +48,9 @@ impl<W: Widget> WidgetMut<'_, W> {
         }
     }
 
+    /// Set the local transform of this widget.
+    ///
+    /// It behaves similarly as CSS transforms.
     pub fn set_transform(&mut self, transform: Affine) {
         self.ctx.set_transform(transform);
     }

@@ -36,7 +36,7 @@ fn compose_widget(
     state.item.window_transform =
         parent_window_transform * state.item.transform.then_translate(local_translation);
 
-    let local_rect = state.item.size.to_rect();
+    let local_rect = state.item.size.to_rect() + state.item.paint_insets;
     state.item.bounding_rect = state.item.window_transform.transform_rect_bbox(local_rect);
 
     let mut ctx = ComposeCtx {

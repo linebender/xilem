@@ -58,7 +58,7 @@ pub(crate) struct WidgetState {
     /// The size of the widget; this is the value returned by the widget's layout
     /// method.
     pub(crate) size: Size,
-    /// The origin of the widget in the parent's coordinate space; together with
+    /// The origin of the widget in the `window_transform` coordinate space; together with
     /// `size` these constitute the widget's layout rect.
     pub(crate) origin: Point,
     /// The insets applied to the layout rect to generate the paint rect.
@@ -68,7 +68,7 @@ pub(crate) struct WidgetState {
     // TODO - Document
     // The computed paint rect, in local coordinates.
     pub(crate) local_paint_rect: Rect,
-    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates.
+    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates. Includes `paint_insets`.
     pub(crate) bounding_rect: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
     ///
@@ -98,8 +98,11 @@ pub(crate) struct WidgetState {
 
     /// This is being computed out of all ancestor transforms and `translation`
     pub(crate) window_transform: Affine,
+    /// Local transform of this widget in the parent coordinate space.
     pub(crate) transform: Affine,
+    /// translation applied by scrolling, this is applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
+    /// The `transform` or `scroll_translation` has changed.
     pub(crate) transform_changed: bool,
 
     // --- PASSES ---
@@ -274,7 +277,7 @@ impl WidgetState {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    /// The axis aligned bounding rect of this widget in window coordinates.
+    /// The axis aligned bounding rect of this widget in window coordinates. Includes `paint_insets`.
     pub fn bounding_rect(&self) -> Rect {
         self.bounding_rect
     }
