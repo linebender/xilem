@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget;
 pub use masonry::widget::Padding;
+use masonry::{widget, Color, Vec2};
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
@@ -25,6 +25,7 @@ where
         height: None,
         width: None,
         background: None,
+        shadow: None,
         border: None,
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
         padding: Padding::ZERO,
@@ -41,7 +42,26 @@ pub struct SizedBox<V, State, Action = ()> {
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
     padding: Padding,
+    shadow: Option<ShadowStyle>,
     phantom: PhantomData<fn() -> (State, Action)>,
+}
+
+/// Style properties for a shadow
+#[derive(PartialEq)]
+pub struct ShadowStyle {
+    /// Shadow color
+    pub color: Color,
+    /// Shadow offset from the element
+    pub offset: Vec2,
+    /// Shadow blur radius
+    pub blur_radius: f64,
+    /// Shadow spread radius
+    pub spread_radius: f64,
+    /// The corner radius of the shadow.
+    ///
+    /// If `None`, the shadow will use the same corner radius as the widget's background.
+    /// If `Some(radius)`, the shadow will use the specified radius for its corners.
+    pub corner_radius: Option<f64>,
 }
 
 impl<V, State, Action> SizedBox<V, State, Action> {
@@ -119,6 +139,25 @@ impl<V, State, Action> SizedBox<V, State, Action> {
         self.padding = padding.into();
         self
     }
+
+    /// Builder-style method for adding a shadow to the widget.
+    pub fn shadow(
+        mut self,
+        color: impl Into<Color>,
+        offset: impl Into<Vec2>,
+        blur_radius: impl Into<f64>,
+        spread_radius: impl Into<f64>,
+        corner_radius: impl Into<Option<f64>>,
+    ) -> Self {
+        self.shadow = Some(ShadowStyle {
+            color: color.into(),
+            offset: offset.into(),
+            blur_radius: blur_radius.into(),
+            spread_radius: spread_radius.into(),
+            corner_radius: corner_radius.into(),
+        });
+        self
+    }
 }
 
 impl<V, State, Action> ViewMarker for SizedBox<V, State, Action> {}
@@ -143,6 +182,15 @@ where
         }
         if let Some(border) = &self.border {
             widget = widget.border(border.brush.clone(), border.width);
+        }
+        if let Some(shadow) = &self.shadow {
+            widget = widget.shadow(
+                shadow.color,
+                shadow.offset,
+                shadow.blur_radius,
+                shadow.spread_radius,
+                shadow.corner_radius,
+            );
         }
         (ctx.new_pod(widget), child_state)
     }
@@ -187,6 +235,21 @@ where
         }
         if self.padding != prev.padding {
             widget::SizedBox::set_padding(&mut element, self.padding);
+        }
+        if self.shadow != prev.shadow {
+            match &self.shadow {
+                Some(shadow) => {
+                    widget::SizedBox::set_shadow(
+                        &mut element,
+                        shadow.color.clone(),
+                        shadow.offset,
+                        shadow.blur_radius,
+                        shadow.spread_radius,
+                        shadow.corner_radius,
+                    );
+                }
+                None => widget::SizedBox::clear_shadow(&mut element),
+            }
         }
         {
             let mut child = widget::SizedBox::child_mut(&mut element)

@@ -50,3 +50,6 @@ pub use portal::*;
 
 mod zstack;
 pub use zstack::*;
+
+mod slider;
+pub use slider::*;
