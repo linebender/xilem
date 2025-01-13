@@ -185,7 +185,7 @@ impl RenderRoot {
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
-                widget_states: TreeArena::new(),
+                states: TreeArena::new(),
             },
             rebuild_access_tree: true,
         };
@@ -208,7 +208,7 @@ impl RenderRoot {
 
     pub(crate) fn root_state(&self) -> &WidgetState {
         self.widget_arena
-            .widget_states
+            .states
             .root_token()
             .into_child(self.root.id())
             .expect("root widget not in widget tree")
@@ -217,7 +217,7 @@ impl RenderRoot {
 
     pub(crate) fn root_state_mut(&mut self) -> &mut WidgetState {
         self.widget_arena
-            .widget_states
+            .states
             .root_token_mut()
             .into_child_mut(self.root.id())
             .expect("root widget not in widget tree")
@@ -359,7 +359,7 @@ impl RenderRoot {
     // --- MARK: ACCESS WIDGETS---
     /// Get a [`WidgetRef`] to the root widget.
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
-        let root_state_token = self.widget_arena.widget_states.root_token();
+        let root_state_token = self.widget_arena.states.root_token();
         let root_widget_token = self.widget_arena.widgets.root_token();
         let state_ref = root_state_token
             .into_child(self.root.id())
@@ -389,7 +389,7 @@ impl RenderRoot {
 
     /// Get a [`WidgetRef`] to a specific widget.
     pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
-        let state_ref = self.widget_arena.widget_states.find(id)?;
+        let state_ref = self.widget_arena.states.find(id)?;
         let widget_ref = self
             .widget_arena
             .widgets
@@ -559,7 +559,7 @@ impl RenderRoot {
     // i.e. not disabled or stashed.
     // Only interactive widgets can have text focus or pointer capture.
     pub(crate) fn is_still_interactive(&self, id: WidgetId) -> bool {
-        let Some(state) = self.widget_arena.widget_states.find(id) else {
+        let Some(state) = self.widget_arena.states.find(id) else {
             return false;
         };
 

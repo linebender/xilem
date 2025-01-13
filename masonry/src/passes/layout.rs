@@ -204,7 +204,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     };
 
     let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-    let root_state_token = root.widget_arena.widget_states.root_token_mut();
+    let root_state_token = root.widget_arena.states.root_token_mut();
     let root_widget_token = root.widget_arena.widgets.root_token_mut();
     let mut ctx = LayoutCtx {
         global_state: &mut root.global_state,

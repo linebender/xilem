@@ -22,7 +22,7 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
     };
 
     root.widget_arena
-        .widget_states
+        .states
         .get_id_path(widget_id)
         .iter()
         .map(|&id| WidgetId(id.try_into().unwrap()))
@@ -170,7 +170,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
     if root.root.incomplete() {
         let mut ctx = RegisterCtx {
-            widget_state_children: root.widget_arena.widget_states.root_token_mut(),
+            widget_state_children: root.widget_arena.states.root_token_mut(),
             widget_children: root.widget_arena.widgets.root_token_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
