@@ -189,6 +189,7 @@ pub(crate) fn run_layout_on<W: Widget>(
 }
 
 // --- MARK: ROOT ---
+/// See the [passes documentation](../doc/05_pass_system.md#layout-pass).
 pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     if !root.root_state().needs_layout {
         return;

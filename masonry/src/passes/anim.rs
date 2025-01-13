@@ -54,6 +54,8 @@ fn update_anim_for_widget(
 }
 
 /// Run the animation pass.
+///
+/// See the [passes documentation](../doc/05_pass_system.md#animation-pass).
 pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
     let _span = info_span!("update_anim").entered();
 
