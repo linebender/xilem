@@ -138,6 +138,7 @@ pub(crate) struct RenderRootState {
 
     /// Pass tracing configuration, used to skip tracing to limit overhead.
     pub(crate) trace: PassTracing,
+    pub(crate) inspector_state: InspectorState,
 }
 
 pub(crate) struct MutateCallback {
@@ -218,6 +219,15 @@ pub enum RenderRootSignal {
     Exit,
     /// The window menu is being shown.
     ShowWindowMenu(LogicalPosition<f64>),
+    WidgetSelectedInInspector(WidgetId),
+}
+
+/// State of the widget inspector. Useful for debugging.
+///
+/// Widget inspector is WIP. It should get its own standalone documentation.
+pub(crate) struct InspectorState {
+    pub(crate) is_picking_widget: bool,
+    pub(crate) hovered_widget: Option<WidgetId>,
 }
 
 impl RenderRoot {
@@ -264,6 +274,10 @@ impl RenderRoot {
                 scenes: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
+                inspector_state: InspectorState {
+                    is_picking_widget: false,
+                    hovered_widget: None,
+                },
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),

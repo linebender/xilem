@@ -296,6 +296,7 @@ impl TestHarness {
                 RenderRootSignal::Minimize => (),
                 RenderRootSignal::Exit => (),
                 RenderRootSignal::ShowWindowMenu(_) => (),
+                RenderRootSignal::WidgetSelectedInInspector(_) => (),
             }
         }
     }

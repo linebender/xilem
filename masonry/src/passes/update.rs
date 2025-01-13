@@ -584,6 +584,17 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
 
+    if root.global_state.inspector_state.is_picking_widget {
+        if let Some(pos) = pointer_pos {
+            root.global_state.inspector_state.hovered_widget = root
+                .get_root_widget()
+                .find_widget_at_pos(pos)
+                .map(|widget| widget.id());
+        }
+        root.root_state_mut().needs_paint = true;
+        return;
+    }
+
     // Release pointer capture if target can no longer hold it.
     if let Some(id) = root.global_state.pointer_capture_target {
         if !root.is_still_interactive(id) {

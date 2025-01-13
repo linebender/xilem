@@ -8,7 +8,9 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::passes::{enter_span, merge_state_up};
 use crate::render_root::RenderRoot;
-use crate::{AccessEvent, EventCtx, Handled, PointerEvent, TextEvent, Widget, WidgetId};
+use crate::{
+    AccessEvent, EventCtx, Handled, PointerEvent, RenderRootSignal, TextEvent, Widget, WidgetId,
+};
 
 // --- MARK: HELPERS ---
 fn get_pointer_target(
@@ -101,6 +103,30 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     if event.position() != root.last_mouse_pos {
         root.global_state.needs_pointer_pass = true;
         root.last_mouse_pos = event.position();
+    }
+
+    if root.global_state.inspector_state.is_picking_widget
+        && matches!(event, PointerEvent::PointerMove(..))
+    {
+        root.global_state.needs_pointer_pass = true;
+        return Handled::Yes;
+    }
+
+    // If the widget picker is active and this is a click event,
+    // we select the widget under the mouse and short-circuit the event pass.
+    if root.global_state.inspector_state.is_picking_widget
+        && matches!(event, PointerEvent::PointerDown(..))
+    {
+        let target_widget_id = get_pointer_target(root, event.position());
+        if let Some(target_widget_id) = target_widget_id {
+            root.global_state
+                .emit_signal(RenderRootSignal::WidgetSelectedInInspector(
+                    target_widget_id,
+                ));
+        }
+        root.global_state.inspector_state.is_picking_widget = false;
+        root.global_state.inspector_state.hovered_widget = None;
+        return Handled::Yes;
     }
 
     let target_widget_id = get_pointer_target(root, event.position());
@@ -197,6 +223,15 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             let forward = !mods.shift_key();
             let next_focused_widget = root.widget_from_focus_chain(forward);
             root.global_state.next_focused_widget = next_focused_widget;
+            handled = Handled::Yes;
+        }
+
+        if key.physical_key == PhysicalKey::Code(KeyCode::F11)
+            && key.state == ElementState::Pressed
+            && handled == Handled::No
+        {
+            root.global_state.inspector_state.is_picking_widget =
+                !root.global_state.inspector_state.is_picking_widget;
             handled = Handled::Yes;
         }
     }
