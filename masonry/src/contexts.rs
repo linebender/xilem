@@ -810,7 +810,7 @@ impl_context_method!(
             self.global_state.focused_widget == Some(self.widget_id())
         }
 
-        /// Whether this widget or any of its descendants is focused.
+        /// Whether this widget or any of its descendants are focused.
         ///
         /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
         pub fn has_focus(&self) -> bool {
