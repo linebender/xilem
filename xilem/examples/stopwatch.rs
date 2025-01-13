@@ -113,7 +113,8 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
         flex((
             FlexSpacer::Fixed(5.0),
             label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
-            flex((lap_reset_button(data), start_stop_button(data))).direction(Axis::Horizontal),
+            flex((lap_reset_button(data), start_stop_button(data)))
+                .direction(Axis::Horizontal).main_axis_alignment(MainAxisAlignment::Center),
             FlexSpacer::Fixed(1.0),
             laps_section(data),
             label(data.displayed_error.as_ref()),
@@ -173,7 +174,6 @@ fn single_lap(
     .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Start)
-    .must_fill_major_axis(true)
 }
 
 fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {

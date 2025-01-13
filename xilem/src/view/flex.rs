@@ -21,7 +21,6 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         axis: Axis::Vertical,
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
-        fill_major_axis: false,
         gap: None,
         phantom: PhantomData,
     }
@@ -33,7 +32,6 @@ pub struct Flex<Seq, State, Action = ()> {
     axis: Axis,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
-    fill_major_axis: bool,
     gap: Option<f64>,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
@@ -50,11 +48,6 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
 
     pub fn main_axis_alignment(mut self, axis: MainAxisAlignment) -> Self {
         self.main_axis_alignment = axis;
-        self
-    }
-
-    pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
-        self.fill_major_axis = fill_major_axis;
         self
     }
 
