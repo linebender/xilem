@@ -22,7 +22,7 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
     };
 
     root.widget_arena
-        .widget_states
+        .states
         .get_id_path(widget_id)
         .iter()
         .map(|&id| WidgetId(id.try_into().unwrap()))
@@ -165,12 +165,13 @@ fn update_widget_tree(
     );
 }
 
+/// See the [passes documentation](../doc/05_pass_system.md#update-tree-pass).
 pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
     if root.root.incomplete() {
         let mut ctx = RegisterCtx {
-            widget_state_children: root.widget_arena.widget_states.root_token_mut(),
+            widget_state_children: root.widget_arena.states.root_token_mut(),
             widget_children: root.widget_arena.widgets.root_token_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
@@ -188,7 +189,9 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: DISABLED ---
+// --- MARK: UPDATE DISABLED ---
+/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [disabled status documentation](../doc/06_masonry_concepts.md#disabled).
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -247,12 +250,12 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// TODO - Document the stashed pass.
 // *Stashed* is for widgets that are no longer "part of the graph". So they can't get keyboard events, don't get painted, etc, but should keep some state.
-// The stereotypical use case would be the contents of hidden tabs in a "tab group" widget.
 // Scrolled-out widgets are *not* stashed.
 
-// --- MARK: STASHED ---
+// --- MARK: UPDATE STASHED ---
+/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [stashed status documentation](../doc/06_masonry_concepts.md#stashed).
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -323,6 +326,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 // TODO - This logic was copy-pasted from WidgetPod code and may need to be refactored.
 // It doesn't quite behave like other update passes (for instance, some code runs after
 // recurse_on_children), and some design decisions inherited from Druid should be reconsidered.
+/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -391,7 +395,9 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: FOCUS ---
+// --- MARK: UPDATE FOCUS ---
+/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [focus status documentation](../doc/06_masonry_concepts.md#text-focus).
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus").entered();
     // If the next-focused widget is disabled, stashed or removed, we set
@@ -541,6 +547,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 // Each parent that implements scrolling will update its scroll position to ensure the
 // child is visible. (If the target area is larger than the parent, the parent will try
 // to show the top left of that area.)
+/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_scroll").entered();
 
@@ -565,7 +572,8 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: POINTER ---
+// --- MARK: UPDATE POINTER ---
+/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if !root.global_state.needs_pointer_pass {
         return;

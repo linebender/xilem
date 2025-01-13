@@ -210,14 +210,14 @@ impl Flex {
         self
     }
 
-    /// Builder-style variant of [`WidgetMut::add_child`].
+    /// Builder-style variant of [`Flex::add_child`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
     pub fn with_child(self, child: impl Widget) -> Self {
         self.with_child_pod(WidgetPod::new(Box::new(child)))
     }
 
-    /// Builder-style variant of [`WidgetMut::add_child`], that takes the id that the child will have.
+    /// Builder-style variant of [`Flex::add_child`], that takes the id that the child will have.
     ///
     /// Useful for unit tests.
     pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
@@ -266,7 +266,7 @@ impl Flex {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: WidgetMut::add_default_spacer
+    /// [`add_default_spacer`]: Flex::add_default_spacer
     pub fn with_spacer(mut self, mut len: f64) -> Self {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -422,7 +422,7 @@ impl Flex {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: WidgetMut::add_default_spacer
+    /// [`add_default_spacer`]: Flex::add_default_spacer
     pub fn add_spacer(this: &mut WidgetMut<'_, Self>, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -506,7 +506,7 @@ impl Flex {
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
-    /// [`add_default_spacer`]: WidgetMut::add_default_spacer
+    /// [`add_default_spacer`]: Flex::add_default_spacer
     pub fn insert_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);

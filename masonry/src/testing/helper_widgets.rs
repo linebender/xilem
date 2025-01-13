@@ -106,15 +106,25 @@ pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 /// Each member of the enum corresponds to one of the methods on `Widget`.
 #[derive(Debug, Clone)]
 pub enum Record {
+    /// Pointer event.
     PE(PointerEvent),
+    /// Text event.
     TE(TextEvent),
+    /// Access event.
     AE(AccessEvent),
+    /// Animation frame.
     AF(u64),
+    /// Register children
     RC,
+    /// Update
     U(Update),
+    /// Layout. Records the size returned by the layout method.
     Layout(Size),
+    /// Compose.
     Compose,
+    /// Paint.
     Paint,
+    /// Accessibility.
     Access,
 }
 
@@ -122,6 +132,7 @@ pub enum Record {
 ///
 /// Implements helper methods useful for unit testing.
 pub trait TestWidgetExt: Widget + Sized + 'static {
+    /// Wrap this widget in a [`Recorder`] that records all method calls.
     fn record(self, recording: &Recording) -> Recorder<Self> {
         Recorder {
             child: self,
@@ -129,6 +140,7 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
         }
     }
 
+    /// Wrap this widget in a [`SizedBox`] with the given id.
     fn with_id(self, id: WidgetId) -> SizedBox {
         SizedBox::new_with_id(self, id)
     }

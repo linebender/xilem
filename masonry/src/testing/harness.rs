@@ -101,6 +101,9 @@ use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 ///
 /// # simple_button();
 /// ```
+///
+/// [`assert_render_snapshot`]: crate::assert_render_snapshot
+/// [`insta`]: https://docs.rs/insta/latest/insta/
 pub struct TestHarness {
     render_root: RenderRoot,
     mouse_state: PointerState,
@@ -171,8 +174,8 @@ impl Default for TestHarnessParams {
 impl TestHarness {
     /// Builds harness with given root widget.
     ///
-    /// Window size will be [`Self::DEFAULT_SIZE`].
-    /// Background color will be [`Self::DEFAULT_BACKGROUND_COLOR`].
+    /// Window size will be [`TestHarnessParams::DEFAULT_SIZE`].
+    /// Background color will be [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     pub fn create(root_widget: impl Widget) -> Self {
         Self::create_with(root_widget, TestHarnessParams::default())
     }
@@ -508,7 +511,7 @@ impl TestHarness {
     pub fn focus_on(&mut self, id: Option<WidgetId>) {
         if let Some(id) = id {
             let arena = &self.render_root.widget_arena;
-            let Some(state) = arena.widget_states.find(id) else {
+            let Some(state) = arena.states.find(id) else {
                 panic!("Cannot focus widget {id}: widget not found in tree");
             };
             if state.item.is_stashed {
@@ -715,16 +718,5 @@ impl TestHarness {
             new_image.save(&new_path).unwrap();
             panic!("Snapshot test '{test_name}' failed: No reference file");
         }
-    }
-
-    // --- Debug logger ---
-
-    // ex: harness.write_debug_logs("test_log.json");
-    #[allow(missing_docs)]
-    pub fn write_debug_logs(&mut self, path: &str) {
-        self.render_root
-            .global_state
-            .debug_logger
-            .write_to_file(path);
     }
 }

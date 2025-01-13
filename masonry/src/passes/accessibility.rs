@@ -137,6 +137,7 @@ fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
 }
 
 // --- MARK: ROOT ---
+/// See the [passes documentation](../doc/05_pass_system.md#render-passes).
 pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -> TreeUpdate {
     let _span = info_span!("accessibility").entered();
 
@@ -164,7 +165,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
             .expect("root_accessibility: root not in widget tree");
         let state = root
             .widget_arena
-            .widget_states
+            .states
             .find_mut(widget_id)
             .expect("root_accessibility: root state not in widget tree");
         (widget, state)

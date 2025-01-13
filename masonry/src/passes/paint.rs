@@ -106,6 +106,7 @@ fn paint_widget(
 }
 
 // --- MARK: ROOT ---
+/// See the [passes documentation](../doc/05_pass_system.md#render-passes).
 pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();
 
@@ -124,7 +125,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
             .expect("root_paint: root not in widget tree");
         let state = root
             .widget_arena
-            .widget_states
+            .states
             .find_mut(widget_id)
             .expect("root_paint: root state not in widget tree");
         (widget, state)

@@ -21,7 +21,6 @@ Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
-[tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 <!-- cargo-rdme start -->
 
@@ -112,6 +111,7 @@ The following feature flags are available:
 [winit]: https://crates.io/crates/winit
 [Druid]: https://crates.io/crates/druid
 [Xilem]: https://crates.io/crates/xilem
+[tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 <!-- cargo-rdme end -->
 

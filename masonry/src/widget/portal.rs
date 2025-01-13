@@ -69,7 +69,7 @@ impl<W: Widget> Portal<W> {
     ///
     /// The default is `false`.
     ///
-    /// This setting affects how a `ClipBox` lays out its child.
+    /// This setting affects how a `Portal` lays out its child.
     ///
     /// - When it is `false` (the default), the child does not receive any upper
     ///   bound on its height: the idea is that the child can be as tall as it
@@ -94,7 +94,7 @@ impl<W: Widget> Portal<W> {
     ///
     /// If `false` (the default) there is no minimum constraint on the child's
     /// size. If `true`, the child is passed the same minimum constraints as
-    /// the `ClipBox`.
+    /// the `Portal`.
     pub fn content_must_fill(mut self, must_fill: bool) -> Self {
         self.must_fill = must_fill;
         self
@@ -198,11 +198,11 @@ impl<W: Widget> Portal<W> {
     }
 
     /// Set whether the child's size must be greater than or equal the size of
-    /// the `ClipBox`.
+    /// the `Portal`.
     ///
     /// See [`content_must_fill`] for more details.
     ///
-    /// [`content_must_fill`]: ClipBox::content_must_fill
+    /// [`content_must_fill`]: Portal::content_must_fill
     pub fn set_content_must_fill(this: &mut WidgetMut<'_, Self>, must_fill: bool) {
         this.widget.must_fill = must_fill;
         this.ctx.request_layout();

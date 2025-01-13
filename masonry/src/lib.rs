@@ -89,6 +89,7 @@
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
+//! [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 // LINEBENDER LINT SET - lib.rs - v1
 // See https://linebender.org/wiki/canonical-lints/
@@ -109,10 +110,6 @@
 #![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 // TODO: Remove any items listed as "Deferred"
-#![expect(
-    rustdoc::broken_intra_doc_links,
-    reason = "Deferred: Noisy. Tracked in https://github.com/linebender/xilem/issues/449"
-)]
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
 #![expect(clippy::should_implement_trait, reason = "Deferred: Noisy")]
 #![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
@@ -126,8 +123,6 @@
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-// https://github.com/rust-lang/rust/pull/130025
-#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
 #![expect(
     unnameable_types,
@@ -146,10 +141,6 @@
 
 #[macro_use]
 mod util;
-
-mod debug_logger;
-#[allow(unused)]
-mod debug_values;
 
 #[cfg(doc)]
 pub mod doc;

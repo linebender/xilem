@@ -93,6 +93,7 @@ fn compose_widget(
 }
 
 // --- MARK: ROOT ---
+/// See the [passes documentation](../doc/05_pass_system.md#compose-pass).
 pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();
 

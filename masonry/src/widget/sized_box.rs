@@ -287,6 +287,7 @@ impl SizedBox {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
+    /// [`Color`]: crate::Color
     pub fn background(mut self, brush: impl Into<Brush>) -> Self {
         self.background = Some(brush.into());
         self
@@ -373,6 +374,7 @@ impl SizedBox {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
+    /// [`Color`]: crate::Color
     pub fn set_background(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         this.widget.background = Some(brush.into());
         this.ctx.request_paint_only();

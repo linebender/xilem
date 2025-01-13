@@ -27,9 +27,8 @@ use crate::{
 /// `WidgetId`s are generated automatically for all widgets in the widget tree.
 /// More specifically, each [`WidgetPod`](crate::WidgetPod) has a unique `WidgetId`.
 ///
-/// These ids are used internally to route events, and can be used to communicate
-/// between widgets, by submitting a command (as with [`EventCtx::submit_command`])
-/// and passing a `WidgetId` as the [`Target`](crate::Target).
+/// These ids are used internally to route events, and can be used to fetch a specific
+/// widget for testing or event handling.
 ///
 /// A widget can retrieve its id via methods on the various contexts, such as
 /// [`UpdateCtx::widget_id`].
@@ -71,35 +70,46 @@ impl<T: Widget> AsDynWidget for T {
 // TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
 ///
-/// For details on how to implement this trait, see tutorial **(TODO)**
+/// For details on how to implement this trait, see the [tutorials](crate::doc).
 ///
-/// Whenever external events affect the given widget, methods [`on_event`],
-/// [`on_status_change`](Self::on_status_change) and [`update`](Self::update)
-/// are called. Later on, when the widget is laid out and displayed, methods
-/// [`layout`](Self::layout) and [`paint`](Self::paint) are called.
+/// Whenever external events affect the given widget, methods
+/// [`on_pointer_event`](Self::on_pointer_event),
+/// [`on_text_event`](Self::on_text_event),
+/// [`on_access_event`](Self::on_access_event),
+/// [`on_anim_frame`](Self::on_anim_frame) and [`update`](Self::update) are called.
+///
+/// Later on, when the widget is laid out and displayed, methods
+/// [`layout`](Self::layout), [`compose`](Self::compose), [`paint`](Self::paint) and
+/// [`accessibility`](Self::accessibility) are called.
 ///
 /// These trait methods are provided with a corresponding context. The widget can
 /// request things and cause actions by calling methods on that context.
 ///
-/// Widgets also have a [`children`](Self::children) method. Leaf widgets return an empty array,
-/// whereas container widgets return an array of [`WidgetRef`]. Container widgets
-/// have some validity invariants to maintain regarding their children.
+/// Widgets also have a [`children_ids`](Self::children_ids) method. Leaf widgets return an empty array,
+/// whereas container widgets return an array of [`WidgetId`].
+/// Container widgets have some validity invariants to maintain regarding their children.
 ///
-/// Generally speaking, widgets aren't used directly. They are stored in
-/// [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by `WidgetPod`s, and the
-/// widget is mutated either during a method call (eg `on_event` or `update`) or
-/// through a [`WidgetMut`](crate::widget::WidgetMut).
+/// Generally speaking, widgets aren't used directly. They are stored by Masonry and accessed
+/// through [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by Masonry, and a
+/// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::widget::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsAny + AsDynWidget {
-    /// Handle an event - usually user interaction.
+    /// Handle a pointer event.
     ///
-    /// A number of different events (in the [`Event`] enum) are handled in this
-    /// method call. A widget can handle these events in a number of ways, such as
-    /// requesting things from the [`EventCtx`] or mutating the data.
+    /// Pointer events will target the widget under the pointer, and then the
+    /// event will bubble to each of its parents.
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {}
+
+    /// Handle a text event.
+    ///
+    /// Text events will target the [focused widget], then bubble to each parent.
+    ///
+    /// [focused widget]: crate::doc::doc_06_masonry_concepts#text-focus
     fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {}
 
     /// Handle an event from the platform's accessibility API.
+    ///
+    /// Accessibility events target a specific widget id, then bubble to each parent.
     fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {}
 
     /// Called at the beginning of a new animation frame.
@@ -252,7 +262,7 @@ pub trait Widget: AsAny + AsDynWidget {
 
     /// Return the cursor icon for this widget.
     ///
-    /// This will be called when the mouse moves or [`request_cursor_icon_change`](MutateCtx::request_cursor_icon_change) is called.
+    /// This will be called when the mouse moves or [`request_cursor_icon_change`](crate::MutateCtx::request_cursor_icon_change) is called.
     ///
     /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
