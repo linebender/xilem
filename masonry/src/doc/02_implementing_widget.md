@@ -154,7 +154,7 @@ impl Widget for ColorRectangle {
     // ...
 
     fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        bc.contrain(self.size)
+        bc.constrain(self.size)
     }
 
     // ...
