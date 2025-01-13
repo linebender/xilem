@@ -787,7 +787,10 @@ impl_context_method!(
             self.widget_state.is_hovered
         }
 
-        /// Whether the mouse is [captured] by this widget.
+        /// Whether a pointer is [captured] by this widget.
+        ///
+        /// The pointer will usually be the mouse. In future versions, this
+        /// function will take a pointer id as input to test a specific pointer.
         ///
         /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
         pub fn has_pointer_capture(&self) -> bool {

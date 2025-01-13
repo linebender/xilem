@@ -184,6 +184,7 @@ impl From<PointerButton> for PointerButtons {
     }
 }
 
+// TODO - Document units for MouseWheel and Pinch deltas.
 // TODO - How can RenderRoot express "I started a drag-and-drop op"?
 // TODO - Touchpad, Touch, AxisMotion
 // TODO - How to handle CursorEntered?
@@ -202,8 +203,15 @@ pub enum PointerEvent {
     /// A pointer entered the window.
     PointerEnter(PointerState),
     /// A pointer left the window.
+    ///
+    /// A synthetic `PointerLeave` event may also be sent when a widget
+    /// loses [pointer capture](crate::doc::doc_06_masonry_concepts#pointer-capture).
     PointerLeave(PointerState),
     /// A mouse wheel event.
+    ///
+    /// The first tuple value is the scrolled distances. In most cases with a
+    /// standard mouse wheel, x will be 0 and y will be the number of ticks
+    /// scrolled. Trackballs and touchpads may produce non-zero values for x.
     MouseWheel(LogicalPosition<f64>, PointerState),
     /// During a file drag-and-drop operation, a file was kept over the window.
     HoverFile(PathBuf, PointerState),
@@ -212,6 +220,9 @@ pub enum PointerEvent {
     /// A file drag-and-drop operation was cancelled.
     HoverFileCancel(PointerState),
     /// A pinch gesture was detected.
+    ///
+    /// The first tuple value is the delta. Positive values indicate magnification
+    /// (zooming in) and negative values indicate shrinking (zooming out).
     Pinch(f64, PointerState),
 }
 

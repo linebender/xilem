@@ -77,7 +77,7 @@ impl Widget for Checkbox {
             PointerEvent::PointerUp(_, _) => {
                 if ctx.has_pointer_capture() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    ctx.submit_action(Action::CheckboxToggled(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 // Checked state impacts appearance and accessibility node
@@ -94,7 +94,7 @@ impl Widget for Checkbox {
             match event.action {
                 accesskit::Action::Click => {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxChecked(self.checked));
+                    ctx.submit_action(Action::CheckboxToggled(self.checked));
                     // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                 }
@@ -251,7 +251,7 @@ mod tests {
         harness.mouse_click_on(checkbox_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::CheckboxChecked(true), checkbox_id))
+            Some((Action::CheckboxToggled(true), checkbox_id))
         );
 
         assert_debug_snapshot!(harness.root_widget());
@@ -260,7 +260,7 @@ mod tests {
         harness.mouse_click_on(checkbox_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::CheckboxChecked(false), checkbox_id))
+            Some((Action::CheckboxToggled(false), checkbox_id))
         );
     }
 

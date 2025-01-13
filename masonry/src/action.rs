@@ -20,8 +20,8 @@ pub enum Action {
     TextChanged(String),
     /// Text entered.
     TextEntered(String),
-    /// A checkbox was checked.
-    CheckboxChecked(bool),
+    /// A checkbox was toggled.
+    CheckboxToggled(bool),
     // FIXME - This is a huge hack
     /// Other.
     Other(Box<dyn Any + Send>),
@@ -33,7 +33,7 @@ impl PartialEq for Action {
             (Self::ButtonPressed(l_button), Self::ButtonPressed(r_button)) => l_button == r_button,
             (Self::TextChanged(l0), Self::TextChanged(r0)) => l0 == r0,
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
-            (Self::CheckboxChecked(l0), Self::CheckboxChecked(r0)) => l0 == r0,
+            (Self::CheckboxToggled(l0), Self::CheckboxToggled(r0)) => l0 == r0,
             // FIXME
             // (Self::Other(val_l), Self::Other(val_r)) => false,
             _ => false,
@@ -47,7 +47,7 @@ impl std::fmt::Debug for Action {
             Self::ButtonPressed(button) => f.debug_tuple("ButtonPressed").field(button).finish(),
             Self::TextChanged(text) => f.debug_tuple("TextChanged").field(text).finish(),
             Self::TextEntered(text) => f.debug_tuple("TextEntered").field(text).finish(),
-            Self::CheckboxChecked(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),
+            Self::CheckboxToggled(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),
             Self::Other(_) => write!(f, "Other(...)"),
         }
     }
