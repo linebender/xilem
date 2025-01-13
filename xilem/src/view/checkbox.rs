@@ -75,7 +75,7 @@ where
         );
         match message.downcast::<masonry::Action>() {
             Ok(action) => {
-                if let masonry::Action::CheckboxChecked(checked) = *action {
+                if let masonry::Action::CheckboxToggled(checked) = *action {
                     MessageResult::Action((self.callback)(app_state, checked))
                 } else {
                     tracing::error!("Wrong action type in Checkbox::message: {action:?}");

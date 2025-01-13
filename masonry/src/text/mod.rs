@@ -25,7 +25,7 @@ pub type ArcStr = std::sync::Arc<str>;
 /// The Parley [`parley::Brush`] used within Masonry.
 ///
 /// This enables updating of brush details without performing relayouts;
-/// the inner values are indexes into the `brushes` argument to [`render_text`].
+/// the inner values are indexes into the `brushes` argument to [`render_text()`].
 #[derive(Clone, PartialEq, Default, Debug)]
 pub struct BrushIndex(pub usize);
 

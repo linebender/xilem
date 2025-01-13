@@ -257,20 +257,17 @@ impl WidgetState {
     }
 
     /// The paint region for this widget.
-    ///
-    /// For more information, see [`WidgetPod::paint_rect`](crate::WidgetPod::paint_rect).
     pub fn paint_rect(&self) -> Rect {
         self.local_paint_rect + self.origin.to_vec2()
     }
 
-    /// The rectangle used when calculating layout with other widgets
-    ///
-    /// For more information, see [`WidgetPod::layout_rect`](crate::WidgetPod::layout_rect).
+    // TODO - Remove
+    /// The rectangle used when calculating layout with other widgets.
     pub fn layout_rect(&self) -> Rect {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    /// The [`layout_rect`](crate::WidgetPod::layout_rect) in window coordinates.
+    /// The [`layout_rect`](Self::layout_rect) in window coordinates.
     ///
     /// This might not map to a visible area of the screen, eg if the widget is scrolled
     /// away.

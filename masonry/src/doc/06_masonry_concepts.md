@@ -58,7 +58,10 @@ Focus marks whether a widget receives text events.
 To give a simple example, when you click a textbox, the textbox gets focus: anything you type on your keyboard will be sent to that textbox.
 
 Focus can be changed with the tab key, or by clicking on a widget, both which Masonry automatically handles.
-Widgets can also set custom focus behavior.
+Masonry will only give focus to widgets that accept focus (see [`Widget::accepts_focus`]).
+Widgets can also use context types to request focus.
+
+If a widget gains or loses focus it will get a [`FocusChanged`] event.
 
 Note that widgets without text-edition capabilities such as buttons and checkboxes can also get focus.
 For instance, pressing space when a button is focused will trigger that button.
@@ -103,3 +106,5 @@ Safety rails aren't guaranteed to run and may be disabled even in debug mode for
 They should not be relied upon to check code correctness, but are meant to help you catch implementation errors early on during development.
 
 [`PointerLeave`]: crate::PointerEvent::PointerLeave
+[`FocusChanged`]: crate::Update::FocusChanged
+[`Widget::accepts_focus`]: crate::Widget::accepts_focus

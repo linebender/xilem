@@ -1,6 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// We use allow because expect(missing_docs) is noisy with rust-analyzer.
+#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
+
 use std::num::NonZeroUsize;
 use std::sync::Arc;
 
@@ -547,6 +550,8 @@ impl MasonryState<'_> {
                 }
             },
             WinitWindowEvent::MouseWheel { delta, .. } => {
+                // TODO - This delta value doesn't quite make sense.
+                // Figure out and document a better standard.
                 let delta = match delta {
                     winit::event::MouseScrollDelta::LineDelta(x, y) => {
                         LogicalPosition::new(x as f64, y as f64)

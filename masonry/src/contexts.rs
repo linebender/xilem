@@ -44,9 +44,7 @@ macro_rules! impl_context_method {
 /// When you declare a mutable reference type for your widget, methods of this type
 /// will have access to a `MutateCtx`. If that method mutates the widget in a way that
 /// requires a later pass (for instance, if your widget has a `set_color` method),
-/// you will need to signal that change in the pass (eg `request_paint`).
-///
-// TODO add tutorial - See https://github.com/linebender/xilem/issues/376
+/// you will need to signal that change in the pass (eg [`request_render`](MutateCtx::request_render)).
 pub struct MutateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
@@ -55,7 +53,9 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
-/// A context provided to methods of widgets requiring shared, read-only access.
+/// A context provided inside of [`WidgetRef`].
+///
+/// This context is passed to methods of widgets requiring shared, read-only access.
 #[derive(Clone, Copy)]
 pub struct QueryCtx<'a> {
     pub(crate) global_state: &'a RenderRootState,
@@ -64,10 +64,7 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_children: ArenaRefChildren<'a, Box<dyn Widget>>,
 }
 
-/// A context provided to event handling methods of widgets.
-///
-/// Widgets should call [`request_paint`](Self::request_paint) whenever an event causes a change
-/// in the widget's appearance, to schedule a repaint.
+/// A context provided to Widget event-handling methods.
 pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -78,7 +75,7 @@ pub struct EventCtx<'a> {
     pub(crate) is_handled: bool,
 }
 
-/// A context provided to the [`Widget::register_children`] method on widgets.
+/// A context provided to the [`Widget::register_children`] method.
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutChildren<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
@@ -86,9 +83,7 @@ pub struct RegisterCtx<'a> {
     pub(crate) registered_ids: Vec<WidgetId>,
 }
 
-/// A context provided to the [`update`] method on widgets.
-///
-/// [`update`]: Widget::update
+/// A context provided to the [`Widget::update`] method.
 pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -96,11 +91,8 @@ pub struct UpdateCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
-/// A context provided to layout handling methods of widgets.
-///
-/// As of now, the main service provided is access to a factory for
-/// creating text layout objects, which are likely to be useful
-/// during widget layout.
+// TODO - Change this once other layout methods are added.
+/// A context provided to [`Widget::layout`] methods.
 pub struct LayoutCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -108,6 +100,7 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
+/// A context provided to the [`Widget::compose`] method.
 pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
@@ -115,7 +108,7 @@ pub struct ComposeCtx<'a> {
     pub(crate) widget_children: ArenaMutChildren<'a, Box<dyn Widget>>,
 }
 
-/// A context passed to paint methods of widgets.
+/// A context passed to [`Widget::paint`] method.
 pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
@@ -124,6 +117,7 @@ pub struct PaintCtx<'a> {
     pub(crate) debug_paint: bool,
 }
 
+/// A context passed to [`Widget::accessibility`] method.
 pub struct AccessCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
@@ -145,12 +139,12 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
-        /// get the `WidgetId` of the current widget.
+        /// The `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
             self.widget_state.id
         }
 
-        #[allow(dead_code)]
+        #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
         fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
             let child_ref = self
@@ -160,7 +154,7 @@ impl_context_method!(
             child_ref.item.as_dyn_any().downcast_ref::<Child>().unwrap()
         }
 
-        #[allow(dead_code)]
+        #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Helper method to get a direct reference to a child widget's `WidgetState` from its `WidgetPod`.
         fn get_child_state<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ WidgetState {
             let child_state_ref = self
@@ -293,12 +287,9 @@ impl_context_method!(
 
 // --- MARK: EVENT HANDLING ---
 impl EventCtx<'_> {
-    // TODO - clearly document all semantics of pointer capture when they've been decided on
-    // TODO - Figure out cases where widget should be notified of pointer capture
-    // loss
     /// Capture the pointer in the current widget.
     ///
-    /// Pointer capture is only allowed during a [`PointerDown`] event. It is a logic error to
+    /// [Pointer capture] is only allowed during a [`PointerDown`] event. It is a logic error to
     /// capture the pointer during any other event.
     ///
     /// A widget normally only receives pointer events when the pointer is inside the widget's
@@ -318,6 +309,10 @@ impl EventCtx<'_> {
     /// released after handling of a [`PointerUp`] or [`PointerLeave`] event completes. A widget
     /// holding the pointer capture will be the target of these events.
     ///
+    /// If pointer capture is lost for external reasons (the widget is disabled, the window
+    /// lost focus, etc), the widget will still get a [`PointerLeave`] event.
+    ///
+    /// [Pointer capture]: crate::doc::doc_06_masonry_concepts#pointer-capture
     /// [`PointerDown`]: crate::PointerEvent::PointerDown
     /// [`PointerUp`]: crate::PointerEvent::PointerUp
     /// [`PointerLeave`]: crate::PointerEvent::PointerLeave
@@ -333,8 +328,9 @@ impl EventCtx<'_> {
         self.global_state.pointer_capture_target = Some(self.widget_state.id);
     }
 
-    /// Release the pointer previously captured through [`capture_pointer`].
+    /// Release the pointer previously [captured] through [`capture_pointer`].
     ///
+    /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
     /// [`capture_pointer`]: EventCtx::capture_pointer
     pub fn release_pointer(&mut self) {
         self.global_state.pointer_capture_target = None;
@@ -357,14 +353,14 @@ impl EventCtx<'_> {
             .push((self.widget_state.id, rect));
     }
 
-    /// Set the event as "handled", which stops its propagation to other
+    /// Set the event as "handled", which stops its propagation to parent
     /// widgets.
     pub fn set_handled(&mut self) {
         trace!("set_handled");
         self.is_handled = true;
     }
 
-    /// Determine whether the event has been handled by some other widget.
+    /// Determine whether the event has been handled.
     pub fn is_handled(&self) -> bool {
         self.is_handled
     }
@@ -376,13 +372,13 @@ impl EventCtx<'_> {
         self.target
     }
 
-    /// Request keyboard focus.
+    /// Request [text focus].
     ///
     /// Because only one widget can be focused at a time, multiple focus requests
     /// from different widgets during a single event cycle means that the last
     /// widget that requests focus will override the previous requests.
     ///
-    /// See [`is_focused`](Self::is_focused) for more information about focus.
+    /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
     pub fn request_focus(&mut self) {
         trace!("request_focus");
         // We need to send the request even if we're currently focused,
@@ -393,19 +389,19 @@ impl EventCtx<'_> {
         self.global_state.next_focused_widget = Some(id);
     }
 
-    /// Transfer focus to the widget with the given `WidgetId`.
+    /// Transfer [text focus] to the widget with the given `WidgetId`.
     ///
-    /// See [`is_focused`](Self::is_focused) for more information about focus.
+    /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
     pub fn set_focus(&mut self, target: WidgetId) {
         trace!("set_focus target={:?}", target);
         self.global_state.next_focused_widget = Some(target);
     }
 
-    /// Give up focus.
+    /// Give up [text focus].
     ///
     /// This should only be called by a widget that currently has focus.
     ///
-    /// See [`is_focused`](Self::is_focused) for more information about focus.
+    /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
     pub fn resign_focus(&mut self) {
         trace!("resign_focus");
         if self.has_focus() {
@@ -448,7 +444,7 @@ impl LayoutCtx<'_> {
         }
     }
 
-    /// Compute layout of a child widget.
+    /// Compute the layout of a child widget.
     ///
     /// Container widgets must call this on every child as part of
     /// their [`layout`] method.
@@ -503,10 +499,6 @@ impl LayoutCtx<'_> {
     /// to paint outside of your layout bounds. In this case, the argument
     /// should be an [`Insets`] struct that indicates where your widget
     /// needs to overpaint, relative to its bounds.
-    ///
-    /// For more information, see [`WidgetPod::paint_insets`].
-    ///
-    /// [`WidgetPod::paint_insets`]: crate::widget::WidgetPod::paint_insets
     pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
         let insets = insets.into();
         self.widget_state.paint_insets = insets.nonnegative();
@@ -522,7 +514,7 @@ impl LayoutCtx<'_> {
     ///
     /// ## Panics
     ///
-    /// This method will panic if the child's [`layout()`](WidgetPod::layout) method has not been called yet
+    /// This method will panic if the child's [`layout()`](LayoutCtx::run_layout) method has not been called yet
     /// and if [`LayoutCtx::place_child()`] has not been called for the child.
     #[track_caller]
     pub fn compute_insets_from_child(
@@ -553,12 +545,12 @@ impl LayoutCtx<'_> {
         self.widget_state.baseline_offset = baseline;
     }
 
-    /// Returns whether this widget needs to call [`WidgetPod::layout`]
+    /// Returns whether this widget needs to call [`LayoutCtx::run_layout`].
     pub fn needs_layout(&self) -> bool {
         self.widget_state.needs_layout
     }
 
-    /// Returns whether a child of this widget needs to call [`WidgetPod::layout`]
+    /// Returns whether a child of this widget needs to call [`LayoutCtx::run_layout`].
     pub fn child_needs_layout(&self, child: &WidgetPod<impl Widget>) -> bool {
         self.get_child_state(child).needs_layout
     }
@@ -567,7 +559,7 @@ impl LayoutCtx<'_> {
     ///
     /// ## Panics
     ///
-    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget>) -> f64 {
@@ -579,7 +571,7 @@ impl LayoutCtx<'_> {
     ///
     /// ## Panics
     ///
-    /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
+    /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
     #[track_caller]
     pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
@@ -592,7 +584,7 @@ impl LayoutCtx<'_> {
     ///
     /// ## Panics
     ///
-    /// This method will panic if [`WidgetPod::layout`] and [`LayoutCtx::place_child`]
+    /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
     #[track_caller]
     pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
@@ -605,7 +597,7 @@ impl LayoutCtx<'_> {
     ///
     /// ## Panics
     ///
-    /// This method will panic if [`WidgetPod::layout`] has not been called yet for
+    /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
     pub fn child_size(&self, child: &WidgetPod<impl Widget>) -> Size {
@@ -613,7 +605,7 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).layout_rect().size()
     }
 
-    /// Skips running the layout pass and calling `place_child` on the child.
+    /// Skips running the layout pass and calling [`LayoutCtx::place_child`] on the child.
     ///
     /// This may be removed in the future. Currently it's useful for
     /// stashed children and children whose layout is cached.
@@ -654,6 +646,8 @@ impl LayoutCtx<'_> {
 }
 
 impl ComposeCtx<'_> {
+    // TODO - Remove?
+    /// Returns whether [`Widget::compose`] will be called on this widget.
     pub fn needs_compose(&self) -> bool {
         self.widget_state.needs_compose
     }
@@ -701,17 +695,19 @@ impl_context_method!(
     {
         /// The layout size.
         ///
-        /// This is the layout size as ultimately determined by the parent
-        /// container, on the previous layout pass.
-        ///
-        /// Generally it will be the same as the size returned by the child widget's
-        /// [`layout`] method.
+        /// This is the layout size returned by the [`layout`] method on the previous
+        /// layout pass.
         ///
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
             self.widget_state.size
         }
 
+        // TODO - Remove? A widget doesn't really have a concept of its own "origin",
+        // it's more useful for the parent widget.
+        /// The layout rect of the widget.
+        ///
+        /// This is the layout [size](Self::size) and origin (in the parent's coordinate space) combined.
         pub fn layout_rect(&self) -> Rect {
             self.widget_state.layout_rect()
         }
@@ -727,10 +723,17 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
+        /// The layout rect of the widget in window coordinates.
+        ///
+        /// Combines the [size](Self::size) and [window origin](Self::window_origin).
         pub fn window_layout_rect(&self) -> Rect {
             self.widget_state.window_layout_rect()
         }
 
+        // TODO - Remove? See above.
+        /// The paint rect of the widget.
+        ///
+        /// Covers the area we expect to be invalidated when the widget is painted.
         pub fn paint_rect(&self) -> Rect {
             self.widget_state.paint_rect()
         }
@@ -764,59 +767,51 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
+        // TODO - Update once we introduce the is_hovered/has_hovered distinction.
         /// The "hovered" status of a widget.
         ///
-        /// A widget is "hovered" when the mouse is hovered over it. Widgets will
+        /// A widget is "hovered" when a pointer is hovering over it. Widgets will
         /// often change their appearance as a visual indication that they
-        /// will respond to mouse interaction.
+        /// will respond to pointer (usually mouse) interaction.
         ///
         /// The hovered status is computed from the widget's layout rect. In a
         /// container hierarchy, all widgets with layout rects containing the
-        /// mouse position have hovered status.
+        /// pointer position have hovered status.
         ///
-        /// Discussion: there is currently some confusion about whether a
-        /// widget can be considered hovered when some other widget has captured the
-        /// pointer (for example, when clicking one widget and dragging to the
-        /// next). The documentation should clearly state the resolution.
+        /// If the pointer is [captured], then only that widget and its parents
+        /// can have hovered status. If the pointer is captured but not hovering
+        /// over the captured widget, then no widget has the hovered status.
+        ///
+        /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
         pub fn is_hovered(&self) -> bool {
             self.widget_state.is_hovered
         }
 
-        /// Whether the pointer is captured by this widget.
+        /// Whether a pointer is [captured] by this widget.
         ///
-        /// See [`capture_pointer`] for more information about pointer capture.
+        /// The pointer will usually be the mouse. In future versions, this
+        /// function will take a pointer id as input to test a specific pointer.
         ///
-        /// [`capture_pointer`]: EventCtx::capture_pointer
+        /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
         pub fn has_pointer_capture(&self) -> bool {
             self.global_state.pointer_capture_target == Some(self.widget_state.id)
         }
 
-        /// The focus status of a widget.
+        /// The [text focus] status of a widget.
+        ///
+        /// The focused widget is the one that receives keyboard events.
         ///
         /// Returns `true` if this specific widget is focused.
         /// To check if any descendants are focused use [`has_focus`].
         ///
-        /// Focus means that the widget receives keyboard events.
-        ///
-        /// A widget can request focus using the [`request_focus`] method.
-        /// It's also possible to register for automatic focus via [`register_for_focus`].
-        ///
-        /// If a widget gains or loses focus it will get a [`Update::FocusChanged`] event.
-        ///
-        /// Only one widget at a time is focused. However due to the way events are routed,
-        /// all ancestors of that widget will also receive keyboard events.
-        ///
-        /// [`request_focus`]: EventCtx::request_focus
-        /// [`register_for_focus`]: UpdateCtx::register_for_focus
-        /// [`Update::FocusChanged`]: crate::Update::FocusChanged
+        /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
         /// [`has_focus`]: Self::has_focus
         pub fn is_focused(&self) -> bool {
             self.global_state.focused_widget == Some(self.widget_id())
         }
 
-        /// The (tree) focus status of a widget.
+        /// Whether this widget or any of its descendants are focused.
         ///
-        /// Returns `true` if either this specific widget or any one of its descendants is focused.
         /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
         pub fn has_focus(&self) -> bool {
             self.widget_state.has_focus
@@ -843,7 +838,7 @@ impl_context_method!(
         /// To make this widget explicitly disabled use [`set_disabled`].
         ///
         /// Disabled means that this widget should not change the state of the application. What
-        /// that means is not entirely clear but in any it should not change its data. Therefore
+        /// that means is not entirely clear but in any case it should not change its data. Therefore
         /// others can use this as a safety mechanism to prevent the application from entering an
         /// illegal state.
         /// For an example the decrease button of a counter of type `usize` should be disabled if the
@@ -854,9 +849,9 @@ impl_context_method!(
             self.widget_state.is_disabled
         }
 
-        /// Check is widget is stashed.
+        /// Check is widget is [stashed]().
         ///
-        /// **Note:** Stashed widgets are a WIP feature.
+        /// [stashed]: crate::doc::doc_06_masonry_concepts#stashed
         pub fn is_stashed(&self) -> bool {
             self.widget_state.is_stashed
         }
@@ -895,14 +890,9 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.widget_state.request_accessibility = true;
     }
 
-    /// Request a layout pass.
+    /// Request a [`layout`] pass.
     ///
-    /// A Widget's [`layout`] method is always called when the widget tree
-    /// changes, or the window is resized.
-    ///
-    /// If your widget would like to have layout called at any other time,
-    /// (such as if it would like to change the layout of children in
-    /// response to some event) it must call this method.
+    /// Call this method if the widget has changed in a way that requires a layout pass.
     ///
     /// [`layout`]: crate::Widget::layout
     pub fn request_layout(&mut self) {
@@ -915,6 +905,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// Request a [`compose`] pass.
     ///
     /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
+    ///
     /// [`compose`]: crate::Widget::compose
     pub fn request_compose(&mut self) {
         trace!("request_compose");
@@ -1050,6 +1041,8 @@ impl_context_method!(
         /// When this widget is [focused] and [accepts text input], the reported IME area is sent
         /// to the platform. The area can be used by the platform to, for example, place a
         /// candidate box near that area, while ensuring the area is not obscured.
+        ///
+        /// If no IME area is set, the platform will use the widget's layout rect.
         ///
         /// [focused]: EventCtx::request_focus
         /// [accepts text input]: Widget::accepts_text_input
@@ -1244,6 +1237,7 @@ impl_get_raw!(EventCtx);
 impl_get_raw!(UpdateCtx);
 impl_get_raw!(LayoutCtx);
 
+#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 impl<'s> AccessCtx<'s> {
     pub fn get_raw_ref<'a, 'r, Child: Widget>(
         &'a mut self,
@@ -1276,17 +1270,20 @@ impl<'s> AccessCtx<'s> {
     }
 }
 
+#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 pub struct RawWrapper<'a, Ctx, W> {
     ctx: Ctx,
     widget: &'a W,
 }
 
+#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 pub struct RawWrapperMut<'a, Ctx: IsContext, W> {
     parent_widget_state: &'a mut WidgetState,
     ctx: Ctx,
     widget: &'a mut W,
 }
 
+#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 impl<Ctx, W> RawWrapper<'_, Ctx, W> {
     pub fn widget(&self) -> &W {
         self.widget
@@ -1297,6 +1294,7 @@ impl<Ctx, W> RawWrapper<'_, Ctx, W> {
     }
 }
 
+#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 impl<Ctx: IsContext, W> RawWrapperMut<'_, Ctx, W> {
     pub fn widget(&mut self) -> &mut W {
         self.widget
@@ -1315,7 +1313,10 @@ impl<Ctx: IsContext, W> Drop for RawWrapperMut<'_, Ctx, W> {
 }
 
 mod private {
-    #[allow(unnameable_types)] // reason: see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/
+    #[allow(
+        unnameable_types,
+        reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
+    )]
     pub trait Sealed {}
 }
 
@@ -1323,7 +1324,11 @@ mod private {
 // We're exporting a trait with a method that returns a private type.
 // It's mostly fine because the trait is sealed anyway, but it's not great for documentation.
 
-#[allow(private_interfaces)] // reason: see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/
+#[allow(
+    private_interfaces,
+    reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
+)]
+#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 pub trait IsContext: private::Sealed {
     fn get_widget_state(&mut self) -> &mut WidgetState;
 }
@@ -1332,7 +1337,10 @@ macro_rules! impl_context_trait {
     ($SomeCtx:tt) => {
         impl private::Sealed for $SomeCtx<'_> {}
 
-        #[allow(private_interfaces)] // reason: see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/
+        #[allow(
+            private_interfaces,
+            reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
+        )]
         impl IsContext for $SomeCtx<'_> {
             fn get_widget_state(&mut self) -> &mut WidgetState {
                 self.widget_state
