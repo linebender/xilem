@@ -75,7 +75,7 @@ impl ColorRectangle {
 ```
 
 This widget doesn't have children and doesn't really need to keep track of any transient state, so its definition is pretty simple.
-Note that we store a size, and not a position: our widget's position is tracked by its parent.
+Note that we store a size, and not a position: our widget's position is managed by its parent.
 
 
 ### Event methods
@@ -153,15 +153,18 @@ use masonry::{
 impl Widget for ColorRectangle {
     // ...
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, _bc: &BoxConstraints) -> Size {
-        self.size
+    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+        bc.contrain(self.size)
     }
 
     // ...
 }
 ```
 
-Our size is static, and doesn't depend on size constraints passed by our parent or context information like "the widget is currently hovered", so it can be written as a one-liner.
+Our size is static, and doesn't perform complex operations like line-breaking, or depend on context information like "the widget is currently hovered", so it can be written as a one-liner.
+
+`BoxConstraints` are the minimum and maximum size our parent expects this widget to respect. It's possible to ignore them, but we choose not to.
+We return our stored size, clamped between the min and max constraints.
 
 ### Render methods
 
@@ -202,7 +205,7 @@ impl Widget for ColorRectangle {
 
 In our `paint` method, we're given a [`vello::Scene`] and paint a rectangle into it.
 
-The rectangle's position is zero (because coordinates in our scene are local to our widget), and its size is `ctx.size()`, which is the value returned by `layout()`; though we could also have used `self.size`.
+The rectangle's origin is zero (because coordinates in our scene are local to our widget), and its size is `ctx.size()`, which is the value returned by `layout()`.
 
 Next we define our accessibility role.
 Returning [`Role::Button`] means that screen readers will report our widget as a button, which roughly makes sense since it is clickable.
@@ -291,26 +294,7 @@ Most context types include these methods for requesting future passes:
 
 To show how context types are used in practice, let's add a feature to `ColorRectangle`: the widget will now be painted in white when hovered.
 
-First, we need to detect hover changes. Let's re-implement the `update` method:
-
-```rust,ignore
-impl Widget for ColorRectangle {
-    // ...
-
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
-        match event {
-            Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
-                ctx.request_paint_only();
-            }
-            _ => {}
-        }
-    }
-
-    // ...
-}
-```
-
-Then, we update our paint method:
+First, we update our paint method:
 
 ```rust,ignore
 impl Widget for ColorRectangle {
@@ -336,6 +320,26 @@ impl Widget for ColorRectangle {
 }
 ```
 
+Next, we need to detect hover changes so the paint method actually gets called.
+
+Let's re-implement the `update` method:
+
+```rust,ignore
+impl Widget for ColorRectangle {
+    // ...
+
+    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+        match event {
+            Update::HoveredChanged(_) => {
+                ctx.request_render();
+            }
+            _ => {}
+        }
+    }
+
+    // ...
+}
+```
 
 ## Widget mutation
 
@@ -345,7 +349,7 @@ That is to say, even if you own a window, and even if that window holds a widget
 Instead, there are two ways to mutate `Label`:
 
 - Inside a Widget method. Most methods (`on_pointer_event`, `update`, `layout`, etc) take a `&mut self` argument.
-- Through a [`WidgetMut`] wrapper. So, to change your label's text, you will call `WidgetMut::<Label>::set_text()`. This helps Masonry make sure that internal metadata is propagated after every widget change.
+- Through a [`WidgetMut`] wrapper. So, to change your label's text, you will call [`Label::set_text()`], which takes a [`WidgetMut`] argument. This helps Masonry make sure that internal metadata is propagated after every widget change.
 
 As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to the Widget tree.
 Most Widgets will implement methods that let their users "project" a WidgetMut from a parent to its child.
@@ -409,7 +413,9 @@ The next one is about creating a container widgets, and the complications it add
 [`Widget`]: crate::Widget
 [`WidgetMut`]: crate::widget::WidgetMut
 [`PaintCtx::size()`]: crate::PaintCtx::size
+[`UpdateCtx::request_paint_only()`]: crate::UpdateCtx::request_paint_only
 [`ButtonPressed`]: crate::Action::ButtonPressed
 [`vello::Scene`]: crate::vello::Scene
 [`Role::Button`]: accesskit::Role::Button
 [`RenderRoot::edit_root_widget()`]: crate::RenderRoot::edit_root_widget
+[`Label::set_text()`]: crate::widget::Label::set_text
