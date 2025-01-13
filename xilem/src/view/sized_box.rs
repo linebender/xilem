@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-use masonry::{widget, Color, Vec2};
 pub use masonry::widget::Padding;
+use masonry::{widget, Color, Vec2};
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
@@ -182,6 +182,15 @@ where
         }
         if let Some(border) = &self.border {
             widget = widget.border(border.brush.clone(), border.width);
+        }
+        if let Some(shadow) = &self.shadow {
+            widget = widget.shadow(
+                shadow.color,
+                shadow.offset,
+                shadow.blur_radius,
+                shadow.spread_radius,
+                shadow.corner_radius,
+            );
         }
         (ctx.new_pod(widget), child_state)
     }

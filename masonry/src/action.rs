@@ -18,6 +18,7 @@ pub enum Action {
     TextEntered(String),
     CheckboxChecked(bool),
     SliderValueChanged(f64),
+    SliderEditingChanged(bool),
     // FIXME - This is a huge hack
     Other(Box<dyn Any + Send>),
 }
@@ -30,6 +31,7 @@ impl PartialEq for Action {
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
             (Self::CheckboxChecked(l0), Self::CheckboxChecked(r0)) => l0 == r0,
             (Self::SliderValueChanged(l0), Self::SliderValueChanged(r0)) => l0 == r0,
+            (Self::SliderEditingChanged(l0), Self::SliderEditingChanged(r0)) => l0 == r0,
             // FIXME
             // (Self::Other(val_l), Self::Other(val_r)) => false,
             _ => false,
@@ -45,6 +47,9 @@ impl std::fmt::Debug for Action {
             Self::TextEntered(text) => f.debug_tuple("TextEntered").field(text).finish(),
             Self::CheckboxChecked(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),
             Self::SliderValueChanged(b) => f.debug_tuple("SliderValueChanged").field(b).finish(),
+            Self::SliderEditingChanged(b) => {
+                f.debug_tuple("SliderEditingChanged").field(b).finish()
+            }
             Self::Other(_) => write!(f, "Other(...)"),
         }
     }

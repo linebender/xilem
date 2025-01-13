@@ -19,10 +19,6 @@ members = [
     "tree_arena",
 ]
 
-[[example]]
-name = "shadow"
-path = "examples/shadow.rs"
-
 [workspace.package]
 edition = "2021"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
