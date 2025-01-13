@@ -432,6 +432,7 @@ impl PointerEvent {
     }
 
     // TODO Logical/PhysicalPosition as return type instead?
+    /// Returns the position of this event in local (the widget's) coordinate space.
     pub fn local_position(&self, ctx: &crate::EventCtx) -> Point {
         let position = self.pointer_state().position;
         ctx.widget_state.window_transform.inverse() * Point::new(position.x, position.y)
