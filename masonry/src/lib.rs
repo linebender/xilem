@@ -147,10 +147,6 @@
 #[macro_use]
 mod util;
 
-mod debug_logger;
-#[allow(unused)]
-mod debug_values;
-
 #[cfg(doc)]
 pub mod doc;
 

@@ -714,15 +714,4 @@ impl TestHarness {
             panic!("Snapshot test '{test_name}' failed: No reference file");
         }
     }
-
-    // --- Debug logger ---
-
-    // ex: harness.write_debug_logs("test_log.json");
-    #[allow(missing_docs)]
-    pub fn write_debug_logs(&mut self, path: &str) {
-        self.render_root
-            .global_state
-            .debug_logger
-            .write_to_file(path);
-    }
 }
