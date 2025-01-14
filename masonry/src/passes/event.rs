@@ -105,6 +105,26 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
     let target_widget_id = get_pointer_target(root, event.position());
 
+    if matches!(event, PointerEvent::PointerDown(..)) {
+        if let Some(target_widget_id) = target_widget_id {
+            // The next tab event assign focus around this widget.
+            root.global_state.most_recently_clicked_widget = Some(target_widget_id);
+
+            // If we click outside of the focused widget, we clear the focus.
+            if let Some(focused_widget) = root.global_state.focused_widget {
+                // Focused_widget isn't ancestor of target_widget_id
+                if !root
+                    .widget_arena
+                    .states
+                    .get_id_path(target_widget_id)
+                    .contains(&focused_widget.to_raw())
+                {
+                    root.global_state.next_focused_widget = None;
+                }
+            }
+        }
+    }
+
     let handled = run_event_pass(
         root,
         target_widget_id,
@@ -174,11 +194,9 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             && key.state == ElementState::Pressed
             && handled == Handled::No
         {
-            if !mods.shift_key() {
-                root.global_state.next_focused_widget = root.widget_from_focus_chain(true);
-            } else {
-                root.global_state.next_focused_widget = root.widget_from_focus_chain(false);
-            }
+            let forward = !mods.shift_key();
+            let next_focused_widget = root.widget_from_focus_chain(forward);
+            root.global_state.next_focused_widget = next_focused_widget;
             handled = Handled::Yes;
         }
     }

@@ -74,6 +74,7 @@ pub(crate) struct RenderRootState {
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) focused_path: Vec<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
+    pub(crate) most_recently_clicked_widget: Option<WidgetId>,
     pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
     pub(crate) hovered_path: Vec<WidgetId>,
     pub(crate) pointer_capture_target: Option<WidgetId>,
@@ -198,6 +199,7 @@ impl RenderRoot {
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
+                most_recently_clicked_widget: None,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
                 pointer_capture_target: None,
@@ -616,7 +618,10 @@ impl RenderRoot {
     }
 
     pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
-        let focused_widget = self.global_state.focused_widget;
+        let focused_widget = self
+            .global_state
+            .focused_widget
+            .or(self.global_state.most_recently_clicked_widget);
         let focused_idx = focused_widget.and_then(|focused_widget| {
             self.focus_chain()
                 .iter()

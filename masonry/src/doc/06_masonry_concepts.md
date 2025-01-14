@@ -57,9 +57,13 @@ Focus marks whether a widget receives text events.
 
 To give a simple example, when you click a textbox, the textbox gets focus: anything you type on your keyboard will be sent to that textbox.
 
-Focus can be changed with the tab key, or by clicking on a widget, both which Masonry automatically handles.
-Masonry will only give focus to widgets that accept focus (see [`Widget::accepts_focus`]).
-Widgets can also use context types to request focus.
+Focus will be changed:
+
+- When users press the Tab key: Masonry will automatically pick the next widget in the tree that accepts focus [`Widget::accepts_focus`]. (If no widget is currently focused, its starting point will be the most recently clicked widget.)
+- When users click outside the currently focused widget: Masonry will automatically remove focus.
+
+Widgets that want to gain focus when clicked should call [`EventCtx::request_focus`] inside [`Widget::on_pointer_event`].
+Other context types can also request focus.
 
 If a widget gains or loses focus it will get a [`FocusChanged`] event.
 
@@ -108,3 +112,5 @@ They should not be relied upon to check code correctness, but are meant to help 
 [`PointerLeave`]: crate::PointerEvent::PointerLeave
 [`FocusChanged`]: crate::Update::FocusChanged
 [`Widget::accepts_focus`]: crate::Widget::accepts_focus
+[`EventCtx::request_focus`]: crate::EventCtx::request_focus
+[`Widget::on_pointer_event`]: crate::Widget::on_pointer_event
