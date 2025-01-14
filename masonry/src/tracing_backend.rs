@@ -142,11 +142,15 @@ pub(crate) fn try_init_test_tracing() -> Result<(), SetGlobalDefaultError> {
 
 /// Initialise tracing for an end-user application.
 pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
-    // Default level is INFO unless a level is passed.
-    // We tried using DEBUG in --dev, but it was too noisy.
+    // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
     // DEBUG should print a few logs per low-density event.
     // INFO should only print logs for noteworthy things.
-    let default_level = LevelFilter::INFO;
+    let default_level = if cfg!(debug_assertions) {
+        LevelFilter::DEBUG
+    } else {
+        LevelFilter::INFO
+    };
+
     #[cfg(not(target_arch = "wasm32"))]
     {
         try_init_layered_tracing(default_level)
