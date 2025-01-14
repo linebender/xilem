@@ -5,7 +5,13 @@ use crate::event_loop_runner::MasonryState;
 use crate::{Action, RenderRoot, WidgetId};
 
 pub struct DriverCtx<'a> {
-    pub(crate) render_root: &'a mut RenderRoot,
+    // We make no guarantees about the fields of this struct, but
+    // they must all be public so that the type can be constructed
+    // externally.
+    // This is needed for external users, whilst our external API
+    // is not yet designed.
+    #[doc(hidden)]
+    pub render_root: &'a mut RenderRoot,
 }
 
 pub trait AppDriver {
@@ -30,4 +36,16 @@ impl DriverCtx<'_> {
     pub fn content_changed(&self) -> bool {
         self.render_root.needs_rewrite_passes()
     }
+}
+
+#[cfg(doctest)]
+/// Doctests aren't collected under `cfg(test)`; we can use `cfg(doctest)` instead
+mod doctests {
+    /// ```no_run
+    /// use masonry::DriverCtx;
+    /// let _ctx = DriverCtx {
+    ///     render_root: unimplemented!()
+    /// };
+    /// ```
+    const _DRIVER_CTX_EXTERNALLY_CONSTRUCTIBLE: () = {};
 }
