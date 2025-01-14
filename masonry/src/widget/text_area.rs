@@ -391,6 +391,9 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         }
         this.widget.editor.set_text(new_text);
 
+        let (fctx, lctx) = this.ctx.text_contexts();
+        this.widget.editor.driver(fctx, lctx).move_to_text_end();
+
         this.ctx.request_layout();
     }
 
