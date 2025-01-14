@@ -57,7 +57,7 @@ pub struct RenderRoot {
     /// Whether the window size should be determined by the content or the user.
     pub(crate) size_policy: WindowSizePolicy,
 
-    /// Currnet size of the window.
+    /// Current size of the window.
     pub(crate) size: PhysicalSize<u32>,
 
     /// DPI scale factor.
@@ -68,7 +68,7 @@ pub struct RenderRoot {
     /// Is `Some` if the most recently displayed frame was an animation frame.
     pub(crate) last_anim: Option<Instant>,
 
-    /// Last mouse position. Updated by on_pointer_event pass, used by other passes.
+    /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
     /// State passed to context types.
@@ -76,7 +76,7 @@ pub struct RenderRoot {
 
     /// Whether the next accessibility pass should rebuild the entire access tree.
     ///
-    /// TODO - Add "access_tree_active" to detect when you don't need to update the
+    /// TODO - Add `access_tree_active` to detect when you don't need to update the
     // access tree
     pub(crate) rebuild_access_tree: bool,
 
@@ -95,7 +95,7 @@ pub(crate) struct RenderRootState {
     /// List of ancestors of the currently focused widget.
     pub(crate) focused_path: Vec<WidgetId>,
 
-    /// Widget that will be focused once the update_focus pass is run.
+    /// Widget that will be focused once the `update_focus` pass is run.
     pub(crate) next_focused_widget: Option<WidgetId>,
 
     /// Most recently clicked widget.
@@ -121,7 +121,7 @@ pub(crate) struct RenderRootState {
     /// Cache for Parley text layout data.
     pub(crate) text_layout_context: LayoutContext<BrushIndex>,
 
-    /// List of callbacks that will run in the next mutate pass.
+    /// List of callbacks that will run in the next `mutate` pass.
     pub(crate) mutate_callbacks: Vec<MutateCallback>,
 
     /// Whether an IME session is active.
