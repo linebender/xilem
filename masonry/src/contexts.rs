@@ -387,7 +387,6 @@ impl EventCtx<'_> {
         // to deliver on the "last focus request wins" promise.
         let id = self.widget_id();
         self.global_state.next_focused_widget = Some(id);
-        self.global_state.ghost_focus = Some(id);
     }
 
     /// Transfer [text focus] to the widget with the given `WidgetId`.

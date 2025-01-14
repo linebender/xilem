@@ -108,7 +108,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     if matches!(event, PointerEvent::PointerDown(..)) {
         if let Some(target_widget_id) = target_widget_id {
             // The next tab event assign focus around this widget.
-            root.global_state.ghost_focus = Some(target_widget_id);
+            root.global_state.most_recently_clicked_widget = Some(target_widget_id);
 
             // If we click outside of the focused widget, we clear the focus.
             if let Some(focused_widget) = root.global_state.focused_widget {
@@ -197,7 +197,6 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             let forward = !mods.shift_key();
             let next_focused_widget = root.widget_from_focus_chain(forward);
             root.global_state.next_focused_widget = next_focused_widget;
-            root.global_state.ghost_focus = next_focused_widget;
             handled = Handled::Yes;
         }
     }

@@ -59,7 +59,7 @@ To give a simple example, when you click a textbox, the textbox gets focus: anyt
 
 Focus will be changed:
 
-- When users press the Tab key: Masonry will automatically pick the next widget in the tree that accepts focus [`Widget::accepts_focus`].
+- When users press the Tab key: Masonry will automatically pick the next widget in the tree that accepts focus [`Widget::accepts_focus`]. (If no widget is currently focused, its starting point will be the most recently clicked widget.)
 - When users click outside the currently focused widget: Masonry will automatically remove focus.
 
 Widgets that want to gain focus when clicked should call [`EventCtx::request_focus`] inside [`Widget::on_pointer_event`].
@@ -74,12 +74,6 @@ There are two types of focus: active and inactive focus.
 Active focus is the default one; inactive focus is when the window your app runs in has lost focus itself.
 
 In that case, we still mark the widget as focused, but with a different color to signal that e.g. typing on the keyboard won't actually affect it.
-
-### Ghost focus
-
-If a user clicks on a non-focusable widget, future tab events will still navigate the widget tree as if that widget was focused.
-
-This concept is referred to internally as "ghost focus".
 
 
 ## Disabled
