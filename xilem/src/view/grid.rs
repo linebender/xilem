@@ -10,7 +10,9 @@ use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewSequence,
 };
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::{Affine, Pod, ViewCtx, WidgetView};
+
+use super::Transformable;
 
 pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     sequence: Seq,
@@ -23,6 +25,7 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
         phantom: PhantomData,
         height,
         width,
+        transform: Affine::IDENTITY,
     }
 }
 
@@ -32,6 +35,7 @@ pub struct Grid<Seq, State, Action = ()> {
     spacing: f64,
     width: i32,
     height: i32,
+    transform: Affine,
     /// Used to associate the State and Action in the call to `.grid()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
     /// Action to be inferred properly
@@ -47,6 +51,12 @@ impl<Seq, State, Action> Grid<Seq, State, Action> {
             panic!("Invalid `spacing` {spacing}; expected a non-negative finite value.")
         }
         self
+    }
+}
+
+impl<Seq, State, Action> Transformable for Grid<Seq, State, Action> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
     }
 }
 
@@ -72,7 +82,8 @@ where
                 GridElement::Child(child, params) => widget.with_child_pod(child.inner, params),
             }
         }
-        (ctx.new_pod(widget), seq_state)
+        let pod = ctx.new_pod_with_transform(widget, self.transform);
+        (pod, seq_state)
     }
 
     fn rebuild(
@@ -82,6 +93,9 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         if prev.height != self.height {
             widget::Grid::set_height(&mut element, self.height);
         }

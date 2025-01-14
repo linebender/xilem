@@ -51,6 +51,23 @@ impl WidgetId {
     }
 }
 
+/// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
+pub trait AsDynWidget {
+    fn as_dyn(&self) -> &dyn Widget;
+    fn as_mut_dyn(&mut self) -> &mut dyn Widget;
+}
+
+impl<T: Widget> AsDynWidget for T {
+    fn as_dyn(&self) -> &dyn Widget {
+        self as &dyn Widget
+    }
+
+    fn as_mut_dyn(&mut self) -> &mut dyn Widget {
+        self as &mut dyn Widget
+    }
+}
+
+// TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
 ///
 /// For details on how to implement this trait, see the [tutorials](crate::doc).
@@ -76,7 +93,7 @@ impl WidgetId {
 /// through [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by Masonry, and a
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::widget::WidgetMut).
 #[allow(unused_variables)]
-pub trait Widget: AsAny {
+pub trait Widget: AsAny + AsDynWidget {
     /// Handle a pointer event.
     ///
     /// Pointer events will target the widget under the pointer, and then the
@@ -255,23 +272,28 @@ pub trait Widget: AsAny {
 
     // --- Auto-generated implementations ---
 
-    /// Return which child, if any, has the given `pos` in its layout rect. In case of overlapping
-    /// children, the last child as determined by [`Widget::children_ids`] is chosen. No child is
-    /// returned if `pos` is outside the widget's clip path.
+    /// Return the first innermost widget composed by this (including `self`), that contains/intersects with `pos` and accepts pointer interaction, if any.
     ///
-    /// The child returned is a direct child, not e.g. a grand-child.
+    /// In case of overlapping children, the last child as determined by [`Widget::children_ids`] is chosen. No widget is
+    /// returned if `pos` is outside the widget's clip path.
     ///
     /// Has a default implementation that can be overridden to search children more efficiently.
     /// Custom implementations must uphold the conditions outlined above.
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        get_child_at_pos(self, ctx, pos)
+        find_widget_at_pos(
+            &WidgetRef {
+                widget: self.as_dyn(),
+                ctx,
+            },
+            pos,
+        )
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -313,35 +335,38 @@ pub trait Widget: AsAny {
     }
 }
 
-pub(crate) fn get_child_at_pos<'c>(
-    widget: &(impl Widget + ?Sized),
-    ctx: QueryCtx<'c>,
+/// See [`Widget::find_widget_at_pos`] for more details.
+pub fn find_widget_at_pos<'c>(
+    widget: &WidgetRef<'c, dyn Widget>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
-    let relative_pos = pos - ctx.window_origin().to_vec2();
-    if !ctx
-        .clip_path()
-        .is_none_or(|clip| clip.contains(relative_pos))
-    {
-        return None;
-    }
+    if widget.ctx.widget_state.bounding_rect.contains(pos) {
+        let local_pos = widget.ctx().widget_state.window_transform.inverse() * pos;
 
-    // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
-    // of overlapping children.
-    for child_id in widget.children_ids().iter().rev() {
-        let child = ctx.get(*child_id);
-
-        // The position must be inside the child's layout and inside the child's clip path (if
-        // any).
-        if !child.ctx().is_stashed()
-            && child.ctx().accepts_pointer_interaction()
-            && child.ctx().window_layout_rect().contains(pos)
+        if widget.ctx.is_stashed()
+            || Some(false) == widget.ctx.clip_path().map(|clip| clip.contains(local_pos))
         {
-            return Some(child);
+            return None;
         }
-    }
 
-    None
+        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+        // of overlapping children.
+        for child_id in widget.children_ids().iter().rev() {
+            let child_ref = widget.ctx.get(*child_id);
+            if let Some(child) = child_ref.widget.find_widget_at_pos(child_ref.ctx, pos) {
+                return Some(child);
+            }
+        }
+        if widget.ctx.accepts_pointer_interaction()
+            && widget.ctx.size().to_rect().contains(local_pos)
+        {
+            Some(*widget)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }
 
 /// Marker trait for Widgets whose parents can get a raw mutable reference to them.
@@ -502,12 +527,12 @@ impl Widget for Box<dyn Widget> {
         self.deref().get_cursor(ctx, pos)
     }
 
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.deref().get_child_at_pos(ctx, pos)
+        self.deref().find_widget_at_pos(ctx, pos)
     }
 
     fn as_any(&self) -> &dyn Any {

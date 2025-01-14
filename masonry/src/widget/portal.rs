@@ -426,7 +426,7 @@ impl<W: Widget> Widget for Portal<W> {
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {
-        ctx.set_child_translation(&mut self.child, Vec2::new(0.0, -self.viewport_pos.y));
+        ctx.set_child_scroll_translation(&mut self.child, Vec2::new(0.0, -self.viewport_pos.y));
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}

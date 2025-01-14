@@ -5,7 +5,9 @@ use masonry::widget;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::{Affine, Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+
+use super::Transformable;
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -24,6 +26,7 @@ where
         on_enter: None,
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
+        transform: Affine::IDENTITY,
         // TODO?: disabled: false,
     }
 }
@@ -35,6 +38,7 @@ pub struct Textbox<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_brush: Brush,
     alignment: TextAlignment,
+    transform: Affine,
     // TODO: add more attributes of `masonry::widget::TextBox`
 }
 
@@ -59,6 +63,12 @@ impl<State, Action> Textbox<State, Action> {
     }
 }
 
+impl<State, Action> Transformable for Textbox<State, Action> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
+}
+
 impl<State, Action> ViewMarker for Textbox<State, Action> {}
 impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<State, Action> {
     type Element = Pod<widget::Textbox>;
@@ -74,7 +84,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
         ctx.record_action(id);
-        let widget_pod = ctx.new_pod(textbox);
+        let widget_pod = ctx.new_pod_with_transform(textbox, self.transform);
         (widget_pod, ())
     }
 
@@ -85,6 +95,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         let mut text_area = widget::Textbox::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;

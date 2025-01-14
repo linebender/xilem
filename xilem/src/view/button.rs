@@ -7,7 +7,9 @@ pub use masonry::PointerButton;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::view::Label;
-use crate::{MessageResult, Pod, ViewCtx, ViewId};
+use crate::{Affine, MessageResult, Pod, ViewCtx, ViewId};
+
+use super::Transformable;
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(
@@ -17,6 +19,7 @@ pub fn button<State, Action>(
 {
     Button {
         label: label.into(),
+        transform: Affine::IDENTITY,
         callback: move |state: &mut State, button| match button {
             PointerButton::Primary => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
@@ -32,6 +35,7 @@ pub fn button_any_pointer<State, Action>(
 {
     Button {
         label: label.into(),
+        transform: Affine::IDENTITY,
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
     }
 }
@@ -39,7 +43,14 @@ pub fn button_any_pointer<State, Action>(
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button<F> {
     label: Label,
+    transform: Affine,
     callback: F,
+}
+
+impl<F> Transformable for Button<F> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
 }
 
 impl<F> ViewMarker for Button<F> {}
@@ -52,15 +63,18 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(widget::Button::from_label(
-                // TODO: Use `Label::build` here - currently impossible because `Pod` uses `WidgetPod` internally
-                widget::Label::new(self.label.label.clone())
-                    .with_brush(self.label.text_brush.clone())
-                    .with_alignment(self.label.alignment)
-                    .with_style(StyleProperty::FontSize(self.label.text_size))
-                    .with_style(StyleProperty::FontWeight(self.label.weight))
-                    .with_style(StyleProperty::FontStack(self.label.font.clone())),
-            ))
+            ctx.new_pod_with_transform(
+                widget::Button::from_label(
+                    // TODO: Use `Label::build` here - currently impossible because `Pod` uses `WidgetPod` internally
+                    widget::Label::new(self.label.label.clone())
+                        .with_brush(self.label.text_brush.clone())
+                        .with_alignment(self.label.alignment)
+                        .with_style(StyleProperty::FontSize(self.label.text_size))
+                        .with_style(StyleProperty::FontWeight(self.label.weight))
+                        .with_style(StyleProperty::FontStack(self.label.font.clone())),
+                ),
+                self.transform,
+            )
         })
     }
 
@@ -71,6 +85,10 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
+
         <Label as View<State, Action, ViewCtx>>::rebuild(
             &self.label,
             &prev.label,

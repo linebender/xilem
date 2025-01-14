@@ -5,10 +5,10 @@ use std::collections::HashMap;
 
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Affine, Stroke};
 use vello::peniko::Mix;
 use vello::Scene;
 
+use crate::paint_scene_helpers::stroke;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
@@ -54,7 +54,7 @@ fn paint_widget(
 
     let clip = state.item.clip_path;
     let has_clip = clip.is_some();
-    let transform = Affine::translate(state.item.window_origin.to_vec2());
+    let transform = state.item.window_transform;
     let scene = scenes.get(&id).unwrap();
 
     if let Some(clip) = clip {
@@ -64,7 +64,7 @@ fn paint_widget(
     complete_scene.append(scene, Some(transform));
 
     let id = state.item.id;
-    let size = state.item.size;
+    let bounding_rect = state.item.bounding_rect;
     let parent_state = state.item;
     recurse_on_children(
         id,
@@ -92,11 +92,12 @@ fn paint_widget(
         },
     );
 
+    // draw the global axis aligned bounding rect of the widget
     if debug_paint {
         const BORDER_WIDTH: f64 = 1.0;
-        let rect = size.to_rect().inset(BORDER_WIDTH / -2.0);
         let color = get_debug_color(id.to_raw());
-        complete_scene.stroke(&Stroke::new(BORDER_WIDTH), transform, color, None, &rect);
+        let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
+        stroke(complete_scene, &rect, color, BORDER_WIDTH);
     }
 
     if has_clip {

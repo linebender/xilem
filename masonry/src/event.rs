@@ -5,6 +5,7 @@
 
 use std::path::PathBuf;
 
+use vello::kurbo::Point;
 use winit::event::{Force, Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
 
@@ -428,6 +429,13 @@ impl PointerEvent {
             Self::HoverFileCancel(_) => false,
             Self::Pinch(_, _) => true,
         }
+    }
+
+    // TODO Logical/PhysicalPosition as return type instead?
+    /// Returns the position of this event in local (the widget's) coordinate space.
+    pub fn local_position(&self, ctx: &crate::EventCtx) -> Point {
+        let position = self.pointer_state().position;
+        ctx.widget_state.window_transform.inverse() * Point::new(position.x, position.y)
     }
 
     /// Create a [`PointerEvent::PointerLeave`] event with dummy values.

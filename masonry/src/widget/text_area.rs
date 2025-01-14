@@ -485,15 +485,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             return;
         }
 
-        let window_origin = ctx.widget_state.window_origin();
         let (fctx, lctx) = ctx.text_contexts();
         let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
-        let inner_origin = Point::new(
-            window_origin.x + self.padding.get_left(is_rtl),
-            window_origin.y + self.padding.top,
-        );
+        let padding = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
         match event {
-            PointerEvent::PointerDown(button, state) => {
+            PointerEvent::PointerDown(button, _) => {
                 if !ctx.is_disabled() && *button == PointerButton::Primary {
                     let now = Instant::now();
                     if let Some(last) = self.last_click_time.take() {
@@ -507,7 +503,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     }
                     self.last_click_time = Some(now);
                     let click_count = self.click_count;
-                    let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
+                    let cursor_pos = event.local_position(ctx) - padding;
                     let (fctx, lctx) = ctx.text_contexts();
                     let mut drv = self.editor.driver(fctx, lctx);
                     match click_count {
@@ -525,9 +521,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     ctx.capture_pointer();
                 }
             }
-            PointerEvent::PointerMove(state) => {
+            PointerEvent::PointerMove(_) => {
                 if !ctx.is_disabled() && ctx.has_pointer_capture() {
-                    let cursor_pos = Point::new(state.position.x, state.position.y) - inner_origin;
+                    let cursor_pos = event.local_position(ctx) - padding;
                     let (fctx, lctx) = ctx.text_contexts();
                     self.editor
                         .driver(fctx, lctx)

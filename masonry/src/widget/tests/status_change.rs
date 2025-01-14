@@ -72,10 +72,10 @@ fn propagate_hovered() {
 
     harness.mouse_move_to(empty);
 
-    dbg!(harness.get_widget(button).ctx().window_layout_rect());
-    dbg!(harness.get_widget(pad).ctx().window_layout_rect());
-    dbg!(harness.get_widget(root).ctx().window_layout_rect());
-    dbg!(harness.get_widget(empty).ctx().window_layout_rect());
+    dbg!(harness.get_widget(button).ctx().bounding_rect());
+    dbg!(harness.get_widget(pad).ctx().bounding_rect());
+    dbg!(harness.get_widget(root).ctx().bounding_rect());
+    dbg!(harness.get_widget(empty).ctx().bounding_rect());
 
     eprintln!("root: {root:?}");
     eprintln!("empty: {empty:?}");

@@ -61,6 +61,7 @@ pub use widget_ref::WidgetRef;
 pub use zstack::{Alignment, ChildAlignment, HorizontalAlignment, VerticalAlignment, ZStack};
 
 pub(crate) use widget_arena::WidgetArena;
+pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
 
 use crate::{Affine, Size};

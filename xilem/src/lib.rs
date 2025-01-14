@@ -53,7 +53,7 @@ use crate::core::{
     ViewPathTracker, ViewSequence,
 };
 pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-pub use masonry::{dpi, palette, Color, FontWeight, TextAlignment};
+pub use masonry::{dpi, palette, Affine, Color, FontWeight, TextAlignment, Vec2};
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.
@@ -289,6 +289,12 @@ impl ViewCtx {
     pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
         Pod {
             inner: WidgetPod::new(widget),
+        }
+    }
+
+    pub fn new_pod_with_transform<W: Widget>(&mut self, widget: W, transform: Affine) -> Pod<W> {
+        Pod {
+            inner: WidgetPod::new_with_transform(widget, transform),
         }
     }
 

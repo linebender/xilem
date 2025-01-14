@@ -3,7 +3,7 @@
 
 use tracing::info_span;
 use tree_arena::ArenaMut;
-use vello::kurbo::Vec2;
+use vello::kurbo::Affine;
 
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
@@ -14,8 +14,8 @@ fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    parent_moved: bool,
-    parent_translation: Vec2,
+    parent_transformed: bool,
+    parent_window_transform: Affine,
 ) {
     let _span = enter_span_if(
         global_state.trace.compose,
@@ -24,13 +24,20 @@ fn compose_widget(
         state.reborrow(),
     );
 
-    let moved = parent_moved || state.item.translation_changed;
-    let translation = parent_translation + state.item.translation + state.item.origin.to_vec2();
-    state.item.window_origin = translation.to_point();
+    let transformed = parent_transformed || state.item.transform_changed;
 
-    if !parent_moved && !state.item.translation_changed && !state.item.needs_compose {
+    if !transformed && !state.item.needs_compose {
         return;
     }
+
+    // the translation needs to be applied *after* applying the transform, as translation by scrolling should be within the transformed coordinate space. Same is true for the (layout) origin, to behave similar as in CSS.
+    let local_translation = state.item.scroll_translation + state.item.origin.to_vec2();
+
+    state.item.window_transform =
+        parent_window_transform * state.item.transform.then_translate(local_translation);
+
+    let local_rect = state.item.size.to_rect() + state.item.paint_insets;
+    state.item.bounding_rect = state.item.window_transform.transform_rect_bbox(local_rect);
 
     let mut ctx = ComposeCtx {
         global_state,
@@ -49,9 +56,10 @@ fn compose_widget(
 
     state.item.needs_compose = false;
     state.item.request_compose = false;
-    state.item.translation_changed = false;
+    state.item.transform_changed = false;
 
     let id = state.item.id;
+    let parent_transform = state.item.window_transform;
     let parent_state = state.item;
     recurse_on_children(
         id,
@@ -62,9 +70,23 @@ fn compose_widget(
                 global_state,
                 widget,
                 state.reborrow_mut(),
-                moved,
-                translation,
+                transformed,
+                parent_transform,
             );
+            let parent_bounding_rect = parent_state.bounding_rect;
+
+            // This could be further optimized by more tightly clipping the child bounding rect according to the clip path.
+            let clipped_child_bounding_rect = if let Some(clip_path) = parent_state.clip_path {
+                let clip_path_bounding_rect =
+                    parent_state.window_transform.transform_rect_bbox(clip_path);
+                state.item.bounding_rect.intersect(clip_path_bounding_rect)
+            } else {
+                state.item.bounding_rect
+            };
+            if !clipped_child_bounding_rect.is_zero_area() {
+                parent_state.bounding_rect =
+                    parent_bounding_rect.union(clipped_child_bounding_rect);
+            }
             parent_state.merge_up(state.item);
         },
     );
@@ -87,6 +109,6 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
         root_widget,
         root_state,
         false,
-        Vec2::ZERO,
+        Affine::IDENTITY,
     );
 }

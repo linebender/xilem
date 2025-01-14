@@ -4,7 +4,9 @@
 use masonry::{widget, Color};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::{Affine, MessageResult, Pod, View, ViewCtx, ViewId};
+
+use super::Transformable;
 
 /// An indefinite spinner.
 ///
@@ -32,7 +34,10 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 /// }
 /// ```
 pub fn spinner() -> Spinner {
-    Spinner { color: None }
+    Spinner {
+        color: None,
+        transform: Affine::IDENTITY,
+    }
 }
 
 /// The [`View`] created by [`spinner`].
@@ -41,6 +46,7 @@ pub fn spinner() -> Spinner {
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Spinner {
     color: Option<Color>,
+    transform: Affine,
 }
 
 impl Spinner {
@@ -51,13 +57,20 @@ impl Spinner {
     }
 }
 
+impl Transformable for Spinner {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
+}
+
 impl ViewMarker for Spinner {}
 impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type Element = Pod<widget::Spinner>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        (ctx.new_pod(widget::Spinner::new()), ())
+        let pod = ctx.new_pod_with_transform(widget::Spinner::new(), self.transform);
+        (pod, ())
     }
 
     fn rebuild(
@@ -67,6 +80,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         _: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         if prev.color != self.color {
             match self.color {
                 Some(color) => widget::Spinner::set_color(&mut element, color),

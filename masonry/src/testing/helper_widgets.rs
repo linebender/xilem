@@ -18,7 +18,7 @@ use tracing::trace_span;
 use vello::Scene;
 
 use crate::event::{PointerEvent, TextEvent};
-use crate::widget::widget::get_child_at_pos;
+use crate::widget::widget::{find_widget_at_pos, AsDynWidget as _};
 use crate::widget::{SizedBox, WidgetRef};
 use crate::{
     AccessCtx, AccessEvent, AsAny, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx,
@@ -401,12 +401,18 @@ impl<S: 'static> Widget for ModularWidget<S> {
         CursorIcon::Default
     }
 
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        get_child_at_pos(self, ctx, pos)
+        find_widget_at_pos(
+            &WidgetRef {
+                widget: self.as_dyn(),
+                ctx,
+            },
+            pos,
+        )
     }
 
     fn type_name(&self) -> &'static str {
@@ -601,12 +607,12 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.get_cursor(ctx, pos)
     }
 
-    fn get_child_at_pos<'c>(
-        &self,
+    fn find_widget_at_pos<'c>(
+        &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.child.get_child_at_pos(ctx, pos)
+        self.child.find_widget_at_pos(ctx, pos)
     }
 
     fn type_name(&self) -> &'static str {

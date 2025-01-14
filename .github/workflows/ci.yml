@@ -213,7 +213,7 @@ jobs:
       with:
         path: .git/lfs
         # The files stored in git lfs are all in this folder
-        key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+        key: masonry-lfs-${{ hashFiles('masonry/src/**/screenshots/*.png') }}
         restore-keys: masonry-lfs-
         enableCrossOsArchive: true
 
@@ -248,7 +248,7 @@ jobs:
         with:
           path: .git/lfs
           # The files stored in git lfs are all in this folder
-          key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+          key: masonry-lfs-${{ hashFiles('masonry/src/**/screenshots/*.png') }}
           enableCrossOsArchive: true
 
       - name: Checkout LFS files

@@ -11,7 +11,7 @@ use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
-use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
+use crate::{Affine, AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
@@ -19,6 +19,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     Flex {
         sequence,
         axis: Axis::Vertical,
+        transform: Affine::IDENTITY,
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
@@ -31,6 +32,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
 pub struct Flex<Seq, State, Action = ()> {
     sequence: Seq,
     axis: Axis,
+    transform: Affine,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
@@ -85,6 +87,12 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     }
 }
 
+impl<Seq, State, Action> Transformable for Flex<Seq, State, Action> {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
+}
+
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
@@ -113,7 +121,8 @@ where
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        (ctx.new_pod(widget), seq_state)
+        let pod = ctx.new_pod_with_transform(widget, self.transform);
+        (pod, seq_state)
     }
 
     fn rebuild(
@@ -123,6 +132,9 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         if prev.axis != self.axis {
             widget::Flex::set_direction(&mut element, self.axis);
         }
@@ -633,6 +645,8 @@ mod hidden {
     }
 }
 use hidden::AnyFlexChildState;
+
+use super::Transformable;
 
 impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>

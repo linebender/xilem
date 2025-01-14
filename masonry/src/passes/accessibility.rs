@@ -50,11 +50,8 @@ fn build_accessibility_tree(
             tree_update,
             rebuild_all,
         };
-        let mut node = build_access_node(widget.item, &mut ctx);
+        let mut node = build_access_node(widget.item, &mut ctx, scale_factor);
         widget.item.accessibility(&mut ctx, &mut node);
-        if let Some(scale_factor) = scale_factor {
-            node.set_transform(accesskit::Affine::scale(scale_factor));
-        }
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {
@@ -89,9 +86,21 @@ fn build_accessibility_tree(
 }
 
 // --- MARK: BUILD NODE ---
-fn build_access_node(widget: &mut dyn Widget, ctx: &mut AccessCtx) -> Node {
+fn build_access_node(
+    widget: &mut dyn Widget,
+    ctx: &mut AccessCtx,
+    scale_factor: Option<f64>,
+) -> Node {
     let mut node = Node::new(widget.accessibility_role());
-    node.set_bounds(to_accesskit_rect(ctx.widget_state.window_layout_rect()));
+    node.set_bounds(to_accesskit_rect(ctx.widget_state.size.to_rect()));
+
+    let local_translation = ctx.widget_state.scroll_translation + ctx.widget_state.origin.to_vec2();
+    let mut local_transform = ctx.widget_state.transform.then_translate(local_translation);
+
+    if let Some(scale_factor) = scale_factor {
+        local_transform = local_transform.pre_scale(scale_factor);
+    }
+    node.set_transform(accesskit::Affine::new(local_transform.as_coeffs()));
 
     node.set_children(
         widget

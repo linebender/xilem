@@ -6,7 +6,9 @@ use masonry::widget::{self, LineBreaking};
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::{Affine, Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+
+use super::Transformable;
 
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
@@ -15,6 +17,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
+        transform: Affine::IDENTITY,
     }
 }
 
@@ -36,6 +39,7 @@ pub struct Prose {
     alignment: TextAlignment,
     text_size: f32,
     line_break_mode: LineBreaking,
+    transform: Affine,
     // TODO: disabled: bool,
     // TODO: add more attributes of `masonry::widget::Prose`
 }
@@ -67,6 +71,12 @@ fn line_break_clips(linebreaking: LineBreaking) -> bool {
     matches!(linebreaking, LineBreaking::Clip | LineBreaking::WordWrap)
 }
 
+impl Transformable for Prose {
+    fn transform_mut(&mut self) -> &mut Affine {
+        &mut self.transform
+    }
+}
+
 impl ViewMarker for Prose {}
 impl<State, Action> View<State, Action, ViewCtx> for Prose {
     type Element = Pod<widget::Prose>;
@@ -78,9 +88,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
             .with_alignment(self.alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.new_pod_with_transform(
             widget::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
+            self.transform,
         );
         (widget_pod, ())
     }
@@ -92,6 +103,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if prev.transform != self.transform {
+            element.set_transform(self.transform);
+        }
         let mut text_area = widget::Prose::text_mut(&mut element);
         if prev.content != self.content {
             widget::TextArea::reset_text(&mut text_area, &self.content);

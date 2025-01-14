@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{Widget, WidgetId};
+use crate::{Affine, Widget, WidgetId};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -20,8 +20,13 @@ pub struct WidgetPod<W> {
 // through context methods where they already have access to the arena.
 // Implementing that requires solving non-trivial design questions.
 
+pub(crate) struct CreateWidget<W> {
+    pub(crate) widget: W,
+    pub(crate) transform: Affine,
+}
+
 enum WidgetPodInner<W> {
-    Created(W),
+    Create(CreateWidget<W>),
     Inserted,
 }
 
@@ -37,19 +42,31 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Create a new widget pod with fixed id.
     pub fn new_with_id(inner: W, id: WidgetId) -> Self {
+        Self::new_with_id_and_transform(inner, id, Affine::IDENTITY)
+    }
+
+    /// Create a new widget pod with a custom transform.
+    pub fn new_with_transform(inner: W, transform: Affine) -> Self {
+        Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
+    }
+
+    pub fn new_with_id_and_transform(inner: W, id: WidgetId, transform: Affine) -> Self {
         Self {
             id,
-            inner: WidgetPodInner::Created(inner),
+            inner: WidgetPodInner::Create(CreateWidget {
+                widget: inner,
+                transform,
+            }),
         }
     }
 
     pub(crate) fn incomplete(&self) -> bool {
-        matches!(self.inner, WidgetPodInner::Created(_))
+        matches!(self.inner, WidgetPodInner::Create(_))
     }
 
-    pub(crate) fn take_inner(&mut self) -> Option<W> {
+    pub(crate) fn take_inner(&mut self) -> Option<CreateWidget<W>> {
         match std::mem::replace(&mut self.inner, WidgetPodInner::Inserted) {
-            WidgetPodInner::Created(widget) => Some(widget),
+            WidgetPodInner::Create(widget) => Some(widget),
             WidgetPodInner::Inserted => None,
         }
     }
@@ -66,11 +83,9 @@ impl<W: Widget + 'static> WidgetPod<W> {
     /// Convert a `WidgetPod` containing a widget of a specific concrete type
     /// into a dynamically boxed widget.
     pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
-        match self.inner {
-            WidgetPodInner::Created(inner) => WidgetPod::new_with_id(Box::new(inner), self.id),
-            WidgetPodInner::Inserted => {
-                panic!("Cannot box a widget after it has been inserted into the widget graph")
-            }
-        }
+        let WidgetPodInner::Create(inner) = self.inner else {
+            panic!("Cannot box a widget after it has been inserted into the widget graph")
+        };
+        WidgetPod::new_with_id_and_transform(Box::new(inner.widget), self.id, inner.transform)
     }
 }

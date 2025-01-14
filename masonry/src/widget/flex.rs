@@ -1146,7 +1146,7 @@ impl Widget for Flex {
         // or be clipped (e.g. if its parent is a Portal).
         let my_size: Size = self.direction.pack(major, minor_dim).into();
 
-        let my_bounds = Rect::ZERO.with_size(my_size);
+        let my_bounds = my_size.to_rect();
         let insets = child_paint_rect - my_bounds;
         ctx.set_paint_insets(insets);
 
