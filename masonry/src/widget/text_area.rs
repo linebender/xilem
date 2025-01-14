@@ -829,13 +829,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
         match event {
-            Update::FocusChanged(focus) => {
-                // If we lose focus, set the selection up so that next time
-                // we get focus, selection will be at the end of the text.
-                if !*focus {
-                    let (fctx, lctx) = ctx.text_contexts();
-                    self.editor.driver(fctx, lctx).move_to_text_end();
-                }
+            Update::FocusChanged(_) => {
                 ctx.request_render();
             }
             Update::DisabledChanged(_) => {
