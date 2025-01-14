@@ -75,6 +75,12 @@ Active focus is the default one; inactive focus is when the window your app runs
 
 In that case, we still mark the widget as focused, but with a different color to signal that e.g. typing on the keyboard won't actually affect it.
 
+### Ghost focus
+
+If a user clicks on a non-focusable widget, future tab events will still navigate the widget tree as if that widget was focused.
+
+This concept is referred to internally as "ghost focus".
+
 
 ## Disabled
 
