@@ -51,45 +51,92 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 ///
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
+    /// Root of the widget tree.
     pub(crate) root: WidgetPod<Box<dyn Widget>>,
+
+    /// Whether the window size should be determined by the content or the user.
     pub(crate) size_policy: WindowSizePolicy,
+
+    /// Current size of the window.
     pub(crate) size: PhysicalSize<u32>,
-    // TODO - Currently this is always 1.0
-    // kurbo coordinates are assumed to be in logical pixels
+
+    /// DPI scale factor.
+    ///
+    /// Kurbo coordinates are assumed to be in logical pixels
     pub(crate) scale_factor: f64,
+
     /// Is `Some` if the most recently displayed frame was an animation frame.
     pub(crate) last_anim: Option<Instant>,
+
+    /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
-    pub(crate) cursor_icon: CursorIcon,
+
+    /// State passed to context types.
     pub(crate) global_state: RenderRootState,
-    // TODO - Add "access_tree_active" to detect when you don't need to update the
+
+    /// Whether the next accessibility pass should rebuild the entire access tree.
+    ///
+    /// TODO - Add `access_tree_active` to detect when you don't need to update the
     // access tree
     pub(crate) rebuild_access_tree: bool,
+
+    /// The widget tree; stores widgets and their states.
     pub(crate) widget_arena: WidgetArena,
 }
 
-// TODO - Document these fields.
+/// State shared between passes.
 pub(crate) struct RenderRootState {
+    /// Queue of signals to be processed by the event loop.
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
+
+    /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
+
+    /// List of ancestors of the currently focused widget.
     pub(crate) focused_path: Vec<WidgetId>,
+
+    /// Widget that will be focused once the `update_focus` pass is run.
     pub(crate) next_focused_widget: Option<WidgetId>,
-    pub(crate) most_recently_clicked_widget: Option<WidgetId>,
-    pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
-    pub(crate) hovered_path: Vec<WidgetId>,
-    pub(crate) pointer_capture_target: Option<WidgetId>,
-    pub(crate) cursor_icon: CursorIcon,
-    pub(crate) font_context: FontContext,
-    pub(crate) text_layout_context: LayoutContext<BrushIndex>,
-    pub(crate) mutate_callbacks: Vec<MutateCallback>,
-    pub(crate) is_ime_active: bool,
-    /// The IME area last sent to the platform.
+
+    /// Most recently clicked widget.
     ///
-    /// This allows only sending the area to the platform when the area has changed.
+    /// This is used to pick the focused widget on Tab events.
+    pub(crate) most_recently_clicked_widget: Option<WidgetId>,
+
+    /// Widgets that have requested to be scrolled into view.
+    pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
+
+    /// List of ancestors of the currently hovered widget.
+    pub(crate) hovered_path: Vec<WidgetId>,
+
+    /// Widget that currently has pointer capture.
+    pub(crate) pointer_capture_target: Option<WidgetId>,
+
+    /// Current cursor icon.
+    pub(crate) cursor_icon: CursorIcon,
+
+    /// Cache for Parley font data.
+    pub(crate) font_context: FontContext,
+
+    /// Cache for Parley text layout data.
+    pub(crate) text_layout_context: LayoutContext<BrushIndex>,
+
+    /// List of callbacks that will run in the next `mutate` pass.
+    pub(crate) mutate_callbacks: Vec<MutateCallback>,
+
+    /// Whether an IME session is active.
+    pub(crate) is_ime_active: bool,
+
+    /// The area in which text is being edited.
     pub(crate) last_sent_ime_area: Rect,
+
+    /// Scene cache for the widget tree.
     pub(crate) scenes: HashMap<WidgetId, Scene>,
+
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
+
+    /// Pass tracing configuration, used to skip tracing to limit overhead.
     pub(crate) trace: PassTracing,
 }
 
@@ -193,7 +240,6 @@ impl RenderRoot {
             scale_factor,
             last_anim: None,
             last_mouse_pos: None,
-            cursor_icon: CursorIcon::Default,
             global_state: RenderRootState {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
@@ -404,7 +450,7 @@ impl RenderRoot {
 
     /// Get the current icon that the mouse should display.
     pub fn cursor_icon(&self) -> CursorIcon {
-        self.cursor_icon
+        self.global_state.cursor_icon
     }
 
     // --- MARK: ACCESS WIDGETS---
