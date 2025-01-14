@@ -73,6 +73,10 @@ pub(crate) struct RenderRootState {
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
     pub(crate) focused_widget: Option<WidgetId>,
     pub(crate) focused_path: Vec<WidgetId>,
+    /// The most recently clicked widget.
+    ///
+    /// When tab-focusing, this will be used as the base.
+    pub(crate) ghost_focus: Option<WidgetId>,
     pub(crate) next_focused_widget: Option<WidgetId>,
     pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
     pub(crate) hovered_path: Vec<WidgetId>,
@@ -197,6 +201,7 @@ impl RenderRoot {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
                 focused_path: Vec::new(),
+                ghost_focus: None,
                 next_focused_widget: None,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
@@ -616,7 +621,7 @@ impl RenderRoot {
     }
 
     pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
-        let focused_widget = self.global_state.focused_widget;
+        let focused_widget = self.global_state.ghost_focus;
         let focused_idx = focused_widget.and_then(|focused_widget| {
             self.focus_chain()
                 .iter()
