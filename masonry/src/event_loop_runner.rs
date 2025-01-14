@@ -8,7 +8,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::{debug, info_span, warn};
+use tracing::{debug, info, info_span, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -745,8 +745,8 @@ impl MasonryState<'_> {
                     } else {
                         widget_name.into()
                     };
-                    println!("Widget selected in inspector: {widget_id} - {display_name}");
-                    println!("{:#?}", state.item);
+                    info!("Widget selected in inspector: {widget_id} - {display_name}");
+                    info!("{:#?}", state.item);
                 }
             }
         }
