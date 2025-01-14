@@ -126,6 +126,8 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         }
         root.global_state.inspector_state.is_picking_widget = false;
         root.global_state.inspector_state.hovered_widget = None;
+        root.global_state.needs_pointer_pass = true;
+        root.root_state_mut().needs_paint = true;
         return Handled::Yes;
     }
 
@@ -214,8 +216,8 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         !event.is_high_density(),
     );
 
-    // Handle Tab focus
     if let TextEvent::KeyboardKey(key, mods) = event {
+        // Handle Tab focus
         if key.physical_key == PhysicalKey::Code(KeyCode::Tab)
             && key.state == ElementState::Pressed
             && handled == Handled::No
@@ -232,6 +234,18 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         {
             root.global_state.inspector_state.is_picking_widget =
                 !root.global_state.inspector_state.is_picking_widget;
+            root.global_state.inspector_state.hovered_widget = None;
+            root.global_state.needs_pointer_pass = true;
+            root.root_state_mut().needs_paint = true;
+            handled = Handled::Yes;
+        }
+
+        if key.physical_key == PhysicalKey::Code(KeyCode::F12)
+            && key.state == ElementState::Pressed
+            && handled == Handled::No
+        {
+            root.debug_paint = !root.debug_paint;
+            root.root_state_mut().needs_paint = true;
             handled = Handled::Yes;
         }
     }

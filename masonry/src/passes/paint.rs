@@ -111,8 +111,6 @@ fn paint_widget(
 pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();
 
-    let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
-
     // TODO - Reserve scene
     // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
@@ -142,7 +140,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         &mut scenes,
         root_widget,
         root_state,
-        debug_paint,
+        root.debug_paint,
     );
     root.global_state.scenes = scenes;
 
