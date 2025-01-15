@@ -108,6 +108,12 @@ The following feature flags are available:
 - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 
+### Debugging features
+
+Masonry apps currently ship with two debugging features built in:
+- A rudimentary widget inspector - toggled by F11 key.
+- A debug mode painting widget layout rectangles - toggled by F12 key.
+
 [winit]: https://crates.io/crates/winit
 [Druid]: https://crates.io/crates/druid
 [Xilem]: https://crates.io/crates/xilem
