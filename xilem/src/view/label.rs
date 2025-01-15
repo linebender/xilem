@@ -25,14 +25,13 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Label {
-    // Public for button and variable_label as a semi-interim state.
-    pub(in crate::view) label: ArcStr,
-    pub(in crate::view) text_brush: Brush,
-    pub(in crate::view) alignment: TextAlignment,
-    pub(in crate::view) text_size: f32,
-    pub(in crate::view) weight: FontWeight,
-    pub(in crate::view) font: FontStack<'static>, // TODO: add more attributes of `masonry::widget::Label`
-    pub(in crate::view) transform: Affine,
+    label: ArcStr,
+    text_brush: Brush,
+    alignment: TextAlignment,
+    text_size: f32,
+    weight: FontWeight,
+    font: FontStack<'static>, // TODO: add more attributes of `masonry::widget::Label`
+    transform: Affine,
 }
 
 impl Label {
@@ -62,7 +61,7 @@ impl Label {
     ///
     /// A font stack allows for providing fallbacks. If there is no matching font
     /// for a character, a system font will be used (if the system fonts are enabled).
-    pub fn with_font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
         self.font = font.into();
         self
     }

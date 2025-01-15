@@ -100,15 +100,15 @@ impl<
         elem: OneOf<Pod<A>, Pod<B>, Pod<C>, Pod<D>, Pod<E>, Pod<F>, Pod<G>, Pod<H>, Pod<I>>,
     ) -> Self::OneOfElement {
         match elem {
-            OneOf::A(w) => self.new_pod(OneOfWidget::A(w.inner)),
-            OneOf::B(w) => self.new_pod(OneOfWidget::B(w.inner)),
-            OneOf::C(w) => self.new_pod(OneOfWidget::C(w.inner)),
-            OneOf::D(w) => self.new_pod(OneOfWidget::D(w.inner)),
-            OneOf::E(w) => self.new_pod(OneOfWidget::E(w.inner)),
-            OneOf::F(w) => self.new_pod(OneOfWidget::F(w.inner)),
-            OneOf::G(w) => self.new_pod(OneOfWidget::G(w.inner)),
-            OneOf::H(w) => self.new_pod(OneOfWidget::H(w.inner)),
-            OneOf::I(w) => self.new_pod(OneOfWidget::I(w.inner)),
+            OneOf::A(w) => self.new_pod(OneOfWidget::A(w.into_widget_pod())),
+            OneOf::B(w) => self.new_pod(OneOfWidget::B(w.into_widget_pod())),
+            OneOf::C(w) => self.new_pod(OneOfWidget::C(w.into_widget_pod())),
+            OneOf::D(w) => self.new_pod(OneOfWidget::D(w.into_widget_pod())),
+            OneOf::E(w) => self.new_pod(OneOfWidget::E(w.into_widget_pod())),
+            OneOf::F(w) => self.new_pod(OneOfWidget::F(w.into_widget_pod())),
+            OneOf::G(w) => self.new_pod(OneOfWidget::G(w.into_widget_pod())),
+            OneOf::H(w) => self.new_pod(OneOfWidget::H(w.into_widget_pod())),
+            OneOf::I(w) => self.new_pod(OneOfWidget::I(w.into_widget_pod())),
         }
     }
 
@@ -117,15 +117,15 @@ impl<
         new_elem: OneOf<Pod<A>, Pod<B>, Pod<C>, Pod<D>, Pod<E>, Pod<F>, Pod<G>, Pod<H>, Pod<I>>,
     ) {
         let new_inner = match new_elem {
-            OneOf::A(w) => OneOfWidget::A(w.inner),
-            OneOf::B(w) => OneOfWidget::B(w.inner),
-            OneOf::C(w) => OneOfWidget::C(w.inner),
-            OneOf::D(w) => OneOfWidget::D(w.inner),
-            OneOf::E(w) => OneOfWidget::E(w.inner),
-            OneOf::F(w) => OneOfWidget::F(w.inner),
-            OneOf::G(w) => OneOfWidget::G(w.inner),
-            OneOf::H(w) => OneOfWidget::H(w.inner),
-            OneOf::I(w) => OneOfWidget::I(w.inner),
+            OneOf::A(w) => OneOfWidget::A(w.into_widget_pod()),
+            OneOf::B(w) => OneOfWidget::B(w.into_widget_pod()),
+            OneOf::C(w) => OneOfWidget::C(w.into_widget_pod()),
+            OneOf::D(w) => OneOfWidget::D(w.into_widget_pod()),
+            OneOf::E(w) => OneOfWidget::E(w.into_widget_pod()),
+            OneOf::F(w) => OneOfWidget::F(w.into_widget_pod()),
+            OneOf::G(w) => OneOfWidget::G(w.into_widget_pod()),
+            OneOf::H(w) => OneOfWidget::H(w.into_widget_pod()),
+            OneOf::I(w) => OneOfWidget::I(w.into_widget_pod()),
         };
         let old_inner = std::mem::replace(elem_mut.widget, new_inner);
         match old_inner {

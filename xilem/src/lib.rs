@@ -161,7 +161,7 @@ where
             runtime: self.runtime,
         };
         let (pod, view_state) = first_view.build(&mut ctx);
-        let root_widget = RootWidget::from_pod(pod.inner);
+        let root_widget = RootWidget::from_pod(pod.into_widget_pod());
         let driver = MasonryDriver {
             current_view: first_view,
             logic: self.logic,
@@ -174,12 +174,43 @@ where
     }
 }
 
-/// A container for a [Masonry](masonry) widget to be used with Xilem.
+/// A container for a yet to be inserted [Masonry](masonry) widget
+/// to be used with Xilem.
 ///
-/// Equivalent to [`WidgetPod<W>`], but in the [`xilem`](crate) crate to work around the orphan rule.
+/// This exists for two reasons:
+/// 1) The nearest equivalent type in Masonry, [`WidgetPod`], can't have
+///    [Xilem Core](xilem_core) traits implemented on it due to Rust's orphan rules.
+/// 2) `WidgetPod` is also used during a Widget's lifetime to contain its children,
+///    and so might not actually own the underlying widget value.
+///    When creating widgets in Xilem, layered views all want access to the - using
+///    `WidgetPod` for this purpose would require fallible unwrapping.
 pub struct Pod<W: Widget> {
-    pub inner: WidgetPod<W>,
-    // TODO: Maybe this should just be a (WidgetId, W) pair.
+    pub widget: W,
+    pub id: WidgetId,
+    pub transform: Affine,
+}
+
+impl<W: Widget> Pod<W> {
+    fn new(widget: W) -> Self {
+        Self {
+            widget,
+            id: WidgetId::next(),
+            transform: Default::default(),
+        }
+    }
+    fn into_widget_pod(self) -> WidgetPod<W> {
+        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
+    }
+    fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
+        WidgetPod::new_with_id_and_transform(Box::new(self.widget), self.id, self.transform)
+    }
+    fn boxed(self) -> Pod<Box<dyn Widget>> {
+        Pod {
+            widget: Box::new(self.widget),
+            id: self.id,
+            transform: self.transform,
+        }
+    }
 }
 
 impl<W: Widget> ViewElement for Pod<W> {
@@ -187,8 +218,8 @@ impl<W: Widget> ViewElement for Pod<W> {
 }
 
 impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
-    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        ctx.boxed_pod(child)
+    fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
+        child.boxed()
     }
 
     fn with_downcast_val<R>(
@@ -287,21 +318,12 @@ impl ViewPathTracker for ViewCtx {
 
 impl ViewCtx {
     pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
-        Pod {
-            inner: WidgetPod::new(widget),
-        }
+        Pod::new(widget)
     }
-
     pub fn new_pod_with_transform<W: Widget>(&mut self, widget: W, transform: Affine) -> Pod<W> {
-        Pod {
-            inner: WidgetPod::new_with_transform(widget, transform),
-        }
-    }
-
-    pub fn boxed_pod<W: Widget>(&mut self, pod: Pod<W>) -> Pod<Box<dyn Widget>> {
-        Pod {
-            inner: pod.inner.boxed(),
-        }
+        let mut pod = Pod::new(widget);
+        pod.transform = transform;
+        pod
     }
 
     pub fn with_leaf_action_widget<E: Widget>(
@@ -313,8 +335,7 @@ impl ViewCtx {
 
     pub fn with_action_widget<E: Widget>(&mut self, f: impl FnOnce(&mut Self) -> Pod<E>) -> Pod<E> {
         let value = f(self);
-        let id = value.inner.id();
-        self.record_action(id);
+        self.record_action(value.id);
         value
     }
 
