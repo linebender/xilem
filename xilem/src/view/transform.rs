@@ -1,12 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::marker::PhantomData;
-
-use masonry::Affine;
-use xilem_core::{DynMessage, View, ViewMarker};
-
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::Affine;
 
 /// An extension trait, to allow common transformations of the views transform.
 pub trait Transformable: Sized {
