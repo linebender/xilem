@@ -127,7 +127,7 @@ pub(crate) struct RenderRootState {
     /// Whether an IME session is active.
     pub(crate) is_ime_active: bool,
 
-    /// The area in which text is being edited.
+    /// The cursor area last sent to the platform.
     pub(crate) last_sent_ime_area: Rect,
 
     /// Scene cache for the widget tree.
@@ -617,6 +617,11 @@ impl RenderRoot {
                 .focused_widget
                 .expect("IME is active without a focused widget");
             let ime_area = self.widget_arena.get_state(widget).item.get_ime_area();
+            // Certain desktop environments (primarily KDE on Wayland) re-synchronise IME state
+            // with the client (this app) in response to the safe area changing.
+            // Our handling of that ultimately results in us sending the safe area again,
+            // which causes an infinite loop.
+            // We break that loop by not re-sending the same safe area again.
             if self.global_state.last_sent_ime_area != ime_area {
                 self.global_state.last_sent_ime_area = ime_area;
                 self.global_state
