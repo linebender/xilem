@@ -82,6 +82,7 @@ pub struct RenderRoot {
 
     /// The widget tree; stores widgets and their states.
     pub(crate) widget_arena: WidgetArena,
+    pub(crate) debug_paint: bool,
 }
 
 /// State shared between passes.
@@ -138,6 +139,7 @@ pub(crate) struct RenderRootState {
 
     /// Pass tracing configuration, used to skip tracing to limit overhead.
     pub(crate) trace: PassTracing,
+    pub(crate) inspector_state: InspectorState,
 }
 
 pub(crate) struct MutateCallback {
@@ -218,6 +220,16 @@ pub enum RenderRootSignal {
     Exit,
     /// The window menu is being shown.
     ShowWindowMenu(LogicalPosition<f64>),
+    /// The widget picker has selected this widget.
+    WidgetSelectedInInspector(WidgetId),
+}
+
+/// State of the widget inspector. Useful for debugging.
+///
+/// Widget inspector is WIP. It should get its own standalone documentation.
+pub(crate) struct InspectorState {
+    pub(crate) is_picking_widget: bool,
+    pub(crate) hovered_widget: Option<WidgetId>,
 }
 
 impl RenderRoot {
@@ -233,6 +245,8 @@ impl RenderRoot {
             scale_factor,
             test_font,
         } = options;
+        let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
+
         let mut root = Self {
             root: WidgetPod::new(root_widget).boxed(),
             size_policy,
@@ -264,12 +278,17 @@ impl RenderRoot {
                 scenes: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
+                inspector_state: InspectorState {
+                    is_picking_widget: false,
+                    hovered_widget: None,
+                },
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
                 states: TreeArena::new(),
             },
             rebuild_access_tree: true,
+            debug_paint,
         };
 
         if let Some(test_font_data) = test_font {

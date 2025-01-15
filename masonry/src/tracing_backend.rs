@@ -150,6 +150,7 @@ pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
     } else {
         LevelFilter::INFO
     };
+
     #[cfg(not(target_arch = "wasm32"))]
     {
         try_init_layered_tracing(default_level)

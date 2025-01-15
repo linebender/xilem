@@ -5,14 +5,15 @@ use std::collections::HashMap;
 
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::peniko::Mix;
+use vello::kurbo::Affine;
+use vello::peniko::{Color, Fill, Mix};
 use vello::Scene;
 
 use crate::paint_scene_helpers::stroke;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
-use crate::{PaintCtx, Widget, WidgetId, WidgetState};
+use crate::{PaintCtx, Rect, Widget, WidgetId, WidgetState};
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(
@@ -110,8 +111,6 @@ fn paint_widget(
 pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();
 
-    let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
-
     // TODO - Reserve scene
     // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
@@ -141,9 +140,24 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         &mut scenes,
         root_widget,
         root_state,
-        debug_paint,
+        root.debug_paint,
     );
     root.global_state.scenes = scenes;
+
+    // Display a rectangle over the hovered widget
+    if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
+        const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
+        let state = root.widget_arena.get_state(hovered_widget).item;
+        let rect = Rect::from_origin_size(state.window_origin(), state.size);
+
+        complete_scene.fill(
+            Fill::NonZero,
+            Affine::IDENTITY,
+            HOVER_FILL_COLOR,
+            None,
+            &rect,
+        );
+    }
 
     complete_scene
 }

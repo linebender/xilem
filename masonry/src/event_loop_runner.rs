@@ -8,7 +8,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::{debug, info_span, warn};
+use tracing::{debug, info, info_span, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -736,6 +736,17 @@ impl MasonryState<'_> {
                 }
                 render_root::RenderRootSignal::ShowWindowMenu(position) => {
                     window.show_window_menu(position);
+                }
+                render_root::RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
+                    let (widget, state) = self.render_root.widget_arena.get_pair(widget_id);
+                    let widget_name = widget.item.short_type_name();
+                    let display_name = if let Some(debug_text) = widget.item.get_debug_text() {
+                        format!("{widget_name}<{debug_text}>")
+                    } else {
+                        widget_name.into()
+                    };
+                    info!("Widget selected in inspector: {widget_id} - {display_name}");
+                    info!("{:#?}", state.item);
                 }
             }
         }
