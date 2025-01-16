@@ -75,7 +75,7 @@ impl Widget for Checkbox {
                 }
             }
             PointerEvent::PointerUp(_, _) => {
-                if ctx.has_pointer_capture() && ctx.is_hovered() && !ctx.is_disabled() {
+                if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxToggled(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());

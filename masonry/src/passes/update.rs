@@ -341,8 +341,8 @@ fn update_focus_chain_for_widget(
     }
 
     // Replace has_focus to check if the value changed in the meantime
-    state.item.has_focus = global_state.focused_widget == Some(id);
-    let had_focus = state.item.has_focus;
+    state.item.has_focused = global_state.focused_widget == Some(id);
+    let had_focus = state.item.has_focused;
 
     state.item.focus_chain.clear();
     if state.item.accepts_focus {
@@ -373,11 +373,11 @@ fn update_focus_chain_for_widget(
     // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
     // Therefore if had_focus is true but state.has_focus is false then the widget which is
     // currently focused is not part of the functional tree anymore and should resign the focus.
-    if had_focus && !state.item.has_focus {
+    if had_focus && !state.item.has_focused {
         // Not sure about this logic, might remove
         global_state.next_focused_widget = None;
     }
-    state.item.has_focus = had_focus;
+    state.item.has_focused = had_focus;
 }
 
 pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
@@ -476,10 +476,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
                 let has_focus = focused_set.contains(&ctx.widget_id());
 
-                if ctx.widget_state.has_focus != has_focus {
+                if ctx.widget_state.has_focused != has_focus {
                     widget.update(ctx, &Update::ChildFocusChanged(has_focus));
                 }
-                ctx.widget_state.has_focus = has_focus;
+                ctx.widget_state.has_focused = has_focus;
             });
         }
 
@@ -487,7 +487,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // TODO - Document the iteration order for update_focus pass.
         for widget_id in prev_focused_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).item.has_focus
+                && root.widget_arena.get_state_mut(widget_id).item.has_focused
                     != focused_set.contains(&widget_id)
             {
                 update_focused_status_of(root, widget_id, &focused_set);
@@ -495,7 +495,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         }
         for widget_id in next_focused_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).item.has_focus
+                && root.widget_arena.get_state_mut(widget_id).item.has_focused
                     != focused_set.contains(&widget_id)
             {
                 update_focused_status_of(root, widget_id, &focused_set);
@@ -622,6 +622,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     // "Hovered path" means the widget which is considered hovered, and all its parents.
     let prev_hovered_path = std::mem::take(&mut root.global_state.hovered_path);
     let next_hovered_path = get_id_path(root, next_hovered_widget);
+    let prev_hovered_widget = prev_hovered_path.first().copied();
 
     // We don't just compare `prev_focused` and `next_focused` they could be the same widget
     // but one of their ancestors could have been reparented.
@@ -648,12 +649,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             hovered_set: &HashSet<WidgetId>,
         ) {
             run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
-                let is_hovered = hovered_set.contains(&ctx.widget_id());
+                let has_hovered = hovered_set.contains(&ctx.widget_id());
 
-                if ctx.widget_state.is_hovered != is_hovered {
-                    widget.update(ctx, &Update::HoveredChanged(is_hovered));
+                if ctx.widget_state.has_hovered != has_hovered {
+                    widget.update(ctx, &Update::ChildHoveredChanged(has_hovered));
                 }
-                ctx.widget_state.is_hovered = is_hovered;
+                ctx.widget_state.has_hovered = has_hovered;
             });
         }
 
@@ -674,6 +675,21 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             {
                 update_hovered_status_of(root, widget_id, &hovered_set);
             }
+        }
+    }
+
+    if prev_hovered_widget != next_hovered_widget {
+        if let Some(prev_hovered_widget) = prev_hovered_widget {
+            run_single_update_pass(root, prev_hovered_widget, |widget, ctx| {
+                ctx.widget_state.is_hovered = false;
+                widget.update(ctx, &Update::HoveredChanged(false));
+            });
+        }
+        if let Some(next_hovered_widget) = next_hovered_widget {
+            run_single_update_pass(root, next_hovered_widget, |widget, ctx| {
+                ctx.widget_state.is_hovered = true;
+                widget.update(ctx, &Update::HoveredChanged(true));
+            });
         }
     }
 

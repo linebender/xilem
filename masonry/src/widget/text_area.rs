@@ -525,7 +525,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 }
             }
             PointerEvent::PointerMove(_) => {
-                if !ctx.is_disabled() && ctx.has_pointer_capture() {
+                if !ctx.is_disabled() && ctx.is_pointer_capture_target() {
                     let cursor_pos = event.local_position(ctx) - padding;
                     let (fctx, lctx) = ctx.text_contexts();
                     self.editor

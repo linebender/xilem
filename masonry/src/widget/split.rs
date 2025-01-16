@@ -381,7 +381,7 @@ impl Widget for Split {
                     }
                 }
                 PointerEvent::PointerMove(state) => {
-                    if ctx.has_pointer_capture() {
+                    if ctx.is_pointer_capture_target() {
                         // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => {
@@ -520,7 +520,7 @@ impl Widget for Split {
         let local_mouse_pos = pos - ctx.window_origin().to_vec2();
         let is_bar_hovered = self.bar_hit_test(ctx.size(), local_mouse_pos);
 
-        if ctx.has_pointer_capture() || is_bar_hovered {
+        if ctx.is_pointer_capture_target() || is_bar_hovered {
             match self.split_axis {
                 Axis::Horizontal => CursorIcon::EwResize,
                 Axis::Vertical => CursorIcon::NsResize,

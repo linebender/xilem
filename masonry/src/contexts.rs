@@ -404,7 +404,7 @@ impl EventCtx<'_> {
     /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
     pub fn resign_focus(&mut self) {
         trace!("resign_focus");
-        if self.has_focus() {
+        if self.has_focused() {
             self.global_state.next_focused_widget = None;
         } else {
             warn!(
@@ -773,16 +773,23 @@ impl_context_method!(
         /// will respond to pointer (usually mouse) interaction.
         ///
         /// The hovered status is computed from the widget's layout rect. In a
-        /// container hierarchy, all widgets with layout rects containing the
-        /// pointer position have hovered status.
+        /// container hierarchy, the innermost widget with a layout rect containing
+        /// the pointer position has hovered status.
         ///
-        /// If the pointer is [captured], then only that widget and its parents
-        /// can have hovered status. If the pointer is captured but not hovering
-        /// over the captured widget, then no widget has the hovered status.
+        /// If the pointer is [captured], then only that widget can have hovered
+        /// status. If the pointer is captured but not hovering over the captured
+        /// widget, then no widget has the hovered status.
         ///
         /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
         pub fn is_hovered(&self) -> bool {
             self.widget_state.is_hovered
+        }
+
+        /// Whether this widget or any of its descendants are hovered.
+        ///
+        /// To check if only this specific widget is hovered use [`is_hovered`](Self::is_hovered).
+        pub fn has_hovered(&self) -> bool {
+            self.widget_state.has_hovered
         }
 
         /// Whether a pointer is [captured] by this widget.
@@ -791,7 +798,7 @@ impl_context_method!(
         /// function will take a pointer id as input to test a specific pointer.
         ///
         /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
-        pub fn has_pointer_capture(&self) -> bool {
+        pub fn is_pointer_capture_target(&self) -> bool {
             self.global_state.pointer_capture_target == Some(self.widget_state.id)
         }
 
@@ -811,8 +818,8 @@ impl_context_method!(
         /// Whether this widget or any of its descendants are focused.
         ///
         /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
-        pub fn has_focus(&self) -> bool {
-            self.widget_state.has_focus
+        pub fn has_focused(&self) -> bool {
+            self.widget_state.has_focused
         }
 
         /// Whether this widget gets pointer events and hovered status.

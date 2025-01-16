@@ -160,11 +160,15 @@ pub(crate) struct WidgetState {
     /// This widget or an ancestor has been stashed.
     pub(crate) is_stashed: bool,
 
+    /// In the hovered path, starting from window and ending at the hovered widget.
+    /// Descendants of the hovered widget are not in the hovered path.
+    pub(crate) has_hovered: bool,
+    /// This specific widget is hovered.
     pub(crate) is_hovered: bool,
 
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
-    pub(crate) has_focus: bool,
+    pub(crate) has_focused: bool,
 
     // --- DEBUG INFO ---
     // TODO - document
@@ -194,6 +198,7 @@ impl WidgetState {
             is_stashed: false,
             baseline_offset: 0.0,
             is_new: true,
+            has_hovered: false,
             is_hovered: false,
             request_layout: true,
             needs_layout: true,
@@ -203,7 +208,7 @@ impl WidgetState {
             needs_paint: true,
             request_accessibility: true,
             needs_accessibility: true,
-            has_focus: false,
+            has_focused: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,
@@ -257,7 +262,6 @@ impl WidgetState {
         self.needs_anim |= child_state.needs_anim;
         self.needs_accessibility |= child_state.needs_accessibility;
         self.needs_update_disabled |= child_state.needs_update_disabled;
-        self.has_focus |= child_state.has_focus;
         self.children_changed |= child_state.children_changed;
         self.needs_update_focus_chain |= child_state.needs_update_focus_chain;
         self.needs_update_stashed |= child_state.needs_update_stashed;
