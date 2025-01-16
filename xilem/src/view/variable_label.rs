@@ -10,7 +10,7 @@ use xilem_core::ViewPathTracker;
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
-use super::{label, Label, Transformable};
+use super::{label, Label};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
@@ -78,12 +78,6 @@ impl VariableLabel {
     pub fn text_size(mut self, text_size: f32) -> Self {
         self.label = self.label.text_size(text_size);
         self
-    }
-}
-
-impl Transformable for VariableLabel {
-    fn transform_mut(&mut self) -> &mut crate::Affine {
-        self.label.transform_mut()
     }
 }
 

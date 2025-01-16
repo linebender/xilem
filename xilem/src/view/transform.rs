@@ -126,8 +126,3 @@ where
         self.child.message(view_state, id_path, message, app_state)
     }
 }
-
-/// An extension trait, to allow common transformations of the views transform.
-pub trait Transformable: Sized {
-    fn transform_mut(&mut self) -> &mut Affine;
-}

@@ -9,9 +9,7 @@ use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
-use crate::{Affine, Pod, ViewCtx, WidgetView};
-
-use super::Transformable;
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget with predefined size.
 ///
@@ -31,7 +29,6 @@ where
         corner_radius: RoundedRectRadii::from_single_radius(0.0),
         padding: Padding::ZERO,
         phantom: PhantomData,
-        transform: Affine::IDENTITY,
     }
 }
 
@@ -45,7 +42,6 @@ pub struct SizedBox<V, State, Action = ()> {
     corner_radius: RoundedRectRadii,
     padding: Padding,
     phantom: PhantomData<fn() -> (State, Action)>,
-    transform: Affine,
 }
 
 impl<V, State, Action> SizedBox<V, State, Action> {
@@ -125,12 +121,6 @@ impl<V, State, Action> SizedBox<V, State, Action> {
     }
 }
 
-impl<V, State, Action> Transformable for SizedBox<V, State, Action> {
-    fn transform_mut(&mut self) -> &mut Affine {
-        &mut self.transform
-    }
-}
-
 impl<V, State, Action> ViewMarker for SizedBox<V, State, Action> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for SizedBox<V, State, Action>
 where
@@ -154,7 +144,7 @@ where
         if let Some(border) = &self.border {
             widget = widget.border(border.brush.clone(), border.width);
         }
-        let pod = ctx.new_pod_with_transform(widget, self.transform);
+        let pod = ctx.new_pod(widget);
         (pod, child_state)
     }
 
@@ -165,9 +155,6 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.transform != self.transform {
-            element.set_transform(self.transform);
-        }
         if self.width != prev.width {
             match self.width {
                 Some(width) => widget::SizedBox::set_width(&mut element, width),

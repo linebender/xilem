@@ -342,11 +342,6 @@ impl ViewCtx {
     pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
         Pod::new(widget)
     }
-    pub fn new_pod_with_transform<W: Widget>(&mut self, widget: W, transform: Affine) -> Pod<W> {
-        let mut pod = Pod::new(widget);
-        pod.transform = Some(transform);
-        pod
-    }
 
     pub fn with_leaf_action_widget<E: Widget>(
         &mut self,
