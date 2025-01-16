@@ -12,6 +12,48 @@ use crate::{Affine, MessageResult, Pod, ViewCtx, ViewId};
 use super::Transformable;
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
+///
+/// # Examples
+/// To use button provide it with a button text and a closure.
+/// ```ignore
+/// use xilem::view::button;
+///
+/// struct State {
+///     int: i32,
+/// }
+///
+/// impl State {
+///     fn increase(&mut self) {
+///         self.int += 1;
+///     }
+/// }
+///
+/// button("Button", |state: &mut State| {
+///      state.increase();
+/// })
+/// ```
+///
+/// Create a `button` with a custom `label`.
+///
+/// ```ignore
+/// use xilem::view::{button, label};
+///
+/// struct State {
+///     int: i32,
+/// }
+///
+/// impl State {
+///     fn increase(&mut self) {
+///         self.int += 1;
+///     }
+/// }
+///
+/// let label = label("Button").weight(FontWeight::BOLD);
+///
+/// button(label, |state: &mut State| {
+///     state.increase();
+/// })
+/// ```
 pub fn button<State, Action>(
     label: impl Into<Label>,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
@@ -40,6 +82,9 @@ pub fn button_any_pointer<State, Action>(
     }
 }
 
+/// The [`View`] created by [`button`] from a `label` and a callback.
+///
+/// See `button` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button<F> {
     label: Label,

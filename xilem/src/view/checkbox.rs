@@ -9,6 +9,24 @@ use crate::{Affine, MessageResult, Pod, View, ViewCtx, ViewId};
 
 use super::Transformable;
 
+/// An element which can be in checked and unchecked state.
+///
+/// # Example
+/// ```ignore
+/// use xilem::view::checkbox;
+///
+/// struct State {
+///     value: bool,
+/// }
+///
+/// // ...
+///
+/// let new_state = false;
+///
+/// checkbox("A simple checkbox", app_state.value, |app_state: &mut State, new_state: bool| {
+/// *app_state.value = new_state;
+/// })
+/// ```
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
     checked: bool,
@@ -25,6 +43,9 @@ where
     }
 }
 
+/// The [`View`] created by [`checkbox`] from a `label`, a bool value and a callback.
+///
+/// See `checkbox` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Checkbox<F> {
     label: ArcStr,

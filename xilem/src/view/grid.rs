@@ -14,6 +14,38 @@ use crate::{Affine, Pod, ViewCtx, WidgetView};
 
 use super::Transformable;
 
+/// A Grid layout divides a window into regions and defines the relationship
+/// between inner elements in terms of size and position.
+///
+/// # Example
+/// ```ignore
+/// use masonry::widget::GridParams;
+/// use xilem::view::{
+///     button, grid, label, GridExt,
+/// };
+///
+/// const GRID_GAP: f64 = 2.;
+///
+/// #[derive(Default)]
+/// struct State {
+///     int: i32,
+/// }
+///
+/// let mut state = State::default();
+///
+/// grid(
+///     (   
+///         label(state.int.to_string()).grid_item(GridParams::new(0, 0, 3, 1)),
+///         button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
+///         button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
+///         button("Increase by 1", |state: &mut State| state.int += 1).grid_pos(3, 1),
+///         ),
+/// 3,
+/// 2,
+/// )
+/// .spacing(GRID_GAP)
+/// ```
+/// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
 pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     sequence: Seq,
     width: i32,
@@ -29,6 +61,9 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     }
 }
 
+/// The [`View`] created by [`grid`] from a sequence, which also consumes custom width and height.
+///
+/// See `grid` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Grid<Seq, State, Action = ()> {
     sequence: Seq,
@@ -303,6 +338,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     ///     prose("a prose").grid_pos(1, 1),
     /// ), 2, 2)
     /// # }
+    /// ```
     fn grid_pos(self, x: i32, y: i32) -> GridItem<Self, State, Action>
     where
         State: 'static,

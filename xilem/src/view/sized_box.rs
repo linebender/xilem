@@ -18,6 +18,22 @@ use super::Transformable;
 /// This widget forces its child to have a specific width and/or height (assuming values are permitted by
 /// this widget's parent). If either the width or height is not set, this widget will size itself
 /// to match the child's size in that dimension.
+///
+/// # Example
+/// See more methods for `sized_box` on [`SizedBox`] page.
+/// ```ignore
+/// use xilem::view::{sized_box, button};
+/// use xilem::palette;
+/// use vello::kurbo::RoundedRectRadii;
+/// use masonry::widget::Padding;
+///
+/// sized_box(button("Button", |data: &mut i32| *data+=1))
+///     .expand()
+///     .background(palette::css::RED)
+///     .border(palette::css::YELLOW, 20.)
+///     .rounded(RoundedRectRadii::from_single_radius(5.))
+///     .padding(Padding::from(5.))
+/// ```
 pub fn sized_box<State, Action, V>(inner: V) -> SizedBox<V, State, Action>
 where
     V: WidgetView<State, Action>,
@@ -35,6 +51,9 @@ where
     }
 }
 
+/// The [`View`] created by [`sized_box`].
+///
+/// See `sized_box` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct SizedBox<V, State, Action = ()> {
     inner: V,

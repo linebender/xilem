@@ -13,6 +13,48 @@ use crate::core::{
 };
 use crate::{Affine, AnyWidgetView, Pod, ViewCtx, WidgetView};
 
+/// A layout which defines how items will be arranged in rows or columns.
+///
+/// # Example
+/// ```rust,no_run
+/// use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
+/// use winit::error::EventLoopError;
+/// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
+/// use xilem::{EventLoop, WidgetView, Xilem};
+///
+/// // A component to make a bigger than usual button
+/// fn big_button(
+///     label: impl Into<Label>,
+///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
+/// ) -> impl WidgetView<i32> {
+///     sized_box(button(label, callback)).width(40.).height(40.)
+/// }
+///
+/// fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
+///     flex((
+///         FlexSpacer::Fixed(30.0),
+///         big_button("-", |data| {
+///             *data -= 1;
+///         }),
+///         FlexSpacer::Flex(1.0),
+///         label(format!("count: {}", data)).text_size(32.).flex(5.0),
+///         FlexSpacer::Flex(1.0),
+///         big_button("+", |data| {
+///             *data += 1;
+///         }),
+///         FlexSpacer::Fixed(30.0),
+///     ))
+///     .direction(Axis::Horizontal)
+///     .cross_axis_alignment(CrossAxisAlignment::Center)
+///     .main_axis_alignment(MainAxisAlignment::Center)
+/// }
+///
+/// fn main() -> Result<(), EventLoopError> {
+///     let app = Xilem::new(0, app_logic);
+///     app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+///     Ok(())
+/// }
+/// ```
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
@@ -28,6 +70,9 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     }
 }
 
+/// The [`View`] created by [`flex`] from a sequence.
+///
+/// See `flex` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Flex<Seq, State, Action = ()> {
     sequence: Seq,
@@ -349,7 +394,7 @@ impl<Seq, State, Action> FlexSequence<State, Action> for Seq where
 {
 }
 
-/// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer
+/// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer.
 pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     /// Applies [`impl Into<FlexParams>`](`FlexParams`) to this view, can be used as child of a [`Flex`] [`View`]
     ///
@@ -402,14 +447,14 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
 
 impl<State, Action, V: WidgetView<State, Action>> FlexExt<State, Action> for V {}
 
-/// A `WidgetView` that can be used within a [`Flex`] [`View`]
+/// A `WidgetView` that can be used within a [`Flex`] [`View`].
 pub struct FlexItem<V, State, Action> {
     view: V,
     params: FlexParams,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-/// Applies [`impl Into<FlexParams>`](`FlexParams`) to the [`View`] `V`, can be used as child of a [`Flex`] View
+/// Applies [`impl Into<FlexParams>`](`FlexParams`) to the [`View`] `V`, can be used as child of a [`Flex`] View.
 ///
 /// # Examples
 /// ```
