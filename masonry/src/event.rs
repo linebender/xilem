@@ -351,7 +351,7 @@ pub enum Update {
 
     /// Called when the [hovered] status of the current widget or a descendant changes.
     ///
-    /// This is sent before [`HoveredChanged`].
+    /// This is sent before [`Update::HoveredChanged`].
     ///
     /// [hovered]: crate::doc::doc_06_masonry_concepts#widget-status
     ChildHoveredChanged(bool),
@@ -363,7 +363,7 @@ pub enum Update {
 
     /// Called when the [focused] status of the current widget or a descendant changes.
     ///
-    /// This is sent before [`FocusChanged`].
+    /// This is sent before [`Update::FocusChanged`].
     ///
     /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
     ChildFocusChanged(bool),

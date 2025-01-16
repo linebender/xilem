@@ -340,7 +340,7 @@ fn update_focus_chain_for_widget(
         return;
     }
 
-    // Replace has_focus to check if the value changed in the meantime
+    // Replace has_focused to check if the value changed in the meantime
     state.item.has_focused = global_state.focused_widget == Some(id);
     let had_focus = state.item.has_focused;
 
@@ -370,8 +370,8 @@ fn update_focus_chain_for_widget(
         parent_focus_chain.extend(&state.item.focus_chain);
     }
 
-    // had_focus is the old focus value. state.has_focus was replaced with parent_ctx.is_focused().
-    // Therefore if had_focus is true but state.has_focus is false then the widget which is
+    // had_focus is the old focus value. state.has_focused was replaced with parent_ctx.is_focused().
+    // Therefore if had_focus is true but state.has_focused is false then the widget which is
     // currently focused is not part of the functional tree anymore and should resign the focus.
     if had_focus && !state.item.has_focused {
         // Not sure about this logic, might remove
@@ -474,12 +474,12 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             focused_set: &HashSet<WidgetId>,
         ) {
             run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
-                let has_focus = focused_set.contains(&ctx.widget_id());
+                let has_focused = focused_set.contains(&ctx.widget_id());
 
-                if ctx.widget_state.has_focused != has_focus {
-                    widget.update(ctx, &Update::ChildFocusChanged(has_focus));
+                if ctx.widget_state.has_focused != has_focused {
+                    widget.update(ctx, &Update::ChildFocusChanged(has_focused));
                 }
-                ctx.widget_state.has_focused = has_focus;
+                ctx.widget_state.has_focused = has_focused;
             });
         }
 

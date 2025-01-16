@@ -807,10 +807,10 @@ impl_context_method!(
         /// The focused widget is the one that receives keyboard events.
         ///
         /// Returns `true` if this specific widget is focused.
-        /// To check if any descendants are focused use [`has_focus`].
+        /// To check if any descendants are focused use [`has_focused`].
         ///
         /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
-        /// [`has_focus`]: Self::has_focus
+        /// [`has_focused`]: Self::has_focused
         pub fn is_focused(&self) -> bool {
             self.global_state.focused_widget == Some(self.widget_id())
         }
