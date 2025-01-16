@@ -305,6 +305,27 @@ jobs:
       - name: Run cargo test --doc
         run: cargo test --doc --workspace --locked --profile ci --all-features --no-fail-fast
 
+  miri:
+    name: cargo miri (unsafe tree_arena)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install nightly toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: miri
+          targets: s390x-unknown-linux-gnu
+
+      - name: restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: cargo miri
+        run: cargo miri test -p tree_arena --locked --no-default-features --target s390x-unknown-linux-gnu --no-fail-fast
+
   test-stable-wasm:
     name: cargo test (wasm32)
     runs-on: ubuntu-latest
