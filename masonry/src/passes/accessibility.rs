@@ -125,7 +125,7 @@ fn build_access_node(
     if ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_stashed() {
         node.add_action(accesskit::Action::Focus);
     }
-    if ctx.is_focused() {
+    if ctx.is_focus_target() {
         node.add_action(accesskit::Action::Blur);
     }
 

@@ -341,8 +341,8 @@ fn update_focus_chain_for_widget(
     }
 
     // Replace has_focused to check if the value changed in the meantime
-    state.item.has_focused = global_state.focused_widget == Some(id);
-    let had_focus = state.item.has_focused;
+    state.item.has_focus_target = global_state.focused_widget == Some(id);
+    let had_focus = state.item.has_focus_target;
 
     state.item.focus_chain.clear();
     if state.item.accepts_focus {
@@ -373,11 +373,11 @@ fn update_focus_chain_for_widget(
     // had_focus is the old focus value. state.has_focused was replaced with parent_ctx.is_focused().
     // Therefore if had_focus is true but state.has_focused is false then the widget which is
     // currently focused is not part of the functional tree anymore and should resign the focus.
-    if had_focus && !state.item.has_focused {
+    if had_focus && !state.item.has_focus_target {
         // Not sure about this logic, might remove
         global_state.next_focused_widget = None;
     }
-    state.item.has_focused = had_focus;
+    state.item.has_focus_target = had_focus;
 }
 
 pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
@@ -476,10 +476,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             run_targeted_update_pass(root, Some(widget_id), |widget, ctx| {
                 let has_focused = focused_set.contains(&ctx.widget_id());
 
-                if ctx.widget_state.has_focused != has_focused {
+                if ctx.widget_state.has_focus_target != has_focused {
                     widget.update(ctx, &Update::ChildFocusChanged(has_focused));
                 }
-                ctx.widget_state.has_focused = has_focused;
+                ctx.widget_state.has_focus_target = has_focused;
             });
         }
 
@@ -487,7 +487,11 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // TODO - Document the iteration order for update_focus pass.
         for widget_id in prev_focused_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).item.has_focused
+                && root
+                    .widget_arena
+                    .get_state_mut(widget_id)
+                    .item
+                    .has_focus_target
                     != focused_set.contains(&widget_id)
             {
                 update_focused_status_of(root, widget_id, &focused_set);
@@ -495,7 +499,11 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         }
         for widget_id in next_focused_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).item.has_focused
+                && root
+                    .widget_arena
+                    .get_state_mut(widget_id)
+                    .item
+                    .has_focus_target
                     != focused_set.contains(&widget_id)
             {
                 update_focused_status_of(root, widget_id, &focused_set);

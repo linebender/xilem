@@ -168,7 +168,7 @@ pub(crate) struct WidgetState {
 
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
-    pub(crate) has_focused: bool,
+    pub(crate) has_focus_target: bool,
 
     // --- DEBUG INFO ---
     // TODO - document
@@ -208,7 +208,7 @@ impl WidgetState {
             needs_paint: true,
             request_accessibility: true,
             needs_accessibility: true,
-            has_focused: false,
+            has_focus_target: false,
             request_anim: true,
             needs_anim: true,
             needs_update_disabled: true,

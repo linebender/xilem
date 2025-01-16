@@ -895,7 +895,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let is_rtl = layout.is_rtl();
         let origin = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
         let transform = Affine::translate(origin);
-        if ctx.is_focused() {
+        if ctx.is_focus_target() {
             for rect in self.editor.selection_geometry().iter() {
                 // TODO: If window not focused, use a different color
                 // TODO: Make configurable

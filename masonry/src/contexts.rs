@@ -404,7 +404,7 @@ impl EventCtx<'_> {
     /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
     pub fn resign_focus(&mut self) {
         trace!("resign_focus");
-        if self.has_focused() {
+        if self.has_focus_target() {
             self.global_state.next_focused_widget = None;
         } else {
             warn!(
@@ -811,15 +811,15 @@ impl_context_method!(
         ///
         /// [text focus]: crate::doc::doc_06_masonry_concepts#text-focus
         /// [`has_focused`]: Self::has_focused
-        pub fn is_focused(&self) -> bool {
+        pub fn is_focus_target(&self) -> bool {
             self.global_state.focused_widget == Some(self.widget_id())
         }
 
         /// Whether this widget or any of its descendants are focused.
         ///
-        /// To check if only this specific widget is focused use [`is_focused`](Self::is_focused).
-        pub fn has_focused(&self) -> bool {
-            self.widget_state.has_focused
+        /// To check if only this specific widget is focused use [`is_focus_target`](Self::is_focus_target).
+        pub fn has_focus_target(&self) -> bool {
+            self.widget_state.has_focus_target
         }
 
         /// Whether this widget gets pointer events and hovered status.
