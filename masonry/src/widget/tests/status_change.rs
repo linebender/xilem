@@ -24,6 +24,10 @@ fn is_hovered(harness: &TestHarness, id: WidgetId) -> bool {
     harness.get_widget(id).ctx().is_hovered()
 }
 
+fn has_hovered(harness: &TestHarness, id: WidgetId) -> bool {
+    harness.get_widget(id).ctx().has_hovered()
+}
+
 fn next_hovered_changed(recording: &Recording) -> Option<bool> {
     while let Some(event) = recording.next() {
         match event {
@@ -34,6 +38,7 @@ fn next_hovered_changed(recording: &Recording) -> Option<bool> {
     None
 }
 
+// TODO - Rewrite test to be more clear
 #[test]
 fn propagate_hovered() {
     let [button, pad, root, empty] = widget_ids();
@@ -82,11 +87,15 @@ fn propagate_hovered() {
     eprintln!("pad: {pad:?}");
     eprintln!("button: {button:?}");
 
-    assert!(is_hovered(&harness, root));
     assert!(is_hovered(&harness, empty));
-    assert!(!is_hovered(&harness, pad));
 
-    assert_eq!(next_hovered_changed(&root_rec), Some(true));
+    assert!(!is_hovered(&harness, root));
+    assert!(has_hovered(&harness, root));
+
+    assert!(!has_hovered(&harness, pad));
+
+    // TODO - Detect ChildHoveredChanged
+    assert_eq!(next_hovered_changed(&root_rec), None);
     assert_eq!(next_hovered_changed(&padding_rec), None);
     assert_eq!(next_hovered_changed(&button_rec), None);
     root_rec.clear();
@@ -100,7 +109,6 @@ fn propagate_hovered() {
     assert!(is_hovered(&harness, pad));
     assert!(!is_hovered(&harness, empty));
     assert!(!is_hovered(&harness, button));
-    assert!(is_hovered(&harness, pad));
 
     assert_eq!(next_hovered_changed(&root_rec), None);
     assert_eq!(next_hovered_changed(&padding_rec), Some(true));
@@ -111,12 +119,13 @@ fn propagate_hovered() {
 
     harness.mouse_move_to(button);
 
-    assert!(is_hovered(&harness, root));
+    assert!(has_hovered(&harness, root));
+    assert!(has_hovered(&harness, pad));
     assert!(!is_hovered(&harness, empty));
     assert!(is_hovered(&harness, button));
-    assert!(is_hovered(&harness, pad));
 
-    assert_eq!(next_hovered_changed(&padding_rec), None);
+    // TODO - Detect ChildHoveredChanged
+    assert_eq!(next_hovered_changed(&padding_rec), Some(false));
     assert_eq!(next_hovered_changed(&button_rec), Some(true));
     root_rec.clear();
     padding_rec.clear();
@@ -126,13 +135,14 @@ fn propagate_hovered() {
 
     harness.mouse_move_to(empty);
 
-    assert!(is_hovered(&harness, root));
+    assert!(has_hovered(&harness, root));
     assert!(is_hovered(&harness, empty));
+    assert!(!has_hovered(&harness, pad));
     assert!(!is_hovered(&harness, button));
-    assert!(!is_hovered(&harness, pad));
 
+    // TODO - Detect ChildHoveredChanged
     assert_eq!(next_hovered_changed(&root_rec), None);
-    assert_eq!(next_hovered_changed(&padding_rec), Some(false));
+    assert_eq!(next_hovered_changed(&padding_rec), None);
     assert_eq!(next_hovered_changed(&button_rec), Some(false));
 }
 
@@ -142,7 +152,7 @@ fn update_hovered_on_mouse_leave() {
 
     let button_rec = Recording::default();
 
-    let widget = Button::new("hello").with_id(button_id).record(&button_rec);
+    let widget = Button::new("hello").record(&button_rec).with_id(button_id);
 
     let mut harness = TestHarness::create(widget);
 

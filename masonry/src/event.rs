@@ -343,28 +343,28 @@ pub enum Update {
     /// [`EventCtx::request_scroll_to_this`](crate::EventCtx::request_scroll_to_this).
     RequestPanToChild(Rect),
 
-    /// Called when the "hovered" status changes.
+    /// Called when the [hovered] status of the current widget changes.
     ///
-    /// This will always be called _before_ the event that triggered it; that is,
-    /// when the mouse moves over a widget, that widget will receive
-    /// `Update::HoveredChanged` before it receives `Event::MouseMove`.
-    ///
-    /// See [`is_hovered`](crate::EventCtx::is_hovered) for
-    /// discussion about the hovered status.
+    /// [hovered]: crate::doc::doc_06_masonry_concepts#widget-status
     HoveredChanged(bool),
 
-    /// Called when the focus status changes.
+    /// Called when the [hovered] status of the current widget or a descendant changes.
     ///
-    /// This will always be called immediately after a new widget gains focus.
-    /// The newly focused widget will receive this with `true` and the widget
-    /// that lost focus will receive this with `false`.
+    /// This is sent before [`Update::HoveredChanged`].
     ///
-    /// See [`EventCtx::is_focused`] for more information about focus.
+    /// [hovered]: crate::doc::doc_06_masonry_concepts#widget-status
+    ChildHoveredChanged(bool),
+
+    /// Called when the [focused] status of the current widget changes.
     ///
-    /// [`EventCtx::is_focused`]: crate::EventCtx::is_focused
+    /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
     FocusChanged(bool),
 
-    /// Called when a widget becomes or no longer is parent of a focused widget.
+    /// Called when the [focused] status of the current widget or a descendant changes.
+    ///
+    /// This is sent before [`Update::FocusChanged`].
+    ///
+    /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
     ChildFocusChanged(bool),
 }
 
@@ -552,6 +552,7 @@ impl Update {
             Self::StashedChanged(_) => "StashedChanged",
             Self::RequestPanToChild(_) => "RequestPanToChild",
             Self::HoveredChanged(_) => "HoveredChanged",
+            Self::ChildHoveredChanged(_) => "ChildHoveredChanged",
             Self::FocusChanged(_) => "FocusChanged",
             Self::ChildFocusChanged(_) => "ChildFocusChanged",
         }

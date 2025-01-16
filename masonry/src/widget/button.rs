@@ -95,7 +95,7 @@ impl Widget for Button {
                 }
             }
             PointerEvent::PointerUp(button, _) => {
-                if ctx.has_pointer_capture() && ctx.is_hovered() && !ctx.is_disabled() {
+                if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
@@ -157,7 +157,7 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        let is_active = ctx.has_pointer_capture() && !ctx.is_disabled();
+        let is_active = ctx.is_pointer_capture_target() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
         let stroke_width = theme::BUTTON_BORDER_WIDTH;
