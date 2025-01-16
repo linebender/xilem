@@ -106,7 +106,7 @@ It is called when new widgets are added to the tree, or existing widgets are rem
 
 It will call the `register_children()` widget method on container widgets whose children changed, then the `update()` method with the [`WidgetAdded`] event on new widgets.
 
-**Note:** Passes that send update events that concern a chain of parents like `ChildFocusChanged` or `HoveredChanged` will send the event first to the innermost widget, then up the parent chain.
+**Note:** Passes that send update events that concern a chain of parents like [`ChildFocusChanged`] or [`HoveredChanged`] will send the event first to the innermost widget, then up the parent chain.
 
 <!-- TODO - document update disabled --- -->
 <!-- TODO - document update stashed --- -->
@@ -188,3 +188,6 @@ They can access the layout of children if they have already been laid out.
 [`UpdateCtx`]: crate::UpdateCtx
 [`RegisterCtx`]: crate::RegisterCtx
 [`QueryCtx`]: crate::QueryCtx
+[`WidgetAdded`]: crate::Update::WidgetAdded
+[`ChildFocusChanged`]: crate::Update::ChildFocusChanged
+[`HoveredChanged`]: crate::Update::HoveredChanged
