@@ -3,7 +3,7 @@
 
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::text::{ArcStr, StyleProperty};
-use masonry::widget;
+use masonry::widget::{self, LineBreaking};
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
@@ -19,6 +19,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
+        line_break_mode: LineBreaking::Overflow,
         transform: Affine::IDENTITY,
     }
 }
@@ -30,7 +31,8 @@ pub struct Label {
     alignment: TextAlignment,
     text_size: f32,
     weight: FontWeight,
-    font: FontStack<'static>, // TODO: add more attributes of `masonry::widget::Label`
+    font: FontStack<'static>,
+    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widget::Label`
     transform: Affine,
 }
 
@@ -65,6 +67,12 @@ impl Label {
         self.font = font.into();
         self
     }
+
+    /// Set how line breaks will be handled by this label (i.e. if there is insufficient horizontal space).
+    pub fn line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
+        self.line_break_mode = line_break_mode;
+        self
+    }
 }
 
 impl Transformable for Label {
@@ -94,7 +102,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
                 .with_alignment(self.alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
-                .with_style(StyleProperty::FontStack(self.font.clone())),
+                .with_style(StyleProperty::FontStack(self.font.clone()))
+                .with_line_break_mode(self.line_break_mode),
             self.transform,
         );
         (widget_pod, ())
@@ -127,6 +136,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         }
         if prev.font != self.font {
             widget::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
+        }
+        if prev.line_break_mode != self.line_break_mode {
+            widget::Label::set_line_break_mode(&mut element, self.line_break_mode);
         }
     }
 
