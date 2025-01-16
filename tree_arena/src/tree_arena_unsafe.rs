@@ -565,13 +565,8 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     /// ## Complexity
     ///
     /// O(Depth). except access from root which is O(1).
-    pub fn find(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
-        let id = id.into();
-        if self.is_descendant(id) {
-            self.parent_arena.find_inner(id)
-        } else {
-            None
-        }
+    pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
+        self.reborrow().find(id)
     }
 
     /// Find an arena item among descendants (this node not included).
