@@ -40,7 +40,7 @@ pub struct TreeArena<T> {
 /// A reference type giving shared access to an arena item and its children.
 ///
 /// When you borrow an item from a [`TreeArena`], it returns an [`ArenaRef`].
-/// You can access it children to get access to child [`ArenaRef`] handles.
+/// You can access its children to get access to child [`ArenaRef`] handles.
 #[derive(Debug)]
 pub struct ArenaRef<'arena, T> {
     /// Parent of the Node
@@ -48,18 +48,18 @@ pub struct ArenaRef<'arena, T> {
     /// Item in the node
     pub item: &'arena T,
     /// Children of the node
-    pub children: ArenaRefChildren<'arena, T>,
+    pub children: ArenaRefList<'arena, T>,
 }
 
-/// A handle giving shared access to an arena item's children.
+/// A handle giving shared access to a set of arena items.
 ///
 /// See [`ArenaRef`] for more information.
 #[derive(Debug)]
-pub struct ArenaRefChildren<'arena, T> {
+pub struct ArenaRefList<'arena, T> {
     /// The associated data arena
     parent_arena: &'arena DataMap<T>,
-    /// The parent id for these children
-    id: Option<NodeId>,
+    /// The parent id for the items
+    parent_id: Option<NodeId>,
 }
 
 /// A reference type giving mutable access to an arena item and its children.
@@ -68,7 +68,7 @@ pub struct ArenaRefChildren<'arena, T> {
 /// This struct holds three fields:
 ///  - the id of its parent.
 ///  - a reference to the item itself.
-///  - an [`ArenaMutChildren`] handle to access its children.
+///  - an [`ArenaMutList`] handle to access its children.
 ///
 /// Because the latter two are disjoint references, you can mutate the node's value
 /// and its children independently without invalidating the references.
@@ -81,24 +81,19 @@ pub struct ArenaMut<'arena, T> {
     /// Item in the node
     pub item: &'arena mut T,
     /// Children of the node
-    pub children: ArenaMutChildren<'arena, T>,
+    pub children: ArenaMutList<'arena, T>,
 }
 
-/// A handle giving mutable access to an arena item's children.
+/// A handle giving mutable access to a set of arena items.
 ///
 /// See [`ArenaMut`] for more information.
-///
-/// This stores all the permissions for what nodes can be accessed from the current node
-/// As such if a [`std::mem::swap`] is used to swap the children of two trees,
-/// each tree will still have the correct permissions. This also stores the roots, and so
-/// that will also be in a consistent state
 #[derive(Debug)]
-pub struct ArenaMutChildren<'arena, T> {
+pub struct ArenaMutList<'arena, T> {
     /// The associated data arena
     parent_arena: &'arena mut DataMap<T>,
-    /// The parent id for these children
-    id: Option<NodeId>,
-    /// Array of children
+    /// The parent id for these items
+    parent_id: Option<NodeId>,
+    /// Array of items
     child_arr: &'arena mut Vec<NodeId>,
 }
 
@@ -110,13 +105,13 @@ impl<Item> Clone for ArenaRef<'_, Item> {
 
 impl<Item> Copy for ArenaRef<'_, Item> {}
 
-impl<T> Clone for ArenaRefChildren<'_, T> {
+impl<T> Clone for ArenaRefList<'_, T> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<Item> Copy for ArenaRefChildren<'_, Item> {}
+impl<Item> Copy for ArenaRefList<'_, Item> {}
 
 impl<T> DataMap<T> {
     fn new() -> Self {
@@ -143,9 +138,9 @@ impl<T> DataMap<T> {
 
         let TreeNode { item, .. } = unsafe { node_cell.get().as_ref()? };
 
-        let children = ArenaRefChildren {
+        let children = ArenaRefList {
             parent_arena: self,
-            id: Some(id),
+            parent_id: Some(id),
         };
 
         Some(ArenaRef {
@@ -166,7 +161,7 @@ impl<T> DataMap<T> {
 
         // SAFETY
         //
-        // When using this on [`ArenaMutChildren`] associated with some node,
+        // When using this on [`ArenaMutList`] associated with some node,
         // must ensure that `id` is a descendant of that node, otherwise can
         // obtain two mutable references to the same node
         //
@@ -175,9 +170,9 @@ impl<T> DataMap<T> {
         // exclusivity by creating a shared reference to the node
         let TreeNode { item, children } = unsafe { node_cell.get().as_mut()? };
 
-        let children = ArenaMutChildren {
+        let children = ArenaMutList {
             parent_arena: self,
-            id: Some(id),
+            parent_id: Some(id),
             child_arr: children,
         };
 
@@ -232,23 +227,23 @@ impl<T> TreeArena<T> {
     }
 
     /// Returns a handle whose children are the roots, if any, of the tree.
-    pub fn root_token(&self) -> ArenaRefChildren<'_, T> {
-        ArenaRefChildren {
+    pub fn roots(&self) -> ArenaRefList<'_, T> {
+        ArenaRefList {
             parent_arena: &self.data_map,
-            id: None,
+            parent_id: None,
         }
     }
 
     /// Returns a handle whose children are the roots, if any, of the tree.
     ///
-    /// Using [`insert_child`](ArenaMutChildren::insert_child) on this handle
+    /// Using [`insert_child`](ArenaMutList::insert_child) on this handle
     /// will add a new root to the tree.
-    pub fn root_token_mut(&mut self) -> ArenaMutChildren<'_, T> {
+    pub fn roots_mut(&mut self) -> ArenaMutList<'_, T> {
         // safe as the roots are derived from the arena itself (same as safety for find for non root nodes)
         let roots = &mut self.roots;
-        ArenaMutChildren {
+        ArenaMutList {
             parent_arena: &mut self.data_map,
-            id: None,
+            parent_id: None,
             child_arr: roots,
         }
     }
@@ -293,21 +288,21 @@ impl<T> ArenaRef<'_, T> {
     /// Id of the item this handle is associated with.
     #[expect(
         clippy::missing_panics_doc,
-        reason = "ArenaRefChildren always has an id when it's a member of ArenaRef"
+        reason = "ArenaRefList always has a parent_id when it's a member of ArenaRef"
     )]
     pub fn id(&self) -> NodeId {
-        self.children.id.unwrap()
+        self.children.parent_id.unwrap()
     }
 }
 
-impl<'arena, T> ArenaRefChildren<'arena, T> {
+impl<'arena, T> ArenaRefList<'arena, T> {
     /// Check if id is a descendant of self
     /// O(depth) and the limiting factor for find methods
     /// not from the root
     fn is_descendant(&self, id: NodeId) -> bool {
         if self.parent_arena.items.contains_key(&id) {
             // the id of the parent
-            let parent_id = self.id;
+            let parent_id = self.parent_id;
 
             // The arena is derived from the root, and the id is in the tree
             if parent_id.is_none() {
@@ -322,10 +317,10 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
         }
     }
 
-    /// Returns true if there is a child with the given id
-    pub fn has_child(&self, id: impl Into<NodeId>) -> bool {
+    /// Returns true if the list has an element with the given id.
+    pub fn has(&self, id: impl Into<NodeId>) -> bool {
         let child_id = id.into();
-        let parent_id = self.id;
+        let parent_id = self.parent_id;
         self.parent_arena
             .parents
             .get(&child_id)
@@ -333,32 +328,32 @@ impl<'arena, T> ArenaRefChildren<'arena, T> {
             .unwrap_or_default()
     }
 
-    /// Get the child of the item this handle is associated with, which has the given id.
+    /// Get a shared handle to the element of the list with the given id.
     ///
     /// Return a new [`ArenaRef`]
-    pub fn get_child(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
+    pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
-        if self.has_child(id) {
+        if self.has(id) {
             self.parent_arena.find_inner(id)
         } else {
             None
         }
     }
 
-    /// Get the child of the item this handle is associated with, which has the given id.
+    /// Get a shared handle to the element of the list with the given id.
     ///
-    /// This is the same as [`get_child`](Self::get_child), except it consumes the
+    /// This is the same as [`item`](Self::item), except it consumes the
     /// handle. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_child(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
+    pub fn into_item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
-        if self.has_child(id) {
+        if self.has(id) {
             self.parent_arena.find_inner(id)
         } else {
             None
         }
     }
 
-    /// Find an arena item among descendants (this node not included).
+    /// Find an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -381,10 +376,10 @@ impl<T> ArenaMut<'_, T> {
     /// Id of the item this handle is associated with
     #[expect(
         clippy::missing_panics_doc,
-        reason = "ArenaMutChildren always has an id when it's a member of ArenaMut"
+        reason = "ArenaMutList always has a parent_id when it's a member of ArenaMut"
     )]
     pub fn id(&self) -> NodeId {
-        self.children.id.unwrap()
+        self.children.parent_id.unwrap()
     }
 
     /// Returns a shared reference equivalent to this one.
@@ -408,7 +403,7 @@ impl<T> ArenaMut<'_, T> {
     }
 }
 
-impl<'arena, T> ArenaMutChildren<'arena, T> {
+impl<'arena, T> ArenaMutList<'arena, T> {
     /// Check if id is a descendant of self
     /// O(depth) and the limiting factor for find methods
     /// not from the root
@@ -416,37 +411,31 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         self.reborrow().is_descendant(id)
     }
 
-    /// returns true if there is a child with the given id
-    pub fn has_child(&self, id: impl Into<NodeId>) -> bool {
-        let child_id = id.into();
-        let parent_id = self.id;
-        self.parent_arena
-            .parents
-            .get(&child_id)
-            .map(|parent| *parent == parent_id) // check if the parent of child is the same as the parent of the arena
-            .unwrap_or_default()
+    /// Returns true if the list has an element with the given id.
+    pub fn has(&self, id: impl Into<NodeId>) -> bool {
+        self.reborrow().has(id)
     }
 
-    /// Get the child of the item this handle is associated with, which has the given id.
+    /// Get a shared handle to the element of the list with the given id.
     ///
     /// Returns a tuple of a mutable reference to the child and a handle to access
     /// its children.
-    pub fn get_child(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
+    pub fn item(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
-        if self.has_child(id) {
+        if self.has(id) {
             self.parent_arena.find_inner(id)
         } else {
             None
         }
     }
 
-    /// Get the child of the item this handle is associated with, which has the given id.
+    /// Get a mutable handle to the element of the list with the given id.
     ///
     /// Returns a tuple of a mutable reference to the child and a handle to access
     /// its children.
-    pub fn get_child_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
+    pub fn item_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
-        if self.has_child(id) {
+        if self.has(id) {
             // safe as we check the node is a direct child node
             self.parent_arena.find_mut_inner(id)
         } else {
@@ -454,26 +443,26 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         }
     }
 
-    /// Get the child of the item this handle is associated with, which has the given id.
+    /// Get a shared handle to the element of the list with the given id.
     ///
-    /// This is the same as [`get_child`](Self::get_child), except it consumes the
+    /// This is the same as [`item`](Self::item), except it consumes the
     /// handle. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_child(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
+    pub fn into_item(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
-        if self.has_child(id) {
+        if self.has(id) {
             self.parent_arena.find_inner(id)
         } else {
             None
         }
     }
 
-    /// Get the child of the item this handle is associated with, which has the given id.
+    /// Get a mutable handle to the element of the list with the given id.
     ///
-    /// This is the same as [`get_child_mut`](Self::get_child_mut), except it consumes
+    /// This is the same as [`item_mut`](Self::item_mut), except it consumes
     /// the handle. This is sometimes necessary to accommodate the borrow checker.
-    pub fn into_child_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
+    pub fn into_item_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
-        if self.has_child(id) {
+        if self.has(id) {
             // safe as we check the node is a direct child node
             self.parent_arena.find_mut_inner(id)
         } else {
@@ -483,22 +472,23 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
 
     // TODO - Remove the child_id argument once creation of Widgets is figured out.
     // Return the id instead.
-    /// Insert a child into the tree under the item associated with this handle.
+    /// Insert a child into the tree under the common parent of this list's items.
+    ///
+    /// If this list was returned from [`TreeArena::roots_mut()`], create a new tree root.
     ///
     /// The new child will have the given id.
     ///
     /// # Panics
     ///
-    /// The `insert_child` method will panic if the arena already contains a child
-    /// with the given id.
-    pub fn insert_child(&mut self, child_id: impl Into<NodeId>, value: T) {
+    /// If the arena already contains an item with the given id.
+    pub fn insert(&mut self, child_id: impl Into<NodeId>, value: T) {
         let child_id: NodeId = child_id.into();
         assert!(
             !self.parent_arena.parents.contains_key(&child_id),
             "Key already present"
         );
 
-        self.parent_arena.parents.insert(child_id, self.id);
+        self.parent_arena.parents.insert(child_id, self.parent_id);
 
         self.child_arr.push(child_id);
 
@@ -515,15 +505,18 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     // TODO - How to handle when a subtree is removed?
     // Move children to the root?
     // Should this be must use?
-    /// Remove the child with the given id from the tree.
+    /// Remove the item with the given id from the arena.
     ///
-    /// Returns the removed item, or None if no child with the given id exists.
+    /// If the id isn't in the list (even if it's e.g. a descendant), does nothing
+    /// and returns None.
     ///
-    /// Calling this will silently remove any recursive grandchildren of this item.
+    /// Else, returns the removed item.
+    ///
+    /// This will also silently remove any recursive grandchildren of this item.
     #[must_use]
-    pub fn remove_child(&mut self, child_id: impl Into<NodeId>) -> Option<T> {
+    pub fn remove(&mut self, child_id: impl Into<NodeId>) -> Option<T> {
         let child_id: NodeId = child_id.into();
-        if self.has_child(child_id) {
+        if self.has(child_id) {
             fn remove_children<T>(id: NodeId, data_map: &mut DataMap<T>) -> T {
                 let node = data_map.items.remove(&id).unwrap().into_inner();
                 for child_id in node.children.into_iter() {
@@ -540,25 +533,25 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
     }
 
     /// Returns a shared handle equivalent to this one.
-    pub fn reborrow(&self) -> ArenaRefChildren<'_, T> {
-        ArenaRefChildren {
+    pub fn reborrow(&self) -> ArenaRefList<'_, T> {
+        ArenaRefList {
             parent_arena: self.parent_arena,
-            id: self.id,
+            parent_id: self.parent_id,
         }
     }
 
     /// Returns a mutable handle equivalent to this one.
     ///
     /// This is sometimes useful to work with the borrow checker.
-    pub fn reborrow_mut(&mut self) -> ArenaMutChildren<'_, T> {
-        ArenaMutChildren {
+    pub fn reborrow_mut(&mut self) -> ArenaMutList<'_, T> {
+        ArenaMutList {
             parent_arena: self.parent_arena,
-            id: self.id,
+            parent_id: self.parent_id,
             child_arr: self.child_arr,
         }
     }
 
-    /// Find an arena item among descendants (this node not included).
+    /// Find an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///
@@ -569,7 +562,7 @@ impl<'arena, T> ArenaMutChildren<'arena, T> {
         self.reborrow().find(id)
     }
 
-    /// Find an arena item among descendants (this node not included).
+    /// Find an arena item among the list's items and their descendants.
     ///
     /// Returns a shared reference to the item if present.
     ///

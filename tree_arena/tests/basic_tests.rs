@@ -8,28 +8,28 @@ use tree_arena::*;
 #[test]
 fn arena_insertions() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
+    let mut roots = tree.roots_mut();
 
     // <empty>
 
-    roots.insert_child(1_u64, 'a');
-    roots.insert_child(2_u64, 'b');
-    assert!(roots.get_child(1_u64).is_some());
+    roots.insert(1_u64, 'a');
+    roots.insert(2_u64, 'b');
+    assert!(roots.item(1_u64).is_some());
 
     // >-- 1(a)
     //
     // >-- 2(b)
 
-    let mut child_1 = roots.get_child_mut(1_u64).unwrap();
-    child_1.children.insert_child(3_u64, 'c');
-    assert!(child_1.children.get_child(3_u64).is_some());
+    let mut child_1 = roots.item_mut(1_u64).unwrap();
+    child_1.children.insert(3_u64, 'c');
+    assert!(child_1.children.item(3_u64).is_some());
 
     // >-- 1(a) -- 3(c)
     //
     // >-- 2(b)
 
-    let mut child_3 = child_1.children.get_child_mut(3_u64).unwrap();
-    child_3.children.insert_child(4_u64, 'd');
+    let mut child_3 = child_1.children.item_mut(3_u64).unwrap();
+    child_3.children.insert(4_u64, 'd');
 
     // >-- 1(a) -- 3(c) -- 4(d)
     //
@@ -46,36 +46,33 @@ fn arena_insertions() {
 #[test]
 fn arena_item_removal() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
+    let mut roots = tree.roots_mut();
 
     // <empty>
 
-    roots.insert_child(1_u64, 'a');
-    roots.insert_child(2_u64, 'b');
+    roots.insert(1_u64, 'a');
+    roots.insert(2_u64, 'b');
 
     // >-- 1(a)
     //
     // >-- 2(b)
 
-    let mut child_1 = roots.get_child_mut(1_u64).unwrap();
+    let mut child_1 = roots.item_mut(1_u64).unwrap();
     let child_1_item = child_1.item;
-    child_1.children.insert_child(3_u64, 'c');
+    child_1.children.insert(3_u64, 'c');
 
     // >-- 1(a) -- 3(c)
     //
     // >-- 2(b)
 
-    let mut child_3 = child_1.children.get_child_mut(3_u64).unwrap();
-    child_3.children.insert_child(4_u64, 'd');
+    let mut child_3 = child_1.children.item_mut(3_u64).unwrap();
+    child_3.children.insert(4_u64, 'd');
 
     // >-- 1(a) -- 3(c) -- 4(d)
     //
     // >-- 2(b)
 
-    let child_3_removed = child_1
-        .children
-        .remove_child(3_u64)
-        .expect("No child 3 found");
+    let child_3_removed = child_1.children.remove(3_u64).expect("No child 3 found");
     assert_eq!(child_3_removed, 'c', "Expect removal of node 3");
 
     // >-- 1(a)
@@ -86,7 +83,7 @@ fn arena_item_removal() {
     *child_1_item = 'X';
 
     assert!(child_1.children.find(3_u64).is_none());
-    assert!(child_1.children.remove_child(3_u64).is_none());
+    assert!(child_1.children.remove(3_u64).is_none());
 
     assert!(tree.find(4_u64).is_none());
 }
@@ -95,20 +92,20 @@ fn arena_item_removal() {
 #[should_panic(expected = "Key already present")]
 fn arena_duplicate_insertion() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
-    roots.insert_child(1_u64, 'a');
-    roots.insert_child(1_u64, 'b');
+    let mut roots = tree.roots_mut();
+    roots.insert(1_u64, 'a');
+    roots.insert(1_u64, 'b');
 }
 
 #[test]
 fn arena_mutate_parent_and_child_at_once() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
+    let mut roots = tree.roots_mut();
 
-    roots.insert_child(1_u64, 'a');
-    let mut node_1 = roots.get_child_mut(1_u64).unwrap();
-    node_1.children.insert_child(2_u64, 'b');
-    let node_2 = node_1.children.get_child_mut(2_u64).unwrap();
+    roots.insert(1_u64, 'a');
+    let mut node_1 = roots.item_mut(1_u64).unwrap();
+    node_1.children.insert(2_u64, 'b');
+    let node_2 = node_1.children.item_mut(2_u64).unwrap();
 
     // >-- 1(a) -- 2(b)
 

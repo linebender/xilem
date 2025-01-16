@@ -67,12 +67,12 @@
 
 type NodeId = u64;
 
-#[cfg(not(feature = "safe_tree"))]
+#[cfg(any(feature = "safe_tree"))]
 mod tree_arena_unsafe;
-#[cfg(not(feature = "safe_tree"))]
+#[cfg(any(feature = "safe_tree"))]
 pub use tree_arena_unsafe::*;
 
-#[cfg(feature = "safe_tree")]
+#[cfg(not(feature = "safe_tree"))]
 mod tree_arena_safe;
-#[cfg(feature = "safe_tree")]
+#[cfg(not(feature = "safe_tree"))]
 pub use tree_arena_safe::*;
