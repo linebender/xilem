@@ -517,7 +517,7 @@ impl MasonryState<'_> {
             }
             WinitWindowEvent::Focused(new_focus) => {
                 self.render_root
-                    .handle_text_event(TextEvent::FocusChange(new_focus));
+                    .handle_text_event(TextEvent::WindowFocusChange(new_focus));
             }
             WinitWindowEvent::CursorEntered { .. } => {
                 self.render_root

@@ -188,7 +188,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 // --- MARK: TEXT EVENT ---
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
-    if matches!(event, TextEvent::FocusChange(false)) {
+    if matches!(event, TextEvent::WindowFocusChange(false)) {
         run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
     }
 
@@ -201,6 +201,10 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         trace!("Running ON_TEXT_EVENT pass with {}", event.short_name());
     } else {
         debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
+    }
+
+    if let TextEvent::WindowFocusChange(focused) = event {
+        root.global_state.window_focused = *focused;
     }
 
     let target = root.global_state.focused_widget;
