@@ -6,6 +6,42 @@
 use image::{GenericImageView as _, RgbImage};
 use nv_flip::{FlipImageRgb8, DEFAULT_PIXELS_PER_DEGREE};
 
+#[cfg(docsrs)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        concat!(
+            "![", $($caption,)? "]",
+            "(", "https://raw.githubusercontent.com/linebender/xilem/",
+            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry/src/", $path,
+            ")",
+        )
+    };
+}
+
+#[cfg(not(docsrs))]
+#[doc(hidden)]
+#[macro_export]
+/// Macro used to create markdown img tag, with a different URL when uploading to docs.rs.
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        concat!(
+            "![", $($caption,)? "]",
+            "(", env!("CARGO_MANIFEST_DIR"), "/src/", $path, ")",
+        )
+    };
+}
+
+// [!Image alt](link)
+
+// https://raw.githubusercontent.com/linebender/xilem/7f40266bd831c3f8e715bf7af325e3a53e046612/masonry/src/widget/screenshots/masonry__widget__align__tests__centered.png
+
+#[cfg(FALSE)]
+include_screenshot!("hello");
+
+#[cfg_attr(docsrs, doc = r" This is a doc comment.")]
+#[cfg_attr(not(docsrs), doc = r" This is a doc comment.")]
 pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Option<RgbImage> {
     assert_eq!(
         (ref_image.width(), ref_image.height()),
