@@ -757,7 +757,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 }
             }
             // TODO: Set our highlighting colour to a lighter blue as window unfocused
-            TextEvent::FocusChange(_) => {}
+            TextEvent::WindowFocusChange(_) => {}
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
                 let (fctx, lctx) = ctx.text_contexts();

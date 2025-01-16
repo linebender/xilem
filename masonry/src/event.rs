@@ -239,8 +239,7 @@ pub enum TextEvent {
     /// Modifier keys (e.g. Shift, Ctrl, Alt) were pressed or released.
     ModifierChange(ModifiersState),
     /// The window took or lost focus.
-    // TODO - Document difference with Update focus change
-    FocusChange(bool),
+    WindowFocusChange(bool),
 }
 
 // TODO - Go into more detail.
@@ -470,7 +469,7 @@ impl TextEvent {
             Self::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
             Self::Ime(Ime::Preedit(_, _)) => "Ime::Preedit(\"...\")",
             Self::ModifierChange(_) => "ModifierChange",
-            Self::FocusChange(_) => "FocusChange",
+            Self::WindowFocusChange(_) => "WindowFocusChange",
         }
     }
 
@@ -484,7 +483,7 @@ impl TextEvent {
             Self::Ime(_) => false,
             // Basically every mouse click/scroll event seems to produce a modifier change event.
             Self::ModifierChange(_) => true,
-            Self::FocusChange(_) => false,
+            Self::WindowFocusChange(_) => false,
         }
     }
 }

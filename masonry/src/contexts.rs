@@ -815,6 +815,11 @@ impl_context_method!(
             self.widget_state.has_focus
         }
 
+        /// Whether the window is focused.
+        pub fn is_window_focused(&self) -> bool {
+            self.global_state.window_focused
+        }
+
         /// Whether this widget gets pointer events and hovered status.
         pub fn accepts_pointer_interaction(&self) -> bool {
             self.widget_state.accepts_pointer_interaction

@@ -104,6 +104,9 @@ pub(crate) struct RenderRootState {
     /// This is used to pick the focused widget on Tab events.
     pub(crate) most_recently_clicked_widget: Option<WidgetId>,
 
+    /// Whether the window is focused.
+    pub(crate) window_focused: bool,
+
     /// Widgets that have requested to be scrolled into view.
     pub(crate) scroll_request_targets: Vec<(WidgetId, Rect)>,
 
@@ -260,6 +263,7 @@ impl RenderRoot {
                 focused_path: Vec::new(),
                 next_focused_widget: None,
                 most_recently_clicked_widget: None,
+                window_focused: true,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
                 pointer_capture_target: None,
