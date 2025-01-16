@@ -6,7 +6,7 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
-use xilem::view::{button, grid, label, sized_box, GridExt as _, Transformable as _};
+use xilem::view::{button, grid, label, sized_box, GridExt as _};
 use xilem::{Color, EventLoop, Vec2, WidgetView, Xilem};
 
 struct TransformsGame {
@@ -46,6 +46,7 @@ impl TransformsGame {
         // Note that the order of the transformations is relevant.
         let transformed_status = sized_box(status)
             .background(Color::new(bg_color))
+            .transformed()
             .translate(self.translation)
             .rotate(self.rotation)
             .scale(self.scale);

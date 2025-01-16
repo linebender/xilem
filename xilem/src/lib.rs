@@ -45,6 +45,7 @@ use std::sync::Arc;
 use masonry::dpi::LogicalSize;
 use masonry::widget::{RootWidget, WidgetMut};
 use masonry::{event_loop_runner, Widget, WidgetId, WidgetPod};
+use view::{transformed, Transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
 
@@ -188,7 +189,7 @@ where
 pub struct Pod<W: Widget> {
     pub widget: W,
     pub id: WidgetId,
-    pub transform: Affine,
+    pub transform: Option<Affine>,
 }
 
 impl<W: Widget> Pod<W> {
@@ -200,10 +201,18 @@ impl<W: Widget> Pod<W> {
         }
     }
     fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
+        WidgetPod::new_with_id_and_transform(
+            self.widget,
+            self.id,
+            self.transform.unwrap_or_default(),
+        )
     }
     fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new_with_id_and_transform(Box::new(self.widget), self.id, self.transform)
+        WidgetPod::new_with_id_and_transform(
+            Box::new(self.widget),
+            self.id,
+            self.transform.unwrap_or_default(),
+        )
     }
     fn boxed(self) -> Pod<Box<dyn Widget>> {
         Pod {
@@ -256,6 +265,18 @@ pub trait WidgetView<State, Action = ()>:
         Self: Sized,
     {
         Box::new(self)
+    }
+
+    /// This widget with a 2d transform applied.
+    ///
+    /// The returned view has methods to control individual components of
+    /// the transform, as well as apply an arbitrary transform.
+    /// See [`transformed`] for more details.
+    fn transformed(self) -> Transformed<Self, State, Action>
+    where
+        Self: Sized,
+    {
+        transformed(self)
     }
 }
 
@@ -323,7 +344,7 @@ impl ViewCtx {
     }
     pub fn new_pod_with_transform<W: Widget>(&mut self, widget: W, transform: Affine) -> Pod<W> {
         let mut pod = Pod::new(widget);
-        pod.transform = transform;
+        pod.transform = Some(transform);
         pod
     }
 

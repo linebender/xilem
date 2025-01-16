@@ -87,10 +87,10 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut child_pod, child_state) = self.child.build(ctx);
         // TODO: Use a marker identity value to detect this more properly
-        if child_pod.transform != Affine::IDENTITY {
+        if child_pod.transform.is_some() {
             panic!("Tried to create a `Transformed` with an already controlled Transform");
         }
-        child_pod.transform = self.transform;
+        child_pod.transform = Some(self.transform);
         (child_pod, child_state)
     }
 
