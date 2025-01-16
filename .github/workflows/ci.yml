@@ -293,7 +293,7 @@ jobs:
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
 
       - name: Run cargo nextest on unsafe arena
-        run: cargo nextest -p tree_arena run --locked --no-fail-fast --no-default-features
+        run: cargo nextest run -p tree_arena --locked --no-fail-fast --no-default-features
   
       - name: Upload test results due to failure
         uses: actions/upload-artifact@v4
