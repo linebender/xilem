@@ -68,6 +68,7 @@ impl Label {
         self
     }
 
+    /// Set how line breaks will be handled by this label (i.e. if there is insufficient horizontal space).
     pub fn line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
         self.line_break_mode = line_break_mode;
         self
