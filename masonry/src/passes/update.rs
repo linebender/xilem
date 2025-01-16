@@ -16,6 +16,9 @@ use crate::{
 };
 
 // --- MARK: HELPERS ---
+/// Returns the id path starting from the given widget id and ending at the root.
+///
+/// If `widget_id` is None, returns an empty Vec.
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
         return Vec::new();
@@ -483,8 +486,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
             });
         }
 
-        // TODO - Make sure widgets are iterated from the bottom up.
-        // TODO - Document the iteration order for update_focus pass.
+        // TODO - Add unit test to check items are iterated from the bottom up.
         for widget_id in prev_focused_path.iter().copied() {
             if root.widget_arena.has(widget_id)
                 && root.widget_arena.get_state_mut(widget_id).item.has_focus
@@ -657,8 +659,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             });
         }
 
-        // TODO - Make sure widgets are iterated from the bottom up.
-        // TODO - Document the iteration order for update_pointer pass.
+        // TODO - Add unit test to check items are iterated from the bottom up.
         for widget_id in prev_hovered_path.iter().copied() {
             if root.widget_arena.has(widget_id)
                 && root.widget_arena.get_state_mut(widget_id).item.is_hovered
