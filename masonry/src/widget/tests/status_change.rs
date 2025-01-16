@@ -152,7 +152,7 @@ fn update_hovered_on_mouse_leave() {
 
     let button_rec = Recording::default();
 
-    let widget = Button::new("hello").with_id(button_id).record(&button_rec);
+    let widget = Button::new("hello").record(&button_rec).with_id(button_id);
 
     let mut harness = TestHarness::create(widget);
 
