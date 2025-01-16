@@ -469,7 +469,7 @@ impl TextEvent {
             Self::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
             Self::Ime(Ime::Preedit(_, _)) => "Ime::Preedit(\"...\")",
             Self::ModifierChange(_) => "ModifierChange",
-            Self::WindowFocusChange(_) => "FocusChange",
+            Self::WindowFocusChange(_) => "WindowFocusChange",
         }
     }
 
