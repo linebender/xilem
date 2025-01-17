@@ -7,9 +7,7 @@ use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::view::Label;
-use crate::{Affine, MessageResult, Pod, ViewCtx, ViewId};
-
-use super::Transformable;
+use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 pub fn button<State, Action>(
@@ -19,7 +17,6 @@ pub fn button<State, Action>(
 {
     Button {
         label: label.into(),
-        transform: Affine::IDENTITY,
         callback: move |state: &mut State, button| match button {
             PointerButton::Primary => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
@@ -35,7 +32,6 @@ pub fn button_any_pointer<State, Action>(
 {
     Button {
         label: label.into(),
-        transform: Affine::IDENTITY,
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
     }
 }
@@ -45,14 +41,7 @@ pub struct Button<F> {
     // N.B. This widget is *implemented* to handle any kind of view with an element
     // type of `Label` even though it currently does not do so.
     label: Label,
-    transform: Affine,
     callback: F,
-}
-
-impl<F> Transformable for Button<F> {
-    fn transform_mut(&mut self) -> &mut Affine {
-        &mut self.transform
-    }
 }
 
 const LABEL_VIEW_ID: ViewId = ViewId::new(0);
@@ -70,10 +59,7 @@ where
             View::<State, Action, _>::build(&self.label, ctx)
         });
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod_with_transform(
-                widget::Button::from_label_pod(child.into_widget_pod()),
-                self.transform,
-            )
+            ctx.new_pod(widget::Button::from_label_pod(child.into_widget_pod()))
         })
     }
 
@@ -84,10 +70,6 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.transform != self.transform {
-            element.set_transform(self.transform);
-        }
-
         ctx.with_id(LABEL_VIEW_ID, |ctx| {
             View::<State, Action, _>::rebuild(
                 &self.label,

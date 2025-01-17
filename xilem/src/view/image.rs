@@ -6,9 +6,7 @@
 use masonry::widget::{self, ObjectFit};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Affine, MessageResult, Pod, View, ViewCtx, ViewId};
-
-use super::Transformable;
+use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 /// Displays the bitmap `image`.
 ///
@@ -27,7 +25,6 @@ pub fn image(image: &vello::peniko::Image) -> Image {
         // easier than documenting that cloning is cheap.
         image: image.clone(),
         object_fit: ObjectFit::default(),
-        transform: Affine::IDENTITY,
     }
 }
 
@@ -38,7 +35,6 @@ pub fn image(image: &vello::peniko::Image) -> Image {
 pub struct Image {
     image: vello::peniko::Image,
     object_fit: ObjectFit,
-    transform: Affine,
 }
 
 impl Image {
@@ -49,20 +45,13 @@ impl Image {
     }
 }
 
-impl Transformable for Image {
-    fn transform_mut(&mut self) -> &mut Affine {
-        &mut self.transform
-    }
-}
-
 impl ViewMarker for Image {}
 impl<State, Action> View<State, Action, ViewCtx> for Image {
     type Element = Pod<widget::Image>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let pod =
-            ctx.new_pod_with_transform(widget::Image::new(self.image.clone()), self.transform);
+        let pod = ctx.new_pod(widget::Image::new(self.image.clone()));
         (pod, ())
     }
 
@@ -73,9 +62,6 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         _: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.transform != self.transform {
-            element.set_transform(self.transform);
-        }
         if prev.object_fit != self.object_fit {
             widget::Image::set_fit_mode(&mut element, self.object_fit);
         }

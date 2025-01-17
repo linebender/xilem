@@ -10,15 +10,13 @@ use crate::{
         AppendVec, DynMessage, ElementSplice, Mut, SuperElement, View, ViewElement, ViewMarker,
         ViewSequence,
     },
-    Affine, Pod, ViewCtx, WidgetView,
+    Pod, ViewCtx, WidgetView,
 };
 use masonry::{
     widget::{self, Alignment, ChildAlignment, WidgetMut},
     Widget,
 };
 use xilem_core::{MessageResult, ViewId};
-
-use super::Transformable;
 
 /// A widget that lays out its children on top of each other.
 /// The children are laid out back to front.
@@ -42,7 +40,6 @@ pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) 
     ZStack {
         sequence,
         alignment: Alignment::default(),
-        transform: Affine::IDENTITY,
     }
 }
 
@@ -53,7 +50,6 @@ pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) 
 pub struct ZStack<Seq> {
     sequence: Seq,
     alignment: Alignment,
-    transform: Affine,
 }
 
 impl<Seq> ZStack<Seq> {
@@ -82,7 +78,7 @@ where
         for child in elements.into_inner() {
             widget = widget.with_child_pod(child.widget.into_widget_pod(), child.alignment);
         }
-        let pod = ctx.new_pod_with_transform(widget, self.transform);
+        let pod = ctx.new_pod(widget);
         (pod, seq_state)
     }
 
@@ -93,10 +89,6 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if self.transform != prev.transform {
-            element.set_transform(self.transform);
-        }
-
         if self.alignment != prev.alignment {
             widget::ZStack::set_alignment(&mut element, self.alignment);
         }
@@ -127,12 +119,6 @@ where
     ) -> MessageResult<Action, DynMessage> {
         self.sequence
             .seq_message(view_state, id_path, message, app_state)
-    }
-}
-
-impl<Seq> Transformable for ZStack<Seq> {
-    fn transform_mut(&mut self) -> &mut Affine {
-        &mut self.transform
     }
 }
 

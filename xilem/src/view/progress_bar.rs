@@ -4,26 +4,14 @@
 use masonry::widget;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Affine, MessageResult, Pod, View, ViewCtx, ViewId};
-
-use super::Transformable;
+use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 pub fn progress_bar(progress: Option<f64>) -> ProgressBar {
-    ProgressBar {
-        progress,
-        transform: Affine::IDENTITY,
-    }
+    ProgressBar { progress }
 }
 
 pub struct ProgressBar {
     progress: Option<f64>,
-    transform: Affine,
-}
-
-impl Transformable for ProgressBar {
-    fn transform_mut(&mut self) -> &mut Affine {
-        &mut self.transform
-    }
 }
 
 impl ViewMarker for ProgressBar {}
@@ -32,9 +20,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod_with_transform(widget::ProgressBar::new(self.progress), self.transform)
-        })
+        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::ProgressBar::new(self.progress)))
     }
 
     fn rebuild(
@@ -44,9 +30,6 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        if prev.transform != self.transform {
-            element.set_transform(self.transform);
-        }
         if prev.progress != self.progress {
             widget::ProgressBar::set_progress(&mut element, self.progress);
         }

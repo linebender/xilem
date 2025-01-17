@@ -45,6 +45,7 @@ use std::sync::Arc;
 use masonry::dpi::LogicalSize;
 use masonry::widget::{RootWidget, WidgetMut};
 use masonry::{event_loop_runner, Widget, WidgetId, WidgetPod};
+use view::{transformed, Transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
 
@@ -188,6 +189,12 @@ where
 pub struct Pod<W: Widget> {
     pub widget: W,
     pub id: WidgetId,
+    /// The transform the widget will be created with.
+    ///
+    /// If changing transforms of widgets, prefer to use [`transformed`]
+    /// (or [`WidgetView::transform`]).
+    /// This has a protocol to ensure that multiple views changing the
+    /// transform interoperate successfully.
     pub transform: Affine,
 }
 
@@ -257,6 +264,18 @@ pub trait WidgetView<State, Action = ()>:
     {
         Box::new(self)
     }
+
+    /// This widget with a 2d transform applied.
+    ///
+    /// See [`transformed`] for similar functionality with a builder-API using this.
+    /// The return type is the same as for `transformed`, and so also has these
+    /// builder methods.
+    fn transform(self, by: Affine) -> Transformed<Self, State, Action>
+    where
+        Self: Sized,
+    {
+        transformed(self).transform(by)
+    }
 }
 
 impl<V, State, Action, W> WidgetView<State, Action> for V
@@ -320,11 +339,6 @@ impl ViewPathTracker for ViewCtx {
 impl ViewCtx {
     pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
         Pod::new(widget)
-    }
-    pub fn new_pod_with_transform<W: Widget>(&mut self, widget: W, transform: Affine) -> Pod<W> {
-        let mut pod = Pod::new(widget);
-        pod.transform = transform;
-        pod
     }
 
     pub fn with_leaf_action_widget<E: Widget>(

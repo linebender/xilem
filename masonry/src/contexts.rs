@@ -163,6 +163,11 @@ impl_context_method!(
                 .expect("get_child_state: child not found");
             child_state_ref.item
         }
+
+        /// The current (local) transform of this widget.
+        pub fn transform(&self) -> Affine {
+            self.widget_state.transform
+        }
     }
 );
 
@@ -230,6 +235,15 @@ impl MutateCtx<'_> {
             widget_state_children: self.widget_state_children.reborrow_mut(),
             widget_children: self.widget_children.reborrow_mut(),
         }
+    }
+
+    /// Whether the (local) transform of this widget has been modified since
+    /// the last time this widget's transformation was resolved.
+    ///
+    /// This is exposed for Xilem, and is more likely to change or be removed
+    /// in major releases of Masonry.
+    pub fn transform_has_changed(&self) -> bool {
+        self.widget_state.transform_changed
     }
 }
 
