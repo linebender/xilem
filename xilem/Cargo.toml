@@ -9,7 +9,11 @@ license.workspace = true
 repository.workspace = true
 homepage.workspace = true
 rust-version.workspace = true
-exclude = ["/resources/fonts/roboto_flex/", "/resources/data/http_cats_status/"]
+exclude = [
+    "/resources/fonts/roboto_flex/",
+    "/resources/data/http_cats_status/",
+    "/resources/data/emoji_names/",
+]
 
 [package.metadata.docs.rs]
 all-features = true
@@ -83,7 +87,7 @@ name = "emoji_picker"
 
 [[example]]
 name = "emoji_picker_android"
-path = "examples/emoji_picker/main.rs"
+path = "examples/emoji_picker.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 

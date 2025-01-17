@@ -68,6 +68,7 @@ Some files used for examples are under different licenses:
 
 * The font file (`RobotoFlex-Subset.ttf`) in `resources/fonts/roboto_flex/` is licensed solely as documented in that folder (and is not licensed under the Apache License, Version 2.0).
 * The data file (`status.csv`) in `resources/data/http_cats_status/` is licensed solely as documented in that folder (and is not licensed under the Apache License, Version 2.0).
+* The data file (`emoji.csv`) in `resources/data/emoji_names/` is licensed solely as documented in that folder (and is not licensed under the Apache License, Version 2.0).
 
 Note that these files are *not* distributed with the released crate.
 

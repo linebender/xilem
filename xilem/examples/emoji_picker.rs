@@ -1,18 +1,10 @@
 // Copyright 2024 the Xilem Authors
-// SPDX-License-Identifier: Apache-2.0 OR MIT
+// SPDX-License-Identifier: Apache 2.0
 
 //! A simple emoji picker.
-//! It is expected that the Emoji in this example may not render.
-//! This is because Vello does not support any kinds of bitmap fonts.
-//!
-//! Note that the MIT license is needed because of the emoji data.
-//! Everything except for the [`EMOJI`] constant is Apache 2.0 licensed.
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-mod emoji_data;
-
-use emoji_data::EMOJI;
 use winit::error::EventLoopError;
 use xilem::{
     core::map_state,
@@ -40,12 +32,12 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
             paginate(
                 data.start_index,
                 (data.size * data.size) as usize,
-                EMOJI.len(),
+                data.emoji.len(),
             ),
             |state: &mut EmojiPagination| &mut state.start_index,
         ),
         data.last_selected
-            .map(|idx| label(format!("Selected: {}", EMOJI[idx].display)).text_size(40.)),
+            .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
     ))
     .direction(Axis::Vertical)
 }
@@ -60,7 +52,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
         let row_idx = data.start_index + y * data.size as usize;
         for x in 0..data.size as usize {
             let idx = row_idx + x;
-            let emoji = EMOJI.get(idx);
+            let emoji = data.emoji.get(idx);
             // TODO: Use OneOf2
             let view: Box<AnyWidgetView<EmojiPagination>> = match emoji {
                 Some(emoji) => {
@@ -123,28 +115,53 @@ struct EmojiPagination {
     size: u32,
     last_selected: Option<usize>,
     start_index: usize,
+    emoji: Vec<EmojiInfo>,
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+    let emoji = EmojiInfo::parse_file();
     let data = EmojiPagination {
         size: 4,
         last_selected: None,
         start_index: 0,
+        emoji,
     };
 
     let app = Xilem::new(data, app_logic);
     app.run_windowed(event_loop, "First Example".into())
 }
 
-// Helpers for the emoji_data module. That is a separate file for licensing reasons.
 struct EmojiInfo {
     name: &'static str,
     display: &'static str,
 }
 
-const fn e(display: &'static str, name: &'static str) -> EmojiInfo {
-    EmojiInfo { name, display }
+impl EmojiInfo {
+    /// Parse the supported emoji's information.
+    fn parse_file() -> Vec<Self> {
+        let mut lines = EMOJI_NAMES_CSV.lines();
+        let first_line = lines.next();
+        assert_eq!(
+            first_line,
+            Some("display,name"),
+            "Probably wrong CSV-like file"
+        );
+        lines.flat_map(Self::parse_single).collect()
+    }
+
+    fn parse_single(line: &'static str) -> Option<Self> {
+        let (display, name) = line.split_once(',')?;
+        Some(Self { display, name })
+    }
 }
+
+/// A subset of emoji data from <https://github.com/iamcal/emoji-data>, used under the MIT license.
+/// Full details can be found in `xilem/resources/data/emoji_names/README.md` from
+/// the workspace root.
+const EMOJI_NAMES_CSV: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/resources/data/emoji_names/emoji.csv",
+));
 
 // Boilerplate code: Identical across all applications which support Android
 
