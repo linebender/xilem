@@ -6,8 +6,8 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
-use xilem::view::{button, grid, label, sized_box, GridExt as _};
-use xilem::{Color, EventLoop, Vec2, WidgetView, Xilem};
+use xilem::view::{button, grid, label, sized_box, transformed, GridExt as _};
+use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, Xilem};
 
 struct TransformsGame {
     rotation: f64,
@@ -41,20 +41,18 @@ impl TransformsGame {
             [1.0, 0.0, 0.0, 0.2]
         };
 
+        let status = sized_box(status).background(Color::new(bg_color));
         // Every view can be transformed similar as with CSS transforms in the web.
         // Currently only 2D transforms are supported.
         // Note that the order of the transformations is relevant.
-        let transformed_status = sized_box(status)
-            .background(Color::new(bg_color))
-            .transformed()
-            .translate(self.translation)
-            // In an actual app, you wouldn't use `.transformed` here.
+        let transformed_status = transformed(
+            // In an actual app, you wouldn't use both `transformed` and `.transform`.
             // This is here to validate that Xilem's support for nested `Transformed`
             // values works as expected.
-            .transformed()
-            .rotate(self.rotation)
-            .transformed()
-            .scale(self.scale);
+            status.transform(Affine::translate(self.translation)),
+        )
+        .rotate(self.rotation)
+        .scale(self.scale);
 
         let controls = (
             button("↶", |this: &mut Self| {

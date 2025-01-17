@@ -266,14 +266,14 @@ pub trait WidgetView<State, Action = ()>:
 
     /// This widget with a 2d transform applied.
     ///
-    /// The returned view has methods to control individual components of
-    /// the transform, as well as apply an arbitrary transform.
-    /// See [`transformed`] for more details.
-    fn transformed(self) -> Transformed<Self, State, Action>
+    /// See [`transformed`] for similar functionality with a builder-API using this.
+    /// The return type is the same as for `transformed`, and so also has these
+    /// builder methods.
+    fn transform(self, by: Affine) -> Transformed<Self, State, Action>
     where
         Self: Sized,
     {
-        transformed(self)
+        transformed(self).transform(by)
     }
 }
 
