@@ -9,8 +9,8 @@ use winit::error::EventLoopError;
 use xilem::{
     core::map_state,
     palette,
-    view::{button, flex, label, prose, sized_box, Axis},
-    AnyWidgetView, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
+    view::{button, flex, grid, label, prose, sized_box, Axis, FlexExt, FlexSpacer, GridExt},
+    Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
@@ -27,7 +27,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
             }),
         ))
         .direction(Axis::Horizontal),
-        picker(data),
+        picker(data).flex(1.0),
         map_state(
             paginate(
                 data.start_index,
@@ -38,54 +38,52 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
         ),
         data.last_selected
             .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
+        FlexSpacer::Fixed(10.),
     ))
     .direction(Axis::Vertical)
+    .must_fill_major_axis(true)
 }
 
 fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
-    let mut result = vec![];
-    // TODO: We should be able to use a grid view here, but that isn't implemented
-    // We hack around it by making each item take up their proportion of the 400
-    let dimensions = 400. / data.size as f64;
-    for y in 0..data.size as usize {
-        let mut row_contents = vec![];
+    let mut grid_items = vec![];
+    'outer: for y in 0..data.size as usize {
         let row_idx = data.start_index + y * data.size as usize;
         for x in 0..data.size as usize {
             let idx = row_idx + x;
             let emoji = data.emoji.get(idx);
-            // TODO: Use OneOf2
-            let view: Box<AnyWidgetView<EmojiPagination>> = match emoji {
-                Some(emoji) => {
-                    let view = flex((
-                        // TODO: Expose that this button corresponds to the label below to accessibility?
-                        sized_box(button(emoji.display, move |data: &mut EmojiPagination| {
-                            data.last_selected = Some(idx);
-                        }))
-                        .expand_width(),
-                        sized_box(
-                            prose(emoji.name)
-                                .alignment(xilem::TextAlignment::Middle)
-                                .brush(if data.last_selected.is_some_and(|it| it == idx) {
-                                    // TODO: Ensure this selection indicator color is accessible
-                                    // TODO: Expose selected state to accessibility tree
-                                    palette::css::BLUE
-                                } else {
-                                    Color::WHITE
-                                }),
-                        )
-                        .expand_width(),
-                    ))
-                    .must_fill_major_axis(true);
-                    Box::new(view)
-                }
-                None => Box::new(flex(())),
+            let Some(emoji) = emoji else {
+                // There are no more emoji, no point still looping
+                break 'outer;
             };
-            row_contents.push(sized_box(view).width(dimensions).height(dimensions));
+            let view = flex((
+                // TODO: Expose that this button corresponds to the label below for accessibility?
+                sized_box(button(emoji.display, move |data: &mut EmojiPagination| {
+                    data.last_selected = Some(idx);
+                }))
+                .expand_width(),
+                sized_box(
+                    prose(emoji.name)
+                        .alignment(xilem::TextAlignment::Middle)
+                        .brush(if data.last_selected.is_some_and(|it| it == idx) {
+                            // TODO: Ensure this selection indicator color is accessible
+                            // TODO: Expose selected state to accessibility tree
+                            palette::css::BLUE
+                        } else {
+                            Color::WHITE
+                        }),
+                )
+                .expand_width(),
+            ))
+            .must_fill_major_axis(true);
+            grid_items.push(view.grid_pos(x.try_into().unwrap(), y.try_into().unwrap()));
         }
-        result.push(flex(row_contents).direction(Axis::Horizontal));
     }
 
-    flex(result)
+    grid(
+        grid_items,
+        data.size.try_into().unwrap(),
+        data.size.try_into().unwrap(),
+    )
 }
 
 fn paginate(
