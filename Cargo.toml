@@ -104,7 +104,7 @@ clippy.duplicated_attributes = "allow"
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
-vello = { git = "https://github.com/linebender/vello", rev = "a71236c7c8da10a6eaad4602267663339620835a" }
+vello = { git = "https://github.com/linebender/vello", rev = "9510df87dcabc03ba9be4a721889425a5eb361b9" }
 wgpu = "23.0.1"
 kurbo = "0.11.1"
 parley = { git = "https://github.com/linebender/parley", rev = "16b62518d467487ee15cb230fdb28530d89a8cf6", features = [

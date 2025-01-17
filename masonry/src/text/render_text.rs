@@ -68,11 +68,7 @@ pub fn render_text(
             let glyph_xform = synthesis
                 .skew()
                 .map(|angle| Affine::skew(angle.to_radians().tan() as f64, 0.0));
-            let coords = run
-                .normalized_coords()
-                .iter()
-                .map(|coord| vello::skrifa::instance::NormalizedCoord::from_bits(*coord))
-                .collect::<Vec<_>>();
+            let coords = run.normalized_coords();
             let brush = &brushes[style.brush.0];
             scene
                 .draw_glyphs(font)
@@ -81,7 +77,7 @@ pub fn render_text(
                 .transform(transform)
                 .glyph_transform(glyph_xform)
                 .font_size(font_size)
-                .normalized_coords(&coords)
+                .normalized_coords(coords)
                 .draw(
                     Fill::NonZero,
                     glyph_run.glyphs().map(|glyph| {

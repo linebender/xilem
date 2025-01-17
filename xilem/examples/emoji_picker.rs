@@ -13,6 +13,7 @@
 use winit::error::EventLoopError;
 use xilem::{
     core::map_state,
+    palette,
     view::{button, flex, label, prose, sized_box, Axis},
     AnyWidgetView, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
@@ -72,7 +73,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
                                 .brush(if data.last_selected.is_some_and(|it| it == idx) {
                                     // TODO: Ensure this selection indicator color is accessible
                                     // TODO: Expose selected state to accessibility tree
-                                    Color::BLUE
+                                    palette::css::BLUE
                                 } else {
                                     Color::WHITE
                                 }),
