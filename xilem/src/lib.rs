@@ -191,7 +191,8 @@ pub struct Pod<W: Widget> {
     pub id: WidgetId,
     /// The transform the widget will be created with.
     ///
-    /// If changing transforms of widgets, prefer to use [`WidgetView::transformed`].
+    /// If changing transforms of widgets, prefer to use [`transformed`]
+    /// (or [`WidgetView::transform`]).
     /// This has a protocol to ensure that multiple views changing the
     /// transform interoperate successfully.
     pub transform: Affine,
