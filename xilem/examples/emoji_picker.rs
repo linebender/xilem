@@ -91,20 +91,22 @@ fn paginate(
     count_per_page: usize,
     max_count: usize,
 ) -> impl WidgetView<usize> {
-    let percentage = (current_start * 100) / max_count;
+    let current_end = (current_start + count_per_page).min(max_count);
+    let percentage_start = (current_start * 100) / max_count;
+    let percentage_end = (current_end * 100) / max_count;
 
     flex((
         // TODO: Expose that this is a previous page button to accessibility
-        button("<-", move |data| {
+        (current_start != 0).then(|| button( "<-", move |data| {
             *data = current_start.saturating_sub(count_per_page);
-        }),
-        label(format!("{percentage}%")),
-        button("->", move |data| {
+        })),
+        label(format!("{percentage_start}% - {percentage_end}%")),
+        (current_end < max_count).then(move || button("->", move |data| {
             let new_idx = current_start + count_per_page;
             if new_idx < max_count {
                 *data = new_idx;
             }
-        }),
+        })),
     ))
     .direction(Axis::Horizontal)
 }
