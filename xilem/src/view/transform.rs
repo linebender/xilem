@@ -115,16 +115,14 @@ where
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
     ) {
-        let initial_transform = element.ctx.transform();
         self.child.rebuild(
             &prev.child,
             &mut view_state.child,
             ctx,
             element.reborrow_mut(),
         );
-        let transform_changed = element.ctx.transform() != initial_transform;
-        // We detect a child view changing the transform by comparing the
-        // resulting transform before and after the child view runs.
+        let transform_changed = element.ctx.transform_has_changed();
+        // If the child view changed the transform, we know we're out of date.
         if transform_changed {
             // If it has changed the transform, then we know that it will only be due to effects
             // "below us" (that is, it will have restarted from scratch).
