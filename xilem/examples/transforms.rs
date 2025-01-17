@@ -48,7 +48,12 @@ impl TransformsGame {
             .background(Color::new(bg_color))
             .transformed()
             .translate(self.translation)
+            // In an actual app, you wouldn't use `.transformed` here.
+            // This is here to validate that Xilem's support for nested `Transformed`
+            // values works as expected.
+            .transformed()
             .rotate(self.rotation)
+            .transformed()
             .scale(self.scale);
 
         let controls = (
