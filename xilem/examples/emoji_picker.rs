@@ -101,7 +101,7 @@ fn paginate(
             *data = current_start.saturating_sub(count_per_page);
         })),
         label(format!("{percentage_start}% - {percentage_end}%")),
-        (current_end < max_count).then(move || button("->", move |data| {
+        (current_end < max_count).then(|| button("->", move |data| {
             let new_idx = current_start + count_per_page;
             if new_idx < max_count {
                 *data = new_idx;
