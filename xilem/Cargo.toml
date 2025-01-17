@@ -83,7 +83,7 @@ name = "emoji_picker"
 
 [[example]]
 name = "emoji_picker_android"
-path = "examples/emoji_picker.rs"
+path = "examples/emoji_picker/main.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
