@@ -8,6 +8,7 @@
 #![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 
 use gloo_net::http::Request;
+use gloo_timers::future::TimeoutFuture;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::{
@@ -56,13 +57,13 @@ impl AppState {
             FetchState::Finished
         } else if self.cats_to_fetch >= TOO_MANY_CATS {
             FetchState::TooMany
+        } else if self.cats_to_fetch > 0 && self.cats_are_being_fetched {
+            FetchState::Fetching
         } else if self.debounce_in_ms > 0 && self.cats_to_fetch > 0 && self.reset_debounce_on_update
         {
             FetchState::Debounced
         } else if self.debounce_in_ms > 0 && self.cats_to_fetch > 0 {
             FetchState::Throttled
-        } else if self.cats_to_fetch > 0 && self.cats_are_being_fetched {
-            FetchState::Fetching
         } else {
             FetchState::Initial
         }
@@ -80,6 +81,10 @@ enum FetchState {
 
 async fn fetch_cats(count: usize) -> Result<Vec<Cat>, gloo_net::Error> {
     log::debug!("Fetch {count} cats");
+
+    // Simulate a delay
+    TimeoutFuture::new(1_000).await;
+
     if count == 0 {
         return Ok(Vec::new());
     }
@@ -119,7 +124,11 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
                     // or debounced otherwise:
                     // As long as updates are happening within `debounce_in_ms` ms the first closure is not invoked, and a debounce timeout which runs `debounce_in_ms` is reset.
                     state.cats_to_fetch,
-                    |count| fetch_cats(*count),
+                    |state: &mut AppState, count| {
+                        log::debug!("Create new future to fetch");
+                        state.cats_are_being_fetched = true;
+                        fetch_cats(*count)
+                    },
                     |state: &mut AppState, cats_result| match cats_result {
                         Ok(cats) => {
                             log::info!("Received {} cats", cats.len());
@@ -182,7 +191,6 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                         if !state.cats_are_being_fetched {
                             state.cats.clear();
                         }
-                        state.cats_are_being_fetched = true;
                         state.cats_to_fetch = input_target(&ev).value().parse().unwrap_or(0);
                     })),
             )),
