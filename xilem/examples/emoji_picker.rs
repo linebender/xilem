@@ -1,5 +1,5 @@
 // Copyright 2024 the Xilem Authors
-// SPDX-License-Identifier: Apache 2.0
+// SPDX-License-Identifier: Apache-2.0
 
 //! A simple emoji picker.
 
