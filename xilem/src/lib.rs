@@ -189,7 +189,12 @@ where
 pub struct Pod<W: Widget> {
     pub widget: W,
     pub id: WidgetId,
-    pub transform: Option<Affine>,
+    /// The transform the widget will be created with.
+    ///
+    /// If changing transforms of widgets, prefer to use [`WidgetView::transformed`].
+    /// This has a protocol to ensure that multiple views changing the
+    /// transform interoperate successfully.
+    pub transform: Affine,
 }
 
 impl<W: Widget> Pod<W> {
@@ -201,18 +206,10 @@ impl<W: Widget> Pod<W> {
         }
     }
     fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with_id_and_transform(
-            self.widget,
-            self.id,
-            self.transform.unwrap_or_default(),
-        )
+        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
     }
     fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new_with_id_and_transform(
-            Box::new(self.widget),
-            self.id,
-            self.transform.unwrap_or_default(),
-        )
+        WidgetPod::new_with_id_and_transform(Box::new(self.widget), self.id, self.transform)
     }
     fn boxed(self) -> Pod<Box<dyn Widget>> {
         Pod {

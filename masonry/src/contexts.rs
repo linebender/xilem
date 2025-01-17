@@ -163,6 +163,11 @@ impl_context_method!(
                 .expect("get_child_state: child not found");
             child_state_ref.item
         }
+
+        /// The current (local) transform of this widget.
+        pub fn transform(&self) -> Affine {
+            self.widget_state.transform
+        }
     }
 );
 

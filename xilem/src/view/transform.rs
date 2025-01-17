@@ -74,6 +74,20 @@ impl<V, State, Action> Transformed<V, State, Action> {
     }
 }
 
+mod private {
+    use crate::Affine;
+
+    /// The View state for the [Transformed](super::Transformed)
+    #[expect(
+        unnameable_types,
+        reason = "This type has no public API, and is only public due to trait visibility rules"
+    )]
+    pub struct TransformedState<ChildState> {
+        pub(super) child: ChildState,
+        pub(super) previous_transform: Affine,
+    }
+}
+
 impl<V, State, Action> ViewMarker for Transformed<V, State, Action> {}
 impl<Child, State, Action> View<State, Action, ViewCtx> for Transformed<Child, State, Action>
 where
@@ -82,16 +96,16 @@ where
     Action: 'static,
 {
     type Element = Pod<Child::Widget>;
-    type ViewState = Child::ViewState;
+    type ViewState = private::TransformedState<Child::ViewState>;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (mut child_pod, child_state) = self.child.build(ctx);
-        // TODO: Use a marker identity value to detect this more properly
-        if child_pod.transform.is_some() {
-            panic!("Tried to create a `Transformed` with an already controlled Transform");
-        }
-        child_pod.transform = Some(self.transform);
-        (child_pod, child_state)
+        let state = private::TransformedState {
+            child: child_state,
+            previous_transform: child_pod.transform,
+        };
+        child_pod.transform = self.transform * state.previous_transform;
+        (child_pod, state)
     }
 
     fn rebuild(
@@ -101,10 +115,30 @@ where
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
     ) {
-        if self.transform != prev.transform {
-            element.ctx.set_transform(self.transform);
+        let initial_transform = element.ctx.transform();
+        self.child.rebuild(
+            &prev.child,
+            &mut view_state.child,
+            ctx,
+            element.reborrow_mut(),
+        );
+        let transform_changed = element.ctx.transform() != initial_transform;
+        // We detect a child view changing the transform by comparing the
+        // resulting transform before and after the child view runs.
+        if transform_changed {
+            // If it has changed the transform, then we know that it will only be due to effects
+            // "below us" (that is, it will have restarted from scratch).
+            // We update our stored understanding of the transforms below us
+            view_state.previous_transform = element.ctx.transform();
+            // This is a convention used to communicate with ourselves, which could
+            // break down if any other view handles transforms differently.
+            // However, we document against this in `Pod::transform`.
         }
-        self.child.rebuild(&prev.child, view_state, ctx, element);
+        if self.transform != prev.transform || transform_changed {
+            element
+                .ctx
+                .set_transform(self.transform * view_state.previous_transform);
+        }
     }
 
     fn teardown(
@@ -113,7 +147,7 @@ where
         ctx: &mut ViewCtx,
         element: xilem_core::Mut<'_, Self::Element>,
     ) {
-        self.child.teardown(view_state, ctx, element);
+        self.child.teardown(&mut view_state.child, ctx, element);
     }
 
     fn message(
@@ -123,6 +157,7 @@ where
         message: DynMessage,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<Action, DynMessage> {
-        self.child.message(view_state, id_path, message, app_state)
+        self.child
+            .message(&mut view_state.child, id_path, message, app_state)
     }
 }
