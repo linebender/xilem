@@ -8,10 +8,13 @@
 //! Note that the MIT license is needed because of the emoji data.
 //! Everything except for the [`EMOJI`] constant is Apache 2.0 licensed.
 
+#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
+
+use winit::error::EventLoopError;
 use xilem::{
     core::map_state,
-    view::{button, flex, label, prose, sized_box},
-    AnyWidgetView, Axis, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
+    view::{button, flex, label, prose, sized_box, Axis},
+    AnyWidgetView, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
 };
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
@@ -118,7 +121,7 @@ struct EmojiPagination {
     start_index: usize,
 }
 
-fn run(event_loop: EventLoopBuilder) {
+fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = EmojiPagination {
         size: 4,
         last_selected: None,
@@ -127,7 +130,6 @@ fn run(event_loop: EventLoopBuilder) {
 
     let app = Xilem::new(data, app_logic);
     app.run_windowed(event_loop, "First Example".into())
-        .unwrap();
 }
 
 struct EmojiInfo {
@@ -264,38 +266,28 @@ const EMOJI: &[EmojiInfo] = &[
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#[cfg(not(target_os = "android"))]
-#[allow(dead_code)]
+// Boilerplate code: Identical across all applications which support Android
+
+#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
+#[allow(dead_code, reason = "False positive: needed in not-_android version")]
 // This is treated as dead code by the Android version of the example, but is actually live
 // This hackery is required because Cargo doesn't care to support this use case, of one
 // example which works across Android and desktop
-fn main() {
-    run(EventLoop::with_user_event());
+fn main() -> Result<(), EventLoopError> {
+    run(EventLoop::with_user_event())
 }
-
-// Boilerplate code for android: Identical across all applications
-
-#[cfg(target_os = "android")]
-use winit::platform::android::activity::AndroidApp;
-
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here
-// We believe that there are no other declarations using this name in the compiled objects here
-#[allow(unsafe_code)]
+#[expect(
+    unsafe_code,
+    reason = "We believe that there are no other declarations using this name in the compiled objects here"
+)]
 #[no_mangle]
-fn android_main(app: AndroidApp) {
+fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
     let mut event_loop = EventLoop::with_user_event();
     event_loop.with_android_app(app);
 
-    run(event_loop);
-}
-
-// TODO: This is a hack because of how we handle our examples in Cargo.toml
-// Ideally, we change Cargo to be more sensible here?
-#[cfg(target_os = "android")]
-#[allow(dead_code)]
-fn main() {
-    unreachable!()
+    run(event_loop).expect("Can create app");
 }
