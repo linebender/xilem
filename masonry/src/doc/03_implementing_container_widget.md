@@ -198,20 +198,20 @@ Widgets will usually be added or removed through a [`WidgetMut`] wrapper.
 Let's write WidgetMut methods for our `VerticalStack`:
 
 ```rust,ignore
-impl WidgetMut<'_, VerticalStack> {
-    pub fn add_child(&mut self, child: WidgetPod<Box<dyn Widget>>) {
-        self.widget.children.push(child);
-        self.ctx.children_changed();
+impl VerticalStack {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: WidgetPod<Box<dyn Widget>>) {
+        this.widget.children.push(child);
+        this.ctx.children_changed();
     }
 
-    pub fn remove_child(&mut self, n: usize) {
-        self.widget.children.remove(n);
-        self.ctx.children_changed();
+    pub fn remove_child(this: &mut WidgetMut<'_, Self>, n: usize) {
+        this.widget.children.remove(n);
+        this.ctx.children_changed();
     }
 
-    pub fn clear_children(&mut self) {
-        self.widget.children.clear();
-        self.ctx.children_changed();
+    pub fn clear_children(this: &mut WidgetMut<'_, Self>) {
+        this.widget.children.clear();
+        this.ctx.children_changed();
     }
 }
 ```
