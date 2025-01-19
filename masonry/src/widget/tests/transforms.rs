@@ -12,12 +12,14 @@ use crate::testing::TestHarness;
 use crate::widget::{Alignment, Button, ChildAlignment, Label, SizedBox, ZStack};
 use crate::{assert_render_snapshot, PointerButton, Widget, WidgetPod};
 
-fn blue_box(inner: impl Widget) -> SizedBox {
-    SizedBox::new(inner)
-        .width(200.)
-        .height(100.)
-        .background(palette::css::BLUE)
-        .border(palette::css::TEAL, 2.)
+fn blue_box(inner: impl Widget) -> Box<SizedBox> {
+    Box::new(
+        SizedBox::new(inner)
+            .width(200.)
+            .height(100.)
+            .background(palette::css::BLUE)
+            .border(palette::css::TEAL, 2.),
+    )
 }
 
 #[test]

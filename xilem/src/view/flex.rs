@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::widget::{self, WidgetMut};
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
-use masonry::Widget;
+use masonry::{FromDynWidget, Widget};
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -221,7 +221,7 @@ impl SuperElement<Self, ViewCtx> for FlexElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
+impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         Self::Child(child.boxed(), FlexParams::default())
     }

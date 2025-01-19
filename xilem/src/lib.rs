@@ -44,7 +44,7 @@ use std::sync::Arc;
 
 use masonry::dpi::LogicalSize;
 use masonry::widget::{RootWidget, WidgetMut};
-use masonry::{event_loop_runner, Widget, WidgetId, WidgetPod};
+use masonry::{event_loop_runner, FromDynWidget, Widget, WidgetId, WidgetPod};
 use view::{transformed, Transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
@@ -186,8 +186,8 @@ where
 ///    and so might not actually own the underlying widget value.
 ///    When creating widgets in Xilem, layered views all want access to the - using
 ///    `WidgetPod` for this purpose would require fallible unwrapping.
-pub struct Pod<W: Widget> {
-    pub widget: W,
+pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
+    pub widget: Box<W>,
     pub id: WidgetId,
     /// The transform the widget will be created with.
     ///
@@ -198,19 +198,17 @@ pub struct Pod<W: Widget> {
     pub transform: Affine,
 }
 
-impl<W: Widget> Pod<W> {
+impl<W: Widget + FromDynWidget> Pod<W> {
     fn new(widget: W) -> Self {
         Self {
-            widget,
+            widget: Box::new(widget),
             id: WidgetId::next(),
             transform: Default::default(),
         }
     }
-    fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
-    }
+
     fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new_with_id_and_transform(Box::new(self.widget), self.id, self.transform)
+        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).boxed()
     }
     fn boxed(self) -> Pod<Box<dyn Widget>> {
         Pod {
@@ -221,11 +219,27 @@ impl<W: Widget> Pod<W> {
     }
 }
 
-impl<W: Widget> ViewElement for Pod<W> {
+impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
+    fn into_widget_pod(self) -> WidgetPod<W> {
+        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
+    }
+    fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
+        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
+    }
+    fn erased(self) -> Pod<dyn Widget> {
+        Pod {
+            widget: self.widget.as_box_dyn(),
+            id: self.id,
+            transform: self.transform,
+        }
+    }
+}
+
+impl<W: Widget + FromDynWidget> ViewElement for Pod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 }
 
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
+impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         child.boxed()
     }
@@ -243,7 +257,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
 pub trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
-    type Widget: Widget;
+    type Widget: Widget + FromDynWidget;
 
     /// Returns a boxed type erased [`AnyWidgetView`]
     ///
@@ -281,7 +295,7 @@ pub trait WidgetView<State, Action = ()>:
 impl<V, State, Action, W> WidgetView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<W>> + Send + Sync,
-    W: Widget,
+    W: Widget + FromDynWidget,
 {
     type Widget = W;
 }
@@ -337,18 +351,21 @@ impl ViewPathTracker for ViewCtx {
 }
 
 impl ViewCtx {
-    pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
+    pub fn new_pod<W: Widget + FromDynWidget>(&mut self, widget: W) -> Pod<W> {
         Pod::new(widget)
     }
 
-    pub fn with_leaf_action_widget<E: Widget>(
+    pub fn with_leaf_action_widget<E: Widget + FromDynWidget>(
         &mut self,
         f: impl FnOnce(&mut Self) -> Pod<E>,
     ) -> (Pod<E>, ()) {
         (self.with_action_widget(f), ())
     }
 
-    pub fn with_action_widget<E: Widget>(&mut self, f: impl FnOnce(&mut Self) -> Pod<E>) -> Pod<E> {
+    pub fn with_action_widget<E: Widget + FromDynWidget>(
+        &mut self,
+        f: impl FnOnce(&mut Self) -> Pod<E>,
+    ) -> Pod<E> {
         let value = f(self);
         self.record_action(value.id);
         value
@@ -360,7 +377,7 @@ impl ViewCtx {
         self.widget_map.insert(id, path);
     }
 
-    pub fn teardown_leaf<E: Widget>(&mut self, widget: WidgetMut<E>) {
+    pub fn teardown_leaf<E: Widget + FromDynWidget>(&mut self, widget: WidgetMut<E>) {
         self.widget_map.remove(&widget.ctx.widget_id());
     }
 

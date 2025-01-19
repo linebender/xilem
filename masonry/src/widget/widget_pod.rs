@@ -42,26 +42,25 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Create a new widget pod with fixed id.
     pub fn new_with_id(inner: W, id: WidgetId) -> Self {
-        Self::new_with_id_and_transform(inner, id, Affine::IDENTITY)
-    }
-
-    /// Create a new widget pod with a custom transform.
-    pub fn new_with_transform(inner: W, transform: Affine) -> Self {
-        Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
-    }
-
-    pub fn new_with_id_and_transform(inner: W, id: WidgetId, transform: Affine) -> Self {
-        Self {
-            id,
-            inner: WidgetPodInner::Create(CreateWidget {
-                widget: Box::new(inner),
-                transform,
-            }),
-        }
+        Self::new_with_id_and_transform(Box::new(inner), id, Affine::IDENTITY)
     }
 }
 
 impl<W: Widget + ?Sized> WidgetPod<W> {
+    /// Create a new widget pod with a custom transform.
+    pub fn new_with_transform(inner: Box<W>, transform: Affine) -> Self {
+        Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
+    }
+
+    pub fn new_with_id_and_transform(inner: Box<W>, id: WidgetId, transform: Affine) -> Self {
+        Self {
+            id,
+            inner: WidgetPodInner::Create(CreateWidget {
+                widget: inner,
+                transform,
+            }),
+        }
+    }
     pub(crate) fn incomplete(&self) -> bool {
         matches!(self.inner, WidgetPodInner::Create(_))
     }
@@ -76,6 +75,23 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
     /// Get the identity of the widget.
     pub fn id(&self) -> WidgetId {
         self.id
+    }
+
+    /// Type-erase the contained widget.
+    ///
+    /// Convert a `WidgetPod` containing a widget of a specific concrete type
+    /// into a dynamically boxed widget.
+    pub fn erased(self) -> WidgetPod<dyn Widget> {
+        let WidgetPodInner::Create(inner) = self.inner else {
+            panic!("Cannot box a widget after it has been inserted into the widget graph")
+        };
+        WidgetPod {
+            id: self.id,
+            inner: WidgetPodInner::Create(CreateWidget {
+                widget: inner.widget.as_box_dyn(),
+                transform: inner.transform,
+            }),
+        }
     }
 }
 

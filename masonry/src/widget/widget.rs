@@ -72,9 +72,10 @@ impl<T: Widget> AsDynWidget for T {
     }
 }
 
-pub trait FromDynWidget: Widget {
+pub trait FromDynWidget {
     fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
+    fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self>;
 }
 
 impl<T: Widget> FromDynWidget for T {
@@ -85,6 +86,10 @@ impl<T: Widget> FromDynWidget for T {
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
         widget.as_mut_any().downcast_mut()
     }
+
+    fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self> {
+        widget.as_mut_dyn_any().downcast_mut()
+    }
 }
 
 impl FromDynWidget for dyn Widget {
@@ -93,6 +98,10 @@ impl FromDynWidget for dyn Widget {
     }
 
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        Some(widget)
+    }
+
+    fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self> {
         Some(widget)
     }
 }
