@@ -25,7 +25,7 @@ use crate::{Pod, ViewCtx};
 pub type AnyWidgetView<State, Action = ()> =
     dyn AnyView<State, Action, ViewCtx, Pod<DynWidget>> + Send + Sync;
 
-impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
         ctx.new_pod(DynWidget {
             inner: child.boxed_widget_pod(),
@@ -46,7 +46,7 @@ impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget>
     }
 }
 
-impl<W: Widget + FromDynWidget> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
+impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
         DynWidget::replace_inner(&mut this, child.boxed_widget_pod());
         this

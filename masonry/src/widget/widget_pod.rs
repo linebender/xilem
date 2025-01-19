@@ -93,9 +93,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
             }),
         }
     }
-}
 
-impl<W: Widget + 'static> WidgetPod<W> {
     /// Box the contained widget.
     ///
     /// Convert a `WidgetPod` containing a widget of a specific concrete type
@@ -104,8 +102,10 @@ impl<W: Widget + 'static> WidgetPod<W> {
         let WidgetPodInner::Create(inner) = self.inner else {
             panic!("Cannot box a widget after it has been inserted into the widget graph")
         };
-        // TODO
-        let widget: Box<dyn Widget> = inner.widget;
-        WidgetPod::new_with_id_and_transform(Box::new(widget), self.id, inner.transform)
+        WidgetPod::new_with_id_and_transform(
+            Box::new(inner.widget.as_box_dyn()),
+            self.id,
+            inner.transform,
+        )
     }
 }

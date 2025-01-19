@@ -273,7 +273,7 @@ impl SuperElement<Self, ViewCtx> for ZStackElement {
     }
 }
 
-impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         Self::new(child.boxed(), ChildAlignment::ParentAligned)
     }

@@ -16,15 +16,15 @@ use crate::core::Mut;
 use crate::{Pod, ViewCtx};
 
 impl<
-        A: Widget + FromDynWidget,
-        B: Widget + FromDynWidget,
-        C: Widget + FromDynWidget,
-        D: Widget + FromDynWidget,
-        E: Widget + FromDynWidget,
-        F: Widget + FromDynWidget,
-        G: Widget + FromDynWidget,
-        H: Widget + FromDynWidget,
-        I: Widget + FromDynWidget,
+        A: Widget + FromDynWidget + ?Sized,
+        B: Widget + FromDynWidget + ?Sized,
+        C: Widget + FromDynWidget + ?Sized,
+        D: Widget + FromDynWidget + ?Sized,
+        E: Widget + FromDynWidget + ?Sized,
+        F: Widget + FromDynWidget + ?Sized,
+        G: Widget + FromDynWidget + ?Sized,
+        H: Widget + FromDynWidget + ?Sized,
+        I: Widget + FromDynWidget + ?Sized,
     >
     crate::core::one_of::OneOfCtx<
         Pod<A>,
@@ -170,15 +170,15 @@ pub enum OneOfWidget<
 }
 
 impl<
-        A: Widget + FromDynWidget,
-        B: Widget + FromDynWidget,
-        C: Widget + FromDynWidget,
-        D: Widget + FromDynWidget,
-        E: Widget + FromDynWidget,
-        F: Widget + FromDynWidget,
-        G: Widget + FromDynWidget,
-        H: Widget + FromDynWidget,
-        I: Widget + FromDynWidget,
+        A: Widget + FromDynWidget + ?Sized,
+        B: Widget + FromDynWidget + ?Sized,
+        C: Widget + FromDynWidget + ?Sized,
+        D: Widget + FromDynWidget + ?Sized,
+        E: Widget + FromDynWidget + ?Sized,
+        F: Widget + FromDynWidget + ?Sized,
+        G: Widget + FromDynWidget + ?Sized,
+        H: Widget + FromDynWidget + ?Sized,
+        I: Widget + FromDynWidget + ?Sized,
     > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}

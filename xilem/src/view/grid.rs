@@ -151,7 +151,7 @@ impl SuperElement<Self, ViewCtx> for GridElement {
     }
 }
 
-impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for GridElement {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         // Getting here means that the widget didn't use .grid_item or .grid_pos.
         // This currently places the widget in the top left cell.

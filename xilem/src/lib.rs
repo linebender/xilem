@@ -206,21 +206,20 @@ impl<W: Widget + FromDynWidget> Pod<W> {
             transform: Default::default(),
         }
     }
+}
 
+#[allow(unused)]
+impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).boxed()
     }
     fn boxed(self) -> Pod<Box<dyn Widget>> {
         Pod {
-            widget: Box::new(self.widget),
+            widget: Box::new(self.widget.as_box_dyn()),
             id: self.id,
             transform: self.transform,
         }
     }
-}
-
-#[allow(unused)]
-impl<W: Widget + FromDynWidget> Pod<W> {
     fn into_widget_pod(self) -> WidgetPod<W> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
     }
@@ -236,11 +235,11 @@ impl<W: Widget + FromDynWidget> Pod<W> {
     }
 }
 
-impl<W: Widget + FromDynWidget> ViewElement for Pod<W> {
+impl<W: Widget + FromDynWidget + ?Sized> ViewElement for Pod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 }
 
-impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         child.boxed()
     }
@@ -258,7 +257,7 @@ impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Wi
 pub trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
-    type Widget: Widget + FromDynWidget;
+    type Widget: Widget + FromDynWidget + ?Sized;
 
     /// Returns a boxed type erased [`AnyWidgetView`]
     ///
@@ -296,7 +295,7 @@ pub trait WidgetView<State, Action = ()>:
 impl<V, State, Action, W> WidgetView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<W>> + Send + Sync,
-    W: Widget + FromDynWidget,
+    W: Widget + FromDynWidget + ?Sized,
 {
     type Widget = W;
 }
@@ -356,17 +355,17 @@ impl ViewCtx {
         Pod::new(widget)
     }
 
-    pub fn with_leaf_action_widget<E: Widget + FromDynWidget>(
+    pub fn with_leaf_action_widget<W: Widget + FromDynWidget + ?Sized>(
         &mut self,
-        f: impl FnOnce(&mut Self) -> Pod<E>,
-    ) -> (Pod<E>, ()) {
+        f: impl FnOnce(&mut Self) -> Pod<W>,
+    ) -> (Pod<W>, ()) {
         (self.with_action_widget(f), ())
     }
 
-    pub fn with_action_widget<E: Widget + FromDynWidget>(
+    pub fn with_action_widget<W: Widget + FromDynWidget + ?Sized>(
         &mut self,
-        f: impl FnOnce(&mut Self) -> Pod<E>,
-    ) -> Pod<E> {
+        f: impl FnOnce(&mut Self) -> Pod<W>,
+    ) -> Pod<W> {
         let value = f(self);
         self.record_action(value.id);
         value
@@ -378,7 +377,7 @@ impl ViewCtx {
         self.widget_map.insert(id, path);
     }
 
-    pub fn teardown_leaf<E: Widget + FromDynWidget>(&mut self, widget: WidgetMut<E>) {
+    pub fn teardown_leaf<W: Widget + FromDynWidget + ?Sized>(&mut self, widget: WidgetMut<W>) {
         self.widget_map.remove(&widget.ctx.widget_id());
     }
 
