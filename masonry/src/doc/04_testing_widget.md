@@ -92,7 +92,7 @@ Let's add a visual test:
     }
 ```
 
-The [`assert_render_snaphot!`] macro takes a snapshot name, renders the current state of the app, and stores the render as a PNG next to the test, in a `./screenshots/` folder.
+The [`assert_render_snapshot!`] macro takes a snapshot name, renders the current state of the app, and stores the render as a PNG next to the test, in a `./screenshots/` folder.
 
 The rendered screenshot is compared against an existing file checked in your project, and panics if the reference file is meaningfully different (using [the NVIDIA FLIP algorithm](https://developer.nvidia.com/blog/flip-a-difference-evaluator-for-alternating-images/)) or if there isn't one.
 
@@ -205,4 +205,4 @@ Read the [`TestHarness`] documentation for a full overview of its API.
 [`SizedBox`]: crate::widget::SizedBox
 [`TestHarness`]: crate::testing::TestHarness
 [`WidgetRef`]: crate::widget::WidgetRef
-[`assert_render_snaphot!`]: crate::assert_render_snaphot
+[`assert_render_snapshot!`]: crate::assert_render_snapshot
