@@ -53,17 +53,57 @@ impl WidgetId {
 
 /// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
 pub trait AsDynWidget {
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget>;
     fn as_dyn(&self) -> &dyn Widget;
     fn as_mut_dyn(&mut self) -> &mut dyn Widget;
 }
 
 impl<T: Widget> AsDynWidget for T {
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget> {
+        self
+    }
+
     fn as_dyn(&self) -> &dyn Widget {
         self as &dyn Widget
     }
 
     fn as_mut_dyn(&mut self) -> &mut dyn Widget {
         self as &mut dyn Widget
+    }
+}
+
+#[allow(unused)]
+pub trait FromDynWidget {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
+    fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self>;
+}
+
+impl<T: Widget> FromDynWidget for T {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+        widget.as_any().downcast_ref()
+    }
+
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        widget.as_mut_any().downcast_mut()
+    }
+
+    fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self> {
+        widget.as_mut_dyn_any().downcast_mut()
+    }
+}
+
+impl FromDynWidget for dyn Widget {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+        Some(widget)
+    }
+
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        Some(widget)
+    }
+
+    fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self> {
+        Some(widget)
     }
 }
 

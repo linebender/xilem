@@ -155,8 +155,18 @@ impl_context_method!(
         }
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
+        /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
+        fn get_child_dyn(&self, child: &'_ WidgetPod<impl Widget + ?Sized>) -> &'_ dyn Widget {
+            let child_ref = self
+                .widget_children
+                .get_child(child.id())
+                .expect("get_child: child not found");
+            child_ref.item.as_dyn()
+        }
+
+        #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Helper method to get a direct reference to a child widget's `WidgetState` from its `WidgetPod`.
-        fn get_child_state<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ WidgetState {
+        fn get_child_state(&self, child: &'_ WidgetPod<impl Widget + ?Sized>) -> &'_ WidgetState {
             let child_state_ref = self
                 .widget_state_children
                 .get_child(child.id())
@@ -182,7 +192,7 @@ impl_context_method!(
         ///
         /// This one isn't defined for `PaintCtx` and `AccessCtx` because those contexts
         /// can't mutate `WidgetState`.
-        fn get_child_state_mut<Child: Widget>(
+        fn get_child_state_mut<Child: Widget + ?Sized>(
             &mut self,
             child: &'_ mut WidgetPod<Child>,
         ) -> &'_ mut WidgetState {
@@ -433,26 +443,26 @@ impl EventCtx<'_> {
 // --- MARK: UPDATE LAYOUT ---
 impl LayoutCtx<'_> {
     #[track_caller]
-    fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+    fn assert_layout_done(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
         if self.get_child_state(child).needs_layout {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
                 self.widget_id(),
                 method_name,
-                self.get_child(child).short_type_name(),
+                self.get_child_dyn(child).short_type_name(),
                 child.id(),
             );
         }
     }
 
     #[track_caller]
-    fn assert_placed(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+    fn assert_placed(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
         if self.get_child_state(child).is_expecting_place_child_call {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before placing it",
                 self.widget_id(),
                 method_name,
-                self.get_child(child).short_type_name(),
+                self.get_child_dyn(child).short_type_name(),
                 child.id(),
             );
         }
@@ -464,7 +474,11 @@ impl LayoutCtx<'_> {
     /// their [`layout`] method.
     ///
     /// [`layout`]: Widget::layout
-    pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
+    pub fn run_layout(
+        &mut self,
+        child: &mut WidgetPod<impl Widget + ?Sized>,
+        bc: &BoxConstraints,
+    ) -> Size {
         run_layout_on(self, child, bc)
     }
 
@@ -479,7 +493,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
-    pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
+    pub fn place_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, origin: Point) {
         self.assert_layout_done(child, "place_child");
         if origin.x.is_nan()
             || origin.x.is_infinite()
@@ -489,7 +503,7 @@ impl LayoutCtx<'_> {
             debug_panic!(
                 "Error in {}: trying to call 'place_child' with child '{}' {} with invalid origin {:?}",
                 self.widget_id(),
-                self.get_child(child).short_type_name(),
+                self.get_child_dyn(child).short_type_name(),
                 child.id(),
                 origin,
             );
@@ -533,7 +547,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn compute_insets_from_child(
         &mut self,
-        child: &WidgetPod<impl Widget>,
+        child: &WidgetPod<impl Widget + ?Sized>,
         my_size: Size,
     ) -> Insets {
         self.assert_layout_done(child, "compute_insets_from_child");
@@ -565,7 +579,7 @@ impl LayoutCtx<'_> {
     }
 
     /// Returns whether a child of this widget needs to call [`LayoutCtx::run_layout`].
-    pub fn child_needs_layout(&self, child: &WidgetPod<impl Widget>) -> bool {
+    pub fn child_needs_layout(&self, child: &WidgetPod<impl Widget + ?Sized>) -> bool {
         self.get_child_state(child).needs_layout
     }
 
@@ -576,7 +590,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
-    pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget>) -> f64 {
+    pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
         self.get_child_state(child).baseline_offset
     }
@@ -588,7 +602,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
     #[track_caller]
-    pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
+    pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Rect {
         self.assert_layout_done(child, "child_layout_rect");
         self.assert_placed(child, "child_layout_rect");
         self.get_child_state(child).layout_rect()
@@ -601,7 +615,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
     #[track_caller]
-    pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget>) -> Rect {
+    pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Rect {
         self.assert_layout_done(child, "child_paint_rect");
         self.assert_placed(child, "child_paint_rect");
         self.get_child_state(child).paint_rect()
@@ -614,7 +628,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
-    pub fn child_size(&self, child: &WidgetPod<impl Widget>) -> Size {
+    pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
         self.assert_layout_done(child, "child_size");
         self.get_child_state(child).layout_rect().size()
     }
@@ -623,7 +637,7 @@ impl LayoutCtx<'_> {
     ///
     /// This may be removed in the future. Currently it's useful for
     /// stashed children and children whose layout is cached.
-    pub fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget>) {
+    pub fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
         self.get_child_state_mut(child).request_layout = false;
     }
 
@@ -682,7 +696,7 @@ impl ComposeCtx<'_> {
             debug_panic!(
                 "Error in {}: trying to call 'set_child_scroll_translation' with child '{}' {} with invalid translation {:?}",
                 self.widget_id(),
-                self.get_child(child).short_type_name(),
+                self.get_child_dyn(child).short_type_name(),
                 child.id(),
                 translation,
             );
@@ -974,7 +988,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     ///
     /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
     /// pass them to this method.
-    pub fn remove_child(&mut self, child: WidgetPod<impl Widget>) {
+    pub fn remove_child(&mut self, child: WidgetPod<impl Widget + ?Sized>) {
         // TODO - Send recursive event to child
         let id = child.id();
         let _ = self
@@ -1025,7 +1039,7 @@ impl_context_method!(
         /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
         ///
         /// This will *not* trigger a layout pass.
-        pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget>, stashed: bool) {
+        pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, stashed: bool) {
             let child_state = self.get_child_state_mut(child);
             // Stashing is generally a property derived from the parent widget's state
             // (rather than set imperatively), so it is likely to be set as part of passes.
@@ -1155,7 +1169,7 @@ impl RegisterCtx<'_> {
     ///
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
-    pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget>) {
+    pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
         let Some(CreateWidget { widget, transform }) = child.take_inner() else {
             return;
         };
@@ -1168,7 +1182,7 @@ impl RegisterCtx<'_> {
         let id = child.id();
         let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
 
-        self.widget_children.insert_child(id, Box::new(widget));
+        self.widget_children.insert_child(id, widget.as_box_dyn());
         self.widget_state_children.insert_child(id, state);
     }
 }

@@ -193,7 +193,7 @@ pub use event::{
 pub use paint_scene_helpers::UnitPoint;
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 pub use util::{AsAny, Handled};
-pub use widget::widget::{AllowRawMut, Widget, WidgetId};
+pub use widget::widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
 pub use widget::WidgetPod;
 
 pub(crate) use widget::WidgetState;

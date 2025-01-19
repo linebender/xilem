@@ -18,7 +18,7 @@ use tracing::trace_span;
 use vello::Scene;
 
 use crate::event::{PointerEvent, TextEvent};
-use crate::widget::widget::{find_widget_at_pos, AsDynWidget as _};
+use crate::widget::widget::find_widget_at_pos;
 use crate::widget::{SizedBox, WidgetRef};
 use crate::{
     AccessCtx, AccessEvent, AsAny, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx,
@@ -406,13 +406,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_at_pos(
-            &WidgetRef {
-                widget: self.as_dyn(),
-                ctx,
-            },
-            pos,
-        )
+        find_widget_at_pos(&WidgetRef { widget: self, ctx }, pos)
     }
 
     fn type_name(&self) -> &'static str {

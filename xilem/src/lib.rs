@@ -207,10 +207,10 @@ impl<W: Widget> Pod<W> {
         }
     }
     fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
+        WidgetPod::new_with_id_and_transform(Box::new(self.widget), self.id, self.transform)
     }
     fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new_with_id_and_transform(Box::new(self.widget), self.id, self.transform)
+        WidgetPod::new_with_id_and_transform(Box::new(self.widget), self.id, self.transform).boxed()
     }
     fn boxed(self) -> Pod<Box<dyn Widget>> {
         Pod {

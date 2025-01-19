@@ -23,12 +23,12 @@ use crate::{Affine, Widget};
 ///
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
-pub struct WidgetMut<'a, W: Widget> {
+pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub ctx: MutateCtx<'a>,
     pub widget: &'a mut W,
 }
 
-impl<W: Widget> Drop for WidgetMut<'_, W> {
+impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
     fn drop(&mut self) {
         // If this `WidgetMut` is a reborrow, a parent non-reborrow `WidgetMut`
         // still exists which will do the merge-up in `Drop`.
@@ -38,7 +38,7 @@ impl<W: Widget> Drop for WidgetMut<'_, W> {
     }
 }
 
-impl<W: Widget> WidgetMut<'_, W> {
+impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;

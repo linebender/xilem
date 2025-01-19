@@ -9,7 +9,7 @@ use crate::{Affine, Widget, WidgetId};
 /// but rather contain a `WidgetPod`, which has additional state needed
 /// for layout and for the widget to participate in event flow.
 // TODO - Add reference to container tutorial
-pub struct WidgetPod<W> {
+pub struct WidgetPod<W: ?Sized> {
     id: WidgetId,
     inner: WidgetPodInner<W>,
 }
@@ -20,12 +20,12 @@ pub struct WidgetPod<W> {
 // through context methods where they already have access to the arena.
 // Implementing that requires solving non-trivial design questions.
 
-pub(crate) struct CreateWidget<W> {
-    pub(crate) widget: W,
+pub(crate) struct CreateWidget<W: ?Sized> {
+    pub(crate) widget: Box<W>,
     pub(crate) transform: Affine,
 }
 
-enum WidgetPodInner<W> {
+enum WidgetPodInner<W: ?Sized> {
     Create(CreateWidget<W>),
     Inserted,
 }
@@ -42,15 +42,17 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Create a new widget pod with fixed id.
     pub fn new_with_id(inner: W, id: WidgetId) -> Self {
-        Self::new_with_id_and_transform(inner, id, Affine::IDENTITY)
+        Self::new_with_id_and_transform(Box::new(inner), id, Affine::IDENTITY)
     }
+}
 
+impl<W: Widget + ?Sized> WidgetPod<W> {
     /// Create a new widget pod with a custom transform.
-    pub fn new_with_transform(inner: W, transform: Affine) -> Self {
+    pub fn new_with_transform(inner: Box<W>, transform: Affine) -> Self {
         Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
     }
 
-    pub fn new_with_id_and_transform(inner: W, id: WidgetId, transform: Affine) -> Self {
+    pub fn new_with_id_and_transform(inner: Box<W>, id: WidgetId, transform: Affine) -> Self {
         Self {
             id,
             inner: WidgetPodInner::Create(CreateWidget {
@@ -59,7 +61,6 @@ impl<W: Widget> WidgetPod<W> {
             }),
         }
     }
-
     pub(crate) fn incomplete(&self) -> bool {
         matches!(self.inner, WidgetPodInner::Create(_))
     }
@@ -75,6 +76,23 @@ impl<W: Widget> WidgetPod<W> {
     pub fn id(&self) -> WidgetId {
         self.id
     }
+
+    /// Type-erase the contained widget.
+    ///
+    /// Convert a `WidgetPod` containing a widget of a specific concrete type
+    /// into a dynamically boxed widget.
+    pub fn erased(self) -> WidgetPod<dyn Widget> {
+        let WidgetPodInner::Create(inner) = self.inner else {
+            panic!("Cannot box a widget after it has been inserted into the widget graph")
+        };
+        WidgetPod {
+            id: self.id,
+            inner: WidgetPodInner::Create(CreateWidget {
+                widget: inner.widget.as_box_dyn(),
+                transform: inner.transform,
+            }),
+        }
+    }
 }
 
 impl<W: Widget + 'static> WidgetPod<W> {
@@ -86,6 +104,8 @@ impl<W: Widget + 'static> WidgetPod<W> {
         let WidgetPodInner::Create(inner) = self.inner else {
             panic!("Cannot box a widget after it has been inserted into the widget graph")
         };
-        WidgetPod::new_with_id_and_transform(Box::new(inner.widget), self.id, inner.transform)
+        // TODO
+        let widget: Box<dyn Widget> = inner.widget;
+        WidgetPod::new_with_id_and_transform(Box::new(widget), self.id, inner.transform)
     }
 }
