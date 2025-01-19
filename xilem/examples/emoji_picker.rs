@@ -97,16 +97,20 @@ fn paginate(
 
     flex((
         // TODO: Expose that this is a previous page button to accessibility
-        (current_start != 0).then(|| button( "<-", move |data| {
-            *data = current_start.saturating_sub(count_per_page);
-        })),
+        (current_start != 0).then(|| {
+            button("<-", move |data| {
+                *data = current_start.saturating_sub(count_per_page);
+            })
+        }),
         label(format!("{percentage_start}% - {percentage_end}%")),
-        (current_end < max_count).then(|| button("->", move |data| {
-            let new_idx = current_start + count_per_page;
-            if new_idx < max_count {
-                *data = new_idx;
-            }
-        })),
+        (current_end < max_count).then(|| {
+            button("->", move |data| {
+                let new_idx = current_start + count_per_page;
+                if new_idx < max_count {
+                    *data = new_idx;
+                }
+            })
+        }),
     ))
     .direction(Axis::Horizontal)
 }
