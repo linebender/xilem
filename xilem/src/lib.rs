@@ -209,7 +209,7 @@ impl<W: Widget + FromDynWidget> Pod<W> {
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
-    fn boxed(self) -> Pod<Box<dyn Widget>> {
+    fn erased(self) -> Pod<dyn Widget> {
         Pod {
             widget: Box::new(self.widget.as_box_dyn()),
             id: self.id,
@@ -222,24 +222,15 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
     }
-
-    #[expect(unused)]
-    fn erased(self) -> Pod<dyn Widget> {
-        Pod {
-            widget: self.widget.as_box_dyn(),
-            id: self.id,
-            transform: self.transform,
-        }
-    }
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> ViewElement for Pod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<dyn Widget> {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        child.boxed()
+        child.erased()
     }
 
     fn with_downcast_val<R>(

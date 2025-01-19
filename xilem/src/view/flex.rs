@@ -170,7 +170,7 @@ where
 }
 
 pub enum FlexElement {
-    Child(Pod<Box<dyn Widget>>, FlexParams),
+    Child(Pod<dyn Widget>, FlexParams),
     FixedSpacer(f64),
     FlexSpacer(f64),
 }
@@ -223,7 +223,7 @@ impl SuperElement<Self, ViewCtx> for FlexElement {
 
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        Self::Child(child.boxed(), FlexParams::default())
+        Self::Child(child.erased(), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -455,7 +455,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (FlexElement::Child(pod.boxed(), self.params), state)
+        (FlexElement::Child(pod.erased(), self.params), state)
     }
 
     fn rebuild(

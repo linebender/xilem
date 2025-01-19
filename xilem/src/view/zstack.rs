@@ -181,7 +181,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (ZStackElement::new(pod.boxed(), self.alignment), state)
+        (ZStackElement::new(pod.erased(), self.alignment), state)
     }
 
     fn rebuild(
@@ -232,7 +232,7 @@ where
 
 /// A struct implementing [`ViewElement`] for a `ZStack`.
 pub struct ZStackElement {
-    widget: Pod<Box<dyn Widget>>,
+    widget: Pod<dyn Widget>,
     alignment: ChildAlignment,
 }
 
@@ -243,7 +243,7 @@ pub struct ZStackElementMut<'w> {
 }
 
 impl ZStackElement {
-    fn new(widget: Pod<Box<dyn Widget>>, alignment: ChildAlignment) -> Self {
+    fn new(widget: Pod<dyn Widget>, alignment: ChildAlignment) -> Self {
         Self { widget, alignment }
     }
 }
@@ -275,7 +275,7 @@ impl SuperElement<Self, ViewCtx> for ZStackElement {
 
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        Self::new(child.boxed(), ChildAlignment::ParentAligned)
+        Self::new(child.erased(), ChildAlignment::ParentAligned)
     }
 
     fn with_downcast_val<R>(

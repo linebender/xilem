@@ -93,19 +93,4 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
             }),
         }
     }
-
-    /// Box the contained widget.
-    ///
-    /// Convert a `WidgetPod` containing a widget of a specific concrete type
-    /// into a dynamically boxed widget.
-    pub fn boxed(self) -> WidgetPod<Box<dyn Widget>> {
-        let WidgetPodInner::Create(inner) = self.inner else {
-            panic!("Cannot box a widget after it has been inserted into the widget graph")
-        };
-        WidgetPod::new_with_id_and_transform(
-            Box::new(inner.widget.as_box_dyn()),
-            self.id,
-            inner.transform,
-        )
-    }
 }

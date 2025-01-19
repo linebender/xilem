@@ -158,7 +158,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridE
         // There is not much else, beyond purposefully failing, that can be done here,
         // because there isn't enough information to determine an appropriate spot
         // for the widget.
-        Self::Child(child.boxed(), GridParams::new(1, 1, 1, 1))
+        Self::Child(child.erased(), GridParams::new(1, 1, 1, 1))
     }
 
     fn with_downcast_val<R>(
@@ -305,7 +305,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
 impl<State, Action, V: WidgetView<State, Action>> GridExt<State, Action> for V {}
 
 pub enum GridElement {
-    Child(Pod<Box<dyn Widget>>, GridParams),
+    Child(Pod<dyn Widget>, GridParams),
 }
 
 pub struct GridElementMut<'w> {
@@ -367,7 +367,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (GridElement::Child(pod.boxed(), self.params), state)
+        (GridElement::Child(pod.erased(), self.params), state)
     }
 
     fn rebuild(

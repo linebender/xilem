@@ -143,7 +143,7 @@ impl<
 }
 
 impl crate::core::one_of::PhantomElementCtx for ViewCtx {
-    type PhantomElement = Pod<Box<dyn Widget>>;
+    type PhantomElement = Pod<dyn Widget>;
 }
 
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules

@@ -281,7 +281,7 @@ impl<'w> QueryCtx<'w> {
 
         WidgetRef {
             ctx,
-            widget: child.item,
+            widget: &**child.item,
         }
     }
 }
