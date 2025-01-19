@@ -67,6 +67,31 @@ impl<T: Widget> AsDynWidget for T {
     }
 }
 
+pub trait FromDynWidget: Widget {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
+}
+
+impl<T: Widget> FromDynWidget for T {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+        widget.as_any().downcast_ref()
+    }
+
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        widget.as_mut_any().downcast_mut()
+    }
+}
+
+impl FromDynWidget for dyn Widget {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+        Some(widget)
+    }
+
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        Some(widget)
+    }
+}
+
 // TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
 ///

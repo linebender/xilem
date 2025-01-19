@@ -17,8 +17,8 @@ use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
 use crate::widget::{CreateWidget, WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    Affine, AllowRawMut, BoxConstraints, Color, Insets, Point, Rect, Size, Vec2, Widget, WidgetId,
-    WidgetPod,
+    Affine, AllowRawMut, BoxConstraints, Color, FromDynWidget, Insets, Point, Rect, Size, Vec2,
+    Widget, WidgetId, WidgetPod,
 };
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
@@ -146,17 +146,23 @@ impl_context_method!(
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
-        fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
+        fn get_child<Child: Widget + FromDynWidget + ?Sized>(
+            &self,
+            child: &'_ WidgetPod<Child>,
+        ) -> &'_ Child {
             let child_ref = self
                 .widget_children
                 .get_child(child.id())
                 .expect("get_child: child not found");
-            child_ref.item.as_dyn_any().downcast_ref::<Child>().unwrap()
+            Child::from_dyn(child_ref.item).unwrap()
         }
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Helper method to get a direct reference to a child widget's `WidgetState` from its `WidgetPod`.
-        fn get_child_state<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ WidgetState {
+        fn get_child_state<Child: Widget + FromDynWidget + ?Sized>(
+            &self,
+            child: &'_ WidgetPod<Child>,
+        ) -> &'_ WidgetState {
             let child_state_ref = self
                 .widget_state_children
                 .get_child(child.id())
@@ -182,7 +188,7 @@ impl_context_method!(
         ///
         /// This one isn't defined for `PaintCtx` and `AccessCtx` because those contexts
         /// can't mutate `WidgetState`.
-        fn get_child_state_mut<Child: Widget>(
+        fn get_child_state_mut<Child: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &'_ mut WidgetPod<Child>,
         ) -> &'_ mut WidgetState {
@@ -199,7 +205,7 @@ impl_context_method!(
 // Methods to get a child WidgetMut from a parent.
 impl MutateCtx<'_> {
     /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget>(
+    pub fn get_mut<'c, Child: Widget + FromDynWidget + ?Sized>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
@@ -220,7 +226,7 @@ impl MutateCtx<'_> {
         };
         WidgetMut {
             ctx: child_ctx,
-            widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
+            widget: Child::from_dyn_mut(child_mut.item).unwrap(),
         }
     }
 
@@ -433,7 +439,11 @@ impl EventCtx<'_> {
 // --- MARK: UPDATE LAYOUT ---
 impl LayoutCtx<'_> {
     #[track_caller]
-    fn assert_layout_done(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+    fn assert_layout_done(
+        &self,
+        child: &WidgetPod<impl FromDynWidget + ?Sized>,
+        method_name: &str,
+    ) {
         if self.get_child_state(child).needs_layout {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
@@ -446,7 +456,7 @@ impl LayoutCtx<'_> {
     }
 
     #[track_caller]
-    fn assert_placed(&self, child: &WidgetPod<impl Widget>, method_name: &str) {
+    fn assert_placed(&self, child: &WidgetPod<impl FromDynWidget + ?Sized>, method_name: &str) {
         if self.get_child_state(child).is_expecting_place_child_call {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before placing it",
@@ -464,7 +474,11 @@ impl LayoutCtx<'_> {
     /// their [`layout`] method.
     ///
     /// [`layout`]: Widget::layout
-    pub fn run_layout<W: Widget>(&mut self, child: &mut WidgetPod<W>, bc: &BoxConstraints) -> Size {
+    pub fn run_layout<W: Widget + ?Sized>(
+        &mut self,
+        child: &mut WidgetPod<W>,
+        bc: &BoxConstraints,
+    ) -> Size {
         run_layout_on(self, child, bc)
     }
 
@@ -479,7 +493,11 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
-    pub fn place_child<W: Widget>(&mut self, child: &mut WidgetPod<W>, origin: Point) {
+    pub fn place_child<W: Widget + FromDynWidget + ?Sized>(
+        &mut self,
+        child: &mut WidgetPod<W>,
+        origin: Point,
+    ) {
         self.assert_layout_done(child, "place_child");
         if origin.x.is_nan()
             || origin.x.is_infinite()
@@ -669,7 +687,7 @@ impl ComposeCtx<'_> {
     /// Set the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
-    pub fn set_child_scroll_translation<W: Widget>(
+    pub fn set_child_scroll_translation<W: Widget + FromDynWidget + ?Sized>(
         &mut self,
         child: &mut WidgetPod<W>,
         translation: Vec2,
@@ -1054,7 +1072,7 @@ impl_context_method!(
         /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
         ///
         /// The callbacks will be run in the order they were submitted during the mutate pass.
-        pub fn mutate_later<W: Widget>(
+        pub fn mutate_later<W: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<W>,
             f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
@@ -1168,7 +1186,7 @@ impl RegisterCtx<'_> {
         let id = child.id();
         let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
 
-        self.widget_children.insert_child(id, Box::new(widget));
+        self.widget_children.insert_child(id, widget);
         self.widget_state_children.insert_child(id, state);
     }
 }

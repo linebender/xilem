@@ -18,7 +18,7 @@ use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 // --- MARK: RUN LAYOUT ---
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
-pub(crate) fn run_layout_on<W: Widget>(
+pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     parent_ctx: &mut LayoutCtx<'_>,
     pod: &mut WidgetPod<W>,
     bc: &BoxConstraints,

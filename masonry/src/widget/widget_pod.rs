@@ -9,7 +9,7 @@ use crate::{Affine, Widget, WidgetId};
 /// but rather contain a `WidgetPod`, which has additional state needed
 /// for layout and for the widget to participate in event flow.
 // TODO - Add reference to container tutorial
-pub struct WidgetPod<W> {
+pub struct WidgetPod<W: ?Sized> {
     id: WidgetId,
     inner: WidgetPodInner<W>,
 }
@@ -20,12 +20,12 @@ pub struct WidgetPod<W> {
 // through context methods where they already have access to the arena.
 // Implementing that requires solving non-trivial design questions.
 
-pub(crate) struct CreateWidget<W> {
-    pub(crate) widget: W,
+pub(crate) struct CreateWidget<W: ?Sized> {
+    pub(crate) widget: Box<W>,
     pub(crate) transform: Affine,
 }
 
-enum WidgetPodInner<W> {
+enum WidgetPodInner<W: ?Sized> {
     Create(CreateWidget<W>),
     Inserted,
 }
@@ -54,7 +54,7 @@ impl<W: Widget> WidgetPod<W> {
         Self {
             id,
             inner: WidgetPodInner::Create(CreateWidget {
-                widget: inner,
+                widget: Box::new(inner),
                 transform,
             }),
         }
@@ -70,7 +70,9 @@ impl<W: Widget> WidgetPod<W> {
             WidgetPodInner::Inserted => None,
         }
     }
+}
 
+impl<W: Widget + ?Sized> WidgetPod<W> {
     /// Get the identity of the widget.
     pub fn id(&self) -> WidgetId {
         self.id
@@ -86,6 +88,8 @@ impl<W: Widget + 'static> WidgetPod<W> {
         let WidgetPodInner::Create(inner) = self.inner else {
             panic!("Cannot box a widget after it has been inserted into the widget graph")
         };
-        WidgetPod::new_with_id_and_transform(Box::new(inner.widget), self.id, inner.transform)
+        // TODO
+        let widget: Box<dyn Widget> = inner.widget;
+        WidgetPod::new_with_id_and_transform(Box::new(widget), self.id, inner.transform)
     }
 }
