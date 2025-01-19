@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::widget::{self, GridParams, WidgetMut};
-use masonry::Widget;
+use masonry::{FromDynWidget, Widget};
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -151,7 +151,7 @@ impl SuperElement<Self, ViewCtx> for GridElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for GridElement {
+impl<W: Widget + FromDynWidget> SuperElement<Pod<W>, ViewCtx> for GridElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         // Getting here means that the widget didn't use .grid_item or .grid_pos.
         // This currently places the widget in the top left cell.

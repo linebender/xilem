@@ -5,8 +5,8 @@
 
 use accesskit::{Node, Role};
 use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx, Point,
+    PointerEvent, RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use smallvec::{smallvec, SmallVec};
 use vello::Scene;
@@ -16,15 +16,15 @@ use crate::core::Mut;
 use crate::{Pod, ViewCtx};
 
 impl<
-        A: Widget,
-        B: Widget,
-        C: Widget,
-        D: Widget,
-        E: Widget,
-        F: Widget,
-        G: Widget,
-        H: Widget,
-        I: Widget,
+        A: Widget + FromDynWidget,
+        B: Widget + FromDynWidget,
+        C: Widget + FromDynWidget,
+        D: Widget + FromDynWidget,
+        E: Widget + FromDynWidget,
+        F: Widget + FromDynWidget,
+        G: Widget + FromDynWidget,
+        H: Widget + FromDynWidget,
+        I: Widget + FromDynWidget,
     >
     crate::core::one_of::OneOfCtx<
         Pod<A>,
@@ -147,7 +147,17 @@ impl crate::core::one_of::PhantomElementCtx for ViewCtx {
 }
 
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
-pub enum OneOfWidget<A, B, C, D, E, F, G, H, I> {
+pub enum OneOfWidget<
+    A: ?Sized,
+    B: ?Sized,
+    C: ?Sized,
+    D: ?Sized,
+    E: ?Sized,
+    F: ?Sized,
+    G: ?Sized,
+    H: ?Sized,
+    I: ?Sized,
+> {
     A(WidgetPod<A>),
     B(WidgetPod<B>),
     C(WidgetPod<C>),
@@ -160,15 +170,15 @@ pub enum OneOfWidget<A, B, C, D, E, F, G, H, I> {
 }
 
 impl<
-        A: Widget,
-        B: Widget,
-        C: Widget,
-        D: Widget,
-        E: Widget,
-        F: Widget,
-        G: Widget,
-        H: Widget,
-        I: Widget,
+        A: Widget + FromDynWidget,
+        B: Widget + FromDynWidget,
+        C: Widget + FromDynWidget,
+        D: Widget + FromDynWidget,
+        E: Widget + FromDynWidget,
+        F: Widget + FromDynWidget,
+        G: Widget + FromDynWidget,
+        H: Widget + FromDynWidget,
+        I: Widget + FromDynWidget,
     > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
