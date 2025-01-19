@@ -19,7 +19,7 @@ The test harness in Masonry is designed to provide a robust and flexible environ
 Okay, you know what, ChatGPT isn't great at this doc thing.
 Let's start over.
 
-A week before writing the first draft for this, this author had a chat with a friend, who complained about the difficulties of writing tests for native GUI apps.
+A week before writing this document's first draft, this author had a chat with a friend, who complained about the difficulties of writing tests for native GUI apps.
 
 His reasoning went that you could always encapsulate your business logic into pure functions and test their inputs and outputs, but you had no way to write "When I click on this button this widget should appear" into your codebase in a way CI could enforce mechanically.
 
