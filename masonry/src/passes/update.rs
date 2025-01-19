@@ -57,9 +57,16 @@ fn run_targeted_update_pass(
 
 fn run_single_update_pass(
     root: &mut RenderRoot,
-    target: WidgetId,
+    target: Option<WidgetId>,
     mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx),
 ) {
+    let Some(target) = target else {
+        return;
+    };
+    if !root.widget_arena.has(target) {
+        return;
+    }
+
     let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(target);
 
     let mut ctx = UpdateCtx {
@@ -517,23 +524,18 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     if prev_focused != next_focused {
         // We send FocusChange event to widget that lost and the widget that gained focus.
         // We also request accessibility, because build_access_node() depends on the focus state.
-        if let Some(prev_focused) = prev_focused {
-            if root.widget_arena.has(prev_focused) {
-                run_single_update_pass(root, prev_focused, |widget, ctx| {
-                    widget.update(ctx, &Update::FocusChanged(false));
-                    ctx.widget_state.request_accessibility = true;
-                    ctx.widget_state.needs_accessibility = true;
-                });
-            }
-        }
-        if let Some(next_focused) = next_focused {
-            // We know that this widget definitely exists because of the `is_still_interactive` check above.
-            run_single_update_pass(root, next_focused, |widget, ctx| {
-                widget.update(ctx, &Update::FocusChanged(true));
-                ctx.widget_state.request_accessibility = true;
-                ctx.widget_state.needs_accessibility = true;
-            });
+        run_single_update_pass(root, prev_focused, |widget, ctx| {
+            widget.update(ctx, &Update::FocusChanged(false));
+            ctx.widget_state.request_accessibility = true;
+            ctx.widget_state.needs_accessibility = true;
+        });
+        run_single_update_pass(root, next_focused, |widget, ctx| {
+            widget.update(ctx, &Update::FocusChanged(true));
+            ctx.widget_state.request_accessibility = true;
+            ctx.widget_state.needs_accessibility = true;
+        });
 
+        if let Some(next_focused) = next_focused {
             let widget_state = root.widget_arena.get_state(next_focused).item;
 
             root.global_state.is_ime_active = widget_state.accepts_text_input;
@@ -688,18 +690,14 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     }
 
     if prev_hovered_widget != next_hovered_widget {
-        if let Some(prev_hovered_widget) = prev_hovered_widget {
-            run_single_update_pass(root, prev_hovered_widget, |widget, ctx| {
-                ctx.widget_state.is_hovered = false;
-                widget.update(ctx, &Update::HoveredChanged(false));
-            });
-        }
-        if let Some(next_hovered_widget) = next_hovered_widget {
-            run_single_update_pass(root, next_hovered_widget, |widget, ctx| {
-                ctx.widget_state.is_hovered = true;
-                widget.update(ctx, &Update::HoveredChanged(true));
-            });
-        }
+        run_single_update_pass(root, prev_hovered_widget, |widget, ctx| {
+            ctx.widget_state.is_hovered = false;
+            widget.update(ctx, &Update::HoveredChanged(false));
+        });
+        run_single_update_pass(root, next_hovered_widget, |widget, ctx| {
+            ctx.widget_state.is_hovered = true;
+            widget.update(ctx, &Update::HoveredChanged(true));
+        });
     }
 
     // -- UPDATE CURSOR ICON --
