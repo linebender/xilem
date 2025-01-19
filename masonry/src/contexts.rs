@@ -684,9 +684,9 @@ impl ComposeCtx<'_> {
     /// Set the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
-    pub fn set_child_scroll_translation<W: Widget>(
+    pub fn set_child_scroll_translation(
         &mut self,
-        child: &mut WidgetPod<W>,
+        child: &mut WidgetPod<impl Widget + ?Sized>,
         translation: Vec2,
     ) {
         if translation.x.is_nan()
@@ -1220,7 +1220,7 @@ macro_rules! impl_get_raw {
             ///
             /// The child context can be used to call context methods on behalf of the
             /// child widget.
-            pub fn get_raw_ref<'a, 'r, Child: Widget>(
+            pub fn get_raw_ref<'a, 'r, Child: Widget + FromDynWidget + ?Sized>(
                 &'a mut self,
                 child: &'a mut WidgetPod<Child>,
             ) -> RawWrapper<'r, $SomeCtx<'r>, Child>
@@ -1246,7 +1246,7 @@ macro_rules! impl_get_raw {
                 };
                 RawWrapper {
                     ctx: child_ctx,
-                    widget: child_mut.item.as_dyn_any().downcast_ref().unwrap(),
+                    widget: Child::from_dyn2(&**child_mut.item).unwrap(),
                 }
             }
 
@@ -1319,7 +1319,7 @@ impl<'s> AccessCtx<'s> {
         };
         RawWrapper {
             ctx: child_ctx,
-            widget: Child::from_dyn2(&mut **child_mut.item).unwrap(),
+            widget: Child::from_dyn2(&**child_mut.item).unwrap(),
         }
     }
 }
@@ -1338,7 +1338,7 @@ pub struct RawWrapperMut<'a, Ctx: IsContext, W: ?Sized> {
 }
 
 #[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-impl<Ctx, W> RawWrapper<'_, Ctx, W> {
+impl<Ctx, W: ?Sized> RawWrapper<'_, Ctx, W> {
     pub fn widget(&self) -> &W {
         self.widget
     }
@@ -1349,7 +1349,7 @@ impl<Ctx, W> RawWrapper<'_, Ctx, W> {
 }
 
 #[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-impl<Ctx: IsContext, W> RawWrapperMut<'_, Ctx, W> {
+impl<Ctx: IsContext, W: ?Sized> RawWrapperMut<'_, Ctx, W> {
     pub fn widget(&mut self) -> &mut W {
         self.widget
     }

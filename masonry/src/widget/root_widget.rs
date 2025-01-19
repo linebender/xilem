@@ -9,13 +9,13 @@ use vello::Scene;
 
 use crate::widget::{WidgetMut, WidgetPod};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    RegisterCtx, Size, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Widget, WidgetId,
 };
 
 // TODO: This is a hack to provide an accessibility node with a Window type.
 // This should eventually be removed.
-pub struct RootWidget<W> {
+pub struct RootWidget<W: ?Sized> {
     pub(crate) pod: WidgetPod<W>,
 }
 
@@ -25,19 +25,21 @@ impl<W: Widget> RootWidget<W> {
             pod: WidgetPod::new(widget),
         }
     }
+}
 
+impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
     pub fn from_pod(pod: WidgetPod<W>) -> Self {
         Self { pod }
     }
 }
 
-impl<W: Widget> RootWidget<W> {
+impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.pod)
     }
 }
 
-impl<W: Widget> Widget for RootWidget<W> {
+impl<W: Widget + FromDynWidget + ?Sized> Widget for RootWidget<W> {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
