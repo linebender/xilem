@@ -53,11 +53,16 @@ impl WidgetId {
 
 /// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
 pub trait AsDynWidget {
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget>;
     fn as_dyn(&self) -> &dyn Widget;
     fn as_mut_dyn(&mut self) -> &mut dyn Widget;
 }
 
 impl<T: Widget> AsDynWidget for T {
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget> {
+        self
+    }
+
     fn as_dyn(&self) -> &dyn Widget {
         self as &dyn Widget
     }

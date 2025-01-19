@@ -59,7 +59,9 @@ impl<W: Widget> WidgetPod<W> {
             }),
         }
     }
+}
 
+impl<W: Widget + ?Sized> WidgetPod<W> {
     pub(crate) fn incomplete(&self) -> bool {
         matches!(self.inner, WidgetPodInner::Create(_))
     }
@@ -70,9 +72,7 @@ impl<W: Widget> WidgetPod<W> {
             WidgetPodInner::Inserted => None,
         }
     }
-}
 
-impl<W: Widget + ?Sized> WidgetPod<W> {
     /// Get the identity of the widget.
     pub fn id(&self) -> WidgetId {
         self.id
