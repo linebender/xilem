@@ -12,4 +12,197 @@
 
 </div>
 
-TODO
+<!-- Not compleletey confident about this joke. Mighty want to put an expiration date on it. -->
+<!-- On the other hand, I'm curious how long it stays relevant. -->
+The test harness in Masonry is designed to provide a robust and flexible environment for writing and executing tests for your Rust GUI applications and-
+
+Okay, you know what, ChatGPT isn't great at this doc thing.
+Let's start over.
+
+A week before writing the first draft for this, this author had a chat with a friend, who complained about the difficulties of writing tests for native GUI apps.
+
+His reasoning went that you could always encapsulate your business logic into pure functions and test their inputs and outputs, but you had no way to write "When I click on this button this widget should appear" into your codebase in a way CI could enforce mechanically.
+
+This one anecdote aside, wanting to test your UI in a headless setting is something many developers want, hence the proliferations of tools testing tools around the WebDriver standard for web dev.
+Giving similar affordances was a core design goal of Masonry.
+
+To demonstrate how testing works in Masonry, let's write a test suite for our `ColorRectangle` widget from two chapters ago.
+
+## Creating the harness
+
+First, let's write a test module with a first unit test:
+
+```rust,ignore
+// We place this block at the end of the file where we implemented ColorRectangle
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+
+    use super::*;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+
+    #[test]
+    fn simple_rect() {
+        let [rect_id] = widget_ids();
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
+
+        let harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+
+        // ...
+    }
+}
+```
+
+<!-- TODO - Rewrite this once we have a better way to assign ids to widgets. -->
+
+First, we create a `ColorRectangle` with an arbitrary size and color.
+We use `TestWidgetExt::with_id()` to assign it a pre-drawn id.
+(As a side-effect, this also wraps our `ColorRectangle` in a [`SizedBox`] widget.)
+
+Then we instantiate the [`TestHarness`], with our (wrapped) `ColorRectangle` as the root.
+
+We use `TestHarness::root_widget()` to get a [`WidgetRef`] to our root.
+
+A [`WidgetRef`] is a rich reference to both a widget and its metadata.
+We can use it to get a widget's origin, size, flags, etc.
+
+It also has a `Debug` impl, which prints the widget's name and the sub-tree of all its children.
+We use that debug impl with `insta::assert_debug_snapshot` to get an easy test checking the widget exists.
+
+<!-- TODO - Include snapshot result. -->
+
+## Screenshot testing
+
+So far our test isn't giving us much information.
+We know that `ColorRectangle::new()` doesn't panic, and that's more or less it.
+
+Let's add a visual test:
+
+```rust,ignore
+    // ...
+    use crate::assert_render_snapshot;
+
+    #[test]
+    fn simple_rect() {
+        // ...
+
+        assert_render_snapshot!(harness, "blue_rectangle");
+    }
+```
+
+The [`assert_render_snaphot!`] macro takes a snapshot name, renders the current state of the app, and stores the render as a PNG next to the test, in a `./screenshots/` folder.
+
+The rendered screenshot is compared against an existing file checked in your project, and panics if the reference file is meaningfully different (using [the NVIDIA FLIP algorithm](https://developer.nvidia.com/blog/flip-a-difference-evaluator-for-alternating-images/)) or if there isn't one.
+
+Adding screenshot tests lets you check both that your widget's `paint()` method runs correctly and to explicitly track and check in your widget's visual changes into version control.
+
+That way, if an internal change happens to affect how a widget is displayed, failing screenshot tests will force you to consider whether the visual change is deliberate or an error.
+
+<!-- TODO - Include screenshot. -->
+
+## Simulating input
+
+We can also use the harness as if we were a user interacting with a window.
+The `TestHarness` types includes methods for mouse events, keyboard events, etc.
+
+Let's create another snapshot test to check that our widget correctly changes color when the mouse hovers it:
+
+```rust,ignore
+    // ...
+
+    #[test]
+    fn hovered() {
+        let [rect_id] = widget_ids();
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
+
+        let mut harness = TestHarness::create(widget);
+
+        // Computes the rect's layout and sends an PointerEvent
+        // placing the mouse at its center.
+        harness.mouse_move_to(rect_id);
+        assert_render_snapshot!(harness, "hovered_rectangle");
+    }
+```
+
+<!-- TODO - Include screenshot. -->
+
+## Testing `WidgetMut`
+
+In some cases, you may want to run tests where the widget tree is modified after its creation.
+
+Like `RenderRoot`, `TestHarness` has methods that take a closure and, inside of that closure, give you a `WidgetMut` to a specific widget.
+
+Let's add a test that changes a rectangle's color, then checks its visual appearance:
+
+```rust,ignore
+    // ...
+
+    #[test]
+    fn hovered() {
+        let [rect_id] = widget_ids();
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
+
+        let mut harness = TestHarness::create(widget);
+
+        // Computes the rect's layout and sends an PointerEvent
+        // placing the mouse at its center.
+        harness.mouse_move_to(rect_id);
+        assert_render_snapshot!(harness, "hovered_rectangle");
+    }
+
+    #[test]
+    fn edit_rect() {
+        let [rect_id] = widget_ids();
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
+
+        let mut harness = TestHarness::create(widget);
+
+        harness.edit_widget(rect_id |mut rect| {
+            let mut rect = rect.downcast::<ColorRectangle>();
+            ColorRectangle::set_color(&mut rect, Size::new(50.0, 50.0));
+            ColorRectangle::set_size(&mut rect, Color::RED);
+        });
+
+        assert_render_snapshot!(harness, "big_red_rectangle");
+    }
+```
+
+<!-- TODO - Include screenshot. -->
+
+## Testing actions
+
+The `TestHarness` is also capable of reading actions emitted by our widget with the `pop_action()` method.
+
+Since our `WidgetRectangle` doesn't emit actions, let's look at a unit test for the [`Button`] widget instead:
+
+```rust
+    #[test]
+    fn simple_button() {
+        let [button_id] = widget_ids();
+        let widget = Button::new("Hello").with_id(button_id);
+
+        let mut harness = TestHarness::create(widget);
+
+        // ...
+
+        harness.mouse_click_on(button_id);
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::ButtonPressed(PointerButton::Primary), button_id))
+        );
+    }
+```
+
+Overall, this tutorial isn't an exhaustive list of the `TestHarness` API.
+
+In general, `TestHarness` tries to implement methods matching every kind of behavior a user interacting with your app can have, using names that match the natural description of what the user does (e.g. `mouse_click_on`).
+
+Read the [`TestHarness`] documentation for a full overview of its API.
+
+[`Button`]: crate::widget::Button
+[`SizedBox`]: crate::widget::SizedBox
+[`TestHarness`]: crate::testing::TestHarness
+[`WidgetRef`]: crate::widget::WidgetRef
+[`assert_render_snaphot!`]: crate::assert_render_snaphot

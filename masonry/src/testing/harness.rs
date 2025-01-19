@@ -133,7 +133,7 @@ pub struct TestHarnessParams {
 /// Assert a snapshot of a rendered frame of your app.
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
-/// and stores the render as a PNG next to the text, in a `./screenshots/` folder.
+/// and stores the render as a PNG next to the test, in a `./screenshots/` folder.
 ///
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
