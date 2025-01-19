@@ -34,8 +34,8 @@ pub struct Split {
     /// bar was clicked. This is used to ensure a click without mouse move is a no-op,
     /// instead of re-centering the bar on the mouse.
     click_offset: f64,
-    child1: WidgetPod<Box<dyn Widget>>,
-    child2: WidgetPod<Box<dyn Widget>>,
+    child1: WidgetPod<dyn Widget>,
+    child2: WidgetPod<dyn Widget>,
 }
 
 // --- MARK: BUILDERS ---
@@ -55,8 +55,8 @@ impl Split {
             solid: false,
             draggable: false,
             click_offset: 0.0,
-            child1: WidgetPod::new(child1).boxed(),
-            child2: WidgetPod::new(child2).boxed(),
+            child1: WidgetPod::new(child1).erased(),
+            child2: WidgetPod::new(child2).erased(),
         }
     }
 

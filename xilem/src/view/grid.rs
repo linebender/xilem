@@ -70,7 +70,7 @@ where
         for child in elements.into_inner() {
             widget = match child {
                 GridElement::Child(child, params) => {
-                    widget.with_child_pod(child.into_widget_pod(), params)
+                    widget.with_child_pod(child.erased_widget_pod(), params)
                 }
             }
         }
@@ -186,7 +186,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
                     widget::Grid::insert_grid_child_pod(
                         &mut self.element,
                         self.idx,
-                        child.into_widget_pod(),
+                        child.erased_widget_pod(),
                         params,
                     );
                 }
@@ -202,7 +202,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
                 widget::Grid::insert_grid_child_pod(
                     &mut self.element,
                     self.idx,
-                    child.into_widget_pod(),
+                    child.erased_widget_pod(),
                     params,
                 );
             }

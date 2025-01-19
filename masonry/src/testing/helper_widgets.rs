@@ -65,10 +65,10 @@ pub struct ModularWidget<S> {
 
 /// A widget that can replace its child on command
 pub struct ReplaceChild {
-    child: WidgetPod<Box<dyn Widget>>,
+    child: WidgetPod<dyn Widget>,
     #[allow(dead_code)]
     // reason: This is probably bit-rotted code. Next version will SizedBox with WidgetMut instead.
-    replacer: Box<dyn Fn() -> WidgetPod<Box<dyn Widget>>>,
+    replacer: Box<dyn Fn() -> WidgetPod<dyn Widget>>,
 }
 
 /// A wrapper widget that records each time one of its methods is called.
@@ -432,8 +432,8 @@ impl ReplaceChild {
     /// The `child` is the initial child widget, and `f` is a function that
     /// returns a new widget to replace it with.
     pub fn new<W: Widget + 'static>(child: impl Widget, f: impl Fn() -> W + 'static) -> Self {
-        let child = WidgetPod::new(child).boxed();
-        let replacer = Box::new(move || WidgetPod::new(f()).boxed());
+        let child = WidgetPod::new(child).erased();
+        let replacer = Box::new(move || WidgetPod::new(f()).erased());
         Self { child, replacer }
     }
 }

@@ -76,7 +76,7 @@ where
         let mut widget = widget::ZStack::new().with_alignment(self.alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
-            widget = widget.with_child_pod(child.widget.into_widget_pod(), child.alignment);
+            widget = widget.with_child_pod(child.widget.erased_widget_pod(), child.alignment);
         }
         let pod = ctx.new_pod(widget);
         (pod, seq_state)
@@ -331,7 +331,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
         for element in self.scratch.drain() {
             widget::ZStack::insert_child_pod(
                 &mut self.element,
-                element.widget.into_widget_pod(),
+                element.widget.erased_widget_pod(),
                 element.alignment,
             );
             self.idx += 1;
@@ -342,7 +342,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
     fn insert(&mut self, element: ZStackElement) {
         widget::ZStack::insert_child_pod(
             &mut self.element,
-            element.widget.into_widget_pod(),
+            element.widget.erased_widget_pod(),
             element.alignment,
         );
         self.idx += 1;

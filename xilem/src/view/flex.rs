@@ -107,7 +107,7 @@ where
         for child in elements.into_inner() {
             widget = match child {
                 FlexElement::Child(child, params) => {
-                    widget.with_flex_child_pod(child.into_widget_pod(), params)
+                    widget.with_flex_child_pod(child.erased_widget_pod(), params)
                 }
                 FlexElement::FixedSpacer(size) => widget.with_spacer(size),
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
@@ -248,7 +248,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                 widget::Flex::insert_flex_child_pod(
                     &mut self.element,
                     self.idx,
-                    child.into_widget_pod(),
+                    child.erased_widget_pod(),
                     params,
                 );
             }
@@ -270,7 +270,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                     widget::Flex::insert_flex_child_pod(
                         &mut self.element,
                         self.idx,
-                        child.into_widget_pod(),
+                        child.erased_widget_pod(),
                         params,
                     );
                 }
@@ -740,7 +740,7 @@ where
                     widget::Flex::insert_flex_child_pod(
                         &mut element.parent,
                         element.idx,
-                        child.boxed_widget_pod(),
+                        child.erased_widget_pod(),
                         params,
                     );
                 } else {

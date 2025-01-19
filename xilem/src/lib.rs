@@ -209,9 +209,6 @@ impl<W: Widget + FromDynWidget> Pod<W> {
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
-    fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).boxed()
-    }
     fn boxed(self) -> Pod<Box<dyn Widget>> {
         Pod {
             widget: Box::new(self.widget.as_box_dyn()),

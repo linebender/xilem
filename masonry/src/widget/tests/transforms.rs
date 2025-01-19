@@ -33,7 +33,7 @@ fn transforms_translation_rotation() {
             .then_rotate(PI * 0.25)
             .then_translate(translation),
     )
-    .boxed();
+    .erased();
     let widget = ZStack::new().with_child_pod(transformed_widget, ChildAlignment::ParentAligned);
 
     let mut harness = TestHarness::create(widget);
@@ -48,7 +48,7 @@ fn transforms_pointer_events() {
         ),
         Affine::rotate(PI * 0.125).then_translate(Vec2::new(100.0, 50.0)),
     )
-    .boxed();
+    .erased();
     let widget = ZStack::new().with_child_pod(transformed_widget, ChildAlignment::ParentAligned);
 
     let mut harness = TestHarness::create(widget);
