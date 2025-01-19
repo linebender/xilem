@@ -76,6 +76,7 @@ impl<T: Widget> AsDynWidget for T {
 pub trait FromDynWidget {
     fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
+    fn from_dyn2(widget: &dyn Widget) -> Option<&Self>;
     fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self>;
 }
 
@@ -88,6 +89,10 @@ impl<T: Widget> FromDynWidget for T {
         widget.as_mut_any().downcast_mut()
     }
 
+    // TODO - Remove
+    fn from_dyn2(widget: &dyn Widget) -> Option<&Self> {
+        widget.as_dyn_any().downcast_ref()
+    }
     fn from_dyn_mut2(widget: &mut dyn Widget) -> Option<&mut Self> {
         widget.as_mut_dyn_any().downcast_mut()
     }
@@ -99,6 +104,10 @@ impl FromDynWidget for dyn Widget {
     }
 
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        Some(widget)
+    }
+
+    fn from_dyn2(widget: &dyn Widget) -> Option<&Self> {
         Some(widget)
     }
 

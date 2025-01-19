@@ -17,8 +17,8 @@ use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
 use crate::widget::{CreateWidget, WidgetMut, WidgetRef, WidgetState};
 use crate::{
-    Affine, AllowRawMut, BoxConstraints, Color, Insets, Point, Rect, Size, Vec2, Widget, WidgetId,
-    WidgetPod,
+    Affine, AllowRawMut, BoxConstraints, Color, FromDynWidget, Insets, Point, Rect, Size, Vec2,
+    Widget, WidgetId, WidgetPod,
 };
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
@@ -209,7 +209,7 @@ impl_context_method!(
 // Methods to get a child WidgetMut from a parent.
 impl MutateCtx<'_> {
     /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget>(
+    pub fn get_mut<'c, Child: Widget + FromDynWidget>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
@@ -230,7 +230,8 @@ impl MutateCtx<'_> {
         };
         WidgetMut {
             ctx: child_ctx,
-            widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
+            // TODO - Remove
+            widget: Child::from_dyn_mut2(&mut **child_mut.item).unwrap(),
         }
     }
 
@@ -1068,7 +1069,7 @@ impl_context_method!(
         /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
         ///
         /// The callbacks will be run in the order they were submitted during the mutate pass.
-        pub fn mutate_later<W: Widget>(
+        pub fn mutate_later<W: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<W>,
             f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
@@ -1252,7 +1253,7 @@ macro_rules! impl_get_raw {
             /// Get a raw mutable reference to a child widget.
             ///
             /// See documentation for [`AllowRawMut`] for more details.
-            pub fn get_raw_mut<'a, 'r, Child: Widget + AllowRawMut>(
+            pub fn get_raw_mut<'a, 'r, Child: Widget + FromDynWidget + AllowRawMut + ?Sized>(
                 &'a mut self,
                 child: &'a mut WidgetPod<Child>,
             ) -> RawWrapperMut<'r, $SomeCtx<'r>, Child>
@@ -1279,7 +1280,7 @@ macro_rules! impl_get_raw {
                 RawWrapperMut {
                     parent_widget_state: &mut self.widget_state,
                     ctx: child_ctx,
-                    widget: child_mut.item.as_mut_dyn_any().downcast_mut().unwrap(),
+                    widget: Child::from_dyn_mut2(&mut **child_mut.item).unwrap(),
                 }
             }
         }
@@ -1292,7 +1293,7 @@ impl_get_raw!(LayoutCtx);
 
 #[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 impl<'s> AccessCtx<'s> {
-    pub fn get_raw_ref<'a, 'r, Child: Widget>(
+    pub fn get_raw_ref<'a, 'r, Child: Widget + FromDynWidget + ?Sized>(
         &'a mut self,
         child: &'a WidgetPod<Child>,
     ) -> RawWrapper<'r, AccessCtx<'r>, Child>
@@ -1318,19 +1319,19 @@ impl<'s> AccessCtx<'s> {
         };
         RawWrapper {
             ctx: child_ctx,
-            widget: child_mut.item.as_dyn_any().downcast_ref().unwrap(),
+            widget: Child::from_dyn2(&mut **child_mut.item).unwrap(),
         }
     }
 }
 
 #[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-pub struct RawWrapper<'a, Ctx, W> {
+pub struct RawWrapper<'a, Ctx, W: ?Sized> {
     ctx: Ctx,
     widget: &'a W,
 }
 
 #[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-pub struct RawWrapperMut<'a, Ctx: IsContext, W> {
+pub struct RawWrapperMut<'a, Ctx: IsContext, W: ?Sized> {
     parent_widget_state: &'a mut WidgetState,
     ctx: Ctx,
     widget: &'a mut W,
@@ -1358,7 +1359,7 @@ impl<Ctx: IsContext, W> RawWrapperMut<'_, Ctx, W> {
     }
 }
 
-impl<Ctx: IsContext, W> Drop for RawWrapperMut<'_, Ctx, W> {
+impl<Ctx: IsContext, W: ?Sized> Drop for RawWrapperMut<'_, Ctx, W> {
     fn drop(&mut self) {
         self.parent_widget_state
             .merge_up(self.ctx.get_widget_state());
