@@ -28,7 +28,7 @@ pub type AnyWidgetView<State, Action = ()> =
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
         ctx.new_pod(DynWidget {
-            inner: child.boxed_widget_pod(),
+            inner: child.erased_widget_pod(),
         })
     }
 
@@ -48,24 +48,21 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<D
 
 impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
-        DynWidget::replace_inner(&mut this, child.boxed_widget_pod());
+        DynWidget::replace_inner(&mut this, child.erased_widget_pod());
         this
     }
 }
 
 /// A widget whose only child can be dynamically replaced.
 ///
-/// `WidgetPod<Box<dyn Widget>>` doesn't expose this possibility.
+/// `WidgetPod<dyn Widget>` doesn't expose this possibility.
 #[allow(unnameable_types)] // This is an implementation detail of `AnyWidgetView`
 pub struct DynWidget {
-    inner: WidgetPod<Box<dyn Widget>>,
+    inner: WidgetPod<dyn Widget>,
 }
 
 impl DynWidget {
-    pub(crate) fn replace_inner(
-        this: &mut WidgetMut<'_, Self>,
-        widget: WidgetPod<Box<dyn Widget>>,
-    ) {
+    pub(crate) fn replace_inner(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<dyn Widget>) {
         let old_widget = std::mem::replace(&mut this.widget.inner, widget);
         this.ctx.remove_child(old_widget);
     }

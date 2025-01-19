@@ -208,7 +208,6 @@ impl<W: Widget + FromDynWidget> Pod<W> {
     }
 }
 
-#[allow(unused)]
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     fn boxed_widget_pod(self) -> WidgetPod<Box<dyn Widget>> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).boxed()
@@ -226,6 +225,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
     }
+
+    #[expect(unused)]
     fn erased(self) -> Pod<dyn Widget> {
         Pod {
             widget: self.widget.as_box_dyn(),
