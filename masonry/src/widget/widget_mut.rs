@@ -54,9 +54,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     pub fn set_transform(&mut self, transform: Affine) {
         self.ctx.set_transform(transform);
     }
-}
 
-impl WidgetMut<'_, Box<dyn Widget>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
     pub fn try_downcast<W2: Widget + FromDynWidget + ?Sized>(
         &mut self,

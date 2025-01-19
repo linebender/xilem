@@ -209,7 +209,7 @@ impl_context_method!(
 // Methods to get a child WidgetMut from a parent.
 impl MutateCtx<'_> {
     /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget + FromDynWidget>(
+    pub fn get_mut<'c, Child: Widget + FromDynWidget + ?Sized>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
