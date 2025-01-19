@@ -1057,7 +1057,7 @@ impl_context_method!(
         /// The callbacks will be run in the order they were submitted during the mutate pass.
         pub fn mutate_self_later(
             &mut self,
-            f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) + Send + 'static,
+            f: impl FnOnce(WidgetMut<'_, dyn Widget>) + Send + 'static,
         ) {
             let callback = MutateCallback {
                 id: self.widget_state.id,

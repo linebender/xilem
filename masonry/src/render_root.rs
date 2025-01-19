@@ -52,7 +52,7 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
     /// Root of the widget tree.
-    pub(crate) root: WidgetPod<Box<dyn Widget>>,
+    pub(crate) root: WidgetPod<dyn Widget>,
 
     /// Whether the window size should be determined by the content or the user.
     pub(crate) size_policy: WindowSizePolicy,
@@ -147,7 +147,7 @@ pub(crate) struct RenderRootState {
 
 pub(crate) struct MutateCallback {
     pub(crate) id: WidgetId,
-    pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, Box<dyn Widget>>)>,
+    pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, dyn Widget>)>,
 }
 
 /// Defines how a windows size should be determined
@@ -251,7 +251,7 @@ impl RenderRoot {
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
         let mut root = Self {
-            root: WidgetPod::new(root_widget).boxed(),
+            root: WidgetPod::new(root_widget).erased(),
             size_policy,
             size: PhysicalSize::new(0, 0),
             scale_factor,
@@ -488,22 +488,17 @@ impl RenderRoot {
             .into_child(self.root.id())
             .expect("root widget not in widget tree");
 
-        // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
-        // type of our root widget is *also* Box<dyn Widget>. We downcast so we
-        // don't add one more level of indirection to this.
-        let widget = widget_ref
-            .item
-            .as_dyn_any()
-            .downcast_ref::<Box<dyn Widget>>()
-            .unwrap();
-
+        // Box<dyn Widget> -> &dyn Widget
+        // Without this step, the type of `WidgetRef::widget` would be
+        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+        // of indirection.
+        let widget = &**widget_ref.item;
         let ctx = QueryCtx {
             global_state: &self.global_state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
         };
-
         WidgetRef { ctx, widget }
     }
 
@@ -520,8 +515,7 @@ impl RenderRoot {
         // Without this step, the type of `WidgetRef::widget` would be
         // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
         // of indirection.
-        let widget = widget_ref.item;
-        let widget: &dyn Widget = &**widget;
+        let widget = &**widget_ref.item;
         let ctx = QueryCtx {
             global_state: &self.global_state,
             widget_state_children: state_ref.children,
@@ -534,25 +528,8 @@ impl RenderRoot {
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_root_widget<R>(
-        &mut self,
-        f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
-    ) -> R {
-        let res = mutate_widget(self, self.root.id(), |mut widget_mut| {
-            // Our WidgetArena stores all widgets as Box<dyn Widget>, but the "true"
-            // type of our root widget is *also* Box<dyn Widget>. We downcast so we
-            // don't add one more level of indirection to this.
-            let widget = widget_mut
-                .widget
-                .as_mut_dyn_any()
-                .downcast_mut::<Box<dyn Widget>>()
-                .unwrap();
-            let widget_mut = WidgetMut {
-                ctx: widget_mut.ctx.reborrow_mut(),
-                widget,
-            };
-            f(widget_mut)
-        });
+    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
+        let res = mutate_widget(self, self.root.id(), f);
 
         self.run_rewrite_passes();
 
@@ -565,7 +542,7 @@ impl RenderRoot {
     pub fn edit_widget<R>(
         &mut self,
         id: WidgetId,
-        f: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
+        f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
         let res = mutate_widget(self, id, f);
 
