@@ -48,7 +48,7 @@ fn run_targeted_update_pass(
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
         };
-        pass_fn(widget_mut.item, &mut ctx);
+        pass_fn(&mut **widget_mut.item, &mut ctx);
 
         merge_state_up(&mut root.widget_arena, widget_id);
         current_id = parent_id;
@@ -75,7 +75,7 @@ fn run_single_update_pass(
         widget_state_children: state_mut.children,
         widget_children: widget_mut.children,
     };
-    pass_fn(widget_mut.item, &mut ctx);
+    pass_fn(&mut **widget_mut.item, &mut ctx);
 
     let mut current_id = Some(target);
     while let Some(widget_id) = current_id {

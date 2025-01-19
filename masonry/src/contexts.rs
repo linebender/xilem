@@ -231,7 +231,7 @@ impl MutateCtx<'_> {
         WidgetMut {
             ctx: child_ctx,
             // TODO - Remove
-            widget: Child::from_dyn_mut2(&mut **child_mut.item).unwrap(),
+            widget: Child::from_dyn_mut(&mut **child_mut.item).unwrap(),
         }
     }
 
@@ -1246,7 +1246,7 @@ macro_rules! impl_get_raw {
                 };
                 RawWrapper {
                     ctx: child_ctx,
-                    widget: Child::from_dyn2(&**child_mut.item).unwrap(),
+                    widget: Child::from_dyn(&**child_mut.item).unwrap(),
                 }
             }
 
@@ -1280,7 +1280,7 @@ macro_rules! impl_get_raw {
                 RawWrapperMut {
                     parent_widget_state: &mut self.widget_state,
                     ctx: child_ctx,
-                    widget: Child::from_dyn_mut2(&mut **child_mut.item).unwrap(),
+                    widget: Child::from_dyn_mut(&mut **child_mut.item).unwrap(),
                 }
             }
         }
@@ -1319,7 +1319,7 @@ impl<'s> AccessCtx<'s> {
         };
         RawWrapper {
             ctx: child_ctx,
-            widget: Child::from_dyn2(&**child_mut.item).unwrap(),
+            widget: Child::from_dyn(&**child_mut.item).unwrap(),
         }
     }
 }

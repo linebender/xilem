@@ -50,7 +50,7 @@ fn build_accessibility_tree(
             tree_update,
             rebuild_all,
         };
-        let mut node = build_access_node(widget.item, &mut ctx, scale_factor);
+        let mut node = build_access_node(&mut **widget.item, &mut ctx, scale_factor);
         widget.item.accessibility(&mut ctx, &mut node);
 
         let id: NodeId = ctx.widget_state.id.into();

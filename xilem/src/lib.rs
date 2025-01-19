@@ -211,7 +211,7 @@ impl<W: Widget + FromDynWidget> Pod<W> {
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     fn erased(self) -> Pod<dyn Widget> {
         Pod {
-            widget: Box::new(self.widget.as_box_dyn()),
+            widget: self.widget.as_box_dyn(),
             id: self.id,
             transform: self.transform,
         }

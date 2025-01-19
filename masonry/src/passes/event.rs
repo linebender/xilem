@@ -75,7 +75,7 @@ fn run_event_pass<E>(
                 );
             }
 
-            pass_fn(widget, &mut ctx, event);
+            pass_fn(&mut **widget, &mut ctx, event);
             is_handled = ctx.is_handled;
         }
 

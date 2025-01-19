@@ -488,10 +488,6 @@ impl RenderRoot {
             .into_child(self.root.id())
             .expect("root widget not in widget tree");
 
-        // Box<dyn Widget> -> &dyn Widget
-        // Without this step, the type of `WidgetRef::widget` would be
-        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-        // of indirection.
         let widget = &**widget_ref.item;
         let ctx = QueryCtx {
             global_state: &self.global_state,
@@ -511,10 +507,6 @@ impl RenderRoot {
             .find(id)
             .expect("found state but not widget");
 
-        // Box<dyn Widget> -> &dyn Widget
-        // Without this step, the type of `WidgetRef::widget` would be
-        // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-        // of indirection.
         let widget = &**widget_ref.item;
         let ctx = QueryCtx {
             global_state: &self.global_state,
