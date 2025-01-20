@@ -3,13 +3,16 @@
 
 #![warn(missing_docs)]
 
-use crate::{
-    vello::Scene, widget::WidgetMut, AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, Point,
-    QueryCtx, RegisterCtx, Size, Widget, WidgetId, WidgetPod,
-};
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
+
+use crate::vello::Scene;
+use crate::widget::WidgetMut;
+use crate::{
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx, Size, Widget,
+    WidgetId, WidgetPod,
+};
 
 struct Child {
     widget: WidgetPod<dyn Widget>,

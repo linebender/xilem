@@ -11,13 +11,11 @@ use vello::Scene;
 use crate::kurbo::Size;
 use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
 use crate::text::ArcStr;
-use crate::widget::WidgetMut;
+use crate::widget::{Label, LineBreaking, WidgetMut, WidgetPod};
 use crate::{
     theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point,
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
-
-use super::{Label, LineBreaking, WidgetPod};
 
 /// A progress bar.
 pub struct ProgressBar {

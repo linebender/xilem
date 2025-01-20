@@ -9,13 +9,11 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Stroke};
 use vello::Scene;
 
-use crate::widget::WidgetMut;
+use crate::widget::{Padding, TextArea, WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
-
-use super::{Padding, TextArea, WidgetPod};
 
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
@@ -180,9 +178,10 @@ mod tests {
     use vello::kurbo::Size;
 
     use super::*;
-    use crate::{
-        assert_render_snapshot, testing::TestHarness, text::StyleProperty, widget::TextArea,
-    };
+    use crate::assert_render_snapshot;
+    use crate::testing::TestHarness;
+    use crate::text::StyleProperty;
+    use crate::widget::TextArea;
 
     #[test]
     fn textbox_outline() {
