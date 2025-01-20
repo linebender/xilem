@@ -59,13 +59,12 @@ fn arena_item_removal() {
 
     let mut child_1 = roots.item_mut(1_u64).unwrap();
     let child_1_item = child_1.item;
-    child_1.children.insert(3_u64, 'c');
+    let mut child_3 = child_1.children.insert(3_u64, 'c');
 
     // >-- 1(a) -- 3(c)
     //
     // >-- 2(b)
 
-    let mut child_3 = child_1.children.item_mut(3_u64).unwrap();
     child_3.children.insert(4_u64, 'd');
 
     // >-- 1(a) -- 3(c) -- 4(d)
@@ -102,10 +101,8 @@ fn arena_mutate_parent_and_child_at_once() {
     let mut tree: TreeArena<char> = TreeArena::new();
     let mut roots = tree.roots_mut();
 
-    roots.insert(1_u64, 'a');
-    let mut node_1 = roots.item_mut(1_u64).unwrap();
-    node_1.children.insert(2_u64, 'b');
-    let node_2 = node_1.children.item_mut(2_u64).unwrap();
+    let mut node_1 = roots.insert(1_u64, 'a');
+    let node_2 = node_1.children.insert(2_u64, 'b');
 
     // >-- 1(a) -- 2(b)
 

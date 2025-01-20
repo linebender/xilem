@@ -481,7 +481,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// # Panics
     ///
     /// If the arena already contains an item with the given id.
-    pub fn insert(&mut self, child_id: impl Into<NodeId>, value: T) {
+    pub fn insert(&mut self, child_id: impl Into<NodeId>, value: T) -> ArenaMut<'_, T> {
         let child_id: NodeId = child_id.into();
         assert!(
             !self.parent_arena.parents.contains_key(&child_id),
@@ -500,6 +500,11 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         self.parent_arena
             .items
             .insert(child_id, Box::new(UnsafeCell::new(node)));
+
+        self.children
+            .get_mut(&child_id)
+            .unwrap()
+            .arena_mut(self.parent_id, self.parents_map.parents_map)
     }
 
     // TODO - How to handle when a subtree is removed?

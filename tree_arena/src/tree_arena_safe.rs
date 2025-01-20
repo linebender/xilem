@@ -378,10 +378,12 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     ///
     /// The new child will have the given id.
     ///
+    /// Returns a handle to the new child.
+    ///
     /// # Panics
     ///
     /// If the arena already contains an item with the given id.
-    pub fn insert(&mut self, child_id: impl Into<NodeId>, value: T) {
+    pub fn insert(&mut self, child_id: impl Into<NodeId>, value: T) -> ArenaMut<'_, T> {
         let child_id = child_id.into();
         assert!(
             !self.parents_map.parents_map.contains_key(&child_id),
@@ -399,6 +401,11 @@ impl<'arena, T> ArenaMutList<'arena, T> {
                 children: HashMap::new(),
             },
         );
+
+        self.children
+            .get_mut(&child_id)
+            .unwrap()
+            .arena_mut(self.parent_id, self.parents_map.parents_map)
     }
 
     // TODO - How to handle when a subtree is removed?
