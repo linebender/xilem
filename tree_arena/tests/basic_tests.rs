@@ -115,3 +115,42 @@ fn arena_mutate_parent_and_child_at_once() {
     assert_eq!(*node_1_item, 'e');
     assert_eq!(*node_2_item, 'f');
 }
+
+#[test]
+fn mem_swap() {
+    let mut tree_p: TreeArena<char> = TreeArena::new();
+    let mut roots_p = tree_p.roots_mut();
+
+    let mut node_p1 = roots_p.insert(1_u64, 'a');
+    node_p1.children.insert(2_u64, 'b');
+    let mut node_p3 = node_p1.children.insert(3_u64, 'c');
+    node_p3.children.insert(4_u64, 'd');
+
+    // P: >-- 1(a) -- 2(b)
+    //             |
+    //             |- 3(c) -- 4(d)
+
+    let mut tree_q: TreeArena<char> = TreeArena::new();
+    let mut roots_q = tree_q.roots_mut();
+
+    let mut node_q4 = roots_q.insert(4_u64, 'e');
+    node_q4.children.insert(3_u64, 'f');
+    let mut node_q2 = node_q4.children.insert(2_u64, 'g');
+    node_q2.children.insert(1_u64, 'h');
+
+    // Q: >-- 4(e) -- 3(f)
+    //             |
+    //             |- 2(g)
+
+    std::mem::swap(&mut node_p1.children, &mut node_q4.children);
+
+    // The specifics that follow don't matter too much.
+    // We mostly want to ensure this doesn't crash and MIRI doesn't detect
+    // undefined behavior.
+
+    // The node_p1 handle we've thus created still has the value 'a',
+    // but now has the id '4' and access to the children of node Q4.
+    assert_eq!(node_p1.id(), 4_u64);
+    assert_eq!(node_p1.item, &'a');
+    assert_eq!(node_p1.children.item(2_u64).unwrap().item, &'g',);
+}
