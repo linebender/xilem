@@ -230,7 +230,6 @@ impl MutateCtx<'_> {
         };
         WidgetMut {
             ctx: child_ctx,
-            // TODO - Remove
             widget: Child::from_dyn_mut(&mut **child_mut.item).unwrap(),
         }
     }

@@ -79,10 +79,12 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
 
     /// Type-erase the contained widget.
     ///
-    /// Convert a `WidgetPod` containing a widget of a specific concrete type
-    /// into a dynamically boxed widget.
+    /// Convert a `WidgetPod` pointing to a widget of a specific concrete type
+    /// `WidgetPod` pointing to a `dyn Widget`.
     pub fn erased(self) -> WidgetPod<dyn Widget> {
         let WidgetPodInner::Create(inner) = self.inner else {
+            // TODO - Enabling this case isn't impossible anymore.
+            // We're keeping it forbidden for now.
             panic!("Cannot box a widget after it has been inserted into the widget graph")
         };
         WidgetPod {
