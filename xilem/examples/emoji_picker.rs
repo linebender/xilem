@@ -6,12 +6,11 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use winit::error::EventLoopError;
-use xilem::{
-    core::map_state,
-    palette,
-    view::{button, flex, grid, label, prose, sized_box, Axis, FlexExt, FlexSpacer, GridExt},
-    Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
+use xilem::core::map_state;
+use xilem::view::{
+    button, flex, grid, label, prose, sized_box, Axis, FlexExt, FlexSpacer, GridExt,
 };
+use xilem::{palette, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
     flex((

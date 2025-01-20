@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![allow(unsafe_code, reason = "Purpose is unsafe abstraction")]
-use super::NodeId;
-
 use std::cell::UnsafeCell;
 
 use hashbrown::HashMap;
+
+use crate::NodeId;
 
 #[derive(Debug)]
 struct TreeNode<T> {

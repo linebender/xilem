@@ -11,9 +11,9 @@
 //! will use an arena and unsafe code, but should have the exact same exported API as
 //! this module.
 
-use super::NodeId;
-
 use hashbrown::HashMap;
+
+use crate::NodeId;
 
 #[derive(Debug)]
 struct TreeNode<T> {
