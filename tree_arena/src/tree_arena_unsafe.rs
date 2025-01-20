@@ -501,10 +501,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             .items
             .insert(child_id, Box::new(UnsafeCell::new(node)));
 
-        self.children
-            .get_mut(&child_id)
-            .unwrap()
-            .arena_mut(self.parent_id, self.parents_map.parents_map)
+        self.parent_arena.find_mut_inner(child_id).unwrap()
     }
 
     // TODO - How to handle when a subtree is removed?
