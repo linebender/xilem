@@ -14,7 +14,7 @@ use crate::{
 };
 use masonry::{
     widget::{self, Alignment, ChildAlignment, WidgetMut},
-    Widget,
+    FromDynWidget, Widget,
 };
 use xilem_core::{MessageResult, ViewId};
 
@@ -76,7 +76,7 @@ where
         let mut widget = widget::ZStack::new().with_alignment(self.alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
-            widget = widget.with_child_pod(child.widget.into_widget_pod(), child.alignment);
+            widget = widget.with_child_pod(child.widget.erased_widget_pod(), child.alignment);
         }
         let pod = ctx.new_pod(widget);
         (pod, seq_state)
@@ -181,7 +181,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (ZStackElement::new(pod.boxed(), self.alignment), state)
+        (ZStackElement::new(pod.erased(), self.alignment), state)
     }
 
     fn rebuild(
@@ -232,7 +232,7 @@ where
 
 /// A struct implementing [`ViewElement`] for a `ZStack`.
 pub struct ZStackElement {
-    widget: Pod<Box<dyn Widget>>,
+    widget: Pod<dyn Widget>,
     alignment: ChildAlignment,
 }
 
@@ -243,7 +243,7 @@ pub struct ZStackElementMut<'w> {
 }
 
 impl ZStackElement {
-    fn new(widget: Pod<Box<dyn Widget>>, alignment: ChildAlignment) -> Self {
+    fn new(widget: Pod<dyn Widget>, alignment: ChildAlignment) -> Self {
         Self { widget, alignment }
     }
 }
@@ -273,9 +273,9 @@ impl SuperElement<Self, ViewCtx> for ZStackElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        Self::new(child.boxed(), ChildAlignment::ParentAligned)
+        Self::new(child.erased(), ChildAlignment::ParentAligned)
     }
 
     fn with_downcast_val<R>(
@@ -331,7 +331,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
         for element in self.scratch.drain() {
             widget::ZStack::insert_child_pod(
                 &mut self.element,
-                element.widget.into_widget_pod(),
+                element.widget.erased_widget_pod(),
                 element.alignment,
             );
             self.idx += 1;
@@ -342,7 +342,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
     fn insert(&mut self, element: ZStackElement) {
         widget::ZStack::insert_child_pod(
             &mut self.element,
-            element.widget.into_widget_pod(),
+            element.widget.erased_widget_pod(),
             element.alignment,
         );
         self.idx += 1;

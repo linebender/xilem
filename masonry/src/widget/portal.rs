@@ -13,8 +13,9 @@ use vello::Scene;
 
 use crate::widget::{Axis, ScrollBar, WidgetMut};
 use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
+    PaintCtx, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetPod,
 };
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
@@ -22,7 +23,7 @@ use crate::{
 // TODO - Document which cases need request_layout, request_compose and request_render
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see
-pub struct Portal<W: Widget> {
+pub struct Portal<W: Widget + ?Sized> {
     child: WidgetPod<W>,
     // TODO - differentiate between the "explicit" viewport pos determined
     // by user input, and the computed viewport pos that may change based
@@ -44,7 +45,9 @@ impl<W: Widget> Portal<W> {
     pub fn new(child: W) -> Self {
         Self::new_pod(WidgetPod::new(child))
     }
+}
 
+impl<W: Widget + ?Sized> Portal<W> {
     pub fn new_pod(child: WidgetPod<W>) -> Self {
         Self {
             child,
@@ -127,7 +130,7 @@ fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64>
     viewport
 }
 
-impl<W: Widget> Portal<W> {
+impl<W: Widget + ?Sized> Portal<W> {
     // TODO - rename
     fn set_viewport_pos_raw(&mut self, portal_size: Size, content_size: Size, pos: Point) -> bool {
         let viewport_max_pos =
@@ -167,7 +170,7 @@ impl<W: Widget> Portal<W> {
 }
 
 // --- MARK: WIDGETMUT ---
-impl<W: Widget> Portal<W> {
+impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.child)
     }
@@ -256,7 +259,7 @@ impl<W: Widget> Portal<W> {
 }
 
 // --- MARK: IMPL WIDGET ---
-impl<W: Widget> Widget for Portal<W> {
+impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
         const SCROLLING_SPEED: f64 = 10.0;
 

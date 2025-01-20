@@ -4,7 +4,6 @@
 use std::any::Any;
 use std::fmt::Display;
 use std::num::NonZeroU64;
-use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::{Node, Role};
@@ -53,17 +52,50 @@ impl WidgetId {
 
 /// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
 pub trait AsDynWidget {
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget>;
     fn as_dyn(&self) -> &dyn Widget;
     fn as_mut_dyn(&mut self) -> &mut dyn Widget;
 }
 
 impl<T: Widget> AsDynWidget for T {
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget> {
+        self
+    }
+
     fn as_dyn(&self) -> &dyn Widget {
         self as &dyn Widget
     }
 
     fn as_mut_dyn(&mut self) -> &mut dyn Widget {
         self as &mut dyn Widget
+    }
+}
+
+/// A trait that lets functions either downcast to a `Sized` widget or keep a `dyn Widget`.
+pub trait FromDynWidget {
+    /// Downcast `widget` if `Self: Sized`, else return it as-is.
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
+    /// Downcast `widget` if `Self: Sized`, else return it as-is.
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
+}
+
+impl<T: Widget> FromDynWidget for T {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+        widget.as_any().downcast_ref()
+    }
+
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        widget.as_mut_any().downcast_mut()
+    }
+}
+
+impl FromDynWidget for dyn Widget {
+    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+        Some(widget)
+    }
+
+    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+        Some(widget)
     }
 }
 
@@ -441,105 +473,5 @@ impl From<WidgetId> for accesskit::NodeId {
 impl Display for WidgetId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "#{}", self.0)
-    }
-}
-
-#[warn(clippy::missing_trait_methods)]
-// TODO - remove
-impl Widget for Box<dyn Widget> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
-        self.deref_mut().on_pointer_event(ctx, event);
-    }
-
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
-        self.deref_mut().on_text_event(ctx, event);
-    }
-
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
-        self.deref_mut().on_access_event(ctx, event);
-    }
-
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
-        self.deref_mut().on_anim_frame(ctx, interval);
-    }
-
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
-        self.deref_mut().register_children(ctx);
-    }
-
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
-        self.deref_mut().update(ctx, event);
-    }
-
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        self.deref_mut().layout(ctx, bc)
-    }
-
-    fn compose(&mut self, ctx: &mut ComposeCtx) {
-        self.deref_mut().compose(ctx);
-    }
-
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        self.deref_mut().paint(ctx, scene);
-    }
-
-    fn accessibility_role(&self) -> Role {
-        self.deref().accessibility_role()
-    }
-
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
-        self.deref_mut().accessibility(ctx, node);
-    }
-
-    fn type_name(&self) -> &'static str {
-        self.deref().type_name()
-    }
-
-    fn short_type_name(&self) -> &'static str {
-        self.deref().short_type_name()
-    }
-
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        self.deref().children_ids()
-    }
-
-    fn accepts_pointer_interaction(&self) -> bool {
-        self.deref().accepts_pointer_interaction()
-    }
-
-    fn accepts_focus(&self) -> bool {
-        self.deref().accepts_focus()
-    }
-
-    fn accepts_text_input(&self) -> bool {
-        self.deref().accepts_text_input()
-    }
-
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        self.deref().make_trace_span(ctx)
-    }
-
-    fn get_debug_text(&self) -> Option<String> {
-        self.deref().get_debug_text()
-    }
-
-    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
-        self.deref().get_cursor(ctx, pos)
-    }
-
-    fn find_widget_at_pos<'c>(
-        &'c self,
-        ctx: QueryCtx<'c>,
-        pos: Point,
-    ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.deref().find_widget_at_pos(ctx, pos)
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        self.deref().as_any()
-    }
-
-    fn as_mut_any(&mut self) -> &mut dyn Any {
-        self.deref_mut().as_mut_any()
     }
 }

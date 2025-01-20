@@ -11,7 +11,7 @@ use crate::{MutateCtx, Widget, WidgetId};
 pub(crate) fn mutate_widget<R>(
     root: &mut RenderRoot,
     id: WidgetId,
-    mutate_fn: impl FnOnce(WidgetMut<'_, Box<dyn Widget>>) -> R,
+    mutate_fn: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
 ) -> R {
     let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(id);
 
@@ -26,7 +26,7 @@ pub(crate) fn mutate_widget<R>(
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
         },
-        widget: widget_mut.item,
+        widget: &mut **widget_mut.item,
     };
 
     let result = mutate_fn(root_widget);

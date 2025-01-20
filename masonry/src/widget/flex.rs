@@ -103,11 +103,11 @@ struct Spacing {
 
 enum Child {
     Fixed {
-        widget: WidgetPod<Box<dyn Widget>>,
+        widget: WidgetPod<dyn Widget>,
         alignment: Option<CrossAxisAlignment>,
     },
     Flex {
-        widget: WidgetPod<Box<dyn Widget>>,
+        widget: WidgetPod<dyn Widget>,
         alignment: Option<CrossAxisAlignment>,
         flex: f64,
     },
@@ -214,17 +214,17 @@ impl Flex {
     ///
     /// Convenient for assembling a group of widgets in a single expression.
     pub fn with_child(self, child: impl Widget) -> Self {
-        self.with_child_pod(WidgetPod::new(Box::new(child)))
+        self.with_child_pod(WidgetPod::new(child).erased())
     }
 
     /// Builder-style variant of [`Flex::add_child`], that takes the id that the child will have.
     ///
     /// Useful for unit tests.
     pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id))
+        self.with_child_pod(WidgetPod::new_with_id(child, id).erased())
     }
 
-    pub fn with_child_pod(mut self, widget: WidgetPod<Box<dyn Widget>>) -> Self {
+    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>) -> Self {
         let child = Child::Fixed {
             widget,
             alignment: None,
@@ -235,13 +235,13 @@ impl Flex {
 
     /// Builder-style method to add a flexible child to the container.
     pub fn with_flex_child(self, child: impl Widget, params: impl Into<FlexParams>) -> Self {
-        self.with_flex_child_pod(WidgetPod::new(Box::new(child)), params)
+        self.with_flex_child_pod(WidgetPod::new(child).erased(), params)
     }
 
     /// Builder-style method to add a flexible child to the container.
     pub fn with_flex_child_pod(
         mut self,
-        widget: WidgetPod<Box<dyn Widget>>,
+        widget: WidgetPod<dyn Widget>,
         params: impl Into<FlexParams>,
     ) -> Self {
         // TODO - dedup?
@@ -378,7 +378,7 @@ impl Flex {
     /// [`with_child`]: Flex::with_child
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
         let child = Child::Fixed {
-            widget: WidgetPod::new(Box::new(child)),
+            widget: WidgetPod::new(child).erased(),
             alignment: None,
         };
         this.widget.children.push(child);
@@ -387,7 +387,7 @@ impl Flex {
 
     pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
         let child = Child::Fixed {
-            widget: WidgetPod::new_with_id(Box::new(child), id),
+            widget: WidgetPod::new_with_id(child, id).erased(),
             alignment: None,
         };
         this.widget.children.push(child);
@@ -401,7 +401,7 @@ impl Flex {
         params: impl Into<FlexParams>,
     ) {
         let params = params.into();
-        let child = new_flex_child(params, WidgetPod::new(Box::new(child)));
+        let child = new_flex_child(params, WidgetPod::new(child).erased());
 
         this.widget.children.push(child);
         this.ctx.children_changed();
@@ -453,14 +453,14 @@ impl Flex {
     ///
     /// [`with_child`]: Flex::with_child
     pub fn insert_child(this: &mut WidgetMut<'_, Self>, idx: usize, child: impl Widget) {
-        Self::insert_child_pod(this, idx, WidgetPod::new(Box::new(child)));
+        Self::insert_child_pod(this, idx, WidgetPod::new(child).erased());
     }
 
     /// Add a non-flex child widget.
     pub fn insert_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        widget: WidgetPod<Box<dyn Widget>>,
+        widget: WidgetPod<dyn Widget>,
     ) {
         let child = Child::Fixed {
             widget,
@@ -476,13 +476,13 @@ impl Flex {
         child: impl Widget,
         params: impl Into<FlexParams>,
     ) {
-        Self::insert_flex_child_pod(this, idx, WidgetPod::new(Box::new(child)), params);
+        Self::insert_flex_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
     pub fn insert_flex_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: WidgetPod<Box<dyn Widget>>,
+        child: WidgetPod<dyn Widget>,
         params: impl Into<FlexParams>,
     ) {
         let child = new_flex_child(params.into(), child);
@@ -542,7 +542,7 @@ impl Flex {
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
+    ) -> Option<WidgetMut<'t, dyn Widget>> {
         let child = match &mut this.widget.children[idx] {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
             Child::FixedSpacer(..) => return None,
@@ -860,13 +860,13 @@ impl From<CrossAxisAlignment> for FlexParams {
 }
 
 impl Child {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<dyn Widget>> {
         match self {
             Self::Fixed { widget, .. } | Self::Flex { widget, .. } => Some(widget),
             _ => None,
         }
     }
-    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
+    fn widget(&self) -> Option<&WidgetPod<dyn Widget>> {
         match self {
             Self::Fixed { widget, .. } | Self::Flex { widget, .. } => Some(widget),
             _ => None,
@@ -882,7 +882,7 @@ fn axis_default_spacer(axis: Axis) -> f64 {
     }
 }
 
-fn new_flex_child(params: FlexParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
+fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
     if let Some(flex) = params.flex {
         if flex.is_normal() && flex > 0.0 {
             Child::Flex {

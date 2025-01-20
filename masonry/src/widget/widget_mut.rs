@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::contexts::MutateCtx;
-use crate::{Affine, Widget};
+use crate::{Affine, FromDynWidget, Widget};
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
@@ -23,12 +23,12 @@ use crate::{Affine, Widget};
 ///
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
-pub struct WidgetMut<'a, W: Widget> {
+pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub ctx: MutateCtx<'a>,
     pub widget: &'a mut W,
 }
 
-impl<W: Widget> Drop for WidgetMut<'_, W> {
+impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
     fn drop(&mut self) {
         // If this `WidgetMut` is a reborrow, a parent non-reborrow `WidgetMut`
         // still exists which will do the merge-up in `Drop`.
@@ -38,7 +38,7 @@ impl<W: Widget> Drop for WidgetMut<'_, W> {
     }
 }
 
-impl<W: Widget> WidgetMut<'_, W> {
+impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;
@@ -54,14 +54,14 @@ impl<W: Widget> WidgetMut<'_, W> {
     pub fn set_transform(&mut self, transform: Affine) {
         self.ctx.set_transform(transform);
     }
-}
 
-impl WidgetMut<'_, Box<dyn Widget>> {
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
-    pub fn try_downcast<W2: Widget>(&mut self) -> Option<WidgetMut<'_, W2>> {
+    pub fn try_downcast<W2: Widget + FromDynWidget + ?Sized>(
+        &mut self,
+    ) -> Option<WidgetMut<'_, W2>> {
         Some(WidgetMut {
             ctx: self.ctx.reborrow_mut(),
-            widget: self.widget.as_mut_any().downcast_mut()?,
+            widget: W2::from_dyn_mut(self.widget.as_mut_dyn())?,
         })
     }
 
@@ -71,9 +71,9 @@ impl WidgetMut<'_, Box<dyn Widget>> {
     ///
     /// Panics if the downcast fails, with an error message that shows the
     /// discrepancy between the expected and actual types.
-    pub fn downcast<W2: Widget>(&mut self) -> WidgetMut<'_, W2> {
+    pub fn downcast<W2: Widget + FromDynWidget + ?Sized>(&mut self) -> WidgetMut<'_, W2> {
         let w1_name = self.widget.type_name();
-        match self.widget.as_mut_any().downcast_mut() {
+        match W2::from_dyn_mut(self.widget.as_mut_dyn()) {
             Some(widget) => WidgetMut {
                 ctx: self.ctx.reborrow_mut(),
                 widget,

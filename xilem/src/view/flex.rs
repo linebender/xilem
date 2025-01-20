@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::widget::{self, WidgetMut};
 pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
-use masonry::Widget;
+use masonry::{FromDynWidget, Widget};
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -107,7 +107,7 @@ where
         for child in elements.into_inner() {
             widget = match child {
                 FlexElement::Child(child, params) => {
-                    widget.with_flex_child_pod(child.into_widget_pod(), params)
+                    widget.with_flex_child_pod(child.erased_widget_pod(), params)
                 }
                 FlexElement::FixedSpacer(size) => widget.with_spacer(size),
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
@@ -170,7 +170,7 @@ where
 }
 
 pub enum FlexElement {
-    Child(Pod<Box<dyn Widget>>, FlexParams),
+    Child(Pod<dyn Widget>, FlexParams),
     FixedSpacer(f64),
     FlexSpacer(f64),
 }
@@ -221,9 +221,9 @@ impl SuperElement<Self, ViewCtx> for FlexElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        Self::Child(child.boxed(), FlexParams::default())
+        Self::Child(child.erased(), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -248,7 +248,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                 widget::Flex::insert_flex_child_pod(
                     &mut self.element,
                     self.idx,
-                    child.into_widget_pod(),
+                    child.erased_widget_pod(),
                     params,
                 );
             }
@@ -270,7 +270,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                     widget::Flex::insert_flex_child_pod(
                         &mut self.element,
                         self.idx,
-                        child.into_widget_pod(),
+                        child.erased_widget_pod(),
                         params,
                     );
                 }
@@ -455,7 +455,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (FlexElement::Child(pod.boxed(), self.params), state)
+        (FlexElement::Child(pod.erased(), self.params), state)
     }
 
     fn rebuild(
@@ -740,7 +740,7 @@ where
                     widget::Flex::insert_flex_child_pod(
                         &mut element.parent,
                         element.idx,
-                        child.boxed_widget_pod(),
+                        child.erased_widget_pod(),
                         params,
                     );
                 } else {

@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::widget::{self, GridParams, WidgetMut};
-use masonry::Widget;
+use masonry::{FromDynWidget, Widget};
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -70,7 +70,7 @@ where
         for child in elements.into_inner() {
             widget = match child {
                 GridElement::Child(child, params) => {
-                    widget.with_child_pod(child.into_widget_pod(), params)
+                    widget.with_child_pod(child.erased_widget_pod(), params)
                 }
             }
         }
@@ -151,14 +151,14 @@ impl SuperElement<Self, ViewCtx> for GridElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for GridElement {
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         // Getting here means that the widget didn't use .grid_item or .grid_pos.
         // This currently places the widget in the top left cell.
         // There is not much else, beyond purposefully failing, that can be done here,
         // because there isn't enough information to determine an appropriate spot
         // for the widget.
-        Self::Child(child.boxed(), GridParams::new(1, 1, 1, 1))
+        Self::Child(child.erased(), GridParams::new(1, 1, 1, 1))
     }
 
     fn with_downcast_val<R>(
@@ -186,7 +186,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
                     widget::Grid::insert_grid_child_pod(
                         &mut self.element,
                         self.idx,
-                        child.into_widget_pod(),
+                        child.erased_widget_pod(),
                         params,
                     );
                 }
@@ -202,7 +202,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
                 widget::Grid::insert_grid_child_pod(
                     &mut self.element,
                     self.idx,
-                    child.into_widget_pod(),
+                    child.erased_widget_pod(),
                     params,
                 );
             }
@@ -305,7 +305,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
 impl<State, Action, V: WidgetView<State, Action>> GridExt<State, Action> for V {}
 
 pub enum GridElement {
-    Child(Pod<Box<dyn Widget>>, GridParams),
+    Child(Pod<dyn Widget>, GridParams),
 }
 
 pub struct GridElementMut<'w> {
@@ -367,7 +367,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (GridElement::Child(pod.boxed(), self.params), state)
+        (GridElement::Child(pod.erased(), self.params), state)
     }
 
     fn rebuild(

@@ -21,7 +21,7 @@ pub struct Grid {
 }
 
 struct Child {
-    widget: WidgetPod<Box<dyn Widget>>,
+    widget: WidgetPod<dyn Widget>,
     x: i32,
     y: i32,
     width: i32,
@@ -56,18 +56,14 @@ impl Grid {
     ///
     /// Convenient for assembling a group of widgets in a single expression.
     pub fn with_child(self, child: impl Widget, params: GridParams) -> Self {
-        self.with_child_pod(WidgetPod::new(Box::new(child)), params)
+        self.with_child_pod(WidgetPod::new(child).erased(), params)
     }
 
     pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: GridParams) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(Box::new(child), id), params)
+        self.with_child_pod(WidgetPod::new_with_id(child, id).erased(), params)
     }
 
-    pub fn with_child_pod(
-        mut self,
-        widget: WidgetPod<Box<dyn Widget>>,
-        params: GridParams,
-    ) -> Self {
+    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>, params: GridParams) -> Self {
         let child = Child {
             widget,
             x: params.x,
@@ -82,10 +78,10 @@ impl Grid {
 
 // --- MARK: IMPL CHILD ---
 impl Child {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<Box<dyn Widget>>> {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<dyn Widget>> {
         Some(&mut self.widget)
     }
-    fn widget(&self) -> Option<&WidgetPod<Box<dyn Widget>>> {
+    fn widget(&self) -> Option<&WidgetPod<dyn Widget>> {
         Some(&self.widget)
     }
 
@@ -97,7 +93,7 @@ impl Child {
     }
 }
 
-fn new_grid_child(params: GridParams, widget: WidgetPod<Box<dyn Widget>>) -> Child {
+fn new_grid_child(params: GridParams, widget: WidgetPod<dyn Widget>) -> Child {
     Child {
         widget,
         x: params.x,
@@ -149,7 +145,7 @@ impl Grid {
     ///
     /// [`with_child`]: Grid::with_child
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
-        let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new(Box::new(child));
+        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
         Self::insert_child_pod(this, child_pod, params);
     }
 
@@ -159,14 +155,14 @@ impl Grid {
         id: WidgetId,
         params: GridParams,
     ) {
-        let child_pod: WidgetPod<Box<dyn Widget>> = WidgetPod::new_with_id(Box::new(child), id);
+        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
         Self::insert_child_pod(this, child_pod, params);
     }
 
     /// Add a child widget.
     pub fn insert_child_pod(
         this: &mut WidgetMut<'_, Self>,
-        widget: WidgetPod<Box<dyn Widget>>,
+        widget: WidgetPod<dyn Widget>,
         params: GridParams,
     ) {
         let child = new_grid_child(params, widget);
@@ -181,13 +177,13 @@ impl Grid {
         child: impl Widget,
         params: impl Into<GridParams>,
     ) {
-        Self::insert_grid_child_pod(this, idx, WidgetPod::new(Box::new(child)), params);
+        Self::insert_grid_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
     pub fn insert_grid_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: WidgetPod<Box<dyn Widget>>,
+        child: WidgetPod<dyn Widget>,
         params: impl Into<GridParams>,
     ) {
         let child = new_grid_child(params.into(), child);
@@ -214,7 +210,7 @@ impl Grid {
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
+    ) -> Option<WidgetMut<'t, dyn Widget>> {
         let child = this.widget.children[idx].widget_mut()?;
         Some(this.ctx.get_mut(child))
     }

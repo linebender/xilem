@@ -26,7 +26,7 @@ use crate::{
 /// A widget that aligns its child.
 pub struct Align {
     align: UnitPoint,
-    child: WidgetPod<Box<dyn Widget>>,
+    child: WidgetPod<dyn Widget>,
     width_factor: Option<f64>,
     height_factor: Option<f64>,
 }
@@ -41,7 +41,7 @@ impl Align {
     pub fn new(align: UnitPoint, child: impl Widget + 'static) -> Self {
         Self {
             align,
-            child: WidgetPod::new(child).boxed(),
+            child: WidgetPod::new(child).erased(),
             width_factor: None,
             height_factor: None,
         }
@@ -66,7 +66,7 @@ impl Align {
     pub fn horizontal(align: UnitPoint, child: impl Widget + 'static) -> Self {
         Self {
             align,
-            child: WidgetPod::new(child).boxed(),
+            child: WidgetPod::new(child).erased(),
             width_factor: None,
             height_factor: Some(1.0),
         }
@@ -76,7 +76,7 @@ impl Align {
     pub fn vertical(align: UnitPoint, child: impl Widget + 'static) -> Self {
         Self {
             align,
-            child: WidgetPod::new(child).boxed(),
+            child: WidgetPod::new(child).erased(),
             width_factor: Some(1.0),
             height_factor: None,
         }

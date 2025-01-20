@@ -57,7 +57,7 @@ pub struct Padding {
 /// and width as possible given the parent's constraints. If height or width is not set,
 /// it will be treated as zero.
 pub struct SizedBox {
-    child: Option<WidgetPod<Box<dyn Widget>>>,
+    child: Option<WidgetPod<dyn Widget>>,
     width: Option<f64>,
     height: Option<f64>,
     background: Option<Brush>,
@@ -186,7 +186,7 @@ impl SizedBox {
     /// Construct container with child, and both width and height not set.
     pub fn new(child: impl Widget) -> Self {
         Self {
-            child: Some(WidgetPod::new(child).boxed()),
+            child: Some(WidgetPod::new(child).erased()),
             width: None,
             height: None,
             background: None,
@@ -199,7 +199,7 @@ impl SizedBox {
     /// Construct container with child, and both width and height not set.
     pub fn new_with_id(child: impl Widget, id: WidgetId) -> Self {
         Self {
-            child: Some(WidgetPod::new_with_id(child, id).boxed()),
+            child: Some(WidgetPod::new_with_id(child, id).erased()),
             width: None,
             height: None,
             background: None,
@@ -210,7 +210,7 @@ impl SizedBox {
     }
 
     /// Construct container with child in a pod, and both width and height not set.
-    pub fn new_pod(child: WidgetPod<Box<dyn Widget>>) -> Self {
+    pub fn new_pod(child: WidgetPod<dyn Widget>) -> Self {
         Self {
             child: Some(child),
             width: None,
@@ -333,7 +333,7 @@ impl SizedBox {
         if let Some(child) = this.widget.child.take() {
             this.ctx.remove_child(child);
         }
-        this.widget.child = Some(WidgetPod::new(child).boxed());
+        this.widget.child = Some(WidgetPod::new(child).erased());
         this.ctx.children_changed();
         this.ctx.request_layout();
     }
@@ -423,9 +423,7 @@ impl SizedBox {
     }
 
     // TODO - Doc
-    pub fn child_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
-    ) -> Option<WidgetMut<'t, Box<dyn Widget>>> {
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> Option<WidgetMut<'t, dyn Widget>> {
         let child = this.widget.child.as_mut()?;
         Some(this.ctx.get_mut(child))
     }
