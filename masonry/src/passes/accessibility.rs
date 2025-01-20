@@ -6,11 +6,9 @@ use tracing::{debug, info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
-use crate::passes::recurse_on_children;
+use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootState};
 use crate::{AccessCtx, Widget, WidgetState};
-
-use super::enter_span_if;
 
 // --- MARK: BUILD TREE ---
 fn build_accessibility_tree(

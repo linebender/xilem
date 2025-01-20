@@ -12,13 +12,11 @@ use vello::kurbo::{Point, Size};
 use vello::Scene;
 
 use crate::text::{ArcStr, StyleProperty};
-use crate::widget::WidgetMut;
+use crate::widget::{Label, WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FontWeight, LayoutCtx, PaintCtx,
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
-
-use super::{Label, WidgetPod};
 
 /// An `f32` value which can move towards a target value at a linear rate over time.
 #[derive(Clone, Debug)]

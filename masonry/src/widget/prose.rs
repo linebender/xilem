@@ -9,13 +9,11 @@ use tracing::{trace_span, Span};
 use vello::kurbo::{Point, Rect, Size};
 use vello::Scene;
 
-use crate::widget::WidgetMut;
+use crate::widget::{Padding, TextArea, WidgetMut, WidgetPod};
 use crate::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
 };
-
-use super::{Padding, TextArea, WidgetPod};
 
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
@@ -161,15 +159,14 @@ impl Widget for Prose {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use parley::{layout::Alignment, StyleProperty};
+    use parley::layout::Alignment;
+    use parley::StyleProperty;
     use vello::kurbo::Size;
 
     use super::*;
-    use crate::{
-        assert_render_snapshot,
-        testing::TestHarness,
-        widget::{CrossAxisAlignment, Flex, SizedBox, TextArea},
-    };
+    use crate::assert_render_snapshot;
+    use crate::testing::TestHarness;
+    use crate::widget::{CrossAxisAlignment, Flex, SizedBox, TextArea};
 
     #[test]
     /// A wrapping prose's alignment should be respected, regardless of
