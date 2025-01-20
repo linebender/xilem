@@ -322,7 +322,7 @@ jobs:
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo miri
+      - name: Run cargo miri
         run: cargo miri test -p tree_arena --locked --no-default-features --target s390x-unknown-linux-gnu --no-fail-fast
 
   test-stable-wasm:
