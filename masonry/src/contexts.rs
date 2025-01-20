@@ -159,7 +159,7 @@ impl_context_method!(
         fn get_child_dyn(&self, child: &'_ WidgetPod<impl Widget + ?Sized>) -> &'_ dyn Widget {
             let child_ref = self
                 .widget_children
-                .get_child(child.id())
+                .item(child.id())
                 .expect("get_child: child not found");
             child_ref.item.as_dyn()
         }
@@ -1170,21 +1170,21 @@ impl RegisterCtx<'_> {
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
-    let Some(CreateWidget { widget, transform }) = child.take_inner() else {
-        return;
-    };
+        let Some(CreateWidget { widget, transform }) = child.take_inner() else {
+            return;
+        };
 
-    #[cfg(debug_assertions)]
-    {
-        self.registered_ids.push(child.id());
+        #[cfg(debug_assertions)]
+        {
+            self.registered_ids.push(child.id());
+        }
+
+        let id = child.id();
+        let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
+
+        self.widget_children.insert(id, widget.as_box_dyn());
+        self.widget_state_children.insert(id, state);
     }
-
-    let id = child.id();
-    let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
-
-    self.widget_children.insert(id, widget.as_box_dyn());
-    self.widget_state_children.insert(id, state);
-}
 }
 
 // --- MARK: DEBUG PAINT ---
