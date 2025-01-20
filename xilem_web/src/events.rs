@@ -1,13 +1,15 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
-    DomView, DynMessage, OptionalAction, ViewCtx,
-};
-use std::{borrow::Cow, marker::PhantomData};
-use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
+use std::borrow::Cow;
+use std::marker::PhantomData;
+
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::{throw_str, JsCast, UnwrapThrowExt};
 use web_sys::{js_sys, AddEventListenerOptions};
+
+use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{DomView, DynMessage, OptionalAction, ViewCtx};
 
 /// Use a distinctive number here, to be able to catch bugs.
 /// In case the generational-id view path in `View::Message` lead to a wrong view

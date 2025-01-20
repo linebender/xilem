@@ -1,18 +1,15 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use wasm_bindgen_futures::spawn_local;
-
-use crate::vecmap::VecMap;
-use std::any::Any;
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::rc::Rc;
 
-use crate::{
-    app::{AppMessage, AppRunner},
-    core::{ViewId, ViewPathTracker},
-    Message,
-};
+use wasm_bindgen_futures::spawn_local;
+
+use crate::app::{AppMessage, AppRunner};
+use crate::core::{ViewId, ViewPathTracker};
+use crate::vecmap::VecMap;
+use crate::Message;
 
 /// A thunk to send messages to the views, it's being used for example in event callbacks
 pub struct MessageThunk {

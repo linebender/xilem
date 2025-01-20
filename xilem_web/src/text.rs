@@ -1,11 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, OrphanView, ViewId},
-    DynMessage, Pod, PodFlags, ViewCtx,
-};
 use wasm_bindgen::JsCast;
+
+use crate::core::{MessageResult, Mut, OrphanView, ViewId};
+use crate::{DynMessage, Pod, PodFlags, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {

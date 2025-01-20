@@ -7,13 +7,10 @@
 //! [`map_state`](xilem_web::core::map_state) or
 //! [`adapt`](xilem_web::core::adapt).
 
-use xilem_web::{
-    core::map_action,
-    document_body,
-    elements::html as el,
-    interfaces::{Element, HtmlDivElement},
-    Action, App,
-};
+use xilem_web::core::map_action;
+use xilem_web::elements::html as el;
+use xilem_web::interfaces::{Element, HtmlDivElement};
+use xilem_web::{document_body, Action, App};
 
 #[derive(Debug, Default)]
 struct Model {

@@ -3,17 +3,18 @@
 
 //! Basic builder functions to create DOM elements, such as [`html::div`]
 
+use std::any::Any;
 use std::borrow::Cow;
 use std::marker::PhantomData;
-use std::{any::Any, rc::Rc};
+use std::rc::Rc;
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
+use crate::core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::modifiers::Children;
+use crate::vec_splice::VecSplice;
 use crate::{
-    core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker},
-    document,
-    modifiers::Children,
-    vec_splice::VecSplice,
-    AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
+    document, AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
 };
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below

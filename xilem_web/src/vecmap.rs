@@ -1,7 +1,10 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{borrow::Borrow, fmt, ops::Index, vec::Drain};
+use std::borrow::Borrow;
+use std::fmt;
+use std::ops::Index;
+use std::vec::Drain;
 
 #[derive(Clone)]
 /// Basically an ordered `Map` (similar as `BTreeMap`) with a `Vec` as backend for very few elements

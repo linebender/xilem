@@ -5,18 +5,15 @@
 
 use std::marker::PhantomData;
 
-use crate::{
-    core::{
-        AppendVec, DynMessage, ElementSplice, Mut, SuperElement, View, ViewElement, ViewMarker,
-        ViewSequence,
-    },
-    Pod, ViewCtx, WidgetView,
-};
-use masonry::{
-    widget::{self, Alignment, ChildAlignment, WidgetMut},
-    FromDynWidget, Widget,
-};
+use masonry::widget::{self, Alignment, ChildAlignment, WidgetMut};
+use masonry::{FromDynWidget, Widget};
 use xilem_core::{MessageResult, ViewId};
+
+use crate::core::{
+    AppendVec, DynMessage, ElementSplice, Mut, SuperElement, View, ViewElement, ViewMarker,
+    ViewSequence,
+};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget that lays out its children on top of each other.
 /// The children are laid out back to front.

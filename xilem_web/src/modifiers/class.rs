@@ -1,15 +1,16 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    diff::{diff_iters, Diff},
-    modifiers::{Modifier, WithModifier},
-    vecmap::VecMap,
-    DomView, DynMessage, ViewCtx,
-};
-use std::{fmt::Debug, marker::PhantomData};
+use std::fmt::Debug;
+use std::marker::PhantomData;
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::diff::{diff_iters, Diff};
+use crate::modifiers::{Modifier, WithModifier};
+use crate::vecmap::VecMap;
+use crate::{DomView, DynMessage, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 

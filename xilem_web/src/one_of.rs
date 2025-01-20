@@ -1,14 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{
-        one_of::{OneOf, OneOfCtx, PhantomElementCtx},
-        Mut,
-    },
-    DomNode, Pod, PodFlags, PodMut, ViewCtx,
-};
 use wasm_bindgen::UnwrapThrowExt;
+
+use crate::core::one_of::{OneOf, OneOfCtx, PhantomElementCtx};
+use crate::core::Mut;
+use crate::{DomNode, Pod, PodFlags, PodMut, ViewCtx};
 
 impl<N1, N2, N3, N4, N5, N6, N7, N8, N9>
     OneOfCtx<Pod<N1>, Pod<N2>, Pod<N3>, Pod<N4>, Pod<N5>, Pod<N6>, Pod<N7>, Pod<N8>, Pod<N9>>

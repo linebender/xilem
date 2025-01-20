@@ -14,13 +14,11 @@
 
 use std::borrow::Cow;
 
-use crate::{
-    events,
-    modifiers::{Attr, Class, ClassIter, Rotate, Scale, ScaleValue, Style, StyleIter},
-    props::{WithElementProps, WithHtmlInputElementProps},
-    DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
-};
 use wasm_bindgen::JsCast;
+
+use crate::modifiers::{Attr, Class, ClassIter, Rotate, Scale, ScaleValue, Style, StyleIter};
+use crate::props::{WithElementProps, WithHtmlInputElementProps};
+use crate::{events, DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg};
 
 macro_rules! event_handler_mixin {
     ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {

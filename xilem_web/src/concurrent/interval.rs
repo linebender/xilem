@@ -1,12 +1,13 @@
 // Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker},
-    DynMessage, OptionalAction, ViewCtx,
-};
 use std::marker::PhantomData;
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
+
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+
+use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
+use crate::{DynMessage, OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
 pub struct Interval<Callback, State, Action> {

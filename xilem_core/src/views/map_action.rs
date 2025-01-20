@@ -1,7 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::{fmt::Debug, marker::PhantomData};
+use core::fmt::Debug;
+use core::marker::PhantomData;
 
 use crate::{Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
