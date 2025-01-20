@@ -10,11 +10,13 @@
 //! after a callback has been performed in
 //! `after_build`, `after_rebuild` or `before_teardown`.
 
-use std::{cell::Cell, rc::Rc};
+use std::cell::Cell;
+use std::rc::Rc;
 
-use xilem_web::{
-    core::one_of::Either, document_body, elements::html, interfaces::Element, App, DomView,
-};
+use xilem_web::core::one_of::Either;
+use xilem_web::elements::html;
+use xilem_web::interfaces::Element;
+use xilem_web::{document_body, App, DomView};
 
 #[derive(Default)]
 struct AppState {

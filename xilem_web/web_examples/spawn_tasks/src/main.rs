@@ -8,15 +8,12 @@
 
 use futures::{select, FutureExt};
 use gloo_timers::future::TimeoutFuture;
-use xilem_web::{
-    concurrent::{task, ShutdownSignal, TaskProxy},
-    core::fork,
-    core::one_of::Either,
-    document_body,
-    elements::html,
-    interfaces::Element,
-    App,
-};
+use xilem_web::concurrent::{task, ShutdownSignal, TaskProxy};
+use xilem_web::core::fork;
+use xilem_web::core::one_of::Either;
+use xilem_web::elements::html;
+use xilem_web::interfaces::Element;
+use xilem_web::{document_body, App};
 
 #[derive(Default)]
 struct AppState {

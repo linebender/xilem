@@ -1,13 +1,15 @@
 // Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker},
-    DynMessage, OptionalAction, ViewCtx,
-};
-use std::{future::Future, marker::PhantomData};
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
+use std::future::Future;
+use std::marker::PhantomData;
+
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
+
+use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{DynMessage, OptionalAction, ViewCtx};
 
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the future. `init_future` will be invoked again, when `data` changes. Use [`memoized_await`] for construction of this [`View`]
 pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut> {

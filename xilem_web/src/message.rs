@@ -1,7 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{any::Any, fmt::Debug, ops::Deref};
+use std::any::Any;
+use std::fmt::Debug;
+use std::ops::Deref;
 
 /// A dynamically typed message for the [`View`] trait.
 ///

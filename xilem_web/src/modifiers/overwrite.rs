@@ -242,9 +242,8 @@ macro_rules! overwrite_bool_modifier_view {
 
 #[cfg(test)]
 mod tests {
-    use crate::PodFlags;
-
     use super::*;
+    use crate::PodFlags;
 
     #[test]
     fn overwrite_bool_push() {

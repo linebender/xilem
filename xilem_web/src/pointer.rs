@@ -3,15 +3,16 @@
 
 //! Interactivity with pointer events.
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker},
-    interfaces::Element,
-    DomView, DynMessage, ViewCtx,
-};
-use peniko::kurbo::Point;
 use std::marker::PhantomData;
-use wasm_bindgen::{prelude::Closure, throw_str, JsCast, UnwrapThrowExt};
+
+use peniko::kurbo::Point;
+use wasm_bindgen::prelude::Closure;
+use wasm_bindgen::{throw_str, JsCast, UnwrapThrowExt};
 use web_sys::PointerEvent;
+
+use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::interfaces::Element;
+use crate::{DomView, DynMessage, ViewCtx};
 
 /// Use a distinctive number here, to be able to catch bugs.
 /// In case the generational-id view path in `View::Message` lead to a wrong view

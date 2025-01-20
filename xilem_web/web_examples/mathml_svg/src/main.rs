@@ -9,10 +9,10 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_web::{
-    document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*,
-    modifiers::style as s, App,
-};
+use xilem_web::elements::{html, mathml as ml, svg};
+use xilem_web::interfaces::*;
+use xilem_web::modifiers::style as s;
+use xilem_web::{document_body, App};
 
 struct Triangle {
     a: u32,

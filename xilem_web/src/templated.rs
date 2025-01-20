@@ -1,12 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewId, ViewMarker},
-    DomView, DynMessage, PodMut, ViewCtx,
-};
-use std::{any::TypeId, rc::Rc};
+use std::any::TypeId;
+use std::rc::Rc;
+
 use wasm_bindgen::UnwrapThrowExt;
+
+use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{DomView, DynMessage, PodMut, ViewCtx};
 
 /// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
 pub struct Templated<V>(Rc<V>);

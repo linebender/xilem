@@ -5,18 +5,13 @@
 // TODO: `expect` doesn't work here
 #![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 
-use xilem_web::{
-    document_body,
-    elements::svg::{g, svg, text},
-    interfaces::*,
-    modifiers::style as s,
-    svg::{
-        kurbo::{Circle, Line, Rect, Stroke, Vec2},
-        peniko::color::palette,
-        peniko::Color,
-    },
-    App, DomView, PointerMsg,
-};
+use xilem_web::elements::svg::{g, svg, text};
+use xilem_web::interfaces::*;
+use xilem_web::modifiers::style as s;
+use xilem_web::svg::kurbo::{Circle, Line, Rect, Stroke, Vec2};
+use xilem_web::svg::peniko::color::palette;
+use xilem_web::svg::peniko::Color;
+use xilem_web::{document_body, App, DomView, PointerMsg};
 
 #[derive(Default)]
 struct AppState {

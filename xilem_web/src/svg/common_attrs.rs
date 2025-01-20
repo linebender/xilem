@@ -1,14 +1,14 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker},
-    modifiers::{AttributeModifier, Attributes, Modifier, WithModifier},
-    DomView, DynMessage, ViewCtx,
-};
-use peniko::{kurbo, Brush};
 use std::fmt::Write as _;
 use std::marker::PhantomData;
+
+use peniko::{kurbo, Brush};
+
+use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
+use crate::{DomView, DynMessage, ViewCtx};
 
 pub struct Fill<V, State, Action> {
     child: V,
@@ -295,8 +295,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    use peniko::color::palette;
+    use peniko::Brush;
+
     use super::brush_to_string;
-    use peniko::{color::palette, Brush};
 
     #[test]
     fn color_brush_to_string() {

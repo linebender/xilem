@@ -4,22 +4,17 @@
 //! An example showing how SVG paths can be used for a vector-drawing application
 
 use std::rc::Rc;
+
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_web::{
-    document_body,
-    elements::{
-        html::{div, input, label, span},
-        svg::{g, svg},
-    },
-    input_event_target_value,
-    interfaces::{Element, HtmlInputElement, SvgGeometryElement, SvgPathElement, SvggElement},
-    modifiers::style as s,
-    svg::{
-        kurbo::{BezPath, Point, QuadSpline, Shape, Stroke},
-        peniko::Color,
-    },
-    AnyDomView, App, DomFragment,
+use xilem_web::elements::html::{div, input, label, span};
+use xilem_web::elements::svg::{g, svg};
+use xilem_web::interfaces::{
+    Element, HtmlInputElement, SvgGeometryElement, SvgPathElement, SvggElement,
 };
+use xilem_web::modifiers::style as s;
+use xilem_web::svg::kurbo::{BezPath, Point, QuadSpline, Shape, Stroke};
+use xilem_web::svg::peniko::Color;
+use xilem_web::{document_body, input_event_target_value, AnyDomView, App, DomFragment};
 
 const RAINBOW_COLORS: [Color; 11] = [
     Color::from_rgba8(228, 3, 3, 255),     // Red

@@ -1,16 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{future::Future, marker::PhantomData, rc::Rc};
+use std::future::Future;
+use std::marker::PhantomData;
+use std::rc::Rc;
 
-use crate::{
-    context::MessageThunk,
-    core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker},
-    DynMessage, Message, ViewCtx,
-};
-use futures::{channel::oneshot, FutureExt};
+use futures::channel::oneshot;
+use futures::FutureExt;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
+
+use crate::context::MessageThunk;
+use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
+use crate::{DynMessage, Message, ViewCtx};
 
 /// Spawn an async task to update state asynchronously
 ///

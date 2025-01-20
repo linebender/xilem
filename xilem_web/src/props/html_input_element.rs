@@ -1,11 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
-use crate::{props, FromWithContext, Pod, PodFlags, ViewCtx};
 use wasm_bindgen::JsCast as _;
 
 use super::WithElementProps;
+use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
+use crate::{props, FromWithContext, Pod, PodFlags, ViewCtx};
 
 /// Props specific to an input element.
 pub struct HtmlInputElement {

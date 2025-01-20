@@ -3,9 +3,10 @@
 
 use std::ops::DerefMut as _;
 
+use wasm_bindgen::UnwrapThrowExt;
+
 use crate::core::{AnyElement, SuperElement, ViewElement};
 use crate::{AnyNode, DomNode, ViewCtx};
-use wasm_bindgen::UnwrapThrowExt;
 
 /// A container, which holds the actual DOM node, and associated props, such as attributes or classes.
 ///
