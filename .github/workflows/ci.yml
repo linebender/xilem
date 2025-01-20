@@ -311,14 +311,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: install nightly toolchain
+      - name: Install nightly toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly
           components: miri
-          targets: s390x-unknown-linux-gnu
 
-      - name: restore cache
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
