@@ -57,9 +57,12 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
             };
             let view = flex((
                 // TODO: Expose that this button corresponds to the label below for accessibility?
-                sized_box(button(label(emoji.display).text_size(200.0 / data.size as f32), move |data: &mut EmojiPagination| {
-                    data.last_selected = Some(idx);
-                }))
+                sized_box(button(
+                    label(emoji.display).text_size(200.0 / data.size as f32),
+                    move |data: &mut EmojiPagination| {
+                        data.last_selected = Some(idx);
+                    },
+                ))
                 .expand_width(),
                 sized_box(
                     prose(emoji.name)
@@ -83,7 +86,8 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
         grid_items,
         data.size.try_into().unwrap(),
         data.size.try_into().unwrap(),
-    ).spacing(10.0)
+    )
+    .spacing(10.0)
 }
 
 fn paginate(
