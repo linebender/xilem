@@ -151,7 +151,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
 
     Xilem::new(data, app_logic)
-        .background_color(Color::from_rgba8(0x20, 0x20, 0x20, 0xff))
+        .background_color(Color::from_rgb8(0x20, 0x20, 0x20))
         .run_windowed(event_loop, "First Example".into())
 }
 

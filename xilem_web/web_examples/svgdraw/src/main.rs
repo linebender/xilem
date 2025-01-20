@@ -17,17 +17,17 @@ use xilem_web::svg::peniko::Color;
 use xilem_web::{document_body, input_event_target_value, AnyDomView, App, DomFragment};
 
 const RAINBOW_COLORS: [Color; 11] = [
-    Color::from_rgba8(228, 3, 3, 255),     // Red
-    Color::from_rgba8(255, 140, 0, 255),   // Orange
-    Color::from_rgba8(255, 237, 0, 255),   // Yellow
-    Color::from_rgba8(0, 128, 38, 255),    // Green
-    Color::from_rgba8(0, 76, 255, 255),    // Indigo
-    Color::from_rgba8(115, 41, 130, 255),  // Violet
-    Color::from_rgba8(214, 2, 112, 255),   // Magenta
-    Color::from_rgba8(155, 79, 150, 255),  // Lavender
-    Color::from_rgba8(0, 56, 168, 255),    // Blue
-    Color::from_rgba8(91, 206, 250, 255),  // Light Blue
-    Color::from_rgba8(245, 169, 184, 255), // Pink
+    Color::from_rgb8(228, 3, 3),     // Red
+    Color::from_rgb8(255, 140, 0),   // Orange
+    Color::from_rgb8(255, 237, 0),   // Yellow
+    Color::from_rgb8(0, 128, 38),    // Green
+    Color::from_rgb8(0, 76, 255),    // Indigo
+    Color::from_rgb8(115, 41, 130),  // Violet
+    Color::from_rgb8(214, 2, 112),   // Magenta
+    Color::from_rgb8(155, 79, 150),  // Lavender
+    Color::from_rgb8(0, 56, 168),    // Blue
+    Color::from_rgb8(91, 206, 250),  // Light Blue
+    Color::from_rgb8(245, 169, 184), // Pink
 ];
 
 struct SplineLine {

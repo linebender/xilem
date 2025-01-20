@@ -86,7 +86,7 @@ impl Widget for CustomWidget {
         path.move_to(Point::ORIGIN);
         path.quad_to((60.0, 120.0), (size.width, size.height));
         // Create a color
-        let stroke_color = Color::from_rgba8(0, 128, 0, 255);
+        let stroke_color = Color::from_rgb8(0, 128, 0);
         // Stroke the path with thickness 5.0
         scene.stroke(
             &Stroke::new(5.0),
