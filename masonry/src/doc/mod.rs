@@ -8,12 +8,9 @@
 //! - **Building a "To-Do List" app:** Tutorial to get started with Masonry.
 //! - **Creating a new Widget:** Introduces the Widget trait.
 //! - **Creating a container Widget:** Expands on the Widget trait for container Widgets.
-//! - **Testing widgets in Masonry:** TODO.
+//! - **Testing widgets in Masonry:** Describes how to test your Masonry widgets in CI.
 //! - **Masonry pass system:** Deep dive into Masonry internals.
 //! - **Concepts and definitions:** Glossary of concepts used in Masonry APIs and internals.
-
-// TODO: Remove this once the issues within masonry are fixed. Tracked in https://github.com/linebender/xilem/issues/449
-#![warn(rustdoc::broken_intra_doc_links)]
 
 // These docs all use the .rustdoc-hidden trick described in
 // https://linebender.org/blog/doc-include/

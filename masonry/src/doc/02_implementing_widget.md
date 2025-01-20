@@ -53,6 +53,8 @@ In the course of a frame, Masonry will run a series of passes over the widget tr
 
 ## Our example widget: `ColorRectangle`
 
+<!-- TODO - Create color_rectangle.rs file as a template for this. -->
+
 Let's implement a very simple widget named `ColorRectangle`.
 This widget has a size, a color, and will notify Masonry when the user left-clicks on it (on mouse press; we'll ignore mouse release).
 
