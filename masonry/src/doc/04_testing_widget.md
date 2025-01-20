@@ -12,21 +12,15 @@
 
 </div>
 
-<!-- Not compleletey confident about this joke. Mighty want to put an expiration date on it. -->
-<!-- On the other hand, I'm curious how long it stays relevant. -->
-The test harness in Masonry is designed to provide a robust and flexible environment for writing and executing tests for your Rust GUI applications and-
+Masonry supports testing your UI in a headless setting, with similar capabilities to testing tools which use the [WebDriver](https://developer.mozilla.org/en-US/docs/Web/WebDriver) standard for web dev.
 
-Okay, you know what, ChatGPT isn't great at this doc thing.
-Let's start over.
+While sometimes you can go a long way keeping your business logic code in pure functions, the best practice is to test your GUI code as well.
+You want to write "When I click on this button this widget should appear" into your codebase in a way CI can enforce mechanically.
 
-A week before writing this document's first draft, this author had a chat with a friend, who complained about the difficulties of writing tests for native GUI apps.
-
-His reasoning went that you could always encapsulate your business logic into pure functions and test their inputs and outputs, but you had no way to write "When I click on this button this widget should appear" into your codebase in a way CI could enforce mechanically.
-
-This one anecdote aside, wanting to test your UI in a headless setting is something many developers want, hence the proliferations of tools testing tools around the WebDriver standard for web dev.
-Giving similar affordances was a core design goal of Masonry.
+Enabling this kind of testing is a core design goal of Masonry.
 
 To demonstrate how testing works in Masonry, let's write a test suite for our `ColorRectangle` widget from two chapters ago.
+
 
 ## Creating the harness
 
@@ -37,9 +31,9 @@ First, let's write a test module with a first unit test:
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
+    use masonry::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     use super::*;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     #[test]
     fn simple_rect() {
@@ -73,6 +67,7 @@ We use that debug impl with `insta::assert_debug_snapshot` to get an easy test c
 
 <!-- TODO - Include snapshot result. -->
 
+
 ## Screenshot testing
 
 So far our test isn't giving us much information.
@@ -82,7 +77,7 @@ Let's add a visual test:
 
 ```rust,ignore
     // ...
-    use crate::assert_render_snapshot;
+    use masonry::assert_render_snapshot;
 
     #[test]
     fn simple_rect() {
@@ -101,6 +96,7 @@ Adding screenshot tests lets you check both that your widget's `paint()` method 
 That way, if an internal change happens to affect how a widget is displayed, failing screenshot tests will force you to consider whether the visual change is deliberate or an error.
 
 <!-- TODO - Include screenshot. -->
+
 
 ## Simulating input
 
@@ -127,6 +123,7 @@ Let's create another snapshot test to check that our widget correctly changes co
 ```
 
 <!-- TODO - Include screenshot. -->
+
 
 ## Testing `WidgetMut`
 
@@ -170,6 +167,7 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
 ```
 
 <!-- TODO - Include screenshot. -->
+
 
 ## Testing actions
 
