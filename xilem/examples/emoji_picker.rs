@@ -56,9 +56,12 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
             };
             let view = flex((
                 // TODO: Expose that this button corresponds to the label below for accessibility?
-                sized_box(button(emoji.display, move |data: &mut EmojiPagination| {
-                    data.last_selected = Some(idx);
-                }))
+                sized_box(button(
+                    label(emoji.display).text_size(200.0 / data.size as f32),
+                    move |data: &mut EmojiPagination| {
+                        data.last_selected = Some(idx);
+                    },
+                ))
                 .expand_width(),
                 sized_box(
                     prose(emoji.name)
@@ -83,6 +86,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
         data.size.try_into().unwrap(),
         data.size.try_into().unwrap(),
     )
+    .spacing(10.0)
 }
 
 fn paginate(
@@ -90,19 +94,25 @@ fn paginate(
     count_per_page: usize,
     max_count: usize,
 ) -> impl WidgetView<usize> {
-    let percentage = (current_start * 100) / max_count;
+    let current_end = (current_start + count_per_page).min(max_count);
+    let percentage_start = (current_start * 100) / max_count;
+    let percentage_end = (current_end * 100) / max_count;
 
     flex((
         // TODO: Expose that this is a previous page button to accessibility
-        button("<-", move |data| {
-            *data = current_start.saturating_sub(count_per_page);
+        (current_start != 0).then(|| {
+            button(label("⬅️").text_size(24.0), move |data| {
+                *data = current_start.saturating_sub(count_per_page);
+            })
         }),
-        label(format!("{percentage}%")),
-        button("->", move |data| {
-            let new_idx = current_start + count_per_page;
-            if new_idx < max_count {
-                *data = new_idx;
-            }
+        label(format!("{percentage_start}% - {percentage_end}%")),
+        (current_end < max_count).then(|| {
+            button(label("➡️").text_size(24.0), move |data| {
+                let new_idx = current_start + count_per_page;
+                if new_idx < max_count {
+                    *data = new_idx;
+                }
+            })
         }),
     ))
     .direction(Axis::Horizontal)
