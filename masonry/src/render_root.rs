@@ -435,21 +435,12 @@ impl RenderRoot {
     /// Returns an update to the accessibility tree and a Vello scene representing
     /// the widget tree's current state.
     pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
-        if self.root_state().needs_layout {
-            // TODO - Rewrite more clearly after run_rewrite_passes is rewritten
-            self.run_rewrite_passes();
-        }
-        if self.root_state().needs_layout {
-            warn!("Widget requested layout during layout pass");
-            self.global_state
-                .emit_signal(RenderRootSignal::RequestRedraw);
-        }
+        self.run_rewrite_passes();
 
         // TODO - Handle invalidation regions
-        (
-            run_paint_pass(self),
-            run_accessibility_pass(self, self.scale_factor),
-        )
+        let scene = run_paint_pass(self);
+        let tree_update = run_accessibility_pass(self, self.scale_factor);
+        (scene, tree_update)
     }
 
     /// Pop the oldest signal from the queue.
@@ -554,7 +545,7 @@ impl RenderRoot {
     /// Rewrite passes are passes which occur after external events, and
     /// update flags and internal values to a consistent state.
     ///
-    /// See Pass Spec RFC for details. (TODO - Link to doc instead.)
+    /// See the [passes documentation](../doc/05_pass_system.md) for details.
     pub(crate) fn run_rewrite_passes(&mut self) {
         const REWRITE_PASSES_MAX: usize = 4;
 
@@ -597,7 +588,6 @@ impl RenderRoot {
         // We request a redraw if either the render tree or the accessibility
         // tree needs to be rebuilt. Usually both happen at the same time.
         // A redraw will trigger a rebuild of the accessibility tree.
-        // TODO - We assume that a relayout will trigger a repaint
         if self.root_state().needs_paint || self.root_state().needs_accessibility {
             self.global_state
                 .emit_signal(RenderRootSignal::RequestRedraw);

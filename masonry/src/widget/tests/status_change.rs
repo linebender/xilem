@@ -167,7 +167,7 @@ fn update_hovered_on_mouse_leave() {
     assert_eq!(next_hovered_changed(&button_rec), Some(false));
 }
 
-// TODO - https://github.com/PoignardAzur/masonry-rs/issues/58
+// TODO - https://github.com/linebender/xilem/issues/336
 #[cfg(FALSE)]
 #[test]
 fn update_hovered_from_layout() {
