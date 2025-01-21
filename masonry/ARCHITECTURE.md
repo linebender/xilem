@@ -66,13 +66,14 @@ Virtually every module should be private. The only public modules should be inli
 
 Most items should be exported from the root module, with no other public-facing export. This makes documentation more readable; readers don't need to click on multiple modules to find the item they're looking for.
 
-There should be only three public modules:
+There should be only two public modules:
 
 - `widgets`
-- `commands`
 - `test_widgets`
 
-Module files should not be `foobar/mod.rs`. Instead, they should be `_foobar.rs` (thus in the parent folder); the full name is for readability, the leading underscore is so these names appear first in file hierarchies.
+Module files should not be `foobar/mod.rs`. Instead, they should be `foobar/_foobar.rs`.
+The full name is for readability when multiple module files are open in a text editor.
+The leading underscore is so these names appear first in file hierarchies.
 
 ### Imports
 

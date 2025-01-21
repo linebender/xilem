@@ -14,6 +14,7 @@ mod widget_ref;
 mod widget_state;
 
 #[cfg(test)]
+#[path = "tests/_tests.rs"]
 mod tests;
 
 mod align;

@@ -148,6 +148,7 @@
 mod util;
 
 #[cfg(doc)]
+#[path = "doc/_doc.rs"]
 pub mod doc;
 
 mod action;
@@ -156,14 +157,18 @@ mod box_constraints;
 mod contexts;
 mod event;
 mod paint_scene_helpers;
+#[path = "passes/_passes.rs"]
 mod passes;
 mod render_root;
 mod tracing_backend;
 
 pub mod event_loop_runner;
+#[path = "testing/_testing.rs"]
 pub mod testing;
+#[path = "text/_text.rs"]
 pub mod text;
 pub mod theme;
+#[path = "widget/_widget.rs"]
 pub mod widget;
 
 pub use cursor_icon;
