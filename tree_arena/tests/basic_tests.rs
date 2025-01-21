@@ -3,24 +3,37 @@
 
 //! Tests for the [`TreeArena`].
 
-use std::mem;
-
 use tree_arena::*;
 
 #[test]
-fn arena_tree_test() {
+fn arena_insertions() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
-    roots.insert_child(1_u64, 'a');
-    roots.insert_child(2_u64, 'b');
-    let mut child_1 = roots.get_child_mut(1_u64).expect("No child 1 found");
-    child_1.children.insert_child(3_u64, 'c');
+    let mut roots = tree.roots_mut();
 
-    let mut child_3 = child_1
-        .children
-        .get_child_mut(3_u64)
-        .expect("No child 3 found");
-    child_3.children.insert_child(4_u64, 'd');
+    // <empty>
+
+    roots.insert(1_u64, 'a');
+    roots.insert(2_u64, 'b');
+    assert!(roots.item(1_u64).is_some());
+
+    // >-- 1(a)
+    //
+    // >-- 2(b)
+
+    let mut child_1 = roots.item_mut(1_u64).unwrap();
+    child_1.children.insert(3_u64, 'c');
+    assert!(child_1.children.item(3_u64).is_some());
+
+    // >-- 1(a) -- 3(c)
+    //
+    // >-- 2(b)
+
+    let mut child_3 = child_1.children.item_mut(3_u64).unwrap();
+    child_3.children.insert(4_u64, 'd');
+
+    // >-- 1(a) -- 3(c) -- 4(d)
+    //
+    // >-- 2(b)
 
     let child_2 = tree.find(2_u64).expect("No child 2 found");
     let child_4 = child_2.children.find(4_u64);
@@ -31,107 +44,113 @@ fn arena_tree_test() {
 }
 
 #[test]
-fn arena_tree_removal_test() {
+fn arena_item_removal() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
-    roots.insert_child(1_u64, 'a');
-    roots.insert_child(2_u64, 'b');
-    let mut child_1 = roots.get_child_mut(1_u64).expect("No child 1 found");
-    child_1.children.insert_child(3_u64, 'c');
+    let mut roots = tree.roots_mut();
 
-    let mut child_3 = child_1
-        .children
-        .get_child_mut(3_u64)
-        .expect("No child 3 found");
-    child_3.children.insert_child(4_u64, 'd');
+    // <empty>
 
-    let child_3_removed = child_1
-        .children
-        .remove_child(3_u64)
-        .expect("No child 3 found");
+    roots.insert(1_u64, 'a');
+    roots.insert(2_u64, 'b');
+
+    // >-- 1(a)
+    //
+    // >-- 2(b)
+
+    let mut child_1 = roots.item_mut(1_u64).unwrap();
+    let child_1_item = child_1.item;
+    let mut child_3 = child_1.children.insert(3_u64, 'c');
+
+    // >-- 1(a) -- 3(c)
+    //
+    // >-- 2(b)
+
+    child_3.children.insert(4_u64, 'd');
+
+    // >-- 1(a) -- 3(c) -- 4(d)
+    //
+    // >-- 2(b)
+
+    let child_3_removed = child_1.children.remove(3_u64).expect("No child 3 found");
     assert_eq!(child_3_removed, 'c', "Expect removal of node 3");
 
-    let no_child_3_removed = child_1.children.remove_child(3_u64);
-    assert!(no_child_3_removed.is_none(), "Child 3 was not removed");
+    // >-- 1(a)
+    //
+    // >-- 2(b)
+
+    // Check that the borrow of child_1.item is still valid.
+    *child_1_item = 'X';
+
+    assert!(child_1.children.find(3_u64).is_none());
+    assert!(child_1.children.remove(3_u64).is_none());
+
+    assert!(tree.find(4_u64).is_none());
 }
 
 #[test]
 #[should_panic(expected = "Key already present")]
-fn arena_tree_duplicate_insertion() {
+fn arena_duplicate_insertion() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
-    roots.insert_child(1_u64, 'a');
-    roots.insert_child(1_u64, 'b');
+    let mut roots = tree.roots_mut();
+    roots.insert(1_u64, 'a');
+    roots.insert(1_u64, 'b');
 }
 
 #[test]
-fn parent_child_items() {
+fn arena_mutate_parent_and_child_at_once() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.root_token_mut();
-    roots.insert_child(1_u64, 'a');
-    let mut node_1 = roots.get_child_mut(1_u64).expect("No child 1 found");
-    node_1.children.insert_child(2_u64, 'b');
+    let mut roots = tree.roots_mut();
+
+    let mut node_1 = roots.insert(1_u64, 'a');
+    let node_2 = node_1.children.insert(2_u64, 'b');
+
+    // >-- 1(a) -- 2(b)
+
     let node_1_item = node_1.item;
-    let node_2_item = node_1
-        .children
-        .get_child_mut(2_u64)
-        .expect("No child 2 found")
-        .item;
+    let node_2_item = node_2.item;
     *node_1_item = 'c';
     *node_2_item = 'd';
-    assert_eq!(*node_1_item, 'c', "Node 1 item should be 'c'");
-    assert_eq!(*node_2_item, 'd', "Node 2 item should be 'd'");
+    *node_1_item = 'e';
+    *node_2_item = 'f';
+    assert_eq!(*node_1_item, 'e');
+    assert_eq!(*node_2_item, 'f');
 }
 
-// test creating trees-
-// --1(a)--2(b)
-//   |
-//   3(c)--4(d)
-//
-// and
-//
-// --4(e)--3(f)
-//   |
-//   2(g)--1(h)
-//
-// and swapping references to the children of 1(a) and 4(e)
 #[test]
 fn mem_swap() {
-    let mut tree_a: TreeArena<char> = TreeArena::new();
-    let mut roots_a = tree_a.root_token_mut();
-    roots_a.insert_child(1_u64, 'a');
-    let mut node_1_a = roots_a.get_child_mut(1_u64).expect("No child 1 found");
-    node_1_a.children.insert_child(2_u64, 'b');
-    node_1_a.children.insert_child(3_u64, 'c');
-    let mut node_3_a = node_1_a
-        .children
-        .get_child_mut(3_u64)
-        .expect("No child 3 found");
+    let mut tree_p: TreeArena<char> = TreeArena::new();
+    let mut roots_p = tree_p.roots_mut();
 
-    node_3_a.children.insert_child(4_u64, 'd');
+    let mut node_p1 = roots_p.insert(1_u64, 'a');
+    node_p1.children.insert(2_u64, 'b');
+    let mut node_p3 = node_p1.children.insert(3_u64, 'c');
+    node_p3.children.insert(4_u64, 'd');
 
-    let mut tree_b: TreeArena<char> = TreeArena::new();
-    let mut roots_b = tree_b.root_token_mut();
-    roots_b.insert_child(4_u64, 'e');
-    let mut node_4_b = roots_b.get_child_mut(4_u64).expect("No child 4 found");
-    node_4_b.children.insert_child(3_u64, 'f');
-    node_4_b.children.insert_child(2_u64, 'g');
-    let mut node_2_b = node_4_b
-        .children
-        .get_child_mut(2_u64)
-        .expect("No child 2 found");
-    node_2_b.children.insert_child(1_u64, 'h');
+    // P: >-- 1(a) -- 2(b)
+    //             |
+    //             |- 3(c) -- 4(d)
 
-    mem::swap(&mut node_1_a.children, &mut node_4_b.children);
+    let mut tree_q: TreeArena<char> = TreeArena::new();
+    let mut roots_q = tree_q.roots_mut();
 
-    // node 1 from tree a now believes it is node 4 from tree b
-    assert_eq!(node_1_a.id(), 4_u64, "Node 1 id should be 4");
-    // however it still contains the item from tree a
-    assert_eq!(*node_1_a.item, 'a', "Node 1 item should be 'a'");
-    // and we can access the nodes in tree b, that node 4 was able to
-    assert_eq!(
-        *node_1_a.children.get_child(2_u64).unwrap().item,
-        'g',
-        "Node 2 item in tree b should be g"
-    );
+    let mut node_q4 = roots_q.insert(4_u64, 'e');
+    node_q4.children.insert(3_u64, 'f');
+    let mut node_q2 = node_q4.children.insert(2_u64, 'g');
+    node_q2.children.insert(1_u64, 'h');
+
+    // Q: >-- 4(e) -- 3(f)
+    //             |
+    //             |- 2(g)
+
+    std::mem::swap(&mut node_p1.children, &mut node_q4.children);
+
+    // The specifics that follow don't matter too much.
+    // We mostly want to ensure this doesn't crash and MIRI doesn't detect
+    // undefined behavior.
+
+    // The node_p1 handle we've thus created still has the value 'a',
+    // but now has the id '4' and access to the children of node Q4.
+    assert_eq!(node_p1.id(), 4_u64);
+    assert_eq!(node_p1.item, &'a');
+    assert_eq!(node_p1.children.item(2_u64).unwrap().item, &'g',);
 }

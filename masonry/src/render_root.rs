@@ -314,8 +314,8 @@ impl RenderRoot {
     pub(crate) fn root_state(&self) -> &WidgetState {
         self.widget_arena
             .states
-            .root_token()
-            .into_child(self.root.id())
+            .roots()
+            .into_item(self.root.id())
             .expect("root widget not in widget tree")
             .item
     }
@@ -323,8 +323,8 @@ impl RenderRoot {
     pub(crate) fn root_state_mut(&mut self) -> &mut WidgetState {
         self.widget_arena
             .states
-            .root_token_mut()
-            .into_child_mut(self.root.id())
+            .roots_mut()
+            .into_item_mut(self.root.id())
             .expect("root widget not in widget tree")
             .item
     }
@@ -479,13 +479,13 @@ impl RenderRoot {
     // --- MARK: ACCESS WIDGETS---
     /// Get a [`WidgetRef`] to the root widget.
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
-        let root_state_token = self.widget_arena.states.root_token();
-        let root_widget_token = self.widget_arena.widgets.root_token();
+        let root_state_token = self.widget_arena.states.roots();
+        let root_widget_token = self.widget_arena.widgets.roots();
         let state_ref = root_state_token
-            .into_child(self.root.id())
+            .into_item(self.root.id())
             .expect("root widget not in widget tree");
         let widget_ref = root_widget_token
-            .into_child(self.root.id())
+            .into_item(self.root.id())
             .expect("root widget not in widget tree");
 
         let widget = &**widget_ref.item;

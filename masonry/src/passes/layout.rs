@@ -24,8 +24,8 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     bc: &BoxConstraints,
 ) -> Size {
     let id = pod.id();
-    let mut widget = parent_ctx.widget_children.get_child_mut(id).unwrap();
-    let mut state = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
+    let mut widget = parent_ctx.widget_children.item_mut(id).unwrap();
+    let mut state = parent_ctx.widget_state_children.item_mut(id).unwrap();
 
     let trace = parent_ctx.global_state.trace.layout;
     let _span = enter_span_if(
@@ -42,7 +42,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         // We forcefully set request_layout to true for all children.
         // This is used below to check that widget.layout(..) visited all of them.
         for child_id in widget.item.children_ids() {
-            let child_state = state.children.get_child_mut(child_id).unwrap().item;
+            let child_state = state.children.item_mut(child_id).unwrap().item;
             if !child_state.is_stashed {
                 child_state.request_layout = true;
             }
@@ -136,7 +136,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     {
         let name = widget.item.short_type_name();
         for child_id in widget.item.children_ids() {
-            let child_state = state.children.get_child_mut(child_id).unwrap().item;
+            let child_state = state.children.item_mut(child_id).unwrap().item;
 
             if child_state.is_stashed {
                 continue;
@@ -182,7 +182,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         }
     }
 
-    let state_mut = parent_ctx.widget_state_children.get_child_mut(id).unwrap();
+    let state_mut = parent_ctx.widget_state_children.item_mut(id).unwrap();
     parent_ctx.widget_state.merge_up(state_mut.item);
     state_mut.item.size = new_size;
     new_size
@@ -205,8 +205,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     };
 
     let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-    let root_state_token = root.widget_arena.states.root_token_mut();
-    let root_widget_token = root.widget_arena.widgets.root_token_mut();
+    let root_state_token = root.widget_arena.states.roots_mut();
+    let root_widget_token = root.widget_arena.widgets.roots_mut();
     let mut ctx = LayoutCtx {
         global_state: &mut root.global_state,
         widget_state: &mut dummy_state,

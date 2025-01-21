@@ -129,7 +129,7 @@ fn update_widget_tree(
 
         #[cfg(debug_assertions)]
         for child_id in widget.item.children_ids() {
-            if widget.children.get_child(child_id).is_none() {
+            if widget.children.item(child_id).is_none() {
                 panic!(
                     "Error in '{}' #{}: method register_children() did not call \
                     RegisterCtx::register_child() on child #{} returned by children_ids()",
@@ -181,8 +181,8 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
     if root.root.incomplete() {
         let mut ctx = RegisterCtx {
-            widget_state_children: root.widget_arena.states.root_token_mut(),
-            widget_children: root.widget_arena.widgets.root_token_mut(),
+            widget_state_children: root.widget_arena.states.roots_mut(),
+            widget_children: root.widget_arena.widgets.roots_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };

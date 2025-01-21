@@ -8,7 +8,7 @@
 //! This file includes utility functions used by multiple passes.
 
 use tracing::span::EnteredSpan;
-use tree_arena::{ArenaMut, ArenaMutChildren, ArenaRef};
+use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
 use crate::render_root::RenderRootState;
 use crate::widget::WidgetArena;
@@ -55,20 +55,20 @@ pub(crate) fn enter_span(
 pub(crate) fn recurse_on_children(
     id: WidgetId,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMutChildren<'_, WidgetState>,
+    mut state: ArenaMutList<'_, WidgetState>,
     mut callback: impl FnMut(ArenaMut<'_, Box<dyn Widget>>, ArenaMut<'_, WidgetState>),
 ) {
     let parent_name = widget.item.short_type_name();
     let parent_id = id;
 
     for child_id in widget.item.children_ids() {
-        let widget = widget.children.get_child_mut(child_id).unwrap_or_else(|| {
+        let widget = widget.children.item_mut(child_id).unwrap_or_else(|| {
             panic!(
                 "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
                 parent_name, parent_id, child_id
             )
         });
-        let state = state.get_child_mut(child_id).unwrap_or_else(|| {
+        let state = state.item_mut(child_id).unwrap_or_else(|| {
             panic!(
                 "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
                 parent_name, parent_id, child_id
@@ -88,7 +88,7 @@ pub(crate) fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId) {
     };
 
     let mut parent_state_mut = arena.states.find_mut(parent_id).unwrap();
-    let child_state_mut = parent_state_mut.children.get_child_mut(widget_id).unwrap();
+    let child_state_mut = parent_state_mut.children.item_mut(widget_id).unwrap();
 
     parent_state_mut.item.merge_up(child_state_mut.item);
 }
