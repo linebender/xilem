@@ -22,24 +22,25 @@ Full documentation at https://github.com/orium/cargo-rdme -->
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
 
+[accesskit_docs]: https://docs.rs/accesskit/latest/accesskit
+[crate::core::lens]: https://docs.rs/xilem_core/latest/xilem_core/fn.lens.html
+[crate::core::memoize]: https://docs.rs/xilem_core/latest/xilem_core/fn.memoize.html
+[crate::view::button]: https://docs.rs/xilem/latest/xilem/view/fn.button.html
 [crate::view::flex]: https://docs.rs/xilem/latest/xilem/view/fn.flex.html
 [crate::view::grid]: https://docs.rs/xilem/latest/xilem/view/fn.grid.html
-[crate::view::sized_box]: https://docs.rs/xilem/latest/xilem/view/fn.sized_box.html
-[crate::view::button]: https://docs.rs/xilem/latest/xilem/view/fn.button.html
 [crate::view::image]: https://docs.rs/xilem/latest/xilem/view/fn.image.html
 [crate::view::portal]: https://docs.rs/xilem/latest/xilem/view/fn.portal.html
 [crate::view::progress_bar]: https://docs.rs/xilem/latest/xilem/view/fn.progress_bar.html
 [crate::view::prose]: https://docs.rs/xilem/latest/xilem/view/fn.prose.html
+[crate::view::sized_box]: https://docs.rs/xilem/latest/xilem/view/fn.sized_box.html
 [crate::view::task]: https://docs.rs/xilem/latest/xilem/view/fn.task.html
 [crate::view::textbox]: https://docs.rs/xilem/latest/xilem/view/fn.textbox.html
 [crate::view::zstack]: https://docs.rs/xilem/latest/xilem/view/fn.zstack.html
-[crate::core::lens]: https://docs.rs/xilem_core/latest/xilem_core/fn.lens.html
-[crate::core::memoize]: https://docs.rs/xilem_core/latest/xilem_core/fn.memoize.html
-[xilem_examples]: ./examples/
-[masonry::vello]: https://docs.rs/vello/latest/vello/
-[masonry::vello::wgpu]: https://docs.rs/wgpu/latest/wgpu
 [masonry::parley]: https://docs.rs/parley/latest/parley
+[masonry::vello::wgpu]: https://docs.rs/wgpu/latest/wgpu
+[masonry::vello]: https://docs.rs/vello/latest/vello/
 [xilem_core]: https://docs.rs/parley_core/latest/xilem_core
+[xilem_examples]: ./examples/
 
 <!-- markdownlint-disable MD053 -->
 <!-- cargo-rdme start -->
@@ -56,7 +57,7 @@ Masonry itself is built on top of a wide array of foundational Rust UI projects:
 * Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
 * GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
 * Text layout is provided by [Parley][masonry::parley].
-* Accessibility is provided by [AccessKit][] ([docs][accesskit]).
+* Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
 * Window handling is provided by [winit][].
 
 Xilem can currently be considered to be in an alpha state. Lots of things need improvements (including this documentation!).
@@ -128,17 +129,17 @@ You should also expect to use the adapters from Xilem Core, including:
 * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 
+[AccessKit]: https://accesskit.dev/
+[Druid]: https://crates.io/crates/druid
+[Fontique]: https://crates.io/crates/fontique
+[Masonry]: https://crates.io/crates/masonry
+[Parley]: https://crates.io/crates/parley
+[skrifa]: https://crates.io/crates/skrifa
+[swash]: https://crates.io/crates/swash
+[Vello]: https://crates.io/crates/vello
+[winit]: https://crates.io/crates/winit
 [xilem_blog]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
 [xilem_examples]: https://github.com/linebender/xilem/tree/main/xilem/examples
-[winit]: https://crates.io/crates/winit
-[Druid]: https://crates.io/crates/druid
-[Masonry]: https://crates.io/crates/masonry
-[Vello]: https://crates.io/crates/vello
-[Parley]: https://crates.io/crates/parley
-[Fontique]: https://crates.io/crates/fontique
-[swash]: https://crates.io/crates/swash
-[skrifa]: https://crates.io/crates/skrifa
-[AccessKit]: https://accesskit.dev/
 
 <!-- cargo-rdme end -->
 <!-- markdownlint-enable MD053 -->

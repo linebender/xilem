@@ -13,7 +13,7 @@
 //! * Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
 //! * GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
 //! * Text layout is provided by [Parley][masonry::parley].
-//! * Accessibility is provided by [AccessKit][] ([docs][accesskit]).
+//! * Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
 //! * Window handling is provided by [winit][].
 //!
 //! Xilem can currently be considered to be in an alpha state. Lots of things need improvements (including this documentation!).
@@ -85,17 +85,17 @@
 //! * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 //! * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 //!
+//! [AccessKit]: https://accesskit.dev/
+//! [Druid]: https://crates.io/crates/druid
+//! [Fontique]: https://crates.io/crates/fontique
+//! [Masonry]: https://crates.io/crates/masonry
+//! [Parley]: https://crates.io/crates/parley
+//! [skrifa]: https://crates.io/crates/skrifa
+//! [swash]: https://crates.io/crates/swash
+//! [Vello]: https://crates.io/crates/vello
+//! [winit]: https://crates.io/crates/winit
 //! [xilem_blog]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
 //! [xilem_examples]: https://github.com/linebender/xilem/tree/main/xilem/examples
-//! [winit]: https://crates.io/crates/winit
-//! [Druid]: https://crates.io/crates/druid
-//! [Masonry]: https://crates.io/crates/masonry
-//! [Vello]: https://crates.io/crates/vello
-//! [Parley]: https://crates.io/crates/parley
-//! [Fontique]: https://crates.io/crates/fontique
-//! [swash]: https://crates.io/crates/swash
-//! [skrifa]: https://crates.io/crates/skrifa
-//! [AccessKit]: https://accesskit.dev/
 
 #![doc(html_logo_url = "https://avatars.githubusercontent.com/u/46134943?s=48&v=4")]
 // LINEBENDER LINT SET - lib.rs - v1
