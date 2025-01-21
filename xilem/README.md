@@ -22,91 +22,114 @@ Full documentation at https://github.com/orium/cargo-rdme -->
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
 
-[`flex`]: https://docs.rs/xilem/latest/xilem/view/fn.flex.html
-[`grid`]: https://docs.rs/xilem/latest/xilem/view/fn.grid.html
-[`sized box`]: https://docs.rs/xilem/latest/xilem/view/fn.sized_box.html
-[`button`]: https://docs.rs/xilem/latest/xilem/view/fn.button.html
-[`checkbox`]: https://docs.rs/xilem/latest/xilem/view/fn.checkbox.html
-[`image`]: https://docs.rs/xilem/latest/xilem/view/fn.image.html
-[`label`]: https://docs.rs/xilem/latest/xilem/view/fn.label.html
-[`portal`]: https://docs.rs/xilem/latest/xilem/view/fn.portal.html
-[`progress bar`]: https://docs.rs/xilem/latest/xilem/view/fn.progress_bar.html
-[`prose`]: https://docs.rs/xilem/latest/xilem/view/fn.prose.html
-[`spinner`]: https://docs.rs/xilem/latest/xilem/view/fn.spinner.html
-[`task`]: https://docs.rs/xilem/latest/xilem/view/fn.task.html
-[`textbox`]: https://docs.rs/xilem/latest/xilem/view/fn.textbox.html
-[`variable label`]: https://docs.rs/xilem/latest/xilem/view/fn.variable_label.html
-[`zstack`]: https://docs.rs/xilem/latest/xilem/view/fn.zstack.html
-[weight]: https://docs.rs/parley/latest/parley/style/struct.FontWeight.html
+[crate::view::flex]: https://docs.rs/xilem/latest/xilem/view/fn.flex.html
+[crate::view::grid]: https://docs.rs/xilem/latest/xilem/view/fn.grid.html
+[crate::view::sized_box]: https://docs.rs/xilem/latest/xilem/view/fn.sized_box.html
+[crate::view::button]: https://docs.rs/xilem/latest/xilem/view/fn.button.html
+[crate::view::image]: https://docs.rs/xilem/latest/xilem/view/fn.image.html
+[crate::view::portal]: https://docs.rs/xilem/latest/xilem/view/fn.portal.html
+[crate::view::progress_bar]: https://docs.rs/xilem/latest/xilem/view/fn.progress_bar.html
+[crate::view::prose]: https://docs.rs/xilem/latest/xilem/view/fn.prose.html
+[crate::view::task]: https://docs.rs/xilem/latest/xilem/view/fn.task.html
+[crate::view::textbox]: https://docs.rs/xilem/latest/xilem/view/fn.textbox.html
+[crate::view::zstack]: https://docs.rs/xilem/latest/xilem/view/fn.zstack.html
+[crate::core::lens]: https://docs.rs/xilem_core/latest/xilem_core/fn.lens.html
+[crate::core::memoize]: https://docs.rs/xilem_core/latest/xilem_core/fn.memoize.html
+[xilem_examples]: ./examples/
+[masonry::vello]: https://docs.rs/vello/latest/vello/
+[masonry::vello::wgpu]: https://docs.rs/wgpu/latest/wgpu
+[masonry::parley]: https://docs.rs/parley/latest/parley
+[xilem_core]: https://docs.rs/parley_core/latest/xilem_core
 
+<!-- markdownlint-disable MD053 -->
 <!-- cargo-rdme start -->
 
-`Xilem` is a UI toolkit. It combines ideas from `Flutter`, `SwiftUI`, and `Elm`.
+Xilem is a UI toolkit. It combines ideas from `Flutter`, `SwiftUI`, and `Elm`.
 Like all of these, it uses lightweight view objects, diffing them to provide
-minimal updates to a retained UI. Like `SwiftUI`, it is strongly typed. For more
-details on `Xilem`'s reactive architecture see `Xilem`: an [architecture for UI in Rust].
+minimal updates to a retained UI. Like `SwiftUI`, it is strongly typed.
 
-`Xilem`'s reactive layer is built on top of a wide array of foundational Rust UI projects, e.g.:
+The talk *[Xilem: Let's Build High Performance Rust UI](https://www.youtube.com/watch?v=OvfNipIcRiQ)* by Raph Levien
+was presented at the RustNL conference in 2024, and gives a video introduction to these ideas.
+Xilem is implemented as a reactive layer on top of [Masonry][masonry], a widget toolkit which is developed alongside Xilem.
+Masonry itself is built on top of a wide array of foundational Rust UI projects:
 
-* Widgets are provided by [Masonry], which is a fork of the now discontinued `Druid` UI toolkit.
-* Rendering is provided by [Vello], a high performance GPU compute-centric 2D renderer.
-* GPU compute infrastructure is provided by wgpu.
-* Text support is provided by [Parley], [Fontique], [swash], and [skrifa].
-* Accessibility is provided by [AccessKit].
-* Window handling is provided by [winit].
+* Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
+* GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
+* Text layout is provided by [Parley][masonry::parley].
+* Accessibility is provided by [AccessKit][] ([docs][accesskit]).
+* Window handling is provided by [winit][].
 
-`Xilem` can currently be considered to be in an alpha state. Lots of things need improvements.
+Xilem can currently be considered to be in an alpha state. Lots of things need improvements (including this documentation!).
 
-### Example
-The simplest app looks like this:
+There is also a [blog post][xilem_blog] from when Xilem was first introduced.
+
+## Example
+
+A simple incrementing counter application looks like:
+
 ```rust
 use winit::error::EventLoopError;
 use xilem::view::{button, flex, label};
 use xilem::{EventLoop, WidgetView, Xilem};
 
-#[derive(Default, Debug)]
-struct AppState {
+#[derive(Default)]
+struct Counter {
     num: i32,
 }
 
-fn app_logic(data: &mut AppState) -> impl WidgetView<AppState> {
-    flex((label(format!("{}", data.num)), button("increment", |data: &mut AppState| data.num+=1)))
+fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> {
+    flex((
+        label(format!("{}", data.num)),
+        button("increment", |data: &mut Counter| data.num += 1),
+    ))
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new(AppState::default(), app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Counter".into())?;
+    let app = Xilem::new(Counter::default(), app_logic);
+    app.run_windowed(EventLoop::with_user_event(), "Counter app".into())?;
     Ok(())
 }
 ```
-More examples available [here](https://github.com/linebender/xilem/tree/main/xilem/examples).
 
-### View elements
+A key feature of Xilem's architecture is that `Counter`, the application's state, is an arbitrary `'static` Rust type.
+In this example, `app_logic` is the root component, which creates the view value it returns.
+This, in turn, leads to corresponding Masonry widgets being created, in this case a button and a label.
+When the button is pressed, the number will be incremented, and then `app_logic` will be re-ran.
+The returned view will be compared with its previous value, whichi will minimally update the contents of these widgets.
+In this case, because the button is still the same, it will not be updated, and the label will show its new value.
+
+More examples can be found [in the repository][xilem_examples]
+
+**Note: The linked examples are for the `main` branch of Xilem. If you are using a released version, please view the examples in the tag for that release**
+
+## Reactive layer
+
+The core concepts of the reactive layer are explained in [Xilem Core][xilem_core].
+
+## View elements
+
 The primitives your `Xilem` app’s view tree will generally be constructed from:
-- [`flex`]: layout defines how items will be arranged in rows or columns.
-- [`grid`]: layout divides a window into regions and defines the relationship
-  between inner elements in terms of size and position.
-- [`lens`]: an adapter which allows using a component which only uses one field
-  of the current state.
-- [`map action`]: provides a message that the parent view has to handle
-  to update the state.
-- [`adapt`]: the most flexible but also most verbose way to modularize the views
-  by state and action.
-- [`sized box`]: forces its child to have a specific width and/or height.
-- [`button`]: basic button element.
-- [`checkbox`]: an element which can be in checked and unchecked state.
-- [`image`]: displays the bitmap `image`.
-- [`label`]: a non-interactive text element.
-- [`portal`]: a view which puts `child` into a scrollable region.
-- [`progress bar`]: progress bar element.
-- [`prose`]: displays immutable text which can be selected within.
-- [`spinner`]: can be used to display that progress is happening on some process.
-- [`task`]: launch a task which will run until the view is no longer in the tree.
-- [`textbox`]: The textbox widget displays text which can be edited by the user.
-- [`variable label`]: displays non-editable text, with a variable [weight].
-- [`zstack`]: an element that lays out its children on top of each other.
 
-[architecture for UI in Rust]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+* [`flex`][crate::view::flex]: layout defines how items will be arranged in a row or column
+* [`grid`][crate::view::grid]: layout divides a window into regions and defines the relationship
+  between inner elements in terms of size and position
+* [`sized_box`][crate::view::sized_box]: forces its child to have a specific width and/or height
+* [`button`][crate::view::button]: basic button element
+* [`image`][crate::view::image]: displays a bitmap image
+* [`portal`][crate::view::portal]: a scrollable region
+* [`progress_bar`][crate::view::progress_bar]: progress bar element
+* [`prose`][crate::view::prose]: displays immutable text which can be selected within
+* [`textbox`][crate::view::textbox]: allows text to be edited by the user
+* [`task`][crate::view::task]: launch an async task which will run until the view is no longer in the tree
+* [`zstack`][crate::view::zstack]: an element that lays out its children on top of each other
+
+You should also expect to use the adapters from Xilem Core, including:
+
+* [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
+* [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
+
+[xilem_blog]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+[xilem_examples]: https://github.com/linebender/xilem/tree/main/xilem/examples
 [winit]: https://crates.io/crates/winit
 [Druid]: https://crates.io/crates/druid
 [Masonry]: https://crates.io/crates/masonry
@@ -115,29 +138,10 @@ The primitives your `Xilem` app’s view tree will generally be constructed from
 [Fontique]: https://crates.io/crates/fontique
 [swash]: https://crates.io/crates/swash
 [skrifa]: https://crates.io/crates/skrifa
-[AccessKit]: https://crates.io/crates/accesskit
-[`flex`]: https://docs.rs/xilem/latest/xilem/view/flex/
-[`grid`]: https://docs.rs/xilem/latest/xilem/view/grid/
-[`lens`]: core::lens
-[`map state`]: core::map_state
-[`map action`]: core::map_action
-[`adapt`]: core::adapt
-[`sized box`]: https://docs.rs/xilem/latest/xilem/view/sized_box/
-[`button`]: https://docs.rs/xilem/latest/xilem/view/button/
-[`checkbox`]: https://docs.rs/xilem/latest/xilem/view/checkbox/
-[`image`]: https://docs.rs/xilem/latest/xilem/view/image/
-[`label`]: https://docs.rs/xilem/latest/xilem/view/label/
-[`portal`]: https://docs.rs/xilem/latest/xilem/view/portal/
-[`progress bar`]: https://docs.rs/xilem/latest/xilem/view/progress_bar/
-[`prose`]: https://docs.rs/xilem/latest/xilem/view/prose/
-[`spinner`]: https://docs.rs/xilem/latest/xilem/view/spinner/
-[`task`]: https://docs.rs/xilem/latest/xilem/view/task/
-[`textbox`]: https://docs.rs/xilem/latest/xilem/view/textbox/
-[`variable label`]: https://docs.rs/xilem/latest/xilem/view/variable_label/
-[`zstack`]: https://docs.rs/xilem/latest/xilem/view/zstack/
-[weight]: masonry::FontWeight 
+[AccessKit]: https://accesskit.dev/
 
 <!-- cargo-rdme end -->
+<!-- markdownlint-enable MD053 -->
 
 ## Minimum supported Rust Version (MSRV)
 
@@ -179,5 +183,4 @@ Some files used for examples are under different licenses:
 
 Note that these files are *not* distributed with the released crate.
 
-[Xilem: an architecture for UI in Rust]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
 [Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
