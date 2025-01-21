@@ -105,6 +105,8 @@ impl Textbox {
         this.widget.clip = clip;
         this.ctx.request_layout();
     }
+
+    //pub fn set
 }
 
 // --- MARK: IMPL WIDGET ---
@@ -191,5 +193,13 @@ mod tests {
         let mut harness = TestHarness::create_with_size(textbox, Size::new(150.0, 20.0));
 
         assert_render_snapshot!(harness, "textbox_outline");
+
+        harness.edit_root_widget(|mut textbox| {
+            let mut textbox = textbox.downcast::<Textbox>();
+            let mut textbox = Textbox::text_mut(&mut textbox);
+
+            TextArea::select_text(&mut textbox, "contents");
+        });
+        assert_render_snapshot!(harness, "textbox_selection");
     }
 }
