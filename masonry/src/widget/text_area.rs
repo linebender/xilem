@@ -483,7 +483,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// No-op if either index is not a char boundary.
     pub fn select_byte_range(this: &mut WidgetMut<'_, Self>, start: usize, end: usize) {
         let (fctx, lctx) = this.ctx.text_contexts();
-        dbg!((start, end));
         this.widget
             .editor
             .driver(fctx, lctx)
