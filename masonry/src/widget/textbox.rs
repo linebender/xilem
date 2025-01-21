@@ -194,12 +194,16 @@ mod tests {
 
         assert_render_snapshot!(harness, "textbox_outline");
 
+        let mut text_area_id = None;
         harness.edit_root_widget(|mut textbox| {
             let mut textbox = textbox.downcast::<Textbox>();
             let mut textbox = Textbox::text_mut(&mut textbox);
+            text_area_id = Some(textbox.ctx.widget_id());
 
             TextArea::select_text(&mut textbox, "contents");
         });
+        harness.focus_on(text_area_id);
+
         assert_render_snapshot!(harness, "textbox_selection");
     }
 }
