@@ -3,6 +3,7 @@
 
 //! Events.
 
+use std::panic;
 use std::path::PathBuf;
 
 use vello::kurbo::Point;
@@ -458,6 +459,30 @@ impl PointerEvent {
 }
 
 impl TextEvent {
+    /// Constructor for IME Preedit events.
+    ///
+    /// This is mostly useful for testing.
+    pub fn preedit(text: String) -> Self {
+        Self::Ime(Ime::Preedit(text, None))
+    }
+
+    /// Constructor for IME Preedit events.
+    ///
+    /// This is mostly useful for testing.
+    ///
+    /// **selected** is the part of the preedit text that should be selected.
+    ///
+    /// ## Panics
+    ///
+    /// If **selected** isn't a substring of **text**.
+    pub fn preedit_with_cursor(text: String, selected: String) -> Self {
+        let Some(offset) = text.find(&selected) else {
+            panic!("Error building Preedit event: '{selected}' not found in '{text}'");
+        };
+        let span = (offset, selected.len());
+        Self::Ime(Ime::Preedit(text, Some(span)))
+    }
+
     /// Short name, for debug logging.
     pub fn short_name(&self) -> &'static str {
         match self {

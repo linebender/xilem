@@ -477,6 +477,32 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         // Determine whether there's any advantage to that
         this.ctx.request_layout();
     }
+
+    /// Set the selection to the given byte range.
+    ///
+    /// No-op if either index is not a char boundary.
+    pub fn select_byte_range(this: &mut WidgetMut<'_, Self>, start: usize, end: usize) {
+        let (fctx, lctx) = this.ctx.text_contexts();
+        this.widget
+            .editor
+            .driver(fctx, lctx)
+            .select_byte_range(start, end);
+        this.ctx.request_render();
+        this.ctx.request_layout();
+    }
+
+    /// Set the selection to the first instance of the given text.
+    ///
+    /// This is mostly useful for testing.
+    ///
+    /// No-op if the text isn't found.
+    pub fn select_text(this: &mut WidgetMut<'_, Self>, text: &str) {
+        let Some(start) = this.widget.text().to_string().find(text) else {
+            return;
+        };
+        let end = start + text.len();
+        Self::select_byte_range(this, start, end);
+    }
 }
 
 // --- MARK: IMPL WIDGET ---
