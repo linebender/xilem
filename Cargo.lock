@@ -645,9 +645,9 @@ dependencies = [
 
 [[package]]
 name = "color"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "04d9a622ee8dabcf678e18d306da59ffa4a7f8f5f50c04155903275a789ae1f7"
+checksum = "61c387f6cef110ee8eaf12fca5586d3d303c07c594f4a5f02c768b6470b70dbd"
 
 [[package]]
 name = "combine"
@@ -2472,9 +2472,9 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "peniko"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7de2e49a1a6b7a55ec3ba866a423f46cd8f31472bfaabe42c68e144c27bc668"
+checksum = "2ec061f435b573ff602b2c5690f1a5bfcf461327194654cfbfce4412b95cf2a1"
 dependencies = [
  "color",
  "kurbo",
@@ -3807,8 +3807,9 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 
 [[package]]
 name = "vello"
-version = "0.3.0"
-source = "git+https://github.com/linebender/vello?rev=d5ebe12737861c521d7ce6ce02b800278367d07d#d5ebe12737861c521d7ce6ce02b800278367d07d"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa359d6cc48a5afec128b6a3829116700c33bd6d4a9ce81efd0b1e6ac55e9777"
 dependencies = [
  "bytemuck",
  "futures-intrusive",
@@ -3826,8 +3827,9 @@ dependencies = [
 
 [[package]]
 name = "vello_encoding"
-version = "0.3.0"
-source = "git+https://github.com/linebender/vello?rev=d5ebe12737861c521d7ce6ce02b800278367d07d#d5ebe12737861c521d7ce6ce02b800278367d07d"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "847f24259aa73e1d5baf453856034f471eeffbf006072e41f7c8397da4f89f65"
 dependencies = [
  "bytemuck",
  "guillotiere",
@@ -3838,8 +3840,9 @@ dependencies = [
 
 [[package]]
 name = "vello_shaders"
-version = "0.3.0"
-source = "git+https://github.com/linebender/vello?rev=d5ebe12737861c521d7ce6ce02b800278367d07d#d5ebe12737861c521d7ce6ce02b800278367d07d"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88db8f16a08862b63bbbf90666d367187ff15d3bb157f3d83798497914f2c94f"
 dependencies = [
  "bytemuck",
  "naga",

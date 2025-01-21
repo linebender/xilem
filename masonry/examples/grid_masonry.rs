@@ -50,7 +50,7 @@ fn main() {
             .with_style(StyleProperty::FontSize(14.0))
             .with_alignment(Alignment::Middle),
     ))
-    .border(Color::from_rgba8(40, 40, 80, 255), 1.0);
+    .border(Color::from_rgb8(40, 40, 80), 1.0);
     let button_inputs = vec![
         GridParams {
             x: 0,
