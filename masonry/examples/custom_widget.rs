@@ -177,3 +177,22 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
     }
     result
 }
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+
+    use super::*;
+
+    #[test]
+    fn screenshot_test() {
+        let my_string = "Masonry + Vello".to_string();
+
+        let mut harness = TestHarness::create(CustomWidget(my_string));
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "custom_widget");
+    }
+}

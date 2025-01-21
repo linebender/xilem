@@ -9,7 +9,7 @@
 
 use masonry::dpi::LogicalSize;
 use masonry::widget::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
-use masonry::{Action, AppDriver, DriverCtx, WidgetId};
+use masonry::{Action, AppDriver, DriverCtx, Widget, WidgetId};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -45,8 +45,8 @@ impl AppDriver for Driver {
     }
 }
 
-fn main() {
-    let main_widget = Portal::new(
+fn make_widget_tree() -> impl Widget {
+    Portal::new(
         Flex::column()
             .with_child(
                 Flex::row()
@@ -54,8 +54,10 @@ fn main() {
                     .with_child(Button::new("Add task")),
             )
             .with_spacer(VERTICAL_WIDGET_SPACING),
-    );
+    )
+}
 
+fn main() {
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()
         .with_title("To-do list")
@@ -65,10 +67,30 @@ fn main() {
     masonry::event_loop_runner::run(
         masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
-        RootWidget::new(main_widget),
+        RootWidget::new(make_widget_tree()),
         Driver {
             next_task: String::new(),
         },
     )
     .unwrap();
+}
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+
+    use super::*;
+
+    #[test]
+    fn screenshot_test() {
+        let mut harness = TestHarness::create(make_widget_tree());
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "to_do_list");
+
+        // TODO - Test clicking buttons
+        // TODO - Test typing text
+    }
 }

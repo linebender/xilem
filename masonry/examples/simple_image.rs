@@ -20,7 +20,7 @@ impl AppDriver for Driver {
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
-fn main() {
+fn make_image() -> Image {
     let image_bytes = include_bytes!("./assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();
@@ -30,8 +30,11 @@ fn main() {
         width,
         height,
     );
-    let image = Image::new(png_data).fit_mode(ObjectFit::Contain);
 
+    Image::new(png_data).fit_mode(ObjectFit::Contain)
+}
+
+fn main() {
     let window_size = LogicalSize::new(650.0, 450.0);
     let window_attributes = Window::default_attributes()
         .with_title("Simple image example")
@@ -41,8 +44,25 @@ fn main() {
     masonry::event_loop_runner::run(
         masonry::event_loop_runner::EventLoop::with_user_event(),
         window_attributes,
-        RootWidget::new(image),
+        RootWidget::new(make_image()),
         Driver,
     )
     .unwrap();
+}
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+
+    use super::*;
+
+    #[test]
+    fn screenshot_test() {
+        let mut harness = TestHarness::create(make_image());
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "grid_masonry");
+    }
 }
