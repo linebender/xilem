@@ -418,7 +418,6 @@ pub fn find_widget_at_pos<'c>(
 /// internal implementation detail of public widgets.
 pub trait AllowRawMut: Widget {}
 
-#[cfg(not(tarpaulin_include))]
 impl WidgetId {
     /// Allocate a new, unique `WidgetId`.
     ///

@@ -3,15 +3,9 @@
 
 //! Helper tools for writing unit tests.
 
-#![cfg(not(tarpaulin_include))]
-
-#[cfg(not(tarpaulin_include))]
 mod harness;
-#[cfg(not(tarpaulin_include))]
 mod helper_widgets;
-#[cfg(not(tarpaulin_include))]
 mod screenshots;
-#[cfg(not(tarpaulin_include))]
 mod snapshot_utils;
 
 pub use harness::{TestHarness, TestHarnessParams};
