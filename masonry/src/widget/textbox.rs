@@ -105,8 +105,6 @@ impl Textbox {
         this.widget.clip = clip;
         this.ctx.request_layout();
     }
-
-    //pub fn set
 }
 
 // --- MARK: IMPL WIDGET ---
