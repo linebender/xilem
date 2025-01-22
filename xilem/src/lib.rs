@@ -48,16 +48,16 @@
 //! }
 //! ```
 //!
-//! A key feature of Xilem's architecture is that `Counter`, the application's state, is an arbitrary `'static` Rust type.
+//! A key feature of Xilem's architecture is that the application's state, in this case `Counter`, is an arbitrary `'static` Rust type.
 //! In this example, `app_logic` is the root component, which creates the view value it returns.
 //! This, in turn, leads to corresponding Masonry widgets being created, in this case a button and a label.
 //! When the button is pressed, the number will be incremented, and then `app_logic` will be re-ran.
-//! The returned view will be compared with its previous value, whichi will minimally update the contents of these widgets.
+//! The returned view will be compared with its previous value, which will minimally update the contents of these widgets.
 //! In this case, because the button is still the same, it will not be updated, and the label will show its new value.
 //!
-//! More examples can be found [in the repository][xilem_examples]
+//! More examples can be found [in the repository][xilem_examples].
 //!
-//! **Note: The linked examples are for the `main` branch of Xilem. If you are using a released version, please view the examples in the tag for that release**
+//! **Note: The linked examples are for the `main` branch of Xilem. If you are using a released version, please view the examples in the tag for that release.**
 //!
 //! ## Reactive layer
 //!
@@ -67,15 +67,15 @@
 //!
 //! The primitives your `Xilem` app’s view tree will generally be constructed from:
 //!
-//! * [`flex`][crate::view::flex]: layout defines how items will be arranged in a row or column
-//! * [`grid`][crate::view::grid]: layout divides a window into regions and defines the relationship
+//! * [`flex`][crate::view::flex]: defines how items will be arranged in a row or column
+//! * [`grid`][crate::view::grid]: divides a window into regions and defines the relationship
 //!   between inner elements in terms of size and position
 //! * [`sized_box`][crate::view::sized_box]: forces its child to have a specific width and/or height
 //! * [`button`][crate::view::button]: basic button element
 //! * [`image`][crate::view::image]: displays a bitmap image
 //! * [`portal`][crate::view::portal]: a scrollable region
 //! * [`progress_bar`][crate::view::progress_bar]: progress bar element
-//! * [`prose`][crate::view::prose]: displays immutable text which can be selected within
+//! * [`prose`][crate::view::prose]: displays immutable, selectable text
 //! * [`textbox`][crate::view::textbox]: allows text to be edited by the user
 //! * [`task`][crate::view::task]: launch an async task which will run until the view is no longer in the tree
 //! * [`zstack`][crate::view::zstack]: an element that lays out its children on top of each other
@@ -205,7 +205,7 @@ where
     }
 
     // TODO: Make windows a specific view
-    /// Run app with default windows attributes.
+    /// Run app with default window attributes.
     pub fn run_windowed(
         self,
         // We pass in the event loop builder to allow
@@ -227,7 +227,7 @@ where
     }
 
     // TODO: Make windows into a custom view
-    /// Run app with custom windows attributes.
+    /// Run app with custom window attributes.
     pub fn run_windowed_in(
         self,
         mut event_loop: EventLoopBuilder,
