@@ -488,7 +488,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             .driver(fctx, lctx)
             .select_byte_range(start, end);
         this.ctx.request_render();
-        this.ctx.request_layout();
     }
 
     /// Set the selection to the first instance of the given text.

@@ -3,7 +3,6 @@
 
 //! Events.
 
-use std::panic;
 use std::path::PathBuf;
 
 use vello::kurbo::Point;
