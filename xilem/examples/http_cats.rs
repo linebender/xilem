@@ -108,10 +108,8 @@ impl HttpCats {
                     portal(sized_box(info_area).expand_width()).flex(1.),
                 ))
                 .direction(Axis::Horizontal)
-                .must_fill_major_axis(true)
                 .flex(1.),
-            ))
-            .must_fill_major_axis(true),
+            )),
             worker(
                 worker_value,
                 |proxy, mut rx| async move {

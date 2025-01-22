@@ -127,7 +127,6 @@ impl TimeZone {
                     },
                 ),
             ))
-            .must_fill_major_axis(true)
             .direction(Axis::Horizontal)
             .flex(1.),
             flex((

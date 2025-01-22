@@ -63,7 +63,6 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         axis: Axis::Vertical,
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
-        fill_major_axis: false,
         gap: None,
         phantom: PhantomData,
     }
@@ -78,7 +77,6 @@ pub struct Flex<Seq, State, Action = ()> {
     axis: Axis,
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
-    fill_major_axis: bool,
     gap: Option<f64>,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
@@ -95,11 +93,6 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
 
     pub fn main_axis_alignment(mut self, axis: MainAxisAlignment) -> Self {
         self.main_axis_alignment = axis;
-        self
-    }
-
-    pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
-        self.fill_major_axis = fill_major_axis;
         self
     }
 
@@ -146,7 +139,6 @@ where
         let mut widget = widget::Flex::for_axis(self.axis)
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
-            .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
@@ -177,9 +169,6 @@ where
         }
         if prev.main_axis_alignment != self.main_axis_alignment {
             widget::Flex::set_main_axis_alignment(&mut element, self.main_axis_alignment);
-        }
-        if prev.fill_major_axis != self.fill_major_axis {
-            widget::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
         }
         if prev.gap != self.gap {
             widget::Flex::set_raw_gap(&mut element, self.gap);
