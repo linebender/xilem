@@ -53,7 +53,9 @@
 //! This, in turn, leads to corresponding Masonry widgets being created, in this case a button and a label.
 //! When the button is pressed, the number will be incremented, and then `app_logic` will be re-ran.
 //! The returned view will be compared with its previous value, which will minimally update the contents of these widgets.
-//! In this case, because the button is still the same, it will not be updated, and the label will show its new value.
+//! As the `num` field's value has changed, the `label`'s formatted text will be different.
+//! This means that the label widget's text will be updated, updating the value displayed to the user.
+//! In this case, because the button is the same, it will not be updated.
 //!
 //! More examples can be found [in the repository][xilem_examples].
 //!
