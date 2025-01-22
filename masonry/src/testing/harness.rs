@@ -556,7 +556,6 @@ impl TestHarness {
         self.render_root.get_widget(id)
     }
 
-    // TODO - Link to focus definition in tutorial
     /// Return a [`WidgetRef`] to the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()

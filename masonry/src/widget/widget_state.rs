@@ -154,7 +154,6 @@ pub(crate) struct WidgetState {
     /// This widget or an ancestor has been disabled.
     pub(crate) is_disabled: bool,
 
-    // TODO - Document concept of "stashing".
     /// This widget has been stashed.
     pub(crate) is_explicitly_stashed: bool,
     /// This widget or an ancestor has been stashed.
@@ -171,7 +170,10 @@ pub(crate) struct WidgetState {
     pub(crate) has_focus_target: bool,
 
     // --- DEBUG INFO ---
-    // TODO - document
+    /// The typename of the associated widget.
+    ///
+    /// Used in some guard rails to provide richer error messages when a parent forgets
+    /// to iterate over some children.
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
 }

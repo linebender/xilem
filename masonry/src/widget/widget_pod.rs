@@ -8,7 +8,8 @@ use crate::{Affine, Widget, WidgetId};
 /// Generally, container widgets don't contain other widgets directly,
 /// but rather contain a `WidgetPod`, which has additional state needed
 /// for layout and for the widget to participate in event flow.
-// TODO - Add reference to container tutorial
+///
+/// See [container widget tutorial](crate::doc::doc_03_implementing_container_widget) for details.
 pub struct WidgetPod<W: ?Sized> {
     id: WidgetId,
     inner: WidgetPodInner<W>,

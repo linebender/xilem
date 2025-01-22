@@ -53,6 +53,10 @@ fn update_anim_for_widget(
     );
 }
 
+// TODO - switch anim frames to being about age / an absolute timestamp
+// instead of time elapsed.
+// (this will help in cases where we want to skip anim frames)
+
 /// Run the animation pass.
 ///
 /// See the [passes documentation](../doc/05_pass_system.md#animation-pass).

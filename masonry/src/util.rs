@@ -3,8 +3,6 @@
 
 //! Miscellaneous utility functions.
 
-#![cfg(not(tarpaulin_include))]
-
 use std::any::Any;
 use std::hash::Hash;
 

@@ -16,11 +16,6 @@ use crate::kurbo::Rect;
 // TODO - Occluded(bool) event
 // TODO - winit ActivationTokenDone thing
 // TODO - Suspended/Resume/NewEvents/MemoryWarning
-// TODO - wtf is InnerSizeWriter?
-// TODO - Move AnimFrame to Update
-// TODO - switch anim frames to being about age / an absolute timestamp
-// instead of time elapsed.
-// (this will help in cases where we want to skip anim frames)
 
 /// A global event.
 #[derive(Debug, Clone)]

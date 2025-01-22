@@ -214,7 +214,7 @@ mod tests {
             harness.render()
         };
 
-        // TODO - write comparison function
+        // TODO - Use Kompari instead
         // We don't use assert_eq because we don't want rich assert
         assert!(render_1 == render_2);
     }

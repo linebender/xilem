@@ -99,7 +99,6 @@ impl FromDynWidget for dyn Widget {
     }
 }
 
-// TODO - Add tutorial: implementing a widget - See https://github.com/linebender/xilem/issues/376
 /// The trait implemented by all widgets.
 ///
 /// For details on how to implement this trait, see the [tutorials](crate::doc).
@@ -418,7 +417,6 @@ pub fn find_widget_at_pos<'c>(
 /// internal implementation detail of public widgets.
 pub trait AllowRawMut: Widget {}
 
-#[cfg(not(tarpaulin_include))]
 impl WidgetId {
     /// Allocate a new, unique `WidgetId`.
     ///
