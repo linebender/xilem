@@ -400,3 +400,22 @@ fn main() {
     )
     .unwrap();
 }
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+
+    use super::*;
+
+    #[test]
+    fn screenshot_test() {
+        let mut harness = TestHarness::create(build_calc());
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "calc");
+
+        // TODO - Test clicking buttons
+    }
+}

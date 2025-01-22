@@ -44,7 +44,7 @@ fn grid_button(params: GridParams) -> Button {
     ))
 }
 
-fn main() {
+fn make_grid(grid_spacing: f64) -> Grid {
     let label = SizedBox::new(Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
@@ -96,16 +96,21 @@ fn main() {
         },
     ];
 
-    let driver = Driver { grid_spacing: 1.0 };
-
     // Arrange widgets in a 4 by 4 grid.
     let mut main_widget = Grid::with_dimensions(4, 4)
-        .with_spacing(driver.grid_spacing)
+        .with_spacing(grid_spacing)
         .with_child(label, GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = grid_button(button_input);
         main_widget = main_widget.with_child(button, button_input);
     }
+
+    main_widget
+}
+
+fn main() {
+    let driver = Driver { grid_spacing: 1.0 };
+    let main_widget = make_grid(driver.grid_spacing);
 
     let window_size = LogicalSize::new(800.0, 500.0);
     let window_attributes = Window::default_attributes()
@@ -120,4 +125,23 @@ fn main() {
         driver,
     )
     .unwrap();
+}
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+
+    use super::*;
+
+    #[test]
+    fn screenshot_test() {
+        let mut harness = TestHarness::create(make_grid(1.0));
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "grid_masonry");
+
+        // TODO - Test clicking buttons
+    }
 }
