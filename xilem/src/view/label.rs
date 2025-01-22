@@ -9,6 +9,22 @@ use vello::peniko::Brush;
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
+/// A non-interactive text element.
+/// # Example
+///
+/// ```ignore
+/// use xilem::palette;
+/// use xilem::view::label;
+/// use masonry::TextAlignment;
+/// use masonry::parley::fontique;
+///
+/// label("Text example.")
+///     .brush(palette::css::RED)
+///     .alignment(TextAlignment::Middle)
+///     .text_size(24.0)
+///     .weight(FontWeight::BOLD)
+///     .with_font(fontique::GenericFamily::Serif)
+/// ```
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
         label: label.into(),
@@ -21,6 +37,9 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
     }
 }
 
+/// The [`View`] created by [`label`] from a text which `impl Into<`[`ArcStr`]`>`.
+///
+/// See `label` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Label {
     label: ArcStr,
@@ -33,23 +52,27 @@ pub struct Label {
 }
 
 impl Label {
+    /// In most cases brush sets text color, but gradients and images are also supported.
     #[doc(alias = "color")]
     pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
         self.text_brush = brush.into();
         self
     }
 
+    /// Sets text alignment: `Start`, `Middle`, `End` or `Justified`.
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
         self.alignment = alignment;
         self
     }
 
+    /// Sets text size.
     #[doc(alias = "font_size")]
     pub fn text_size(mut self, text_size: f32) -> Self {
         self.text_size = text_size;
         self
     }
 
+    /// Sets font weight.
     pub fn weight(mut self, weight: FontWeight) -> Self {
         self.weight = weight;
         self
