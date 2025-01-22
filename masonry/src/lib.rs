@@ -166,18 +166,6 @@ pub mod text;
 pub mod theme;
 pub mod widget;
 
-pub use cursor_icon;
-pub use dpi;
-pub use parley;
-pub use vello;
-pub use vello::kurbo;
-
-pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
-pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use parley::layout::Alignment as TextAlignment;
-pub use parley::style::FontWeight;
-pub use vello::peniko::{color::palette, Color, Gradient};
-
 pub use action::Action;
 pub use app_driver::{AppDriver, DriverCtx};
 pub use box_constraints::BoxConstraints;
@@ -185,14 +173,21 @@ pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
     RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
 };
+pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
 pub use event::{
     AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
     WindowTheme,
 };
+pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 pub use paint_scene_helpers::UnitPoint;
+pub use parley::layout::Alignment as TextAlignment;
+pub use parley::style::FontWeight;
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 pub use util::{AsAny, Handled};
+pub use vello::kurbo;
+pub use vello::peniko::color::palette;
+pub use vello::peniko::{Color, Gradient};
 pub use widget::widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
 pub use widget::WidgetPod;
-
 pub(crate) use widget::WidgetState;
+pub use {cursor_icon, dpi, parley, vello};

@@ -141,23 +141,22 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use masonry::dpi::LogicalSize;
+pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
+pub use masonry::widget::LineBreaking;
 use masonry::widget::{RootWidget, WidgetMut};
+pub use masonry::{dpi, palette, Affine, Color, FontWeight, TextAlignment, Vec2};
 use masonry::{event_loop_runner, FromDynWidget, Widget, WidgetId, WidgetPod};
+/// Tokio is the async runner used with Xilem.
+pub use tokio;
 use view::{transformed, Transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
+pub use xilem_core as core;
 
 use crate::core::{
     AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
     ViewPathTracker, ViewSequence,
 };
-pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-pub use masonry::widget::LineBreaking;
-pub use masonry::{dpi, palette, Affine, Color, FontWeight, TextAlignment, Vec2};
-pub use xilem_core as core;
-
-/// Tokio is the async runner used with Xilem.
-pub use tokio;
 
 mod any_view;
 mod driver;

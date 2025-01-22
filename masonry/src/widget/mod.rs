@@ -37,7 +37,6 @@ mod variable_label;
 mod widget_arena;
 mod zstack;
 
-pub use self::image::Image;
 pub use align::Align;
 pub use button::Button;
 pub use checkbox::Checkbox;
@@ -55,15 +54,15 @@ pub use split::Split;
 pub use text_area::TextArea;
 pub use textbox::Textbox;
 pub use variable_label::VariableLabel;
+pub(crate) use widget_arena::WidgetArena;
 pub use widget_mut::WidgetMut;
+pub(crate) use widget_pod::CreateWidget;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
+pub(crate) use widget_state::WidgetState;
 pub use zstack::{Alignment, ChildAlignment, HorizontalAlignment, VerticalAlignment, ZStack};
 
-pub(crate) use widget_arena::WidgetArena;
-pub(crate) use widget_pod::CreateWidget;
-pub(crate) use widget_state::WidgetState;
-
+pub use self::image::Image;
 use crate::{Affine, Size};
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit

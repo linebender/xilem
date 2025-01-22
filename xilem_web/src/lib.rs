@@ -82,25 +82,22 @@ pub mod modifiers;
 pub mod props;
 pub mod svg;
 
-pub use self::{
-    after_update::{
-        after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
-    },
-    app::App,
-    attribute_value::{AttributeValue, IntoAttributeValue},
-    context::{MessageThunk, ViewCtx},
-    dom_helpers::{document, document_body, get_element_by_id, input_event_target_value},
-    message::{DynMessage, Message},
-    optional_action::{Action, OptionalAction},
-    pod::{AnyPod, Pod, PodFlags, PodMut},
-    pointer::{Pointer, PointerDetails, PointerMsg},
-};
+use core::{Adapt, AdaptThunk, AnyView, MapAction, MapState, MessageResult, View, ViewSequence};
 
 pub use templated::{templated, Templated};
-
 pub use xilem_core as core;
 
-use core::{Adapt, AdaptThunk, AnyView, MapAction, MapState, MessageResult, View, ViewSequence};
+pub use self::after_update::{
+    after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
+};
+pub use self::app::App;
+pub use self::attribute_value::{AttributeValue, IntoAttributeValue};
+pub use self::context::{MessageThunk, ViewCtx};
+pub use self::dom_helpers::{document, document_body, get_element_by_id, input_event_target_value};
+pub use self::message::{DynMessage, Message};
+pub use self::optional_action::{Action, OptionalAction};
+pub use self::pod::{AnyPod, Pod, PodFlags, PodMut};
+pub use self::pointer::{Pointer, PointerDetails, PointerMsg};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
