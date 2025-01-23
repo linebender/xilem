@@ -18,8 +18,8 @@ use tracing::trace_span;
 use vello::Scene;
 
 use crate::event::{PointerEvent, TextEvent};
-use crate::widget::widget::find_widget_at_pos;
-use crate::widget::{SizedBox, WidgetRef};
+use crate::widgets::widget::find_widget_at_pos;
+use crate::widgets::{SizedBox, WidgetRef};
 use crate::{
     AccessCtx, AccessEvent, AsAny, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx,
     PaintCtx, Point, QueryCtx, RegisterCtx, Size, Update, UpdateCtx, Widget, WidgetId, WidgetPod,

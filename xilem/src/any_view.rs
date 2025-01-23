@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
-use masonry::widget::WidgetMut;
+use masonry::widgets::WidgetMut;
 use masonry::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx, Point,
     PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,

@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget;
+use masonry::widgets;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -16,11 +16,11 @@ pub struct ProgressBar {
 
 impl ViewMarker for ProgressBar {}
 impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
-    type Element = Pod<widget::ProgressBar>;
+    type Element = Pod<widgets::ProgressBar>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widget::ProgressBar::new(self.progress)))
+        ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widgets::ProgressBar::new(self.progress)))
     }
 
     fn rebuild(
@@ -31,7 +31,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         mut element: Mut<Self::Element>,
     ) {
         if prev.progress != self.progress {
-            widget::ProgressBar::set_progress(&mut element, self.progress);
+            widgets::ProgressBar::set_progress(&mut element, self.progress);
         }
     }
 

@@ -152,21 +152,13 @@ mod util;
 #[cfg(doc)]
 pub mod doc;
 
-mod action;
-mod app_driver;
-mod box_constraints;
-mod contexts;
-mod event;
-mod paint_scene_helpers;
 mod passes;
-mod render_root;
-mod tracing_backend;
 
-pub mod event_loop_runner;
+pub mod app;
+pub mod core;
 pub mod testing;
-pub mod text;
 pub mod theme;
-pub mod widget;
+pub mod widgets;
 
 pub use cursor_icon;
 pub use dpi;
@@ -194,7 +186,23 @@ pub use event::{
 pub use paint_scene_helpers::UnitPoint;
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 pub use util::{AsAny, Handled};
-pub use widget::widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
-pub use widget::WidgetPod;
+pub use widgets::widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
+pub use widgets::WidgetPod;
 
-pub(crate) use widget::WidgetState;
+pub(crate) use widgets::WidgetState;
+
+// TODO - Remove
+use app::app_driver;
+use app::render_root;
+use app::tracing_backend;
+use core::action;
+use core::box_constraints;
+use core::contexts;
+use core::event;
+
+pub use app::event_loop_runner;
+pub use core::text;
+
+mod paint_scene_helpers {
+    pub use crate::util::*;
+}

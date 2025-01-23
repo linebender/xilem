@@ -10,7 +10,7 @@
 use std::sync::Arc;
 
 use masonry::event_loop_runner::MasonryUserEvent;
-use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::{AppDriver, Color};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;

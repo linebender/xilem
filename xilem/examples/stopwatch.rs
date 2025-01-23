@@ -10,7 +10,7 @@ use std::time::{Duration, SystemTime};
 
 use masonry::dpi::LogicalSize;
 use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-use masonry::widget::{Axis, CrossAxisAlignment, MainAxisAlignment};
+use masonry::widgets::{Axis, CrossAxisAlignment, MainAxisAlignment};
 use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;

@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Flex, RootWidget, Textbox};
+use masonry::widgets::{Flex, RootWidget, Textbox};
 use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 use winit::window::Window;
 

@@ -3,7 +3,7 @@
 
 //! The bitmap image widget.
 
-use masonry::widget::{self, ObjectFit};
+use masonry::widgets::{self, ObjectFit};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -47,11 +47,11 @@ impl Image {
 
 impl ViewMarker for Image {}
 impl<State, Action> View<State, Action, ViewCtx> for Image {
-    type Element = Pod<widget::Image>;
+    type Element = Pod<widgets::Image>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.new_pod(widget::Image::new(self.image.clone()));
+        let pod = ctx.new_pod(widgets::Image::new(self.image.clone()));
         (pod, ())
     }
 
@@ -63,10 +63,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         mut element: Mut<Self::Element>,
     ) {
         if prev.object_fit != self.object_fit {
-            widget::Image::set_fit_mode(&mut element, self.object_fit);
+            widgets::Image::set_fit_mode(&mut element, self.object_fit);
         }
         if prev.image != self.image {
-            widget::Image::set_image_data(&mut element, self.image.clone());
+            widgets::Image::set_image_data(&mut element, self.image.clone());
         }
     }
 

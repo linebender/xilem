@@ -15,7 +15,7 @@
 use accesskit::{Node, Role};
 use masonry::dpi::LogicalSize;
 use masonry::text::StyleProperty;
-use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
+use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry::{
     AccessCtx, AccessEvent, Action, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
     LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update,

@@ -8,7 +8,7 @@
 
 use masonry::dpi::LogicalSize;
 use masonry::text::StyleProperty;
-use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
+use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
 use masonry::{Action, AppDriver, Color, DriverCtx, PointerButton, WidgetId};
 use parley::layout::Alignment;
 use winit::window::Window;

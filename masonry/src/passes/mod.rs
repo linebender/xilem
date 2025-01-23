@@ -11,7 +11,7 @@ use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
 use crate::render_root::RenderRootState;
-use crate::widget::WidgetArena;
+use crate::widgets::WidgetArena;
 use crate::{QueryCtx, Widget, WidgetId, WidgetState};
 
 pub(crate) mod accessibility;

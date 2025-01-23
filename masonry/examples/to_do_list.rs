@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
+use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use masonry::{Action, AppDriver, DriverCtx, Widget, WidgetId};
 use winit::window::Window;
 

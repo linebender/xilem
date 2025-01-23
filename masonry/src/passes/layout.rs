@@ -12,7 +12,7 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::widget::WidgetState;
+use crate::widgets::WidgetState;
 use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 
 // --- MARK: RUN LAYOUT ---

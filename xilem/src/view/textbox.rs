@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget;
+use masonry::widgets;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
@@ -61,15 +61,15 @@ impl<State, Action> Textbox<State, Action> {
 
 impl<State, Action> ViewMarker for Textbox<State, Action> {}
 impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<State, Action> {
-    type Element = Pod<widget::Textbox>;
+    type Element = Pod<widgets::Textbox>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         // TODO: Maybe we want a shared TextArea View?
-        let text_area = widget::TextArea::new_editable(&self.contents)
+        let text_area = widgets::TextArea::new_editable(&self.contents)
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment);
-        let textbox = widget::Textbox::from_text_area(text_area);
+        let textbox = widgets::Textbox::from_text_area(text_area);
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
@@ -85,7 +85,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut text_area = widget::Textbox::text_mut(&mut element);
+        let mut text_area = widgets::Textbox::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
@@ -95,14 +95,14 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
 
         // This is probably not the right behaviour, but determining what is the right behaviour is hard
         if text_area.widget.text() != &self.contents {
-            widget::TextArea::reset_text(&mut text_area, &self.contents);
+            widgets::TextArea::reset_text(&mut text_area, &self.contents);
         }
 
         if prev.text_brush != self.text_brush {
-            widget::TextArea::set_brush(&mut text_area, self.text_brush.clone());
+            widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::TextArea::set_alignment(&mut text_area, self.alignment);
+            widgets::TextArea::set_alignment(&mut text_area, self.alignment);
         }
     }
 

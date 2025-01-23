@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget, Color};
+use masonry::{widgets, Color};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -53,11 +53,11 @@ impl Spinner {
 
 impl ViewMarker for Spinner {}
 impl<State, Action> View<State, Action, ViewCtx> for Spinner {
-    type Element = Pod<widget::Spinner>;
+    type Element = Pod<widgets::Spinner>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.new_pod(widget::Spinner::new());
+        let pod = ctx.new_pod(widgets::Spinner::new());
         (pod, ())
     }
 
@@ -70,8 +70,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     ) {
         if prev.color != self.color {
             match self.color {
-                Some(color) => widget::Spinner::set_color(&mut element, color),
-                None => widget::Spinner::reset_color(&mut element),
+                Some(color) => widgets::Spinner::set_color(&mut element, color),
+                None => widgets::Spinner::reset_color(&mut element),
             };
         }
     }

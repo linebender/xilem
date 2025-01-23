@@ -26,7 +26,7 @@ use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, Window
 use crate::testing::screenshots::get_image_diff;
 use crate::testing::snapshot_utils::get_cargo_workspace;
 use crate::tracing_backend::try_init_test_tracing;
-use crate::widget::{WidgetMut, WidgetRef};
+use crate::widgets::{WidgetMut, WidgetRef};
 use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 
 /// A safe headless environment to test widgets in.

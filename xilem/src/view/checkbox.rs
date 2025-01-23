@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::text::ArcStr;
-use masonry::widget;
+use masonry::widgets;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -55,12 +55,12 @@ impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<F>
 where
     F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
 {
-    type Element = Pod<widget::Checkbox>;
+    type Element = Pod<widgets::Checkbox>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(widget::Checkbox::new(self.checked, self.label.clone()))
+            ctx.new_pod(widgets::Checkbox::new(self.checked, self.label.clone()))
         })
     }
 
@@ -72,10 +72,10 @@ where
         mut element: Mut<Self::Element>,
     ) {
         if prev.label != self.label {
-            widget::Checkbox::set_text(&mut element, self.label.clone());
+            widgets::Checkbox::set_text(&mut element, self.label.clone());
         }
         if prev.checked != self.checked {
-            widget::Checkbox::set_checked(&mut element, self.checked);
+            widgets::Checkbox::set_checked(&mut element, self.checked);
         }
     }
 

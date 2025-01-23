@@ -9,7 +9,7 @@
 
 use masonry::dpi::LogicalSize;
 use masonry::text::StyleProperty;
-use masonry::widget::{Button, Flex, Label, RootWidget};
+use masonry::widgets::{Button, Flex, Label, RootWidget};
 use masonry::{Action, AppDriver, DriverCtx, FontWeight, WidgetId};
 use winit::window::Window;
 

@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use masonry::widget::{Alignment, LineBreaking};
+use masonry::widgets::{Alignment, LineBreaking};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;

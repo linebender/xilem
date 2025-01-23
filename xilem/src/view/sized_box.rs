@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget;
-pub use masonry::widget::Padding;
+use masonry::widgets;
+pub use masonry::widgets::Padding;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
@@ -147,12 +147,12 @@ where
     Action: 'static,
     V: WidgetView<State, Action>,
 {
-    type Element = Pod<widget::SizedBox>;
+    type Element = Pod<widgets::SizedBox>;
     type ViewState = V::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.inner.build(ctx);
-        let mut widget = widget::SizedBox::new_pod(child.erased_widget_pod())
+        let mut widget = widgets::SizedBox::new_pod(child.erased_widget_pod())
             .raw_width(self.width)
             .raw_height(self.height)
             .rounded(self.corner_radius)
@@ -176,40 +176,40 @@ where
     ) {
         if self.width != prev.width {
             match self.width {
-                Some(width) => widget::SizedBox::set_width(&mut element, width),
-                None => widget::SizedBox::unset_width(&mut element),
+                Some(width) => widgets::SizedBox::set_width(&mut element, width),
+                None => widgets::SizedBox::unset_width(&mut element),
             }
         }
         if self.height != prev.height {
             match self.height {
-                Some(height) => widget::SizedBox::set_height(&mut element, height),
-                None => widget::SizedBox::unset_height(&mut element),
+                Some(height) => widgets::SizedBox::set_height(&mut element, height),
+                None => widgets::SizedBox::unset_height(&mut element),
             }
         }
         if self.background != prev.background {
             match &self.background {
                 Some(background) => {
-                    widget::SizedBox::set_background(&mut element, background.clone());
+                    widgets::SizedBox::set_background(&mut element, background.clone());
                 }
-                None => widget::SizedBox::clear_background(&mut element),
+                None => widgets::SizedBox::clear_background(&mut element),
             }
         }
         if self.border != prev.border {
             match &self.border {
                 Some(border) => {
-                    widget::SizedBox::set_border(&mut element, border.brush.clone(), border.width);
+                    widgets::SizedBox::set_border(&mut element, border.brush.clone(), border.width);
                 }
-                None => widget::SizedBox::clear_border(&mut element),
+                None => widgets::SizedBox::clear_border(&mut element),
             }
         }
         if self.corner_radius != prev.corner_radius {
-            widget::SizedBox::set_rounded(&mut element, self.corner_radius);
+            widgets::SizedBox::set_rounded(&mut element, self.corner_radius);
         }
         if self.padding != prev.padding {
-            widget::SizedBox::set_padding(&mut element, self.padding);
+            widgets::SizedBox::set_padding(&mut element, self.padding);
         }
         {
-            let mut child = widget::SizedBox::child_mut(&mut element)
+            let mut child = widgets::SizedBox::child_mut(&mut element)
                 .expect("We only create SizedBox with a child");
             self.inner
                 .rebuild(&prev.inner, view_state, ctx, child.downcast());
@@ -222,7 +222,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut child = widget::SizedBox::child_mut(&mut element)
+        let mut child = widgets::SizedBox::child_mut(&mut element)
             .expect("We only create SizedBox with a child");
         self.inner.teardown(view_state, ctx, child.downcast());
     }

@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget;
+use masonry::widgets;
 pub use masonry::PointerButton;
 use xilem_core::ViewPathTracker;
 
@@ -96,7 +96,7 @@ impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
 where
     F: Fn(&mut State, PointerButton) -> MessageResult<Action> + Send + Sync + 'static,
 {
-    type Element = Pod<widget::Button>;
+    type Element = Pod<widgets::Button>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
@@ -104,7 +104,7 @@ where
             View::<State, Action, _>::build(&self.label, ctx)
         });
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(widget::Button::from_label_pod(child.into_widget_pod()))
+            ctx.new_pod(widgets::Button::from_label_pod(child.into_widget_pod()))
         })
     }
 
@@ -121,7 +121,7 @@ where
                 &prev.label,
                 state,
                 ctx,
-                widget::Button::label_mut(&mut element),
+                widgets::Button::label_mut(&mut element),
             );
         });
     }
@@ -137,7 +137,7 @@ where
                 &self.label,
                 &mut (),
                 ctx,
-                widget::Button::label_mut(&mut element),
+                widgets::Button::label_mut(&mut element),
             );
         });
         ctx.teardown_leaf(element);

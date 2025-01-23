@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget::{self, WidgetMut};
-pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
+use masonry::widgets::{self, WidgetMut};
+pub use masonry::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 use masonry::{FromDynWidget, Widget};
 
 use crate::core::{
@@ -137,13 +137,13 @@ where
     Action: 'static,
     Seq: FlexSequence<State, Action>,
 {
-    type Element = Pod<widget::Flex>;
+    type Element = Pod<widgets::Flex>;
 
     type ViewState = Seq::SeqState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let mut widget = widget::Flex::for_axis(self.axis)
+        let mut widget = widgets::Flex::for_axis(self.axis)
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
@@ -170,19 +170,19 @@ where
         mut element: Mut<Self::Element>,
     ) {
         if prev.axis != self.axis {
-            widget::Flex::set_direction(&mut element, self.axis);
+            widgets::Flex::set_direction(&mut element, self.axis);
         }
         if prev.cross_axis_alignment != self.cross_axis_alignment {
-            widget::Flex::set_cross_axis_alignment(&mut element, self.cross_axis_alignment);
+            widgets::Flex::set_cross_axis_alignment(&mut element, self.cross_axis_alignment);
         }
         if prev.main_axis_alignment != self.main_axis_alignment {
-            widget::Flex::set_main_axis_alignment(&mut element, self.main_axis_alignment);
+            widgets::Flex::set_main_axis_alignment(&mut element, self.main_axis_alignment);
         }
         if prev.fill_major_axis != self.fill_major_axis {
-            widget::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
+            widgets::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
         }
         if prev.gap != self.gap {
-            widget::Flex::set_raw_gap(&mut element, self.gap);
+            widgets::Flex::set_raw_gap(&mut element, self.gap);
         }
         // TODO: Re-use scratch space?
         let mut splice = FlexSplice::new(element);
@@ -221,18 +221,18 @@ pub enum FlexElement {
 }
 
 pub struct FlexElementMut<'w> {
-    parent: WidgetMut<'w, widget::Flex>,
+    parent: WidgetMut<'w, widgets::Flex>,
     idx: usize,
 }
 
 struct FlexSplice<'w> {
     idx: usize,
-    element: WidgetMut<'w, widget::Flex>,
+    element: WidgetMut<'w, widgets::Flex>,
     scratch: AppendVec<FlexElement>,
 }
 
 impl<'w> FlexSplice<'w> {
-    fn new(element: WidgetMut<'w, widget::Flex>) -> Self {
+    fn new(element: WidgetMut<'w, widgets::Flex>) -> Self {
         Self {
             idx: 0,
             element,
@@ -276,7 +276,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexE
         f: impl FnOnce(Mut<Pod<W>>) -> R,
     ) -> (Mut<Self>, R) {
         let ret = {
-            let mut child = widget::Flex::child_mut(&mut this.parent, this.idx)
+            let mut child = widgets::Flex::child_mut(&mut this.parent, this.idx)
                 .expect("This is supposed to be a widget");
             let downcast = child.downcast();
             f(downcast)
@@ -290,7 +290,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     fn insert(&mut self, element: FlexElement) {
         match element {
             FlexElement::Child(child, params) => {
-                widget::Flex::insert_flex_child_pod(
+                widgets::Flex::insert_flex_child_pod(
                     &mut self.element,
                     self.idx,
                     child.erased_widget_pod(),
@@ -298,10 +298,10 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                 );
             }
             FlexElement::FixedSpacer(len) => {
-                widget::Flex::insert_spacer(&mut self.element, self.idx, len);
+                widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
             }
             FlexElement::FlexSpacer(len) => {
-                widget::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
+                widgets::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
             }
         };
         self.idx += 1;
@@ -312,7 +312,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         for element in self.scratch.drain() {
             match element {
                 FlexElement::Child(child, params) => {
-                    widget::Flex::insert_flex_child_pod(
+                    widgets::Flex::insert_flex_child_pod(
                         &mut self.element,
                         self.idx,
                         child.erased_widget_pod(),
@@ -320,10 +320,10 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
                     );
                 }
                 FlexElement::FixedSpacer(len) => {
-                    widget::Flex::insert_spacer(&mut self.element, self.idx, len);
+                    widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
                 }
                 FlexElement::FlexSpacer(len) => {
-                    widget::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
+                    widgets::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
                 }
             };
             self.idx += 1;
@@ -349,7 +349,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
             };
             f(child)
         };
-        widget::Flex::remove_child(&mut self.element, self.idx);
+        widgets::Flex::remove_child(&mut self.element, self.idx);
         ret
     }
 
@@ -512,13 +512,13 @@ where
     ) {
         {
             if self.params != prev.params {
-                widget::Flex::update_child_flex_params(
+                widgets::Flex::update_child_flex_params(
                     &mut element.parent,
                     element.idx,
                     self.params,
                 );
             }
-            let mut child = widget::Flex::child_mut(&mut element.parent, element.idx)
+            let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
                 .expect("FlexWrapper always has a widget child");
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast());
@@ -531,7 +531,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut child = widget::Flex::child_mut(&mut element.parent, element.idx)
+        let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
             .expect("FlexWrapper always has a widget child");
         self.view.teardown(view_state, ctx, child.downcast());
     }
@@ -586,10 +586,10 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         if self != prev {
             match self {
                 Self::Fixed(len) => {
-                    widget::Flex::update_spacer_fixed(&mut element.parent, element.idx, *len);
+                    widgets::Flex::update_spacer_fixed(&mut element.parent, element.idx, *len);
                 }
                 Self::Flex(flex) => {
-                    widget::Flex::update_spacer_flex(&mut element.parent, element.idx, *flex);
+                    widgets::Flex::update_spacer_flex(&mut element.parent, element.idx, *flex);
                 }
             };
         }
@@ -742,7 +742,7 @@ where
                         },
                     );
                 });
-                widget::Flex::remove_child(&mut element.parent, element.idx);
+                widgets::Flex::remove_child(&mut element.parent, element.idx);
                 // The Flex item view has just been destroyed, teardown the old view
                 // We increment the generation only on the falling edge (new item `FlexSpacer`) by convention
                 // This choice has no impact on functionality
@@ -756,10 +756,10 @@ where
                 let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx);
                 match spacer_element {
                     FlexElement::FixedSpacer(len) => {
-                        widget::Flex::insert_spacer(&mut element.parent, element.idx, len);
+                        widgets::Flex::insert_spacer(&mut element.parent, element.idx, len);
                     }
                     FlexElement::FlexSpacer(len) => {
-                        widget::Flex::insert_flex_spacer(&mut element.parent, element.idx, len);
+                        widgets::Flex::insert_flex_spacer(&mut element.parent, element.idx, len);
                     }
                     FlexElement::Child(_, _) => unreachable!(),
                 };
@@ -774,7 +774,7 @@ where
                         idx: element.idx,
                     },
                 );
-                widget::Flex::remove_child(&mut element.parent, element.idx);
+                widgets::Flex::remove_child(&mut element.parent, element.idx);
 
                 let (flex_item_element, child_state) = ctx
                     .with_id(ViewId::new(view_state.generation), |ctx| {
@@ -782,7 +782,7 @@ where
                     });
                 view_state.inner = Some(child_state);
                 if let FlexElement::Child(child, params) = flex_item_element {
-                    widget::Flex::insert_flex_child_pod(
+                    widgets::Flex::insert_flex_child_pod(
                         &mut element.parent,
                         element.idx,
                         child.erased_widget_pod(),

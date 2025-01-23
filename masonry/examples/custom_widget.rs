@@ -12,7 +12,7 @@
 
 use accesskit::{Node, Role};
 use masonry::kurbo::{BezPath, Stroke};
-use masonry::widget::{ObjectFit, RootWidget};
+use masonry::widgets::{ObjectFit, RootWidget};
 use masonry::{
     palette, AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx,
     EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size,
