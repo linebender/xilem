@@ -88,7 +88,7 @@ mod tests {
     fn screenshot_test() {
         let mut harness = TestHarness::create(make_widget_tree());
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "to_do_list");
+        assert_render_snapshot!(harness, "base_screenshot");
 
         // TODO - Test clicking buttons
         // TODO - Test typing text
