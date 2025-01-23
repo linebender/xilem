@@ -96,6 +96,8 @@
 //! [Druid]: https://crates.io/crates/druid
 //! [Xilem]: https://crates.io/crates/xilem
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
+// TODO: Add screenshot. This can't use include_screenshot as that doesn't work with cargo-rdme
+// See https://github.com/linebender/xilem/issues/851
 
 // LINEBENDER LINT SET - lib.rs - v1
 // See https://linebender.org/wiki/canonical-lints/

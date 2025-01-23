@@ -20,11 +20,6 @@ macro_rules! include_screenshot {
     };
 }
 
-// TODO:
-// - Check whether the docs.rs trick actually works.
-// - Check whether this method will work with cargo rdme.
-// - Make better screenshots than the ones we currently use.
-
 #[cfg(not(docsrs))]
 #[doc(hidden)]
 #[macro_export]
