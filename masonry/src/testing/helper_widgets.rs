@@ -17,11 +17,10 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 
-use crate::core::widget::find_widget_at_pos;
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
-    WidgetRef,
+    find_widget_at_pos, AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx,
+    PaintCtx, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetPod, WidgetRef,
 };
 use crate::kurbo::{Point, Size};
 use crate::widgets::SizedBox;

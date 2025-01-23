@@ -1,17 +1,20 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(missing_docs, reason = "WIP")]
+//! Basic types and traits Masonry is built on.
 
-pub(crate) mod action;
-pub(crate) mod box_constraints;
-pub mod contexts;
-pub mod event;
-pub mod text;
-
-pub(crate) mod widget;
+mod action;
+mod box_constraints;
+mod contexts;
+mod event;
+mod object_fit;
+mod text;
+#[allow(missing_docs, reason = "TODO")]
+mod widget;
 mod widget_arena;
+#[allow(missing_docs, reason = "TODO")]
 mod widget_mut;
+#[allow(missing_docs, reason = "TODO")]
 mod widget_pod;
 mod widget_ref;
 mod widget_state;
@@ -26,9 +29,9 @@ pub use event::{
     AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
     WindowTheme,
 };
-pub use text::{render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
-
 pub use object_fit::ObjectFit;
+pub use text::{render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
+pub use widget::find_widget_at_pos;
 pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
@@ -38,65 +41,3 @@ pub(crate) use text::default_styles;
 pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
-
-mod object_fit {
-    use crate::kurbo::{Affine, Size};
-
-    // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
-    /// Strategies for inscribing a rectangle inside another rectangle.
-    #[derive(Clone, Copy, Default, PartialEq)]
-    pub enum ObjectFit {
-        /// As large as possible without changing aspect ratio of image and all of image shown
-        #[default]
-        Contain,
-        /// As large as possible with no dead space so that some of the image may be clipped
-        Cover,
-        /// Fill the widget with no dead space, aspect ratio of widget is used
-        Fill,
-        /// Fill the height with the images aspect ratio, some of the image may be clipped
-        FitHeight,
-        /// Fill the width with the images aspect ratio, some of the image may be clipped
-        FitWidth,
-        /// Do not scale
-        None,
-        /// Scale down to fit but do not scale up
-        ScaleDown,
-    }
-
-    // TODO - Need to write tests for this, in a way that's relatively easy to visualize.
-
-    impl ObjectFit {
-        /// Calculate an origin and scale for an image with a given `ObjectFit`.
-        ///
-        /// This takes some properties of a widget and an object fit and returns an affine matrix
-        /// used to position and scale the image in the widget.
-        pub fn affine_to_fill(self, parent: Size, fit_box: Size) -> Affine {
-            let raw_scalex = parent.width / fit_box.width;
-            let raw_scaley = parent.height / fit_box.height;
-
-            let (scalex, scaley) = match self {
-                Self::Contain => {
-                    let scale = raw_scalex.min(raw_scaley);
-                    (scale, scale)
-                }
-                Self::Cover => {
-                    let scale = raw_scalex.max(raw_scaley);
-                    (scale, scale)
-                }
-                Self::Fill => (raw_scalex, raw_scaley),
-                Self::FitHeight => (raw_scaley, raw_scaley),
-                Self::FitWidth => (raw_scalex, raw_scalex),
-                Self::ScaleDown => {
-                    let scale = raw_scalex.min(raw_scaley).min(1.0);
-                    (scale, scale)
-                }
-                Self::None => (1.0, 1.0),
-            };
-
-            let origin_x = (parent.width - (fit_box.width * scalex)) / 2.0;
-            let origin_y = (parent.height - (fit_box.height * scaley)) / 2.0;
-
-            Affine::new([scalex, 0., 0., scaley, origin_x, origin_y])
-        }
-    }
-}
