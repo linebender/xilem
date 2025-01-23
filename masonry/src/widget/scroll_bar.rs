@@ -24,6 +24,9 @@ use crate::{
 // - Document names
 // - Document invariants
 
+/// A scrollbar.
+///
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__scroll_bar__tests__scrollbar_default.png", "Vertical scrollbar.")]
 pub struct ScrollBar {
     axis: Axis,
     pub(crate) cursor_progress: f64,

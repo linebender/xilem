@@ -19,6 +19,8 @@ use crate::{
 /// A container with either horizontal or vertical layout.
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
+///
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__flex__tests__col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
     direction: Axis,
     cross_alignment: CrossAxisAlignment,

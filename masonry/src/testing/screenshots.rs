@@ -6,6 +6,33 @@
 use image::{GenericImageView as _, RgbImage};
 use nv_flip::{FlipImageRgb8, DEFAULT_PIXELS_PER_DEGREE};
 
+#[cfg(docsrs)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        concat!(
+            "![", $($caption,)? "]",
+            "(", "https://media.githubusercontent.com/media/linebender/xilem/",
+            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry/src/", $path,
+            ")",
+        )
+    };
+}
+
+#[cfg(not(docsrs))]
+#[doc(hidden)]
+#[macro_export]
+/// Macro used to create markdown img tag, with a different URL when uploading to docs.rs.
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        concat!(
+            "![", $($caption,)? "]",
+            "(", env!("CARGO_MANIFEST_DIR"), "/src/", $path, ")",
+        )
+    };
+}
+
 pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Option<RgbImage> {
     assert_eq!(
         (ref_image.width(), ref_image.height()),

@@ -26,6 +26,8 @@ const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
 /// A button with a text label.
 ///
 /// Emits [`Action::ButtonPressed`] when pressed.
+///
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__button__tests__hello.png", "Button with text label.")]
 pub struct Button {
     label: WidgetPod<Label>,
 }

@@ -13,6 +13,9 @@ use crate::{
     QueryCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
 };
 
+/// A widget that arranges its children in a grid.
+///
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__grid__tests__with_changed_spacing.png", "Grid with buttons of various sizes.")]
 pub struct Grid {
     children: Vec<Child>,
     grid_width: i32,
