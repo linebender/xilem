@@ -13,7 +13,7 @@ macro_rules! include_screenshot {
     ($path:literal $(, $caption:literal)? $(,)?) => {
         concat!(
             "![", $($caption,)? "]",
-            "(", "https://raw.githubusercontent.com/linebender/xilem/",
+            "(", "https://media.githubusercontent.com/media/linebender/xilem/",
             "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry/src/", $path,
             ")",
         )
@@ -38,8 +38,6 @@ macro_rules! include_screenshot {
     };
 }
 
-#[cfg_attr(docsrs, doc = r" This is a doc comment.")]
-#[cfg_attr(not(docsrs), doc = r" This is a doc comment.")]
 pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Option<RgbImage> {
     assert_eq!(
         (ref_image.width(), ref_image.height()),
