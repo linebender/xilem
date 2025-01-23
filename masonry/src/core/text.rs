@@ -22,6 +22,7 @@ pub type ArcStr = std::sync::Arc<str>;
 ///
 /// This enables updating of brush details without performing relayouts;
 /// the inner values are indexes into the `brushes` argument to [`render_text()`].
+///
 /// [`Brush`]: crate::parley::Brush
 #[derive(Clone, PartialEq, Default, Debug)]
 pub struct BrushIndex(pub usize);
