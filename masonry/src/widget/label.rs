@@ -43,7 +43,7 @@ pub enum LineBreaking {
 /// This is useful for creating interactive widgets which internally
 /// need support for displaying text, such as a button.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__label__tests__styled_label.png", "Styled label")]
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__label__tests__styled_label.png", "Styled label.")]
 pub struct Label {
     text_layout: Layout<BrushIndex>,
     accessibility: LayoutAccessibility,

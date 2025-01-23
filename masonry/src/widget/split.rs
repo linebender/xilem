@@ -22,7 +22,7 @@ use crate::{
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__split__tests__columns.png", "Split panel with two labels")]
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__split__tests__columns.png", "Split panel with two labels.")]
 pub struct Split {
     split_axis: Axis,
     split_point_chosen: f64,

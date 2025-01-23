@@ -19,7 +19,7 @@ use crate::{
 
 /// A progress bar.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__progress_bar__tests__25_percent_progressbar.png", "25% progress bar")]
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__progress_bar__tests__25_percent_progressbar.png", "25% progress bar.")]
 pub struct ProgressBar {
     /// A value in the range `[0, 1]` inclusive, where 0 is 0% and 1 is 100% complete.
     ///

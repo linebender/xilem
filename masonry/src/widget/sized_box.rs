@@ -57,7 +57,7 @@ pub struct Padding {
 /// and width as possible given the parent's constraints. If height or width is not set,
 /// it will be treated as zero.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__sized_box__tests__label_box_with_outer_padding.png", "Box with blue border, pink background and a child label")]
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__sized_box__tests__label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
 pub struct SizedBox {
     child: Option<WidgetPod<dyn Widget>>,
     width: Option<f64>,

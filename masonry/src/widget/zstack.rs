@@ -33,7 +33,7 @@ pub enum ChildAlignment {
 /// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
 /// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__zstack__tests__zstack_alignment_default.png", "Red foreground widget on top of blue background widget")]
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__zstack__tests__zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
 #[derive(Default)]
 pub struct ZStack {
     children: Vec<Child>,
