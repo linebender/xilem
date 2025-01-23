@@ -14,7 +14,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
 /// To configure this, call [`fit`](Image::fit) on the returned value.
 ///
-/// Corresponds to the [`Image`](widget::Image) widget.
+/// Corresponds to the [`Image`](widgets::Image) widget.
 ///
 /// It is not currently supported to use a GPU-resident [texture](vello::wgpu::Texture) in this widget.
 /// See [#gpu>vello adding wgpu texture buffers to scene](https://xi.zulipchat.com/#narrow/stream/197075-gpu/topic/vello.20adding.20wgpu.20texture.20buffers.20to.20scene)
