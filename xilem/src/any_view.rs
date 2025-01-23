@@ -3,7 +3,6 @@
 
 use accesskit::Node;
 use accesskit::Role;
-use masonry::core::WidgetMut;
 use masonry::core::AccessCtx;
 use masonry::core::AccessEvent;
 use masonry::core::BoxConstraints;
@@ -11,15 +10,16 @@ use masonry::core::EventCtx;
 use masonry::core::FromDynWidget;
 use masonry::core::LayoutCtx;
 use masonry::core::PaintCtx;
-use masonry::Point;
 use masonry::core::PointerEvent;
 use masonry::core::QueryCtx;
 use masonry::core::RegisterCtx;
-use masonry::Size;
 use masonry::core::TextEvent;
 use masonry::core::Widget;
 use masonry::core::WidgetId;
+use masonry::core::WidgetMut;
 use masonry::core::WidgetPod;
+use masonry::kurbo::Point;
+use masonry::kurbo::Size;
 use smallvec::smallvec;
 use smallvec::SmallVec;
 use tracing::trace_span;

@@ -1,10 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::parley::style::FontStack;
-use masonry::parley::style::FontWeight;
 use masonry::core::ArcStr;
 use masonry::core::StyleProperty;
+use masonry::parley::style::FontStack;
+use masonry::parley::style::FontWeight;
 use masonry::widgets::LineBreaking;
 use masonry::widgets::{self};
 use vello::peniko::Brush;

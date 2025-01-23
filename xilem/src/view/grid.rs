@@ -3,11 +3,11 @@
 
 use std::marker::PhantomData;
 
-use masonry::widgets::GridParams;
-use masonry::core::WidgetMut;
-use masonry::widgets::{self};
 use masonry::core::FromDynWidget;
 use masonry::core::Widget;
+use masonry::core::WidgetMut;
+use masonry::widgets::GridParams;
+use masonry::widgets::{self};
 
 use crate::core::AppendVec;
 use crate::core::DynMessage;

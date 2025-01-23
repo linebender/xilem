@@ -10,9 +10,9 @@ use std::ops::Sub;
 use std::time::Duration;
 use std::time::SystemTime;
 
-use masonry::dpi::LogicalSize;
 use masonry::app::EventLoop;
 use masonry::app::EventLoopBuilder;
+use masonry::dpi::LogicalSize;
 use masonry::widgets::Axis;
 use masonry::widgets::CrossAxisAlignment;
 use masonry::widgets::MainAxisAlignment;

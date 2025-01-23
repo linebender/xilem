@@ -95,7 +95,9 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             .direction(Axis::Horizontal),
             prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
             button_any_pointer(button_label, |data: &mut AppData, button| match button {
-                masonry::core::PointerButton::None => tracing::warn!("Got unexpected None from button"),
+                masonry::core::PointerButton::None => {
+                    tracing::warn!("Got unexpected None from button")
+                }
                 masonry::core::PointerButton::Primary => data.count += 1,
                 masonry::core::PointerButton::Secondary => data.count -= 1,
                 masonry::core::PointerButton::Auxiliary => data.count *= 2,

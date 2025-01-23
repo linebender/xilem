@@ -3,7 +3,7 @@
 
 use crate::core::Widget;
 use crate::core::WidgetId;
-use crate::Affine;
+use crate::kurbo::Affine;
 
 /// A container for one widget in the hierarchy.
 ///

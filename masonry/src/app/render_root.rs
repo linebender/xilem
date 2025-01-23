@@ -61,8 +61,8 @@ use crate::passes::update::run_update_scroll_pass;
 use crate::passes::update::run_update_stashed_pass;
 use crate::passes::update::run_update_widget_tree_pass;
 use crate::passes::PassTracing;
-use crate::CursorIcon;
 use crate::Handled;
+use cursor_icon::CursorIcon;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.

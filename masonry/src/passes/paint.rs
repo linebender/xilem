@@ -12,17 +12,17 @@ use vello::peniko::Fill;
 use vello::peniko::Mix;
 use vello::Scene;
 
-use crate::util::stroke;
-use crate::passes::enter_span_if;
-use crate::passes::recurse_on_children;
 use crate::app::RenderRoot;
 use crate::app::RenderRootState;
-use crate::theme::get_debug_color;
 use crate::core::PaintCtx;
-use crate::Rect;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetState;
+use crate::kurbo::Rect;
+use crate::passes::enter_span_if;
+use crate::passes::recurse_on_children;
+use crate::theme::get_debug_color;
+use crate::util::stroke;
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(

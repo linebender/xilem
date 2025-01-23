@@ -9,6 +9,7 @@ use winit::event::ElementState;
 use winit::keyboard::KeyCode;
 use winit::keyboard::PhysicalKey;
 
+use crate::app::RenderRoot;
 use crate::app::RenderRootSignal;
 use crate::core::AccessEvent;
 use crate::core::EventCtx;
@@ -18,7 +19,6 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::passes::enter_span;
 use crate::passes::merge_state_up;
-use crate::app::RenderRoot;
 use crate::Handled;
 
 // --- MARK: HELPERS ---

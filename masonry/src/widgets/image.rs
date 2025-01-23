@@ -15,6 +15,8 @@ use vello::peniko::Image as ImageBuf;
 use vello::Scene;
 
 use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
 use crate::core::ObjectFit;
@@ -28,9 +30,7 @@ use crate::core::UpdateCtx;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::Size;
+use crate::kurbo::Size;
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
 

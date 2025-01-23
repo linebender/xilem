@@ -1,10 +1,10 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::MutateCtx;
 use crate::core::FromDynWidget;
+use crate::core::MutateCtx;
 use crate::core::Widget;
-use crate::Affine;
+use crate::kurbo::Affine;
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885

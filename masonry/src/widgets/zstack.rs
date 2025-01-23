@@ -9,18 +9,18 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 
 use crate::core::AccessCtx;
+use crate::core::BoxConstraints;
 use crate::core::LayoutCtx;
 use crate::core::PaintCtx;
 use crate::core::QueryCtx;
 use crate::core::RegisterCtx;
 use crate::core::Widget;
 use crate::core::WidgetId;
-use crate::core::WidgetPod;
-use crate::vello::Scene;
 use crate::core::WidgetMut;
-use crate::core::BoxConstraints;
-use crate::Point;
-use crate::Size;
+use crate::core::WidgetPod;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
+use crate::vello::Scene;
 
 struct Child {
     widget: WidgetPod<dyn Widget>,

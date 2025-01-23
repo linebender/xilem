@@ -5,13 +5,13 @@ use tracing::info_span;
 use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
-use crate::passes::enter_span_if;
-use crate::passes::recurse_on_children;
 use crate::app::RenderRoot;
 use crate::app::RenderRootState;
 use crate::core::ComposeCtx;
 use crate::core::Widget;
 use crate::core::WidgetState;
+use crate::passes::enter_span_if;
+use crate::passes::recurse_on_children;
 
 // --- MARK: RECURSE ---
 fn compose_widget(

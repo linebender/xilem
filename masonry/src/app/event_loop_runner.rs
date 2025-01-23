@@ -46,7 +46,7 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WindowEvent;
 use crate::dpi::LogicalPosition;
-use crate::Color;
+use crate::peniko::Color;
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {

@@ -13,11 +13,11 @@ use masonry::core::Action;
 use masonry::core::StyleProperty;
 use masonry::core::WidgetId;
 use masonry::dpi::LogicalSize;
+use masonry::parley::style::FontWeight;
 use masonry::widgets::Button;
 use masonry::widgets::Flex;
 use masonry::widgets::Label;
 use masonry::widgets::RootWidget;
-use masonry::FontWeight;
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;

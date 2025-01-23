@@ -117,7 +117,7 @@ impl<V, State, Action> SizedBox<V, State, Action> {
     /// This can be passed anything which can be represented by a [`Brush`];
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
-    /// [`Color`]: crate::Color
+    /// [`Color`]: crate::peniko::Color
     /// [`Image`]: vello::peniko::Image
     pub fn background(mut self, brush: impl Into<Brush>) -> Self {
         self.background = Some(brush.into());

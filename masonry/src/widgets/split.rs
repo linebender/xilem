@@ -13,6 +13,8 @@ use tracing::Span;
 use vello::Scene;
 
 use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
 use crate::core::PaintCtx;
@@ -23,20 +25,18 @@ use crate::core::RegisterCtx;
 use crate::core::TextEvent;
 use crate::core::Widget;
 use crate::core::WidgetId;
+use crate::core::WidgetMut;
 use crate::core::WidgetPod;
 use crate::kurbo::Line;
+use crate::kurbo::Point;
+use crate::kurbo::Rect;
+use crate::kurbo::Size;
+use crate::peniko::Color;
+use crate::theme;
 use crate::util::fill_color;
 use crate::util::stroke;
-use crate::theme;
 use crate::widgets::flex::Axis;
-use crate::core::WidgetMut;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::Color;
-use crate::CursorIcon;
-use crate::Point;
-use crate::Rect;
-use crate::Size;
+use cursor_icon::CursorIcon;
 
 // TODO - Have child widget type as generic argument
 

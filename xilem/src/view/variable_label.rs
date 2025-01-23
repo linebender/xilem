@@ -1,11 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::core::ArcStr;
 use masonry::parley::style::FontStack;
 use masonry::parley::style::FontWeight;
-use masonry::core::ArcStr;
+use masonry::parley::Alignment as TextAlignment;
 use masonry::widgets;
-use masonry::TextAlignment;
 use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 

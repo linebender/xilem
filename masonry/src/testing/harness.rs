@@ -44,14 +44,14 @@ use crate::core::WindowEvent;
 use crate::dpi::LogicalPosition;
 use crate::dpi::PhysicalPosition;
 use crate::dpi::PhysicalSize;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
+use crate::kurbo::Vec2;
 use crate::passes::anim::run_update_anim_pass;
+use crate::peniko::Color;
 use crate::testing::screenshots::get_image_diff;
 use crate::testing::snapshot_utils::get_cargo_workspace;
-use crate::Color;
 use crate::Handled;
-use crate::Point;
-use crate::Size;
-use crate::Vec2;
 
 /// A safe headless environment to test widgets in.
 ///

@@ -22,28 +22,28 @@ use vello::peniko::BlendMode;
 use vello::peniko::Brush;
 use vello::Scene;
 
+use crate::core::default_styles;
+use crate::core::render_text;
 use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::ArcStr;
+use crate::core::BoxConstraints;
+use crate::core::BrushIndex;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
 use crate::core::PaintCtx;
 use crate::core::PointerEvent;
 use crate::core::QueryCtx;
 use crate::core::RegisterCtx;
+use crate::core::StyleProperty;
+use crate::core::StyleSet;
 use crate::core::TextEvent;
 use crate::core::Update;
 use crate::core::UpdateCtx;
 use crate::core::Widget;
 use crate::core::WidgetId;
-use crate::core::default_styles;
-use crate::core::render_text;
-use crate::core::ArcStr;
-use crate::core::BrushIndex;
-use crate::core::StyleProperty;
-use crate::core::StyleSet;
-use crate::theme;
 use crate::core::WidgetMut;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
+use crate::theme;
 
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.

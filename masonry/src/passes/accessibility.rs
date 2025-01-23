@@ -11,13 +11,13 @@ use tracing::trace;
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
-use crate::passes::enter_span_if;
-use crate::passes::recurse_on_children;
 use crate::app::RenderRoot;
 use crate::app::RenderRootState;
 use crate::core::AccessCtx;
 use crate::core::Widget;
 use crate::core::WidgetState;
+use crate::passes::enter_span_if;
+use crate::passes::recurse_on_children;
 
 // --- MARK: BUILD TREE ---
 fn build_accessibility_tree(

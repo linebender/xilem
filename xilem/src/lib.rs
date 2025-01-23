@@ -166,13 +166,13 @@ use crate::core::ViewSequence;
 pub use masonry::app::EventLoop;
 pub use masonry::app::EventLoopBuilder;
 pub use masonry::dpi;
+pub use masonry::kurbo::Affine;
+pub use masonry::kurbo::Vec2;
 pub use masonry::palette;
+pub use masonry::parley::style::FontWeight;
+pub use masonry::parley::Alignment as TextAlignment;
+pub use masonry::peniko::Color;
 pub use masonry::widgets::LineBreaking;
-pub use masonry::Affine;
-pub use masonry::Color;
-pub use masonry::FontWeight;
-pub use masonry::TextAlignment;
-pub use masonry::Vec2;
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.

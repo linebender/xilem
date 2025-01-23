@@ -27,7 +27,12 @@ use vello::Scene;
 use winit::keyboard::Key;
 use winit::keyboard::NamedKey;
 
+use crate::core::default_styles;
+use crate::core::render_text;
 use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::BrushIndex;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
 use crate::core::PaintCtx;
@@ -35,22 +40,17 @@ use crate::core::PointerButton;
 use crate::core::PointerEvent;
 use crate::core::QueryCtx;
 use crate::core::RegisterCtx;
+use crate::core::StyleProperty;
 use crate::core::TextEvent;
 use crate::core::Update;
 use crate::core::UpdateCtx;
 use crate::core::Widget;
 use crate::core::WidgetId;
+use crate::core::WidgetMut;
 use crate::palette;
-use crate::core::default_styles;
-use crate::core::render_text;
-use crate::core::BrushIndex;
-use crate::core::StyleProperty;
 use crate::theme;
 use crate::widgets::Padding;
-use crate::core::WidgetMut;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::CursorIcon;
+use cursor_icon::CursorIcon;
 
 /// `TextArea` implements the core of interactive text.
 ///
@@ -765,7 +765,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                                 .insert_or_replace_selection("\n");
                             edited = true;
                         } else {
-                            ctx.submit_action(crate::core::Action::TextEntered(self.text().to_string()));
+                            ctx.submit_action(crate::core::Action::TextEntered(
+                                self.text().to_string(),
+                            ));
                         }
                     }
 

@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widgets;
 pub use masonry::core::PointerButton;
+use masonry::widgets;
 use xilem_core::ViewPathTracker;
 
 use crate::core::DynMessage;

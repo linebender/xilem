@@ -16,10 +16,10 @@ use tracing::trace_span;
 use tracing::Span;
 use vello::Scene;
 
-use crate::core::ComposeCtx;
 use crate::core::AccessCtx;
 use crate::core::AccessEvent;
 use crate::core::BoxConstraints;
+use crate::core::ComposeCtx;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
 use crate::core::PaintCtx;
@@ -30,9 +30,9 @@ use crate::core::TextEvent;
 use crate::core::Update;
 use crate::core::UpdateCtx;
 use crate::core::WidgetRef;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
 use crate::AsAny;
-use crate::Point;
-use crate::Size;
 
 /// A unique identifier for a single [`Widget`].
 ///

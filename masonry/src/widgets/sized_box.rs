@@ -30,9 +30,9 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
 use crate::util::stroke;
-use crate::Point;
-use crate::Size;
 
 // FIXME - Improve all doc in this module ASAP.
 
@@ -306,7 +306,7 @@ impl SizedBox {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    /// [`Color`]: crate::Color
+    /// [`Color`]: crate::peniko::Color
     pub fn background(mut self, brush: impl Into<Brush>) -> Self {
         self.background = Some(brush.into());
         self
@@ -393,7 +393,7 @@ impl SizedBox {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    /// [`Color`]: crate::Color
+    /// [`Color`]: crate::peniko::Color
     pub fn set_background(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         this.widget.background = Some(brush.into());
         this.ctx.request_paint_only();

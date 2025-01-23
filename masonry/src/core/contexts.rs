@@ -28,15 +28,15 @@ use crate::core::WidgetMut;
 use crate::core::WidgetPod;
 use crate::core::WidgetRef;
 use crate::core::WidgetState;
+use crate::kurbo::Affine;
+use crate::kurbo::Insets;
+use crate::kurbo::Point;
+use crate::kurbo::Rect;
+use crate::kurbo::Size;
+use crate::kurbo::Vec2;
 use crate::passes::layout::run_layout_on;
+use crate::peniko::Color;
 use crate::theme::get_debug_color;
-use crate::Affine;
-use crate::Color;
-use crate::Insets;
-use crate::Point;
-use crate::Rect;
-use crate::Size;
-use crate::Vec2;
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)

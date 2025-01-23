@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::peniko::Color;
 use masonry::widgets;
-use masonry::Color;
 
 use crate::core::DynMessage;
 use crate::core::Mut;

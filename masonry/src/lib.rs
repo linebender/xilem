@@ -165,21 +165,10 @@ pub use dpi;
 pub use parley;
 pub use vello;
 pub use vello::kurbo;
-
-pub use cursor_icon::CursorIcon;
-pub use cursor_icon::ParseError as CursorIconParseError;
-pub use kurbo::Affine;
-pub use kurbo::Insets;
-pub use kurbo::Point;
-pub use kurbo::Rect;
-pub use kurbo::Size;
-pub use kurbo::Vec2;
-pub use parley::layout::Alignment as TextAlignment;
-pub use parley::style::FontWeight;
+pub use vello::peniko;
 pub use vello::peniko::color::palette;
-pub use vello::peniko::Color;
-pub use vello::peniko::Gradient;
 
+// TODO - Move to core?
 pub use util::AsAny;
 pub use util::Handled;
 pub use util::UnitPoint;

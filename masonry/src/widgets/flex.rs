@@ -16,6 +16,8 @@ use vello::kurbo::Vec2;
 use vello::Scene;
 
 use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
 use crate::core::PaintCtx;
@@ -24,13 +26,11 @@ use crate::core::QueryCtx;
 use crate::core::TextEvent;
 use crate::core::Widget;
 use crate::core::WidgetId;
-use crate::core::WidgetPod;
 use crate::core::WidgetMut;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::Point;
-use crate::Rect;
-use crate::Size;
+use crate::core::WidgetPod;
+use crate::kurbo::Point;
+use crate::kurbo::Rect;
+use crate::kurbo::Size;
 
 /// A container with either horizontal or vertical layout.
 ///

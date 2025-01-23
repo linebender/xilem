@@ -8,12 +8,12 @@ use crate::core::Update;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetPod;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
 use crate::testing::ModularWidget;
 use crate::testing::TestHarness;
 use crate::testing::TestWidgetExt;
 use crate::widgets::Flex;
-use crate::Point;
-use crate::Size;
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);

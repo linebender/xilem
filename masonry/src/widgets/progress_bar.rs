@@ -13,6 +13,7 @@ use vello::Scene;
 
 use crate::core::AccessCtx;
 use crate::core::AccessEvent;
+use crate::core::ArcStr;
 use crate::core::BoxConstraints;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
@@ -27,15 +28,14 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
+use crate::kurbo::Point;
 use crate::kurbo::Size;
+use crate::theme;
 use crate::util::fill_lin_gradient;
 use crate::util::stroke;
 use crate::util::UnitPoint;
-use crate::core::ArcStr;
-use crate::theme;
 use crate::widgets::Label;
 use crate::widgets::LineBreaking;
-use crate::Point;
 
 /// A progress bar.
 ///

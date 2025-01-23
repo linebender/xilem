@@ -36,11 +36,11 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetPod;
 use crate::core::WidgetRef;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
 use crate::widgets::SizedBox;
 use crate::AsAny;
-use crate::CursorIcon;
-use crate::Point;
-use crate::Size;
+use cursor_icon::CursorIcon;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);

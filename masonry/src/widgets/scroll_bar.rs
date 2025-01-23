@@ -27,12 +27,12 @@ use crate::core::UpdateCtx;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
+use crate::theme;
 use crate::util::fill_color;
 use crate::util::stroke;
-use crate::theme;
 use crate::widgets::Axis;
-use crate::Point;
-use crate::Size;
 
 // TODO
 // - Fade scrollbars? Find out how Linux/MacOS/Windows do it

@@ -12,9 +12,10 @@ use tracing::trace_span;
 use tracing::Span;
 use vello::Scene;
 
-use crate::core::Action;
 use crate::core::AccessCtx;
 use crate::core::AccessEvent;
+use crate::core::Action;
+use crate::core::ArcStr;
 use crate::core::BoxConstraints;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
@@ -29,14 +30,13 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
+use crate::kurbo::Insets;
+use crate::kurbo::Size;
+use crate::theme;
 use crate::util::fill_lin_gradient;
 use crate::util::stroke;
 use crate::util::UnitPoint;
-use crate::core::ArcStr;
-use crate::theme;
 use crate::widgets::Label;
-use crate::Insets;
-use crate::Size;
 
 // The minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -72,7 +72,7 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use masonry::Color;
+    /// use masonry::peniko::Color;
     /// use masonry::widgets::{Button, Label};
     ///
     /// let label = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
@@ -245,10 +245,10 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
+    use crate::core::StyleProperty;
     use crate::testing::widget_ids;
     use crate::testing::TestHarness;
     use crate::testing::TestWidgetExt;
-    use crate::core::StyleProperty;
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]

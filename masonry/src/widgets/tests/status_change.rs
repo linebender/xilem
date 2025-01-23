@@ -5,8 +5,10 @@ use assert_matches::assert_matches;
 
 use crate::core::PointerButton;
 use crate::core::PointerEvent;
-use crate::core::WidgetId;
 use crate::core::PointerState;
+use crate::core::Update;
+use crate::core::WidgetId;
+use crate::kurbo::Vec2;
 use crate::testing::widget_ids;
 use crate::testing::Record;
 use crate::testing::Recording;
@@ -15,8 +17,6 @@ use crate::testing::TestWidgetExt as _;
 use crate::widgets::Button;
 use crate::widgets::Flex;
 use crate::widgets::SizedBox;
-use crate::core::Update;
-use crate::Vec2;
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     while let Some(event) = recording.next() {

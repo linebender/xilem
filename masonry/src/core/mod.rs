@@ -59,8 +59,8 @@ pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
 
 mod object_fit {
-    use crate::Affine;
-    use crate::Size;
+    use crate::kurbo::Affine;
+    use crate::kurbo::Size;
 
     // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
     /// Strategies for inscribing a rectangle inside another rectangle.

@@ -29,9 +29,9 @@ use crate::core::TextEvent;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetPod;
+use crate::kurbo::Rect;
+use crate::kurbo::Size;
 use crate::util::UnitPoint;
-use crate::Rect;
-use crate::Size;
 
 // TODO - Have child widget type as generic argument
 

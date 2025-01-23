@@ -5,12 +5,12 @@
 
 use std::marker::PhantomData;
 
-use masonry::widgets::Alignment;
-use masonry::widgets::ChildAlignment;
-use masonry::core::WidgetMut;
-use masonry::widgets::{self};
 use masonry::core::FromDynWidget;
 use masonry::core::Widget;
+use masonry::core::WidgetMut;
+use masonry::widgets::Alignment;
+use masonry::widgets::ChildAlignment;
+use masonry::widgets::{self};
 use xilem_core::MessageResult;
 use xilem_core::ViewId;
 

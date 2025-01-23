@@ -3,14 +3,14 @@
 
 use std::marker::PhantomData;
 
+use masonry::core::FromDynWidget;
+use masonry::core::Widget;
+use masonry::core::WidgetMut;
 pub use masonry::widgets::Axis;
 pub use masonry::widgets::CrossAxisAlignment;
 pub use masonry::widgets::FlexParams;
 pub use masonry::widgets::MainAxisAlignment;
-use masonry::core::WidgetMut;
 use masonry::widgets::{self};
-use masonry::core::FromDynWidget;
-use masonry::core::Widget;
 
 use crate::core::AppendVec;
 use crate::core::DynMessage;

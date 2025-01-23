@@ -25,7 +25,7 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
-use crate::Size;
+use crate::kurbo::Size;
 
 // TODO: This is a hack to provide an accessibility node with a Window type.
 // This should eventually be removed.

@@ -13,9 +13,9 @@ use tree_arena::ArenaMutList;
 use tree_arena::ArenaRef;
 
 use crate::app::RenderRootState;
-use crate::core::WidgetArena;
 use crate::core::QueryCtx;
 use crate::core::Widget;
+use crate::core::WidgetArena;
 use crate::core::WidgetId;
 use crate::core::WidgetState;
 

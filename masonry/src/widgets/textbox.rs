@@ -33,9 +33,9 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
+use crate::peniko::Color;
 use crate::widgets::Padding;
 use crate::widgets::TextArea;
-use crate::Color;
 
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
@@ -201,8 +201,8 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
     use crate::core::StyleProperty;
+    use crate::testing::TestHarness;
     use crate::widgets::TextArea;
 
     #[test]

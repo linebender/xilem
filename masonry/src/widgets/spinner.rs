@@ -31,11 +31,11 @@ use crate::core::UpdateCtx;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
+use crate::kurbo::Vec2;
+use crate::peniko::Color;
 use crate::theme;
-use crate::Color;
-use crate::Point;
-use crate::Size;
-use crate::Vec2;
 
 /// An animated spinner widget for showing a loading state.
 ///

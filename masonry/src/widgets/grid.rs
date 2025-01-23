@@ -24,8 +24,8 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
-use crate::Point;
-use crate::Size;
+use crate::kurbo::Point;
+use crate::kurbo::Size;
 
 /// A widget that arranges its children in a grid.
 ///
