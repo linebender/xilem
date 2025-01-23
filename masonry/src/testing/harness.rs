@@ -68,7 +68,7 @@ use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 /// use insta::assert_debug_snapshot;
 ///
 /// use masonry::PointerButton;
-/// use masonry::widget::Button;
+/// use masonry::widgets::Button;
 /// use masonry::Action;
 /// use masonry::assert_render_snapshot;
 /// use masonry::testing::widget_ids;

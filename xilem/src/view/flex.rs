@@ -17,7 +17,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```rust,no_run
-/// use masonry::widget::{CrossAxisAlignment, MainAxisAlignment};
+/// use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
 /// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WidgetView, Xilem};

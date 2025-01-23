@@ -39,7 +39,7 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use masonry::widget::Button;
+    /// use masonry::widgets::Button;
     ///
     /// let button = Button::new("Increment");
     /// ```
@@ -53,7 +53,7 @@ impl Button {
     ///
     /// ```
     /// use masonry::Color;
-    /// use masonry::widget::{Button, Label};
+    /// use masonry::widgets::{Button, Label};
     ///
     /// let label = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
     /// let button = Button::from_label(label);

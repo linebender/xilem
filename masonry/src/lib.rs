@@ -18,7 +18,7 @@
 //!
 //! ```
 //! use masonry::dpi::LogicalSize;
-//! use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
+//! use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
 //! use masonry::{Action, AppDriver, DriverCtx, WidgetId};
 //! use winit::window::Window;
 //!

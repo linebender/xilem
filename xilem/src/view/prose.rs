@@ -37,7 +37,7 @@ pub struct Prose {
     text_size: f32,
     line_break_mode: LineBreaking,
     // TODO: disabled: bool,
-    // TODO: add more attributes of `masonry::widget::Prose`
+    // TODO: add more attributes of `masonry::widgets::Prose`
 }
 
 impl Prose {

@@ -35,7 +35,7 @@ pub struct Textbox<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_brush: Brush,
     alignment: TextAlignment,
-    // TODO: add more attributes of `masonry::widget::TextBox`
+    // TODO: add more attributes of `masonry::widgets::TextBox`
 }
 
 impl<State, Action> Textbox<State, Action> {

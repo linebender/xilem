@@ -17,7 +17,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```ignore
-/// use masonry::widget::GridParams;
+/// use masonry::widgets::GridParams;
 /// use xilem::view::{
 ///     button, grid, label, GridExt,
 /// };
@@ -290,7 +290,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
-    /// use masonry::widget::GridParams;
+    /// use masonry::widgets::GridParams;
     /// use xilem::{view::{button, prose, grid, GridExt}};
     /// # use xilem::{WidgetView};
     ///
@@ -317,7 +317,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
-    /// use masonry::widget::GridParams;
+    /// use masonry::widgets::GridParams;
     /// use xilem::{view::{button, prose, grid, GridExt}};
     /// # use xilem::{WidgetView};
     ///

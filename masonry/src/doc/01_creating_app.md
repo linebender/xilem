@@ -28,7 +28,7 @@ Let's start with the `main()` function.
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widget::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -80,7 +80,7 @@ We create a `Driver` struct to store a very simple app's state, and we implement
 
 ```rust
 use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-use masonry::widget::{Flex, Label, Portal, RootWidget, WidgetMut};
+use masonry::widgets::{Flex, Label, Portal, RootWidget, WidgetMut};
 
 struct Driver {
     next_task: String,
@@ -173,7 +173,7 @@ Our complete program therefore looks like this:
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widget::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -187,7 +187,7 @@ fn main() {
     let main_widget = RootWidget::new(main_widget);
 
     use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-    use masonry::widget::{Label};
+    use masonry::widgets::{Label};
 
     struct Driver {
         next_task: String,

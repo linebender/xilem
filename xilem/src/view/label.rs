@@ -48,7 +48,7 @@ pub struct Label {
     text_size: f32,
     weight: FontWeight,
     font: FontStack<'static>,
-    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widget::Label`
+    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widgets::Label`
 }
 
 impl Label {

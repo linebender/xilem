@@ -78,7 +78,7 @@ pub struct ReplaceChild {
 /// Make one like this:
 ///
 /// ```
-/// # use masonry::widget::Label;
+/// # use masonry::widgets::Label;
 /// # use masonry::{Update};
 /// use masonry::testing::{Recording, Record, TestWidgetExt};
 /// use masonry::testing::TestHarness;

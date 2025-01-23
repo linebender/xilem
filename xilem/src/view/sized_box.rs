@@ -23,7 +23,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use xilem::view::{sized_box, button};
 /// use xilem::palette;
 /// use vello::kurbo::RoundedRectRadii;
-/// use masonry::widget::Padding;
+/// use masonry::widgets::Padding;
 ///
 /// sized_box(button("Button", |data: &mut i32| *data+=1))
 ///     .expand()
