@@ -6,7 +6,7 @@ use crate::kurbo::Affine;
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
-/// A mutable reference to a [`Widget`].
+/// A rich mutable reference to a [`Widget`].
 ///
 /// In Masonry, widgets can't be mutated directly. All mutations go through a `WidgetMut`
 /// wrapper. So, to change a label's text, you might call `WidgetMut<Label>::set_text()`.
