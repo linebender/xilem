@@ -6,15 +6,10 @@
 use std::path::PathBuf;
 
 use vello::kurbo::Point;
-use winit::event::Force;
-use winit::event::Ime;
-use winit::event::KeyEvent;
-use winit::event::Modifiers;
+use winit::event::{Force, Ime, KeyEvent, Modifiers};
 use winit::keyboard::ModifiersState;
 
-use crate::dpi::LogicalPosition;
-use crate::dpi::PhysicalPosition;
-use crate::dpi::PhysicalSize;
+use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::Rect;
 
 // TODO - Occluded(bool) event

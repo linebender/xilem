@@ -3,23 +3,15 @@
 
 #![warn(missing_docs)]
 
-use accesskit::Node;
-use accesskit::Role;
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
 
-use crate::core::AccessCtx;
-use crate::core::BoxConstraints;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::core::WidgetPod;
-use crate::kurbo::Point;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, QueryCtx, RegisterCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
+};
+use crate::kurbo::{Point, Size};
 use crate::vello::Scene;
 
 struct Child {
@@ -384,8 +376,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    use crate::widgets::Label;
-    use crate::widgets::SizedBox;
+    use crate::widgets::{Label, SizedBox};
 
     #[test]
     fn zstack_alignments_parent_aligned() {

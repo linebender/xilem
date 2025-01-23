@@ -4,22 +4,11 @@
 use std::fmt::Write as _;
 use std::marker::PhantomData;
 
-use peniko::kurbo;
-use peniko::Brush;
+use peniko::{kurbo, Brush};
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewElement;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::modifiers::AttributeModifier;
-use crate::modifiers::Attributes;
-use crate::modifiers::Modifier;
-use crate::modifiers::WithModifier;
-use crate::DomView;
-use crate::DynMessage;
-use crate::ViewCtx;
+use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
+use crate::{DomView, DynMessage, ViewCtx};
 
 pub struct Fill<V, State, Action> {
     child: V,

@@ -3,22 +3,11 @@
 
 //! Implementation of the View trait for various kurbo shapes.
 
-use peniko::kurbo::BezPath;
-use peniko::kurbo::Circle;
-use peniko::kurbo::Line;
-use peniko::kurbo::Rect;
+use peniko::kurbo::{BezPath, Circle, Line, Rect};
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::OrphanView;
-use crate::core::ViewId;
-use crate::modifiers::Attributes;
-use crate::modifiers::WithModifier;
-use crate::DynMessage;
-use crate::FromWithContext;
-use crate::Pod;
-use crate::ViewCtx;
-use crate::SVG_NS;
+use crate::core::{MessageResult, Mut, OrphanView, ViewId};
+use crate::modifiers::{Attributes, WithModifier};
+use crate::{DynMessage, FromWithContext, Pod, ViewCtx, SVG_NS};
 
 fn create_element<R>(
     name: &str,

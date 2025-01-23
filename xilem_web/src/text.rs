@@ -3,14 +3,8 @@
 
 use wasm_bindgen::JsCast;
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::OrphanView;
-use crate::core::ViewId;
-use crate::DynMessage;
-use crate::Pod;
-use crate::PodFlags;
-use crate::ViewCtx;
+use crate::core::{MessageResult, Mut, OrphanView, ViewId};
+use crate::{DynMessage, Pod, PodFlags, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {

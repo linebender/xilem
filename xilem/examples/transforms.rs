@@ -3,22 +3,11 @@
 
 //! The transform for all views can be modified similar to CSS transforms.
 
-use std::f64::consts::PI;
-use std::f64::consts::TAU;
+use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
-use xilem::view::button;
-use xilem::view::grid;
-use xilem::view::label;
-use xilem::view::sized_box;
-use xilem::view::transformed;
-use xilem::view::GridExt as _;
-use xilem::Affine;
-use xilem::Color;
-use xilem::EventLoop;
-use xilem::Vec2;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{button, grid, label, sized_box, transformed, GridExt as _};
+use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, Xilem};
 
 struct TransformsGame {
     rotation: f64,

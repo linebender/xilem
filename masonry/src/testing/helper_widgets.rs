@@ -12,32 +12,18 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use accesskit::Node;
-use accesskit::Role;
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 
 use crate::core::widget::find_widget_at_pos;
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::ComposeCtx;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Update;
-use crate::core::UpdateCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetPod;
-use crate::core::WidgetRef;
-use crate::kurbo::Point;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    WidgetRef,
+};
+use crate::kurbo::{Point, Size};
 use crate::widgets::SizedBox;
 use crate::AsAny;
 use cursor_icon::CursorIcon;

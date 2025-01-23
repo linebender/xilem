@@ -6,21 +6,11 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::app::AppDriver;
-use masonry::app::DriverCtx;
-use masonry::core::Action;
-use masonry::core::PointerButton;
-use masonry::core::StyleProperty;
-use masonry::core::WidgetId;
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{Action, PointerButton, StyleProperty, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
-use masonry::widgets::Button;
-use masonry::widgets::Grid;
-use masonry::widgets::GridParams;
-use masonry::widgets::Prose;
-use masonry::widgets::RootWidget;
-use masonry::widgets::SizedBox;
-use masonry::widgets::TextArea;
+use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
 use parley::layout::Alignment;
 use winit::window::Window;
 

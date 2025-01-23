@@ -1,32 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::BTreeMap;
-use std::collections::HashMap;
-use std::fmt::Debug;
-use std::fmt::Display;
-use std::hash::BuildHasher;
-use std::hash::Hash;
+use std::collections::{BTreeMap, HashMap};
+use std::fmt::{Debug, Display};
+use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
 
 use peniko::kurbo::Vec2;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use super::Modifier;
-use super::WithModifier;
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewElement;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::diff::diff_iters;
-use crate::diff::Diff;
+use super::{Modifier, WithModifier};
+use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::diff::{diff_iters, Diff};
 use crate::vecmap::VecMap;
-use crate::DomView;
-use crate::DynMessage;
-use crate::ViewCtx;
+use crate::{DomView, DynMessage, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 

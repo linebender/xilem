@@ -8,16 +8,10 @@
 //! This file includes utility functions used by multiple passes.
 
 use tracing::span::EnteredSpan;
-use tree_arena::ArenaMut;
-use tree_arena::ArenaMutList;
-use tree_arena::ArenaRef;
+use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
 use crate::app::RenderRootState;
-use crate::core::QueryCtx;
-use crate::core::Widget;
-use crate::core::WidgetArena;
-use crate::core::WidgetId;
-use crate::core::WidgetState;
+use crate::core::{QueryCtx, Widget, WidgetArena, WidgetId, WidgetState};
 
 pub(crate) mod accessibility;
 pub(crate) mod anim;

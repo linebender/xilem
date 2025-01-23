@@ -8,15 +8,9 @@
 use std::io::stdin;
 use std::path::PathBuf;
 
-use xilem_core::AnyElement;
-use xilem_core::AnyView;
-use xilem_core::Mut;
-use xilem_core::SuperElement;
-use xilem_core::View;
-use xilem_core::ViewElement;
-use xilem_core::ViewId;
-use xilem_core::ViewMarker;
-use xilem_core::ViewPathTracker;
+use xilem_core::{
+    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+};
 
 #[derive(Debug)]
 enum State {

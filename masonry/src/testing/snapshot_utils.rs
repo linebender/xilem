@@ -8,8 +8,7 @@
 use std::collections::BTreeMap;
 use std::env;
 use std::path::PathBuf;
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 use serde::Deserialize;

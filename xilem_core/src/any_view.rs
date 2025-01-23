@@ -6,15 +6,10 @@
 use alloc::boxed::Box;
 use core::any::Any;
 
-use crate::AnyElement;
-use crate::DynMessage;
-use crate::MessageResult;
-use crate::Mut;
-use crate::View;
-use crate::ViewElement;
-use crate::ViewId;
-use crate::ViewMarker;
-use crate::ViewPathTracker;
+use crate::{
+    AnyElement, DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
+    ViewPathTracker,
+};
 
 /// A view which can have any view type where the [`View::Element`] is compatible with
 /// `Element`.

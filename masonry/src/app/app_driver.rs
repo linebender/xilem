@@ -1,10 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::app::MasonryState;
-use crate::app::RenderRoot;
-use crate::core::Action;
-use crate::core::WidgetId;
+use crate::app::{MasonryState, RenderRoot};
+use crate::core::{Action, WidgetId};
 
 /// Context for the [`AppDriver`] trait.
 ///

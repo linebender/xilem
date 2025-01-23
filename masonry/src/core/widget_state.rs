@@ -1,12 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use vello::kurbo::Affine;
-use vello::kurbo::Insets;
-use vello::kurbo::Point;
-use vello::kurbo::Rect;
-use vello::kurbo::Size;
-use vello::kurbo::Vec2;
+use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::core::WidgetId;
 

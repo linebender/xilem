@@ -6,14 +6,9 @@ use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::AppendVec;
-use crate::core::MessageResult;
-use crate::core::ViewId;
+use crate::core::{AppendVec, MessageResult, ViewId};
 use crate::elements::DomChildrenSplice;
-use crate::AnyPod;
-use crate::DomFragment;
-use crate::DynMessage;
-use crate::ViewCtx;
+use crate::{AnyPod, DomFragment, DynMessage, ViewCtx};
 
 pub(crate) struct AppMessage {
     pub id_path: Rc<[ViewId]>,

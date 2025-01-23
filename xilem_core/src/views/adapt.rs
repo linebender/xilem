@@ -3,12 +3,7 @@
 
 use core::marker::PhantomData;
 
-use crate::MessageResult;
-use crate::Mut;
-use crate::View;
-use crate::ViewId;
-use crate::ViewMarker;
-use crate::ViewPathTracker;
+use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that wraps a child view and modifies the state that callbacks have access to.
 #[derive(Debug)]

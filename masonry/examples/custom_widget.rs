@@ -10,43 +10,21 @@
 #![expect(clippy::shadow_unrelated, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use accesskit::Node;
-use accesskit::Role;
-use masonry::app::AppDriver;
-use masonry::app::DriverCtx;
-use masonry::core::AccessCtx;
-use masonry::core::AccessEvent;
-use masonry::core::Action;
-use masonry::core::BoxConstraints;
-use masonry::core::EventCtx;
-use masonry::core::LayoutCtx;
-use masonry::core::ObjectFit;
-use masonry::core::PaintCtx;
-use masonry::core::PointerEvent;
-use masonry::core::QueryCtx;
-use masonry::core::RegisterCtx;
-use masonry::core::TextEvent;
-use masonry::core::Widget;
-use masonry::core::WidgetId;
-use masonry::kurbo::Affine;
-use masonry::kurbo::BezPath;
-use masonry::kurbo::Point;
-use masonry::kurbo::Rect;
-use masonry::kurbo::Size;
-use masonry::kurbo::Stroke;
+use accesskit::{Node, Role};
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{
+    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+};
+use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
 use masonry::peniko::Color;
 use masonry::widgets::RootWidget;
 use parley::layout::Alignment;
-use parley::style::FontFamily;
-use parley::style::FontStack;
-use parley::style::StyleProperty;
+use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
-use vello::peniko::Fill;
-use vello::peniko::Image;
-use vello::peniko::ImageFormat;
+use tracing::{trace_span, Span};
+use vello::peniko::{Fill, Image, ImageFormat};
 use vello::Scene;
 use winit::window::Window;
 

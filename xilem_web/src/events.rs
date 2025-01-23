@@ -5,22 +5,11 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 
 use wasm_bindgen::prelude::Closure;
-use wasm_bindgen::throw_str;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
-use web_sys::js_sys;
-use web_sys::AddEventListenerOptions;
+use wasm_bindgen::{throw_str, JsCast, UnwrapThrowExt};
+use web_sys::{js_sys, AddEventListenerOptions};
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::core::ViewPathTracker;
-use crate::DomView;
-use crate::DynMessage;
-use crate::OptionalAction;
-use crate::ViewCtx;
+use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{DomView, DynMessage, OptionalAction, ViewCtx};
 
 /// Use a distinctive number here, to be able to catch bugs.
 /// In case the generational-id view path in `View::Message` lead to a wrong view

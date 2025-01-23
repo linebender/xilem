@@ -3,21 +3,12 @@
 
 use std::sync::Arc;
 
-use masonry::app::AppDriver;
-use masonry::app::EventLoopProxy;
-use masonry::app::MasonryState;
-use masonry::app::MasonryUserEvent;
+use masonry::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};
 use masonry::core::WidgetId;
 use masonry::widgets::RootWidget;
 
-use crate::core::DynMessage;
-use crate::core::Message;
-use crate::core::MessageResult;
-use crate::core::ProxyError;
-use crate::core::RawProxy;
-use crate::core::ViewId;
-use crate::ViewCtx;
-use crate::WidgetView;
+use crate::core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId};
+use crate::{ViewCtx, WidgetView};
 
 pub struct MasonryDriver<State, Logic, View, ViewState> {
     pub(crate) state: State,

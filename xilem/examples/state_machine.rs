@@ -6,17 +6,9 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use winit::error::EventLoopError;
-use xilem::core::one_of::OneOf;
-use xilem::core::one_of::OneOf3;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::label;
-use xilem::view::prose;
-use xilem::view::sized_box;
-use xilem::view::spinner;
-use xilem::EventLoop;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::core::one_of::{OneOf, OneOf3};
+use xilem::view::{button, flex, label, prose, sized_box, spinner};
+use xilem::{EventLoop, WidgetView, Xilem};
 
 /// The state of the entire application.
 ///

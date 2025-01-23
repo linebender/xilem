@@ -8,15 +8,11 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
-use xilem_web::document_body;
-use xilem_web::elements::html;
-use xilem_web::elements::mathml as ml;
-use xilem_web::elements::svg;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use xilem_web::elements::{html, mathml as ml, svg};
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
-use xilem_web::App;
+use xilem_web::{document_body, App};
 
 struct Triangle {
     a: u32,

@@ -7,19 +7,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::app::AppDriver;
-use masonry::app::DriverCtx;
-use masonry::core::Action;
-use masonry::core::Widget;
-use masonry::core::WidgetId;
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{Action, Widget, WidgetId};
 use masonry::dpi::LogicalSize;
-use masonry::widgets::Button;
-use masonry::widgets::Flex;
-use masonry::widgets::Label;
-use masonry::widgets::Portal;
-use masonry::widgets::RootWidget;
-use masonry::widgets::TextArea;
-use masonry::widgets::Textbox;
+use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;

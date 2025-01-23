@@ -3,26 +3,16 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::FromDynWidget;
-use masonry::core::Widget;
-use masonry::core::WidgetMut;
-use masonry::widgets::GridParams;
-use masonry::widgets::{self};
+use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::widgets::{
+    GridParams, {self},
+};
 
-use crate::core::AppendVec;
-use crate::core::DynMessage;
-use crate::core::ElementSplice;
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::SuperElement;
-use crate::core::View;
-use crate::core::ViewElement;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::core::ViewSequence;
-use crate::Pod;
-use crate::ViewCtx;
-use crate::WidgetView;
+use crate::core::{
+    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewId, ViewMarker, ViewSequence,
+};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A Grid layout divides a window into regions and defines the relationship
 /// between inner elements in terms of size and position.

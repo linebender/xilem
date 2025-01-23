@@ -3,16 +3,9 @@
 
 use smallvec::smallvec;
 
-use crate::core::PointerButton;
-use crate::core::Update;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetPod;
-use crate::kurbo::Point;
-use crate::kurbo::Size;
-use crate::testing::ModularWidget;
-use crate::testing::TestHarness;
-use crate::testing::TestWidgetExt;
+use crate::core::{PointerButton, Update, Widget, WidgetId, WidgetPod};
+use crate::kurbo::{Point, Size};
+use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
 use crate::widgets::Flex;
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {

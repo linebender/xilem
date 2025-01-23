@@ -1,8 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::Widget;
-use crate::core::WidgetId;
+use crate::core::{Widget, WidgetId};
 use crate::kurbo::Affine;
 
 /// A container for one widget in the hierarchy.

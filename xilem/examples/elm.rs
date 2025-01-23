@@ -7,19 +7,11 @@
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use masonry::widgets::CrossAxisAlignment;
-use masonry::widgets::MainAxisAlignment;
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::core::adapt;
-use xilem::core::map_action;
-use xilem::core::MessageResult;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::label;
-use xilem::view::Axis;
-use xilem::EventLoop;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::core::{adapt, map_action, MessageResult};
+use xilem::view::{button, flex, label, Axis};
+use xilem::{EventLoop, WidgetView, Xilem};
 
 #[derive(Default)]
 struct AppState {

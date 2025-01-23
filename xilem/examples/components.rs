@@ -8,13 +8,8 @@
 use masonry::widgets::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::label;
-use xilem::view::Axis;
-use xilem::EventLoop;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{button, flex, label, Axis};
+use xilem::{EventLoop, WidgetView, Xilem};
 
 #[derive(Default)]
 struct AppState {

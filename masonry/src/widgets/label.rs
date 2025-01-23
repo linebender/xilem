@@ -7,42 +7,20 @@
 
 use std::mem::Discriminant;
 
-use accesskit::Node;
-use accesskit::NodeId;
-use accesskit::Role;
+use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
-use parley::Layout;
-use parley::LayoutAccessibility;
+use parley::{Layout, LayoutAccessibility};
 use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
-use vello::kurbo::Affine;
-use vello::kurbo::Size;
-use vello::peniko::BlendMode;
-use vello::peniko::Brush;
+use tracing::{trace_span, Span};
+use vello::kurbo::{Affine, Size};
+use vello::peniko::{BlendMode, Brush};
 use vello::Scene;
 
-use crate::core::default_styles;
-use crate::core::render_text;
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::ArcStr;
-use crate::core::BoxConstraints;
-use crate::core::BrushIndex;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::StyleProperty;
-use crate::core::StyleSet;
-use crate::core::TextEvent;
-use crate::core::Update;
-use crate::core::UpdateCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
+use crate::core::{
+    default_styles, render_text, AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex,
+    EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+};
 use crate::theme;
 
 /// Added padding between each horizontal edge of the widget
@@ -475,17 +453,13 @@ impl Widget for Label {
 mod tests {
     use insta::assert_debug_snapshot;
     use parley::style::GenericFamily;
-    use parley::FontFamily;
-    use parley::StyleProperty;
+    use parley::{FontFamily, StyleProperty};
 
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    use crate::theme::PRIMARY_DARK;
-    use crate::theme::PRIMARY_LIGHT;
-    use crate::widgets::CrossAxisAlignment;
-    use crate::widgets::Flex;
-    use crate::widgets::SizedBox;
+    use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
+    use crate::widgets::{CrossAxisAlignment, Flex, SizedBox};
 
     #[test]
     fn simple_label() {

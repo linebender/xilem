@@ -8,12 +8,9 @@
 //! [`adapt`](xilem_web::core::adapt).
 
 use xilem_web::core::map_action;
-use xilem_web::document_body;
 use xilem_web::elements::html as el;
-use xilem_web::interfaces::Element;
-use xilem_web::interfaces::HtmlDivElement;
-use xilem_web::Action;
-use xilem_web::App;
+use xilem_web::interfaces::{Element, HtmlDivElement};
+use xilem_web::{document_body, Action, App};
 
 #[derive(Debug, Default)]
 struct Model {

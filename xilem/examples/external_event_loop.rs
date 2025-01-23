@@ -9,26 +9,15 @@
 
 use std::sync::Arc;
 
-use masonry::app::AppDriver;
-use masonry::app::MasonryUserEvent;
+use masonry::app::{AppDriver, MasonryUserEvent};
 use masonry::peniko::Color;
-use masonry::widgets::CrossAxisAlignment;
-use masonry::widgets::MainAxisAlignment;
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
-use winit::keyboard::KeyCode;
-use winit::keyboard::PhysicalKey;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::label;
-use xilem::view::sized_box;
-use xilem::view::Axis;
-use xilem::view::Label;
-use xilem::EventLoop;
-use xilem::MasonryProxy;
-use xilem::WidgetView;
-use xilem::Xilem;
+use winit::keyboard::{KeyCode, PhysicalKey};
+use xilem::view::{button, flex, label, sized_box, Axis, Label};
+use xilem::{EventLoop, MasonryProxy, WidgetView, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(

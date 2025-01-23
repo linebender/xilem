@@ -3,16 +3,10 @@
 
 use alloc::boxed::Box;
 use alloc::sync::Arc;
-use core::fmt::Debug;
-use core::fmt::Display;
+use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::DynMessage;
-use crate::Message;
-use crate::NoElement;
-use crate::View;
-use crate::ViewId;
-use crate::ViewPathTracker;
+use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.

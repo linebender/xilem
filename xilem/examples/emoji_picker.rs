@@ -7,22 +7,10 @@
 
 use winit::error::EventLoopError;
 use xilem::core::map_state;
-use xilem::palette;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::grid;
-use xilem::view::label;
-use xilem::view::prose;
-use xilem::view::sized_box;
-use xilem::view::Axis;
-use xilem::view::FlexExt;
-use xilem::view::FlexSpacer;
-use xilem::view::GridExt;
-use xilem::Color;
-use xilem::EventLoop;
-use xilem::EventLoopBuilder;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{
+    button, flex, grid, label, prose, sized_box, Axis, FlexExt, FlexSpacer, GridExt,
+};
+use xilem::{palette, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
     flex((

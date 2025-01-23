@@ -5,31 +5,20 @@
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use std::ops::Add;
-use std::ops::Sub;
-use std::time::Duration;
-use std::time::SystemTime;
+use std::ops::{Add, Sub};
+use std::time::{Duration, SystemTime};
 
-use masonry::app::EventLoop;
-use masonry::app::EventLoopBuilder;
+use masonry::app::{EventLoop, EventLoopBuilder};
 use masonry::dpi::LogicalSize;
-use masonry::widgets::Axis;
-use masonry::widgets::CrossAxisAlignment;
-use masonry::widgets::MainAxisAlignment;
+use masonry::widgets::{Axis, CrossAxisAlignment, MainAxisAlignment};
 use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::label;
-use xilem::view::task;
-use xilem::view::FlexSequence;
-use xilem::view::FlexSpacer;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{button, flex, label, task, FlexSequence, FlexSpacer};
+use xilem::{WidgetView, Xilem};
 
 /// The state of the entire application.
 ///

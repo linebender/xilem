@@ -4,11 +4,7 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::Mut;
-use crate::View;
-use crate::ViewId;
-use crate::ViewMarker;
-use crate::ViewPathTracker;
+use crate::{Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
 ///

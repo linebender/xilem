@@ -5,35 +5,17 @@
 
 use std::f64::consts::PI;
 
-use accesskit::Node;
-use accesskit::Role;
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
-use vello::kurbo::Affine;
-use vello::kurbo::Cap;
-use vello::kurbo::Line;
-use vello::kurbo::Stroke;
+use tracing::{trace_span, Span};
+use vello::kurbo::{Affine, Cap, Line, Stroke};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Update;
-use crate::core::UpdateCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::kurbo::Point;
-use crate::kurbo::Size;
-use crate::kurbo::Vec2;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+};
+use crate::kurbo::{Point, Size, Vec2};
 use crate::peniko::Color;
 use crate::theme;
 
@@ -174,9 +156,8 @@ impl Widget for Spinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::palette;
     use crate::testing::TestHarness;
+    use crate::{assert_render_snapshot, palette};
 
     #[test]
     fn simple_spinner() {

@@ -3,38 +3,19 @@
 
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
-use accesskit::Node;
-use accesskit::Role;
-use smallvec::smallvec;
-use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::warn;
-use tracing::Span;
+use accesskit::{Node, Role};
+use smallvec::{smallvec, SmallVec};
+use tracing::{trace_span, warn, Span};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerButton;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::core::WidgetPod;
-use crate::kurbo::Line;
-use crate::kurbo::Point;
-use crate::kurbo::Rect;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerButton,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+};
+use crate::kurbo::{Line, Point, Rect, Size};
 use crate::peniko::Color;
 use crate::theme;
-use crate::util::fill_color;
-use crate::util::stroke;
+use crate::util::{fill_color, stroke};
 use crate::widgets::flex::Axis;
 use cursor_icon::CursorIcon;
 

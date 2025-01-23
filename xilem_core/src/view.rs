@@ -9,9 +9,7 @@ use alloc::sync::Arc;
 use core::ops::Deref;
 
 use crate::message::MessageResult;
-use crate::DynMessage;
-use crate::Mut;
-use crate::ViewElement;
+use crate::{DynMessage, Mut, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:

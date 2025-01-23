@@ -3,23 +3,12 @@
 
 use std::marker::PhantomData;
 
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewElement;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::modifiers::Modifier;
-use crate::modifiers::WithModifier;
+use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
-use crate::AttributeValue;
-use crate::DomView;
-use crate::DynMessage;
-use crate::IntoAttributeValue;
-use crate::ViewCtx;
+use crate::{AttributeValue, DomView, DynMessage, IntoAttributeValue, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 

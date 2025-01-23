@@ -14,11 +14,9 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use xilem_web::core::one_of::Either;
-use xilem_web::document_body;
 use xilem_web::elements::html;
 use xilem_web::interfaces::Element;
-use xilem_web::App;
-use xilem_web::DomView;
+use xilem_web::{document_body, App, DomView};
 
 #[derive(Default)]
 struct AppState {

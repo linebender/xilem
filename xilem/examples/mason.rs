@@ -10,28 +10,15 @@
 use std::time::Duration;
 
 use winit::error::EventLoopError;
-use xilem::core::fork;
-use xilem::core::run_once;
-use xilem::palette;
+use xilem::core::{fork, run_once};
 use xilem::tokio::time;
-use xilem::view::button;
-use xilem::view::button_any_pointer;
-use xilem::view::checkbox;
-use xilem::view::flex;
-use xilem::view::label;
-use xilem::view::prose;
-use xilem::view::task;
-use xilem::view::textbox;
-use xilem::view::Axis;
-use xilem::view::FlexExt as _;
-use xilem::view::FlexSpacer;
-use xilem::Color;
-use xilem::EventLoop;
-use xilem::EventLoopBuilder;
-use xilem::FontWeight;
-use xilem::TextAlignment;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{
+    button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis, FlexExt as _,
+    FlexSpacer,
+};
+use xilem::{
+    palette, Color, EventLoop, EventLoopBuilder, FontWeight, TextAlignment, WidgetView, Xilem,
+};
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
 Phasellus in viverra dolor, vitae facilisis est. Maecenas malesuada massa vel ultricies feugiat. Vivamus venenatis et nibh nec pharetra. Phasellus vestibulum elit enim, nec scelerisque orci faucibus id. Vivamus consequat purus sit amet orci egestas, non iaculis massa porttitor. Vestibulum ut eros leo. In fermentum convallis magna in finibus. Donec justo leo, maximus ac laoreet id, volutpat ut elit. Mauris sed leo non neque laoreet faucibus. Aliquam orci arcu, faucibus in molestie eget, ornare non dui. Donec volutpat nulla in fringilla elementum. Aliquam vitae ante egestas ligula tempus vestibulum sit amet sed ante. ";

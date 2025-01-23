@@ -5,29 +5,15 @@
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use masonry::widgets::CrossAxisAlignment;
-use masonry::widgets::GridParams;
-use masonry::widgets::MainAxisAlignment;
+use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
-use xilem::palette;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::grid;
-use xilem::view::label;
-use xilem::view::sized_box;
-use xilem::view::Axis;
-use xilem::view::Flex;
-use xilem::view::FlexSequence;
-use xilem::view::FlexSpacer;
-use xilem::view::GridExt;
-use xilem::view::GridSequence;
-use xilem::view::Label;
-use xilem::EventLoop;
-use xilem::EventLoopBuilder;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{
+    button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
+    GridSequence, Label,
+};
+use xilem::{palette, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 #[derive(Copy, Clone)]
 enum MathOperator {

@@ -8,28 +8,14 @@ use std::time::Duration;
 
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
-use time::OffsetDateTime;
-use time::UtcOffset;
+use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::core::fork;
-use xilem::palette;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::inline_prose;
-use xilem::view::label;
-use xilem::view::portal;
-use xilem::view::prose;
-use xilem::view::sized_box;
-use xilem::view::task;
-use xilem::view::variable_label;
-use xilem::view::Axis;
-use xilem::view::FlexExt;
-use xilem::view::FlexSpacer;
-use xilem::EventLoop;
-use xilem::EventLoopBuilder;
-use xilem::FontWeight;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{
+    button, flex, inline_prose, label, portal, prose, sized_box, task, variable_label, Axis,
+    FlexExt, FlexSpacer,
+};
+use xilem::{palette, EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {

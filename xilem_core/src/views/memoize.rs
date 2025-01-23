@@ -5,12 +5,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
-use crate::MessageResult;
-use crate::Mut;
-use crate::View;
-use crate::ViewId;
-use crate::ViewMarker;
-use crate::ViewPathTracker;
+use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///

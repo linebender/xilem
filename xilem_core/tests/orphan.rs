@@ -8,13 +8,7 @@
 
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
-use xilem_core::DynMessage;
-use xilem_core::MessageResult;
-use xilem_core::Mut;
-use xilem_core::OrphanView;
-use xilem_core::View;
-use xilem_core::ViewId;
-use xilem_core::ViewPathTracker;
+use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewId, ViewPathTracker};
 
 mod common;
 use common::*;

@@ -1,16 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::rc::Rc;
 
 use wasm_bindgen_futures::spawn_local;
 
-use crate::app::AppMessage;
-use crate::app::AppRunner;
-use crate::core::ViewId;
-use crate::core::ViewPathTracker;
+use crate::app::{AppMessage, AppRunner};
+use crate::core::{ViewId, ViewPathTracker};
 use crate::vecmap::VecMap;
 use crate::Message;
 

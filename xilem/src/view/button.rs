@@ -5,15 +5,9 @@ pub use masonry::core::PointerButton;
 use masonry::widgets;
 use xilem_core::ViewPathTracker;
 
-use crate::core::DynMessage;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewMarker;
+use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::view::Label;
-use crate::MessageResult;
-use crate::Pod;
-use crate::ViewCtx;
-use crate::ViewId;
+use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///

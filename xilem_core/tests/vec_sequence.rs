@@ -10,8 +10,7 @@
 
 mod common;
 use common::*;
-use xilem_core::MessageResult;
-use xilem_core::View;
+use xilem_core::{MessageResult, View};
 
 fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)

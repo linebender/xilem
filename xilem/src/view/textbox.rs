@@ -4,16 +4,8 @@
 use masonry::widgets;
 use vello::peniko::Brush;
 
-use crate::core::DynMessage;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewMarker;
-use crate::Color;
-use crate::MessageResult;
-use crate::Pod;
-use crate::TextAlignment;
-use crate::ViewCtx;
-use crate::ViewId;
+use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,

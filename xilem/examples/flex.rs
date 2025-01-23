@@ -4,20 +4,10 @@
 //! Flex properties can be set in Xilem.
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-use masonry::widgets::CrossAxisAlignment;
-use masonry::widgets::MainAxisAlignment;
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::view::button;
-use xilem::view::flex;
-use xilem::view::label;
-use xilem::view::sized_box;
-use xilem::view::Axis;
-use xilem::view::FlexExt as _;
-use xilem::view::FlexSpacer;
-use xilem::view::Label;
-use xilem::EventLoop;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
+use xilem::{EventLoop, WidgetView, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(

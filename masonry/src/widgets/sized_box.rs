@@ -3,35 +3,18 @@
 
 //! A widget with predefined size.
 
-use accesskit::Node;
-use accesskit::Role;
-use smallvec::smallvec;
-use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::warn;
-use tracing::Span;
-use vello::kurbo::Affine;
-use vello::kurbo::RoundedRectRadii;
-use vello::peniko::Brush;
-use vello::peniko::Fill;
+use accesskit::{Node, Role};
+use smallvec::{smallvec, SmallVec};
+use tracing::{trace_span, warn, Span};
+use vello::kurbo::{Affine, RoundedRectRadii};
+use vello::peniko::{Brush, Fill};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::core::WidgetPod;
-use crate::kurbo::Point;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
+    RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+};
+use crate::kurbo::{Point, Size};
 use crate::util::stroke;
 
 // FIXME - Improve all doc in this module ASAP.
@@ -589,10 +572,9 @@ mod tests {
     use vello::peniko::Gradient;
 
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::palette;
     use crate::testing::TestHarness;
     use crate::widgets::Label;
+    use crate::{assert_render_snapshot, palette};
 
     // TODO - Add WidgetMut tests
 

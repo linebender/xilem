@@ -4,32 +4,17 @@
 //! An Image widget.
 //! Please consider using SVG and the SVG widget as it scales much better.
 
-use accesskit::Node;
-use accesskit::Role;
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
+use tracing::{trace_span, Span};
 use vello::kurbo::Affine;
-use vello::peniko::BlendMode;
-use vello::peniko::Image as ImageBuf;
+use vello::peniko::{BlendMode, Image as ImageBuf};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::ObjectFit;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Update;
-use crate::core::UpdateCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx, PointerEvent,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+};
 use crate::kurbo::Size;
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image

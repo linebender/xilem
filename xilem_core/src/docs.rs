@@ -35,9 +35,7 @@
 //! # struct InterestingPrimitive;
 //! ```
 
-use crate::run_once;
-use crate::View;
-use crate::ViewPathTracker;
+use crate::{run_once, View, ViewPathTracker};
 
 /// A type used for documentation
 #[derive(Debug)]

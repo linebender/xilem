@@ -18,37 +18,18 @@ mod widget_state;
 
 pub use action::Action;
 pub use box_constraints::BoxConstraints;
-pub use contexts::AccessCtx;
-pub use contexts::ComposeCtx;
-pub use contexts::EventCtx;
-pub use contexts::IsContext;
-pub use contexts::LayoutCtx;
-pub use contexts::MutateCtx;
-pub use contexts::PaintCtx;
-pub use contexts::QueryCtx;
-pub use contexts::RawWrapper;
-pub use contexts::RawWrapperMut;
-pub use contexts::RegisterCtx;
-pub use contexts::UpdateCtx;
-pub use event::AccessEvent;
-pub use event::PointerButton;
-pub use event::PointerEvent;
-pub use event::PointerState;
-pub use event::TextEvent;
-pub use event::Update;
-pub use event::WindowEvent;
-pub use event::WindowTheme;
-pub use text::render_text;
-pub use text::ArcStr;
-pub use text::BrushIndex;
-pub use text::StyleProperty;
-pub use text::StyleSet;
+pub use contexts::{
+    AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
+    RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
+};
+pub use event::{
+    AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
+    WindowTheme,
+};
+pub use text::{render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
 
 pub use object_fit::ObjectFit;
-pub use widget::AllowRawMut;
-pub use widget::FromDynWidget;
-pub use widget::Widget;
-pub use widget::WidgetId;
+pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
@@ -59,8 +40,7 @@ pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
 
 mod object_fit {
-    use crate::kurbo::Affine;
-    use crate::kurbo::Size;
+    use crate::kurbo::{Affine, Size};
 
     // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
     /// Strategies for inscribing a rectangle inside another rectangle.

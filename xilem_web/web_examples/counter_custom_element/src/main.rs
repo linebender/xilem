@@ -5,12 +5,9 @@
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use xilem_web::document_body;
 use xilem_web::elements::custom_element;
-use xilem_web::interfaces::Element;
-use xilem_web::interfaces::HtmlElement;
-use xilem_web::App;
-use xilem_web::DomView;
+use xilem_web::interfaces::{Element, HtmlElement};
+use xilem_web::{document_body, App, DomView};
 
 #[derive(Default)]
 struct AppState {

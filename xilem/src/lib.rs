@@ -140,39 +140,24 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry::core::FromDynWidget;
-use masonry::core::Widget;
-use masonry::core::WidgetId;
-use masonry::core::WidgetMut;
-use masonry::core::WidgetPod;
+use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::RootWidget;
-use view::transformed;
-use view::Transformed;
+use view::{transformed, Transformed};
 use winit::error::EventLoopError;
-use winit::window::Window;
-use winit::window::WindowAttributes;
+use winit::window::{Window, WindowAttributes};
 
-use crate::core::AsyncCtx;
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::RawProxy;
-use crate::core::SuperElement;
-use crate::core::View;
-use crate::core::ViewElement;
-use crate::core::ViewId;
-use crate::core::ViewPathTracker;
-use crate::core::ViewSequence;
-pub use masonry::app::EventLoop;
-pub use masonry::app::EventLoopBuilder;
-pub use masonry::dpi;
-pub use masonry::kurbo::Affine;
-pub use masonry::kurbo::Vec2;
-pub use masonry::palette;
+use crate::core::{
+    AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
+    ViewPathTracker, ViewSequence,
+};
+pub use masonry::app::{EventLoop, EventLoopBuilder};
+pub use masonry::kurbo::{Affine, Vec2};
 pub use masonry::parley::style::FontWeight;
 pub use masonry::parley::Alignment as TextAlignment;
 pub use masonry::peniko::Color;
 pub use masonry::widgets::LineBreaking;
+pub use masonry::{dpi, palette};
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.
@@ -184,10 +169,7 @@ mod one_of;
 
 pub mod view;
 pub use any_view::AnyWidgetView;
-pub use driver::async_action;
-pub use driver::MasonryDriver;
-pub use driver::MasonryProxy;
-pub use driver::ASYNC_MARKER_WIDGET;
+pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
 
 /// Runtime builder.
 #[must_use = "A Xilem app does nothing unless ran."]

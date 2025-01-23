@@ -4,23 +4,13 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewElement;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::diff::diff_iters;
-use crate::diff::Diff;
-use crate::modifiers::Modifier;
-use crate::modifiers::WithModifier;
+use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::diff::{diff_iters, Diff};
+use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
-use crate::DomView;
-use crate::DynMessage;
-use crate::ViewCtx;
+use crate::{DomView, DynMessage, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 

@@ -3,39 +3,19 @@
 
 //! A progress bar widget.
 
-use accesskit::Node;
-use accesskit::Role;
-use smallvec::smallvec;
-use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
+use accesskit::{Node, Role};
+use smallvec::{smallvec, SmallVec};
+use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::ArcStr;
-use crate::core::BoxConstraints;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Update;
-use crate::core::UpdateCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::core::WidgetPod;
-use crate::kurbo::Point;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+};
+use crate::kurbo::{Point, Size};
 use crate::theme;
-use crate::util::fill_lin_gradient;
-use crate::util::stroke;
-use crate::util::UnitPoint;
-use crate::widgets::Label;
-use crate::widgets::LineBreaking;
+use crate::util::{fill_lin_gradient, stroke, UnitPoint};
+use crate::widgets::{Label, LineBreaking};
 
 /// A progress bar.
 ///
@@ -210,9 +190,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::widget_ids;
-    use crate::testing::TestHarness;
-    use crate::testing::TestWidgetExt;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     #[test]
     fn indeterminate_progressbar() {

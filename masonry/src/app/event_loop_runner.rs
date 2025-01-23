@@ -8,43 +8,26 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::debug;
-use tracing::info;
-use tracing::info_span;
-use tracing::warn;
+use tracing::{debug, info, info_span, warn};
 use vello::kurbo::Affine;
-use vello::util::RenderContext;
-use vello::util::RenderSurface;
-use vello::AaSupport;
-use vello::RenderParams;
-use vello::Renderer;
-use vello::RendererOptions;
-use vello::Scene;
+use vello::util::{RenderContext, RenderSurface};
+use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
-use winit::event::DeviceEvent as WinitDeviceEvent;
-use winit::event::DeviceId;
-use winit::event::MouseButton as WinitMouseButton;
-use winit::event::WindowEvent as WinitWindowEvent;
+use winit::event::{
+    DeviceEvent as WinitDeviceEvent, DeviceId, MouseButton as WinitMouseButton,
+    WindowEvent as WinitWindowEvent,
+};
 use winit::event_loop::ActiveEventLoop;
-use winit::window::Window;
-use winit::window::WindowAttributes;
-use winit::window::WindowId;
+use winit::window::{Window, WindowAttributes, WindowId};
 
-use crate::app::AppDriver;
-use crate::app::DriverCtx;
-use crate::app::RenderRoot;
-use crate::app::RenderRootOptions;
-use crate::app::RenderRootSignal;
-use crate::app::WindowSizePolicy;
-use crate::core::PointerButton;
-use crate::core::PointerEvent;
-use crate::core::PointerState;
-use crate::core::TextEvent;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WindowEvent;
+use crate::app::{
+    AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+};
+use crate::core::{
+    PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
+};
 use crate::dpi::LogicalPosition;
 use crate::peniko::Color;
 

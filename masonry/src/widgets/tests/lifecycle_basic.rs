@@ -5,15 +5,10 @@
 
 use insta::assert_debug_snapshot;
 
-use crate::testing::widget_ids;
-use crate::testing::Record;
-use crate::testing::Recording;
-use crate::testing::ReplaceChild;
-use crate::testing::TestHarness;
-use crate::testing::TestWidgetExt as _;
-use crate::widgets::Flex;
-use crate::widgets::Label;
-use crate::widgets::SizedBox;
+use crate::testing::{
+    widget_ids, Record, Recording, ReplaceChild, TestHarness, TestWidgetExt as _,
+};
+use crate::widgets::{Flex, Label, SizedBox};
 use crate::*;
 
 #[test]

@@ -3,24 +3,16 @@
 
 use std::collections::HashMap;
 
-use tracing::info_span;
-use tracing::trace;
+use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
-use vello::peniko::Color;
-use vello::peniko::Fill;
-use vello::peniko::Mix;
+use vello::peniko::{Color, Fill, Mix};
 use vello::Scene;
 
-use crate::app::RenderRoot;
-use crate::app::RenderRootState;
-use crate::core::PaintCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetState;
+use crate::app::{RenderRoot, RenderRootState};
+use crate::core::{PaintCtx, Widget, WidgetId, WidgetState};
 use crate::kurbo::Rect;
-use crate::passes::enter_span_if;
-use crate::passes::recurse_on_children;
+use crate::passes::{enter_span_if, recurse_on_children};
 use crate::theme::get_debug_color;
 use crate::util::stroke;
 

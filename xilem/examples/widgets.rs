@@ -4,23 +4,13 @@
 //! A widget gallery for xilem/masonry
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use masonry::app::EventLoop;
-use masonry::app::EventLoopBuilder;
+use masonry::app::{EventLoop, EventLoopBuilder};
 use masonry::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::button;
-use xilem::view::checkbox;
-use xilem::view::flex;
-use xilem::view::flex_item;
-use xilem::view::progress_bar;
-use xilem::view::sized_box;
-use xilem::view::Axis;
-use xilem::view::FlexSpacer;
-use xilem::Color;
-use xilem::WidgetView;
-use xilem::Xilem;
+use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
+use xilem::{Color, WidgetView, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
 

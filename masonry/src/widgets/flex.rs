@@ -3,34 +3,18 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
-use accesskit::Node;
-use accesskit::Role;
+use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
+use tracing::{trace_span, Span};
 use vello::kurbo::common::FloatExt;
-use vello::kurbo::Affine;
-use vello::kurbo::Line;
-use vello::kurbo::Stroke;
-use vello::kurbo::Vec2;
+use vello::kurbo::{Affine, Line, Stroke, Vec2};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::TextEvent;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::core::WidgetPod;
-use crate::kurbo::Point;
-use crate::kurbo::Rect;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
+    TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+};
+use crate::kurbo::{Point, Rect, Size};
 
 /// A container with either horizontal or vertical layout.
 ///

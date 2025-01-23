@@ -160,15 +160,9 @@ pub mod testing;
 pub mod theme;
 pub mod widgets;
 
-pub use cursor_icon;
-pub use dpi;
-pub use parley;
-pub use vello;
-pub use vello::kurbo;
-pub use vello::peniko;
 pub use vello::peniko::color::palette;
+pub use vello::{kurbo, peniko};
+pub use {cursor_icon, dpi, parley, vello};
 
 // TODO - Move to core?
-pub use util::AsAny;
-pub use util::Handled;
-pub use util::UnitPoint;
+pub use util::{AsAny, Handled, UnitPoint};

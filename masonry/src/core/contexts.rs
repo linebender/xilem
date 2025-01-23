@@ -5,35 +5,17 @@
 
 use accesskit::TreeUpdate;
 use dpi::LogicalPosition;
-use parley::FontContext;
-use parley::LayoutContext;
-use tracing::trace;
-use tracing::warn;
-use tree_arena::ArenaMutList;
-use tree_arena::ArenaRefList;
+use parley::{FontContext, LayoutContext};
+use tracing::{trace, warn};
+use tree_arena::{ArenaMutList, ArenaRefList};
 use winit::window::ResizeDirection;
 
-use crate::app::MutateCallback;
-use crate::app::RenderRootSignal;
-use crate::app::RenderRootState;
-use crate::core::Action;
-use crate::core::AllowRawMut;
-use crate::core::BoxConstraints;
-use crate::core::BrushIndex;
-use crate::core::CreateWidget;
-use crate::core::FromDynWidget;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::core::WidgetPod;
-use crate::core::WidgetRef;
-use crate::core::WidgetState;
-use crate::kurbo::Affine;
-use crate::kurbo::Insets;
-use crate::kurbo::Point;
-use crate::kurbo::Rect;
-use crate::kurbo::Size;
-use crate::kurbo::Vec2;
+use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
+use crate::core::{
+    Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, FromDynWidget, Widget, WidgetId,
+    WidgetMut, WidgetPod, WidgetRef, WidgetState,
+};
+use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
 use crate::theme::get_debug_color;

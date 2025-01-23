@@ -3,15 +3,9 @@
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::one_of::OneOf;
-use crate::core::one_of::OneOfCtx;
-use crate::core::one_of::PhantomElementCtx;
+use crate::core::one_of::{OneOf, OneOfCtx, PhantomElementCtx};
 use crate::core::Mut;
-use crate::DomNode;
-use crate::Pod;
-use crate::PodFlags;
-use crate::PodMut;
-use crate::ViewCtx;
+use crate::{DomNode, Pod, PodFlags, PodMut, ViewCtx};
 
 impl<N1, N2, N3, N4, N5, N6, N7, N8, N9>
     OneOfCtx<Pod<N1>, Pod<N2>, Pod<N3>, Pod<N4>, Pod<N5>, Pod<N6>, Pod<N7>, Pod<N8>, Pod<N9>>

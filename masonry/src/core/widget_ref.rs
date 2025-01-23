@@ -6,9 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::core::QueryCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
+use crate::core::{QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -176,11 +174,8 @@ impl WidgetRef<'_, dyn Widget> {
 mod tests {
     use assert_matches::assert_matches;
 
-    use crate::testing::widget_ids;
-    use crate::testing::TestHarness;
-    use crate::testing::TestWidgetExt as _;
-    use crate::widgets::Button;
-    use crate::widgets::Label;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt as _};
+    use crate::widgets::{Button, Label};
 
     #[test]
     fn downcast_ref_in_harness() {

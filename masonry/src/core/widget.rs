@@ -4,34 +4,20 @@
 use std::any::Any;
 use std::fmt::Display;
 use std::num::NonZeroU64;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU64, Ordering};
 
-use accesskit::Node;
-use accesskit::Role;
+use accesskit::{Node, Role};
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
-use tracing::trace_span;
-use tracing::Span;
+use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::ComposeCtx;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Update;
-use crate::core::UpdateCtx;
-use crate::core::WidgetRef;
-use crate::kurbo::Point;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetRef,
+};
+use crate::kurbo::{Point, Size};
 use crate::AsAny;
 
 /// A unique identifier for a single [`Widget`].

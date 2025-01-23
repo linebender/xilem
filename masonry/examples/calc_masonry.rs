@@ -12,42 +12,19 @@
 )]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
-use accesskit::Node;
-use accesskit::Role;
-use masonry::app::AppDriver;
-use masonry::app::DriverCtx;
-use masonry::core::AccessCtx;
-use masonry::core::AccessEvent;
-use masonry::core::Action;
-use masonry::core::BoxConstraints;
-use masonry::core::EventCtx;
-use masonry::core::LayoutCtx;
-use masonry::core::PaintCtx;
-use masonry::core::PointerEvent;
-use masonry::core::QueryCtx;
-use masonry::core::RegisterCtx;
-use masonry::core::StyleProperty;
-use masonry::core::TextEvent;
-use masonry::core::Update;
-use masonry::core::UpdateCtx;
-use masonry::core::Widget;
-use masonry::core::WidgetId;
-use masonry::core::WidgetPod;
+use accesskit::{Node, Role};
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{
+    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetPod,
+};
 use masonry::dpi::LogicalSize;
-use masonry::kurbo::Point;
-use masonry::kurbo::Size;
+use masonry::kurbo::{Point, Size};
 use masonry::peniko::Color;
-use masonry::widgets::Align;
-use masonry::widgets::CrossAxisAlignment;
-use masonry::widgets::Flex;
-use masonry::widgets::Label;
-use masonry::widgets::RootWidget;
-use masonry::widgets::SizedBox;
-use smallvec::smallvec;
-use smallvec::SmallVec;
-use tracing::trace;
-use tracing::trace_span;
-use tracing::Span;
+use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
+use smallvec::{smallvec, SmallVec};
+use tracing::{trace, trace_span, Span};
 use vello::Scene;
 use winit::window::Window;
 

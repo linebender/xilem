@@ -8,14 +8,8 @@
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
-use xilem_core::one_of::OneOf;
-use xilem_core::one_of::OneOf2;
-use xilem_core::one_of::OneOfCtx;
-use xilem_core::one_of::PhantomElementCtx;
-use xilem_core::MessageResult;
-use xilem_core::Mut;
-use xilem_core::View;
-use xilem_core::ViewId;
+use xilem_core::one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx};
+use xilem_core::{MessageResult, Mut, View, ViewId};
 
 mod common;
 use common::*;

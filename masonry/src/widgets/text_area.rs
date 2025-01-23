@@ -6,50 +6,24 @@
 use std::mem::Discriminant;
 use std::time::Instant;
 
-use accesskit::Node;
-use accesskit::NodeId;
-use accesskit::Role;
-use parley::editor::Generation;
-use parley::editor::SplitString;
+use accesskit::{Node, NodeId, Role};
+use parley::editor::{Generation, SplitString};
 use parley::layout::Alignment;
 use parley::PlainEditor;
 use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
-use vello::kurbo::Affine;
-use vello::kurbo::Point;
-use vello::kurbo::Rect;
-use vello::kurbo::Size;
-use vello::kurbo::Vec2;
-use vello::peniko::Brush;
-use vello::peniko::Fill;
+use tracing::{trace_span, Span};
+use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
+use vello::peniko::{Brush, Fill};
 use vello::Scene;
-use winit::keyboard::Key;
-use winit::keyboard::NamedKey;
+use winit::keyboard::{Key, NamedKey};
 
-use crate::core::default_styles;
-use crate::core::render_text;
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::BrushIndex;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerButton;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::StyleProperty;
-use crate::core::TextEvent;
-use crate::core::Update;
-use crate::core::UpdateCtx;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetMut;
-use crate::palette;
-use crate::theme;
+use crate::core::{
+    default_styles, render_text, AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx,
+    LayoutCtx, PaintCtx, PointerButton, PointerEvent, QueryCtx, RegisterCtx, StyleProperty,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+};
 use crate::widgets::Padding;
+use crate::{palette, theme};
 use cursor_icon::CursorIcon;
 
 /// `TextArea` implements the core of interactive text.

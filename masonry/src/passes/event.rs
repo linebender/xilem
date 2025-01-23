@@ -2,23 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use dpi::LogicalPosition;
-use tracing::debug;
-use tracing::info_span;
-use tracing::trace;
+use tracing::{debug, info_span, trace};
 use winit::event::ElementState;
-use winit::keyboard::KeyCode;
-use winit::keyboard::PhysicalKey;
+use winit::keyboard::{KeyCode, PhysicalKey};
 
-use crate::app::RenderRoot;
-use crate::app::RenderRootSignal;
-use crate::core::AccessEvent;
-use crate::core::EventCtx;
-use crate::core::PointerEvent;
-use crate::core::TextEvent;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::passes::enter_span;
-use crate::passes::merge_state_up;
+use crate::app::{RenderRoot, RenderRootSignal};
+use crate::core::{AccessEvent, EventCtx, PointerEvent, TextEvent, Widget, WidgetId};
+use crate::passes::{enter_span, merge_state_up};
 use crate::Handled;
 
 // --- MARK: HELPERS ---

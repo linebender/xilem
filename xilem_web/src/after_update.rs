@@ -3,15 +3,8 @@
 
 use std::marker::PhantomData;
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::View;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::DomNode;
-use crate::DomView;
-use crate::DynMessage;
-use crate::ViewCtx;
+use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{DomNode, DomView, DynMessage, ViewCtx};
 
 /// Invokes the `callback` after the inner `element` [`DomView`] was created.
 /// See [`after_build`] for more details.

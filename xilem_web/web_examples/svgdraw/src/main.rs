@@ -6,29 +6,15 @@
 use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_web::document_body;
-use xilem_web::elements::html::div;
-use xilem_web::elements::html::input;
-use xilem_web::elements::html::label;
-use xilem_web::elements::html::span;
-use xilem_web::elements::svg::g;
-use xilem_web::elements::svg::svg;
-use xilem_web::input_event_target_value;
-use xilem_web::interfaces::Element;
-use xilem_web::interfaces::HtmlInputElement;
-use xilem_web::interfaces::SvgGeometryElement;
-use xilem_web::interfaces::SvgPathElement;
-use xilem_web::interfaces::SvggElement;
+use xilem_web::elements::html::{div, input, label, span};
+use xilem_web::elements::svg::{g, svg};
+use xilem_web::interfaces::{
+    Element, HtmlInputElement, SvgGeometryElement, SvgPathElement, SvggElement,
+};
 use xilem_web::modifiers::style as s;
-use xilem_web::svg::kurbo::BezPath;
-use xilem_web::svg::kurbo::Point;
-use xilem_web::svg::kurbo::QuadSpline;
-use xilem_web::svg::kurbo::Shape;
-use xilem_web::svg::kurbo::Stroke;
+use xilem_web::svg::kurbo::{BezPath, Point, QuadSpline, Shape, Stroke};
 use xilem_web::svg::peniko::Color;
-use xilem_web::AnyDomView;
-use xilem_web::App;
-use xilem_web::DomFragment;
+use xilem_web::{document_body, input_event_target_value, AnyDomView, App, DomFragment};
 
 const RAINBOW_COLORS: [Color; 11] = [
     Color::from_rgb8(228, 3, 3),     // Red

@@ -4,18 +4,10 @@
 use std::marker::PhantomData;
 
 use wasm_bindgen::closure::Closure;
-use wasm_bindgen::JsCast;
-use wasm_bindgen::UnwrapThrowExt;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::MessageResult;
-use crate::core::Mut;
-use crate::core::NoElement;
-use crate::core::View;
-use crate::core::ViewId;
-use crate::core::ViewMarker;
-use crate::DynMessage;
-use crate::OptionalAction;
-use crate::ViewCtx;
+use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
+use crate::{DynMessage, OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
 pub struct Interval<Callback, State, Action> {

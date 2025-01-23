@@ -8,29 +8,16 @@
 // size constraints to its child means that "aligning" a widget may actually change
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
-use accesskit::Node;
-use accesskit::Role;
-use smallvec::smallvec;
-use smallvec::SmallVec;
-use tracing::trace_span;
-use tracing::Span;
+use accesskit::{Node, Role};
+use smallvec::{smallvec, SmallVec};
+use tracing::{trace_span, Span};
 use vello::Scene;
 
-use crate::core::AccessCtx;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
-use crate::core::EventCtx;
-use crate::core::LayoutCtx;
-use crate::core::PaintCtx;
-use crate::core::PointerEvent;
-use crate::core::QueryCtx;
-use crate::core::RegisterCtx;
-use crate::core::TextEvent;
-use crate::core::Widget;
-use crate::core::WidgetId;
-use crate::core::WidgetPod;
-use crate::kurbo::Rect;
-use crate::kurbo::Size;
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
+    RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
+};
+use crate::kurbo::{Rect, Size};
 use crate::util::UnitPoint;
 
 // TODO - Have child widget type as generic argument
