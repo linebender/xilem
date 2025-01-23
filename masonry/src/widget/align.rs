@@ -14,7 +14,6 @@ use tracing::{trace_span, Span};
 use vello::Scene;
 
 use crate::contexts::AccessCtx;
-use crate::include_screenshot;
 use crate::paint_scene_helpers::UnitPoint;
 use crate::widget::WidgetPod;
 use crate::{
@@ -26,7 +25,7 @@ use crate::{
 
 /// A widget that aligns its child.
 ///
-#[doc = include_screenshot!("widget/screenshots/masonry__widget__align__tests__right.png", "Right-aligned label")]
+#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__align__tests__right.png", "Right-aligned label")]
 pub struct Align {
     align: UnitPoint,
     child: WidgetPod<dyn Widget>,

@@ -20,6 +20,11 @@ macro_rules! include_screenshot {
     };
 }
 
+// TODO:
+// - Check whether the docs.rs trick actually works.
+// - Check whether this method will work with cargo rdme.
+// - Make better screenshots than the ones we currently use.
+
 #[cfg(not(docsrs))]
 #[doc(hidden)]
 #[macro_export]
@@ -32,13 +37,6 @@ macro_rules! include_screenshot {
         )
     };
 }
-
-// [!Image alt](link)
-
-// https://raw.githubusercontent.com/linebender/xilem/7f40266bd831c3f8e715bf7af325e3a53e046612/masonry/src/widget/screenshots/masonry__widget__align__tests__centered.png
-
-#[cfg(FALSE)]
-include_screenshot!("hello");
 
 #[cfg_attr(docsrs, doc = r" This is a doc comment.")]
 #[cfg_attr(not(docsrs), doc = r" This is a doc comment.")]
