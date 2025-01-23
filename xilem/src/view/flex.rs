@@ -3,15 +3,31 @@
 
 use std::marker::PhantomData;
 
-use masonry::widgets::{self, WidgetMut};
-pub use masonry::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
-use masonry::{FromDynWidget, Widget};
+pub use masonry::widgets::Axis;
+pub use masonry::widgets::CrossAxisAlignment;
+pub use masonry::widgets::FlexParams;
+pub use masonry::widgets::MainAxisAlignment;
+use masonry::core::WidgetMut;
+use masonry::widgets::{self};
+use masonry::core::FromDynWidget;
+use masonry::core::Widget;
 
-use crate::core::{
-    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewId, ViewMarker, ViewPathTracker, ViewSequence,
-};
-use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
+use crate::core::AppendVec;
+use crate::core::DynMessage;
+use crate::core::ElementSplice;
+use crate::core::MessageResult;
+use crate::core::Mut;
+use crate::core::SuperElement;
+use crate::core::View;
+use crate::core::ViewElement;
+use crate::core::ViewId;
+use crate::core::ViewMarker;
+use crate::core::ViewPathTracker;
+use crate::core::ViewSequence;
+use crate::AnyWidgetView;
+use crate::Pod;
+use crate::ViewCtx;
+use crate::WidgetView;
 
 /// A layout which defines how items will be arranged in rows or columns.
 ///
@@ -659,7 +675,8 @@ where
 mod hidden {
     use super::FlexItem;
     use crate::core::View;
-    use crate::{AnyWidgetView, ViewCtx};
+    use crate::AnyWidgetView;
+    use crate::ViewCtx;
     #[doc(hidden)] // Implementation detail, public because of trait visibility rules
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     pub struct AnyFlexChildState<State: 'static, Action: 'static> {

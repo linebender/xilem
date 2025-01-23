@@ -18,7 +18,7 @@ use vello::kurbo::Size;
 /// The constraints are always [rounded away from zero] to integers
 /// to enable pixel perfect layout.
 ///
-/// [`layout`]: crate::Widget::layout
+/// [`layout`]: crate::core::Widget::layout
 /// [Flutter BoxConstraints]: https://api.flutter.dev/flutter/rendering/BoxConstraints-class.html
 /// [rounded away from zero]: Size::expand
 #[derive(Clone, Copy, Debug, PartialEq)]

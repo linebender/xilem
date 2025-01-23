@@ -1,15 +1,24 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::parley::style::{FontStack, FontWeight};
+use masonry::parley::style::FontStack;
+use masonry::parley::style::FontWeight;
 use masonry::text::ArcStr;
-use masonry::{widgets, TextAlignment};
+use masonry::widgets;
+use masonry::TextAlignment;
 use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 
-use super::{label, Label};
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use super::label;
+use super::Label;
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::ViewMarker;
+use crate::MessageResult;
+use crate::Pod;
+use crate::View;
+use crate::ViewCtx;
+use crate::ViewId;
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {

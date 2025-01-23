@@ -6,9 +6,14 @@
     reason = "We have `std` enabled when testing, which means that some items are conditionally in the prelude"
 )]
 
-use crate::{
-    DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::DynMessage;
+use crate::MessageResult;
+use crate::Mut;
+use crate::View;
+use crate::ViewElement;
+use crate::ViewId;
+use crate::ViewMarker;
+use crate::ViewPathTracker;
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
 ///
@@ -121,7 +126,11 @@ impl_orphan_view_for!(usize);
 /// These [`OrphanView`] implementations can e.g. be used in a vector graphics context, as for example seen in `xilem_web` within svg nodes
 mod kurbo {
     use super::OrphanView;
-    use crate::{MessageResult, Mut, View, ViewId, ViewMarker};
+    use crate::MessageResult;
+    use crate::Mut;
+    use crate::View;
+    use crate::ViewId;
+    use crate::ViewMarker;
     impl_orphan_view_for!(kurbo::PathSeg);
     impl_orphan_view_for!(kurbo::Arc);
     impl_orphan_view_for!(kurbo::BezPath);

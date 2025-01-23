@@ -3,10 +3,15 @@
 
 //! Tests related to layout.
 
-use vello::kurbo::{Insets, Size};
+use vello::kurbo::Insets;
+use vello::kurbo::Size;
 
-use crate::testing::{widget_ids, ModularWidget, TestHarness, TestWidgetExt};
-use crate::widgets::{Flex, SizedBox};
+use crate::testing::widget_ids;
+use crate::testing::ModularWidget;
+use crate::testing::TestHarness;
+use crate::testing::TestWidgetExt;
+use crate::widgets::Flex;
+use crate::widgets::SizedBox;
 
 #[test]
 fn layout_simple() {

@@ -2,12 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::widgets;
-pub use masonry::PointerButton;
+pub use masonry::core::PointerButton;
 use xilem_core::ViewPathTracker;
 
-use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::View;
+use crate::core::ViewMarker;
 use crate::view::Label;
-use crate::{MessageResult, Pod, ViewCtx, ViewId};
+use crate::MessageResult;
+use crate::Pod;
+use crate::ViewCtx;
+use crate::ViewId;
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///
@@ -152,9 +158,9 @@ where
     ) -> MessageResult<Action> {
         match id_path.split_first() {
             Some((&LABEL_VIEW_ID, rest)) => self.label.message(&mut (), rest, message, app_state),
-            None => match message.downcast::<masonry::Action>() {
+            None => match message.downcast::<masonry::core::Action>() {
                 Ok(action) => {
-                    if let masonry::Action::ButtonPressed(button) = *action {
+                    if let masonry::core::Action::ButtonPressed(button) = *action {
                         (self.callback)(app_state, button)
                     } else {
                         tracing::error!("Wrong action type in Button::message: {action:?}");

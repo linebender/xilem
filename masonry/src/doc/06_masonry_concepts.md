@@ -109,8 +109,8 @@ These checks are sometimes referred to as "safety rails".
 Safety rails aren't guaranteed to run and may be disabled even in debug mode for performance reasons.
 They should not be relied upon to check code correctness, but are meant to help you catch implementation errors early on during development.
 
-[`PointerLeave`]: crate::PointerEvent::PointerLeave
-[`FocusChanged`]: crate::Update::FocusChanged
-[`Widget::accepts_focus`]: crate::Widget::accepts_focus
-[`EventCtx::request_focus`]: crate::EventCtx::request_focus
-[`Widget::on_pointer_event`]: crate::Widget::on_pointer_event
+[`PointerLeave`]: crate::core::PointerEvent::PointerLeave
+[`FocusChanged`]: crate::core::Update::FocusChanged
+[`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
+[`EventCtx::request_focus`]: crate::core::EventCtx::request_focus
+[`Widget::on_pointer_event`]: crate::core::Widget::on_pointer_event

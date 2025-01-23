@@ -3,19 +3,36 @@
 
 #![allow(missing_docs)]
 
-use accesskit::{Node, Role};
+use accesskit::Node;
+use accesskit::Role;
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
+use tracing::trace_span;
+use tracing::Span;
 use vello::kurbo::Rect;
 use vello::Scene;
 
-use crate::paint_scene_helpers::{fill_color, stroke};
-use crate::widgets::{Axis, WidgetMut};
-use crate::{
-    theme, AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    Point, PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId,
-};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::AllowRawMut;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::paint_scene_helpers::fill_color;
+use crate::paint_scene_helpers::stroke;
+use crate::theme;
+use crate::widgets::Axis;
+use crate::Point;
+use crate::Size;
 
 // TODO
 // - Fade scrollbars? Find out how Linux/MacOS/Windows do it
@@ -232,8 +249,10 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::event::PointerButton;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::core::PointerButton;
+    use crate::testing::widget_ids;
+    use crate::testing::TestHarness;
+    use crate::testing::TestWidgetExt;
 
     #[test]
     fn simple_scrollbar() {

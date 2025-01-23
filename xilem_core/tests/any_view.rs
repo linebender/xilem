@@ -3,7 +3,9 @@
 
 //! Tests that [`AnyView`] has the correct routing behaviour
 
-use xilem_core::{AnyView, MessageResult, View};
+use xilem_core::AnyView;
+use xilem_core::MessageResult;
+use xilem_core::View;
 
 mod common;
 use common::*;

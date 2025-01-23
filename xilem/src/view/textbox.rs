@@ -4,8 +4,16 @@
 use masonry::widgets;
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, View, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::View;
+use crate::core::ViewMarker;
+use crate::Color;
+use crate::MessageResult;
+use crate::Pod;
+use crate::TextAlignment;
+use crate::ViewCtx;
+use crate::ViewId;
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -121,15 +129,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             id_path.is_empty(),
             "id path should be empty in Textbox::message"
         );
-        match message.downcast::<masonry::Action>() {
+        match message.downcast::<masonry::core::Action>() {
             Ok(action) => match *action {
-                masonry::Action::TextChanged(text) => {
+                masonry::core::Action::TextChanged(text) => {
                     MessageResult::Action((self.on_changed)(app_state, text))
                 }
-                masonry::Action::TextEntered(text) if self.on_enter.is_some() => {
+                masonry::core::Action::TextEntered(text) if self.on_enter.is_some() => {
                     MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
                 }
-                masonry::Action::TextEntered(_) => {
+                masonry::core::Action::TextEntered(_) => {
                     tracing::error!("Textbox::message: on_enter is not set");
                     MessageResult::Stale(action)
                 }

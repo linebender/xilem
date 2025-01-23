@@ -6,8 +6,15 @@ use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker};
-use crate::{DomView, DynMessage, PodMut, ViewCtx};
+use crate::core::MessageResult;
+use crate::core::Mut;
+use crate::core::View;
+use crate::core::ViewId;
+use crate::core::ViewMarker;
+use crate::DomView;
+use crate::DynMessage;
+use crate::PodMut;
+use crate::ViewCtx;
 
 /// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
 pub struct Templated<V>(Rc<V>);

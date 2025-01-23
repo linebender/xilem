@@ -12,18 +12,35 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use accesskit::{Node, Role};
+use accesskit::Node;
+use accesskit::Role;
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 
-use crate::event::{PointerEvent, TextEvent};
-use crate::widgets::widget::find_widget_at_pos;
-use crate::widgets::{SizedBox, WidgetRef};
-use crate::{
-    AccessCtx, AccessEvent, AsAny, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx,
-    PaintCtx, Point, QueryCtx, RegisterCtx, Size, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
-};
+use crate::core::widget::find_widget_at_pos;
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::ComposeCtx;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetPod;
+use crate::core::WidgetRef;
+use crate::widgets::SizedBox;
+use crate::AsAny;
+use crate::CursorIcon;
+use crate::Point;
+use crate::Size;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);

@@ -3,17 +3,31 @@
 
 //! Statically typed alternatives to the type-erased [`AnyWidgetView`](`crate::any_view::AnyWidgetView`).
 
-use accesskit::{Node, Role};
-use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx, Point,
-    PointerEvent, RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
-};
-use smallvec::{smallvec, SmallVec};
+use accesskit::Node;
+use accesskit::Role;
+use masonry::core::AccessCtx;
+use masonry::core::AccessEvent;
+use masonry::core::BoxConstraints;
+use masonry::core::EventCtx;
+use masonry::core::FromDynWidget;
+use masonry::core::LayoutCtx;
+use masonry::core::PaintCtx;
+use masonry::Point;
+use masonry::core::PointerEvent;
+use masonry::core::RegisterCtx;
+use masonry::Size;
+use masonry::core::TextEvent;
+use masonry::core::Widget;
+use masonry::core::WidgetId;
+use masonry::core::WidgetPod;
+use smallvec::smallvec;
+use smallvec::SmallVec;
 use vello::Scene;
 
 use crate::core::one_of::OneOf;
 use crate::core::Mut;
-use crate::{Pod, ViewCtx};
+use crate::Pod;
+use crate::ViewCtx;
 
 impl<
         A: Widget + FromDynWidget + ?Sized,

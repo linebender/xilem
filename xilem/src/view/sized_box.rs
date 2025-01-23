@@ -8,8 +8,14 @@ pub use masonry::widgets::Padding;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::View;
+use crate::core::ViewId;
+use crate::core::ViewMarker;
+use crate::Pod;
+use crate::ViewCtx;
+use crate::WidgetView;
 
 /// A widget with predefined size.
 ///

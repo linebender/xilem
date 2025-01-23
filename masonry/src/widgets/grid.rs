@@ -1,17 +1,31 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{Node, Role};
+use accesskit::Node;
+use accesskit::Role;
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Line, Stroke};
+use tracing::trace_span;
+use tracing::Span;
+use vello::kurbo::Affine;
+use vello::kurbo::Line;
+use vello::kurbo::Stroke;
 use vello::Scene;
 
-use crate::widgets::WidgetMut;
-use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    QueryCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
-};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::TextEvent;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
+use crate::Point;
+use crate::Size;
 
 /// A widget that arranges its children in a grid.
 ///
@@ -248,7 +262,7 @@ impl Widget for Grid {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);
         }

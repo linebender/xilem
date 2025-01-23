@@ -1,14 +1,22 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
+use std::collections::VecDeque;
 
-use accesskit::{ActionRequest, TreeUpdate};
-use parley::fontique::{self, Collection, CollectionOptions};
-use parley::{FontContext, LayoutContext};
-use tracing::{info_span, warn};
-use tree_arena::{ArenaMut, TreeArena};
-use vello::kurbo::{self, Rect};
+use accesskit::ActionRequest;
+use accesskit::TreeUpdate;
+use parley::fontique::Collection;
+use parley::fontique::CollectionOptions;
+use parley::fontique::{self};
+use parley::FontContext;
+use parley::LayoutContext;
+use tracing::info_span;
+use tracing::warn;
+use tree_arena::ArenaMut;
+use tree_arena::TreeArena;
+use vello::kurbo::Rect;
+use vello::kurbo::{self};
 use vello::Scene;
 use winit::window::ResizeDirection;
 
@@ -17,26 +25,44 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
-use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
-use crate::event::{PointerEvent, TextEvent, WindowEvent};
+use crate::core::AccessEvent;
+use crate::core::Action;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::TextEvent;
+use crate::core::Widget;
+use crate::core::WidgetArena;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
+use crate::core::WidgetRef;
+use crate::core::WidgetState;
+use crate::core::WindowEvent;
+use crate::dpi::LogicalPosition;
+use crate::dpi::LogicalSize;
+use crate::dpi::PhysicalSize;
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
 use crate::passes::compose::run_compose_pass;
-use crate::passes::event::{
-    run_on_access_event_pass, run_on_pointer_event_pass, run_on_text_event_pass,
-};
+use crate::passes::event::run_on_access_event_pass;
+use crate::passes::event::run_on_pointer_event_pass;
+use crate::passes::event::run_on_text_event_pass;
 use crate::passes::layout::run_layout_pass;
-use crate::passes::mutate::{mutate_widget, run_mutate_pass};
+use crate::passes::mutate::mutate_widget;
+use crate::passes::mutate::run_mutate_pass;
 use crate::passes::paint::run_paint_pass;
-use crate::passes::update::{
-    run_update_disabled_pass, run_update_focus_chain_pass, run_update_focus_pass,
-    run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
-    run_update_widget_tree_pass,
-};
-use crate::passes::{recurse_on_children, PassTracing};
+use crate::passes::recurse_on_children;
+use crate::passes::update::run_update_disabled_pass;
+use crate::passes::update::run_update_focus_chain_pass;
+use crate::passes::update::run_update_focus_pass;
+use crate::passes::update::run_update_pointer_pass;
+use crate::passes::update::run_update_scroll_pass;
+use crate::passes::update::run_update_stashed_pass;
+use crate::passes::update::run_update_widget_tree_pass;
+use crate::passes::PassTracing;
 use crate::text::BrushIndex;
-use crate::widgets::{WidgetArena, WidgetMut, WidgetRef, WidgetState};
-use crate::{AccessEvent, Action, CursorIcon, Handled, QueryCtx, Widget, WidgetId, WidgetPod};
+use crate::CursorIcon;
+use crate::Handled;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.

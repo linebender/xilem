@@ -1,10 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::JsCast;
+use wasm_bindgen::UnwrapThrowExt;
 
-use crate::modifiers::{Attributes, Children, Classes, Modifier, Styles};
-use crate::{document, AnyPod, Pod, PodFlags, ViewCtx};
+use crate::document;
+use crate::modifiers::Attributes;
+use crate::modifiers::Children;
+use crate::modifiers::Classes;
+use crate::modifiers::Modifier;
+use crate::modifiers::Styles;
+use crate::AnyPod;
+use crate::Pod;
+use crate::PodFlags;
+use crate::ViewCtx;
 
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...

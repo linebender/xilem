@@ -3,20 +3,45 @@
 
 //! A checkbox widget.
 
-use accesskit::{Node, Role, Toggled};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
-use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
+use accesskit::Node;
+use accesskit::Role;
+use accesskit::Toggled;
+use smallvec::smallvec;
+use smallvec::SmallVec;
+use tracing::trace;
+use tracing::trace_span;
+use tracing::Span;
+use vello::kurbo::Affine;
+use vello::kurbo::BezPath;
+use vello::kurbo::Cap;
+use vello::kurbo::Join;
+use vello::kurbo::Size;
+use vello::kurbo::Stroke;
 use vello::Scene;
 
 use crate::action::Action;
-use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
+use crate::paint_scene_helpers::fill_lin_gradient;
+use crate::paint_scene_helpers::stroke;
+use crate::paint_scene_helpers::UnitPoint;
 use crate::text::ArcStr;
-use crate::widgets::{Label, WidgetMut};
-use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
-};
+use crate::theme;
+use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
 ///
@@ -234,7 +259,9 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::testing::widget_ids;
+    use crate::testing::TestHarness;
+    use crate::testing::TestWidgetExt;
     use crate::text::StyleProperty;
     use crate::theme::PRIMARY_LIGHT;
 

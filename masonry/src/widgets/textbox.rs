@@ -3,17 +3,39 @@
 
 #![warn(missing_docs)]
 
-use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Insets, Point, Rect, Size, Stroke};
+use accesskit::Node;
+use accesskit::Role;
+use smallvec::smallvec;
+use smallvec::SmallVec;
+use tracing::trace_span;
+use tracing::Span;
+use vello::kurbo::Affine;
+use vello::kurbo::Insets;
+use vello::kurbo::Point;
+use vello::kurbo::Rect;
+use vello::kurbo::Size;
+use vello::kurbo::Stroke;
 use vello::Scene;
 
-use crate::widgets::{Padding, TextArea, WidgetMut, WidgetPod};
-use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
+use crate::widgets::Padding;
+use crate::widgets::TextArea;
+use crate::Color;
 
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.

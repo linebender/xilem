@@ -10,13 +10,19 @@
 
 mod state;
 
-use state::{AppState, Filter, Todo};
+use state::AppState;
+use state::Filter;
+use state::Todo;
 use wasm_bindgen::JsCast;
-use xilem_web::core::{adapt, MessageResult};
+use xilem_web::core::adapt;
+use xilem_web::core::MessageResult;
 use xilem_web::elements::html as el;
+use xilem_web::get_element_by_id;
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
-use xilem_web::{get_element_by_id, Action, App, DomView};
+use xilem_web::Action;
+use xilem_web::App;
+use xilem_web::DomView;
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
 // them.

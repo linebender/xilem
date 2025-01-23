@@ -1,10 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widgets, Color};
+use masonry::widgets;
+use masonry::Color;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::ViewMarker;
+use crate::MessageResult;
+use crate::Pod;
+use crate::View;
+use crate::ViewCtx;
+use crate::ViewId;
 
 /// An indefinite spinner.
 ///

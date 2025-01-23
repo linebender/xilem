@@ -5,18 +5,36 @@
 
 use std::cmp::Ordering;
 
-use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
-use vello::kurbo::{Point, Size};
+use accesskit::Node;
+use accesskit::Role;
+use smallvec::smallvec;
+use smallvec::SmallVec;
+use tracing::trace_span;
+use tracing::Span;
+use vello::kurbo::Point;
+use vello::kurbo::Size;
 use vello::Scene;
 
-use crate::text::{ArcStr, StyleProperty};
-use crate::widgets::{Label, WidgetMut, WidgetPod};
-use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FontWeight, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
+use crate::text::ArcStr;
+use crate::text::StyleProperty;
+use crate::widgets::Label;
+use crate::FontWeight;
 
 /// An `f32` value which can move towards a target value at a linear rate over time.
 #[derive(Clone, Debug)]

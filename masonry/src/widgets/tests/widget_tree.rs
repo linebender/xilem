@@ -3,8 +3,10 @@
 
 use insta::assert_debug_snapshot;
 
-use crate::testing::{widget_ids, TestHarness};
-use crate::widgets::{Flex, Label};
+use crate::testing::widget_ids;
+use crate::testing::TestHarness;
+use crate::widgets::Flex;
+use crate::widgets::Label;
 
 #[test]
 fn access_grandchild_widget() {

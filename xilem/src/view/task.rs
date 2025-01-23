@@ -7,10 +7,16 @@ use std::sync::Arc;
 
 use tokio::task::JoinHandle;
 
-use crate::core::{
-    DynMessage, Message, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
-    ViewPathTracker,
-};
+use crate::core::DynMessage;
+use crate::core::Message;
+use crate::core::MessageProxy;
+use crate::core::MessageResult;
+use crate::core::Mut;
+use crate::core::NoElement;
+use crate::core::View;
+use crate::core::ViewId;
+use crate::core::ViewMarker;
+use crate::core::ViewPathTracker;
 use crate::ViewCtx;
 
 /// Launch a task which will run until the view is no longer in the tree.

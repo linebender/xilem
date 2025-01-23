@@ -9,7 +9,8 @@
 
 use std::sync::Arc;
 
-use xilem_core::{MessageResult, View};
+use xilem_core::MessageResult;
+use xilem_core::View;
 
 mod common;
 use common::*;

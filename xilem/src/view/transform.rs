@@ -3,8 +3,13 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{DynMessage, View, ViewMarker};
-use crate::{Affine, Pod, ViewCtx, WidgetView};
+use crate::core::DynMessage;
+use crate::core::View;
+use crate::core::ViewMarker;
+use crate::Affine;
+use crate::Pod;
+use crate::ViewCtx;
+use crate::WidgetView;
 
 /// A view which transforms the widget created by child.
 ///

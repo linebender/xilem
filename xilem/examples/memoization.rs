@@ -6,9 +6,14 @@
 
 use std::sync::Arc;
 
-use xilem::core::{frozen, memoize};
-use xilem::view::{button, flex};
-use xilem::{AnyWidgetView, EventLoop, WidgetView, Xilem};
+use xilem::core::frozen;
+use xilem::core::memoize;
+use xilem::view::button;
+use xilem::view::flex;
+use xilem::AnyWidgetView;
+use xilem::EventLoop;
+use xilem::WidgetView;
+use xilem::Xilem;
 
 // There are currently two ways to do memoization
 

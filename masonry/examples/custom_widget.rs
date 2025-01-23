@@ -10,19 +10,43 @@
 #![expect(clippy::shadow_unrelated, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use accesskit::{Node, Role};
-use masonry::kurbo::{BezPath, Stroke};
-use masonry::widgets::{ObjectFit, RootWidget};
-use masonry::{
-    palette, AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx,
-    EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size,
-    TextEvent, Widget, WidgetId,
-};
+use accesskit::Node;
+use accesskit::Role;
+use masonry::kurbo::BezPath;
+use masonry::kurbo::Stroke;
+use masonry::palette;
+use masonry::core::ObjectFit;
+use masonry::widgets::RootWidget;
+use masonry::core::AccessCtx;
+use masonry::core::AccessEvent;
+use masonry::core::Action;
+use masonry::Affine;
+use masonry::app::AppDriver;
+use masonry::core::BoxConstraints;
+use masonry::Color;
+use masonry::app::DriverCtx;
+use masonry::core::EventCtx;
+use masonry::core::LayoutCtx;
+use masonry::core::PaintCtx;
+use masonry::Point;
+use masonry::core::PointerEvent;
+use masonry::core::QueryCtx;
+use masonry::Rect;
+use masonry::core::RegisterCtx;
+use masonry::Size;
+use masonry::core::TextEvent;
+use masonry::core::Widget;
+use masonry::core::WidgetId;
 use parley::layout::Alignment;
-use parley::style::{FontFamily, FontStack, StyleProperty};
+use parley::style::FontFamily;
+use parley::style::FontStack;
+use parley::style::StyleProperty;
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::peniko::{Fill, Image, ImageFormat};
+use tracing::trace_span;
+use tracing::Span;
+use vello::peniko::Fill;
+use vello::peniko::Image;
+use vello::peniko::ImageFormat;
 use vello::Scene;
 use winit::window::Window;
 

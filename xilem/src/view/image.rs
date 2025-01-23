@@ -3,10 +3,17 @@
 
 //! The bitmap image widget.
 
-use masonry::widgets::{self, ObjectFit};
+use masonry::core::ObjectFit;
+use masonry::widgets::{self};
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::ViewMarker;
+use crate::MessageResult;
+use crate::Pod;
+use crate::View;
+use crate::ViewCtx;
+use crate::ViewId;
 
 /// Displays the bitmap `image`.
 ///

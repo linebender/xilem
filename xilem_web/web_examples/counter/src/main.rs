@@ -4,9 +4,12 @@
 //! A simple counter
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
+use xilem_web::document_body;
 use xilem_web::elements::html as el;
-use xilem_web::interfaces::{Element, HtmlButtonElement};
-use xilem_web::{document_body, App, DomFragment};
+use xilem_web::interfaces::Element;
+use xilem_web::interfaces::HtmlButtonElement;
+use xilem_web::App;
+use xilem_web::DomFragment;
 
 #[derive(Default)]
 struct AppState {

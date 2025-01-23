@@ -261,9 +261,9 @@ Most of this documentation is written to help developers trying to build such a 
 [`Button`]: crate::widget::Button
 [`RootWidget`]: crate::widget::RootWidget
 
-[`AppDriver`]: crate::AppDriver
-[`Action`]: crate::Action
-[`DriverCtx`]: crate::DriverCtx
-[`WidgetId`]: crate::WidgetId
+[`AppDriver`]: crate::app::AppDriver
+[`Action`]: crate::core::Action
+[`DriverCtx`]: crate::app::DriverCtx
+[`WidgetId`]: crate::core::WidgetId
 [`WidgetMut`]: crate::widget::WidgetMut
 [add_child]: crate::widget::Flex::add_child

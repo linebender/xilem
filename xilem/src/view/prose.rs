@@ -1,12 +1,22 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::{ArcStr, StyleProperty};
-use masonry::widgets::{self, LineBreaking};
+use masonry::text::ArcStr;
+use masonry::text::StyleProperty;
+use masonry::widgets::LineBreaking;
+use masonry::widgets::{self};
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::ViewMarker;
+use crate::Color;
+use crate::MessageResult;
+use crate::Pod;
+use crate::TextAlignment;
+use crate::View;
+use crate::ViewCtx;
+use crate::ViewId;
 
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {

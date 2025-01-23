@@ -7,12 +7,21 @@ use std::marker::PhantomData;
 
 use peniko::kurbo::Point;
 use wasm_bindgen::prelude::Closure;
-use wasm_bindgen::{throw_str, JsCast, UnwrapThrowExt};
+use wasm_bindgen::throw_str;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::UnwrapThrowExt;
 use web_sys::PointerEvent;
 
-use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::core::MessageResult;
+use crate::core::Mut;
+use crate::core::View;
+use crate::core::ViewId;
+use crate::core::ViewMarker;
+use crate::core::ViewPathTracker;
 use crate::interfaces::Element;
-use crate::{DomView, DynMessage, ViewCtx};
+use crate::DomView;
+use crate::DynMessage;
+use crate::ViewCtx;
 
 /// Use a distinctive number here, to be able to catch bugs.
 /// In case the generational-id view path in `View::Message` lead to a wrong view

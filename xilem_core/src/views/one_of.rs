@@ -5,7 +5,13 @@
 
 use hidden::OneOfState;
 
-use crate::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker};
+use crate::MessageResult;
+use crate::Mut;
+use crate::View;
+use crate::ViewElement;
+use crate::ViewId;
+use crate::ViewMarker;
+use crate::ViewPathTracker;
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used.
 ///
@@ -552,7 +558,8 @@ where
 #[doc(hidden)]
 mod hidden {
     use super::PhantomElementCtx;
-    use crate::{View, ViewMarker};
+    use crate::View;
+    use crate::ViewMarker;
 
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     #[derive(Debug)]

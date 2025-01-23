@@ -5,12 +5,21 @@
 
 use std::f64::consts::PI;
 
-use vello::kurbo::{Affine, Vec2};
+use vello::kurbo::Affine;
+use vello::kurbo::Vec2;
 use vello::peniko::color::palette;
 
+use crate::assert_render_snapshot;
 use crate::testing::TestHarness;
-use crate::widgets::{Alignment, Button, ChildAlignment, Label, SizedBox, ZStack};
-use crate::{assert_render_snapshot, PointerButton, Widget, WidgetPod};
+use crate::widgets::Alignment;
+use crate::widgets::Button;
+use crate::widgets::ChildAlignment;
+use crate::widgets::Label;
+use crate::widgets::SizedBox;
+use crate::widgets::ZStack;
+use crate::core::PointerButton;
+use crate::core::Widget;
+use crate::core::WidgetPod;
 
 fn blue_box(inner: impl Widget) -> Box<SizedBox> {
     Box::new(

@@ -3,18 +3,34 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
-use accesskit::{Node, Role};
+use accesskit::Node;
+use accesskit::Role;
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
+use tracing::trace_span;
+use tracing::Span;
 use vello::kurbo::common::FloatExt;
-use vello::kurbo::{Affine, Line, Stroke, Vec2};
+use vello::kurbo::Affine;
+use vello::kurbo::Line;
+use vello::kurbo::Stroke;
+use vello::kurbo::Vec2;
 use vello::Scene;
 
-use crate::widgets::WidgetMut;
-use crate::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent,
-    QueryCtx, Rect, Size, TextEvent, Widget, WidgetId, WidgetPod,
-};
+use crate::core::AccessCtx;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::TextEvent;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetPod;
+use crate::core::WidgetMut;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::Point;
+use crate::Rect;
+use crate::Size;
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -915,7 +931,7 @@ impl Widget for Flex {
 
     fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
 
-    fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);
         }

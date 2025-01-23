@@ -3,20 +3,40 @@
 
 //! A button widget.
 
-use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
+use accesskit::Node;
+use accesskit::Role;
+use smallvec::smallvec;
+use smallvec::SmallVec;
+use tracing::trace;
+use tracing::trace_span;
+use tracing::Span;
 use vello::Scene;
 
 use crate::action::Action;
-use crate::event::PointerButton;
-use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerButton;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
+use crate::paint_scene_helpers::fill_lin_gradient;
+use crate::paint_scene_helpers::stroke;
+use crate::paint_scene_helpers::UnitPoint;
 use crate::text::ArcStr;
-use crate::widgets::{Label, WidgetMut, WidgetPod};
-use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, Insets, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, Size, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-};
+use crate::theme;
+use crate::widgets::Label;
+use crate::Insets;
+use crate::Size;
 
 // The minimum padding added to a button.
 // NOTE: these values are chosen to match the existing look of TextBox; these
@@ -130,7 +150,7 @@ impl Widget for Button {
         }
     }
 
-    fn register_children(&mut self, ctx: &mut crate::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
         ctx.register_child(&mut self.label);
     }
 
@@ -225,7 +245,9 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::testing::widget_ids;
+    use crate::testing::TestHarness;
+    use crate::testing::TestWidgetExt;
     use crate::text::StyleProperty;
     use crate::theme::PRIMARY_LIGHT;
 

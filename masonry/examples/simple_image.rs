@@ -9,9 +9,15 @@
 #![windows_subsystem = "windows"]
 
 use masonry::dpi::LogicalSize;
-use masonry::widgets::{Image, ObjectFit, RootWidget};
-use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-use vello::peniko::{Image as ImageBuf, ImageFormat};
+use masonry::widgets::Image;
+use masonry::core::ObjectFit;
+use masonry::widgets::RootWidget;
+use masonry::core::Action;
+use masonry::app::AppDriver;
+use masonry::app::DriverCtx;
+use masonry::core::WidgetId;
+use vello::peniko::Image as ImageBuf;
+use vello::peniko::ImageFormat;
 use winit::window::Window;
 
 struct Driver;

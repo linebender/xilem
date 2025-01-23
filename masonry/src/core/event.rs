@@ -6,10 +6,15 @@
 use std::path::PathBuf;
 
 use vello::kurbo::Point;
-use winit::event::{Force, Ime, KeyEvent, Modifiers};
+use winit::event::Force;
+use winit::event::Ime;
+use winit::event::KeyEvent;
+use winit::event::Modifiers;
 use winit::keyboard::ModifiersState;
 
-use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
+use crate::dpi::LogicalPosition;
+use crate::dpi::PhysicalPosition;
+use crate::dpi::PhysicalSize;
 use crate::kurbo::Rect;
 
 // TODO - Occluded(bool) event
@@ -306,9 +311,9 @@ pub enum Update {
     ///
     /// ## Registering children
     ///
-    /// Container widgets (widgets which use [`WidgetPod`](crate::WidgetPod) to
+    /// Container widgets (widgets which use [`WidgetPod`](crate::core::WidgetPod) to
     /// manage children) must ensure that this event is forwarded to those children.
-    /// The [`WidgetPod`](crate::WidgetPod) itself will handle registering those
+    /// The [`WidgetPod`](crate::core::WidgetPod) itself will handle registering those
     /// children with the system; this is required for things like correct routing
     /// of events.
     WidgetAdded,
@@ -319,8 +324,8 @@ pub enum Update {
     ///
     /// To change a widget's disabled state, see [`set_disabled`].
     ///
-    /// [`is_disabled`]: crate::EventCtx::is_disabled
-    /// [`set_disabled`]: crate::EventCtx::set_disabled
+    /// [`is_disabled`]: crate::core::EventCtx::is_disabled
+    /// [`set_disabled`]: crate::core::EventCtx::set_disabled
     DisabledChanged(bool),
 
     // TODO - Link to tutorial doc.
@@ -330,12 +335,12 @@ pub enum Update {
     ///
     /// To change a widget's stashed state, see [`set_stashed`].
     ///
-    /// [`is_stashed`]: crate::EventCtx::is_stashed
-    /// [`set_stashed`]: crate::EventCtx::set_stashed
+    /// [`is_stashed`]: crate::core::EventCtx::is_stashed
+    /// [`set_stashed`]: crate::core::EventCtx::set_stashed
     StashedChanged(bool),
 
     /// Called when a child widgets uses
-    /// [`EventCtx::request_scroll_to_this`](crate::EventCtx::request_scroll_to_this).
+    /// [`EventCtx::request_scroll_to_this`](crate::core::EventCtx::request_scroll_to_this).
     RequestPanToChild(Rect),
 
     /// Called when the [hovered] status of the current widget changes.
@@ -427,7 +432,7 @@ impl PointerEvent {
 
     // TODO Logical/PhysicalPosition as return type instead?
     /// Returns the position of this event in local (the widget's) coordinate space.
-    pub fn local_position(&self, ctx: &crate::EventCtx) -> Point {
+    pub fn local_position(&self, ctx: &crate::core::EventCtx) -> Point {
         let position = self.pointer_state().position;
         ctx.widget_state.window_transform.inverse() * Point::new(position.x, position.y)
     }

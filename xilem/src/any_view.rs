@@ -1,18 +1,37 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{Node, Role};
-use masonry::widgets::WidgetMut;
-use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx, Point,
-    PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
-};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
+use accesskit::Node;
+use accesskit::Role;
+use masonry::core::WidgetMut;
+use masonry::core::AccessCtx;
+use masonry::core::AccessEvent;
+use masonry::core::BoxConstraints;
+use masonry::core::EventCtx;
+use masonry::core::FromDynWidget;
+use masonry::core::LayoutCtx;
+use masonry::core::PaintCtx;
+use masonry::Point;
+use masonry::core::PointerEvent;
+use masonry::core::QueryCtx;
+use masonry::core::RegisterCtx;
+use masonry::Size;
+use masonry::core::TextEvent;
+use masonry::core::Widget;
+use masonry::core::WidgetId;
+use masonry::core::WidgetPod;
+use smallvec::smallvec;
+use smallvec::SmallVec;
+use tracing::trace_span;
+use tracing::Span;
 use vello::Scene;
 
-use crate::core::{AnyElement, AnyView, Mut, SuperElement};
-use crate::{Pod, ViewCtx};
+use crate::core::AnyElement;
+use crate::core::AnyView;
+use crate::core::Mut;
+use crate::core::SuperElement;
+use crate::Pod;
+use crate::ViewCtx;
 
 /// A view which can have any underlying view type.
 ///

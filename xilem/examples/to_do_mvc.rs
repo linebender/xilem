@@ -8,8 +8,16 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use winit::error::EventLoopError;
-use xilem::view::{button, checkbox, flex, textbox, Axis, FlexSpacer};
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::view::button;
+use xilem::view::checkbox;
+use xilem::view::flex;
+use xilem::view::textbox;
+use xilem::view::Axis;
+use xilem::view::FlexSpacer;
+use xilem::EventLoop;
+use xilem::EventLoopBuilder;
+use xilem::WidgetView;
+use xilem::Xilem;
 
 struct Task {
     description: String,

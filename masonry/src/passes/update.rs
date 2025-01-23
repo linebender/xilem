@@ -4,16 +4,28 @@
 use std::collections::HashSet;
 
 use cursor_icon::CursorIcon;
-use tracing::{info_span, trace};
+use tracing::info_span;
+use tracing::trace;
 use tree_arena::ArenaMut;
 
-use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
-use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
-use crate::render_root::{RenderRoot, RenderRootSignal, RenderRootState};
-use crate::{
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetState,
-};
+use crate::passes::enter_span;
+use crate::passes::enter_span_if;
+use crate::passes::event::run_on_pointer_event_pass;
+use crate::passes::event::run_on_text_event_pass;
+use crate::passes::merge_state_up;
+use crate::passes::recurse_on_children;
+use crate::app::RenderRoot;
+use crate::app::RenderRootSignal;
+use crate::app::RenderRootState;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetState;
 
 // --- MARK: HELPERS ---
 /// Returns the id path starting from the given widget id and ending at the root.

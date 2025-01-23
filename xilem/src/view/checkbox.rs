@@ -4,8 +4,14 @@
 use masonry::text::ArcStr;
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::DynMessage;
+use crate::core::Mut;
+use crate::core::ViewMarker;
+use crate::MessageResult;
+use crate::Pod;
+use crate::View;
+use crate::ViewCtx;
+use crate::ViewId;
 
 /// An element which can be in checked and unchecked state.
 ///
@@ -94,9 +100,9 @@ where
             id_path.is_empty(),
             "id path should be empty in Checkbox::message"
         );
-        match message.downcast::<masonry::Action>() {
+        match message.downcast::<masonry::core::Action>() {
             Ok(action) => {
-                if let masonry::Action::CheckboxToggled(checked) = *action {
+                if let masonry::core::Action::CheckboxToggled(checked) = *action {
                     MessageResult::Action((self.callback)(app_state, checked))
                 } else {
                     tracing::error!("Wrong action type in Checkbox::message: {action:?}");

@@ -3,7 +3,7 @@
 
 use std::any::Any;
 
-use crate::event::PointerButton;
+use crate::core::PointerButton;
 
 // TODO - Replace actions with an associated type on the Widget trait
 // See https://github.com/linebender/xilem/issues/664

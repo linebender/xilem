@@ -6,8 +6,16 @@
 use std::any::Any;
 use std::hash::Hash;
 
-use vello::kurbo::{self, Affine, Rect, Shape, Stroke};
-use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
+use vello::kurbo::Affine;
+use vello::kurbo::Rect;
+use vello::kurbo::Shape;
+use vello::kurbo::Stroke;
+use vello::kurbo::{self};
+use vello::peniko::BrushRef;
+use vello::peniko::Color;
+use vello::peniko::ColorStopsSource;
+use vello::peniko::Fill;
+use vello::peniko::Gradient;
 use vello::Scene;
 
 /// Panic in debug and `tracing::error` in release mode.

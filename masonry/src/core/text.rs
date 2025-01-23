@@ -37,9 +37,13 @@ pub(crate) fn default_styles(styles: &mut StyleSet) {
     styles.insert(GenericFamily::SystemUi.into());
 }
 
-use parley::{Layout, PositionedLayoutItem};
-use vello::kurbo::{Affine, Line, Stroke};
-use vello::peniko::{Brush, Fill};
+use parley::Layout;
+use parley::PositionedLayoutItem;
+use vello::kurbo::Affine;
+use vello::kurbo::Line;
+use vello::kurbo::Stroke;
+use vello::peniko::Brush;
+use vello::peniko::Fill;
 use vello::Scene;
 
 /// A function that renders laid out glyphs to a [`Scene`].

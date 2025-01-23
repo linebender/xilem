@@ -5,12 +5,22 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use masonry::dpi::LogicalSize;
-use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
+use masonry::event_loop_runner::EventLoop;
+use masonry::event_loop_runner::EventLoopBuilder;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
-use xilem::{Color, WidgetView, Xilem};
+use xilem::view::button;
+use xilem::view::checkbox;
+use xilem::view::flex;
+use xilem::view::flex_item;
+use xilem::view::progress_bar;
+use xilem::view::sized_box;
+use xilem::view::Axis;
+use xilem::view::FlexSpacer;
+use xilem::Color;
+use xilem::WidgetView;
+use xilem::Xilem;
 
 const SPACER_WIDTH: f64 = 10.;
 

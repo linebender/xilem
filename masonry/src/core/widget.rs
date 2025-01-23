@@ -4,27 +4,40 @@
 use std::any::Any;
 use std::fmt::Display;
 use std::num::NonZeroU64;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
-use accesskit::{Node, Role};
+use accesskit::Node;
+use accesskit::Role;
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
-use tracing::{trace_span, Span};
+use tracing::trace_span;
+use tracing::Span;
 use vello::Scene;
 
 use crate::contexts::ComposeCtx;
-use crate::event::{AccessEvent, PointerEvent, TextEvent};
-use crate::widgets::WidgetRef;
-use crate::{
-    AccessCtx, AsAny, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point, QueryCtx, RegisterCtx,
-    Size, Update, UpdateCtx,
-};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::WidgetRef;
+use crate::AsAny;
+use crate::Point;
+use crate::Size;
 
 /// A unique identifier for a single [`Widget`].
 ///
 /// `WidgetId`s are generated automatically for all widgets in the widget tree.
-/// More specifically, each [`WidgetPod`](crate::WidgetPod) has a unique `WidgetId`.
+/// More specifically, each [`WidgetPod`](crate::core::WidgetPod) has a unique `WidgetId`.
 ///
 /// These ids are used internally to route events, and can be used to fetch a specific
 /// widget for testing or event handling.
@@ -35,7 +48,7 @@ use crate::{
 /// ## Explicit `WidgetId`s.
 ///
 /// Sometimes, you may want to construct a widget, in a way that lets you know its id,
-/// so you can refer to the widget later. You can use [`WidgetPod::new_with_id`](crate::WidgetPod::new_with_id) to pass
+/// so you can refer to the widget later. You can use [`WidgetPod::new_with_id`](crate::core::WidgetPod::new_with_id) to pass
 /// an id to the `WidgetPod` you're creating; various widgets which have methods to create
 /// children may have variants taking ids as parameters.
 ///
@@ -121,7 +134,7 @@ impl FromDynWidget for dyn Widget {
 /// Container widgets have some validity invariants to maintain regarding their children.
 ///
 /// Generally speaking, widgets aren't used directly. They are stored by Masonry and accessed
-/// through [`WidgetPod`](crate::WidgetPod)s. Widget methods are called by Masonry, and a
+/// through [`WidgetPod`](crate::core::WidgetPod)s. Widget methods are called by Masonry, and a
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::widget::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsAny + AsDynWidget {
@@ -293,7 +306,7 @@ pub trait Widget: AsAny + AsDynWidget {
 
     /// Return the cursor icon for this widget.
     ///
-    /// This will be called when the mouse moves or [`request_cursor_icon_change`](crate::MutateCtx::request_cursor_icon_change) is called.
+    /// This will be called when the mouse moves or [`request_cursor_icon_change`](crate::core::MutateCtx::request_cursor_icon_change) is called.
     ///
     /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).

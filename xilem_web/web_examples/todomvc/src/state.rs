@@ -3,7 +3,8 @@
 
 #![expect(clippy::partial_pub_fields, reason = "Deferred: Noisy")]
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 use wasm_bindgen::UnwrapThrowExt;
 
 const KEY: &str = "todomvc_persist";

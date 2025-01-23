@@ -175,19 +175,19 @@ They can access the layout of children if they have already been laid out.
 - [`RegisterCtx`] can't do anything except register children.
 - [`QueryCtx`] provides read-only information about the widget.
 
-[`LayoutCtx::place_child`]: crate::LayoutCtx::place_child
-[`LayoutCtx::run_layout`]: crate::LayoutCtx::run_layout
+[`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
+[`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
 [`WidgetMut`]: crate::widget::WidgetMut
-[`RenderRoot`]: crate::RenderRoot
-[`PaintCtx`]: crate::PaintCtx
-[`AccessCtx`]: crate::AccessCtx
-[`LayoutCtx`]: crate::LayoutCtx
-[`ComposeCtx`]: crate::ComposeCtx
-[`MutateCtx`]: crate::MutateCtx
-[`EventCtx`]: crate::EventCtx
-[`UpdateCtx`]: crate::UpdateCtx
-[`RegisterCtx`]: crate::RegisterCtx
-[`QueryCtx`]: crate::QueryCtx
-[`WidgetAdded`]: crate::Update::WidgetAdded
-[`ChildFocusChanged`]: crate::Update::ChildFocusChanged
-[`HoveredChanged`]: crate::Update::HoveredChanged
+[`RenderRoot`]: crate::app::RenderRoot
+[`PaintCtx`]: crate::core::PaintCtx
+[`AccessCtx`]: crate::core::AccessCtx
+[`LayoutCtx`]: crate::core::LayoutCtx
+[`ComposeCtx`]: crate::core::ComposeCtx
+[`MutateCtx`]: crate::core::MutateCtx
+[`EventCtx`]: crate::core::EventCtx
+[`UpdateCtx`]: crate::core::UpdateCtx
+[`RegisterCtx`]: crate::core::RegisterCtx
+[`QueryCtx`]: crate::core::QueryCtx
+[`WidgetAdded`]: crate::core::Update::WidgetAdded
+[`ChildFocusChanged`]: crate::core::Update::ChildFocusChanged
+[`HoveredChanged`]: crate::core::Update::HoveredChanged

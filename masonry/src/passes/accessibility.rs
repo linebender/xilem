@@ -1,14 +1,23 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{Node, NodeId, Tree, TreeUpdate};
-use tracing::{debug, info_span, trace};
+use accesskit::Node;
+use accesskit::NodeId;
+use accesskit::Tree;
+use accesskit::TreeUpdate;
+use tracing::debug;
+use tracing::info_span;
+use tracing::trace;
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
-use crate::passes::{enter_span_if, recurse_on_children};
-use crate::render_root::{RenderRoot, RenderRootState};
-use crate::{AccessCtx, Widget, WidgetState};
+use crate::passes::enter_span_if;
+use crate::passes::recurse_on_children;
+use crate::app::RenderRoot;
+use crate::app::RenderRootState;
+use crate::core::AccessCtx;
+use crate::core::Widget;
+use crate::core::WidgetState;
 
 // --- MARK: BUILD TREE ---
 fn build_accessibility_tree(

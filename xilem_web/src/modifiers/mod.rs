@@ -69,7 +69,11 @@ pub use overwrite::*;
 mod elements;
 pub use elements::*;
 
-use crate::{AnyPod, DomNode, Pod, PodFlags, PodMut};
+use crate::AnyPod;
+use crate::DomNode;
+use crate::Pod;
+use crate::PodFlags;
+use crate::PodMut;
 
 /// This struct is a container, with the current Element state (e.g. whether it was created/hydrated or generally needs an update), and the modifier itself.
 pub struct Modifier<'a, M> {

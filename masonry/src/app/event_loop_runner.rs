@@ -8,31 +8,51 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::{debug, info, info_span, warn};
+use tracing::debug;
+use tracing::info;
+use tracing::info_span;
+use tracing::warn;
 use vello::kurbo::Affine;
-use vello::util::{RenderContext, RenderSurface};
-use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
+use vello::util::RenderContext;
+use vello::util::RenderSurface;
+use vello::AaSupport;
+use vello::RenderParams;
+use vello::Renderer;
+use vello::RendererOptions;
+use vello::Scene;
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
-use winit::event::{
-    DeviceEvent as WinitDeviceEvent, DeviceId, MouseButton as WinitMouseButton,
-    WindowEvent as WinitWindowEvent,
-};
+use winit::event::DeviceEvent as WinitDeviceEvent;
+use winit::event::DeviceId;
+use winit::event::MouseButton as WinitMouseButton;
+use winit::event::WindowEvent as WinitWindowEvent;
 use winit::event_loop::ActiveEventLoop;
-use winit::window::{Window, WindowAttributes, WindowId};
+use winit::window::Window;
+use winit::window::WindowAttributes;
+use winit::window::WindowId;
 
-use crate::app_driver::{AppDriver, DriverCtx};
+use crate::app::AppDriver;
+use crate::app::DriverCtx;
+use crate::app::RenderRoot;
+use crate::app::RenderRootOptions;
+use crate::app::RenderRootSignal;
+use crate::app::WindowSizePolicy;
+use crate::core::PointerButton;
+use crate::core::PointerEvent;
+use crate::core::TextEvent;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WindowEvent;
 use crate::dpi::LogicalPosition;
-use crate::event::{PointerButton, PointerState, WindowEvent};
-use crate::render_root::{self, RenderRoot, WindowSizePolicy};
-use crate::{Color, PointerEvent, TextEvent, Widget, WidgetId};
+use crate::event::PointerState;
+use crate::Color;
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
     AccessKit(accesskit_winit::Event),
     // TODO: A more considered design here
-    Action(crate::Action, WidgetId),
+    Action(crate::core::Action, WidgetId),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {
@@ -234,7 +254,7 @@ impl MasonryState<'_> {
             render_cx,
             render_root: RenderRoot::new(
                 root_widget,
-                render_root::RenderRootOptions {
+                RenderRootOptions {
                     use_system_fonts: true,
                     size_policy: WindowSizePolicy::User,
                     scale_factor,
@@ -656,7 +676,7 @@ impl MasonryState<'_> {
                 .render_root
                 .global_state
                 .signal_queue
-                .push_back(render_root::RenderRootSignal::Action(action, widget)),
+                .push_back(RenderRootSignal::Action(action, widget)),
         }
 
         self.handle_signals(event_loop, app_driver);
@@ -681,63 +701,63 @@ impl MasonryState<'_> {
         let mut needs_redraw = false;
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
-                render_root::RenderRootSignal::Action(action, widget_id) => {
+                RenderRootSignal::Action(action, widget_id) => {
                     let mut driver_ctx = DriverCtx {
                         render_root: &mut self.render_root,
                     };
                     debug!("Action {:?} on widget {:?}", action, widget_id);
                     app_driver.on_action(&mut driver_ctx, widget_id, action);
                 }
-                render_root::RenderRootSignal::StartIme => {
+                RenderRootSignal::StartIme => {
                     window.set_ime_allowed(true);
                 }
-                render_root::RenderRootSignal::EndIme => {
+                RenderRootSignal::EndIme => {
                     window.set_ime_allowed(false);
                 }
-                render_root::RenderRootSignal::ImeMoved(position, size) => {
+                RenderRootSignal::ImeMoved(position, size) => {
                     window.set_ime_cursor_area(position, size);
                 }
-                render_root::RenderRootSignal::RequestRedraw => {
+                RenderRootSignal::RequestRedraw => {
                     needs_redraw = true;
                 }
-                render_root::RenderRootSignal::RequestAnimFrame => {
+                RenderRootSignal::RequestAnimFrame => {
                     // TODO
                     needs_redraw = true;
                 }
-                render_root::RenderRootSignal::TakeFocus => {
+                RenderRootSignal::TakeFocus => {
                     window.focus_window();
                 }
-                render_root::RenderRootSignal::SetCursor(cursor) => {
+                RenderRootSignal::SetCursor(cursor) => {
                     window.set_cursor(cursor);
                 }
-                render_root::RenderRootSignal::SetSize(size) => {
+                RenderRootSignal::SetSize(size) => {
                     // TODO - Handle return value?
                     let _ = window.request_inner_size(size);
                 }
-                render_root::RenderRootSignal::SetTitle(title) => {
+                RenderRootSignal::SetTitle(title) => {
                     window.set_title(&title);
                 }
-                render_root::RenderRootSignal::DragWindow => {
+                RenderRootSignal::DragWindow => {
                     // TODO - Handle return value?
                     let _ = window.drag_window();
                 }
-                render_root::RenderRootSignal::DragResizeWindow(direction) => {
+                RenderRootSignal::DragResizeWindow(direction) => {
                     // TODO - Handle return value?
                     let _ = window.drag_resize_window(direction);
                 }
-                render_root::RenderRootSignal::ToggleMaximized => {
+                RenderRootSignal::ToggleMaximized => {
                     window.set_maximized(!window.is_maximized());
                 }
-                render_root::RenderRootSignal::Minimize => {
+                RenderRootSignal::Minimize => {
                     window.set_minimized(true);
                 }
-                render_root::RenderRootSignal::Exit => {
+                RenderRootSignal::Exit => {
                     event_loop.exit();
                 }
-                render_root::RenderRootSignal::ShowWindowMenu(position) => {
+                RenderRootSignal::ShowWindowMenu(position) => {
                     window.show_window_menu(position);
                 }
-                render_root::RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
+                RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
                     let (widget, state) = self.render_root.widget_arena.get_pair(widget_id);
                     let widget_name = widget.item.short_type_name();
                     let display_name = if let Some(debug_text) = widget.item.get_debug_text() {

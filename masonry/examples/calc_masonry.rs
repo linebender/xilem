@@ -12,17 +12,42 @@
 )]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
-use accesskit::{Node, Role};
+use accesskit::Node;
+use accesskit::Role;
 use masonry::dpi::LogicalSize;
 use masonry::text::StyleProperty;
-use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
-use masonry::{
-    AccessCtx, AccessEvent, Action, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
-    LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetPod,
-};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
+use masonry::widgets::Align;
+use masonry::widgets::CrossAxisAlignment;
+use masonry::widgets::Flex;
+use masonry::widgets::Label;
+use masonry::widgets::RootWidget;
+use masonry::widgets::SizedBox;
+use masonry::core::AccessCtx;
+use masonry::core::AccessEvent;
+use masonry::core::Action;
+use masonry::app::AppDriver;
+use masonry::core::BoxConstraints;
+use masonry::Color;
+use masonry::app::DriverCtx;
+use masonry::core::EventCtx;
+use masonry::core::LayoutCtx;
+use masonry::core::PaintCtx;
+use masonry::Point;
+use masonry::core::PointerEvent;
+use masonry::core::QueryCtx;
+use masonry::core::RegisterCtx;
+use masonry::Size;
+use masonry::core::TextEvent;
+use masonry::core::Update;
+use masonry::core::UpdateCtx;
+use masonry::core::Widget;
+use masonry::core::WidgetId;
+use masonry::core::WidgetPod;
+use smallvec::smallvec;
+use smallvec::SmallVec;
+use tracing::trace;
+use tracing::trace_span;
+use tracing::Span;
 use vello::Scene;
 use winit::window::Window;
 

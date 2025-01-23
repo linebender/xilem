@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::app::RenderRoot;
+use crate::core::Action;
+use crate::core::WidgetId;
 use crate::event_loop_runner::MasonryState;
-use crate::{Action, RenderRoot, WidgetId};
 
 /// Context for the [`AppDriver`] trait.
 ///
@@ -51,7 +53,7 @@ impl DriverCtx<'_> {
 /// Doctests aren't collected under `cfg(test)`; we can use `cfg(doctest)` instead
 mod doctests {
     /// ```no_run
-    /// use masonry::DriverCtx;
+    /// use masonry::app::DriverCtx;
     /// let _ctx = DriverCtx {
     ///     render_root: unimplemented!()
     /// };

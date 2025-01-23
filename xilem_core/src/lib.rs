@@ -34,27 +34,57 @@
 extern crate alloc;
 
 mod deferred;
-pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
+pub use deferred::AsyncCtx;
+pub use deferred::MessageProxy;
+pub use deferred::PhantomView;
+pub use deferred::ProxyError;
+pub use deferred::RawProxy;
 
 mod view;
-pub use view::{View, ViewId, ViewMarker, ViewPathTracker};
+pub use view::View;
+pub use view::ViewId;
+pub use view::ViewMarker;
+pub use view::ViewPathTracker;
 
 mod views;
-pub use views::{
-    adapt, fork, frozen, lens, map_action, map_state, memoize, one_of, run_once, run_once_raw,
-    Adapt, AdaptThunk, Fork, Frozen, MapAction, MapState, Memoize, OrphanView, RunOnce,
-};
+pub use views::adapt;
+pub use views::fork;
+pub use views::frozen;
+pub use views::lens;
+pub use views::map_action;
+pub use views::map_state;
+pub use views::memoize;
+pub use views::one_of;
+pub use views::run_once;
+pub use views::run_once_raw;
+pub use views::Adapt;
+pub use views::AdaptThunk;
+pub use views::Fork;
+pub use views::Frozen;
+pub use views::MapAction;
+pub use views::MapState;
+pub use views::Memoize;
+pub use views::OrphanView;
+pub use views::RunOnce;
 
 mod message;
-pub use message::{DynMessage, Message, MessageResult};
+pub use message::DynMessage;
+pub use message::Message;
+pub use message::MessageResult;
 
 mod element;
-pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
+pub use element::AnyElement;
+pub use element::Mut;
+pub use element::NoElement;
+pub use element::SuperElement;
+pub use element::ViewElement;
 
 mod any_view;
 pub use any_view::AnyView;
 
 mod sequence;
-pub use sequence::{AppendVec, ElementSplice, ViewSequence};
+pub use sequence::AppendVec;
+pub use sequence::ElementSplice;
+pub use sequence::ViewSequence;
 
 pub mod docs;

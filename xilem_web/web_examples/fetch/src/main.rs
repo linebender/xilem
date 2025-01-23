@@ -8,16 +8,21 @@
 #![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 
 use gloo_net::http::Request;
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use serde::Deserialize;
+use serde::Serialize;
+use wasm_bindgen::JsCast;
+use wasm_bindgen::UnwrapThrowExt;
 use xilem_web::concurrent::memoized_await;
 use xilem_web::core::fork;
 use xilem_web::core::one_of::Either;
+use xilem_web::document_body;
 use xilem_web::elements::html::*;
-use xilem_web::interfaces::{
-    Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement,
-};
-use xilem_web::{document_body, App};
+use xilem_web::interfaces::Element;
+use xilem_web::interfaces::HtmlDivElement;
+use xilem_web::interfaces::HtmlImageElement;
+use xilem_web::interfaces::HtmlInputElement;
+use xilem_web::interfaces::HtmlLabelElement;
+use xilem_web::App;
 
 const TOO_MANY_CATS: usize = 8;
 

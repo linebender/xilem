@@ -5,10 +5,15 @@
 
 use core::any::Any;
 
-use xilem_core::{
-    DynMessage, MessageResult, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker,
-    ViewPathTracker,
-};
+use xilem_core::DynMessage;
+use xilem_core::MessageResult;
+use xilem_core::Mut;
+use xilem_core::SuperElement;
+use xilem_core::View;
+use xilem_core::ViewElement;
+use xilem_core::ViewId;
+use xilem_core::ViewMarker;
+use xilem_core::ViewPathTracker;
 
 fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
     Button {}

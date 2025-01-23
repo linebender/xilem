@@ -6,24 +6,51 @@
 use std::mem::Discriminant;
 use std::time::Instant;
 
-use accesskit::{Node, NodeId, Role};
-use parley::editor::{Generation, SplitString};
+use accesskit::Node;
+use accesskit::NodeId;
+use accesskit::Role;
+use parley::editor::Generation;
+use parley::editor::SplitString;
 use parley::layout::Alignment;
 use parley::PlainEditor;
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
-use vello::peniko::{Brush, Fill};
+use tracing::trace_span;
+use tracing::Span;
+use vello::kurbo::Affine;
+use vello::kurbo::Point;
+use vello::kurbo::Rect;
+use vello::kurbo::Size;
+use vello::kurbo::Vec2;
+use vello::peniko::Brush;
+use vello::peniko::Fill;
 use vello::Scene;
-use winit::keyboard::{Key, NamedKey};
+use winit::keyboard::Key;
+use winit::keyboard::NamedKey;
 
-use crate::text::{default_styles, render_text, BrushIndex, StyleProperty};
-use crate::widgets::{Padding, WidgetMut};
-use crate::{
-    palette, theme, AccessCtx, AccessEvent, BoxConstraints, CursorIcon, EventCtx, LayoutCtx,
-    PaintCtx, PointerButton, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId,
-};
+use crate::core::AccessCtx;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerButton;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::palette;
+use crate::text::default_styles;
+use crate::text::render_text;
+use crate::text::BrushIndex;
+use crate::text::StyleProperty;
+use crate::theme;
+use crate::widgets::Padding;
+use crate::core::WidgetMut;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::CursorIcon;
 
 /// `TextArea` implements the core of interactive text.
 ///
@@ -738,7 +765,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                                 .insert_or_replace_selection("\n");
                             edited = true;
                         } else {
-                            ctx.submit_action(crate::Action::TextEntered(self.text().to_string()));
+                            ctx.submit_action(crate::core::Action::TextEntered(self.text().to_string()));
                         }
                     }
 
@@ -768,7 +795,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     if edited {
-                        ctx.submit_action(crate::Action::TextChanged(
+                        ctx.submit_action(crate::core::Action::TextChanged(
                             self.text().into_iter().collect(),
                         ));
                         ctx.request_layout();
@@ -812,7 +839,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.set_handled();
                 if edited {
                     let text = self.text().into_iter().collect();
-                    ctx.submit_action(crate::Action::TextChanged(text));
+                    ctx.submit_action(crate::core::Action::TextChanged(text));
                 }
 
                 let new_generation = self.editor.generation();

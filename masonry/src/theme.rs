@@ -5,7 +5,8 @@
 
 #![allow(missing_docs)]
 
-use crate::{Color, Insets};
+use crate::Color;
+use crate::Insets;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)

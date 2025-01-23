@@ -16,9 +16,23 @@ use std::borrow::Cow;
 
 use wasm_bindgen::JsCast;
 
-use crate::modifiers::{Attr, Class, ClassIter, Rotate, Scale, ScaleValue, Style, StyleIter};
-use crate::props::{WithElementProps, WithHtmlInputElementProps};
-use crate::{events, DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg};
+use crate::events;
+use crate::modifiers::Attr;
+use crate::modifiers::Class;
+use crate::modifiers::ClassIter;
+use crate::modifiers::Rotate;
+use crate::modifiers::Scale;
+use crate::modifiers::ScaleValue;
+use crate::modifiers::Style;
+use crate::modifiers::StyleIter;
+use crate::props::WithElementProps;
+use crate::props::WithHtmlInputElementProps;
+use crate::DomNode;
+use crate::DomView;
+use crate::IntoAttributeValue;
+use crate::OptionalAction;
+use crate::Pointer;
+use crate::PointerMsg;
 
 macro_rules! event_handler_mixin {
     ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {

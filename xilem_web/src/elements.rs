@@ -8,14 +8,27 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use wasm_bindgen::{JsCast, UnwrapThrowExt};
+use wasm_bindgen::JsCast;
+use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::core::AppendVec;
+use crate::core::ElementSplice;
+use crate::core::MessageResult;
+use crate::core::Mut;
+use crate::core::View;
+use crate::core::ViewId;
+use crate::core::ViewMarker;
+use crate::document;
 use crate::modifiers::Children;
 use crate::vec_splice::VecSplice;
-use crate::{
-    document, AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
-};
+use crate::AnyPod;
+use crate::DomFragment;
+use crate::DomNode;
+use crate::DynMessage;
+use crate::FromWithContext;
+use crate::Pod;
+use crate::ViewCtx;
+use crate::HTML_NS;
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below
 /// This is basically a specialized dynamically dispatchable [`ViewSequence`][crate::core::ViewSequence], It's currently not able to change the underlying type unlike [`AnyDomView`](crate::AnyDomView), so it should not be used as `dyn DomViewSequence`.

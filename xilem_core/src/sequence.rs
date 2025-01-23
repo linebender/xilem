@@ -3,13 +3,20 @@
 
 //! Support for sequences of views with a shared element type.
 
-use alloc::vec::{Drain, Vec};
-use core::sync::atomic::{AtomicBool, Ordering};
+use alloc::vec::Drain;
+use alloc::vec::Vec;
+use core::sync::atomic::AtomicBool;
+use core::sync::atomic::Ordering;
 
 // use crate::element::NoElement;
-use crate::{
-    DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::DynMessage;
+use crate::MessageResult;
+use crate::SuperElement;
+use crate::View;
+use crate::ViewElement;
+use crate::ViewId;
+use crate::ViewMarker;
+use crate::ViewPathTracker;
 
 /// An append only `Vec`.
 ///

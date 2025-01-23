@@ -5,21 +5,38 @@
 
 use accesskit::TreeUpdate;
 use dpi::LogicalPosition;
-use parley::{FontContext, LayoutContext};
-use tracing::{trace, warn};
-use tree_arena::{ArenaMutList, ArenaRefList};
+use parley::FontContext;
+use parley::LayoutContext;
+use tracing::trace;
+use tracing::warn;
+use tree_arena::ArenaMutList;
+use tree_arena::ArenaRefList;
 use winit::window::ResizeDirection;
 
 use crate::action::Action;
+use crate::app::MutateCallback;
+use crate::app::RenderRootSignal;
+use crate::app::RenderRootState;
+use crate::core::AllowRawMut;
+use crate::core::BoxConstraints;
+use crate::core::CreateWidget;
+use crate::core::FromDynWidget;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
+use crate::core::WidgetRef;
+use crate::core::WidgetState;
 use crate::passes::layout::run_layout_on;
-use crate::render_root::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::text::BrushIndex;
 use crate::theme::get_debug_color;
-use crate::widgets::{CreateWidget, WidgetMut, WidgetRef, WidgetState};
-use crate::{
-    Affine, AllowRawMut, BoxConstraints, Color, FromDynWidget, Insets, Point, Rect, Size, Vec2,
-    Widget, WidgetId, WidgetPod,
-};
+use crate::Affine;
+use crate::Color;
+use crate::Insets;
+use crate::Point;
+use crate::Rect;
+use crate::Size;
+use crate::Vec2;
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -337,9 +354,9 @@ impl EventCtx<'_> {
     /// lost focus, etc), the widget will still get a [`PointerLeave`] event.
     ///
     /// [Pointer capture]: crate::doc::doc_06_masonry_concepts#pointer-capture
-    /// [`PointerDown`]: crate::PointerEvent::PointerDown
-    /// [`PointerUp`]: crate::PointerEvent::PointerUp
-    /// [`PointerLeave`]: crate::PointerEvent::PointerLeave
+    /// [`PointerDown`]: crate::core::PointerEvent::PointerDown
+    /// [`PointerUp`]: crate::core::PointerEvent::PointerUp
+    /// [`PointerLeave`]: crate::core::PointerEvent::PointerLeave
     /// [`release`]: Self::release_pointer
     #[track_caller]
     pub fn capture_pointer(&mut self) {
@@ -767,7 +784,7 @@ impl_context_method!(
         /// The clip path of the widget, if any was set.
         ///
         /// For more information, see
-        /// [`LayoutCtx::set_clip_path`](crate::LayoutCtx::set_clip_path).
+        /// [`LayoutCtx::set_clip_path`](crate::core::LayoutCtx::set_clip_path).
         pub fn clip_path(&self) -> Option<Rect> {
             self.widget_state.clip_path
         }
@@ -899,7 +916,7 @@ impl_context_method!(
 // --- MARK: UPDATE FLAGS ---
 // Methods on MutateCtx, EventCtx, and UpdateCtx
 impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
-    /// Request a [`paint`](crate::Widget::paint) and an [`accessibility`](crate::Widget::accessibility) pass.
+    /// Request a [`paint`](crate::core::Widget::paint) and an [`accessibility`](crate::core::Widget::accessibility) pass.
     pub fn request_render(&mut self) {
         trace!("request_render");
         self.widget_state.request_paint = true;
@@ -908,9 +925,9 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.widget_state.request_accessibility = true;
     }
 
-    /// Request a [`paint`](crate::Widget::paint) pass.
+    /// Request a [`paint`](crate::core::Widget::paint) pass.
     ///
-    /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::Widget::accessibility) pass.
+    /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::core::Widget::accessibility) pass.
     /// Use request_render unless you're sure an accessibility pass is not needed.
     pub fn request_paint_only(&mut self) {
         trace!("request_paint");
@@ -918,9 +935,9 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.widget_state.needs_paint = true;
     }
 
-    /// Request an [`accessibility`](crate::Widget::accessibility) pass.
+    /// Request an [`accessibility`](crate::core::Widget::accessibility) pass.
     ///
-    /// This doesn't request a [`paint`](crate::Widget::paint) pass.
+    /// This doesn't request a [`paint`](crate::core::Widget::paint) pass.
     /// If you want to request both an accessibility pass and a paint pass, use [`request_render`](Self::request_render).
     pub fn request_accessibility_update(&mut self) {
         trace!("request_accessibility_update");
@@ -932,7 +949,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     ///
     /// Call this method if the widget has changed in a way that requires a layout pass.
     ///
-    /// [`layout`]: crate::Widget::layout
+    /// [`layout`]: crate::core::Widget::layout
     pub fn request_layout(&mut self) {
         trace!("request_layout");
         self.widget_state.request_layout = true;
@@ -944,7 +961,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     ///
     /// The compose pass is often cheaper than the layout pass, because it can only transform individual widgets' position.
     ///
-    /// [`compose`]: crate::Widget::compose
+    /// [`compose`]: crate::core::Widget::compose
     pub fn request_compose(&mut self) {
         trace!("request_compose");
         self.widget_state.needs_compose = true;

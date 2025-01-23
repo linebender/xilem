@@ -8,26 +8,50 @@ use std::num::NonZeroUsize;
 
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
-use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
+use image::DynamicImage;
+use image::ImageReader;
+use image::Rgba;
+use image::RgbaImage;
 use tracing::debug;
-use vello::util::{block_on_wgpu, RenderContext};
+use vello::util::block_on_wgpu;
+use vello::util::RenderContext;
 use vello::RendererOptions;
-use wgpu::{
-    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
-    TextureDescriptor, TextureFormat, TextureUsages,
-};
+use wgpu::BufferDescriptor;
+use wgpu::BufferUsages;
+use wgpu::CommandEncoderDescriptor;
+use wgpu::Extent3d;
+use wgpu::ImageCopyBuffer;
+use wgpu::TextureDescriptor;
+use wgpu::TextureFormat;
+use wgpu::TextureUsages;
 use winit::event::Ime;
 
 use crate::action::Action;
-use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
+use crate::app::RenderRoot;
+use crate::app::RenderRootOptions;
+use crate::app::RenderRootSignal;
+use crate::app::WindowSizePolicy;
+use crate::core::PointerButton;
+use crate::core::PointerEvent;
+use crate::core::TextEvent;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetRef;
+use crate::core::WindowEvent;
+use crate::dpi::LogicalPosition;
+use crate::dpi::PhysicalPosition;
+use crate::dpi::PhysicalSize;
+use crate::event::PointerState;
 use crate::passes::anim::run_update_anim_pass;
-use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use crate::testing::screenshots::get_image_diff;
 use crate::testing::snapshot_utils::get_cargo_workspace;
 use crate::tracing_backend::try_init_test_tracing;
-use crate::widgets::{WidgetMut, WidgetRef};
-use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
+use crate::Color;
+use crate::Handled;
+use crate::Point;
+use crate::Size;
+use crate::Vec2;
 
 /// A safe headless environment to test widgets in.
 ///
@@ -67,9 +91,9 @@ use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 /// ```
 /// use insta::assert_debug_snapshot;
 ///
-/// use masonry::PointerButton;
+/// use masonry::core::PointerButton;
 /// use masonry::widgets::Button;
-/// use masonry::Action;
+/// use masonry::core::Action;
 /// use masonry::assert_render_snapshot;
 /// use masonry::testing::widget_ids;
 /// use masonry::testing::TestHarness;

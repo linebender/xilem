@@ -9,18 +9,36 @@
 
 use std::sync::Arc;
 
-use masonry::widgets::{Alignment, LineBreaking};
-use vello::peniko::{Blob, Image};
+use masonry::widgets::Alignment;
+use masonry::widgets::LineBreaking;
+use vello::peniko::Blob;
+use vello::peniko::Image;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
-use xilem::view::{
-    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, zstack, Axis,
-    FlexExt, FlexSpacer, Padding, ZStackExt,
-};
-use xilem::{palette, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
+use xilem::palette;
+use xilem::view::button;
+use xilem::view::flex;
+use xilem::view::image;
+use xilem::view::inline_prose;
+use xilem::view::portal;
+use xilem::view::prose;
+use xilem::view::sized_box;
+use xilem::view::spinner;
+use xilem::view::worker;
+use xilem::view::zstack;
+use xilem::view::Axis;
+use xilem::view::FlexExt;
+use xilem::view::FlexSpacer;
+use xilem::view::Padding;
+use xilem::view::ZStackExt;
+use xilem::EventLoop;
+use xilem::EventLoopBuilder;
+use xilem::TextAlignment;
+use xilem::WidgetView;
+use xilem::Xilem;
 
 /// The main state of the application.
 struct HttpCats {

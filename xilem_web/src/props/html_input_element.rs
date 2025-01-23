@@ -4,8 +4,16 @@
 use wasm_bindgen::JsCast as _;
 
 use super::WithElementProps;
-use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
-use crate::{props, FromWithContext, Pod, PodFlags, ViewCtx};
+use crate::modifiers::html_input_element::Checked;
+use crate::modifiers::html_input_element::DefaultChecked;
+use crate::modifiers::html_input_element::Disabled;
+use crate::modifiers::html_input_element::Multiple;
+use crate::modifiers::html_input_element::Required;
+use crate::props;
+use crate::FromWithContext;
+use crate::Pod;
+use crate::PodFlags;
+use crate::ViewCtx;
 
 /// Props specific to an input element.
 pub struct HtmlInputElement {

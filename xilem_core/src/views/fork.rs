@@ -1,10 +1,15 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    AppendVec, ElementSplice, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
-    ViewSequence,
-};
+use crate::AppendVec;
+use crate::ElementSplice;
+use crate::Mut;
+use crate::NoElement;
+use crate::View;
+use crate::ViewId;
+use crate::ViewMarker;
+use crate::ViewPathTracker;
+use crate::ViewSequence;
 
 /// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
 ///

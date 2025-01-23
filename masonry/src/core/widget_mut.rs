@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::contexts::MutateCtx;
-use crate::{Affine, FromDynWidget, Widget};
+use crate::core::FromDynWidget;
+use crate::core::Widget;
+use crate::Affine;
 
 // TODO - Document extension trait workaround.
 // See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
@@ -14,7 +16,7 @@ use crate::{Affine, FromDynWidget, Widget};
 /// change.
 ///
 /// You can create a `WidgetMut` from [`TestHarness`](crate::testing::TestHarness),
-/// [`EventCtx`](crate::EventCtx), [`UpdateCtx`](crate::UpdateCtx) or from a parent
+/// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`](crate::core::UpdateCtx) or from a parent
 /// `WidgetMut` with [`MutateCtx`].
 ///
 /// `WidgetMut` implements [`Deref`](std::ops::Deref) with `W::Mut` as target.

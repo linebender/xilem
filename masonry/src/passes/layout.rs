@@ -7,13 +7,22 @@
 
 use dpi::LogicalSize;
 use smallvec::SmallVec;
-use tracing::{info_span, trace};
-use vello::kurbo::{Point, Rect, Size};
+use tracing::info_span;
+use tracing::trace;
+use vello::kurbo::Point;
+use vello::kurbo::Rect;
+use vello::kurbo::Size;
 
-use crate::passes::{enter_span_if, recurse_on_children};
-use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::widgets::WidgetState;
-use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
+use crate::passes::enter_span_if;
+use crate::passes::recurse_on_children;
+use crate::app::RenderRoot;
+use crate::app::RenderRootSignal;
+use crate::app::WindowSizePolicy;
+use crate::core::WidgetState;
+use crate::core::BoxConstraints;
+use crate::core::LayoutCtx;
+use crate::core::Widget;
+use crate::core::WidgetPod;
 
 // --- MARK: RUN LAYOUT ---
 /// Run [`Widget::layout`] method on the widget contained in `pod`.

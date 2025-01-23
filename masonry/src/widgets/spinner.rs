@@ -5,18 +5,37 @@
 
 use std::f64::consts::PI;
 
-use accesskit::{Node, Role};
+use accesskit::Node;
+use accesskit::Role;
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Cap, Line, Stroke};
+use tracing::trace_span;
+use tracing::Span;
+use vello::kurbo::Affine;
+use vello::kurbo::Cap;
+use vello::kurbo::Line;
+use vello::kurbo::Stroke;
 use vello::Scene;
 
-use crate::widgets::WidgetMut;
-use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, Color, EventCtx, LayoutCtx, PaintCtx, Point,
-    PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update, UpdateCtx, Vec2, Widget,
-    WidgetId,
-};
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::theme;
+use crate::Color;
+use crate::Point;
+use crate::Size;
+use crate::Vec2;
 
 /// An animated spinner widget for showing a loading state.
 ///
@@ -155,8 +174,9 @@ impl Widget for Spinner {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::assert_render_snapshot;
+    use crate::palette;
     use crate::testing::TestHarness;
-    use crate::{assert_render_snapshot, palette};
 
     #[test]
     fn simple_spinner() {

@@ -4,9 +4,13 @@
 use tracing::info_span;
 use tree_arena::ArenaMut;
 
-use crate::passes::{enter_span_if, recurse_on_children};
-use crate::render_root::{RenderRoot, RenderRootState};
-use crate::{UpdateCtx, Widget, WidgetState};
+use crate::passes::enter_span_if;
+use crate::passes::recurse_on_children;
+use crate::app::RenderRoot;
+use crate::app::RenderRootState;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetState;
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(

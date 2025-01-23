@@ -3,19 +3,39 @@
 
 //! A progress bar widget.
 
-use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
+use accesskit::Node;
+use accesskit::Role;
+use smallvec::smallvec;
+use smallvec::SmallVec;
+use tracing::trace_span;
+use tracing::Span;
 use vello::Scene;
 
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
+use crate::core::EventCtx;
+use crate::core::LayoutCtx;
+use crate::core::PaintCtx;
+use crate::core::PointerEvent;
+use crate::core::QueryCtx;
+use crate::core::RegisterCtx;
+use crate::core::TextEvent;
+use crate::core::Update;
+use crate::core::UpdateCtx;
+use crate::core::Widget;
+use crate::core::WidgetId;
+use crate::core::WidgetMut;
+use crate::core::WidgetPod;
 use crate::kurbo::Size;
-use crate::paint_scene_helpers::{fill_lin_gradient, stroke, UnitPoint};
+use crate::paint_scene_helpers::fill_lin_gradient;
+use crate::paint_scene_helpers::stroke;
+use crate::paint_scene_helpers::UnitPoint;
 use crate::text::ArcStr;
-use crate::widgets::{Label, LineBreaking, WidgetMut, WidgetPod};
-use crate::{
-    theme, AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, Point,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-};
+use crate::theme;
+use crate::widgets::Label;
+use crate::widgets::LineBreaking;
+use crate::Point;
 
 /// A progress bar.
 ///
@@ -190,7 +210,9 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::testing::widget_ids;
+    use crate::testing::TestHarness;
+    use crate::testing::TestWidgetExt;
 
     #[test]
     fn indeterminate_progressbar() {
