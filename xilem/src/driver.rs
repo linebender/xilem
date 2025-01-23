@@ -3,12 +3,12 @@
 
 use std::sync::Arc;
 
-use masonry::event_loop_runner::EventLoopProxy;
-use masonry::event_loop_runner::MasonryUserEvent;
-use masonry::event_loop_runner::{self};
-use masonry::widgets::RootWidget;
 use masonry::app::AppDriver;
+use masonry::app::EventLoopProxy;
+use masonry::app::MasonryState;
+use masonry::app::MasonryUserEvent;
 use masonry::core::WidgetId;
+use masonry::widgets::RootWidget;
 
 use crate::core::DynMessage;
 use crate::core::Message;
@@ -133,7 +133,7 @@ where
             tracing::debug!("Nothing changed as result of action");
         }
     }
-    fn on_start(&mut self, state: &mut event_loop_runner::MasonryState) {
+    fn on_start(&mut self, state: &mut MasonryState) {
         let root = state.get_root();
         // Register all provided fonts
         // self.fonts is never used again, so we may as well deallocate it.

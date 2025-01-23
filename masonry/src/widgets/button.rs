@@ -12,7 +12,7 @@ use tracing::trace_span;
 use tracing::Span;
 use vello::Scene;
 
-use crate::action::Action;
+use crate::core::Action;
 use crate::core::AccessCtx;
 use crate::core::AccessEvent;
 use crate::core::BoxConstraints;
@@ -29,10 +29,10 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
-use crate::paint_scene_helpers::fill_lin_gradient;
-use crate::paint_scene_helpers::stroke;
-use crate::paint_scene_helpers::UnitPoint;
-use crate::text::ArcStr;
+use crate::util::fill_lin_gradient;
+use crate::util::stroke;
+use crate::util::UnitPoint;
+use crate::core::ArcStr;
 use crate::theme;
 use crate::widgets::Label;
 use crate::Insets;
@@ -248,7 +248,7 @@ mod tests {
     use crate::testing::widget_ids;
     use crate::testing::TestHarness;
     use crate::testing::TestWidgetExt;
-    use crate::text::StyleProperty;
+    use crate::core::StyleProperty;
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]

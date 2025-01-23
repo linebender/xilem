@@ -16,7 +16,9 @@ use tracing::trace_span;
 use tracing::Span;
 use vello::Scene;
 
-use crate::contexts::AccessCtx;
+use crate::core::AccessCtx;
+use crate::core::AccessEvent;
+use crate::core::BoxConstraints;
 use crate::core::EventCtx;
 use crate::core::LayoutCtx;
 use crate::core::PaintCtx;
@@ -27,9 +29,7 @@ use crate::core::TextEvent;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetPod;
-use crate::paint_scene_helpers::UnitPoint;
-use crate::core::AccessEvent;
-use crate::core::BoxConstraints;
+use crate::util::UnitPoint;
 use crate::Rect;
 use crate::Size;
 

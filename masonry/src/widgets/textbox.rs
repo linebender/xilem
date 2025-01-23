@@ -202,7 +202,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    use crate::text::StyleProperty;
+    use crate::core::StyleProperty;
     use crate::widgets::TextArea;
 
     #[test]

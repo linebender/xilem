@@ -10,9 +10,9 @@
 use masonry::app::AppDriver;
 use masonry::app::DriverCtx;
 use masonry::core::Action;
+use masonry::core::StyleProperty;
 use masonry::core::WidgetId;
 use masonry::dpi::LogicalSize;
-use masonry::text::StyleProperty;
 use masonry::widgets::Button;
 use masonry::widgets::Flex;
 use masonry::widgets::Label;
@@ -56,8 +56,8 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(main_widget),
         Driver,

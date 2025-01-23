@@ -1,10 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use crate::app::MasonryState;
 use crate::app::RenderRoot;
 use crate::core::Action;
 use crate::core::WidgetId;
-use crate::event_loop_runner::MasonryState;
 
 /// Context for the [`AppDriver`] trait.
 ///
@@ -21,7 +21,7 @@ pub struct DriverCtx<'a> {
 
 /// A trait for defining how your app interacts with the Masonry widget tree.
 ///
-/// When launching your app with [`crate::event_loop_runner::run`], you need to provide
+/// When launching your app with [`crate::app::run`], you need to provide
 /// a type that implements this trait.
 pub trait AppDriver {
     /// A hook which will be executed when a widget emits an [`Action`].

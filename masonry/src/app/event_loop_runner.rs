@@ -40,12 +40,12 @@ use crate::app::RenderRootSignal;
 use crate::app::WindowSizePolicy;
 use crate::core::PointerButton;
 use crate::core::PointerEvent;
+use crate::core::PointerState;
 use crate::core::TextEvent;
 use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WindowEvent;
 use crate::dpi::LogicalPosition;
-use crate::event::PointerState;
 use crate::Color;
 
 #[derive(Debug)]
@@ -159,7 +159,7 @@ pub fn run_with(
     // already been set, we get an error which we swallow.
     // By now, we're about to take control of the event loop. The user is unlikely
     // to try to set their own subscriber once the event loop has started.
-    let _ = crate::tracing_backend::try_init_tracing();
+    let _ = crate::app::try_init_tracing();
 
     let mut main_state = MainState {
         masonry_state: MasonryState::new(window, &event_loop, root_widget, background_color),

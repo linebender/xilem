@@ -65,8 +65,8 @@
 //!         .with_min_inner_size(window_size);
 //!
 //!     # return;
-//!     masonry::event_loop_runner::run(
-//!         masonry::event_loop_runner::EventLoop::with_user_event(),
+//!     masonry::app::run(
+//!         masonry::app::EventLoop::with_user_event(),
 //!         window_attributes,
 //!         RootWidget::new(main_widget),
 //!         Driver {
@@ -180,20 +180,6 @@ pub use vello::peniko::color::palette;
 pub use vello::peniko::Color;
 pub use vello::peniko::Gradient;
 
-pub use paint_scene_helpers::UnitPoint;
 pub use util::AsAny;
 pub use util::Handled;
-
-// TODO - Remove
-use app::tracing_backend;
-use core::action;
-use core::box_constraints;
-use core::contexts;
-use core::event;
-
-pub use app::event_loop_runner;
-pub use core::text;
-
-mod paint_scene_helpers {
-    pub use crate::util::*;
-}
+pub use util::UnitPoint;

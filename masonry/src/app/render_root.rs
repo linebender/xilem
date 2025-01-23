@@ -27,6 +27,7 @@ use web_time::Instant;
 
 use crate::core::AccessEvent;
 use crate::core::Action;
+use crate::core::BrushIndex;
 use crate::core::PointerEvent;
 use crate::core::QueryCtx;
 use crate::core::TextEvent;
@@ -60,7 +61,6 @@ use crate::passes::update::run_update_scroll_pass;
 use crate::passes::update::run_update_stashed_pass;
 use crate::passes::update::run_update_widget_tree_pass;
 use crate::passes::PassTracing;
-use crate::text::BrushIndex;
 use crate::CursorIcon;
 use crate::Handled;
 
@@ -266,7 +266,7 @@ impl RenderRoot {
     ///
     /// Note that this doesn't create a window or start the event loop.
     ///
-    /// See [`crate::event_loop_runner::run`] for that.
+    /// See [`crate::app::run`] for that.
     pub fn new(root_widget: impl Widget, options: RenderRootOptions) -> Self {
         let RenderRootOptions {
             use_system_fonts,

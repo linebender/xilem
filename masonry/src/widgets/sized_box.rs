@@ -30,7 +30,7 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
-use crate::paint_scene_helpers::stroke;
+use crate::util::stroke;
 use crate::Point;
 use crate::Size;
 

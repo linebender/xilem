@@ -6,7 +6,7 @@ use assert_matches::assert_matches;
 use crate::core::PointerButton;
 use crate::core::PointerEvent;
 use crate::core::WidgetId;
-use crate::event::PointerState;
+use crate::core::PointerState;
 use crate::testing::widget_ids;
 use crate::testing::Record;
 use crate::testing::Recording;

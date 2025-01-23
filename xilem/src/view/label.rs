@@ -3,8 +3,8 @@
 
 use masonry::parley::style::FontStack;
 use masonry::parley::style::FontWeight;
-use masonry::text::ArcStr;
-use masonry::text::StyleProperty;
+use masonry::core::ArcStr;
+use masonry::core::StyleProperty;
 use masonry::widgets::LineBreaking;
 use masonry::widgets::{self};
 use vello::peniko::Brush;

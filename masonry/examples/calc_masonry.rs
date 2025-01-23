@@ -14,35 +14,35 @@
 
 use accesskit::Node;
 use accesskit::Role;
-use masonry::dpi::LogicalSize;
-use masonry::text::StyleProperty;
-use masonry::widgets::Align;
-use masonry::widgets::CrossAxisAlignment;
-use masonry::widgets::Flex;
-use masonry::widgets::Label;
-use masonry::widgets::RootWidget;
-use masonry::widgets::SizedBox;
+use masonry::app::AppDriver;
+use masonry::app::DriverCtx;
 use masonry::core::AccessCtx;
 use masonry::core::AccessEvent;
 use masonry::core::Action;
-use masonry::app::AppDriver;
 use masonry::core::BoxConstraints;
-use masonry::Color;
-use masonry::app::DriverCtx;
 use masonry::core::EventCtx;
 use masonry::core::LayoutCtx;
 use masonry::core::PaintCtx;
-use masonry::Point;
 use masonry::core::PointerEvent;
 use masonry::core::QueryCtx;
 use masonry::core::RegisterCtx;
-use masonry::Size;
+use masonry::core::StyleProperty;
 use masonry::core::TextEvent;
 use masonry::core::Update;
 use masonry::core::UpdateCtx;
 use masonry::core::Widget;
 use masonry::core::WidgetId;
 use masonry::core::WidgetPod;
+use masonry::dpi::LogicalSize;
+use masonry::widgets::Align;
+use masonry::widgets::CrossAxisAlignment;
+use masonry::widgets::Flex;
+use masonry::widgets::Label;
+use masonry::widgets::RootWidget;
+use masonry::widgets::SizedBox;
+use masonry::Color;
+use masonry::Point;
+use masonry::Size;
 use smallvec::smallvec;
 use smallvec::SmallVec;
 use tracing::trace;
@@ -417,8 +417,8 @@ fn main() {
         in_num: false,
     };
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(build_calc()),
         calc_state,

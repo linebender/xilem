@@ -12,31 +12,31 @@
 
 use accesskit::Node;
 use accesskit::Role;
-use masonry::kurbo::BezPath;
-use masonry::kurbo::Stroke;
-use masonry::palette;
-use masonry::core::ObjectFit;
-use masonry::widgets::RootWidget;
+use masonry::app::AppDriver;
+use masonry::app::DriverCtx;
 use masonry::core::AccessCtx;
 use masonry::core::AccessEvent;
 use masonry::core::Action;
-use masonry::Affine;
-use masonry::app::AppDriver;
 use masonry::core::BoxConstraints;
-use masonry::Color;
-use masonry::app::DriverCtx;
 use masonry::core::EventCtx;
 use masonry::core::LayoutCtx;
+use masonry::core::ObjectFit;
 use masonry::core::PaintCtx;
-use masonry::Point;
 use masonry::core::PointerEvent;
 use masonry::core::QueryCtx;
-use masonry::Rect;
 use masonry::core::RegisterCtx;
-use masonry::Size;
 use masonry::core::TextEvent;
 use masonry::core::Widget;
 use masonry::core::WidgetId;
+use masonry::kurbo::BezPath;
+use masonry::kurbo::Stroke;
+use masonry::palette;
+use masonry::widgets::RootWidget;
+use masonry::Affine;
+use masonry::Color;
+use masonry::Point;
+use masonry::Rect;
+use masonry::Size;
 use parley::layout::Alignment;
 use parley::style::FontFamily;
 use parley::style::FontStack;
@@ -140,7 +140,7 @@ impl Widget for CustomWidget {
         text_layout.align(None, Alignment::Start);
 
         // We can pass a transform matrix to rotate the text we render
-        masonry::text::render_text(
+        masonry::core::render_text(
             scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
             &text_layout,
@@ -179,8 +179,8 @@ fn main() {
     let my_string = "Masonry + Vello".to_string();
     let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(CustomWidget(my_string)),
         Driver,

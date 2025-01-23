@@ -12,7 +12,7 @@ use vello::peniko::Fill;
 use vello::peniko::Mix;
 use vello::Scene;
 
-use crate::paint_scene_helpers::stroke;
+use crate::util::stroke;
 use crate::passes::enter_span_if;
 use crate::passes::recurse_on_children;
 use crate::app::RenderRoot;

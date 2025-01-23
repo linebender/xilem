@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::ArcStr;
+use masonry::core::ArcStr;
 use masonry::widgets;
 
 use crate::core::DynMessage;

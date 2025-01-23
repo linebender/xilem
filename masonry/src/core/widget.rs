@@ -16,7 +16,7 @@ use tracing::trace_span;
 use tracing::Span;
 use vello::Scene;
 
-use crate::contexts::ComposeCtx;
+use crate::core::ComposeCtx;
 use crate::core::AccessCtx;
 use crate::core::AccessEvent;
 use crate::core::BoxConstraints;

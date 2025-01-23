@@ -43,7 +43,7 @@ fn main() {
 
     // ...
 
-    masonry::event_loop_runner::run(
+    masonry::app::run(
         // ...
         main_widget,
         // ...
@@ -137,7 +137,7 @@ In our main function, we create a `Driver` and pass it to `event_loop_runner::ru
 
     // ...
 
-    masonry::event_loop_runner::run(
+    masonry::app::run(
         // ...
         main_widget,
         driver,
@@ -158,8 +158,8 @@ The last step is to create our Winit window and start our main loop.
         .with_resizable(true)
         .with_min_inner_size(LogicalSize::new(400.0, 400.0));
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         main_widget,
         driver,
@@ -226,8 +226,8 @@ fn main() {
 
     # return;
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         main_widget,
         driver,

@@ -140,14 +140,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry::dpi::LogicalSize;
-use masonry::event_loop_runner;
-use masonry::widgets::RootWidget;
-use masonry::core::WidgetMut;
 use masonry::core::FromDynWidget;
 use masonry::core::Widget;
 use masonry::core::WidgetId;
+use masonry::core::WidgetMut;
 use masonry::core::WidgetPod;
+use masonry::dpi::LogicalSize;
+use masonry::widgets::RootWidget;
 use view::transformed;
 use view::Transformed;
 use winit::error::EventLoopError;
@@ -164,9 +163,9 @@ use crate::core::ViewElement;
 use crate::core::ViewId;
 use crate::core::ViewPathTracker;
 use crate::core::ViewSequence;
+pub use masonry::app::EventLoop;
+pub use masonry::app::EventLoopBuilder;
 pub use masonry::dpi;
-pub use masonry::event_loop_runner::EventLoop;
-pub use masonry::event_loop_runner::EventLoopBuilder;
 pub use masonry::palette;
 pub use masonry::widgets::LineBreaking;
 pub use masonry::Affine;
@@ -269,7 +268,7 @@ where
         let proxy = event_loop.create_proxy();
         let bg_color = self.background_color;
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
+        masonry::app::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
     }
 
     pub fn into_driver(

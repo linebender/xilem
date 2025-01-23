@@ -11,8 +11,8 @@ use std::time::Duration;
 use std::time::SystemTime;
 
 use masonry::dpi::LogicalSize;
-use masonry::event_loop_runner::EventLoop;
-use masonry::event_loop_runner::EventLoopBuilder;
+use masonry::app::EventLoop;
+use masonry::app::EventLoopBuilder;
 use masonry::widgets::Axis;
 use masonry::widgets::CrossAxisAlignment;
 use masonry::widgets::MainAxisAlignment;

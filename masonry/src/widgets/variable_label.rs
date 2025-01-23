@@ -31,8 +31,8 @@ use crate::core::Widget;
 use crate::core::WidgetId;
 use crate::core::WidgetMut;
 use crate::core::WidgetPod;
-use crate::text::ArcStr;
-use crate::text::StyleProperty;
+use crate::core::ArcStr;
+use crate::core::StyleProperty;
 use crate::widgets::Label;
 use crate::FontWeight;
 

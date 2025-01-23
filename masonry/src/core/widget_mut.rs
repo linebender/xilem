@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::contexts::MutateCtx;
+use crate::core::MutateCtx;
 use crate::core::FromDynWidget;
 use crate::core::Widget;
 use crate::Affine;

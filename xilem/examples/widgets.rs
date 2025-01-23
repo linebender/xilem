@@ -5,8 +5,8 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use masonry::dpi::LogicalSize;
-use masonry::event_loop_runner::EventLoop;
-use masonry::event_loop_runner::EventLoopBuilder;
+use masonry::app::EventLoop;
+use masonry::app::EventLoopBuilder;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;

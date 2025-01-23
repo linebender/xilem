@@ -3,7 +3,7 @@
 
 use masonry::parley::style::FontStack;
 use masonry::parley::style::FontWeight;
-use masonry::text::ArcStr;
+use masonry::core::ArcStr;
 use masonry::widgets;
 use masonry::TextAlignment;
 use vello::peniko::Brush;
