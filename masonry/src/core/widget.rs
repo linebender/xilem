@@ -121,7 +121,7 @@ impl FromDynWidget for dyn Widget {
 ///
 /// Generally speaking, widgets aren't used directly. They are stored by Masonry and accessed
 /// through [`WidgetPod`](crate::core::WidgetPod)s. Widget methods are called by Masonry, and a
-/// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::widget::WidgetMut).
+/// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsAny + AsDynWidget {
     /// Handle a pointer event.

@@ -78,7 +78,7 @@ When debug assertions are on, Masonry will actively try to detect cases where yo
 For our `VerticalStack`, we'll lay out our children in a vertical line, with a gap between each child; we give each child an equal share of the available height:
 
 ```rust,ignore
-use masonry::{
+use masonry::core::{
     LayoutCtx, BoxConstraints
 };
 
@@ -131,7 +131,7 @@ For instance, if a widget in a list changes size, its siblings and parents must 
 In the case of our `VerticalStack`, we don't implement any transform-only changes, so we don't need to do anything in compose:
 
 ```rust,ignore
-use masonry::{
+use masonry::core::{
     LayoutCtx, BoxConstraints
 };
 
@@ -263,7 +263,7 @@ For instance, a container widget with a background color should implement `paint
 
 [`Widget`]: crate::core::Widget
 [`WidgetPod`]: crate::core::WidgetPod
-[`WidgetMut`]: crate::widget::WidgetMut
+[`WidgetMut`]: crate::core::WidgetMut
 [`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
 [`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
 [`BoxConstraints`]: crate::core::BoxConstraints

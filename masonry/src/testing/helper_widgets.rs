@@ -82,7 +82,7 @@ pub struct ReplaceChild {
 ///
 /// ```
 /// # use masonry::widgets::Label;
-/// # use masonry::{Update};
+/// # use masonry::core::Update;
 /// use masonry::testing::{Recording, Record, TestWidgetExt};
 /// use masonry::testing::TestHarness;
 /// use assert_matches::assert_matches;

@@ -17,9 +17,10 @@
 //! The to-do-list example looks like this:
 //!
 //! ```
+//! use masonry::app::{AppDriver, DriverCtx};
+//! use masonry::core::{Action, Widget, WidgetId};
 //! use masonry::dpi::LogicalSize;
-//! use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
-//! use masonry::{Action, AppDriver, DriverCtx, WidgetId};
+//! use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
 //! use winit::window::Window;
 //!
 //! struct Driver {

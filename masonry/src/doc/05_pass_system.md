@@ -177,7 +177,7 @@ They can access the layout of children if they have already been laid out.
 
 [`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
 [`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
-[`WidgetMut`]: crate::widget::WidgetMut
+[`WidgetMut`]: crate::core::WidgetMut
 [`RenderRoot`]: crate::app::RenderRoot
 [`PaintCtx`]: crate::core::PaintCtx
 [`AccessCtx`]: crate::core::AccessCtx

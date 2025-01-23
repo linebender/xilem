@@ -24,7 +24,7 @@ use crate::theme;
 /// To customize the spinner's size, you can place it inside a [`SizedBox`]
 /// that has a fixed width and height.
 ///
-/// [`SizedBox`]: crate::widget::SizedBox
+/// [`SizedBox`]: crate::widgets::SizedBox
 ///
 #[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__spinner__tests__spinner_init.png", "Spinner frame.")]
 pub struct Spinner {

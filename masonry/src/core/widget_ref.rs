@@ -19,7 +19,7 @@ use crate::core::{QueryCtx, Widget, WidgetId};
 /// printing it will display its widget subtree (as in, the referenced widget, and its
 /// children, and their children, etc).
 ///
-/// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::widget::WidgetMut).
+/// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::core::WidgetMut).
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
     pub(crate) ctx: QueryCtx<'w>,
     pub(crate) widget: &'w W,

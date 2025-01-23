@@ -199,8 +199,8 @@ In general, `TestHarness` tries to implement methods matching every kind of beha
 
 Read the [`TestHarness`] documentation for a full overview of its API.
 
-[`Button`]: crate::widget::Button
-[`SizedBox`]: crate::widget::SizedBox
+[`Button`]: crate::widgets::Button
+[`SizedBox`]: crate::widgets::SizedBox
 [`TestHarness`]: crate::testing::TestHarness
-[`WidgetRef`]: crate::widget::WidgetRef
+[`WidgetRef`]: crate::core::WidgetRef
 [`assert_render_snapshot!`]: crate::assert_render_snapshot

@@ -49,7 +49,7 @@ use crate::core::WidgetId;
 /// other pass, which means the widget tree will keep requesting the same passes over
 /// and over. Zombie flags are terrible for performance and power-efficiency.
 ///
-/// [`WidgetMut`]: crate::widget::WidgetMut
+/// [`WidgetMut`]: crate::core::WidgetMut
 #[derive(Clone, Debug)]
 pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,

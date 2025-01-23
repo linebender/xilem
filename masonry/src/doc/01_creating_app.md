@@ -79,8 +79,10 @@ That method gives our app a [`DriverCtx`] context, which we can use to access th
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
 ```rust
-use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-use masonry::widgets::{Flex, Label, Portal, RootWidget, WidgetMut};
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{Action, WidgetId};
+use masonry::widgets::Label;
+# use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
 struct Driver {
     next_task: String,
@@ -186,8 +188,9 @@ fn main() {
     );
     let main_widget = RootWidget::new(main_widget);
 
-    use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-    use masonry::widgets::{Label};
+    use masonry::app::{AppDriver, DriverCtx};
+    use masonry::core::{Action, WidgetId};
+    use masonry::widgets::Label;
 
     struct Driver {
         next_task: String,
@@ -255,15 +258,15 @@ Currently, the only public framework built with Masonry is Xilem, though we hope
 
 Most of this documentation is written to help developers trying to build such a framework.
 
-[`Portal`]: crate::widget::Portal
-[`Flex`]: crate::widget::Flex
-[`Textbox`]: crate::widget::Textbox
-[`Button`]: crate::widget::Button
-[`RootWidget`]: crate::widget::RootWidget
+[`Portal`]: crate::widgets::Portal
+[`Flex`]: crate::widgets::Flex
+[`Textbox`]: crate::widgets::Textbox
+[`Button`]: crate::widgets::Button
+[`RootWidget`]: crate::widgets::RootWidget
 
 [`AppDriver`]: crate::app::AppDriver
 [`Action`]: crate::core::Action
 [`DriverCtx`]: crate::app::DriverCtx
 [`WidgetId`]: crate::core::WidgetId
-[`WidgetMut`]: crate::widget::WidgetMut
-[add_child]: crate::widget::Flex::add_child
+[`WidgetMut`]: crate::core::WidgetMut
+[add_child]: crate::widgets::Flex::add_child
