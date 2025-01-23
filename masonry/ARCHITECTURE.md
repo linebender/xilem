@@ -1,12 +1,8 @@
 # ARCHITECTURE
 
-**Note - The crate was migrated from the `PoignardAzur/masonry` repository and ported to work with winit. A lot of stuff was changed during that port and all the documentation wasn't updated. Some of this might be outdated.**
-
 Masonry is a framework that aims to provide the foundation for Rust GUI libraries.
 
-Developers trying to write immediate-mode GUIs, Elm-architecture GUIs, functional reactive GUIs, etc, can import Masonry and get a platform to create windows (using Glazier as a backend) each with a tree of widgets. Each widget has to implement the Widget trait that Masonry provides.
-
-This crate was originally a fork of Druid that emerged from discussions I had with Raph Levien and Colin Rofls about what it would look like to turn Druid into a foundational library. This means the code looks very similar to Druid's code and has mostly the same dependencies and primitives.
+Developers trying to write immediate-mode GUIs, Elm-architecture GUIs, functional reactive GUIs, etc, can import Masonry and get a platform to create windows (using Winit as a backend) each with a tree of widgets. Each widget has to implement the Widget trait that Masonry provides.
 
 
 ## High-level goals
@@ -14,7 +10,7 @@ This crate was originally a fork of Druid that emerged from discussions I had wi
 Masonry has some opinionated design goals:
 
 - **Be dumb.** As a general rule, Masonry doesn't do "algorithms". It has no reconciliation logic, no behind-the-scenes dataflow, no clever optimizations, etc. It tries to be efficient, but that efficiency comes from well-designed interfaces and well-placed abstraction boundaries. High-level logic should be implemented in downstream crates.
-- **No mutability tricks.** Masonry tries to use as little unsafe code and cells/mutexes as possible. It's designed to work within Rust's ownership system, not to bypass it.
+- **No mutability tricks.** Masonry uses no unsafe code and as few cells/mutexes as possible. It's designed to work within Rust's ownership system, not to bypass it. While it relies on the `tree_arena` crate in this repository which *does* perform some mutability tricks, the resulting usage patterns are still very rust-like.
 - **Facilitate testing.** Masonry implements a `TestHarness` type that helps users write unit tests, including tests with simulated user interactions and screenshot tests. In general, every feature should be designed with easy-to-write high-reliability tests in mind.
 - **Facilitate debugging.** GUI app bugs are often easy to fix, but extremely painful to track down. GUI framework bugs are worse. Masonry should facilitate reproducing bugs and pinpointing which bit of code they come from.
 - **Provide reflection.** Masonry should help developers surface some of the inherent structure in GUI programs. It should provide tools out-of-the-box to get information about the widget tree, performance indicators, etc. It should also provide accessibility data out-of-the-box.
@@ -22,39 +18,42 @@ Masonry has some opinionated design goals:
 
 ## Code layout
 
-### `src/testing/`
+### `src/core/`
 
-Contains the TestHarness type, various helper widgets for writing tests, and the snapshot testing code.
+Most widget-related code, including the Widget trait, its context types, event types, and the WidgetRef, WidgetMut, and WidgetPod types.
 
-### `src/text2/`
-
-Contains text-handling code, for both displaying and editing text. Has been overhauled during the port to winit, but still in rough shape. Here be dragons.
-
-### `src/text/`
-
-Dead code, should probably be cleaned up.
-
-### `src/widget/`
-
-Contains widget-related items, including the Widget trait, and the WidgetRef, WidgetMut, and WidgetPod types.
-
-Also includes a list of basic widgets, each defined in a single file.
-
-### `src/widget/widget_state.rs`
+#### `src/core/widget_state.rs`
 
 Contains the WidgetState type, around which a lot of internal code is based.
 
 WidgetState is one of the most important internal types in Masonry.
-Understanding Masonry passes will likely be easier if you read WidgetState documentation first.
+Understanding Masonry pass code will likely be easier if you read WidgetState documentation first.
 
+### `src/app/`
 
-### `src/render_root.rs`
+Code for creating a Masonry app, including:
 
-The composition root of the framework. See **General architecture** section.
+- `event_loop_runner.rs` - glue code between Masonry and winit.
+- `render_root.rs` - Masonry's composition root. See **General architecture** section.
 
-### `src/debug_logger.rs`, `src/debug_values.rs`
+### `src/passes/`
 
-WIP logger to get record of widget passes. See <https://github.com/linebender/xilem/issues/370>.
+Masonry's passes are computations that run on the entire widget tree (iff invalidation flags are set) once per frame.
+
+`event.rs` and `update.rs` include a bunch of related passes. Every other file only includes one pass. `mod.rs` has a utility functions shared between multiple passes.
+
+### `src/doc/`
+
+Documentation for the entire crate. In other projects, this would be an `mdbook` doc, but we choose to directly inline the doc, so that `cargo test` runs on it.
+
+### `src/testing/`
+
+Contains the TestHarness type, various helper widgets for writing tests, and the snapshot testing code.
+
+### `src/widgets/`
+
+A list of basic widgets, each defined in a single file.
+
 
 ## Module organization principles
 
@@ -62,17 +61,7 @@ WIP logger to get record of widget passes. See <https://github.com/linebender/xi
 
 ### Module structure
 
-Virtually every module should be private. The only public modules should be inline module blocks that gather public-facing re-exports.
-
-Most items should be exported from the root module, with no other public-facing export. This makes documentation more readable; readers don't need to click on multiple modules to find the item they're looking for.
-
-There should be only three public modules:
-
-- `widgets`
-- `commands`
-- `test_widgets`
-
-Module files should not be `foobar/mod.rs`. Instead, they should be `_foobar.rs` (thus in the parent folder); the full name is for readability, the leading underscore is so these names appear first in file hierarchies.
+The public module hierarchy should be relatively flat. This makes documentation more readable; readers don't need to click on multiple modules to find the item they're looking for, and maintainers don't need to open multiple layers of folders to find a file.
 
 ### Imports
 
@@ -91,48 +80,56 @@ Masonry should have no prelude. Examples and documentation should deliberately h
 
 The composition roots of Masonry are:
 
-- **RenderRoot**
-- The **AppDriver** trait.
+- **RenderRoot**, which owns the widget tree.
+- The **AppDriver** trait, which owns the business logic.
 - The **run_with** function in `event_loop_runner.rs`.
-
-TODO - Explain in more detail.
 
 The high-level control flow of a Masonry app's render loop is usually:
 
 - The platform library (windows, macos, x11, etc) runs some callbacks written in Winit in response to user interactions, timers, or other events.
-- The callbacks call MasonryWinHandler methods.
-- Each method calls a single AppRoot method.
-- That method calls some AppRootInner method.
-- AppRootInner does a bunch of bookkeeping and calls WindowRoot methods.
-- WindowRoot does a bunch of bookkeeping and calls the root WidgetPod's on_event/lifecycle/layout/paint methods.
+- Winit calls some RenderRoot method.
+- RenderRoot runs a series of passes (events, updates, paint, accessibility, etc).
+- Throughout those passes, RenderRootSignal values are pushed to a queue which winit can query.
+- winit may change its internals or schedule another frame based on those signals.
 
 
 ### Widget hierarchy and passes
 
-The **Widget** trait is defined in `src/widget/widget.rs`. Most of the widget-related bookkeeping is done by the **WidgetPod** type defined in `src/widget/widget_pod.rs`.
+The **Widget** trait is defined in `src/widget/widget.rs`. Most of the widget-related bookkeeping is done in the passes defined in `src/passes`.
 
-A WidgetPod is the main way to store a child for container widgets. In general, the widget hierarchy looks like a tree of container widgets, with each container owning a WidgetPod or a Vec of WidgetPod or something similar. When a pass (on_event/lifecycle/layout/paint) is run on a window, the matching method is called on the root WidgetPod, which recurses to its widget, which calls the same method on each of its children.
+A **WidgetPod** is the main way to store a child for container widgets. In general, the widget hierarchy looks like a tree of container widgets, with each container owning a WidgetPod or a Vec of WidgetPod or something similar.
 
-Currently, container Widgets are encouraged to call pass methods on each of their children, even when the pass only concerns a single child (eg a click event where only one child is under the mouse); the filtering, if any, is done in WidgetPod.
+When RenderRoot runs a pass (on_xxx_event/update_xxx/paint), it usually iterates over the widget tree in depth-first pre-order, and calls the matching method is called on the root WidgetPod, which recurses to its widget, which calls the same method on each of its children.
+
+There is one exception to this pattern: the layout pass requires widgets to "manually" recurse to their children.
 
 The current passes are:
 
-- **on_xxx_event:** Handles UX-related events, eg user interactions, timers, and IME updates. Widgets can declare these events as "handled" which has a bunch of semantic implications. Right now this pass is split between "cursor events" (eg mouse stuff) and "text events" (eg IME, keyboard stuff).
-- **on_status_change:** TODO.
-- **lifecycle:** Handles internal events, eg when the widget is marked as "disabled".
-- **layout:** Given size constraints, return the widget's size. Container widgets first call their children's layout method, then set the position and layout date of each child.
-- **paint** Paint the widget and its children.
+- **mutate:** Runs a list of callbacks with mutable access to the widget tree. These callbacks can either be passed by the event loop, or pushed to a queue by widgets during the other passes.
+- **on_xxx_event:** Handles UX-related events, e.g. clicks, text entered, IME updates and accessibility input. Widgets can declare these events as "handled" which has a bunch of semantic implications.
+- **anim:** Do updates related to an animation frame.
+- **update:** Handles internal changes to some widgets, e.g. when the widget is marked as "disabled" or Masonry detects that a widget is hovered by a pointer.
+- **layout:** Given size constraints, return the widget's size. Container widgets first call `LayoutCtx::run_layout` on their children, then set the position of each child.
+- **compose:** Computes the global transform/origin for every widget.
+- **paint** Paint every widget.
+- **accessibility:** Compute every widget's node in the accessibility tree.
 
-The general pass order is "For each user event, call on_event once, then lifecycle a variable number of times, then schedule a paint. When the platform starts the paint, run layout, then paint".
+See [masonry/src/doc/05_pass_system.md] for details.
 
 
 ### WidgetMut
 
 In Masonry, widgets can't be mutated directly. All mutations go through a `WidgetMut` wrapper. So, to change a label's text, you might call `WidgetMut<Label>::set_text()`. This helps Masonry make sure that internal metadata is propagated after every widget change.
 
-Generally speaking, to create a WidgetMut, you need a reference to the parent context that will be updated when the WidgetMut is dropped. That can be the WidgetMut of a parent, an EventCtx / LifecycleCtx, or the WindowRoot. In general, container widgets will have methods such that you can get a WidgetMut of a child from the WidgetMut of a parent.
+In general, there's three ways to get a WidgetMut:
 
-WidgetMut gives direct mutable access to the widget tree. This can be used by GUI frameworks in their update method, and it can be used in tests to make specific local modifications and test their result.
+- From a WidgetMut to a parent widget.
+- As an argument to the callback passed to `RenderRoot::edit_widget()`.
+- As an argument to a callback pushed to the mutate pass.
+
+In most cases, the WidgetMut holds a reference to a WidgetState that will be updated when the WidgetMut is dropped.
+
+WidgetMut gives direct mutable access to the widget tree. This can be used by GUI frameworks in their tree update methods, and it can be used in tests to make specific local modifications and test their result.
 
 
 ### Tests
@@ -147,16 +144,15 @@ Ideally, the harness should provide ways to emulate absolutely every feature tha
 
 Each widget has unit tests in its module and major features have modules with dedicated unit test suites. Ideally, we would like to achieve complete coverage within the crate.
 
-#### Mock timers
+#### Screenshot tests
 
-For timers in particular, the framework does some special work to simulate the GUI environment.
+TODO - mention kompari
 
-The GlobalPassCtx types stores two timer handlers: **timers** and **mock_timer_queue**. The first one connects ids returned by the platform's timer creator to widget ids; the second one stores a list of timer values that have to be manually advanced by calling `TestHarness::move_timers_forward`.
+TestHarness can render a widget tree, save the result to an image, and compare the image to a stored snapshot. This lets us check that (1) our widgets' paint methods don't panic and (2) changes don't introduce accidental regression in their visual appearance.
 
-When a widget calls `request_timer` in a normal running app, a normal timer is requested from the platform. When a widget calls `request_timer` from a simulated app inside a TestHarness, mock_timer_queue is used instead.
+The screenshots are stored using git LFS, which adds some minor complications but avoids the overhead of committing files directly to Git.
 
-All this means you can have timer-based tests without *actually* having to sleep for the duration of the timer.
-
+We include some of the screenshots in the documentation; because `docs.rs` doesn't have access to LFS files, we use the `include_screenshot!` to instead link to `https://media.githubusercontent.com` when building doc for `docs.rs`.
 
 ## VS Code markers
 
