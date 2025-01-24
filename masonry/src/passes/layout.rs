@@ -10,10 +10,9 @@ use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
+use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
+use crate::core::{BoxConstraints, LayoutCtx, Widget, WidgetPod, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::render_root::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::widget::WidgetState;
-use crate::{BoxConstraints, LayoutCtx, Widget, WidgetPod};
 
 // --- MARK: RUN LAYOUT ---
 /// Run [`Widget::layout`] method on the widget contained in `pod`.

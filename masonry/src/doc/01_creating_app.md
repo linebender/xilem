@@ -28,7 +28,7 @@ Let's start with the `main()` function.
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widget::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -43,7 +43,7 @@ fn main() {
 
     // ...
 
-    masonry::event_loop_runner::run(
+    masonry::app::run(
         // ...
         main_widget,
         // ...
@@ -79,8 +79,10 @@ That method gives our app a [`DriverCtx`] context, which we can use to access th
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
 ```rust
-use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-use masonry::widget::{Flex, Label, Portal, RootWidget, WidgetMut};
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{Action, WidgetId};
+use masonry::widgets::Label;
+# use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
 struct Driver {
     next_task: String,
@@ -137,7 +139,7 @@ In our main function, we create a `Driver` and pass it to `event_loop_runner::ru
 
     // ...
 
-    masonry::event_loop_runner::run(
+    masonry::app::run(
         // ...
         main_widget,
         driver,
@@ -158,8 +160,8 @@ The last step is to create our Winit window and start our main loop.
         .with_resizable(true)
         .with_min_inner_size(LogicalSize::new(400.0, 400.0));
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         main_widget,
         driver,
@@ -173,7 +175,7 @@ Our complete program therefore looks like this:
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widget::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -186,8 +188,9 @@ fn main() {
     );
     let main_widget = RootWidget::new(main_widget);
 
-    use masonry::{Action, AppDriver, DriverCtx, WidgetId};
-    use masonry::widget::{Label};
+    use masonry::app::{AppDriver, DriverCtx};
+    use masonry::core::{Action, WidgetId};
+    use masonry::widgets::Label;
 
     struct Driver {
         next_task: String,
@@ -226,8 +229,8 @@ fn main() {
 
     # return;
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         main_widget,
         driver,
@@ -255,15 +258,15 @@ Currently, the only public framework built with Masonry is Xilem, though we hope
 
 Most of this documentation is written to help developers trying to build such a framework.
 
-[`Portal`]: crate::widget::Portal
-[`Flex`]: crate::widget::Flex
-[`Textbox`]: crate::widget::Textbox
-[`Button`]: crate::widget::Button
-[`RootWidget`]: crate::widget::RootWidget
+[`Portal`]: crate::widgets::Portal
+[`Flex`]: crate::widgets::Flex
+[`Textbox`]: crate::widgets::Textbox
+[`Button`]: crate::widgets::Button
+[`RootWidget`]: crate::widgets::RootWidget
 
-[`AppDriver`]: crate::AppDriver
-[`Action`]: crate::Action
-[`DriverCtx`]: crate::DriverCtx
-[`WidgetId`]: crate::WidgetId
-[`WidgetMut`]: crate::widget::WidgetMut
-[add_child]: crate::widget::Flex::add_child
+[`AppDriver`]: crate::app::AppDriver
+[`Action`]: crate::core::Action
+[`DriverCtx`]: crate::app::DriverCtx
+[`WidgetId`]: crate::core::WidgetId
+[`WidgetMut`]: crate::core::WidgetMut
+[add_child]: crate::widgets::Flex::add_child

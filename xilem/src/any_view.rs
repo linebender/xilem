@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
-use masonry::widget::WidgetMut;
-use masonry::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx, Point,
-    PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Widget, WidgetId, WidgetPod,
+use masonry::core::{
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use masonry::kurbo::{Point, Size};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace_span, Span};
 use vello::Scene;

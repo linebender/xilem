@@ -1,9 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::text::{ArcStr, StyleProperty};
-use masonry::widget::{self, LineBreaking};
+use masonry::widgets::{
+    LineBreaking, {self},
+};
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
@@ -48,7 +50,7 @@ pub struct Label {
     text_size: f32,
     weight: FontWeight,
     font: FontStack<'static>,
-    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widget::Label`
+    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widgets::Label`
 }
 
 impl Label {
@@ -105,12 +107,12 @@ where
 
 impl ViewMarker for Label {}
 impl<State, Action> View<State, Action, ViewCtx> for Label {
-    type Element = Pod<widget::Label>;
+    type Element = Pod<widgets::Label>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let widget_pod = ctx.new_pod(
-            widget::Label::new(self.label.clone())
+            widgets::Label::new(self.label.clone())
                 .with_brush(self.text_brush.clone())
                 .with_alignment(self.alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
@@ -129,25 +131,25 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         mut element: Mut<Self::Element>,
     ) {
         if prev.label != self.label {
-            widget::Label::set_text(&mut element, self.label.clone());
+            widgets::Label::set_text(&mut element, self.label.clone());
         }
         if prev.text_brush != self.text_brush {
-            widget::Label::set_brush(&mut element, self.text_brush.clone());
+            widgets::Label::set_brush(&mut element, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::Label::set_alignment(&mut element, self.alignment);
+            widgets::Label::set_alignment(&mut element, self.alignment);
         }
         if prev.text_size != self.text_size {
-            widget::Label::insert_style(&mut element, StyleProperty::FontSize(self.text_size));
+            widgets::Label::insert_style(&mut element, StyleProperty::FontSize(self.text_size));
         }
         if prev.weight != self.weight {
-            widget::Label::insert_style(&mut element, StyleProperty::FontWeight(self.weight));
+            widgets::Label::insert_style(&mut element, StyleProperty::FontWeight(self.weight));
         }
         if prev.font != self.font {
-            widget::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
+            widgets::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
         }
         if prev.line_break_mode != self.line_break_mode {
-            widget::Label::set_line_break_mode(&mut element, self.line_break_mode);
+            widgets::Label::set_line_break_mode(&mut element, self.line_break_mode);
         }
     }
 

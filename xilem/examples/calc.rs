@@ -5,7 +5,7 @@
 #![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
+use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;

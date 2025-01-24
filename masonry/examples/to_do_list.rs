@@ -7,9 +7,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{Action, Widget, WidgetId};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
-use masonry::{Action, AppDriver, DriverCtx, Widget, WidgetId};
+use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -64,8 +65,8 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(make_widget_tree()),
         Driver {

@@ -6,11 +6,10 @@ use tracing::{debug, info_span, trace};
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
 
+use crate::app::{RenderRoot, RenderRootSignal};
+use crate::core::{AccessEvent, EventCtx, PointerEvent, TextEvent, Widget, WidgetId};
 use crate::passes::{enter_span, merge_state_up};
-use crate::render_root::RenderRoot;
-use crate::{
-    AccessEvent, EventCtx, Handled, PointerEvent, RenderRootSignal, TextEvent, Widget, WidgetId,
-};
+use crate::Handled;
 
 // --- MARK: HELPERS ---
 fn get_pointer_target(

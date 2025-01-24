@@ -4,8 +4,8 @@
 //! A widget gallery for xilem/masonry
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
+use masonry::app::{EventLoop, EventLoopBuilder};
 use masonry::dpi::LogicalSize;
-use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;

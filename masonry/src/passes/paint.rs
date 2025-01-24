@@ -9,11 +9,12 @@ use vello::kurbo::Affine;
 use vello::peniko::{Color, Fill, Mix};
 use vello::Scene;
 
-use crate::paint_scene_helpers::stroke;
+use crate::app::{RenderRoot, RenderRootState};
+use crate::core::{PaintCtx, Widget, WidgetId, WidgetState};
+use crate::kurbo::Rect;
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::render_root::{RenderRoot, RenderRootState};
 use crate::theme::get_debug_color;
-use crate::{PaintCtx, Rect, Widget, WidgetId, WidgetState};
+use crate::util::stroke;
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(

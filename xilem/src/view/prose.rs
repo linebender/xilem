@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::text::{ArcStr, StyleProperty};
-use masonry::widget::{self, LineBreaking};
+use masonry::core::{ArcStr, StyleProperty};
+use masonry::widgets::{
+    LineBreaking, {self},
+};
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
@@ -37,7 +39,7 @@ pub struct Prose {
     text_size: f32,
     line_break_mode: LineBreaking,
     // TODO: disabled: bool,
-    // TODO: add more attributes of `masonry::widget::Prose`
+    // TODO: add more attributes of `masonry::widgets::Prose`
 }
 
 impl Prose {
@@ -69,17 +71,17 @@ fn line_break_clips(linebreaking: LineBreaking) -> bool {
 
 impl ViewMarker for Prose {}
 impl<State, Action> View<State, Action, ViewCtx> for Prose {
-    type Element = Pod<widget::Prose>;
+    type Element = Pod<widgets::Prose>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let text_area = widget::TextArea::new_immutable(&self.content)
+        let text_area = widgets::TextArea::new_immutable(&self.content)
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
         let widget_pod = ctx.new_pod(
-            widget::Prose::from_text_area(text_area)
+            widgets::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );
         (widget_pod, ())
@@ -92,26 +94,29 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut text_area = widget::Prose::text_mut(&mut element);
+        let mut text_area = widgets::Prose::text_mut(&mut element);
         if prev.content != self.content {
-            widget::TextArea::reset_text(&mut text_area, &self.content);
+            widgets::TextArea::reset_text(&mut text_area, &self.content);
         }
         if prev.text_brush != self.text_brush {
-            widget::TextArea::set_brush(&mut text_area, self.text_brush.clone());
+            widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
         if prev.alignment != self.alignment {
-            widget::TextArea::set_alignment(&mut text_area, self.alignment);
+            widgets::TextArea::set_alignment(&mut text_area, self.alignment);
         }
         if prev.text_size != self.text_size {
-            widget::TextArea::insert_style(&mut text_area, StyleProperty::FontSize(self.text_size));
+            widgets::TextArea::insert_style(
+                &mut text_area,
+                StyleProperty::FontSize(self.text_size),
+            );
         }
         if prev.line_break_mode != self.line_break_mode {
-            widget::TextArea::set_word_wrap(
+            widgets::TextArea::set_word_wrap(
                 &mut text_area,
                 self.line_break_mode == LineBreaking::WordWrap,
             );
             drop(text_area);
-            widget::Prose::set_clip(&mut element, line_break_clips(self.line_break_mode));
+            widgets::Prose::set_clip(&mut element, line_break_clips(self.line_break_mode));
         }
     }
 

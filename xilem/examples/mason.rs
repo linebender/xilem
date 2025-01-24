@@ -14,7 +14,7 @@ use xilem::core::{fork, run_once};
 use xilem::tokio::time;
 use xilem::view::{
     button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis, FlexExt as _,
-    FlexSpacer,
+    FlexSpacer, PointerButton,
 };
 use xilem::{
     palette, Color, EventLoop, EventLoopBuilder, FontWeight, TextAlignment, WidgetView, Xilem,
@@ -82,10 +82,12 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
             .direction(Axis::Horizontal),
             prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
             button_any_pointer(button_label, |data: &mut AppData, button| match button {
-                masonry::PointerButton::None => tracing::warn!("Got unexpected None from button"),
-                masonry::PointerButton::Primary => data.count += 1,
-                masonry::PointerButton::Secondary => data.count -= 1,
-                masonry::PointerButton::Auxiliary => data.count *= 2,
+                PointerButton::None => {
+                    tracing::warn!("Got unexpected None from button");
+                }
+                PointerButton::Primary => data.count += 1,
+                PointerButton::Secondary => data.count -= 1,
+                PointerButton::Auxiliary => data.count *= 2,
                 _ => (),
             }),
             checkbox("Check me", data.active, |data: &mut AppData, checked| {

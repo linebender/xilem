@@ -1,9 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::core::ArcStr;
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::text::ArcStr;
-use masonry::{widget, TextAlignment};
+use masonry::parley::Alignment as TextAlignment;
+use masonry::widgets;
 use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 
@@ -82,7 +83,7 @@ impl VariableLabel {
 
 impl ViewMarker for VariableLabel {}
 impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
-    type Element = Pod<widget::VariableLabel>;
+    type Element = Pod<widgets::VariableLabel>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
@@ -90,7 +91,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
             View::<State, Action, _, _>::build(&self.label, ctx)
         });
         let widget_pod = ctx.new_pod(
-            widget::VariableLabel::from_label_pod(label.into_widget_pod())
+            widgets::VariableLabel::from_label_pod(label.into_widget_pod())
                 .with_initial_weight(self.target_weight.value()),
         );
         (widget_pod, ())
@@ -109,12 +110,12 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
                 &prev.label,
                 &mut (),
                 ctx,
-                widget::VariableLabel::label_mut(&mut element),
+                widgets::VariableLabel::label_mut(&mut element),
             );
         });
 
         if prev.target_weight != self.target_weight {
-            widget::VariableLabel::set_target_weight(
+            widgets::VariableLabel::set_target_weight(
                 &mut element,
                 self.target_weight.value(),
                 self.over_millis,
@@ -133,7 +134,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
                 &self.label,
                 &mut (),
                 ctx,
-                widget::VariableLabel::label_mut(&mut element),
+                widgets::VariableLabel::label_mut(&mut element),
             );
         });
     }

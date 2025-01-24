@@ -3,9 +3,9 @@
 
 use std::sync::Arc;
 
-use masonry::event_loop_runner::{self, EventLoopProxy, MasonryUserEvent};
-use masonry::widget::RootWidget;
-use masonry::{AppDriver, WidgetId};
+use masonry::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};
+use masonry::core::WidgetId;
+use masonry::widgets::RootWidget;
 
 use crate::core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId};
 use crate::{ViewCtx, WidgetView};
@@ -24,8 +24,8 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
 pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
 
 /// The action which should be used for async events.
-pub fn async_action(path: Arc<[ViewId]>, message: Box<dyn Message>) -> masonry::Action {
-    masonry::Action::Other(Box::<MessagePackage>::new((path, message)))
+pub fn async_action(path: Arc<[ViewId]>, message: Box<dyn Message>) -> masonry::core::Action {
+    masonry::core::Action::Other(Box::<MessagePackage>::new((path, message)))
 }
 
 /// The type used to send a message for async events.
@@ -39,7 +39,7 @@ impl RawProxy for MasonryProxy {
         )) {
             Ok(()) => Ok(()),
             Err(err) => {
-                let MasonryUserEvent::Action(masonry::Action::Other(res), _) = err.0 else {
+                let MasonryUserEvent::Action(masonry::core::Action::Other(res), _) = err.0 else {
                     unreachable!(
                         "We know this is the value we just created, which matches this pattern"
                     )
@@ -71,12 +71,12 @@ where
 {
     fn on_action(
         &mut self,
-        masonry_ctx: &mut masonry::DriverCtx<'_>,
+        masonry_ctx: &mut masonry::app::DriverCtx<'_>,
         widget_id: WidgetId,
-        action: masonry::Action,
+        action: masonry::core::Action,
     ) {
         let message_result = if widget_id == ASYNC_MARKER_WIDGET {
-            let masonry::Action::Other(action) = action else {
+            let masonry::core::Action::Other(action) = action else {
                 panic!();
             };
             let (path, message) = *action.downcast::<MessagePackage>().unwrap();
@@ -124,7 +124,7 @@ where
             tracing::debug!("Nothing changed as result of action");
         }
     }
-    fn on_start(&mut self, state: &mut event_loop_runner::MasonryState) {
+    fn on_start(&mut self, state: &mut MasonryState) {
         let root = state.get_root();
         // Register all provided fonts
         // self.fonts is never used again, so we may as well deallocate it.

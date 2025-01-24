@@ -8,9 +8,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{Action, ObjectFit, WidgetId};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{Image, ObjectFit, RootWidget};
-use masonry::{Action, AppDriver, DriverCtx, WidgetId};
+use masonry::widgets::{Image, RootWidget};
 use vello::peniko::{Image as ImageBuf, ImageFormat};
 use winit::window::Window;
 
@@ -41,8 +42,8 @@ fn main() {
         .with_min_inner_size(window_size)
         .with_max_inner_size(window_size);
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(make_image()),
         Driver,

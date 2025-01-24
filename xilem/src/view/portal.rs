@@ -3,14 +3,14 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget;
+use masonry::widgets;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
 
 /// A view which puts `child` into a scrollable region.
 ///
-/// This corresponds to the Masonry [`Portal`](masonry::widget::Portal) widget.
+/// This corresponds to the Masonry [`Portal`](masonry::widgets::Portal) widget.
 pub fn portal<Child, State, Action>(child: Child) -> Portal<Child, State, Action>
 where
     Child: WidgetView<State, Action>,
@@ -34,14 +34,14 @@ where
     State: 'static,
     Action: 'static,
 {
-    type Element = Pod<widget::Portal<Child::Widget>>;
+    type Element = Pod<widgets::Portal<Child::Widget>>;
     type ViewState = Child::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         // The Portal `View` doesn't get any messages directly (yet - scroll events?), so doesn't need to
         // use ctx.with_id.
         let (child, child_state) = self.child.build(ctx);
-        let widget_pod = ctx.new_pod(widget::Portal::new_pod(child.into_widget_pod()));
+        let widget_pod = ctx.new_pod(widgets::Portal::new_pod(child.into_widget_pod()));
         (widget_pod, child_state)
     }
 
@@ -52,7 +52,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let child_element = widget::Portal::child_mut(&mut element);
+        let child_element = widgets::Portal::child_mut(&mut element);
         self.child
             .rebuild(&prev.child, view_state, ctx, child_element);
     }
@@ -63,7 +63,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let child_element = widget::Portal::child_mut(&mut element);
+        let child_element = widgets::Portal::child_mut(&mut element);
         self.child.teardown(view_state, ctx, child_element);
     }
 

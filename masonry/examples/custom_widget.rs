@@ -11,13 +11,15 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use accesskit::{Node, Role};
-use masonry::kurbo::{BezPath, Stroke};
-use masonry::widget::{ObjectFit, RootWidget};
-use masonry::{
-    palette, AccessCtx, AccessEvent, Action, Affine, AppDriver, BoxConstraints, Color, DriverCtx,
-    EventCtx, LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, Rect, RegisterCtx, Size,
-    TextEvent, Widget, WidgetId,
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{
+    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
 };
+use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
+use masonry::palette;
+use masonry::peniko::Color;
+use masonry::widgets::RootWidget;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
@@ -116,7 +118,7 @@ impl Widget for CustomWidget {
         text_layout.align(None, Alignment::Start);
 
         // We can pass a transform matrix to rotate the text we render
-        masonry::text::render_text(
+        masonry::core::render_text(
             scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
             &text_layout,
@@ -155,8 +157,8 @@ fn main() {
     let my_string = "Masonry + Vello".to_string();
     let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(CustomWidget(my_string)),
         Driver,

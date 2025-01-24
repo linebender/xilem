@@ -140,9 +140,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
 use masonry::dpi::LogicalSize;
-use masonry::widget::{RootWidget, WidgetMut};
-use masonry::{event_loop_runner, FromDynWidget, Widget, WidgetId, WidgetPod};
+use masonry::widgets::RootWidget;
 use view::{transformed, Transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
@@ -151,9 +151,13 @@ use crate::core::{
     AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
     ViewPathTracker, ViewSequence,
 };
-pub use masonry::event_loop_runner::{EventLoop, EventLoopBuilder};
-pub use masonry::widget::LineBreaking;
-pub use masonry::{dpi, palette, Affine, Color, FontWeight, TextAlignment, Vec2};
+pub use masonry::app::{EventLoop, EventLoopBuilder};
+pub use masonry::kurbo::{Affine, Vec2};
+pub use masonry::parley::style::FontWeight;
+pub use masonry::parley::Alignment as TextAlignment;
+pub use masonry::peniko::Color;
+pub use masonry::widgets::LineBreaking;
+pub use masonry::{dpi, palette};
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.
@@ -246,7 +250,7 @@ where
         let proxy = event_loop.create_proxy();
         let bg_color = self.background_color;
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
+        masonry::app::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
     }
 
     pub fn into_driver(

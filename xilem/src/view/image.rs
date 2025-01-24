@@ -3,7 +3,8 @@
 
 //! The bitmap image widget.
 
-use masonry::widget::{self, ObjectFit};
+use masonry::core::ObjectFit;
+use masonry::widgets::{self};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -13,7 +14,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
 /// To configure this, call [`fit`](Image::fit) on the returned value.
 ///
-/// Corresponds to the [`Image`](widget::Image) widget.
+/// Corresponds to the [`Image`](widgets::Image) widget.
 ///
 /// It is not currently supported to use a GPU-resident [texture](vello::wgpu::Texture) in this widget.
 /// See [#gpu>vello adding wgpu texture buffers to scene](https://xi.zulipchat.com/#narrow/stream/197075-gpu/topic/vello.20adding.20wgpu.20texture.20buffers.20to.20scene)
@@ -47,11 +48,11 @@ impl Image {
 
 impl ViewMarker for Image {}
 impl<State, Action> View<State, Action, ViewCtx> for Image {
-    type Element = Pod<widget::Image>;
+    type Element = Pod<widgets::Image>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.new_pod(widget::Image::new(self.image.clone()));
+        let pod = ctx.new_pod(widgets::Image::new(self.image.clone()));
         (pod, ())
     }
 
@@ -63,10 +64,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         mut element: Mut<Self::Element>,
     ) {
         if prev.object_fit != self.object_fit {
-            widget::Image::set_fit_mode(&mut element, self.object_fit);
+            widgets::Image::set_fit_mode(&mut element, self.object_fit);
         }
         if prev.image != self.image {
-            widget::Image::set_image_data(&mut element, self.image.clone());
+            widgets::Image::set_image_data(&mut element, self.image.clone());
         }
     }
 

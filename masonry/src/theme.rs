@@ -5,7 +5,8 @@
 
 #![allow(missing_docs)]
 
-use crate::{Color, Insets};
+use crate::kurbo::Insets;
+use crate::peniko::Color;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -80,7 +81,7 @@ static DEBUG_COLOR: &[Color] = &[
 /// A color used for debug painting.
 ///
 /// The same color is always returned given the same id, usually the id of a widget.
-/// When painting a widget, [`PaintCtx::debug_color`][crate::contexts::PaintCtx::debug_color] is typically used instead.
+/// When painting a widget, [`PaintCtx::debug_color`][crate::core::PaintCtx::debug_color] is typically used instead.
 pub fn get_debug_color(id: u64) -> Color {
     let color_num = id as usize % DEBUG_COLOR.len();
     DEBUG_COLOR[color_num]

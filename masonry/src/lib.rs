@@ -17,9 +17,10 @@
 //! The to-do-list example looks like this:
 //!
 //! ```
+//! use masonry::app::{AppDriver, DriverCtx};
+//! use masonry::core::{Action, Widget, WidgetId};
 //! use masonry::dpi::LogicalSize;
-//! use masonry::widget::{Button, Flex, Label, Portal, RootWidget, Textbox, WidgetMut};
-//! use masonry::{Action, AppDriver, DriverCtx, WidgetId};
+//! use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
 //! use winit::window::Window;
 //!
 //! struct Driver {
@@ -65,8 +66,8 @@
 //!         .with_min_inner_size(window_size);
 //!
 //!     # return;
-//!     masonry::event_loop_runner::run(
-//!         masonry::event_loop_runner::EventLoop::with_user_event(),
+//!     masonry::app::run(
+//!         masonry::app::EventLoop::with_user_event(),
 //!         window_attributes,
 //!         RootWidget::new(main_widget),
 //!         Driver {
@@ -152,49 +153,17 @@ mod util;
 #[cfg(doc)]
 pub mod doc;
 
-mod action;
-mod app_driver;
-mod box_constraints;
-mod contexts;
-mod event;
-mod paint_scene_helpers;
 mod passes;
-mod render_root;
-mod tracing_backend;
 
-pub mod event_loop_runner;
+pub mod app;
+pub mod core;
 pub mod testing;
-pub mod text;
 pub mod theme;
-pub mod widget;
+pub mod widgets;
 
-pub use cursor_icon;
-pub use dpi;
-pub use parley;
-pub use vello;
-pub use vello::kurbo;
+pub use vello::peniko::color::palette;
+pub use vello::{kurbo, peniko};
+pub use {cursor_icon, dpi, parley, vello};
 
-pub use cursor_icon::{CursorIcon, ParseError as CursorIconParseError};
-pub use kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
-pub use parley::layout::Alignment as TextAlignment;
-pub use parley::style::FontWeight;
-pub use vello::peniko::{color::palette, Color, Gradient};
-
-pub use action::Action;
-pub use app_driver::{AppDriver, DriverCtx};
-pub use box_constraints::BoxConstraints;
-pub use contexts::{
-    AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
-    RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
-};
-pub use event::{
-    AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
-    WindowTheme,
-};
-pub use paint_scene_helpers::UnitPoint;
-pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
-pub use util::{AsAny, Handled};
-pub use widget::widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
-pub use widget::WidgetPod;
-
-pub(crate) use widget::WidgetState;
+// TODO - Move to core?
+pub use util::{AsAny, Handled, UnitPoint};

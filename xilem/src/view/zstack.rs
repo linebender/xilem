@@ -5,8 +5,10 @@
 
 use std::marker::PhantomData;
 
-use masonry::widget::{self, Alignment, ChildAlignment, WidgetMut};
-use masonry::{FromDynWidget, Widget};
+use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::widgets::{
+    Alignment, ChildAlignment, {self},
+};
 use xilem_core::{MessageResult, ViewId};
 
 use crate::core::{
@@ -64,13 +66,13 @@ where
     Action: 'static,
     Seq: ZStackSequence<State, Action>,
 {
-    type Element = Pod<widget::ZStack>;
+    type Element = Pod<widgets::ZStack>;
 
     type ViewState = Seq::SeqState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let mut widget = widget::ZStack::new().with_alignment(self.alignment);
+        let mut widget = widgets::ZStack::new().with_alignment(self.alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for child in elements.into_inner() {
             widget = widget.with_child_pod(child.widget.erased_widget_pod(), child.alignment);
@@ -87,7 +89,7 @@ where
         mut element: Mut<Self::Element>,
     ) {
         if self.alignment != prev.alignment {
-            widget::ZStack::set_alignment(&mut element, self.alignment);
+            widgets::ZStack::set_alignment(&mut element, self.alignment);
         }
 
         let mut splice = ZStackSplice::new(element);
@@ -190,13 +192,13 @@ where
     ) {
         {
             if self.alignment != prev.alignment {
-                widget::ZStack::update_child_alignment(
+                widgets::ZStack::update_child_alignment(
                     &mut element.parent,
                     element.idx,
                     self.alignment,
                 );
             }
-            let mut child = widget::ZStack::child_mut(&mut element.parent, element.idx)
+            let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
                 .expect("ZStackWrapper always has a widget child");
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast());
@@ -209,7 +211,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut child = widget::ZStack::child_mut(&mut element.parent, element.idx)
+        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
             .expect("ZStackWrapper always has a widget child");
         self.view.teardown(view_state, ctx, child.downcast());
     }
@@ -235,7 +237,7 @@ pub struct ZStackElement {
 
 /// A mutable version of `ZStackElement`.
 pub struct ZStackElementMut<'w> {
-    parent: WidgetMut<'w, widget::ZStack>,
+    parent: WidgetMut<'w, widgets::ZStack>,
     idx: usize,
 }
 
@@ -280,7 +282,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStac
         f: impl FnOnce(Mut<Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
-            let mut child = widget::ZStack::child_mut(&mut this.parent, this.idx)
+            let mut child = widgets::ZStack::child_mut(&mut this.parent, this.idx)
                 .expect("This is supposed to be a widget");
             let downcast = child.downcast();
             f(downcast)
@@ -308,12 +310,12 @@ impl<Seq, State, Action> ZStackSequence<State, Action> for Seq where
 /// An implementation of [`ElementSplice`] for `ZStackElement`.
 pub struct ZStackSplice<'w> {
     idx: usize,
-    element: WidgetMut<'w, widget::ZStack>,
+    element: WidgetMut<'w, widgets::ZStack>,
     scratch: AppendVec<ZStackElement>,
 }
 
 impl<'w> ZStackSplice<'w> {
-    fn new(element: WidgetMut<'w, widget::ZStack>) -> Self {
+    fn new(element: WidgetMut<'w, widgets::ZStack>) -> Self {
         Self {
             idx: 0,
             element,
@@ -326,7 +328,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<ZStackElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {
-            widget::ZStack::insert_child_pod(
+            widgets::ZStack::insert_child_pod(
                 &mut self.element,
                 element.widget.erased_widget_pod(),
                 element.alignment,
@@ -337,7 +339,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
     }
 
     fn insert(&mut self, element: ZStackElement) {
-        widget::ZStack::insert_child_pod(
+        widgets::ZStack::insert_child_pod(
             &mut self.element,
             element.widget.erased_widget_pod(),
             element.alignment,
@@ -367,7 +369,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
             };
             f(child)
         };
-        widget::ZStack::remove_child(&mut self.element, self.idx);
+        widgets::ZStack::remove_child(&mut self.element, self.idx);
         ret
     }
 }

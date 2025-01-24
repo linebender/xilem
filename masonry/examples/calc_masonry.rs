@@ -13,14 +13,16 @@
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
 use accesskit::{Node, Role};
-use masonry::dpi::LogicalSize;
-use masonry::text::StyleProperty;
-use masonry::widget::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
-use masonry::{
-    AccessCtx, AccessEvent, Action, AppDriver, BoxConstraints, Color, DriverCtx, EventCtx,
-    LayoutCtx, PaintCtx, Point, PointerEvent, QueryCtx, RegisterCtx, Size, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetPod,
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{
+    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetPod,
 };
+use masonry::dpi::LogicalSize;
+use masonry::kurbo::{Point, Size};
+use masonry::peniko::Color;
+use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use smallvec::{smallvec, SmallVec};
 use tracing::{trace, trace_span, Span};
 use vello::Scene;
@@ -392,8 +394,8 @@ fn main() {
         in_num: false,
     };
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(build_calc()),
         calc_state,

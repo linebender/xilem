@@ -6,10 +6,11 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use masonry::app::{AppDriver, DriverCtx};
+use masonry::core::{Action, PointerButton, StyleProperty, WidgetId};
 use masonry::dpi::LogicalSize;
-use masonry::text::StyleProperty;
-use masonry::widget::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
-use masonry::{Action, AppDriver, Color, DriverCtx, PointerButton, WidgetId};
+use masonry::peniko::Color;
+use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
 use parley::layout::Alignment;
 use winit::window::Window;
 
@@ -118,8 +119,8 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::event_loop_runner::run(
-        masonry::event_loop_runner::EventLoop::with_user_event(),
+    masonry::app::run(
+        masonry::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(main_widget),
         driver,

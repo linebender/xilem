@@ -18,16 +18,20 @@ use wgpu::{
 };
 use winit::event::Ime;
 
-use crate::action::Action;
+use crate::app::{
+    try_init_test_tracing, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+};
+use crate::core::{
+    Action, PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetRef, WindowEvent,
+};
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::event::{PointerButton, PointerEvent, PointerState, TextEvent, WindowEvent};
+use crate::kurbo::{Point, Size, Vec2};
 use crate::passes::anim::run_update_anim_pass;
-use crate::render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use crate::peniko::Color;
 use crate::testing::screenshots::get_image_diff;
 use crate::testing::snapshot_utils::get_cargo_workspace;
-use crate::tracing_backend::try_init_test_tracing;
-use crate::widget::{WidgetMut, WidgetRef};
-use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
+use crate::Handled;
 
 /// A safe headless environment to test widgets in.
 ///
@@ -67,9 +71,9 @@ use crate::{Color, Handled, Point, Size, Vec2, Widget, WidgetId};
 /// ```
 /// use insta::assert_debug_snapshot;
 ///
-/// use masonry::PointerButton;
-/// use masonry::widget::Button;
-/// use masonry::Action;
+/// use masonry::core::PointerButton;
+/// use masonry::widgets::Button;
+/// use masonry::core::Action;
 /// use masonry::assert_render_snapshot;
 /// use masonry::testing::widget_ids;
 /// use masonry::testing::TestHarness;

@@ -85,7 +85,7 @@ Note that we store a size, and not a position: our widget's position is managed 
 First we implement event methods:
 
 ```rust,ignore
-use masonry::{
+use masonry::core::{
     Widget, EventCtx, PointerEvent, TextEvent, AccessEvent, Action
 };
 
@@ -129,7 +129,7 @@ We don't handle any text events.
 Since our widget isn't animated and doesn't react to changes in status, we can leave the `on_anim_frame` and `update` implementations empty:
 
 ```rust,ignore
-use masonry::{
+use masonry::core::{
     UpdateCtx, Update,
 };
 
@@ -148,7 +148,7 @@ impl Widget for ColorRectangle {
 Next we implement layout:
 
 ```rust,ignore
-use masonry::{
+use masonry::core::{
     LayoutCtx, BoxConstraints
 };
 
@@ -173,7 +173,7 @@ We return our stored size, clamped between the min and max constraints.
 Next we write our render methods:
 
 ```rust,ignore
-use masonry::{
+use masonry::core::{
     PaintCtx, AccessCtx
 };
 use vello::Scene;
@@ -239,7 +239,7 @@ impl Widget for ColorRectangle {
 And last, we stub in some additional methods:
 
 ```rust,ignore
-use masonry::{
+use masonry::core::{
     RegisterCtx, WidgetId
 };
 use smallvec::SmallVec;
@@ -412,12 +412,12 @@ This document was about how to create a simple leaf widget.
 
 The next one is about creating a container widgets, and the complications it adds.
 
-[`Widget`]: crate::Widget
-[`WidgetMut`]: crate::widget::WidgetMut
-[`PaintCtx::size()`]: crate::PaintCtx::size
-[`UpdateCtx::request_paint_only()`]: crate::UpdateCtx::request_paint_only
-[`ButtonPressed`]: crate::Action::ButtonPressed
+[`Widget`]: crate::core::Widget
+[`WidgetMut`]: crate::core::WidgetMut
+[`PaintCtx::size()`]: crate::core::PaintCtx::size
+[`UpdateCtx::request_paint_only()`]: crate::core::UpdateCtx::request_paint_only
+[`ButtonPressed`]: crate::core::Action::ButtonPressed
 [`vello::Scene`]: crate::vello::Scene
 [`Role::Button`]: accesskit::Role::Button
-[`RenderRoot::edit_root_widget()`]: crate::RenderRoot::edit_root_widget
-[`Label::set_text()`]: crate::widget::Label::set_text
+[`RenderRoot::edit_root_widget()`]: crate::app::RenderRoot::edit_root_widget
+[`Label::set_text()`]: crate::widgets::Label::set_text

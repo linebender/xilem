@@ -17,13 +17,15 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 
-use crate::event::{PointerEvent, TextEvent};
-use crate::widget::widget::find_widget_at_pos;
-use crate::widget::{SizedBox, WidgetRef};
-use crate::{
-    AccessCtx, AccessEvent, AsAny, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx,
-    PaintCtx, Point, QueryCtx, RegisterCtx, Size, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+use crate::core::{
+    find_widget_at_pos, AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx,
+    PaintCtx, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetPod, WidgetRef,
 };
+use crate::kurbo::{Point, Size};
+use crate::widgets::SizedBox;
+use crate::AsAny;
+use cursor_icon::CursorIcon;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
 pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
@@ -78,8 +80,8 @@ pub struct ReplaceChild {
 /// Make one like this:
 ///
 /// ```
-/// # use masonry::widget::Label;
-/// # use masonry::{Update};
+/// # use masonry::widgets::Label;
+/// # use masonry::core::Update;
 /// use masonry::testing::{Recording, Record, TestWidgetExt};
 /// use masonry::testing::TestHarness;
 /// use assert_matches::assert_matches;

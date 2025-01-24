@@ -10,9 +10,8 @@
 use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
-use crate::render_root::RenderRootState;
-use crate::widget::WidgetArena;
-use crate::{QueryCtx, Widget, WidgetId, WidgetState};
+use crate::app::RenderRootState;
+use crate::core::{QueryCtx, Widget, WidgetArena, WidgetId, WidgetState};
 
 pub(crate) mod accessibility;
 pub(crate) mod anim;
