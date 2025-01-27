@@ -27,6 +27,9 @@ pub use sized_box::*;
 mod spinner;
 pub use spinner::*;
 
+mod slider;
+pub use slider::*;
+
 mod image;
 pub use image::*;
 

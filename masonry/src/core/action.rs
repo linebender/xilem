@@ -22,6 +22,10 @@ pub enum Action {
     TextEntered(String),
     /// A checkbox was toggled.
     CheckboxToggled(bool),
+    /// Slider value changed.
+    SliderValueChanged(f64),
+    /// Slider editing state changed.
+    SliderEditingChanged(bool),
     // FIXME - This is a huge hack
     /// Other.
     Other(Box<dyn Any + Send>),
@@ -34,6 +38,8 @@ impl PartialEq for Action {
             (Self::TextChanged(l0), Self::TextChanged(r0)) => l0 == r0,
             (Self::TextEntered(l0), Self::TextEntered(r0)) => l0 == r0,
             (Self::CheckboxToggled(l0), Self::CheckboxToggled(r0)) => l0 == r0,
+            (Self::SliderValueChanged(l0), Self::SliderValueChanged(r0)) => l0 == r0,
+            (Self::SliderEditingChanged(l0), Self::SliderEditingChanged(r0)) => l0 == r0,
             // FIXME
             // (Self::Other(val_l), Self::Other(val_r)) => false,
             _ => false,
@@ -48,6 +54,13 @@ impl std::fmt::Debug for Action {
             Self::TextChanged(text) => f.debug_tuple("TextChanged").field(text).finish(),
             Self::TextEntered(text) => f.debug_tuple("TextEntered").field(text).finish(),
             Self::CheckboxToggled(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),
+            Self::SliderValueChanged(value) => {
+                f.debug_tuple("SliderValueChanged").field(value).finish()
+            }
+            Self::SliderEditingChanged(editing) => f
+                .debug_tuple("SliderEditingChanged")
+                .field(editing)
+                .finish(),
             Self::Other(_) => write!(f, "Other(...)"),
         }
     }

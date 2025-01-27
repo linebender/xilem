@@ -9,10 +9,18 @@ use masonry::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
+use xilem::view::{
+    button, checkbox, flex, flex_item, progress_bar, sized_box, slider, Axis, FlexSpacer,
+};
 use xilem::{Color, WidgetView, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
+
+#[derive(Clone, Copy, PartialEq)]
+enum SliderDirection {
+    Horizontal,
+    Vertical,
+}
 
 /// The state of the entire application.
 ///
@@ -20,6 +28,8 @@ const SPACER_WIDTH: f64 = 10.;
 struct WidgetGallery {
     progress: Option<f64>,
     checked: bool,
+    slider_value: f64,
+    slider_direction: SliderDirection,
 }
 
 fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
@@ -29,15 +39,11 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
             "set indeterminate progress",
             data.is_none(),
             |state: &mut Option<f64>, checked| {
-                if checked {
-                    *state = None;
-                } else {
-                    *state = Some(0.5);
-                }
+                *state = if checked { None } else { Some(0.5) };
             },
         ),
         button("change progress", |state: &mut Option<f64>| match state {
-            Some(ref mut v) => *v = (*v + 0.1).rem_euclid(1.),
+            Some(v) => *v = (*v + 0.1).rem_euclid(1.),
             None => *state = Some(0.5),
         }),
     ))
@@ -47,6 +53,19 @@ fn checkbox_view(data: bool) -> impl WidgetView<bool> {
     checkbox("a simple checkbox", data, |data, new_state| {
         *data = new_state;
     })
+}
+
+fn slider_view(data: f64, direction: SliderDirection) -> impl WidgetView<f64> {
+    let axis = match direction {
+        SliderDirection::Horizontal => Axis::Horizontal,
+        SliderDirection::Vertical => Axis::Vertical,
+    };
+
+    slider(0.0..1.0, data, |state, value| *state = value)
+        .with_color(Color::from_rgb8(100, 150, 200))
+        .with_track_color(Color::from_rgb8(200, 150, 100))
+        .with_step(0.1)
+        .direction(axis)
 }
 
 /// Wrap `inner` in a box with a border
@@ -79,21 +98,62 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
                 flex_item(border_box(checkbox_view(data.checked)), 1.),
                 |data: &mut WidgetGallery, thunk| thunk.call(&mut data.checked),
             ),
+            flex_item(
+                sized_box(border_box(
+                    flex((
+                        adapt(
+                            sized_box(button(
+                                match data.slider_direction {
+                                    SliderDirection::Horizontal => "Switch to Vertical",
+                                    SliderDirection::Vertical => "Switch to Horizontal",
+                                },
+                                |state: &mut WidgetGallery| {
+                                    state.slider_direction = match state.slider_direction {
+                                        SliderDirection::Horizontal => SliderDirection::Vertical,
+                                        SliderDirection::Vertical => SliderDirection::Horizontal,
+                                    };
+                                },
+                            ))
+                            .width(200.0)
+                            .height(40.0),
+                            |data: &mut WidgetGallery, thunk| thunk.call(data),
+                        ),
+                        adapt(
+                            sized_box(slider_view(data.slider_value, data.slider_direction))
+                                .width(match data.slider_direction {
+                                    SliderDirection::Horizontal => 300.0,
+                                    SliderDirection::Vertical => 100.0,
+                                })
+                                .height(match data.slider_direction {
+                                    SliderDirection::Horizontal => 100.0,
+                                    SliderDirection::Vertical => 300.0,
+                                }),
+                            |data: &mut WidgetGallery, thunk| thunk.call(&mut data.slider_value),
+                        ),
+                    ))
+                    .direction(Axis::Vertical)
+                    .gap(20.0),
+                ))
+                .height(250.0)
+                .width(450.0),
+                1.,
+            ),
         ))
         .gap(SPACER_WIDTH)
         .direction(Axis::Horizontal),
     )
+    .padding(20.0)
     .border(Color::TRANSPARENT, SPACER_WIDTH)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
-    // Set up the initial state of the app
     let data = WidgetGallery {
         progress: Some(0.5),
         checked: false,
+        slider_value: 0.5,
+        slider_direction: SliderDirection::Horizontal,
     };
 
-    // Instantiate and run the UI using the passed event loop.
     let app = Xilem::new(data, app_logic);
     let min_window_size = LogicalSize::new(300., 200.);
     let window_size = LogicalSize::new(650., 500.);
