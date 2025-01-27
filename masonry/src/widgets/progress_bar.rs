@@ -62,16 +62,16 @@ impl ProgressBar {
 
 // --- MARK: WIDGETMUT ---
 impl ProgressBar {
-    pub fn set_progress(this: &mut WidgetMut<'_, Self>, mut progress: Option<f64>) {
+    pub fn set_progress(self: &mut WidgetMut<'_, Self>, mut progress: Option<f64>) {
         clamp_progress(&mut progress);
-        let progress_changed = this.widget.progress != progress;
+        let progress_changed = self.widget.progress != progress;
         if progress_changed {
-            this.widget.progress = progress;
-            let mut label = this.ctx.get_mut(&mut this.widget.label);
+            self.widget.progress = progress;
+            let mut label = self.ctx.get_mut(&mut self.widget.label);
             Label::set_text(&mut label, Self::value(progress));
         }
-        this.ctx.request_layout();
-        this.ctx.request_render();
+        self.ctx.request_layout();
+        self.ctx.request_render();
     }
 }
 
