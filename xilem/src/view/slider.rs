@@ -60,60 +60,70 @@ pub struct Slider<F, State, Action> {
 impl<F, State, Action> ViewMarker for Slider<F, State, Action> {}
 
 impl<F, State, Action> Slider<F, State, Action> {
+    #[must_use]
     /// Set the slider's direction (horizontal or vertical).
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
     }
 
+    #[must_use]
     /// Set the slider's thumb color.
     pub fn with_color(mut self, color: impl Into<Color>) -> Self {
         self.color = Some(color.into());
         self
     }
 
+    #[must_use]
     /// Set the slider's track color.
     pub fn with_track_color(mut self, track_color: impl Into<Color>) -> Self {
         self.track_color = Some(track_color.into());
         self
     }
 
+    #[must_use]
     /// Set the slider's step amount.
     pub fn with_step(mut self, step: f64) -> Self {
         self.step = Some(step);
         self
     }
 
+    #[must_use]
     /// Set the slider's thumb radii.
     pub fn with_thumb_radii(mut self, radii: impl Into<RoundedRectRadii>) -> Self {
         self.thumb_radii = Some(radii.into());
         self
     }
 
+    #[must_use]
     /// Set the slider's track radii.
     pub fn with_track_radii(mut self, radii: impl Into<RoundedRectRadii>) -> Self {
         self.track_radii = Some(radii.into());
         self
     }
 
+    #[must_use]
     /// Set the slider's hover glow color.
     pub fn with_hover_glow_color(mut self, color: impl Into<Color>) -> Self {
         self.hover_glow_color = Some(color.into());
         self
     }
 
+    #[must_use]
     /// Set the slider's hover glow blur radius.
     pub fn with_hover_glow_blur_radius(mut self, blur_radius: f64) -> Self {
         self.hover_glow_blur_radius = Some(blur_radius);
         self
     }
 
+    #[must_use]
     /// Set the slider's hover glow spread radius.
     pub fn with_hover_glow_spread_radius(mut self, spread_radius: f64) -> Self {
         self.hover_glow_spread_radius = Some(spread_radius);
         self
     }
 
+    #[must_use]
     /// Set the callback for editing state changes.
     pub fn on_editing_changed(
         mut self,
