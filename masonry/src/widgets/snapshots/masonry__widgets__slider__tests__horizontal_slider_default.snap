@@ -1,0 +1,7 @@
+---
+source: masonry/src/widgets/slider.rs
+expression: harness.root_widget()
+---
+SizedBox(
+    Slider<50>,
+)
