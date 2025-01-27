@@ -160,20 +160,20 @@ impl VariableLabel {
 // --- MARK: WIDGETMUT ---
 impl VariableLabel {
     /// Get the underlying label for this widget.
-    pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
-        this.ctx.get_mut(&mut this.widget.label)
+    pub fn label_mut<'t>(self: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
+        self.ctx.get_mut(&mut self.widget.label)
     }
 
     /// Set the text of this label.
-    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
-        Label::set_text(&mut Self::label_mut(this), new_text);
+    pub fn set_text(self: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
+        Label::set_text(&mut self.label_mut(), new_text);
     }
 
     /// Set the weight which this font will target.
-    pub fn set_target_weight(this: &mut WidgetMut<'_, Self>, target: f32, over_millis: f32) {
-        this.widget.weight.move_to(target, over_millis);
-        this.ctx.request_layout();
-        this.ctx.request_anim_frame();
+    pub fn set_target_weight(self: &mut WidgetMut<'_, Self>, target: f32, over_millis: f32) {
+        self.widget.weight.move_to(target, over_millis);
+        self.ctx.request_layout();
+        self.ctx.request_anim_frame();
     }
 }
 

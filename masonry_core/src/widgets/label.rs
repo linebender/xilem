@@ -214,13 +214,13 @@ impl Label {
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
     /// Use [`set_brush`](Self::set_brush) instead.
     pub fn insert_style(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
     ) -> Option<StyleProperty> {
-        let old = this.widget.insert_style_inner(property.into());
+        let old = self.widget.insert_style_inner(property.into());
 
-        this.widget.styles_changed = true;
-        this.ctx.request_layout();
+        self.widget.styles_changed = true;
+        self.ctx.request_layout();
         old
     }
 
@@ -230,11 +230,11 @@ impl Label {
     /// In most cases, these are the defaults for this widget.
     ///
     /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
-    pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
-        this.widget.styles.retain(f);
+    pub fn retain_styles(self: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
+        self.widget.styles.retain(f);
 
-        this.widget.styles_changed = true;
-        this.ctx.request_layout();
+        self.widget.styles_changed = true;
+        self.ctx.request_layout();
     }
 
     /// Remove the style with the discriminant `property`.
@@ -248,65 +248,65 @@ impl Label {
     ///
     /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn remove_style(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,
     ) -> Option<StyleProperty> {
-        let old = this.widget.styles.remove(property);
+        let old = self.widget.styles.remove(property);
 
-        this.widget.styles_changed = true;
-        this.ctx.request_layout();
+        self.widget.styles_changed = true;
+        self.ctx.request_layout();
         old
     }
 
     /// Replace the text of this widget.
-    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
-        this.widget.text = new_text.into();
+    pub fn set_text(self: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
+        self.widget.text = new_text.into();
 
-        this.widget.styles_changed = true;
-        this.ctx.request_layout();
+        self.widget.styles_changed = true;
+        self.ctx.request_layout();
     }
 
     /// The runtime requivalent of [`with_line_break_mode`](Self::with_line_break_mode).
-    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
-        this.widget.line_break_mode = line_break_mode;
+    pub fn set_line_break_mode(self: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
+        self.widget.line_break_mode = line_break_mode;
         // We don't need to set an internal invalidation, as `max_advance` is always recalculated
-        this.ctx.request_layout();
+        self.ctx.request_layout();
     }
 
     /// The runtime requivalent of [`with_alignment`](Self::with_alignment).
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
-        this.widget.alignment = alignment;
+    pub fn set_alignment(self: &mut WidgetMut<'_, Self>, alignment: Alignment) {
+        self.widget.alignment = alignment;
 
-        this.widget.needs_alignment = true;
-        this.ctx.request_layout();
+        self.widget.needs_alignment = true;
+        self.ctx.request_layout();
     }
 
     #[doc(alias = "set_color")]
     /// The runtime requivalent of [`with_brush`](Self::with_brush).
-    pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
+    pub fn set_brush(self: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         let brush = brush.into();
-        this.widget.brush = brush;
+        self.widget.brush = brush;
 
         // We need to repaint unless the disabled brush is currently being used.
-        if this.widget.disabled_brush.is_none() || this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
+        if self.widget.disabled_brush.is_none() || self.ctx.is_disabled() {
+            self.ctx.request_paint_only();
         }
     }
 
     /// The runtime requivalent of [`with_disabled_brush`](Self::with_disabled_brush).
-    pub fn set_disabled_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
+    pub fn set_disabled_brush(self: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
         let brush = brush.into();
-        this.widget.disabled_brush = brush;
+        self.widget.disabled_brush = brush;
 
-        if this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
+        if self.ctx.is_disabled() {
+            self.ctx.request_paint_only();
         }
     }
 
     /// The runtime requivalent of [`with_hint`](Self::with_hint).
-    pub fn set_hint(this: &mut WidgetMut<'_, Self>, hint: bool) {
-        this.widget.hint = hint;
-        this.ctx.request_paint_only();
+    pub fn set_hint(self: &mut WidgetMut<'_, Self>, hint: bool) {
+        self.widget.hint = hint;
+        self.ctx.request_paint_only();
     }
 }
 

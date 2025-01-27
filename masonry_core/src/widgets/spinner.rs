@@ -61,14 +61,14 @@ impl Default for Spinner {
 // --- MARK: WIDGETMUT ---
 impl Spinner {
     /// Set the spinner's color.
-    pub fn set_color(this: &mut WidgetMut<'_, Self>, color: impl Into<Color>) {
-        this.widget.color = color.into();
-        this.ctx.request_paint_only();
+    pub fn set_color(self: &mut WidgetMut<'_, Self>, color: impl Into<Color>) {
+        self.widget.color = color.into();
+        self.ctx.request_paint_only();
     }
 
     /// Reset the spinner's color to its default value.
-    pub fn reset_color(this: &mut WidgetMut<'_, Self>) {
-        Self::set_color(this, DEFAULT_SPINNER_COLOR);
+    pub fn reset_color(self: &mut WidgetMut<'_, Self>) {
+        self.set_color(DEFAULT_SPINNER_COLOR);
     }
 }
 

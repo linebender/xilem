@@ -40,6 +40,7 @@
     reason = "Potentially controversial code style"
 )]
 #![expect(clippy::single_match, reason = "General policy not decided")]
+#![feature(arbitrary_self_types)]
 
 // TODO - Add logo
 

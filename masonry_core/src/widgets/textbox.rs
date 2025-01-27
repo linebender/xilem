@@ -92,8 +92,8 @@ impl Textbox {
     /// Edit the underlying text area.
     ///
     /// Used to modify most properties of the text.
-    pub fn text_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextArea<true>> {
-        this.ctx.get_mut(&mut this.widget.text)
+    pub fn text_mut<'t>(self: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, TextArea<true>> {
+        self.ctx.get_mut(&mut self.widget.text)
     }
 
     /// Whether to clip the text to the drawn boundaries.
@@ -102,9 +102,9 @@ impl Textbox {
     /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
     ///
     /// The runtime requivalent of [`with_clip`](Self::with_clip).
-    pub fn set_clip(this: &mut WidgetMut<'_, Self>, clip: bool) {
-        this.widget.clip = clip;
-        this.ctx.request_layout();
+    pub fn set_clip(self: &mut WidgetMut<'_, Self>, clip: bool) {
+        self.widget.clip = clip;
+        self.ctx.request_layout();
     }
 }
 

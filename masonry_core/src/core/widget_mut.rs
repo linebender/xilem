@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::TypeId;
+use std::ops::Receiver;
 
 use anymap3::Entry;
 
@@ -31,6 +32,10 @@ pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub widget: &'a mut W,
     /// A context handle that points to the widget state and other relevant data.
     pub ctx: MutateCtx<'a>,
+}
+
+impl<W: Widget + ?Sized> Receiver for WidgetMut<'_, W> {
+    type Target = W;
 }
 
 impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {

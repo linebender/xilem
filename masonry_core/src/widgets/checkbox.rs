@@ -47,22 +47,22 @@ impl Checkbox {
 // --- MARK: WIDGETMUT ---
 impl Checkbox {
     /// Check or uncheck the box.
-    pub fn set_checked(this: &mut WidgetMut<'_, Self>, checked: bool) {
-        this.widget.checked = checked;
+    pub fn set_checked(self: &mut WidgetMut<'_, Self>, checked: bool) {
+        self.widget.checked = checked;
         // Checked state impacts appearance and accessibility node
-        this.ctx.request_render();
+        self.ctx.request_render();
     }
 
     /// Set the text.
     ///
     /// We enforce this to be an `ArcStr` to make the allocation explicit.
-    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: ArcStr) {
-        Label::set_text(&mut Self::label_mut(this), new_text);
+    pub fn set_text(self: &mut WidgetMut<'_, Self>, new_text: ArcStr) {
+        Label::set_text(&mut self.label_mut(), new_text);
     }
 
     /// Get a mutable reference to the label.
-    pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
-        this.ctx.get_mut(&mut this.widget.label)
+    pub fn label_mut<'t>(self: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
+        self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
@@ -312,15 +312,12 @@ mod tests {
 
             harness.edit_root_widget(|mut checkbox| {
                 let mut checkbox = checkbox.downcast::<Checkbox>();
-                Checkbox::set_checked(&mut checkbox, true);
-                Checkbox::set_text(
-                    &mut checkbox,
-                    ArcStr::from("The quick brown fox jumps over the lazy dog"),
-                );
+                checkbox.set_checked(true);
+                checkbox.set_text("The quick brown fox jumps over the lazy dog".into());
 
-                let mut label = Checkbox::label_mut(&mut checkbox);
-                Label::set_brush(&mut label, PRIMARY_LIGHT);
-                Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
+                let mut label = checkbox.label_mut();
+                label.set_brush(PRIMARY_LIGHT);
+                label.insert_style(StyleProperty::FontSize(20.0));
             });
 
             harness.render()

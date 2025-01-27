@@ -89,13 +89,13 @@ impl Button {
 // --- MARK: WIDGETMUT ---
 impl Button {
     /// Set the text.
-    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
-        Label::set_text(&mut Self::label_mut(this), new_text);
+    pub fn set_text(self: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
+        Label::set_text(&mut self.label_mut(), new_text);
     }
 
     /// Get a mutable reference to the label.
-    pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
-        this.ctx.get_mut(&mut this.widget.label)
+    pub fn label_mut<'t>(self: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
+        self.ctx.get_mut(&mut self.widget.label)
     }
 }
 
