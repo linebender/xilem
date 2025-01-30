@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![warn(rustdoc::broken_intra_doc_links, clippy::doc_markdown, missing_docs)]
-
 //! Configures a suitable default [`tracing`] implementation for a Masonry application.
 //!
 //! This uses a custom log format specialised for GUI applications,
