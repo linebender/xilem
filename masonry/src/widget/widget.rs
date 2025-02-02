@@ -90,7 +90,13 @@ pub trait Widget: AsAny {
     ///
     /// When you create a timer, you can stash the ID returned and compare it against
     /// `event.id`.
-    fn on_timer_expired(&mut self, ctx: &mut EventCtx, event: &TimerEvent) {}
+    fn on_timer_expired(&mut self, ctx: &mut EventCtx, event: &TimerEvent) {
+        tracing::info!(
+            "default on_timer_expired handler called, id={} debug_text={:?}",
+            ctx.widget_id(),
+            self.get_debug_text()
+        );
+    }
 
     /// Called at the beginning of a new animation frame.
     ///

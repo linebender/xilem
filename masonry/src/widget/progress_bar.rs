@@ -231,14 +231,14 @@ impl Widget for ProgressBar {
     }
 
     fn on_timer_expired(&mut self, ctx: &mut EventCtx, _event: &TimerEvent) {
-        println!("on_timer_expired");
+        tracing::debug!("progress_bar: on_timer_expired");
         self.reset_animation();
         ctx.request_anim_frame();
         ctx.request_paint_only();
     }
 
     fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
-        println!("on_anim_frame");
+        tracing::debug!("progress_bar: on_anim_frame");
         // pixel per 1ms
         const NS_PER_PIXEL: f64 = 1_000_000.;
         const DURATION_BETWEEN_ANIMATIONS: Duration = Duration::from_millis(2_500);
@@ -258,7 +258,7 @@ impl Widget for ProgressBar {
             // animation finished;
             self.anim_pixel_position = 0.;
             self.anim_prev_interval = None;
-            ctx.request_timer(DURATION_BETWEEN_ANIMATIONS);
+            ctx.request_timer_rel(DURATION_BETWEEN_ANIMATIONS);
         } else {
             ctx.request_anim_frame();
             ctx.request_paint_only();

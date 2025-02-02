@@ -148,6 +148,7 @@ pub(crate) fn run_on_elapsed_timer_pass(root: &mut RenderRoot, timer: &Timer) ->
         &event,
         false,
         |widget, ctx, event| {
+            tracing::info!("running on_timer_expired on widget {:?}", timer.widget_id);
             widget.on_timer_expired(ctx, event);
             // don't traverse for this event
             ctx.set_handled();

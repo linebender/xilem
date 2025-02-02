@@ -663,6 +663,7 @@ impl MasonryState<'_> {
 
     // --- MARK: TIMERS ---
     pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {
+        tracing::trace!("looking for elapsed timers");
         // check if timers have elapsed and set event loop to wake at next timer deadline
         let now = Instant::now();
         loop {
@@ -670,6 +671,7 @@ impl MasonryState<'_> {
                 break;
             };
             if next_timer.deadline > now {
+                tracing::trace!("checking timer deadline ({:?}) against current time ({now:?}", next_timer.deadline);
                 break;
             }
             // timer has elapsed - remove from heap and handle
@@ -677,14 +679,17 @@ impl MasonryState<'_> {
                 debug_panic!("should be unreachable: peek was Some");
                 break;
             };
+            tracing::trace!("found elapsed timer with id {elapsed_timer:?}");
             self.render_root.handle_elapsed_timer(elapsed_timer);
         }
     }
 
     pub fn handle_about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         if let Some(next_timer) = self.timers.peek() {
+            tracing::trace!("wait until {:?}", next_timer.deadline);
             event_loop.set_control_flow(ControlFlow::WaitUntil(next_timer.deadline));
         } else {
+            tracing::trace!("wait until next event");
             event_loop.set_control_flow(ControlFlow::Wait);
         }
     }
