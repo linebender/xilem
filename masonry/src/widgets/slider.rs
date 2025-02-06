@@ -7,7 +7,7 @@ use smallvec::SmallVec;
 use tracing::{trace_span, Span};
 use vello::{
     kurbo::{Affine, Point, Rect, RoundedRect, RoundedRectRadii, Shape as _, Size},
-    peniko::Color,
+    peniko::{Brush, Color},
     Scene,
 };
 
@@ -29,8 +29,8 @@ pub struct Slider {
     min: f64,
     max: f64,
     step: f64,
-    color: Color,
-    track_color: Color,
+    thumb_color: Brush,
+    track_color: Brush,
     editing: bool,
     is_dragging: bool,
     grab_anchor: Option<f64>,
@@ -41,16 +41,6 @@ pub struct Slider {
     hover_glow_blur_radius: f64,
     hover_glow_spread_radius: f64,
     track_rect: Option<RoundedRect>,
-}
-
-// Constants
-impl Slider {
-    const DEFAULT_WIDTH: f64 = 200.0;
-    const DEFAULT_HEIGHT: f64 = 40.0;
-    const BASE_TRACK_THICKNESS: f64 = 4.0;
-    const TRACK_PADDING: f64 = 5.0;
-    const THUMB_WIDTH: f64 = 12.0;
-    const THUMB_HEIGHT: f64 = 20.0;
 }
 
 // Constructor and methods
@@ -67,30 +57,30 @@ impl Slider {
             value: value.clamp(min, max),
             min,
             max,
-            step: 1.0,
-            color: theme::PRIMARY_LIGHT,
-            track_color: theme::PRIMARY_DARK,
+            step: theme::SLIDER_STEP,
+            thumb_color: theme::PRIMARY_LIGHT.into(),
+            track_color: theme::PRIMARY_DARK.into(),
             editing: false,
             is_dragging: false,
             grab_anchor: None,
-            thumb_radii: RoundedRectRadii::from_single_radius(5.0),
-            track_radii: RoundedRectRadii::from_single_radius(2.0),
+            thumb_radii: RoundedRectRadii::from_single_radius(theme::SLIDER_THUMB_RADIUS),
+            track_radii: RoundedRectRadii::from_single_radius(theme::SLIDER_TRACK_RADIUS),
             is_hovered: false,
-            hover_glow_color: Color::from_rgba8(255, 255, 255, 50),
-            hover_glow_blur_radius: 5.0,
-            hover_glow_spread_radius: 2.0,
+            hover_glow_color: theme::SLIDER_HOVER_GLOW_COLOR,
+            hover_glow_blur_radius: theme::SLIDER_HOVER_GLOW_BLUR_RADIUS,
+            hover_glow_spread_radius: theme::SLIDER_HOVER_GLOW_SPREAD_RADIUS,
             track_rect: None,
         }
     }
 
     /// Sets the slider's color.
-    pub fn with_color(mut self, color: impl Into<Color>) -> Self {
-        self.color = color.into();
+    pub fn with_thumb_color(mut self, color: impl Into<Brush>) -> Self {
+        self.thumb_color = color.into();
         self
     }
 
     /// Sets the slider's track color.
-    pub fn with_track_color(mut self, track_color: impl Into<Color>) -> Self {
+    pub fn with_track_color(mut self, track_color: impl Into<Brush>) -> Self {
         self.track_color = track_color.into();
         self
     }
@@ -149,22 +139,23 @@ impl Slider {
 
         let (pos, size) = match self.axis {
             Axis::Horizontal => {
-                let x = track_rect.rect().x0 + ratio * (track_rect.width() - Self::THUMB_WIDTH);
-                let y = (layout_size.height - Self::THUMB_HEIGHT) / 2.0;
+                let x =
+                    track_rect.rect().x0 + ratio * (track_rect.width() - theme::SLIDER_THUMB_WIDTH);
+                let y = (layout_size.height - theme::SLIDER_THUMB_HEIGHT) / 2.0;
                 (
                     Point::new(x, y),
-                    Size::new(Self::THUMB_WIDTH, Self::THUMB_HEIGHT),
+                    Size::new(theme::SLIDER_THUMB_WIDTH, theme::SLIDER_THUMB_HEIGHT),
                 )
             }
             Axis::Vertical => {
                 // Vertical axis needs reversed coordinates (0.0 at bottom, 1.0 at top)
                 let reversed_ratio = 1.0 - ratio;
-                let x = (layout_size.width - Self::THUMB_HEIGHT) / 2.0; // Swap width and height
+                let x = (layout_size.width - theme::SLIDER_THUMB_HEIGHT) / 2.0; // Swap width and height
                 let y = track_rect.rect().y0
-                    + reversed_ratio * (track_rect.height() - Self::THUMB_WIDTH);
+                    + reversed_ratio * (track_rect.height() - theme::SLIDER_THUMB_WIDTH);
                 (
                     Point::new(x, y),
-                    Size::new(Self::THUMB_HEIGHT, Self::THUMB_WIDTH), // Swap width and height
+                    Size::new(theme::SLIDER_THUMB_HEIGHT, theme::SLIDER_THUMB_WIDTH), // Swap width and height
                 )
             }
         };
@@ -186,8 +177,8 @@ impl Slider {
         if let Some(anchor) = self.grab_anchor {
             let track_rect = self.track_rect.expect("Track rect should be set");
             let thumb_size = match self.axis {
-                Axis::Horizontal => Self::THUMB_WIDTH,
-                Axis::Vertical => Self::THUMB_WIDTH, // Use swapped width
+                Axis::Horizontal => theme::SLIDER_THUMB_WIDTH,
+                Axis::Vertical => theme::SLIDER_THUMB_WIDTH, // Use swapped width
             };
 
             let mouse_major = self.axis.major_pos(mouse_pos);
@@ -237,13 +228,13 @@ impl Slider {
     }
 
     /// Sets the slider's color.
-    pub fn set_color(this: &mut WidgetMut<'_, Self>, color: impl Into<Color>) {
-        this.widget.color = color.into();
+    pub fn set_thumb_color(this: &mut WidgetMut<'_, Self>, color: impl Into<Brush>) {
+        this.widget.thumb_color = color.into();
         this.ctx.request_paint_only();
     }
 
     /// Sets the slider's track color.
-    pub fn set_track_color(this: &mut WidgetMut<'_, Self>, track_color: impl Into<Color>) {
+    pub fn set_track_color(this: &mut WidgetMut<'_, Self>, track_color: impl Into<Brush>) {
         this.widget.track_color = track_color.into();
         this.ctx.request_paint_only();
     }
@@ -363,12 +354,12 @@ impl Widget for Slider {
     fn layout(&mut self, _: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let (main, cross) = match self.axis {
             Axis::Horizontal => (
-                bc.max().width.min(Self::DEFAULT_WIDTH),
-                bc.max().height.min(Self::DEFAULT_HEIGHT),
+                bc.max().width.min(theme::SLIDER_DEFAULT_WIDTH),
+                bc.max().height.min(theme::SLIDER_DEFAULT_HEIGHT),
             ),
             Axis::Vertical => (
-                bc.max().height.min(Self::DEFAULT_HEIGHT),
-                bc.max().width.min(Self::DEFAULT_WIDTH),
+                bc.max().height.min(theme::SLIDER_DEFAULT_HEIGHT),
+                bc.max().width.min(theme::SLIDER_DEFAULT_WIDTH),
             ),
         };
 
@@ -377,16 +368,16 @@ impl Widget for Slider {
         // Calculate track position (adjusted for padding)
         let track_rect = match self.axis {
             Axis::Horizontal => Rect::new(
-                Self::TRACK_PADDING,
-                (size.height - Self::BASE_TRACK_THICKNESS) / 2.0,
-                size.width - Self::TRACK_PADDING,
-                (size.height + Self::BASE_TRACK_THICKNESS) / 2.0,
+                theme::SLIDER_TRACK_PADDING,
+                (size.height - theme::SLIDER_BASE_TRACK_THICKNESS) / 2.0,
+                size.width - theme::SLIDER_TRACK_PADDING,
+                (size.height + theme::SLIDER_BASE_TRACK_THICKNESS) / 2.0,
             ),
             Axis::Vertical => Rect::new(
-                (size.width - Self::BASE_TRACK_THICKNESS) / 2.0,
-                Self::TRACK_PADDING,
-                (size.width + Self::BASE_TRACK_THICKNESS) / 2.0,
-                size.height - Self::TRACK_PADDING,
+                (size.width - theme::SLIDER_BASE_TRACK_THICKNESS) / 2.0,
+                theme::SLIDER_TRACK_PADDING,
+                (size.width + theme::SLIDER_BASE_TRACK_THICKNESS) / 2.0,
+                size.height - theme::SLIDER_TRACK_PADDING,
             ),
         }
         .to_rounded_rect(self.track_radii);
@@ -400,7 +391,7 @@ impl Widget for Slider {
             scene.fill(
                 vello::peniko::Fill::NonZero,
                 Affine::IDENTITY,
-                self.track_color,
+                &self.track_color,
                 None,
                 track,
             );
@@ -411,7 +402,7 @@ impl Widget for Slider {
         scene.fill(
             vello::peniko::Fill::NonZero,
             Affine::IDENTITY,
-            self.color,
+            &self.thumb_color,
             None,
             &thumb,
         );
@@ -522,7 +513,7 @@ mod tests {
     fn slider_custom_colors() {
         let [slider_id] = widget_ids();
         let slider = Slider::new(Axis::Horizontal, 0.0, 100.0, 30.0)
-            .with_color(Color::from_rgb8(255, 0, 0))
+            .with_thumb_color(Color::from_rgb8(255, 0, 0))
             .with_track_color(Color::from_rgb8(0, 255, 0))
             .with_id(slider_id);
 
@@ -689,8 +680,8 @@ mod tests {
          *    value = 0 + 0.7809 * (100 - 0) ≈ 78.09 → 78.0
          *****************************************************************/
         harness.mouse_move(Point::new(
-            Slider::DEFAULT_WIDTH * 0.75, // X coordinate: 200 * 0.75 = 150.0
-            Slider::DEFAULT_HEIGHT * 0.5, // Y coordinate remains centered
+            theme::SLIDER_DEFAULT_WIDTH * 0.75, // X coordinate: 200 * 0.75 = 150.0
+            theme::SLIDER_DEFAULT_HEIGHT * 0.5, // Y coordinate remains centered
         ));
 
         // Verify value change event
@@ -845,7 +836,7 @@ mod tests {
         // Modify properties and verify rendering updates
         harness.edit_widget(slider_id, |mut slider| {
             let mut slider = slider.downcast();
-            Slider::set_color(&mut slider, Color::from_rgb8(0, 255, 0));
+            Slider::set_thumb_color(&mut slider, Color::from_rgb8(0, 255, 0));
             Slider::set_track_color(&mut slider, Color::from_rgb8(255, 0, 0));
         });
 

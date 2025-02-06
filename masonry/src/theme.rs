@@ -57,6 +57,20 @@ pub const WIDGET_PADDING_VERTICAL: f64 = 10.0;
 pub const WIDGET_PADDING_HORIZONTAL: f64 = 8.0;
 pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
 
+// Slider theme constants
+pub const SLIDER_DEFAULT_WIDTH: f64 = 200.0;
+pub const SLIDER_DEFAULT_HEIGHT: f64 = 40.0;
+pub const SLIDER_BASE_TRACK_THICKNESS: f64 = 4.0;
+pub const SLIDER_TRACK_PADDING: f64 = 5.0;
+pub const SLIDER_THUMB_WIDTH: f64 = 12.0;
+pub const SLIDER_THUMB_HEIGHT: f64 = 20.0;
+pub const SLIDER_HOVER_GLOW_COLOR: Color = Color::from_rgba8(0xff, 0xff, 0xff, 0x32);
+pub const SLIDER_THUMB_RADIUS: f64 = 5.0;
+pub const SLIDER_TRACK_RADIUS: f64 = 2.0;
+pub const SLIDER_HOVER_GLOW_BLUR_RADIUS: f64 = 5.0;
+pub const SLIDER_HOVER_GLOW_SPREAD_RADIUS: f64 = 2.0;
+pub const SLIDER_STEP: f64 = 1.0;
+
 static DEBUG_COLOR: &[Color] = &[
     Color::from_rgb8(230, 25, 75),
     Color::from_rgb8(60, 180, 75),
