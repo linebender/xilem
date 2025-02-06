@@ -257,7 +257,7 @@ pub trait Widget: AsAny + AsDynWidget {
 
     /// Describe the widget's contents for accessibility APIs.
     ///
-    /// This method takes a mutable reference to a Node which is already initialized
+    /// This method takes a mutable reference to a node which is already initialized
     /// with some information about the current widget (coordinates, status flags), and
     /// and mutates that node to set widget-specific information.
     fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node);
