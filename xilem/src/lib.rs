@@ -314,17 +314,29 @@ impl<W: Widget + FromDynWidget> Pod<W> {
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
-    fn erased(self) -> Pod<dyn Widget> {
+    /// Type-erase the contained widget.
+    ///
+    /// Convert a `Pod` pointing to a widget of a specific concrete type
+    /// into a `Pod` pointing to a `dyn Widget`.
+    pub fn erased(self) -> Pod<dyn Widget> {
         Pod {
             widget: self.widget.as_box_dyn(),
             id: self.id,
             transform: self.transform,
         }
     }
-    fn into_widget_pod(self) -> WidgetPod<W> {
+    /// Create the Masonry widget for this view.
+    ///
+    /// In most cases, you will add the return value as a child
+    /// to another Masonry widget, using a method on that widget type.
+    pub fn into_widget_pod(self) -> WidgetPod<W> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
     }
-    fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
+    /// Create the type-erased Masonry widget for this view.
+    ///
+    /// Convert a Xilem `Pod` pointing to a widget of a specific concrete type
+    /// into a Masonry `WidgetPod` pointing to a `dyn Widget`.
+    pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
     }
 }
