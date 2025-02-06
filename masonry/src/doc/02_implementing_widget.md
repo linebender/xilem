@@ -218,7 +218,7 @@ We edit that node to mark that our widget accepts the `accesskit::Action::Click`
 
 #### Writing accessibility code
 
-Masonry's support of accessiblity APIs is based on the [accesskit](https://github.com/AccessKit/accesskit) crate.
+Masonry's support of accessibility APIs is based on the [accesskit](https://github.com/AccessKit/accesskit) crate.
 For more info on which role `accessibility_role` should return and how the accessibility node should be edited, consult the accesskit documentation.
 
 ... Well, in theory.
