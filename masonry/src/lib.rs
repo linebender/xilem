@@ -148,7 +148,7 @@
 // TODO - Add logo
 
 #[macro_use]
-mod util;
+pub mod util;
 
 #[cfg(doc)]
 pub mod doc;
