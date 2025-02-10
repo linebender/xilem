@@ -304,27 +304,49 @@ pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
 }
 
 impl<W: Widget + FromDynWidget> Pod<W> {
-    fn new(widget: W) -> Self {
+    /// Create a new `Pod` from a `widget`.
+    ///
+    /// This contains the widget value, and other metadata which will
+    /// be used when that widget is added to a Masonry tree.
+    pub fn new(widget: W) -> Self {
         Self {
             widget: Box::new(widget),
             id: WidgetId::next(),
-            transform: Default::default(),
+            transform: Affine::default(),
         }
     }
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
-    fn erased(self) -> Pod<dyn Widget> {
+    /// Type-erase the contained widget.
+    ///
+    /// Convert a `Pod` pointing to a widget of a specific concrete type
+    /// `Pod` pointing to a `dyn Widget`.
+    pub fn erased(self) -> Pod<dyn Widget> {
         Pod {
             widget: self.widget.as_box_dyn(),
             id: self.id,
             transform: self.transform,
         }
     }
-    fn into_widget_pod(self) -> WidgetPod<W> {
+    /// Finalise this `Pod`, converting into a [`WidgetPod`].
+    ///
+    /// In most cases, you will use the return value when creating a
+    /// widget with a single child.
+    /// For example, button widgets have a label child.
+    ///
+    /// If you're adding the widget to a layout container widget,
+    /// which can contain heterogenous widgets, you will probably
+    /// prefer to use [`Self::erased_widget_pod`].
+    pub fn into_widget_pod(self) -> WidgetPod<W> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
     }
-    fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
+    /// Finalise this `Pod` into a type-erased [`WidgetPod`].
+    ///
+    /// In most cases, you will use the return value for adding to a layout
+    /// widget which supports heterogenous widgets.
+    /// For example, [`Flex`](masonry::widgets::Flex) accepts type-erased widget pods.
+    pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
     }
 }
