@@ -5,18 +5,18 @@
 
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
-use tracing::{trace, debug, trace_span, Span};
+use tracing::{trace, trace_span, Span};
 use vello::Scene;
 
-use masonry::core::{
+use crate::core::{self,
   AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
   PointerButton, PointerEvent, QueryCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
   WidgetMut, WidgetPod,
 };
-use masonry::kurbo::{Insets, Size, Point, Vec2};
-use masonry::theme;
-use masonry::util::{fill_lin_gradient, stroke, UnitPoint};
-use masonry::widgets::Label;
+use crate::kurbo::{Insets, Size, Vec2};
+use crate::theme;
+use crate::util::{fill_lin_gradient, stroke, UnitPoint};
+use crate::widgets::Label;
 
 /// The minimum padding added to a button. NOTE: these values are chosen to match the existing look of TextBox; these should be reevaluated at some point.
 pub const pad_def: Insets = Insets::uniform_xy(8., 2.);
@@ -76,22 +76,22 @@ pub struct Pad9 {
 impl Button9 {
   /// Create a new button with a text label at the center (HI5m other labels are blank, use `.addx` methods to fill them)
   /// ```
-  /// use masonry::widgets::Button9;
+  /// use crate::widgets::Button9;
   /// let button = Button9::new("Increment");
   /// ```
   pub fn new(text:impl Into<ArcStr>) -> Self {Self::from_label    (Label::new(text))}
   /// Create a new button with the provided [`Label`]
   /// ```
-  /// use masonry::peniko::Color;
-  /// use masonry::widgets::{Button9, Label};
+  /// use crate::peniko::Color;
+  /// use crate::widgets::{Button9, Label};
   /// let label = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
   /// let button = Button9::from_label(label);
   /// ```
   pub fn from_label    (label:Label) -> Self {Self::from_label_pad(label, None)}
   /// Create a new button with the provided [`Label`] and padding [`Insets`]
   /// ```
-  /// use masonry::peniko::Color;
-  /// use masonry::widgets::{Button9, Label};
+  /// use crate::peniko::Color;
+  /// use crate::widgets::{Button9, Label};
   /// let label  = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
   /// let pad    = Insets::uniform_xy(8., 2.); // pad ←→ by 8 and ↑↓ by 2
   /// let button = Button9::from_label_pad(label, pad);
@@ -263,7 +263,7 @@ impl Widget for Button9 {
     |Update::DisabledChanged(_) => {ctx.request_paint_only();}
     _                           => {}  }   }
 
-  fn register_children(&mut self, ctx: &mut masonry::core::RegisterCtx) {
+  fn register_children(&mut self, ctx: &mut core::RegisterCtx) {
     ctx.register_child(&mut self.label.TL1);ctx.register_child(&mut self.label.TI2);ctx.register_child(&mut self.label.TJ3); // ↖  ↑  ↗
     ctx.register_child(&mut self.label.HL4);ctx.register_child(&mut self.label.HI5);ctx.register_child(&mut self.label.HJ6); // ←  •  →
     ctx.register_child(&mut self.label.LL7);ctx.register_child(&mut self.label.LI8);ctx.register_child(&mut self.label.LJ9); // ↙  ↓  ↘
