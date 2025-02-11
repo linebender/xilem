@@ -1,46 +1,51 @@
 //! An illustration of the various options for Xilem's Label View (based on Masonry Label Widget)
 // TODOs:
-  // add rust code generating each element in a tooltip
-  // add the same code in a context menu as a "copy" command
-  // add URL support for doc links
-  // add non-desktop platforms
-  // add to a CI build so you can simply download a binary and use it as a reference
-    // have both debug/release builds so that you can use F11/F12 inspectors?
-      // is a release build useful for basic examples?
+// add rust code generating each element in a tooltip
+// add the same code in a context menu as a "copy" command
+// add URL support for doc links
+// add non-desktop platforms
+// add to a CI build so you can simply download a binary and use it as a reference
+// have both debug/release builds so that you can use F11/F12 inspectors?
+// is a release build useful for basic examples?
 
-use winit::window::Window;
 use masonry::dpi::LogicalSize;
-use xilem::view::{CrossAxisAlignment,FlexExt,FlexParams,};
+use winit::window::Window;
+use xilem::view::{CrossAxisAlignment, FlexExt, FlexParams};
 #[derive(Default)]
 struct AppState {}
 
-use winit::error::EventLoopError;
-use xilem::view::{flex,sized_box,portal,grid,label,prose, Prose, Label,
-  GridExt, Padding,
-  Axis,
-  label as l,
-  };
-use xilem::{EventLoop,WidgetView,Xilem,FontWeight,TextAlignment,LineBreaking,palette::css,};
 use masonry::core::ArcStr;
 use masonry::parley::fontique;
 use masonry::peniko::Color;
-const LABEL_COLOR:Color = css::ROYAL_BLUE;
+use winit::error::EventLoopError;
+use xilem::view::{
+    flex, grid, label, label as l, portal, prose, sized_box, Axis, GridExt, Label, Padding, Prose,
+};
+use xilem::{palette::css, EventLoop, FontWeight, LineBreaking, TextAlignment, WidgetView, Xilem};
+const LABEL_COLOR: Color = css::ROYAL_BLUE;
 
-fn title_prose(text:impl Into<ArcStr>) -> Prose {
-  prose(text).text_size(18.0).alignment(TextAlignment::Justified).brush(css::GREEN)
+fn title_prose(text: impl Into<ArcStr>) -> Prose {
+    prose(text)
+        .text_size(18.0)
+        .alignment(TextAlignment::Justified)
+        .brush(css::GREEN)
 }
-fn txt_prose(text:impl Into<ArcStr>) -> Prose {
-  prose(text).text_size(14.0).alignment(TextAlignment::Start).brush(Color::from_rgb8(0x11,0x11,0x11))
+fn txt_prose(text: impl Into<ArcStr>) -> Prose {
+    prose(text)
+        .text_size(14.0)
+        .alignment(TextAlignment::Start)
+        .brush(Color::from_rgb8(0x11, 0x11, 0x11))
 }
-fn lc(text:impl Into<ArcStr>) -> Label { //colored label
-  label(text).brush(LABEL_COLOR)
+fn lc(text: impl Into<ArcStr>) -> Label {
+    //colored label
+    label(text).brush(LABEL_COLOR)
 }
-fn app_logic(_d:&mut AppState) -> impl WidgetView<AppState> {
-  let m_c = Color::from_rgb8(0x11,0x11,0x11); //main text
-  let l_c = LABEL_COLOR;
-  let mut i = 1;
+fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
+    let m_c = Color::from_rgb8(0x11, 0x11, 0x11); //main text
+    let l_c = LABEL_COLOR;
+    let mut i = 1;
 
-  portal(
+    portal(
   flex((
   (txt_prose("Xilem view::Label formats vGit@25-02 #25b12ad (in a ↕-scrollable area)").text_size(18.0),
   if cfg!(debug_assertions) {txt_prose(
@@ -153,15 +158,13 @@ fn app_logic(_d:&mut AppState) -> impl WidgetView<AppState> {
 }
 
 fn main() -> Result<(), EventLoopError> {
-  let app_state_init = AppState::default();
-  let xapp = Xilem::new(app_state_init, app_logic)
-    .background_color(css::SEASHELL);
+    let app_state_init = AppState::default();
+    let xapp = Xilem::new(app_state_init, app_logic).background_color(css::SEASHELL);
 
-  let win_attr = Window::default_attributes()
-    .with_title("Label: Xilem View")
-    .with_min_inner_size(LogicalSize::new(800., 600.))
-    ;
+    let win_attr = Window::default_attributes()
+        .with_title("Label: Xilem View")
+        .with_min_inner_size(LogicalSize::new(800., 600.));
 
-  xapp.run_windowed_in(EventLoop::with_user_event(), win_attr)?;
-  Ok(())
+    xapp.run_windowed_in(EventLoop::with_user_event(), win_attr)?;
+    Ok(())
 }
