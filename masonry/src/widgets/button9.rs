@@ -309,3 +309,68 @@ impl Widget for Button9 {
   // how to adjust `accessibility` for all 9 labels?
   // add tests
   // reformat docs
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use insta::assert_debug_snapshot;
+
+    use super::*;
+    use crate::assert_render_snapshot;
+    use crate::core::StyleProperty;
+    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::theme::PRIMARY_LIGHT;
+
+    #[test]
+    fn simple_button() {
+        let [button_id] = widget_ids();
+        let widget = Button9::new("Hello").with_id(button_id);
+
+        let mut harness = TestHarness::create(widget);
+
+        assert_debug_snapshot!(harness.root_widget());
+        assert_render_snapshot!(harness, "hello");
+
+        assert_eq!(harness.pop_action(), None);
+
+        harness.mouse_click_on(button_id);
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::Button9Pressed(PointerButton9::Primary), button_id))
+        );
+    }
+
+    #[test]
+    fn edit_button() {
+        let image_1 = {
+            let label = Label::new("The quick brown fox jumps over the lazy dog")
+                .with_brush(PRIMARY_LIGHT)
+                .with_style(StyleProperty::FontSize(20.0));
+            let button = Button9::from_label(label);
+
+            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
+
+            harness.render()
+        };
+
+        let image_2 = {
+            let button = Button9::new("Hello world");
+
+            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
+
+            harness.edit_root_widget(|mut button| {
+                let mut button = button.downcast::<Button9>();
+                Button9::set_text(&mut button, "The quick brown fox jumps over the lazy dog");
+
+                let mut label = Button9::label_mut(&mut button);
+                Label::set_brush(&mut label, PRIMARY_LIGHT);
+                Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
+            });
+
+            harness.render()
+        };
+
+        // We don't use assert_eq because we don't want rich assert
+        assert!(image_1 == image_2);
+    }
+}
