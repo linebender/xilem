@@ -190,14 +190,6 @@ impl Button9 {
     }
 }
 
-// Helper indices for the Label9 positions (0-based unlike .Prop or fn() names!)
-const ROW_TOP: [usize; 3] = [0, 1, 2]; //↖ ↑ ↗
-const ROW_MID: [usize; 3] = [3, 4, 5]; //← • →
-const ROW_BOT: [usize; 3] = [6, 7, 8]; //↙ ↓ ↘
-const COL_LHS: [usize; 3] = [0, 1, 2]; //↖ ← ↙
-const COL_CNT: [usize; 3] = [3, 4, 5]; //↑ • ↓
-const COL_RHS: [usize; 3] = [6, 7, 8]; //↗ → ↘
-
 // --- MARK: WIDGETMUT ---
 impl Button9 {
     /// Set text helpers
@@ -376,8 +368,6 @@ impl Widget for Button9 {
             (&mut self.label.p9, self.opt.pad.p9),
         ];
 
-        let mut row_w: [f64; 3] = [0.; 3]; //top /middle/bottom ↖↑↗  ←•→  ↙↓↘
-        let mut col_h: [f64; 3] = [0.; 3]; //left/center/right  ↖←↙  ↑•↓  ↗→↘
         let mut lsz: [Size; 10] = [Size::ZERO; 10];
         let mut lpad: [Insets; 10] = [Insets::ZERO; 10];
         for (i, (lbl9, pad9)) in lbl_pad9.iter_mut().enumerate() {
@@ -405,27 +395,56 @@ impl Widget for Button9 {
                 let baseline = ctx.child_baseline_offset(&lbl9);
                 ctx.set_baseline_offset(baseline + pad.y1);
             }
-            if ROW_TOP.iter().any(|x| x == &i) {
-                row_w[0] += lbl_sz.width + pad_sz.width;
-            }
-            if ROW_MID.iter().any(|x| x == &i) {
-                row_w[1] += lbl_sz.width + pad_sz.width;
-            }
-            if ROW_BOT.iter().any(|x| x == &i) {
-                row_w[2] += lbl_sz.width + pad_sz.width;
-            }
-            if COL_LHS.iter().any(|x| x == &i) {
-                col_h[0] += lbl_sz.height + pad_sz.height;
-            }
-            if COL_CNT.iter().any(|x| x == &i) {
-                col_h[1] += lbl_sz.height + pad_sz.height;
-            }
-            if COL_RHS.iter().any(|x| x == &i) {
-                col_h[2] += lbl_sz.height + pad_sz.height;
-            }
-            lsz[i + 1] = lbl_sz; // store size for later offset calculations (after button size is known)
+            lsz[i + 1] = lbl_sz; // store size for later button size/offset calculations
             lpad[i + 1] = pad;
         }
+        let mut row_w: [f64; 3] = [0.; 3]; //top /middle/bottom ↖↑↗  ←•→  ↙↓↘
+        let mut col_h: [f64; 3] = [0.; 3]; //left/center/right  ↖←↙  ↑•↓  ↗→↘
+        // empty buttons have a width of 4, not 0, though it doesn't affect anything?
+        //row Width = double max of (‹half width, half› width) since 2nd label will be at the middle even if only 2 labels exist and would otherwise fully fit in a button (with the 2nd label touching the right side), so need split the 2nd label in half and do the max width calculations separately, then pick the worst
+        //↖↑↗ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
+        row_w[0] = 2.0 * f64::max(lpad[1].x0 + lsz[1].width + f64::max(lpad[1].x1, lpad[2].x0) +
+                                         0.5 * lsz[2].width
+            ,//                           ½     •btn  width
+                                         0.5 * lsz[2].width + f64::max(lpad[2].x1, lpad[3].x0) +
+                                               lsz[3].width +
+                                  lpad[3].x1);//pad →right
+        //←•→ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
+        row_w[1] = 2.0 * f64::max(lpad[4].x0 + lsz[4].width + f64::max(lpad[4].x1, lpad[5].x0) +
+                                         0.5 * lsz[5].width
+            ,//                           ½     •btn  width
+                                         0.5 * lsz[5].width + f64::max(lpad[5].x1, lpad[6].x0) +
+                                               lsz[6].width +
+                                  lpad[6].x1);//pad →right
+        //↙↓↘ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
+        row_w[2] = 2.0 * f64::max(lpad[7].x0 + lsz[7].width + f64::max(lpad[7].x1, lpad[8].x0) +
+                                         0.5 * lsz[8].width
+            ,//                           ½     •btn  width
+                                         0.5 * lsz[8].width + f64::max(lpad[8].x1, lpad[9].x0) +
+                                               lsz[9].width +
+                                  lpad[6].x1);//pad →right
+        //col Height = double max of (‹half height, half› height) since 2nd label will be at the center even if only 2 labels exist and would otherwise fully fit in a button (with the 2nd label touching the bottom side), so need split the 2nd label in half and do the max width calculations separately, then pick the worst
+        //↖←↙ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
+        col_h[0] = 2.0 * f64::max(lpad[1].y0 + lsz[1].height + f64::max(lpad[1].y1, lpad[4].y0) +
+                                         0.5 * lsz[4].height
+            ,//                           ½     •btn  height
+                                         0.5 * lsz[4].height + f64::max(lpad[4].y1, lpad[7].y0) +
+                                               lsz[7].height +
+                                  lpad[7].y1);//pad →right
+        //↑•↓ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
+        col_h[1] = 2.0 * f64::max(lpad[2].y0 + lsz[2].height + f64::max(lpad[2].y1, lpad[5].y0) +
+                                         0.5 * lsz[5].height
+            ,//                           ½     •btn  height
+                                         0.5 * lsz[5].height + f64::max(lpad[5].y1, lpad[2].y0) +
+                                               lsz[2].height +
+                                  lpad[2].y1);//pad →right
+        //↗→↘ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
+        col_h[2] = 2.0 * f64::max(lpad[3].y0 + lsz[3].height + f64::max(lpad[3].y1, lpad[6].y0) +
+                                         0.5 * lsz[6].height
+            ,//                           ½     •btn  height
+                                         0.5 * lsz[6].height + f64::max(lpad[6].y1, lpad[9].y0) +
+                                               lsz[9].height +
+                                  lpad[9].y1);//pad →right
         let max_w = row_w[0].max(row_w[1]).max(row_w[2]);
         let max_h = col_h[0].max(col_h[1]).max(col_h[2]).max(min_height);
         let button_size = bc.constrain(Size::new(max_w, max_h));
