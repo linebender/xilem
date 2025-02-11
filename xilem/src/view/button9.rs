@@ -5,14 +5,14 @@ pub use masonry::core::{PointerButton, PointerButton as PointerB, WidgetPod};
 use masonry::widgets;
 use crate::binmod::custom_button_masonry as widget9;
 
-use xilem::core::{ViewPathTracker,
+use crate::core::{ViewPathTracker,
   DynMessage, Mut, View, ViewMarker,
   MessageResult, ViewId, MessageResult as MsgRes,
 };
-use xilem::view::Label;
-use xilem::{Pod, ViewCtx};
+use crate::view::Label;
+use crate::{Pod, ViewCtx};
 
-use masonry::kurbo::{Insets};
+use masonry::kurbo::Insets;
 
 /// A button which calls `callback` when the 🖰1 (normally left) is pressed<br>
 /// To use button provide it with a button text or `label` and a closure
