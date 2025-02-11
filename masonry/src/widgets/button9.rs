@@ -19,22 +19,8 @@ use crate::util::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widgets::Label;
 
 /// The minimum padding added to a button. NOTE: these values are chosen to match the existing look of TextBox; these should be reevaluated at some point.
-pub const pad_def: Insets = Insets::uniform_xy(8., 2.);
+pub const PAD_DEF: Insets = Insets::uniform_xy(8., 2.);
 
-/// IDs for all the 9 possible label positions in a button from top left to bottom right.<br>
-  /// Letter corresponds to a visual mnemonic of its horizontal/vertical line position
-  /// ⎺	T top   	⎸ L left
-  /// -	H middle	| I middle
-  /// _	L low   	⎹ J right
-  /// ⎺T -H _L  top/middle/low
-  /// ↖  ↑  ↗
-  /// ←  •  →
-  /// ↙  ↓  ↘
-pub enum LPos {
-  tl1 = 1, ti2 = 2, tj3 = 3,
-  hl4 = 4, hi5 = 5, hj6 = 6,
-  ll7 = 7, li8 = 8, lj9 = 9,
-}
 /// A button with up to 9 text Labels (allowing for custom styles) with custom padding
 /// (allowing for flexible positioning).
 pub struct Button9 {
@@ -43,7 +29,15 @@ pub struct Button9 {
   /// Options for those widgets or the button as a whole (only padding is implemented)
   opt  : LabelOpt,
 }
-/// Label widgets for Button9
+/// Label widgets for Button9 for all the 9 possible label positions in a button from top left to bottom right.<br>
+  /// Letter in a name corresponds to a visual mnemonic of its horizontal/vertical line position
+  /// ⎺ T top     ⎸ L left
+  /// - H middle  | I middle
+  /// _ L low     ⎹ J right
+  /// ⎺T -H _L  top/middle/low
+  /// ↖  ↑  ↗
+  /// ←  •  →
+  /// ↙  ↓  ↘
 pub struct Label9 {
   tl1:WidgetPod<Label>, ti2:WidgetPod<Label>, tj3:WidgetPod<Label>, // ↖  ↑  ↗
   hl4:WidgetPod<Label>, hi5:WidgetPod<Label>, hj6:WidgetPod<Label>, // ←  •  →
@@ -63,13 +57,6 @@ pub struct Pad9 {
   pub hl4:Option<Insets>, pub hi5:Option<Insets>, pub hj6:Option<Insets>, // ←  •  →
   pub ll7:Option<Insets>, pub li8:Option<Insets>, pub lj9:Option<Insets>, // ↙  ↓  ↘
 }
-// /// Track whether a label exists, useful for layout constraint calculations
-// #[derive(Default, Debug, Copy, Clone, PartialEq)]
-// pub struct Is9 {
-//   pub tl1:bool, pub ti2:bool, pub tj3:bool, // ↖  ↑  ↗
-//   pub hl4:bool, pub hi5:bool, pub hj6:bool, // ←  •  →
-//   pub ll7:bool, pub li8:bool, pub lj9:bool, // ↙  ↓  ↘
-// }
 
 // --- MARK: BUILDERS ---
 impl Button9 {
@@ -120,19 +107,6 @@ impl Button9 {
   pub fn add7(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.ll7 = WidgetPod::new(label); self.opt.pad.ll7 = pad; self}
   pub fn add8(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.li8 = WidgetPod::new(label); self.opt.pad.li8 = pad; self}
   pub fn add9(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.lj9 = WidgetPod::new(label); self.opt.pad.lj9 = pad; self}
-  // pub fn add (mut self,         label:Label, pad:Option<Insets>) {self.addx(LPos::hi5,label,pad)}
-  /// Helper .method for adding a label to a given position (same as in [`LPos`])
-  pub fn addx(mut self,idx:LPos,label:Label, pad:Option<Insets>) -> Self {match idx {
-    LPos::tl1 => {self.label.tl1 = WidgetPod::new(label); self.opt.pad.tl1 = pad}, //↖
-    LPos::ti2 => {self.label.ti2 = WidgetPod::new(label); self.opt.pad.ti2 = pad}, //↑
-    LPos::tj3 => {self.label.tj3 = WidgetPod::new(label); self.opt.pad.tj3 = pad}, //↗
-    LPos::hl4 => {self.label.hl4 = WidgetPod::new(label); self.opt.pad.hl4 = pad}, //←
-    LPos::hi5 => {self.label.hi5 = WidgetPod::new(label); self.opt.pad.hi5 = pad}, //•
-    LPos::hj6 => {self.label.hj6 = WidgetPod::new(label); self.opt.pad.hj6 = pad}, //→
-    LPos::ll7 => {self.label.ll7 = WidgetPod::new(label); self.opt.pad.ll7 = pad}, //↙
-    LPos::li8 => {self.label.li8 = WidgetPod::new(label); self.opt.pad.li8 = pad}, //↓
-    LPos::lj9 => {self.label.lj9 = WidgetPod::new(label); self.opt.pad.lj9 = pad}, //↘
-  } self }
   /// Create a new button with the provided [`Label9`]s and their [`Pad9`] with predetermined IDs. This constructor is useful for toolkits which use Masonry (such as Xilem).
   pub fn from_label_pod(label_l:[WidgetPod<Label>;9], pad:Pad9) -> Self {
     let [l1,l2,l3,l4,l5,l6,l7,l8,l9] = label_l;
@@ -167,11 +141,6 @@ impl Button9 {
   pub fn set_text7(this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label7_mut(this), new_text);}
   pub fn set_text8(this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label8_mut(this), new_text);}
   pub fn set_text9(this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label9_mut(this), new_text);}
-  // pub fn set_text (this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label_mutx(this,LPos::hi5), new_text);}
-  /// Set label text for a given position
-  pub fn set_textx(this:&mut WidgetMut<'_,Self>, idx:LPos, new_text: impl Into<ArcStr>) {
-    Label::set_text(&mut Self::labelx_mut(this, idx), new_text);
-  }
 
   /// Set label options helpers
   pub fn set_opt <'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hi5 = new_pad; this.ctx.request_render();}
@@ -281,7 +250,7 @@ impl Widget for Button9 {
     let mut lsz  : [Size  ;10] = [Size::ZERO  ;10];
     let mut lpad : [Insets;10] = [Insets::ZERO;10];
     for (i, (lbl9, pad9)) in lbl_pad9.iter_mut().enumerate() {
-      let pad       = match pad9 {Some(inset)=>*inset, None=>pad_def,};
+      let pad       = match pad9 {Some(inset)=>*inset, None=>PAD_DEF,};
       let pad_sz    = Size::new(pad.x_value(), pad.y_value());
       let lbl_bc    = bc.shrink(pad_sz).loosen();
       let lbl_sz    = ctx.run_layout(lbl9, &lbl_bc);
