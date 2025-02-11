@@ -379,7 +379,7 @@ where
                 &self.label.p2,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label2_mut(&mut el),
             );
         });
         ctx.with_id(ID_LVW3, |ctx| {
@@ -387,7 +387,7 @@ where
                 &self.label.p3,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label3_mut(&mut el),
             );
         });
         ctx.with_id(ID_LVW4, |ctx| {
@@ -395,7 +395,7 @@ where
                 &self.label.p4,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label4_mut(&mut el),
             );
         });
         ctx.with_id(ID_LVW5, |ctx| {
@@ -403,7 +403,7 @@ where
                 &self.label.p5,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label5_mut(&mut el),
             );
         });
         ctx.with_id(ID_LVW6, |ctx| {
@@ -411,7 +411,7 @@ where
                 &self.label.p6,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label6_mut(&mut el),
             );
         });
         ctx.with_id(ID_LVW7, |ctx| {
@@ -419,7 +419,7 @@ where
                 &self.label.p7,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label7_mut(&mut el),
             );
         });
         ctx.with_id(ID_LVW8, |ctx| {
@@ -427,7 +427,7 @@ where
                 &self.label.p8,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label8_mut(&mut el),
             );
         });
         ctx.with_id(ID_LVW9, |ctx| {
@@ -435,7 +435,7 @@ where
                 &self.label.p9,
                 &mut (),
                 ctx,
-                widgets::Button9::label1_mut(&mut el),
+                widgets::Button9::label9_mut(&mut el),
             );
         });
         ctx.teardown_leaf(el); // teardown the button element itself
