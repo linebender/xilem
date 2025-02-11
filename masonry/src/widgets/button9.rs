@@ -31,9 +31,9 @@ pub const pad_def: Insets = Insets::uniform_xy(8., 2.);
   /// ←  •  →
   /// ↙  ↓  ↘
 pub enum LPos {
-  TL1 = 1, TI2 = 2, TJ3 = 3,
-  HL4 = 4, HI5 = 5, HJ6 = 6,
-  LL7 = 7, LI8 = 8, LJ9 = 9,
+  tl1 = 1, ti2 = 2, tj3 = 3,
+  hl4 = 4, hi5 = 5, hj6 = 6,
+  ll7 = 7, li8 = 8, lj9 = 9,
 }
 /// A button with up to 9 text Labels (allowing for custom styles) with custom padding
 /// (allowing for flexible positioning).
@@ -45,120 +45,114 @@ pub struct Button9 {
 }
 /// Label widgets for Button9
 pub struct Label9 {
-  TL1:WidgetPod<Label>, TI2:WidgetPod<Label>, TJ3:WidgetPod<Label>, // ↖  ↑  ↗
-  HL4:WidgetPod<Label>, HI5:WidgetPod<Label>, HJ6:WidgetPod<Label>, // ←  •  →
-  LL7:WidgetPod<Label>, LI8:WidgetPod<Label>, LJ9:WidgetPod<Label>, // ↙  ↓  ↘
+  tl1:WidgetPod<Label>, ti2:WidgetPod<Label>, tj3:WidgetPod<Label>, // ↖  ↑  ↗
+  hl4:WidgetPod<Label>, hi5:WidgetPod<Label>, hj6:WidgetPod<Label>, // ←  •  →
+  ll7:WidgetPod<Label>, li8:WidgetPod<Label>, lj9:WidgetPod<Label>, // ↙  ↓  ↘
 }
 /// Custom button options. Currently only padding is supported.
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct LabelOpt {
   /// Per-label padding.
   pub pad: Pad9,
-  // pub is : Is9, //
 }
 
 /// Optional padding options per label as [`Insets`]
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct Pad9 {
-  pub TL1:Option<Insets>, pub TI2:Option<Insets>, pub TJ3:Option<Insets>, // ↖  ↑  ↗
-  pub HL4:Option<Insets>, pub HI5:Option<Insets>, pub HJ6:Option<Insets>, // ←  •  →
-  pub LL7:Option<Insets>, pub LI8:Option<Insets>, pub LJ9:Option<Insets>, // ↙  ↓  ↘
+  pub tl1:Option<Insets>, pub ti2:Option<Insets>, pub tj3:Option<Insets>, // ↖  ↑  ↗
+  pub hl4:Option<Insets>, pub hi5:Option<Insets>, pub hj6:Option<Insets>, // ←  •  →
+  pub ll7:Option<Insets>, pub li8:Option<Insets>, pub lj9:Option<Insets>, // ↙  ↓  ↘
 }
 // /// Track whether a label exists, useful for layout constraint calculations
 // #[derive(Default, Debug, Copy, Clone, PartialEq)]
 // pub struct Is9 {
-//   pub TL1:bool, pub TI2:bool, pub TJ3:bool, // ↖  ↑  ↗
-//   pub HL4:bool, pub HI5:bool, pub HJ6:bool, // ←  •  →
-//   pub LL7:bool, pub LI8:bool, pub LJ9:bool, // ↙  ↓  ↘
+//   pub tl1:bool, pub ti2:bool, pub tj3:bool, // ↖  ↑  ↗
+//   pub hl4:bool, pub hi5:bool, pub hj6:bool, // ←  •  →
+//   pub ll7:bool, pub li8:bool, pub lj9:bool, // ↙  ↓  ↘
 // }
 
 // --- MARK: BUILDERS ---
 impl Button9 {
-  /// Create a new button with a text label at the center (HI5m other labels are blank, use `.addx` methods to fill them)
+  /// Create a new button with a text label at the center (hi5 other labels are blank, use `.addx` methods to fill them)
   /// ```
-  /// use crate::widgets::Button9;
+  /// use masonry::widgets::Button9;
   /// let button = Button9::new("Increment");
   /// ```
   pub fn new(text:impl Into<ArcStr>) -> Self {Self::from_label    (Label::new(text))}
   /// Create a new button with the provided [`Label`]
   /// ```
-  /// use crate::peniko::Color;
-  /// use crate::widgets::{Button9, Label};
+  /// use masonry::peniko::Color;
+  /// use masonry::widgets::{Button9, Label};
   /// let label = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
   /// let button = Button9::from_label(label);
   /// ```
   pub fn from_label    (label:Label) -> Self {Self::from_label_pad(label, None)}
   /// Create a new button with the provided [`Label`] and padding [`Insets`]
   /// ```
-  /// use crate::peniko::Color;
-  /// use crate::widgets::{Button9, Label};
+  /// use masonry::peniko::Color;
+  /// use masonry::widgets::{Button9, Label};
   /// let label  = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
   /// let pad    = Insets::uniform_xy(8., 2.); // pad ←→ by 8 and ↑↓ by 2
   /// let button = Button9::from_label_pad(label, pad);
   /// ```
   pub fn from_label_pad(lbl:Label, pad:Option<Insets>) -> Self {
-    // let is = is9 {
-      // TL1:false, TI2:false                , TJ3:false, // ↖  ↑  ↗
-      // HL4:false, HI5:lbl.text().len() > 0 , HJ6:false, // ←  •  →
-      // LL7:false, LI8:false                , LJ9:false, // ↙  ↓  ↘
-    // };
     let label = Label9 {
-      TL1:WidgetPod::new(Label::new("")), TI2:WidgetPod::new(Label::new("")), TJ3:WidgetPod::new(Label::new("")), // ↖  ↑  ↗
-      HL4:WidgetPod::new(Label::new("")), HI5:WidgetPod::new(lbl           ), HJ6:WidgetPod::new(Label::new("")), // ←  •  →
-      LL7:WidgetPod::new(Label::new("")), LI8:WidgetPod::new(Label::new("")), LJ9:WidgetPod::new(Label::new("")), // ↙  ↓  ↘
+      tl1:WidgetPod::new(Label::new("")), ti2:WidgetPod::new(Label::new("")), tj3:WidgetPod::new(Label::new("")), // ↖  ↑  ↗
+      hl4:WidgetPod::new(Label::new("")), hi5:WidgetPod::new(lbl           ), hj6:WidgetPod::new(Label::new("")), // ←  •  →
+      ll7:WidgetPod::new(Label::new("")), li8:WidgetPod::new(Label::new("")), lj9:WidgetPod::new(Label::new("")), // ↙  ↓  ↘
     };
     let pad = Pad9 {
-      TL1:None, TI2:None, TJ3:None, // ↖  ↑  ↗
-      HL4:None, HI5:pad , HJ6:None, // ←  •  →
-      LL7:None, LI8:None, LJ9:None, // ↙  ↓  ↘
+      tl1:None, ti2:None, tj3:None, // ↖  ↑  ↗
+      hl4:None, hi5:pad , hj6:None, // ←  •  →
+      ll7:None, li8:None, lj9:None, // ↙  ↓  ↘
     };
-    let opt = LabelOpt{pad}; //, is
+    let opt = LabelOpt{pad};
     Self {label, opt}
   }
-  /// Helper .methods for adding individual labels (add=center HI5)
-  pub fn add (mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.HI5 = WidgetPod::new(label); self.opt.pad.HI5 = pad; self}
-  pub fn add1(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.TL1 = WidgetPod::new(label); self.opt.pad.TL1 = pad; self}
-  pub fn add2(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.TI2 = WidgetPod::new(label); self.opt.pad.TI2 = pad; self}
-  pub fn add3(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.TJ3 = WidgetPod::new(label); self.opt.pad.TJ3 = pad; self}
-  pub fn add4(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.HL4 = WidgetPod::new(label); self.opt.pad.HL4 = pad; self}
-  pub fn add5(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.HI5 = WidgetPod::new(label); self.opt.pad.HI5 = pad; self}
-  pub fn add6(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.HJ6 = WidgetPod::new(label); self.opt.pad.HJ6 = pad; self}
-  pub fn add7(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.LL7 = WidgetPod::new(label); self.opt.pad.LL7 = pad; self}
-  pub fn add8(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.LI8 = WidgetPod::new(label); self.opt.pad.LI8 = pad; self}
-  pub fn add9(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.LJ9 = WidgetPod::new(label); self.opt.pad.LJ9 = pad; self}
-  // pub fn add (mut self,         label:Label, pad:Option<Insets>) {self.addx(LPos::HI5,label,pad)}
+  /// Helper .methods for adding individual labels (add=center hi5)
+  pub fn add (mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.hi5 = WidgetPod::new(label); self.opt.pad.hi5 = pad; self}
+  pub fn add1(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.tl1 = WidgetPod::new(label); self.opt.pad.tl1 = pad; self}
+  pub fn add2(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.ti2 = WidgetPod::new(label); self.opt.pad.ti2 = pad; self}
+  pub fn add3(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.tj3 = WidgetPod::new(label); self.opt.pad.tj3 = pad; self}
+  pub fn add4(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.hl4 = WidgetPod::new(label); self.opt.pad.hl4 = pad; self}
+  pub fn add5(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.hi5 = WidgetPod::new(label); self.opt.pad.hi5 = pad; self}
+  pub fn add6(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.hj6 = WidgetPod::new(label); self.opt.pad.hj6 = pad; self}
+  pub fn add7(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.ll7 = WidgetPod::new(label); self.opt.pad.ll7 = pad; self}
+  pub fn add8(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.li8 = WidgetPod::new(label); self.opt.pad.li8 = pad; self}
+  pub fn add9(mut self,         label:Label, pad:Option<Insets>) -> Self {self.label.lj9 = WidgetPod::new(label); self.opt.pad.lj9 = pad; self}
+  // pub fn add (mut self,         label:Label, pad:Option<Insets>) {self.addx(LPos::hi5,label,pad)}
   /// Helper .method for adding a label to a given position (same as in [`LPos`])
   pub fn addx(mut self,idx:LPos,label:Label, pad:Option<Insets>) -> Self {match idx {
-    LPos::TL1 => {self.label.TL1 = WidgetPod::new(label); self.opt.pad.TL1 = pad}, //↖
-    LPos::TI2 => {self.label.TI2 = WidgetPod::new(label); self.opt.pad.TI2 = pad}, //↑
-    LPos::TJ3 => {self.label.TJ3 = WidgetPod::new(label); self.opt.pad.TJ3 = pad}, //↗
-    LPos::HL4 => {self.label.HL4 = WidgetPod::new(label); self.opt.pad.HL4 = pad}, //←
-    LPos::HI5 => {self.label.HI5 = WidgetPod::new(label); self.opt.pad.HI5 = pad}, //•
-    LPos::HJ6 => {self.label.HJ6 = WidgetPod::new(label); self.opt.pad.HJ6 = pad}, //→
-    LPos::LL7 => {self.label.LL7 = WidgetPod::new(label); self.opt.pad.LL7 = pad}, //↙
-    LPos::LI8 => {self.label.LI8 = WidgetPod::new(label); self.opt.pad.LI8 = pad}, //↓
-    LPos::LJ9 => {self.label.LJ9 = WidgetPod::new(label); self.opt.pad.LJ9 = pad}, //↘
+    LPos::tl1 => {self.label.tl1 = WidgetPod::new(label); self.opt.pad.tl1 = pad}, //↖
+    LPos::ti2 => {self.label.ti2 = WidgetPod::new(label); self.opt.pad.ti2 = pad}, //↑
+    LPos::tj3 => {self.label.tj3 = WidgetPod::new(label); self.opt.pad.tj3 = pad}, //↗
+    LPos::hl4 => {self.label.hl4 = WidgetPod::new(label); self.opt.pad.hl4 = pad}, //←
+    LPos::hi5 => {self.label.hi5 = WidgetPod::new(label); self.opt.pad.hi5 = pad}, //•
+    LPos::hj6 => {self.label.hj6 = WidgetPod::new(label); self.opt.pad.hj6 = pad}, //→
+    LPos::ll7 => {self.label.ll7 = WidgetPod::new(label); self.opt.pad.ll7 = pad}, //↙
+    LPos::li8 => {self.label.li8 = WidgetPod::new(label); self.opt.pad.li8 = pad}, //↓
+    LPos::lj9 => {self.label.lj9 = WidgetPod::new(label); self.opt.pad.lj9 = pad}, //↘
   } self }
   /// Create a new button with the provided [`Label9`]s and their [`Pad9`] with predetermined IDs. This constructor is useful for toolkits which use Masonry (such as Xilem).
-  pub fn from_label_pod(label_l:[WidgetPod<Label>;9], pad:Pad9) -> Self { //, is:is9
+  pub fn from_label_pod(label_l:[WidgetPod<Label>;9], pad:Pad9) -> Self {
     let [l1,l2,l3,l4,l5,l6,l7,l8,l9] = label_l;
     let label = Label9 { //numbering shifted due to 0-based array index
-      TL1:l1, TI2:l2, TJ3:l3, // ↖  ↑  ↗
-      HL4:l4, HI5:l5, HJ6:l8, // ←  •  →
-      LL7:l7, LI8:l6, LJ9:l9, // ↙  ↓  ↘
+      tl1:l1, ti2:l2, tj3:l3, // ↖  ↑  ↗
+      hl4:l4, hi5:l5, hj6:l8, // ←  •  →
+      ll7:l7, li8:l6, lj9:l9, // ↙  ↓  ↘
     };
-    let opt = LabelOpt{pad}; //, is
+    let opt = LabelOpt{pad};
     Self {label, opt}
   }
 }
 
 // Helper indices for the Label9 positions (0-based unlike .Prop or fn() names!)
-const row_top: [usize;3] = [0,1,2]; //↖ ↑ ↗
-const row_mid: [usize;3] = [3,4,5]; //← • →
-const row_bot: [usize;3] = [6,7,8]; //↙ ↓ ↘
-const col_lhs: [usize;3] = [0,1,2]; //↖ ← ↙
-const col_cnt: [usize;3] = [3,4,5]; //↑ • ↓
-const col_rhs: [usize;3] = [6,7,8]; //↗ → ↘
+const ROW_TOP: [usize;3] = [0,1,2]; //↖ ↑ ↗
+const ROW_MID: [usize;3] = [3,4,5]; //← • →
+const ROW_BOT: [usize;3] = [6,7,8]; //↙ ↓ ↘
+const COL_LHS: [usize;3] = [0,1,2]; //↖ ← ↙
+const COL_CNT: [usize;3] = [3,4,5]; //↑ • ↓
+const COL_RHS: [usize;3] = [6,7,8]; //↗ → ↘
 
 // --- MARK: WIDGETMUT ---
 impl Button9 {
@@ -173,62 +167,62 @@ impl Button9 {
   pub fn set_text7(this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label7_mut(this), new_text);}
   pub fn set_text8(this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label8_mut(this), new_text);}
   pub fn set_text9(this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label9_mut(this), new_text);}
-  // pub fn set_text (this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label_mutx(this,LPos::HI5), new_text);}
+  // pub fn set_text (this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label_mutx(this,LPos::hi5), new_text);}
   /// Set label text for a given position
   pub fn set_textx(this:&mut WidgetMut<'_,Self>, idx:LPos, new_text: impl Into<ArcStr>) {
     Label::set_text(&mut Self::labelx_mut(this, idx), new_text);
   }
 
   /// Set label options helpers
-  pub fn set_opt <'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.HI5 = new_pad; this.ctx.request_render();}
-  pub fn set_pad1<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.TL1 = new_pad; this.ctx.request_render();}
-  pub fn set_pad2<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.TI2 = new_pad; this.ctx.request_render();}
-  pub fn set_pad3<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.TJ3 = new_pad; this.ctx.request_render();}
-  pub fn set_pad4<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.HL4 = new_pad; this.ctx.request_render();}
-  pub fn set_pad5<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.HI5 = new_pad; this.ctx.request_render();}
-  pub fn set_pad6<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.HJ6 = new_pad; this.ctx.request_render();}
-  pub fn set_pad7<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.LL7 = new_pad; this.ctx.request_render();}
-  pub fn set_pad8<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.LI8 = new_pad; this.ctx.request_render();}
-  pub fn set_pad9<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.LJ9 = new_pad; this.ctx.request_render();}
-  // pub fn set_opt  <'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.set_optx(LPos::HI5, new_opt);}
+  pub fn set_opt <'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hi5 = new_pad; this.ctx.request_render();}
+  pub fn set_pad1<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.tl1 = new_pad; this.ctx.request_render();}
+  pub fn set_pad2<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.ti2 = new_pad; this.ctx.request_render();}
+  pub fn set_pad3<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.tj3 = new_pad; this.ctx.request_render();}
+  pub fn set_pad4<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hl4 = new_pad; this.ctx.request_render();}
+  pub fn set_pad5<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hi5 = new_pad; this.ctx.request_render();}
+  pub fn set_pad6<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hj6 = new_pad; this.ctx.request_render();}
+  pub fn set_pad7<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.ll7 = new_pad; this.ctx.request_render();}
+  pub fn set_pad8<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.li8 = new_pad; this.ctx.request_render();}
+  pub fn set_pad9<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.lj9 = new_pad; this.ctx.request_render();}
+  // pub fn set_opt  <'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.set_optx(LPos::hi5, new_opt);}
   /// Set the label options for a given position
   pub fn set_padx(this: &mut WidgetMut<'_,Self>, idx:LPos, new_pad:Option<Insets>) {match idx {
-    LPos::TL1 => {this.widget.opt.pad.TL1 = new_pad}, //↖
-    LPos::TI2 => {this.widget.opt.pad.TI2 = new_pad}, //↑
-    LPos::TJ3 => {this.widget.opt.pad.TJ3 = new_pad}, //↗
-    LPos::HL4 => {this.widget.opt.pad.HL4 = new_pad}, //←
-    LPos::HI5 => {this.widget.opt.pad.HI5 = new_pad}, //•
-    LPos::HJ6 => {this.widget.opt.pad.HJ6 = new_pad}, //→
-    LPos::LL7 => {this.widget.opt.pad.LL7 = new_pad}, //↙
-    LPos::LI8 => {this.widget.opt.pad.LI8 = new_pad}, //↓
-    LPos::LJ9 => {this.widget.opt.pad.LJ9 = new_pad}, //↘
+    LPos::tl1 => {this.widget.opt.pad.tl1 = new_pad}, //↖
+    LPos::ti2 => {this.widget.opt.pad.ti2 = new_pad}, //↑
+    LPos::tj3 => {this.widget.opt.pad.tj3 = new_pad}, //↗
+    LPos::hl4 => {this.widget.opt.pad.hl4 = new_pad}, //←
+    LPos::hi5 => {this.widget.opt.pad.hi5 = new_pad}, //•
+    LPos::hj6 => {this.widget.opt.pad.hj6 = new_pad}, //→
+    LPos::ll7 => {this.widget.opt.pad.ll7 = new_pad}, //↙
+    LPos::li8 => {this.widget.opt.pad.li8 = new_pad}, //↓
+    LPos::lj9 => {this.widget.opt.pad.lj9 = new_pad}, //↘
     }
     this.ctx.request_render(); // label options state impacts appearance and accessibility node
   }
 
   /// Get mutable label helpers
-  pub fn label_mut <'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.HI5)}
-  pub fn label1_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.TL1)}
-  pub fn label2_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.TI2)}
-  pub fn label3_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.TJ3)}
-  pub fn label4_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.HL4)}
-  pub fn label5_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.HI5)}
-  pub fn label6_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.HJ6)}
-  pub fn label7_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.LL7)}
-  pub fn label8_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.LI8)}
-  pub fn label9_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.LJ9)}
-  // pub fn label_mut <'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.labelx_mut(LPos::HI5)}
+  pub fn label_mut <'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.hi5)}
+  pub fn label1_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.tl1)}
+  pub fn label2_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.ti2)}
+  pub fn label3_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.tj3)}
+  pub fn label4_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.hl4)}
+  pub fn label5_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.hi5)}
+  pub fn label6_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.hj6)}
+  pub fn label7_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.ll7)}
+  pub fn label8_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.li8)}
+  pub fn label9_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.lj9)}
+  // pub fn label_mut <'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.labelx_mut(LPos::hi5)}
   /// Get mutable label for a given position
   pub fn labelx_mut<'t>(this: &'t mut WidgetMut<'_,Self>, idx:LPos) -> WidgetMut<'t, Label> {match idx {
-    LPos::TL1 => {return this.ctx.get_mut(&mut this.widget.label.TL1)}, //↖
-    LPos::TI2 => {return this.ctx.get_mut(&mut this.widget.label.TI2)}, //↑
-    LPos::TJ3 => {return this.ctx.get_mut(&mut this.widget.label.TJ3)}, //↗
-    LPos::HL4 => {return this.ctx.get_mut(&mut this.widget.label.HL4)}, //←
-    LPos::HI5 => {return this.ctx.get_mut(&mut this.widget.label.HI5)}, //•
-    LPos::HJ6 => {return this.ctx.get_mut(&mut this.widget.label.HJ6)}, //→
-    LPos::LL7 => {return this.ctx.get_mut(&mut this.widget.label.LL7)}, //↙
-    LPos::LI8 => {return this.ctx.get_mut(&mut this.widget.label.LI8)}, //↓
-    LPos::LJ9 => {return this.ctx.get_mut(&mut this.widget.label.LJ9)}, //↘
+    LPos::tl1 => {return this.ctx.get_mut(&mut this.widget.label.tl1)}, //↖
+    LPos::ti2 => {return this.ctx.get_mut(&mut this.widget.label.ti2)}, //↑
+    LPos::tj3 => {return this.ctx.get_mut(&mut this.widget.label.tj3)}, //↗
+    LPos::hl4 => {return this.ctx.get_mut(&mut this.widget.label.hl4)}, //←
+    LPos::hi5 => {return this.ctx.get_mut(&mut this.widget.label.hi5)}, //•
+    LPos::hj6 => {return this.ctx.get_mut(&mut this.widget.label.hj6)}, //→
+    LPos::ll7 => {return this.ctx.get_mut(&mut this.widget.label.ll7)}, //↙
+    LPos::li8 => {return this.ctx.get_mut(&mut this.widget.label.li8)}, //↓
+    LPos::lj9 => {return this.ctx.get_mut(&mut this.widget.label.lj9)}, //↘
   }}
 }
 
@@ -264,36 +258,29 @@ impl Widget for Button9 {
     _                           => {}  }   }
 
   fn register_children(&mut self, ctx: &mut core::RegisterCtx) {
-    ctx.register_child(&mut self.label.TL1);ctx.register_child(&mut self.label.TI2);ctx.register_child(&mut self.label.TJ3); // ↖  ↑  ↗
-    ctx.register_child(&mut self.label.HL4);ctx.register_child(&mut self.label.HI5);ctx.register_child(&mut self.label.HJ6); // ←  •  →
-    ctx.register_child(&mut self.label.LL7);ctx.register_child(&mut self.label.LI8);ctx.register_child(&mut self.label.LJ9); // ↙  ↓  ↘
+    ctx.register_child(&mut self.label.tl1);ctx.register_child(&mut self.label.ti2);ctx.register_child(&mut self.label.tj3); // ↖  ↑  ↗
+    ctx.register_child(&mut self.label.hl4);ctx.register_child(&mut self.label.hi5);ctx.register_child(&mut self.label.hj6); // ←  •  →
+    ctx.register_child(&mut self.label.ll7);ctx.register_child(&mut self.label.li8);ctx.register_child(&mut self.label.lj9); // ↙  ↓  ↘
   }
   fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
     let min_height = theme::BORDERED_WIDGET_HEIGHT; // HACK: to make sure we look okay at default sizes when beside a textbox, we make sure we will have at least the same height as the default textbox.
     let mut lbl_pad9 = [
-      (&mut self.label.TL1, self.opt.pad.TL1),
-      (&mut self.label.TI2, self.opt.pad.TI2),
-      (&mut self.label.TJ3, self.opt.pad.TJ3),
-      (&mut self.label.HL4, self.opt.pad.HL4),
-      (&mut self.label.HI5, self.opt.pad.HI5),
-      (&mut self.label.HJ6, self.opt.pad.HJ6),
-      (&mut self.label.LL7, self.opt.pad.LL7),
-      (&mut self.label.LI8, self.opt.pad.LI8),
-      (&mut self.label.LJ9, self.opt.pad.LJ9),
+      (&mut self.label.tl1, self.opt.pad.tl1),
+      (&mut self.label.ti2, self.opt.pad.ti2),
+      (&mut self.label.tj3, self.opt.pad.tj3),
+      (&mut self.label.hl4, self.opt.pad.hl4),
+      (&mut self.label.hi5, self.opt.pad.hi5),
+      (&mut self.label.hj6, self.opt.pad.hj6),
+      (&mut self.label.ll7, self.opt.pad.ll7),
+      (&mut self.label.li8, self.opt.pad.li8),
+      (&mut self.label.lj9, self.opt.pad.lj9),
       ];
 
     let mut row_w: [f64 ;3] = [0.   ;3]; //top /middle/bottom ↖↑↗  ←•→  ↙↓↘
     let mut col_h: [f64 ;3] = [0.   ;3]; //left/center/right  ↖←↙  ↑•↓  ↗→↘
-    // let mut is   : [bool;9] = [false;9];
     let mut lsz  : [Size  ;10] = [Size::ZERO  ;10];
     let mut lpad : [Insets;10] = [Insets::ZERO;10];
-    // let mut valid = vec!();
     for (i, (lbl9, pad9)) in lbl_pad9.iter_mut().enumerate() {
-      // let is_txt = ctx.get_raw_ref(lbl9).widget().text().len() > 0;
-      // is[i] = is_txt;
-      // if is_txt || i == 4 { //todo only calc/place valid labels,
-        // but then update register_children + children_ids
-        // and call children_changed when set_txt sets what was an empty label
       let pad       = match pad9 {Some(inset)=>*inset, None=>pad_def,};
       let pad_sz    = Size::new(pad.x_value(), pad.y_value());
       let lbl_bc    = bc.shrink(pad_sz).loosen();
@@ -304,22 +291,19 @@ impl Widget for Button9 {
         let baseline = ctx.child_baseline_offset(&lbl9);
         ctx.set_baseline_offset(baseline + pad.y1);
       }
-      if row_top.iter().any(|x| x == &i) {row_w[0] += lbl_sz.width  + pad_sz.width ;}
-      if row_mid.iter().any(|x| x == &i) {row_w[1] += lbl_sz.width  + pad_sz.width ;}
-      if row_bot.iter().any(|x| x == &i) {row_w[2] += lbl_sz.width  + pad_sz.width ;}
-      if col_lhs.iter().any(|x| x == &i) {col_h[0] += lbl_sz.height + pad_sz.height;}
-      if col_cnt.iter().any(|x| x == &i) {col_h[1] += lbl_sz.height + pad_sz.height;}
-      if col_rhs.iter().any(|x| x == &i) {col_h[2] += lbl_sz.height + pad_sz.height;}
+      if ROW_TOP.iter().any(|x| x == &i) {row_w[0] += lbl_sz.width  + pad_sz.width ;}
+      if ROW_MID.iter().any(|x| x == &i) {row_w[1] += lbl_sz.width  + pad_sz.width ;}
+      if ROW_BOT.iter().any(|x| x == &i) {row_w[2] += lbl_sz.width  + pad_sz.width ;}
+      if COL_LHS.iter().any(|x| x == &i) {col_h[0] += lbl_sz.height + pad_sz.height;}
+      if COL_CNT.iter().any(|x| x == &i) {col_h[1] += lbl_sz.height + pad_sz.height;}
+      if COL_RHS.iter().any(|x| x == &i) {col_h[2] += lbl_sz.height + pad_sz.height;}
       lsz[i+1] = lbl_sz; // store size for later offset calculations (after button size is known)
       lpad[i+1] = pad;
-      // valid.push((i, lbl9));
-      // }
     }
     let max_w = row_w[0].max(row_w[1]).max(row_w[2]);
     let max_h = col_h[0].max(col_h[1]).max(col_h[2]).max(min_height);
     let button_size = bc.constrain(Size::new(max_w, max_h));
 
-    // for (i, lbl9) in valid { // for (i, (lbl9, pad9)) in lbl_pad9.iter_mut().enumerate() {
     let bw = button_size.width; let bh = button_size.height; // ↖0,0 (w1-w2)/2=middle@x; (h1-h2)/2=center@y
     let lbl1_offset = Vec2::new( 0.                     + lpad[1].x0    , 0.                      + lpad[1].y0  );
     let lbl2_offset = Vec2::new((bw - lsz[2].width)/2.0                 , 0.                      + lpad[2].y0  );
@@ -337,10 +321,9 @@ impl Widget for Button9 {
       trace!("↙ lbl7 🆔{} offset {}", ctx.widget_id(), lbl7_offset); trace!("↓ lbl8 🆔{} offset {}", ctx.widget_id(), lbl8_offset); trace!("↘ lbl9 🆔{} offset {}", ctx.widget_id(), lbl9_offset);
     }
 
-    ctx.place_child(&mut self.label.TL1, lbl1_offset.to_point()); ctx.place_child(&mut self.label.TI2, lbl2_offset.to_point()); ctx.place_child(&mut self.label.TJ3, lbl3_offset.to_point());
-    ctx.place_child(&mut self.label.HL4, lbl4_offset.to_point()); ctx.place_child(&mut self.label.HI5, lbl5_offset.to_point()); ctx.place_child(&mut self.label.HJ6, lbl6_offset.to_point());
-    ctx.place_child(&mut self.label.LL7, lbl7_offset.to_point()); ctx.place_child(&mut self.label.LI8, lbl8_offset.to_point()); ctx.place_child(&mut self.label.LJ9, lbl9_offset.to_point());
-    // }
+    ctx.place_child(&mut self.label.tl1, lbl1_offset.to_point()); ctx.place_child(&mut self.label.ti2, lbl2_offset.to_point()); ctx.place_child(&mut self.label.tj3, lbl3_offset.to_point());
+    ctx.place_child(&mut self.label.hl4, lbl4_offset.to_point()); ctx.place_child(&mut self.label.hi5, lbl5_offset.to_point()); ctx.place_child(&mut self.label.hj6, lbl6_offset.to_point());
+    ctx.place_child(&mut self.label.ll7, lbl7_offset.to_point()); ctx.place_child(&mut self.label.li8, lbl8_offset.to_point()); ctx.place_child(&mut self.label.lj9, lbl9_offset.to_point());
     button_size
   }
 
@@ -368,7 +351,7 @@ impl Widget for Button9 {
   fn accessibility_role(&self) -> Role {Role::Button}
   fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) { // IMPORTANT: We don't want to merge this code in practice, because the child label already has a 'name' property. This is more of a proof of concept of `get_raw_ref()`.
     if false {
-      let label = ctx.get_raw_ref(&self.label.HI5);
+      let label = ctx.get_raw_ref(&self.label.hi5);
       let name  = label.widget().text().as_ref().to_string();
       node.set_value(name);
     }
@@ -376,9 +359,9 @@ impl Widget for Button9 {
   }
 
   fn children_ids   (&self                    ) -> SmallVec<[WidgetId; 16]> {smallvec![
-    self.label.TL1.id(),self.label.TI2.id(),self.label.TJ3.id(), // ↖  ↑  ↗
-    self.label.HL4.id(),self.label.HI5.id(),self.label.HJ6.id(), // ←  •  →
-    self.label.LL7.id(),self.label.LI8.id(),self.label.LJ9.id(), // ↙  ↓  ↘
+    self.label.tl1.id(),self.label.ti2.id(),self.label.tj3.id(), // ↖  ↑  ↗
+    self.label.hl4.id(),self.label.hi5.id(),self.label.hj6.id(), // ←  •  →
+    self.label.ll7.id(),self.label.li8.id(),self.label.lj9.id(), // ↙  ↓  ↘
   ]}
   fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {trace_span!("Button9", id = ctx.widget_id().trace())}
 }
