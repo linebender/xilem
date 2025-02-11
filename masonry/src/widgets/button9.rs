@@ -143,31 +143,16 @@ impl Button9 {
   pub fn set_text9(this:&mut WidgetMut<'_,Self>, new_text:impl Into<ArcStr>) {Label::set_text(&mut Self::label9_mut(this), new_text);}
 
   /// Set label options helpers
-  pub fn set_opt <'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hi5 = new_pad; this.ctx.request_render();}
-  pub fn set_pad1<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.tl1 = new_pad; this.ctx.request_render();}
-  pub fn set_pad2<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.ti2 = new_pad; this.ctx.request_render();}
-  pub fn set_pad3<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.tj3 = new_pad; this.ctx.request_render();}
-  pub fn set_pad4<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hl4 = new_pad; this.ctx.request_render();}
-  pub fn set_pad5<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hi5 = new_pad; this.ctx.request_render();}
-  pub fn set_pad6<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hj6 = new_pad; this.ctx.request_render();}
-  pub fn set_pad7<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.ll7 = new_pad; this.ctx.request_render();}
-  pub fn set_pad8<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.li8 = new_pad; this.ctx.request_render();}
-  pub fn set_pad9<'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.lj9 = new_pad; this.ctx.request_render();}
-  // pub fn set_opt  <'t>(this: &'t mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.set_optx(LPos::hi5, new_opt);}
-  /// Set the label options for a given position
-  pub fn set_padx(this: &mut WidgetMut<'_,Self>, idx:LPos, new_pad:Option<Insets>) {match idx {
-    LPos::tl1 => {this.widget.opt.pad.tl1 = new_pad}, //↖
-    LPos::ti2 => {this.widget.opt.pad.ti2 = new_pad}, //↑
-    LPos::tj3 => {this.widget.opt.pad.tj3 = new_pad}, //↗
-    LPos::hl4 => {this.widget.opt.pad.hl4 = new_pad}, //←
-    LPos::hi5 => {this.widget.opt.pad.hi5 = new_pad}, //•
-    LPos::hj6 => {this.widget.opt.pad.hj6 = new_pad}, //→
-    LPos::ll7 => {this.widget.opt.pad.ll7 = new_pad}, //↙
-    LPos::li8 => {this.widget.opt.pad.li8 = new_pad}, //↓
-    LPos::lj9 => {this.widget.opt.pad.lj9 = new_pad}, //↘
-    }
-    this.ctx.request_render(); // label options state impacts appearance and accessibility node
-  }
+  pub fn set_opt (this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hi5 = new_pad; this.ctx.request_render();}
+  pub fn set_pad1(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.tl1 = new_pad; this.ctx.request_render();}
+  pub fn set_pad2(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.ti2 = new_pad; this.ctx.request_render();}
+  pub fn set_pad3(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.tj3 = new_pad; this.ctx.request_render();}
+  pub fn set_pad4(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hl4 = new_pad; this.ctx.request_render();}
+  pub fn set_pad5(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hi5 = new_pad; this.ctx.request_render();}
+  pub fn set_pad6(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.hj6 = new_pad; this.ctx.request_render();}
+  pub fn set_pad7(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.ll7 = new_pad; this.ctx.request_render();}
+  pub fn set_pad8(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.li8 = new_pad; this.ctx.request_render();}
+  pub fn set_pad9(this:&mut WidgetMut<'_,Self>, new_pad:Option<Insets>) {this.widget.opt.pad.lj9 = new_pad; this.ctx.request_render();}
 
   /// Get mutable label helpers
   pub fn label_mut <'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.hi5)}
@@ -180,19 +165,6 @@ impl Button9 {
   pub fn label7_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.ll7)}
   pub fn label8_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.li8)}
   pub fn label9_mut<'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.ctx.get_mut(&mut this.widget.label.lj9)}
-  // pub fn label_mut <'t>(this: &'t mut WidgetMut<'_,Self>) -> WidgetMut<'t, Label> {this.labelx_mut(LPos::hi5)}
-  /// Get mutable label for a given position
-  pub fn labelx_mut<'t>(this: &'t mut WidgetMut<'_,Self>, idx:LPos) -> WidgetMut<'t, Label> {match idx {
-    LPos::tl1 => {return this.ctx.get_mut(&mut this.widget.label.tl1)}, //↖
-    LPos::ti2 => {return this.ctx.get_mut(&mut this.widget.label.ti2)}, //↑
-    LPos::tj3 => {return this.ctx.get_mut(&mut this.widget.label.tj3)}, //↗
-    LPos::hl4 => {return this.ctx.get_mut(&mut this.widget.label.hl4)}, //←
-    LPos::hi5 => {return this.ctx.get_mut(&mut this.widget.label.hi5)}, //•
-    LPos::hj6 => {return this.ctx.get_mut(&mut this.widget.label.hj6)}, //→
-    LPos::ll7 => {return this.ctx.get_mut(&mut this.widget.label.ll7)}, //↙
-    LPos::li8 => {return this.ctx.get_mut(&mut this.widget.label.li8)}, //↓
-    LPos::lj9 => {return this.ctx.get_mut(&mut this.widget.label.lj9)}, //↘
-  }}
 }
 
 // --- MARK: IMPL WIDGET ---
