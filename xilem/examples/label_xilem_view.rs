@@ -8,6 +8,8 @@
 // have both debug/release builds so that you can use F11/F12 inspectors?
 // is a release build useful for basic examples?
 
+#![allow(unused_assignments)]
+
 use masonry::dpi::LogicalSize;
 use winit::window::Window;
 use xilem::view::{CrossAxisAlignment, FlexExt, FlexParams};
