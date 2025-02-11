@@ -92,8 +92,8 @@ path = "examples/emoji_picker.rs"
 crate-type = ["cdylib"]
 
 [[example]]
-name = "label_xilem_view"
-path = "examples/label_xilem_view.rs"
+name = "gallery_label_xilem_view"
+path = "examples/gallery_label_xilem_view.rs"
 
 [lints]
 workspace = true
