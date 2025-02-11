@@ -11,6 +11,7 @@ mod tests;
 
 mod align;
 mod button;
+mod button9;
 mod checkbox;
 mod flex;
 mod grid;
@@ -31,6 +32,7 @@ mod zstack;
 
 pub use self::align::Align;
 pub use self::button::Button;
+pub use self::button9::{Button9, LabelOpt, Pad9};
 pub use self::checkbox::Checkbox;
 pub use self::flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use self::grid::{Grid, GridParams};

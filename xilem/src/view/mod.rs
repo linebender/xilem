@@ -9,6 +9,9 @@ pub use task::*;
 mod worker;
 pub use worker::*;
 
+mod button9;
+pub use button9::*;
+
 mod button;
 pub use button::*;
 
