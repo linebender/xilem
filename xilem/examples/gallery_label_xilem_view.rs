@@ -1,3 +1,6 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! An illustration of the various options for Xilem's Label View (based on Masonry Label Widget)
 // TODOs:
 // add rust code generating each element in a tooltip
@@ -5,10 +8,13 @@
 // add URL support for doc links
 // add non-desktop platforms
 // add to a CI build so you can simply download a binary and use it as a reference
-// have both debug/release builds so that you can use F11/F12 inspectors?
-// is a release build useful for basic examples?
+//   have both debug/release builds so that you can use F11/F12 inspectors?
+//     is a release build useful for basic examples?
 
-#![allow(unused_assignments)]
+#![allow(
+    unused_assignments,
+    reason = "allows NOT having to track section increments {i+=1;}, removing the last one."
+)]
 
 use masonry::dpi::LogicalSize;
 use winit::window::Window;
@@ -84,7 +90,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
             lc("3/4 alignment End"          ).alignment(TextAlignment::End          ).grid_pos(0,2),
             lc("4/4 alignment Justified"    ).alignment(TextAlignment::Justified    ).grid_pos(0,3),
             ),1,4,).spacing(0.0)
-        ).width(200f64).height(70f64).padding(Padding::from(0.))
+        ).width(200_f64).height(70_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY) //.border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ,),
     (l("  •unboxed (constrained by root parent's flex in a portal)\n  (Start=Middle: parent Flex container ≝CrossAxisAlignment::Center,\n  so the alignment for a label starts at the center)").alignment(TextAlignment::Justified).brush(m_c),
@@ -102,7 +108,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
         lc("3/4 alignment End"                                  ).alignment(TextAlignment::End          ),
         lc("4/4 alignment Justified"                            ).alignment(TextAlignment::Justified    ),
         ))
-        ).width(500f64).height(140f64).padding(Padding::from(0.))
+        ).width(500_f64).height(140_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY) //.border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ),
     (title_prose(format!("§{i} .line_break_mode")),{i+=1;},
@@ -114,7 +120,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
             lc("2/3 Clip    : truncate to label's width = abcd-efgh-ijkl-mnop-qrst-uvwx-yz" ).line_break_mode(LineBreaking::Clip        ).grid_pos(0,1),
             lc("3/3 Overflow: overflow the label = abcd-efgh-ijkl-mnop-qrst-uvwx-yz"        ).line_break_mode(LineBreaking::Overflow    ).grid_pos(0,2),
             ),1,3,).spacing(0.0)
-        ).width(340f64).height(120f64).padding(Padding::from(0.))
+        ).width(340_f64).height(120_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY)
     ),
 
