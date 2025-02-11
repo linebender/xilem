@@ -24,13 +24,13 @@ use masonry::kurbo::Insets;
 /// button(label, |state:&mut State| { state.increase();})
 /// ```
 pub fn button9<State,Action> (label:impl Into<Label>, callback:impl Fn(&mut State) -> Action+Send+'static)
-->ButtonL9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
+->Button9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
   button9_pad(label, None, callback)
 }
 /// A button with custom `pad` padding which calls `callback` when 🖰1 (normally left) is pressed
 pub fn button9_pad<State,Action>(label:impl Into<Label>, pad:Option<Insets>, callback: impl Fn(&mut State) -> Action+Send+'static)
-->ButtonL9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
-  ButtonL9::new(label, pad,
+->Button9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
+  Button9::new(label, pad,
     move |state: &mut State, button| match button {
       PointerB::Primary => MsgRes::Action(callback(state)),
       _                 => MsgRes::Nop                    ,},
@@ -38,13 +38,13 @@ pub fn button9_pad<State,Action>(label:impl Into<Label>, pad:Option<Insets>, cal
 }
 /// A button which calls `callback` when any 🖰 is pressed
 pub fn button9_any_pointer<State,Action>(label:impl Into<Label>, callback: impl Fn(&mut State, PointerB) -> Action+Send+'static)
-->ButtonL9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
+->Button9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
   button9_any_pointer_pad(label, None, callback)
 }
 /// A button with custom `pad` padding which calls `callback` when any 🖰 is pressed
 pub fn button9_any_pointer_pad<State,Action>(label:impl Into<Label>, pad:Option<Insets>, callback: impl Fn(&mut State, PointerB) -> Action+Send+'static)
-->ButtonL9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
-  ButtonL9::new(label, pad,
+->Button9<impl for<'a> Fn(&'a mut State, PointerB) -> MsgRes<Action>+Send+'static> {
+  Button9::new(label, pad,
     move |state: &mut State, button| MsgRes::Action(callback(state, button)),
   )
 }
@@ -53,19 +53,19 @@ use crate::masonry::button9::{LPos, LabelOpt, Pad9};
 
 /// The [`View`] created by [`button`] from up to label(s) in one of [`LPos`] position with custom padding and a callback.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct ButtonL9<F> {
+pub struct Button9<F> {
   label: Label9,
   opt  : LabelOpt,
   callback: F,
 }
-/// Label for ButtonL9
+/// Label for Button9
 pub struct Label9 {
   p1:Label, p2:Label, p3:Label, // ↖  ↑  ↗
   p4:Label, p5:Label, p6:Label, // ←  •  →
   p7:Label, p8:Label, p9:Label, // ↙  ↓  ↘
 }
 
-impl<F> ButtonL9<F>{
+impl<F> Button9<F>{
   /// Create a new button with a text label at the center (p5m other labels are blank, use `.addx` methods to fill them)
   pub fn new(                     label:impl Into<Label>, pad:Option<Insets>, callback:F) -> Self {
     let label = Label9 {
@@ -121,10 +121,10 @@ pub fn into_widget_pod(p:Pod<widgets::Label>) -> WidgetPod<widgets::Label> {
   WidgetPod::new_with_id_and_transform(p.widget, p.id, p.transform)
 }
 
-impl<F>              ViewMarker                 for ButtonL9<F> {}
-impl<F,State,Action> View<State,Action,ViewCtx> for ButtonL9<F>
+impl<F>              ViewMarker                 for Button9<F> {}
+impl<F,State,Action> View<State,Action,ViewCtx> for Button9<F>
 where F: Fn(&mut State, PointerB) -> MsgRes<Action> + Send + Sync + 'static {
-  type Element = Pod<widget9::ButtonL9>;
+  type Element = Pod<widget9::Button9>;
   type ViewState = ();
 
   fn build(&self, ctx:&mut ViewCtx) -> (Self::Element, Self::ViewState) {
@@ -152,44 +152,44 @@ where F: Fn(&mut State, PointerB) -> MsgRes<Action> + Send + Sync + 'static {
       p4:self.opt.pad.p4.clone(), p5:self.opt.pad.p5.clone(), p6:self.opt.pad.p6.clone(), // ←  •  →
       p7:self.opt.pad.p7.clone(), p8:self.opt.pad.p8.clone(), p9:self.opt.pad.p9.clone(), // ↙  ↓  ↘
     };
-    ctx.with_leaf_action_widget(|ctx| {ctx.new_pod(widget9::ButtonL9::from_label_pod(label,pad)) } )
+    ctx.with_leaf_action_widget(|ctx| {ctx.new_pod(widget9::Button9::from_label_pod(label,pad)) } )
   }
 
   fn rebuild(&self, prev:&Self, state:&mut Self::ViewState, ctx:&mut ViewCtx, mut el:Mut<Self::Element>) {
     // rebuild based on LabelViews, which already implement rebuild themselves (compare all the props)
-    ctx.with_id(id_lvw1, |ctx|{View::<State,Action,_>::rebuild(&self.label.p1,&prev.label.p1,state,ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw2, |ctx|{View::<State,Action,_>::rebuild(&self.label.p2,&prev.label.p2,state,ctx, widget9::ButtonL9::label2_mut(&mut el));});
-    ctx.with_id(id_lvw3, |ctx|{View::<State,Action,_>::rebuild(&self.label.p3,&prev.label.p3,state,ctx, widget9::ButtonL9::label3_mut(&mut el));});
-    ctx.with_id(id_lvw4, |ctx|{View::<State,Action,_>::rebuild(&self.label.p4,&prev.label.p4,state,ctx, widget9::ButtonL9::label4_mut(&mut el));});
-    ctx.with_id(id_lvw5, |ctx|{View::<State,Action,_>::rebuild(&self.label.p5,&prev.label.p5,state,ctx, widget9::ButtonL9::label5_mut(&mut el));});
-    ctx.with_id(id_lvw6, |ctx|{View::<State,Action,_>::rebuild(&self.label.p6,&prev.label.p6,state,ctx, widget9::ButtonL9::label6_mut(&mut el));});
-    ctx.with_id(id_lvw7, |ctx|{View::<State,Action,_>::rebuild(&self.label.p7,&prev.label.p7,state,ctx, widget9::ButtonL9::label7_mut(&mut el));});
-    ctx.with_id(id_lvw8, |ctx|{View::<State,Action,_>::rebuild(&self.label.p8,&prev.label.p8,state,ctx, widget9::ButtonL9::label8_mut(&mut el));});
-    ctx.with_id(id_lvw9, |ctx|{View::<State,Action,_>::rebuild(&self.label.p9,&prev.label.p9,state,ctx, widget9::ButtonL9::label9_mut(&mut el));});
+    ctx.with_id(id_lvw1, |ctx|{View::<State,Action,_>::rebuild(&self.label.p1,&prev.label.p1,state,ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw2, |ctx|{View::<State,Action,_>::rebuild(&self.label.p2,&prev.label.p2,state,ctx, widget9::Button9::label2_mut(&mut el));});
+    ctx.with_id(id_lvw3, |ctx|{View::<State,Action,_>::rebuild(&self.label.p3,&prev.label.p3,state,ctx, widget9::Button9::label3_mut(&mut el));});
+    ctx.with_id(id_lvw4, |ctx|{View::<State,Action,_>::rebuild(&self.label.p4,&prev.label.p4,state,ctx, widget9::Button9::label4_mut(&mut el));});
+    ctx.with_id(id_lvw5, |ctx|{View::<State,Action,_>::rebuild(&self.label.p5,&prev.label.p5,state,ctx, widget9::Button9::label5_mut(&mut el));});
+    ctx.with_id(id_lvw6, |ctx|{View::<State,Action,_>::rebuild(&self.label.p6,&prev.label.p6,state,ctx, widget9::Button9::label6_mut(&mut el));});
+    ctx.with_id(id_lvw7, |ctx|{View::<State,Action,_>::rebuild(&self.label.p7,&prev.label.p7,state,ctx, widget9::Button9::label7_mut(&mut el));});
+    ctx.with_id(id_lvw8, |ctx|{View::<State,Action,_>::rebuild(&self.label.p8,&prev.label.p8,state,ctx, widget9::Button9::label8_mut(&mut el));});
+    ctx.with_id(id_lvw9, |ctx|{View::<State,Action,_>::rebuild(&self.label.p9,&prev.label.p9,state,ctx, widget9::Button9::label9_mut(&mut el));});
 
     // rebuild based on LabelOpt, do manuall diff for each prop
-    if prev.opt.pad.p1 != self.opt.pad.p1 {widget9::ButtonL9::set_pad1 (&mut el, self.opt.pad.p1);}
-    if prev.opt.pad.p2 != self.opt.pad.p2 {widget9::ButtonL9::set_pad2 (&mut el, self.opt.pad.p2);}
-    if prev.opt.pad.p3 != self.opt.pad.p3 {widget9::ButtonL9::set_pad3 (&mut el, self.opt.pad.p3);}
-    if prev.opt.pad.p4 != self.opt.pad.p4 {widget9::ButtonL9::set_pad4 (&mut el, self.opt.pad.p4);}
-    if prev.opt.pad.p5 != self.opt.pad.p5 {widget9::ButtonL9::set_pad5 (&mut el, self.opt.pad.p5);}
-    if prev.opt.pad.p6 != self.opt.pad.p6 {widget9::ButtonL9::set_pad6 (&mut el, self.opt.pad.p6);}
-    if prev.opt.pad.p7 != self.opt.pad.p7 {widget9::ButtonL9::set_pad7 (&mut el, self.opt.pad.p7);}
-    if prev.opt.pad.p8 != self.opt.pad.p8 {widget9::ButtonL9::set_pad8 (&mut el, self.opt.pad.p8);}
-    if prev.opt.pad.p9 != self.opt.pad.p9 {widget9::ButtonL9::set_pad9 (&mut el, self.opt.pad.p9);}
+    if prev.opt.pad.p1 != self.opt.pad.p1 {widget9::Button9::set_pad1 (&mut el, self.opt.pad.p1);}
+    if prev.opt.pad.p2 != self.opt.pad.p2 {widget9::Button9::set_pad2 (&mut el, self.opt.pad.p2);}
+    if prev.opt.pad.p3 != self.opt.pad.p3 {widget9::Button9::set_pad3 (&mut el, self.opt.pad.p3);}
+    if prev.opt.pad.p4 != self.opt.pad.p4 {widget9::Button9::set_pad4 (&mut el, self.opt.pad.p4);}
+    if prev.opt.pad.p5 != self.opt.pad.p5 {widget9::Button9::set_pad5 (&mut el, self.opt.pad.p5);}
+    if prev.opt.pad.p6 != self.opt.pad.p6 {widget9::Button9::set_pad6 (&mut el, self.opt.pad.p6);}
+    if prev.opt.pad.p7 != self.opt.pad.p7 {widget9::Button9::set_pad7 (&mut el, self.opt.pad.p7);}
+    if prev.opt.pad.p8 != self.opt.pad.p8 {widget9::Button9::set_pad8 (&mut el, self.opt.pad.p8);}
+    if prev.opt.pad.p9 != self.opt.pad.p9 {widget9::Button9::set_pad9 (&mut el, self.opt.pad.p9);}
   }
 
   fn teardown(&self, _:&mut Self::ViewState, ctx:&mut ViewCtx, mut el:Mut<Self::Element>) {
     // teardown LabelViews, which already implement teardown themselves
-    ctx.with_id(id_lvw1, |ctx|{View::<State,Action,_>::teardown(&self.label.p1,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw2, |ctx|{View::<State,Action,_>::teardown(&self.label.p2,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw3, |ctx|{View::<State,Action,_>::teardown(&self.label.p3,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw4, |ctx|{View::<State,Action,_>::teardown(&self.label.p4,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw5, |ctx|{View::<State,Action,_>::teardown(&self.label.p5,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw6, |ctx|{View::<State,Action,_>::teardown(&self.label.p6,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw7, |ctx|{View::<State,Action,_>::teardown(&self.label.p7,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw8, |ctx|{View::<State,Action,_>::teardown(&self.label.p8,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
-    ctx.with_id(id_lvw9, |ctx|{View::<State,Action,_>::teardown(&self.label.p9,&mut (),ctx, widget9::ButtonL9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw1, |ctx|{View::<State,Action,_>::teardown(&self.label.p1,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw2, |ctx|{View::<State,Action,_>::teardown(&self.label.p2,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw3, |ctx|{View::<State,Action,_>::teardown(&self.label.p3,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw4, |ctx|{View::<State,Action,_>::teardown(&self.label.p4,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw5, |ctx|{View::<State,Action,_>::teardown(&self.label.p5,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw6, |ctx|{View::<State,Action,_>::teardown(&self.label.p6,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw7, |ctx|{View::<State,Action,_>::teardown(&self.label.p7,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw8, |ctx|{View::<State,Action,_>::teardown(&self.label.p8,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
+    ctx.with_id(id_lvw9, |ctx|{View::<State,Action,_>::teardown(&self.label.p9,&mut (),ctx, widget9::Button9::label1_mut(&mut el));});
     ctx.teardown_leaf(el); // teardown the button element itself
   }
 
@@ -208,11 +208,11 @@ where F: Fn(&mut State, PointerB) -> MsgRes<Action> + Send + Sync + 'static {
         Ok(action)   => {
           if let masonry::core::Action::ButtonPressed(button) = *action {
             (self.callback)(app_state, button)
-          } else        {tracing::error!("Wrong action type in ButtonL9::message: {action:?}");
+          } else        {tracing::error!("Wrong action type in Button9::message: {action:?}");
             MessageResult::Stale(action)} }
-        Err(message) => {tracing::error!("Wrong message type in ButtonL9::message: {message:?}");
+        Err(message) => {tracing::error!("Wrong message type in Button9::message: {message:?}");
             MessageResult::Stale(message) }   },
-      _    =>           {tracing::warn! ("Got unexpected ID path in ButtonL9::message");
+      _    =>           {tracing::warn! ("Got unexpected ID path in Button9::message");
             MessageResult::Stale(message)      }
     }
   }
