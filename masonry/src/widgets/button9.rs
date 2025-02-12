@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A button widget with up to 9 labels.
+// TODO: how to adjust `accessibility` for all 9 labels?
 
 use accesskit::{Node, Role};
 use smallvec::{smallvec, SmallVec};
@@ -627,14 +628,6 @@ impl Widget for Button9 {
         trace_span!("Button9", id = ctx.widget_id().trace())
     }
 }
-
-// --- MARK: TESTS ---
-// #[cfg(test)] mod button9_test; //TODO
-
-// TODO:
-// how to adjust `accessibility` for all 9 labels?
-// add tests
-// reformat docs
 
 // --- MARK: TESTS ---
 #[cfg(test)]
