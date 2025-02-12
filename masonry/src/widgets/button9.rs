@@ -19,7 +19,7 @@ use crate::theme;
 use crate::util::{fill_lin_gradient, stroke, UnitPoint};
 use crate::widgets::Label;
 
-/// The minimum padding added to a button. NOTE: these values are chosen to match the existing look of TextBox; these should be reevaluated at some point.
+/// The minimum padding added to a button. NOTE: these values are chosen to match the existing look of `TextBox`; these should be reevaluated at some point.
 pub const PAD_DEF: Insets = Insets::uniform_xy(8., 2.);
 
 /// A button with up to 9 text [`Label`]s (allowing for custom styles) with custom [`Pad9`]ing
@@ -432,7 +432,7 @@ impl Widget for Button9 {
             }
             if i == 4 {
                 // set baseline off the central label only?
-                let baseline = ctx.child_baseline_offset(&lbl9);
+                let baseline = ctx.child_baseline_offset(lbl9);
                 ctx.set_baseline_offset(baseline + pad.y1);
             }
             lsz[i + 1] = lbl_sz; // store size for later button size/offset calculations
@@ -440,51 +440,45 @@ impl Widget for Button9 {
         }
         let mut row_w: [f64; 3] = [0.; 3]; //top /middle/bottom ↖↑↗  ←•→  ↙↓↘
         let mut col_h: [f64; 3] = [0.; 3]; //left/center/right  ↖←↙  ↑•↓  ↗→↘
-        // empty buttons have a width of 4, not 0, though it doesn't affect anything?
-        //row Width = double max of (‹half width, half› width) since 2nd label will be at the middle even if only 2 labels exist and would otherwise fully fit in a button (with the 2nd label touching the right side), so need split the 2nd label in half and do the max width calculations separately, then pick the worst
-        //↖↑↗ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
-        row_w[0] = 2.0 * f64::max(lpad[1].x0 + lsz[1].width + f64::max(lpad[1].x1, lpad[2].x0) +
-                                         0.5 * lsz[2].width
-            ,//                           ½     •btn  width
-                                         0.5 * lsz[2].width + f64::max(lpad[2].x1, lpad[3].x0) +
-                                               lsz[3].width +
-                                  lpad[3].x1);//pad →right
-        //←•→ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
-        row_w[1] = 2.0 * f64::max(lpad[4].x0 + lsz[4].width + f64::max(lpad[4].x1, lpad[5].x0) +
-                                         0.5 * lsz[5].width
-            ,//                           ½     •btn  width
-                                         0.5 * lsz[5].width + f64::max(lpad[5].x1, lpad[6].x0) +
-                                               lsz[6].width +
-                                  lpad[6].x1);//pad →right
-        //↙↓↘ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
-        row_w[2] = 2.0 * f64::max(lpad[7].x0 + lsz[7].width + f64::max(lpad[7].x1, lpad[8].x0) +
-                                         0.5 * lsz[8].width
-            ,//                           ½     •btn  width
-                                         0.5 * lsz[8].width + f64::max(lpad[8].x1, lpad[9].x0) +
-                                               lsz[9].width +
-                                  lpad[6].x1);//pad →right
-        //col Height = double max of (‹half height, half› height) since 2nd label will be at the center even if only 2 labels exist and would otherwise fully fit in a button (with the 2nd label touching the bottom side), so need split the 2nd label in half and do the max width calculations separately, then pick the worst
-        //↖←↙ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
-        col_h[0] = 2.0 * f64::max(lpad[1].y0 + lsz[1].height + f64::max(lpad[1].y1, lpad[4].y0) +
-                                         0.5 * lsz[4].height
-            ,//                           ½     •btn  height
-                                         0.5 * lsz[4].height + f64::max(lpad[4].y1, lpad[7].y0) +
-                                               lsz[7].height +
-                                  lpad[7].y1);//pad →right
-        //↑•↓ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
-        col_h[1] = 2.0 * f64::max(lpad[2].y0 + lsz[2].height + f64::max(lpad[2].y1, lpad[5].y0) +
-                                         0.5 * lsz[5].height
-            ,//                           ½     •btn  height
-                                         0.5 * lsz[5].height + f64::max(lpad[5].y1, lpad[2].y0) +
-                                               lsz[2].height +
-                                  lpad[2].y1);//pad →right
-        //↗→↘ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
-        col_h[2] = 2.0 * f64::max(lpad[3].y0 + lsz[3].height + f64::max(lpad[3].y1, lpad[6].y0) +
-                                         0.5 * lsz[6].height
-            ,//                           ½     •btn  height
-                                         0.5 * lsz[6].height + f64::max(lpad[6].y1, lpad[9].y0) +
-                                               lsz[9].height +
-                                  lpad[9].y1);//pad →right
+                                           // empty buttons have a width of 4, not 0, though it doesn't affect anything?
+                                           //row Width = double max of (‹half width, half› width) since 2nd label will be at the middle even if only 2 labels exist and would otherwise fully fit in a button (with the 2nd label touching the right side), so need split the 2nd label in half and do the max width calculations separately, then pick the worst
+                                           //↖↑↗ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
+        row_w[0] = 2.0
+            * f64::max(
+                lpad[1].x0 + lsz[1].width + f64::max(lpad[1].x1, lpad[2].x0) + 0.5 * lsz[2].width, //                           ½     •btn  width
+                0.5 * lsz[2].width + f64::max(lpad[2].x1, lpad[3].x0) + lsz[3].width + lpad[3].x1,
+            ); //pad →right
+               //←•→ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
+        row_w[1] = 2.0
+            * f64::max(
+                lpad[4].x0 + lsz[4].width + f64::max(lpad[4].x1, lpad[5].x0) + 0.5 * lsz[5].width, //                           ½     •btn  width
+                0.5 * lsz[5].width + f64::max(lpad[5].x1, lpad[6].x0) + lsz[6].width + lpad[6].x1,
+            ); //pad →right
+               //↙↓↘ W    2          max( pad left← +  ‹btn› width +      max  pad     →  between  ← buttons
+        row_w[2] = 2.0
+            * f64::max(
+                lpad[7].x0 + lsz[7].width + f64::max(lpad[7].x1, lpad[8].x0) + 0.5 * lsz[8].width, //                           ½     •btn  width
+                0.5 * lsz[8].width + f64::max(lpad[8].x1, lpad[9].x0) + lsz[9].width + lpad[6].x1,
+            ); //pad →right
+               //col Height = double max of (‹half height, half› height) since 2nd label will be at the center even if only 2 labels exist and would otherwise fully fit in a button (with the 2nd label touching the bottom side), so need split the 2nd label in half and do the max width calculations separately, then pick the worst
+               //↖←↙ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
+        col_h[0] = 2.0
+            * f64::max(
+                lpad[1].y0 + lsz[1].height + f64::max(lpad[1].y1, lpad[4].y0) + 0.5 * lsz[4].height, //                           ½     •btn  height
+                0.5 * lsz[4].height + f64::max(lpad[4].y1, lpad[7].y0) + lsz[7].height + lpad[7].y1,
+            ); //pad →right
+               //↑•↓ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
+        col_h[1] = 2.0
+            * f64::max(
+                lpad[2].y0 + lsz[2].height + f64::max(lpad[2].y1, lpad[5].y0) + 0.5 * lsz[5].height, //                           ½     •btn  height
+                0.5 * lsz[5].height + f64::max(lpad[5].y1, lpad[2].y0) + lsz[2].height + lpad[2].y1,
+            ); //pad →right
+               //↗→↘ H    2          max( pad top↑  +  ‹btn› height +      max  pad     →  between  ← buttons
+        col_h[2] = 2.0
+            * f64::max(
+                lpad[3].y0 + lsz[3].height + f64::max(lpad[3].y1, lpad[6].y0) + 0.5 * lsz[6].height, //                           ½     •btn  height
+                0.5 * lsz[6].height + f64::max(lpad[6].y1, lpad[9].y0) + lsz[9].height + lpad[9].y1,
+            ); //pad →right
         let max_w = row_w[0].max(row_w[1]).max(row_w[2]);
         let max_h = col_h[0].max(col_h[1]).max(col_h[2]).max(min_height);
         let button_size = bc.constrain(Size::new(max_w, max_h));
@@ -510,14 +504,40 @@ impl Widget for Button9 {
             trace!("    2⋅Max½        ▫■▫      ▫▪¦▪▫       ▫■▫            ▣   ▣   ▣ ");
             //eg   "↖↑↗  18    9̣ ≕  1+ 4+ 3̣? 1+ 2¦ 2+ 1? 2̣+ 4+ 0 ≔   8     8   6   6"
             for ri in 0..=2 {
-                let rs = if ri==0{"↖↑↗"} else if ri==1{"←•→"} else if ri==2{"↙↓↘"} else{"???"};
-                let l1=ri*3+1; let l2=ri*3+2; let l3=ri*3+3;
+                let rs = if ri == 0 {
+                    "↖↑↗"
+                } else if ri == 1 {
+                    "←•→"
+                } else if ri == 2 {
+                    "↙↓↘"
+                } else {
+                    "???"
+                };
+                let l1 = ri * 3 + 1;
+                let l2 = ri * 3 + 2;
+                let l3 = ri * 3 + 3;
                 let dim_d = row_w;
-                let row_wh1 = lpad[l1].x0 + lsz[l1].width + f64::max(lpad[l1].x1, lpad[l2].x0) + 0.5 * lsz[l2].width;
-                let row_wh2 =               lsz[l3].width + f64::max(lpad[l2].x1, lpad[l3].x0) + 0.5 * lsz[l2].width;
-                let (mh1,mh2) = if row_wh1 >= row_wh2 {("̣","")} else {("","̣")};
-                let (mp1r,mp2l) = if lpad[l1].x1.ge(&lpad[l2].x0) {("̣","")} else {("","̣")};
-                let (mp2r,mp3l) = if lpad[l2].x1.ge(&lpad[l3].x0) {("̣","")} else {("","̣")};
+                let row_wh1 = lpad[l1].x0
+                    + lsz[l1].width
+                    + f64::max(lpad[l1].x1, lpad[l2].x0)
+                    + 0.5 * lsz[l2].width;
+                let row_wh2 =
+                    lsz[l3].width + f64::max(lpad[l2].x1, lpad[l3].x0) + 0.5 * lsz[l2].width;
+                let (mh1, mh2) = if row_wh1 >= row_wh2 {
+                    ("̣", "")
+                } else {
+                    ("", "̣")
+                };
+                let (mp1r, mp2l) = if lpad[l1].x1.ge(&lpad[l2].x0) {
+                    ("̣", "")
+                } else {
+                    ("", "̣")
+                };
+                let (mp2r, mp3l) = if lpad[l2].x1.ge(&lpad[l3].x0) {
+                    ("̣", "")
+                } else {
+                    ("", "̣")
+                };
                 trace!("{} {: >3}  {: >3}{} ≕ {: >2     }+{: >2        }+{: >2      }{   }?{: >2     }{   }+{: >2   }\
                     ¦{: >2            }+{: >2      }{    }?{: >2      }{    }+{: >2        }+{: >2     } ≔ {: >3}{}   \
                     {: >3} {: >3} {: >3}"
@@ -532,14 +552,40 @@ impl Widget for Button9 {
             trace!("    2⋅Max½        ▫■▫      ▫▪¦▪▫       ▫■▫            ▣   ▣   ▣ ");
             //eg   "↖←↙  18    9̣ ≕  1+ 4+ 3̣? 1+ 2¦ 2+ 1? 2̣+ 4+ 0 ≔   8     8   6   6"
             for ci in 0..=2 {
-                let cs = if ci==0{"↖←↙"} else if ci==1{"↑•↓"} else if ci==2{"↗→↘"} else{"???"};
-                let l1=ci*3+1; let l2=ci*3+2; let l3=ci*3+3;
+                let cs = if ci == 0 {
+                    "↖←↙"
+                } else if ci == 1 {
+                    "↑•↓"
+                } else if ci == 2 {
+                    "↗→↘"
+                } else {
+                    "???"
+                };
+                let l1 = ci * 3 + 1;
+                let l2 = ci * 3 + 2;
+                let l3 = ci * 3 + 3;
                 let dim_d = col_h;
-                let row_hh1 = lpad[l1].y0 + lsz[l1].height + f64::max(lpad[l1].y1, lpad[l2].y0) + 0.5 * lsz[l2].height;
-                let row_hh2 =               lsz[l3].height + f64::max(lpad[l2].y1, lpad[l3].y0) + 0.5 * lsz[l2].height;
-                let (mh1,mh2) = if row_hh1 >= row_hh2 {("̣","")} else {("","̣")};
-                let (mp1b,mp2t) = if lpad[l1].y1.ge(&lpad[l2].y0) {("̣","")} else {("","̣")};
-                let (mp2b,mp3t) = if lpad[l2].y1.ge(&lpad[l3].y0) {("̣","")} else {("","̣")};
+                let row_hh1 = lpad[l1].y0
+                    + lsz[l1].height
+                    + f64::max(lpad[l1].y1, lpad[l2].y0)
+                    + 0.5 * lsz[l2].height;
+                let row_hh2 =
+                    lsz[l3].height + f64::max(lpad[l2].y1, lpad[l3].y0) + 0.5 * lsz[l2].height;
+                let (mh1, mh2) = if row_hh1 >= row_hh2 {
+                    ("̣", "")
+                } else {
+                    ("", "̣")
+                };
+                let (mp1b, mp2t) = if lpad[l1].y1.ge(&lpad[l2].y0) {
+                    ("̣", "")
+                } else {
+                    ("", "̣")
+                };
+                let (mp2b, mp3t) = if lpad[l2].y1.ge(&lpad[l3].y0) {
+                    ("̣", "")
+                } else {
+                    ("", "̣")
+                };
                 trace!("{} {: >3}  {: >3}{} ≕ {: >2     }+{: >2        }+{: >2      }{   }?{: >2     }{   }+{: >2   }\
                     ¦{: >2            }+{: >2      }{    }?{: >2      }{    }+{: >2        }+{: >2     } ≔ {: >3}{}   \
                     {: >3} {: >3} {: >3}"
@@ -637,23 +683,23 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
+    use crate::kurbo::Insets;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
     use crate::theme::PRIMARY_LIGHT;
-    use crate::kurbo::Insets;
 
     #[test]
     fn simple_button9() {
         let [button_id] = widget_ids();
         let widget = Button9::new("5Hello")
-            .add1(Label::new("1"),Some(Insets::new(1.,0.,1.,0.)),)
-            .add2(Label::new("2"),Some(Insets::new(2.,0.,0.,0.)),)
-            .add3(Label::new("3"),Some(Insets::new(0.,0.,0.,0.)),)
-            .add4(Label::new("4"),Some(Insets::new(1.,0.,4.,0.)),)
-            .add6(Label::new("6"),Some(Insets::new(0.,0.,0.,0.)),)
-            .add7(Label::new("7"),Some(Insets::new(0.,0.,0.,0.)),)
-            .add8(Label::new("8"),Some(Insets::new(0.,0.,0.,0.)),)
-            .add9(Label::new("9"),Some(Insets::new(0.,0.,0.,0.)),)
-        .with_id(button_id);
+            .add1(Label::new("1"), Some(Insets::new(1., 0., 1., 0.)))
+            .add2(Label::new("2"), Some(Insets::new(2., 0., 0., 0.)))
+            .add3(Label::new("3"), Some(Insets::new(0., 0., 0., 0.)))
+            .add4(Label::new("4"), Some(Insets::new(1., 0., 4., 0.)))
+            .add6(Label::new("6"), Some(Insets::new(0., 0., 0., 0.)))
+            .add7(Label::new("7"), Some(Insets::new(0., 0., 0., 0.)))
+            .add8(Label::new("8"), Some(Insets::new(0., 0., 0., 0.)))
+            .add9(Label::new("9"), Some(Insets::new(0., 0., 0., 0.)))
+            .with_id(button_id);
 
         let mut harness = TestHarness::create(widget);
 

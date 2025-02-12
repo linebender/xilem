@@ -234,15 +234,15 @@ where
             child9.into_widget_pod(), // ↙  ↓  ↘
         ];
         let pad = Pad9 {
-            p1: self.opt.pad.p1.clone(),
-            p2: self.opt.pad.p2.clone(),
-            p3: self.opt.pad.p3.clone(), // ↖  ↑  ↗
-            p4: self.opt.pad.p4.clone(),
-            p5: self.opt.pad.p5.clone(),
-            p6: self.opt.pad.p6.clone(), // ←  •  →
-            p7: self.opt.pad.p7.clone(),
-            p8: self.opt.pad.p8.clone(),
-            p9: self.opt.pad.p9.clone(), // ↙  ↓  ↘
+            p1: self.opt.pad.p1,
+            p2: self.opt.pad.p2,
+            p3: self.opt.pad.p3, // ↖  ↑  ↗
+            p4: self.opt.pad.p4,
+            p5: self.opt.pad.p5,
+            p6: self.opt.pad.p6, // ←  •  →
+            p7: self.opt.pad.p7,
+            p8: self.opt.pad.p8,
+            p9: self.opt.pad.p9, // ↙  ↓  ↘
         };
         ctx.with_leaf_action_widget(|ctx| ctx.new_pod(widgets::Button9::from_label_pod(label, pad)))
     }

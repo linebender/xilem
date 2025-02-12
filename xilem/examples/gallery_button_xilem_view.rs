@@ -21,9 +21,7 @@ struct AppState {}
 use masonry::core::ArcStr;
 use masonry::peniko::Color;
 use winit::error::EventLoopError;
-use xilem::view::{
-    button9_pad, flex, label, portal, prose, Axis, Prose,
-};
+use xilem::view::{button9_pad, flex, label, portal, prose, Axis, Prose};
 use xilem::{palette::css, EventLoop, FontWeight, TextAlignment, WidgetView, Xilem};
 
 fn title_prose(text: impl Into<ArcStr>) -> Prose {
@@ -42,10 +40,10 @@ fn txt_prose(text: impl Into<ArcStr>) -> Prose {
 use masonry::kurbo::Insets;
 const OFF0: Insets = Insets::uniform_xy(0., 0.);
 // const OFF8: Insets = Insets::uniform_xy(8., 2.);
-fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
-    let _cb = |_d: &mut AppState| {}; // empty callback for empty buttons
-                                      // let m_c = Color::from_rgb8(0x11, 0x11, 0x11); //main text
-                                      // let l_c = LABEL_COLOR;
+fn app_logic(_: &mut AppState) -> impl WidgetView<AppState> {
+    let _cb = |_: &mut AppState| {}; // empty callback for empty buttons
+                                     // let m_c = Color::from_rgb8(0x11, 0x11, 0x11); //main text
+                                     // let l_c = LABEL_COLOR;
     let mut i = 1;
 
     portal(
@@ -110,7 +108,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
         .add8(label(""     	),Some(Insets::new(0.,0.,0.,0.)),)
         .add9(label(""     	),Some(Insets::new(0.,0.,0.,0.)),)
         ,
-    txt_prose("  but moving ↖L1 to the right by 7 by increasing its left padding from 1 to 8 in addition to the increase in padding between ↖L1 and ↑L2 by 3 (from max(1,2)=2 to max(1,5)=5) makes the overall width of the Top row (+20 = +10⋅2 on both the left and the right sides to maintain symmetry vs. the central label) bigger than the width of the Middle row (152 vs 138), so the button accomodates by increasing its width to 152"),
+    txt_prose("  but moving ↖L1 to the right by 7 by increasing its left padding from 1 to 8 in addition to the increase in padding between ↖L1 and ↑L2 by 3 (from max(1,2)=2 to max(1,5)=5) makes the overall width of the Top row (+20 = +10⋅2 on both the left and the right sides to maintain symmetry vs. the central label) bigger than the width of the Middle row (152 vs 138), so the button accommodates by increasing its width to 152"),
     txt_prose("❗ padding between labels are not summed up, but a maximum is used since the point of padding is to offset against a visible element, which in this case is label's text."),
     ),
     ))//flex
