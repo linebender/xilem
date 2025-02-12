@@ -184,10 +184,6 @@ const ID_LVW7: ViewId = ViewId::new(7);
 const ID_LVW8: ViewId = ViewId::new(8);
 const ID_LVW9: ViewId = ViewId::new(9);
 
-pub fn into_widget_pod(p: Pod<widgets::Label>) -> WidgetPod<widgets::Label> {
-    WidgetPod::new_with_id_and_transform(p.widget, p.id, p.transform)
-}
-
 impl<F> ViewMarker for Button9<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Button9<F>
 where
@@ -227,18 +223,15 @@ where
         });
         // pass built elements to the masonry widgets
         let label = [
-            into_widget_pod(child1),
-            into_widget_pod(child2),
-            into_widget_pod(child3), // ↖  ↑  ↗
-            into_widget_pod(child4),
-            into_widget_pod(child5),
-            into_widget_pod(child8), // ←  •  →
-            into_widget_pod(child7),
-            into_widget_pod(child6),
-            into_widget_pod(child9), // ↙  ↓  ↘
-                                     // child1.into_widget_pod(), child2.into_widget_pod(), child3.into_widget_pod(), // ↖  ↑  ↗
-                                     // child4.into_widget_pod(), child5.into_widget_pod(), child8.into_widget_pod(), // ←  •  →
-                                     // child7.into_widget_pod(), child6.into_widget_pod(), child9.into_widget_pod(), // ↙  ↓  ↘
+            child1.into_widget_pod(),
+            child2.into_widget_pod(),
+            child3.into_widget_pod(), // ↖  ↑  ↗
+            child4.into_widget_pod(),
+            child5.into_widget_pod(),
+            child8.into_widget_pod(), // ←  •  →
+            child7.into_widget_pod(),
+            child6.into_widget_pod(),
+            child9.into_widget_pod(), // ↙  ↓  ↘
         ];
         let pad = Pad9 {
             p1: self.opt.pad.p1.clone(),
