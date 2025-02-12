@@ -607,11 +607,21 @@ mod tests {
     use crate::core::StyleProperty;
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
     use crate::theme::PRIMARY_LIGHT;
+    use crate::kurbo::Insets;
 
     #[test]
-    fn simple_button() {
+    fn simple_button9() {
         let [button_id] = widget_ids();
-        let widget = Button9::new("Hello").with_id(button_id);
+        let widget = Button9::new("5Hello")
+            .add1(Label::new("1"),Some(Insets::new(1.,0.,1.,0.)),)
+            .add2(Label::new("2"),Some(Insets::new(2.,0.,0.,0.)),)
+            .add3(Label::new("3"),Some(Insets::new(0.,0.,0.,0.)),)
+            .add4(Label::new("4"),Some(Insets::new(1.,0.,4.,0.)),)
+            .add6(Label::new("6"),Some(Insets::new(0.,0.,0.,0.)),)
+            .add7(Label::new("7"),Some(Insets::new(0.,0.,0.,0.)),)
+            .add8(Label::new("8"),Some(Insets::new(0.,0.,0.,0.)),)
+            .add9(Label::new("9"),Some(Insets::new(0.,0.,0.,0.)),)
+        .with_id(button_id);
 
         let mut harness = TestHarness::create(widget);
 
@@ -623,7 +633,7 @@ mod tests {
         harness.mouse_click_on(button_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::Button9Pressed(PointerButton::Primary), button_id))
+            Some((Action::ButtonPressed(PointerButton::Primary), button_id))
         );
     }
 
