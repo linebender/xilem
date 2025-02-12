@@ -163,6 +163,8 @@ pub use xilem_core as core;
 /// Tokio is the async runner used with Xilem.
 pub use tokio;
 
+pub use winit;
+
 mod any_view;
 mod driver;
 mod one_of;
