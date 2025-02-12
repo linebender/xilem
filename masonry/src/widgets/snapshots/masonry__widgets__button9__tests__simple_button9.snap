@@ -1,0 +1,18 @@
+---
+source: masonry/src/widgets/button9.rs
+assertion_line: 628
+expression: harness.root_widget()
+---
+SizedBox(
+    Button9(
+        Label<1>,
+        Label<2>,
+        Label<3>,
+        Label<4>,
+        Label<5Hello>,
+        Label<6>,
+        Label<7>,
+        Label<8>,
+        Label<9>,
+    ),
+)
