@@ -638,7 +638,7 @@ mod tests {
     }
 
     #[test]
-    fn edit_button() {
+    fn edit_button9() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_brush(PRIMARY_LIGHT)
