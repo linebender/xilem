@@ -464,16 +464,52 @@ impl Widget for Button9 {
             bh - lsz[9].height - lpad[9].y1,
         ); // button_size.to_vec2() - lsz[3].to_vec2()
         if cfg!(debug_assertions) {
-            trace!("button_size = {button_size:?} max_w={max_w} max_h={max_h} row_w={row_w:?} col_h={col_h:?}");
-            trace!("↖ lbl1 🆔{} offset {}", ctx.widget_id(), lbl1_offset);
-            trace!("↑ lbl2 🆔{} offset {}", ctx.widget_id(), lbl2_offset);
-            trace!("↗ lbl3 🆔{} offset {}", ctx.widget_id(), lbl3_offset);
-            trace!("← lbl4 🆔{} offset {}", ctx.widget_id(), lbl4_offset);
-            trace!("• lbl5 🆔{} offset {}", ctx.widget_id(), lbl5_offset);
-            trace!("→ lbl6 🆔{} offset {}", ctx.widget_id(), lbl6_offset);
-            trace!("↙ lbl7 🆔{} offset {}", ctx.widget_id(), lbl7_offset);
-            trace!("↓ lbl8 🆔{} offset {}", ctx.widget_id(), lbl8_offset);
-            trace!("↘ lbl9 🆔{} offset {}", ctx.widget_id(), lbl9_offset);
+            trace!("🆔{} button_size={button_size:?} ∑▣ max_w={max_w} max_h={max_h} row_w={row_w:?} col_h={col_h:?}",ctx.widget_id());
+            trace!("▣ label with pads; ▫■▫ 1-dimensional with 2 pads, ▪¦▪ split, ḍọṭ marks the max pad between labels");
+            trace!("Row ∑W   ∑½    ┌─────‹W½────┐ ┌────W½›─────┐   ∑½    🛈 Label width");
+            trace!("    2⋅Max½        ▫■▫      ▫▪¦▪▫       ▫■▫            ▣   ▣   ▣ ");
+            //eg   "↖↑↗  18    9̣ ≕  1+ 4+ 3̣? 1+ 2¦ 2+ 1? 2̣+ 4+ 0 ≔   8     8   6   6"
+            for ri in 0..=2 {
+                let rs = if ri==0{"↖↑↗"} else if ri==1{"←•→"} else if ri==2{"↙↓↘"} else{"???"};
+                let l1=ri*3+1; let l2=ri*3+2; let l3=ri*3+3;
+                let dim_d = row_w;
+                let row_wh1 = lpad[l1].x0 + lsz[l1].width + f64::max(lpad[l1].x1, lpad[l2].x0) + 0.5 * lsz[l2].width;
+                let row_wh2 =               lsz[l3].width + f64::max(lpad[l2].x1, lpad[l3].x0) + 0.5 * lsz[l2].width;
+                let (mh1,mh2) = if row_wh1 >= row_wh2 {("̣","")} else {("","̣")};
+                let (mp1r,mp2l) = if lpad[l1].x1.ge(&lpad[l2].x0) {("̣","")} else {("","̣")};
+                let (mp2r,mp3l) = if lpad[l2].x1.ge(&lpad[l3].x0) {("̣","")} else {("","̣")};
+                trace!("{} {: >3}  {: >3}{} ≕ {: >2     }+{: >2        }+{: >2      }{   }?{: >2     }{   }+{: >2   }\
+                    ¦{: >2            }+{: >2      }{    }?{: >2      }{    }+{: >2        }+{: >2     } ≔ {: >3}{}   \
+                    {: >3} {: >3} {: >3}"
+                    ,rs,dim_d[ri],row_wh1,mh1, lpad[l1].x0,lsz[l1].width , lpad[l1].x1,mp1r,lpad[l2].x0,mp2l, 0.5*lsz[l2].width
+                    ,0.5*lsz[l2].width, lpad[l2].x1,mp2r , lpad[l3].x0,mp3l , lsz[l3].width,lpad[l3].x1, row_wh2,mh2
+                    ,lsz[l1].width + lpad[l1].x0+lpad[l1].x1
+                    ,lsz[l2].width + lpad[l2].x0+lpad[l2].x1
+                    ,lsz[l3].width + lpad[l3].x0+lpad[l3].x1
+                    );
+            }
+            trace!("Col ∑H   ∑½    ┌─────↑H½────┐ ┌────H½↓─────┐   ∑½    🛈 Label height");
+            trace!("    2⋅Max½        ▫■▫      ▫▪¦▪▫       ▫■▫            ▣   ▣   ▣ ");
+            //eg   "↖←↙  18    9̣ ≕  1+ 4+ 3̣? 1+ 2¦ 2+ 1? 2̣+ 4+ 0 ≔   8     8   6   6"
+            for ci in 0..=2 {
+                let cs = if ci==0{"↖←↙"} else if ci==1{"↑•↓"} else if ci==2{"↗→↘"} else{"???"};
+                let l1=ci*3+1; let l2=ci*3+2; let l3=ci*3+3;
+                let dim_d = col_h;
+                let row_hh1 = lpad[l1].y0 + lsz[l1].height + f64::max(lpad[l1].y1, lpad[l2].y0) + 0.5 * lsz[l2].height;
+                let row_hh2 =               lsz[l3].height + f64::max(lpad[l2].y1, lpad[l3].y0) + 0.5 * lsz[l2].height;
+                let (mh1,mh2) = if row_hh1 >= row_hh2 {("̣","")} else {("","̣")};
+                let (mp1b,mp2t) = if lpad[l1].y1.ge(&lpad[l2].y0) {("̣","")} else {("","̣")};
+                let (mp2b,mp3t) = if lpad[l2].y1.ge(&lpad[l3].y0) {("̣","")} else {("","̣")};
+                trace!("{} {: >3}  {: >3}{} ≕ {: >2     }+{: >2        }+{: >2      }{   }?{: >2     }{   }+{: >2   }\
+                    ¦{: >2            }+{: >2      }{    }?{: >2      }{    }+{: >2        }+{: >2     } ≔ {: >3}{}   \
+                    {: >3} {: >3} {: >3}"
+                    ,cs,dim_d[ci],row_hh1,mh1, lpad[l1].y0,lsz[l1].height , lpad[l1].y1,mp1b,lpad[l2].y0,mp2t, 0.5*lsz[l2].height
+                    ,0.5*lsz[l2].height, lpad[l2].y1,mp2b , lpad[l3].y0,mp3t , lsz[l3].height,lpad[l3].y1, row_hh2,mh2
+                    ,lsz[l1].height + lpad[l1].y0+lpad[l1].y1
+                    ,lsz[l2].height + lpad[l2].y0+lpad[l2].y1
+                    ,lsz[l3].height + lpad[l3].y0+lpad[l3].y1
+                    );
+            }
         }
 
         ctx.place_child(&mut self.label.p1, lbl1_offset.to_point());
