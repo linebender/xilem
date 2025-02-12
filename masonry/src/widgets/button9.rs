@@ -623,7 +623,7 @@ mod tests {
         harness.mouse_click_on(button_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::Button9Pressed(PointerButton9::Primary), button_id))
+            Some((Action::Button9Pressed(PointerButton::Primary), button_id))
         );
     }
 
