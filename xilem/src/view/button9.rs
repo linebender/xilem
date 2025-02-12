@@ -59,7 +59,7 @@ pub fn button9_any_pointer_pad<State, Action>(
     })
 }
 
-/// The [`View`] created by [`button`] from up to label(s) in one of 9 positions with custom padding and a callback.
+/// The [`View`] created by [`button9`] from up to label(s) in one of 9 positions with custom padding and a callback.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button9<F> {
     label: Label9,
@@ -80,7 +80,8 @@ pub struct Label9 {
 }
 
 impl<F> Button9<F> {
-    /// Create a new button with a text label at the center (p5m other labels are blank, use `.addx` methods to fill them)
+    /// Create a new button with a text label at the center
+    /// ([`Label9`].p5, others 8 labels are blank by default, use [`Button9::add1`]–[`Button9::add9`] methods to fill them)
     pub fn new(label: impl Into<Label>, pad: Option<Insets>, callback: F) -> Self {
         let label = Label9 {
             p1: "".into(),
@@ -111,52 +112,61 @@ impl<F> Button9<F> {
             callback,
         }
     }
-    /// Helper .methods for adding individual labels (add=center p5)
+    /// Add label at •p5
     pub fn add(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p5 = label.into();
         self.opt.pad.p5 = pad;
         self
     }
+    /// Add label at ↖p1
     pub fn add1(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p1 = label.into();
         self.opt.pad.p1 = pad;
         self
     }
+    /// Add label at ↑p2
     pub fn add2(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p2 = label.into();
         self.opt.pad.p2 = pad;
         self
     }
+    /// Add label at ↗p3
     pub fn add3(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p3 = label.into();
         self.opt.pad.p3 = pad;
         self
     }
+    /// Add label at ←p4
     pub fn add4(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p4 = label.into();
         self.opt.pad.p4 = pad;
         self
     }
+    /// Add label at •p5
     pub fn add5(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p5 = label.into();
         self.opt.pad.p5 = pad;
         self
     }
+    /// Add label at →p6
     pub fn add6(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p6 = label.into();
         self.opt.pad.p6 = pad;
         self
     }
+    /// Add label at ↙p7
     pub fn add7(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p7 = label.into();
         self.opt.pad.p7 = pad;
         self
     }
+    /// Add label at ↓p8
     pub fn add8(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p8 = label.into();
         self.opt.pad.p8 = pad;
         self
     }
+    /// Add label at ↘p9
     pub fn add9(mut self, label: impl Into<Label>, pad: Option<Insets>) -> Self {
         self.label.p9 = label.into();
         self.opt.pad.p9 = pad;
