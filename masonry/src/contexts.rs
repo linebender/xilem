@@ -716,8 +716,8 @@ impl_context_method!(
         ///
         /// The return value is a token, which can be used to associate the
         /// request with the event.
-        pub fn request_timer_rel(&mut self, deadline: Duration) -> TimerId {
-            let deadline = Instant::now() + deadline;
+        pub fn request_timer_relative(&mut self, offset: Duration) -> TimerId {
+            let deadline = Instant::now() + offset;
             self.request_timer(deadline)
         }
 
