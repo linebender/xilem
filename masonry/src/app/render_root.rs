@@ -294,6 +294,7 @@ impl RenderRoot {
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
                 states: TreeArena::new(),
+                properties: TreeArena::new(),
             },
             rebuild_access_tree: true,
             debug_paint,
@@ -476,19 +477,23 @@ impl RenderRoot {
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.states.roots();
         let root_widget_token = self.widget_arena.widgets.roots();
+        let root_properties_token = self.widget_arena.properties.roots();
         let state_ref = root_state_token
             .into_item(self.root.id())
             .expect("root widget not in widget tree");
         let widget_ref = root_widget_token
             .into_item(self.root.id())
             .expect("root widget not in widget tree");
-
+        let properties_ref = root_properties_token
+            .into_item(self.root.id())
+            .expect("root widget not in widget tree");
         let widget = &**widget_ref.item;
         let ctx = QueryCtx {
             global_state: &self.global_state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
+            properties_children: properties_ref.children,
         };
         WidgetRef { ctx, widget }
     }
@@ -501,6 +506,11 @@ impl RenderRoot {
             .widgets
             .find(id)
             .expect("found state but not widget");
+        let properties_ref = self
+            .widget_arena
+            .properties
+            .find(id)
+            .expect("found state but not properties");
 
         let widget = &**widget_ref.item;
         let ctx = QueryCtx {
@@ -508,6 +518,7 @@ impl RenderRoot {
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
+            properties_children: properties_ref.children,
         };
         Some(WidgetRef { ctx, widget })
     }

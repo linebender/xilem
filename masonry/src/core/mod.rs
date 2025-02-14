@@ -8,6 +8,7 @@ mod box_constraints;
 mod contexts;
 mod event;
 mod object_fit;
+mod properties;
 mod text;
 #[allow(missing_docs, reason = "TODO")]
 mod widget;
@@ -30,6 +31,7 @@ pub use event::{
     WindowTheme,
 };
 pub use object_fit::ObjectFit;
+pub use properties::{Properties, PropertiesMut};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_at_pos;
 pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
