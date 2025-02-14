@@ -63,8 +63,8 @@ impl Default for ViewCtx {
             id_path: Vec::default(),
             app_ref: None,
             fragment: Rc::new(crate::document().create_document_fragment()),
-            templates: Default::default(),
-            hydration_node_stack: Default::default(),
+            templates: VecMap::default(),
+            hydration_node_stack: Vec::default(),
             is_hydrating: false,
             // One element for the root `DomFragment`. will be extended with `Self::push_size_hints`
             modifier_size_hints: vec![VecMap::default()],

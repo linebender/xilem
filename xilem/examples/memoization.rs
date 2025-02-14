@@ -69,7 +69,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
 fn main() {
     let data = AppState {
         count: 0,
-        increase_button: Default::default(),
+        increase_button: MemoizedArcView::default(),
     };
 
     let app = Xilem::new(data, app_logic);

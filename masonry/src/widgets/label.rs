@@ -91,7 +91,7 @@ impl Label {
         default_styles(&mut styles);
         Self {
             text_layout: Layout::new(),
-            accessibility: Default::default(),
+            accessibility: LayoutAccessibility::default(),
             text: text.into(),
             styles,
             styles_changed: true,

@@ -29,7 +29,7 @@ pub fn fill<State, Action, V>(child: V, brush: impl Into<Brush>) -> Fill<V, Stat
     Fill {
         child,
         brush: brush.into(),
-        phantom: Default::default(),
+        phantom: PhantomData,
     }
 }
 
@@ -42,7 +42,7 @@ pub fn stroke<State, Action, V>(
         child,
         brush: brush.into(),
         style,
-        phantom: Default::default(),
+        phantom: PhantomData,
     }
 }
 

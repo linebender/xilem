@@ -66,7 +66,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
         }),
         Rect::new(210.0, 100.0, 310.0, 200.0)
             .fill(palette::css::LIGHT_GRAY)
-            .stroke(palette::css::BLUE, Default::default())
+            .stroke(palette::css::BLUE, Stroke::default())
             .scale((state.x / 100.0 + 1.0, state.y / 100.0 + 1.0)),
         Rect::new(320.0, 100.0, 420.0, 200.0).class("red"),
         Rect::new(state.x, state.y, state.x + 100., state.y + 100.)

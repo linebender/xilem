@@ -128,7 +128,7 @@ where
     Adapt {
         proxy_fn,
         child,
-        phantom: Default::default(),
+        phantom: PhantomData,
     }
 }
 

@@ -4,9 +4,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use accesskit::{ActionRequest, TreeUpdate};
-use parley::fontique::{
-    Collection, CollectionOptions, {self},
-};
+use parley::fontique::{self, Collection, CollectionOptions, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
@@ -279,7 +277,7 @@ impl RenderRoot {
                         system_fonts: use_system_fonts,
                         ..Default::default()
                     }),
-                    source_cache: Default::default(),
+                    source_cache: SourceCache::default(),
                 },
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
