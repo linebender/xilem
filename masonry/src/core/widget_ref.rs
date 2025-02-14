@@ -115,6 +115,12 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                         self.widget.short_type_name()
                     );
                 };
+                let Some(properties_ref) = self.ctx.properties_children.into_item(id) else {
+                    panic!(
+                        "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
+                        self.widget.short_type_name()
+                    );
+                };
 
                 // Box<dyn Widget> -> &dyn Widget
                 // Without this step, the type of `WidgetRef::widget` would be
@@ -128,6 +134,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                     widget_state_children: state_ref.children,
                     widget_children: widget_ref.children,
                     widget_state: state_ref.item,
+                    properties_children: properties_ref.children,
                 };
 
                 WidgetRef { ctx, widget }
