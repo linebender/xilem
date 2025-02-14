@@ -95,7 +95,7 @@ pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
     Pointer {
         child,
         callback,
-        phantom: PhantomData::default(),
+        phantom: PhantomData,
     }
 }
 
