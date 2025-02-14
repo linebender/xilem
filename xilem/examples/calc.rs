@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple calculator example
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};

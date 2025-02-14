@@ -286,12 +286,10 @@ impl<T> Default for TreeArena<T> {
 
 impl<T> ArenaRef<'_, T> {
     /// Id of the item this handle is associated with.
-    #[expect(
-        clippy::missing_panics_doc,
-        reason = "ArenaRefList always has a parent_id when it's a member of ArenaRef"
-    )]
     pub fn id(&self) -> NodeId {
-        self.children.parent_id.unwrap()
+        self.children
+            .parent_id
+            .expect("ArenaRefList always has a parent_id when it's a member of ArenaRef")
     }
 }
 
@@ -374,12 +372,10 @@ impl<'arena, T> ArenaRefList<'arena, T> {
 
 impl<T> ArenaMut<'_, T> {
     /// Id of the item this handle is associated with
-    #[expect(
-        clippy::missing_panics_doc,
-        reason = "ArenaMutList always has a parent_id when it's a member of ArenaMut"
-    )]
     pub fn id(&self) -> NodeId {
-        self.children.parent_id.unwrap()
+        self.children
+            .parent_id
+            .expect("ArenaMutList always has a parent_id when it's a member of ArenaMut")
     }
 
     /// Returns a shared reference equivalent to this one.

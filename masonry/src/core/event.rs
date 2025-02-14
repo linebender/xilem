@@ -294,7 +294,6 @@ pub enum WindowTheme {
 /// the event loop.
 #[non_exhaustive]
 #[derive(Debug, Clone)]
-#[allow(variant_size_differences)]
 pub enum Update {
     /// Sent to a `Widget` when it is added to the widget tree. This should be
     /// the first message that each widget receives.

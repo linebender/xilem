@@ -4,7 +4,6 @@
 //! An example demonstrating the use of Async web requests in Xilem to access the <https://http.cat/> API.
 //! This also demonstrates image loading.
 
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use std::sync::Arc;

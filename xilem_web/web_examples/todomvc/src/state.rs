@@ -1,8 +1,6 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(clippy::partial_pub_fields, reason = "Deferred: Noisy")]
-
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::UnwrapThrowExt;
 

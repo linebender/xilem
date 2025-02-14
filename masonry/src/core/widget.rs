@@ -440,7 +440,6 @@ impl WidgetId {
     /// The actual inner representation of the returned `WidgetId` will not
     /// be the same as the raw value that is passed in; it will be
     /// `u64::max_value() - raw`.
-    #[allow(clippy::missing_panics_doc)] // Can never panic
     pub const fn reserved(raw: u16) -> Self {
         let id = u64::MAX - raw as u64;
         match NonZeroU64::new(id) {

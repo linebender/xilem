@@ -226,23 +226,19 @@ impl<T> TreeNode<T> {
 
 impl<T> ArenaRef<'_, T> {
     /// Id of the item this handle is associated with.
-    #[expect(
-        clippy::missing_panics_doc,
-        reason = "ArenaRefList always has a parent_id when it's a member of ArenaRef"
-    )]
     pub fn id(&self) -> NodeId {
-        self.children.parent_id.unwrap()
+        self.children
+            .parent_id
+            .expect("ArenaRefList always has a parent_id when it's a member of ArenaRef")
     }
 }
 
 impl<T> ArenaMut<'_, T> {
     /// Id of the item this handle is associated with.
-    #[expect(
-        clippy::missing_panics_doc,
-        reason = "ArenaRefList always has a parent_id when it's a member of ArenaRef"
-    )]
     pub fn id(&self) -> NodeId {
-        self.children.parent_id.unwrap()
+        self.children
+            .parent_id
+            .expect("ArenaRefList always has a parent_id when it's a member of ArenaRef")
     }
 
     /// Returns a shared reference equivalent to this one.
@@ -510,10 +506,6 @@ impl ArenaMapRef<'_> {
     /// If `start_id` is Some, the path ends just before that id instead; `start_id` is not included.
     ///
     /// If there is no path from `start_id` to id, returns an empty vector.
-    #[expect(
-        clippy::missing_panics_doc,
-        reason = "All ids in the tree should have a parent in the parent map"
-    )]
     pub fn get_id_path(self, id: NodeId, start_id: Option<NodeId>) -> Vec<NodeId> {
         let mut path = Vec::new();
 
@@ -524,7 +516,10 @@ impl ArenaMapRef<'_> {
         let mut current_id = Some(id);
         while let Some(current) = current_id {
             path.push(current);
-            current_id = *self.parents_map.get(&current).unwrap();
+            current_id = *self
+                .parents_map
+                .get(&current)
+                .expect("All ids in the tree should have a parent in the parent map");
             if current_id == start_id {
                 break;
             }

@@ -4,8 +4,6 @@
 //! Demonstrates fetching other web content from Xilem Web
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-// TODO: `expect` doesn't work here for unknown reasons
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};

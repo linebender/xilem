@@ -5,7 +5,6 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx};

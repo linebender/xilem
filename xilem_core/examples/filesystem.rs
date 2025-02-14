@@ -3,8 +3,6 @@
 
 //! An example using Xilem Core to manipulate a filesystem.
 
-#![expect(let_underscore_drop, reason = "Deferred: Noisy")]
-
 use std::io::stdin;
 use std::path::PathBuf;
 
