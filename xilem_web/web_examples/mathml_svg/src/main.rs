@@ -3,8 +3,6 @@
 
 //! Shows using mathml and SVG on the web
 
-// TODO: `expect` doesn't work here for unknown reasons
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 

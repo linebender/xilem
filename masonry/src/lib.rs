@@ -116,20 +116,14 @@
         reason = "False-positive with dev-dependencies only used in examples"
     )
 )]
-#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 // TODO: Remove any items listed as "Deferred"
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
 #![expect(clippy::should_implement_trait, reason = "Deferred: Noisy")]
 #![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
-#![expect(let_underscore_drop, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-#![expect(unused_qualifications, reason = "Deferred: Noisy")]
-#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(clippy::return_self_not_must_use, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
 #![expect(
@@ -137,8 +131,6 @@
     reason = "Requires lint_reasons rustc feature for exceptions"
 )]
 #![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
-#![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
-#![expect(clippy::missing_panics_doc, reason = "Can be quite noisy?")]
 #![expect(
     clippy::shadow_unrelated,
     reason = "Potentially controversial code style"

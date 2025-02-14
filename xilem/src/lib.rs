@@ -122,19 +122,14 @@
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
-#![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
-#![expect(clippy::missing_panics_doc, reason = "Can be quite noisy?")]
 #![expect(
     clippy::shadow_unrelated,
     reason = "Potentially controversial code style"
 )]
-#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::collections::HashMap;

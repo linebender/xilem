@@ -24,12 +24,10 @@
 #![cfg_attr(not(test), no_std)]
 #![forbid(unsafe_code)]
 // TODO: Remove any items listed as "Deferred"
-#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
 #![expect(
     clippy::shadow_unrelated,
     reason = "Potentially controversial code style"
 )]
-#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 extern crate alloc;
 
