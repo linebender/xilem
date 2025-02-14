@@ -191,7 +191,7 @@ impl WidgetState {
             accepts_focus: false,
             accepts_text_input: false,
             ime_area: None,
-            clip_path: Default::default(),
+            clip_path: Option::default(),
             scroll_translation: Vec2::ZERO,
             transform_changed: false,
             is_explicitly_disabled: false,

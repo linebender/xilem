@@ -175,7 +175,7 @@ impl Widget for Checkbox {
                 miter_limit: 10.0,
                 start_cap: Cap::Round,
                 end_cap: Cap::Round,
-                dash_pattern: Default::default(),
+                dash_pattern: SmallVec::default(),
                 dash_offset: 0.0,
             };
 

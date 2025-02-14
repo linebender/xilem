@@ -440,10 +440,10 @@ impl PointerEvent {
         // TODO - The fact we're creating so many dummy values might be
         // a sign we should refactor that struct
         let pointer_state = PointerState {
-            physical_position: Default::default(),
-            position: Default::default(),
-            buttons: Default::default(),
-            mods: Default::default(),
+            physical_position: PhysicalPosition::default(),
+            position: LogicalPosition::default(),
+            buttons: PointerButtons::default(),
+            mods: Modifiers::default(),
             count: 0,
             focus: false,
             force: None,
@@ -551,8 +551,8 @@ impl PointerState {
         Self {
             physical_position: PhysicalPosition::new(0.0, 0.0),
             position: LogicalPosition::new(0.0, 0.0),
-            buttons: Default::default(),
-            mods: Default::default(),
+            buttons: PointerButtons::default(),
+            mods: Modifiers::default(),
             count: 0,
             focus: false,
             force: None,

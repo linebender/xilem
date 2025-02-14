@@ -84,8 +84,8 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
             fragment_state: None,
             elements: Vec::new(),
             ctx,
-            fragment_append_scratch: Default::default(),
-            vec_splice_scratch: Default::default(),
+            fragment_append_scratch: AppendVec::default(),
+            vec_splice_scratch: Vec::default(),
         }
     }
 

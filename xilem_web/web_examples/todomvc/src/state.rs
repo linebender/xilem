@@ -87,13 +87,13 @@ impl AppState {
     /// Load the current state from local storage, or use the default.
     pub(crate) fn load() -> Self {
         let Some(raw) = storage().get_item(KEY).unwrap_throw() else {
-            return Default::default();
+            return Self::default();
         };
         match serde_json::from_str(&raw) {
             Ok(todos) => todos,
             Err(e) => {
                 tracing::error!("couldn't load existing todos: {e}");
-                Default::default()
+                Self::default()
             }
         }
     }

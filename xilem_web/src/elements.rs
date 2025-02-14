@@ -220,8 +220,8 @@ impl ElementState {
     pub fn new(seq_state: Box<dyn Any>) -> Self {
         Self {
             seq_state,
-            append_scratch: Default::default(),
-            vec_splice_scratch: Default::default(),
+            append_scratch: AppendVec::default(),
+            vec_splice_scratch: Vec::default(),
         }
     }
 }
