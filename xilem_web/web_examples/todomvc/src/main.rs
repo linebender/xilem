@@ -4,8 +4,6 @@
 //! A recreation of todomvc in Xilem Web
 // TODO: Link
 
-// TODO: `expect` doesn't work here
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 mod state;

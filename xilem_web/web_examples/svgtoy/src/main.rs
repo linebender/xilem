@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple example showing the interaction between SVG and event handling
-// TODO: `expect` doesn't work here
-#![allow(clippy::wildcard_imports, reason = "HTML elements are an exception")]
 
 use xilem_web::elements::svg::{g, svg, text};
 use xilem_web::interfaces::*;

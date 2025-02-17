@@ -6,7 +6,6 @@
     reason = "This is a utility module, which means that some exposed items aren't used in all instantiations"
 )]
 #![deny(unreachable_pub)]
-#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 

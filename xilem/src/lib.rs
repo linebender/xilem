@@ -101,12 +101,14 @@
 //! [xilem_examples]: https://github.com/linebender/xilem/tree/main/xilem/examples
 
 #![doc(html_logo_url = "https://avatars.githubusercontent.com/u/46134943?s=48&v=4")]
-// LINEBENDER LINT SET - lib.rs - v1
+// LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
-// These lints aren't included in Cargo.toml because they
-// shouldn't apply to examples and tests
-#![warn(unused_crate_dependencies)]
+// These lints shouldn't apply to examples or tests.
+#![cfg_attr(not(test), warn(unused_crate_dependencies))]
+// These lints shouldn't apply to examples.
 #![warn(clippy::print_stdout, clippy::print_stderr)]
+// Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
+#![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![cfg_attr(
@@ -122,19 +124,14 @@
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-#![expect(clippy::exhaustive_enums, reason = "Deferred: Noisy")]
-#![expect(clippy::match_same_arms, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
 #![allow(missing_docs, reason = "We have many as-yet undocumented items")]
-#![expect(clippy::missing_errors_doc, reason = "Can be quite noisy?")]
-#![expect(clippy::missing_panics_doc, reason = "Can be quite noisy?")]
 #![expect(
     clippy::shadow_unrelated,
     reason = "Potentially controversial code style"
 )]
-#![expect(clippy::allow_attributes, reason = "Deferred: Noisy")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::collections::HashMap;
