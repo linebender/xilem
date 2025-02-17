@@ -777,6 +777,11 @@ impl_context_method!(
         pub fn to_window(&self, widget_point: Point) -> Point {
             self.widget_state.window_transform * widget_point
         }
+
+        /// Get DPI scaling factor.
+        pub fn get_scale_factor(&self) -> f64 {
+            self.global_state.scale_factor
+        }
     }
 );
 
