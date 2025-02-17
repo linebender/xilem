@@ -386,7 +386,7 @@ impl Widget for Label {
         };
         if self.alignment_changed {
             self.text_layout
-                .align(Some(alignment_width), self.alignment);
+                .align(Some(alignment_width), self.alignment, false);
         }
         let text_size = Size::new(alignment_width.into(), self.text_layout.height().into());
 
