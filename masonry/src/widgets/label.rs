@@ -18,8 +18,8 @@ use vello::Scene;
 
 use crate::core::{
     default_styles, render_text, AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex,
-    Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    EventCtx, LayoutCtx, PaintCtx, PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx,
+    StyleProperty, StyleSet, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::theme;
 
@@ -311,15 +311,33 @@ impl Label {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Label {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
     fn accepts_pointer_interaction(&self) -> bool {
         false
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
@@ -334,7 +352,12 @@ impl Widget for Label {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let available_width = if bc.max().width.is_finite() {
             Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
         } else {
