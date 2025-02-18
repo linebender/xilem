@@ -10,7 +10,7 @@ use vello::kurbo::Affine;
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{PaintCtx, Widget, WidgetId, WidgetState};
+use crate::core::{PaintCtx, Properties, Widget, WidgetId, WidgetState};
 use crate::kurbo::Rect;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::theme::get_debug_color;
@@ -55,7 +55,10 @@ fn paint_widget(
         // https://github.com/linebender/xilem/issues/524
         let scene = scenes.entry(id).or_default();
         scene.reset();
-        widget.item.paint(&mut ctx, scene);
+        let props = Properties {
+            map: properties.item,
+        };
+        widget.item.paint(&mut ctx, &props, scene);
     }
 
     state.item.request_paint = false;

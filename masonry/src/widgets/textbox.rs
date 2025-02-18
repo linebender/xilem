@@ -10,7 +10,7 @@ use vello::Scene;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
+    AccessCtx, AccessEvent, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
@@ -110,19 +110,19 @@ impl Textbox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Textbox {
-    fn on_pointer_event(&mut self, _: &mut EventCtx, _: &PointerEvent) {}
+    fn on_pointer_event(&mut self, _: &mut EventCtx, _props: &mut PropertiesMut<'_>, _: &PointerEvent) {}
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.text);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
         let margin = TEXTBOX_MARGIN;
         // Shrink constraints by padding inset
         let margin_size = Size::new(margin.leading + margin.trailing, margin.top + margin.bottom);
@@ -137,7 +137,7 @@ impl Widget for Textbox {
         size + margin_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
         let size = ctx.size();
         let outline_rect = size.to_rect().inset(Insets::new(
             -TEXTBOX_MARGIN.leading,
@@ -158,7 +158,7 @@ impl Widget for Textbox {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.text.id()]

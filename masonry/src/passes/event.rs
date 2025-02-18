@@ -8,7 +8,9 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 
 use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
-use crate::core::{AccessEvent, EventCtx, PointerEvent, TextEvent, Widget, WidgetId};
+use crate::core::{
+    AccessEvent, EventCtx, PointerEvent, PropertiesMut, TextEvent, Widget, WidgetId,
+};
 use crate::passes::{enter_span, merge_state_up};
 
 // --- MARK: HELPERS ---
@@ -38,7 +40,7 @@ fn run_event_pass<E>(
     target: Option<WidgetId>,
     event: &E,
     allow_pointer_capture: bool,
-    pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx, &E),
+    pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx, &mut PropertiesMut<'_>, &E),
     trace: bool,
 ) -> Handled {
     let mut pass_fn = pass_fn;
@@ -77,7 +79,10 @@ fn run_event_pass<E>(
                 );
             }
 
-            pass_fn(&mut **widget, &mut ctx, event);
+            let mut props = PropertiesMut {
+                map: properties_mut.item,
+            };
+            pass_fn(&mut **widget, &mut ctx, &mut props, event);
             is_handled = ctx.is_handled;
         }
 
@@ -160,8 +165,8 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         target_widget_id,
         event,
         matches!(event, PointerEvent::PointerDown(..)),
-        |widget, ctx, event| {
-            widget.on_pointer_event(ctx, event);
+        |widget, ctx, props, event| {
+            widget.on_pointer_event(ctx, props, event);
         },
         !event.is_high_density(),
     );
@@ -216,8 +221,8 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         target,
         event,
         false,
-        |widget, ctx, event| {
-            widget.on_text_event(ctx, event);
+        |widget, ctx, props, event| {
+            widget.on_text_event(ctx, props, event);
         },
         !event.is_high_density(),
     );
@@ -282,8 +287,8 @@ pub(crate) fn run_on_access_event_pass(
         Some(target),
         event,
         false,
-        |widget, ctx, event| {
-            widget.on_access_event(ctx, event);
+        |widget, ctx, props, event| {
+            widget.on_access_event(ctx, props, event);
         },
         true,
     );

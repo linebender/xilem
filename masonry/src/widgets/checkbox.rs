@@ -10,7 +10,7 @@ use vello::Scene;
 use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
@@ -66,7 +66,7 @@ impl Checkbox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Checkbox {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
@@ -89,9 +89,9 @@ impl Widget for Checkbox {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+    fn on_access_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
@@ -105,7 +105,7 @@ impl Widget for Checkbox {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
@@ -119,7 +119,7 @@ impl Widget for Checkbox {
         ctx.register_child(&mut self.label);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
         let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
         let check_size = theme::BASIC_WIDGET_HEIGHT;
 
@@ -137,7 +137,7 @@ impl Widget for Checkbox {
         our_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
         let check_size = theme::BASIC_WIDGET_HEIGHT;
         let border_width = 1.;
 
@@ -193,7 +193,7 @@ impl Widget for Checkbox {
         Role::CheckBox
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.

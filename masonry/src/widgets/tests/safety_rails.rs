@@ -14,7 +14,7 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
         .register_children_fn(move |child, ctx| {
             ctx.register_child(child);
         })
-        .layout_fn(move |child, ctx, bc| {
+        .layout_fn(move |child, ctx, _, bc| {
             let size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::ZERO);
             size
@@ -26,7 +26,7 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
 #[should_panic(expected = "not visited in method on_text_event")]
 #[test]
 fn check_forget_to_recurse_text_event() {
-    let widget = make_parent_widget(Flex::row()).text_event_fn(|_child, _ctx, _event| {
+    let widget = make_parent_widget(Flex::row()).text_event_fn(|_child, _ctx, _, _event| {
         // We forget to call child.on_text_event();
     });
 
@@ -101,7 +101,7 @@ fn check_register_invalid_child() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_pointer_capture_outside_pointer_down() {
-    let widget = ModularWidget::new(()).pointer_event_fn(|_, ctx, _event| {
+    let widget = ModularWidget::new(()).pointer_event_fn(|_, ctx, _, _event| {
         ctx.capture_pointer();
     });
 
@@ -120,7 +120,7 @@ fn check_pointer_capture_text_event() {
     let id = WidgetId::next();
     let widget = ModularWidget::new(())
         .accepts_focus(true)
-        .text_event_fn(|_, ctx, _event| {
+        .text_event_fn(|_, ctx, _, _event| {
             ctx.capture_pointer();
         })
         .with_id(id);
@@ -137,7 +137,7 @@ fn check_pointer_capture_text_event() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_to_recurse_layout() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|_child, _ctx, _| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|_child, _ctx, _, _| {
         // We forget to call ctx.run_layout();
         Size::ZERO
     });
@@ -152,7 +152,7 @@ fn check_forget_to_recurse_layout() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_to_call_place_child() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, _, bc| {
         // We call ctx.run_layout(), but forget place_child
         ctx.run_layout(child, bc)
     });
@@ -168,11 +168,11 @@ fn check_forget_to_call_place_child() {
 #[test]
 fn allow_non_recurse_event_handled() {
     let widget = make_parent_widget(Flex::row())
-        .pointer_event_fn(|_child, ctx, _event| {
+        .pointer_event_fn(|_child, ctx, _, _event| {
             // Event handled, we don't need to recurse
             ctx.set_handled();
         })
-        .text_event_fn(|_child, ctx, _event| {
+        .text_event_fn(|_child, ctx, _, _event| {
             // Event handled, we don't need to recurse
             ctx.set_handled();
         });
@@ -185,12 +185,12 @@ fn allow_non_recurse_event_handled() {
 #[test]
 fn allow_non_recurse_cursor_oob() {
     let widget = make_parent_widget(Flex::row())
-        .pointer_event_fn(|child, ctx, event| {
+        .pointer_event_fn(|child, ctx, _, event| {
             if !matches!(event, PointerEvent::PointerMove(_)) {
                 child.on_pointer_event(ctx, event);
             }
         })
-        .layout_fn(|child, ctx, bc| {
+        .layout_fn(|child, ctx, _, bc| {
             let _size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::ZERO);
             Size::new(6000.0, 6000.0)
@@ -207,7 +207,7 @@ fn allow_non_recurse_oob_paint() {
         .paint_fn(|_child, _ctx, _| {
             // We forget to call child.paint();
         })
-        .layout_fn(|child, ctx, bc| {
+        .layout_fn(|child, ctx, _, bc| {
             let _size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::new(500.0, 500.0));
             Size::new(600.0, 600.0)
@@ -242,7 +242,7 @@ fn check_forget_children_changed() {
                 child.lifecycle(ctx, event);
             }
         })
-        .layout_fn(|child, ctx, bc| {
+        .layout_fn(|child, ctx, _, bc| {
             if let Some(child) = child {
                 let size = ctx.run_layout(child, bc);
                 ctx.place_child(child, Point::ZERO);
@@ -274,7 +274,7 @@ fn check_forget_children_changed() {
 #[should_panic]
 #[test]
 fn check_recurse_event_twice() {
-    let widget = make_parent_widget(Flex::row()).pointer_event_fn(|child, ctx, event| {
+    let widget = make_parent_widget(Flex::row()).pointer_event_fn(|child, ctx, _, event| {
         child.on_pointer_event(ctx, event);
         child.on_pointer_event(ctx, event);
     });
@@ -299,7 +299,7 @@ fn check_recurse_lifecycle_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_layout_twice() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, bc| {
+    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, _, bc| {
         let size = ctx.run_layout(child, bc);
         let _ = ctx.run_layout(child, bc);
         ctx.place_child(child, Point::ZERO);
@@ -328,12 +328,12 @@ fn check_recurse_paint_twice() {
 #[test]
 fn check_layout_stashed() {
     let widget = make_parent_widget(Flex::row())
-        .update_fn(|child, ctx, event| {
+        .update_fn(|child, ctx, _, event| {
             if matches!(event, Update::WidgetAdded) {
                 ctx.set_stashed(child, true);
             }
         })
-        .layout_fn(|child, ctx, bc| {
+        .layout_fn(|child, ctx, _, bc| {
             let size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::ZERO);
             size
@@ -351,7 +351,7 @@ fn check_layout_stashed() {
 #[test]
 fn check_paint_rect_includes_children() {
     use crate::widgets::Label;
-    let widget = make_parent_widget(Label::new("Hello world")).layout_fn(|child, ctx, bc| {
+    let widget = make_parent_widget(Label::new("Hello world")).layout_fn(|child, ctx, _, bc| {
         let _size = ctx.run_layout(child, bc);
         ctx.place_child(child, Point::ZERO);
         Size::ZERO

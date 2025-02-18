@@ -11,7 +11,7 @@ use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{BoxConstraints, LayoutCtx, Widget, WidgetPod, WidgetState};
+use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RUN LAYOUT ---
@@ -109,7 +109,10 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         // TODO - If constraints are the same and request_layout isn't set,
         // skip calling layout
         inner_ctx.widget_state.request_layout = false;
-        widget.item.layout(&mut inner_ctx, bc)
+        let mut props = PropertiesMut {
+            map: properties.item,
+        };
+        widget.item.layout(&mut inner_ctx, &mut props, bc)
     };
     if state.item.request_layout {
         debug_panic!(

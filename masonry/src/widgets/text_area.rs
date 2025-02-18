@@ -19,8 +19,8 @@ use winit::keyboard::{Key, NamedKey};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, default_styles, render_text,
+    PointerButton, PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, StyleProperty,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles, render_text,
 };
 use crate::widgets::Padding;
 use crate::{palette, theme};
@@ -507,7 +507,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
 // --- MARK: IMPL WIDGET ---
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         if self.editor.is_composing() {
             return;
         }
@@ -567,7 +572,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
     }
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
         match event {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
                 if !key_event.state.is_pressed() || self.editor.is_composing() {
@@ -836,7 +846,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         EDITABLE
     }
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+    ) {
         if event.action == accesskit::Action::SetTextSelection {
             if self.editor.is_composing() {
                 return;
@@ -859,7 +874,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::FocusChanged(_) => {
                 ctx.request_render();
@@ -872,7 +887,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         // Shrink constraints by padding inset
         let padding_size = Size::new(
             self.padding.leading + self.padding.trailing,
@@ -914,7 +934,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         bc.constrain(area_size)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
         let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
@@ -968,7 +988,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
         if !EDITABLE {
             node.set_read_only();
         }
