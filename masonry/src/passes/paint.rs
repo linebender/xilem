@@ -23,10 +23,17 @@ fn paint_widget(
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, anymap3::AnyMap>,
     debug_paint: bool,
 ) {
     let trace = global_state.trace.paint;
-    let _span = enter_span_if(trace, global_state, widget.reborrow(), state.reborrow());
+    let _span = enter_span_if(
+        trace,
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+        properties.reborrow(),
+    );
 
     let id = state.item.id;
 
@@ -72,7 +79,8 @@ fn paint_widget(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
+        properties.children,
+        |widget, mut state, properties| {
             // TODO - We skip painting stashed items.
             // This may lead to zombie flags in rare cases, we need to fix this.
             if state.item.is_stashed {
@@ -88,6 +96,7 @@ fn paint_widget(
                 scenes,
                 widget,
                 state.reborrow_mut(),
+                properties,
                 debug_paint,
             );
             parent_state.merge_up(state.item);
@@ -116,7 +125,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
 
-    let (root_widget, root_state) = {
+    let (root_widget, root_state, root_properties) = {
         let widget_id = root.root.id();
         let widget = root
             .widget_arena
@@ -128,7 +137,12 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
             .states
             .find_mut(widget_id)
             .expect("root_paint: root state not in widget tree");
-        (widget, state)
+        let properties = root
+            .widget_arena
+            .properties
+            .find_mut(widget_id)
+            .expect("root_paint: root properties not in widget tree");
+        (widget, state, properties)
     };
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
@@ -141,6 +155,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         &mut scenes,
         root_widget,
         root_state,
+        root_properties,
         root.debug_paint,
     );
     root.global_state.scenes = scenes;

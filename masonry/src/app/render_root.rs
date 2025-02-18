@@ -633,6 +633,7 @@ impl RenderRoot {
         fn request_render_all_in(
             mut widget: ArenaMut<'_, Box<dyn Widget>>,
             state: ArenaMut<'_, WidgetState>,
+            properties: ArenaMut<'_, anymap3::AnyMap>,
         ) {
             state.item.needs_paint = true;
             state.item.needs_accessibility = true;
@@ -644,14 +645,16 @@ impl RenderRoot {
                 id,
                 widget.reborrow_mut(),
                 state.children,
-                |widget, mut state| {
-                    request_render_all_in(widget, state.reborrow_mut());
+                properties.children,
+                |widget, state, properties| {
+                    request_render_all_in(widget, state, properties);
                 },
             );
         }
 
-        let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
-        request_render_all_in(root_widget, root_state.reborrow_mut());
+        let (root_widget, root_state, root_properties) =
+            self.widget_arena.get_all_mut(self.root.id());
+        request_render_all_in(root_widget, root_state, root_properties);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
     }

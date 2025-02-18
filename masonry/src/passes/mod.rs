@@ -28,9 +28,10 @@ pub(crate) fn enter_span_if(
     global_state: &RenderRootState,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
+    properties: ArenaRef<'_, anymap3::AnyMap>,
 ) -> Option<EnteredSpan> {
     if enabled {
-        Some(enter_span(global_state, widget, state))
+        Some(enter_span(global_state, widget, state, properties))
     } else {
         None
     }
@@ -41,12 +42,14 @@ pub(crate) fn enter_span(
     global_state: &RenderRootState,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
+    properties: ArenaRef<'_, anymap3::AnyMap>,
 ) -> EnteredSpan {
     let ctx = QueryCtx {
         global_state,
         widget_state: state.item,
         widget_state_children: state.children,
         widget_children: widget.children,
+        properties_children: properties.children,
     };
     widget.item.make_trace_span(&ctx).entered()
 }
@@ -55,7 +58,12 @@ pub(crate) fn recurse_on_children(
     id: WidgetId,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMutList<'_, WidgetState>,
-    mut callback: impl FnMut(ArenaMut<'_, Box<dyn Widget>>, ArenaMut<'_, WidgetState>),
+    mut properties: ArenaMutList<'_, anymap3::AnyMap>,
+    mut callback: impl FnMut(
+        ArenaMut<'_, Box<dyn Widget>>,
+        ArenaMut<'_, WidgetState>,
+        ArenaMut<'_, anymap3::AnyMap>,
+    ),
 ) {
     let parent_name = widget.item.short_type_name();
     let parent_id = id;
@@ -73,8 +81,14 @@ pub(crate) fn recurse_on_children(
                 parent_name, parent_id, child_id
             )
         });
+        let properties = properties.item_mut(child_id).unwrap_or_else(|| {
+            panic!(
+                "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
+                parent_name, parent_id, child_id
+            )
+        });
 
-        callback(widget, state);
+        callback(widget, state, properties);
     }
 }
 

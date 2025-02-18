@@ -13,6 +13,7 @@ fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, anymap3::AnyMap>,
     elapsed_ns: u64,
 ) {
     let _span = enter_span_if(
@@ -20,6 +21,7 @@ fn update_anim_for_widget(
         global_state,
         widget.reborrow(),
         state.reborrow(),
+        properties.reborrow(),
     );
     if !state.item.needs_anim {
         return;
@@ -36,6 +38,7 @@ fn update_anim_for_widget(
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            properties_children: properties.children.reborrow_mut(),
         };
         widget.item.on_anim_frame(&mut ctx, elapsed_ns);
     }
@@ -46,8 +49,15 @@ fn update_anim_for_widget(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
-            update_anim_for_widget(global_state, widget, state.reborrow_mut(), elapsed_ns);
+        properties.children,
+        |widget, mut state, properties| {
+            update_anim_for_widget(
+                global_state,
+                widget,
+                state.reborrow_mut(),
+                properties,
+                elapsed_ns,
+            );
             parent_state.merge_up(state.item);
         },
     );
@@ -63,11 +73,13 @@ fn update_anim_for_widget(
 pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
     let _span = info_span!("update_anim").entered();
 
-    let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    let (root_widget, mut root_state, root_properties) =
+        root.widget_arena.get_all_mut(root.root.id());
     update_anim_for_widget(
         &mut root.global_state,
         root_widget,
         root_state.reborrow_mut(),
+        root_properties,
         elapsed_ns,
     );
 }

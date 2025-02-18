@@ -25,6 +25,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     let id = pod.id();
     let mut widget = parent_ctx.widget_children.item_mut(id).unwrap();
     let mut state = parent_ctx.widget_state_children.item_mut(id).unwrap();
+    let mut properties = parent_ctx.properties_children.item_mut(id).unwrap();
 
     let trace = parent_ctx.global_state.trace.layout;
     let _span = enter_span_if(
@@ -32,6 +33,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         parent_ctx.global_state,
         widget.reborrow(),
         state.reborrow(),
+        properties.reborrow(),
     );
 
     let mut children_ids = SmallVec::new();
@@ -86,7 +88,8 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         pod.id(),
         widget.reborrow_mut(),
         state.children.reborrow_mut(),
-        |_, state| {
+        properties.children.reborrow_mut(),
+        |_, state, _| {
             if state.item.is_stashed {
                 state.item.needs_layout = false;
                 state.item.request_layout = false;
@@ -99,6 +102,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children,
+            properties_children: properties.children.reborrow_mut(),
             global_state: parent_ctx.global_state,
         };
 
@@ -204,11 +208,14 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
     let root_state_token = root.widget_arena.states.roots_mut();
     let root_widget_token = root.widget_arena.widgets.roots_mut();
+    let root_properties_token = root.widget_arena.properties.roots_mut();
+
     let mut ctx = LayoutCtx {
         global_state: &mut root.global_state,
         widget_state: &mut dummy_state,
         widget_state_children: root_state_token,
         widget_children: root_widget_token,
+        properties_children: root_properties_token,
     };
 
     let size = run_layout_on(&mut ctx, &mut root.root, &bc);
