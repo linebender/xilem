@@ -777,7 +777,19 @@ impl_context_method!(
         pub fn to_window(&self, widget_point: Point) -> Point {
             self.widget_state.window_transform * widget_point
         }
+    }
+);
 
+// Methods on all context types except LayoutCtx and ComposeCtx.
+// Access selected global state information.
+impl_context_method!(
+    MutateCtx<'_>,
+    QueryCtx<'_>,
+    EventCtx<'_>,
+    UpdateCtx<'_>,
+    PaintCtx<'_>,
+    AccessCtx<'_>,
+    {
         /// Get DPI scaling factor.
         pub fn get_scale_factor(&self) -> f64 {
             self.global_state.scale_factor
