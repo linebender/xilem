@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, NodeId, Tree, TreeUpdate};
+use anymap3::AnyMap;
 use tracing::{debug, info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
@@ -16,7 +17,7 @@ fn build_accessibility_tree(
     tree_update: &mut TreeUpdate,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {

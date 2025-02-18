@@ -82,6 +82,7 @@ pub struct EventCtx<'a> {
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     #[cfg(debug_assertions)]
     pub(crate) registered_ids: Vec<WidgetId>,
 }
@@ -1217,6 +1218,7 @@ impl RegisterCtx<'_> {
 
         self.widget_children.insert(id, widget.as_box_dyn());
         self.widget_state_children.insert(id, state);
+        self.properties_children.insert(id, AnyMap::new());
     }
 }
 

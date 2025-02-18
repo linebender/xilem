@@ -3,6 +3,7 @@
 
 use std::collections::HashMap;
 
+use anymap3::AnyMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
@@ -23,7 +24,7 @@ fn paint_widget(
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     debug_paint: bool,
 ) {
     let trace = global_state.trace.paint;

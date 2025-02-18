@@ -1,6 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use anymap3::AnyMap;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 
@@ -13,7 +14,7 @@ fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     elapsed_ns: u64,
 ) {
     let _span = enter_span_if(

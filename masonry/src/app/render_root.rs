@@ -4,6 +4,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use accesskit::{ActionRequest, TreeUpdate};
+use anymap3::AnyMap;
 use parley::fontique::{self, Collection, CollectionOptions, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
@@ -633,7 +634,7 @@ impl RenderRoot {
         fn request_render_all_in(
             mut widget: ArenaMut<'_, Box<dyn Widget>>,
             state: ArenaMut<'_, WidgetState>,
-            properties: ArenaMut<'_, anymap3::AnyMap>,
+            properties: ArenaMut<'_, AnyMap>,
         ) {
             state.item.needs_paint = true;
             state.item.needs_accessibility = true;
