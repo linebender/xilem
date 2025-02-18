@@ -29,10 +29,14 @@ impl WidgetArena {
     }
 
     #[track_caller]
-    pub(crate) fn get_pair(
+    pub(crate) fn get_all(
         &self,
         widget_id: WidgetId,
-    ) -> (ArenaRef<Box<dyn Widget>>, ArenaRef<WidgetState>) {
+    ) -> (
+        ArenaRef<Box<dyn Widget>>,
+        ArenaRef<WidgetState>,
+        ArenaRef<anymap3::AnyMap>,
+    ) {
         let widget = self
             .widgets
             .find(widget_id)
@@ -41,14 +45,22 @@ impl WidgetArena {
             .states
             .find(widget_id)
             .expect("get_pair: widget state not in widget tree");
-        (widget, state)
+        let properties = self
+            .properties
+            .find(widget_id)
+            .expect("get_pair: widget properties not in widget tree");
+        (widget, state, properties)
     }
 
     #[track_caller]
-    pub(crate) fn get_pair_mut(
+    pub(crate) fn get_all_mut(
         &mut self,
         widget_id: WidgetId,
-    ) -> (ArenaMut<Box<dyn Widget>>, ArenaMut<WidgetState>) {
+    ) -> (
+        ArenaMut<Box<dyn Widget>>,
+        ArenaMut<WidgetState>,
+        ArenaMut<anymap3::AnyMap>,
+    ) {
         let widget = self
             .widgets
             .find_mut(widget_id)
@@ -57,7 +69,11 @@ impl WidgetArena {
             .states
             .find_mut(widget_id)
             .expect("get_pair_mut: widget state not in widget tree");
-        (widget, state)
+        let properties = self
+            .properties
+            .find_mut(widget_id)
+            .expect("get_pair_mut: widget properties not in widget tree");
+        (widget, state, properties)
     }
 
     #[allow(dead_code)]

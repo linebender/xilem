@@ -40,13 +40,14 @@ fn run_targeted_update_pass(
     let mut current_id = target;
     while let Some(widget_id) = current_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
-        let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(widget_id);
+        let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(widget_id);
 
         let mut ctx = UpdateCtx {
             global_state: &mut root.global_state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
+            properties_children: properties_mut.children,
         };
         pass_fn(&mut **widget_mut.item, &mut ctx);
 
@@ -67,13 +68,14 @@ fn run_single_update_pass(
         return;
     }
 
-    let (widget_mut, state_mut) = root.widget_arena.get_pair_mut(target);
+    let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(target);
 
     let mut ctx = UpdateCtx {
         global_state: &mut root.global_state,
         widget_state: state_mut.item,
         widget_state_children: state_mut.children,
         widget_children: widget_mut.children,
+        properties_children: properties_mut.children,
     };
     pass_fn(&mut **widget_mut.item, &mut ctx);
 
@@ -89,9 +91,16 @@ fn update_widget_tree(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, anymap3::AnyMap>,
 ) {
     let trace = global_state.trace.update_tree;
-    let _span = enter_span_if(trace, global_state, widget.reborrow(), state.reborrow());
+    let _span = enter_span_if(
+        trace,
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+        properties.reborrow(),
+    );
     let id = state.item.id;
 
     if !state.item.children_changed {
@@ -147,6 +156,7 @@ fn update_widget_tree(
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            properties_children: properties.children.reborrow_mut(),
         };
         widget.item.update(&mut ctx, &Update::WidgetAdded);
         if trace {
@@ -168,8 +178,9 @@ fn update_widget_tree(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
-            update_widget_tree(global_state, widget, state.reborrow_mut());
+        properties.children,
+        |widget, mut state, properties| {
+            update_widget_tree(global_state, widget, state.reborrow_mut(), properties);
             parent_state.merge_up(state.item);
         },
     );
@@ -189,11 +200,13 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
         ctx.register_child(&mut root.root);
     }
 
-    let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    let (root_widget, mut root_state, root_properties) =
+        root.widget_arena.get_all_mut(root.root.id());
     update_widget_tree(
         &mut root.global_state,
         root_widget,
         root_state.reborrow_mut(),
+        root_properties,
     );
 }
 
@@ -206,9 +219,15 @@ fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, anymap3::AnyMap>,
     parent_disabled: bool,
 ) {
-    let _span = enter_span(global_state, widget.reborrow(), state.reborrow());
+    let _span = enter_span(
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+        properties.reborrow(),
+    );
     let id = state.item.id;
 
     let disabled = state.item.is_explicitly_disabled || parent_disabled;
@@ -222,6 +241,7 @@ fn update_disabled_for_widget(
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            properties_children: properties.children.reborrow_mut(),
         };
         widget
             .item
@@ -239,8 +259,15 @@ fn update_disabled_for_widget(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
-            update_disabled_for_widget(global_state, widget, state.reborrow_mut(), disabled);
+        properties.children,
+        |widget, mut state, properties| {
+            update_disabled_for_widget(
+                global_state,
+                widget,
+                state.reborrow_mut(),
+                properties,
+                disabled,
+            );
             parent_state.merge_up(state.item);
         },
     );
@@ -254,8 +281,14 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
         root.global_state.needs_pointer_pass = true;
     }
 
-    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    update_disabled_for_widget(&mut root.global_state, root_widget, root_state, false);
+    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
+    update_disabled_for_widget(
+        &mut root.global_state,
+        root_widget,
+        root_state,
+        root_properties,
+        false,
+    );
 }
 
 // ----------------
@@ -270,9 +303,15 @@ fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, anymap3::AnyMap>,
     parent_stashed: bool,
 ) {
-    let _span = enter_span(global_state, widget.reborrow(), state.reborrow());
+    let _span = enter_span(
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+        properties.reborrow(),
+    );
     let id = state.item.id;
 
     let stashed = state.item.is_explicitly_stashed || parent_stashed;
@@ -286,6 +325,7 @@ fn update_stashed_for_widget(
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            properties_children: properties.children.reborrow_mut(),
         };
         widget
             .item
@@ -312,8 +352,15 @@ fn update_stashed_for_widget(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
-            update_stashed_for_widget(global_state, widget, state.reborrow_mut(), stashed);
+        properties.children,
+        |widget, mut state, properties| {
+            update_stashed_for_widget(
+                global_state,
+                widget,
+                state.reborrow_mut(),
+                properties,
+                stashed,
+            );
             parent_state.merge_up(state.item);
         },
     );
@@ -322,8 +369,14 @@ fn update_stashed_for_widget(
 pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_stashed").entered();
 
-    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
-    update_stashed_for_widget(&mut root.global_state, root_widget, root_state, false);
+    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
+    update_stashed_for_widget(
+        &mut root.global_state,
+        root_widget,
+        root_state,
+        root_properties,
+        false,
+    );
 }
 
 // ----------------
@@ -341,9 +394,15 @@ fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, anymap3::AnyMap>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
-    let _span = enter_span(global_state, widget.reborrow(), state.reborrow());
+    let _span = enter_span(
+        global_state,
+        widget.reborrow(),
+        state.reborrow(),
+        properties.reborrow(),
+    );
     let id = state.item.id;
 
     if !state.item.needs_update_focus_chain {
@@ -365,11 +424,13 @@ fn update_focus_chain_for_widget(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
+        properties.children,
+        |widget, mut state, properties| {
             update_focus_chain_for_widget(
                 global_state,
                 widget,
                 state.reborrow_mut(),
+                properties,
                 &mut parent_state.focus_chain,
             );
             parent_state.merge_up(state.item);
@@ -394,11 +455,12 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus_chain").entered();
     let mut dummy_focus_chain = Vec::new();
 
-    let (root_widget, mut root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     update_focus_chain_for_widget(
         &mut root.global_state,
         root_widget,
-        root_state.reborrow_mut(),
+        root_state,
+        root_properties,
         &mut dummy_focus_chain,
     );
 }
@@ -710,13 +772,14 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         .or(next_hovered_widget);
 
     let new_icon = if let (Some(icon_source), Some(pos)) = (icon_source, pointer_pos) {
-        let (widget, state) = root.widget_arena.get_pair(icon_source);
+        let (widget, state, properties) = root.widget_arena.get_all(icon_source);
 
         let ctx = QueryCtx {
             global_state: &root.global_state,
             widget_state_children: state.children,
             widget_children: widget.children,
             widget_state: state.item,
+            properties_children: properties.children,
         };
 
         if state.item.is_disabled {
