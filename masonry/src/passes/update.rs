@@ -3,6 +3,7 @@
 
 use std::collections::HashSet;
 
+use anymap3::AnyMap;
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
@@ -97,7 +98,7 @@ fn update_widget_tree(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
 ) {
     let trace = global_state.trace.update_tree;
     let _span = enter_span_if(
@@ -118,6 +119,7 @@ fn update_widget_tree(
         let mut ctx = RegisterCtx {
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            properties_children: properties.children.reborrow_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };
@@ -205,6 +207,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
         let mut ctx = RegisterCtx {
             widget_state_children: root.widget_arena.states.roots_mut(),
             widget_children: root.widget_arena.widgets.roots_mut(),
+            properties_children: root.widget_arena.properties.roots_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };
@@ -230,7 +233,7 @@ fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     parent_disabled: bool,
 ) {
     let _span = enter_span(
@@ -317,7 +320,7 @@ fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     parent_stashed: bool,
 ) {
     let _span = enter_span(
@@ -411,7 +414,7 @@ fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
     let _span = enter_span(

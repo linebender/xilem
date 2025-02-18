@@ -1,6 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use anymap3::AnyMap;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
@@ -14,7 +15,7 @@ fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, anymap3::AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {

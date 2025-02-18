@@ -35,7 +35,7 @@ impl WidgetArena {
     ) -> (
         ArenaRef<Box<dyn Widget>>,
         ArenaRef<WidgetState>,
-        ArenaRef<anymap3::AnyMap>,
+        ArenaRef<AnyMap>,
     ) {
         let widget = self
             .widgets
@@ -59,7 +59,7 @@ impl WidgetArena {
     ) -> (
         ArenaMut<Box<dyn Widget>>,
         ArenaMut<WidgetState>,
-        ArenaMut<anymap3::AnyMap>,
+        ArenaMut<AnyMap>,
     ) {
         let widget = self
             .widgets
