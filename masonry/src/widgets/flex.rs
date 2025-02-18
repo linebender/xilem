@@ -11,8 +11,8 @@ use vello::kurbo::common::FloatExt;
 use vello::kurbo::{Affine, Line, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    Properties, PropertiesMut, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Rect, Size};
 
@@ -911,11 +911,29 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
 
 // --- MARK: IMPL WIDGET---
 impl Widget for Flex {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
@@ -923,7 +941,12 @@ impl Widget for Flex {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
 

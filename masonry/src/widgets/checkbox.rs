@@ -10,9 +10,9 @@ use vello::Scene;
 use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::theme;
 use crate::util::{UnitPoint, fill_lin_gradient, stroke};
@@ -66,7 +66,12 @@ impl Checkbox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Checkbox {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
@@ -89,9 +94,20 @@ impl Widget for Checkbox {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+    ) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
@@ -119,7 +135,12 @@ impl Widget for Checkbox {
         ctx.register_child(&mut self.label);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
         let check_size = theme::BASIC_WIDGET_HEIGHT;
 

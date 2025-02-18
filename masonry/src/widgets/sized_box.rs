@@ -11,8 +11,9 @@ use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 use crate::util::stroke;
@@ -453,11 +454,29 @@ impl SizedBox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for SizedBox {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         if let Some(ref mut child) = self.child {
@@ -465,7 +484,12 @@ impl Widget for SizedBox {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         // Shrink constraints by border offset
         let border_width = match &self.border {
             Some(border) => border.width,

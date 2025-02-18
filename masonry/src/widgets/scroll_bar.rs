@@ -10,8 +10,9 @@ use vello::Scene;
 use vello::kurbo::Rect;
 
 use crate::core::{
-    AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Point, Size};
 use crate::theme;
@@ -121,7 +122,12 @@ impl ScrollBar {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for ScrollBar {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 ctx.capture_pointer();
@@ -162,9 +168,20 @@ impl Widget for ScrollBar {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
         // TODO - Handle scroll-related events?
     }
 
@@ -172,7 +189,12 @@ impl Widget for ScrollBar {
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         // TODO - handle resize
 
         let scrollbar_width = theme::SCROLLBAR_WIDTH;

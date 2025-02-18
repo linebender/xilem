@@ -8,8 +8,8 @@ use vello::Scene;
 use vello::kurbo::{Affine, Line, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    Properties, PropertiesMut, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 
@@ -242,11 +242,29 @@ impl Grid {
 
 // --- MARK: IMPL WIDGET---
 impl Widget for Grid {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
@@ -254,7 +272,12 @@ impl Widget for Grid {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let total_size = bc.max();
         if !total_size.is_finite() {
             debug_panic!(

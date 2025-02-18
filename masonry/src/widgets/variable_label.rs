@@ -12,9 +12,9 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, Properties, PropertiesMut, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    Properties, PropertiesMut, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::parley::style::FontWeight;
 use crate::widgets::Label;
@@ -173,15 +173,33 @@ impl VariableLabel {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for VariableLabel {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
     fn accepts_pointer_interaction(&self) -> bool {
         false
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
@@ -189,7 +207,12 @@ impl Widget for VariableLabel {
         ctx.register_child(&mut self.label);
     }
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, interval: u64) {
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
         let millis = (interval as f64 / 1_000_000.) as f32;
         let result = self.weight.advance(millis);
         let new_weight = self.weight.value;
@@ -212,7 +235,12 @@ impl Widget for VariableLabel {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let size = ctx.run_layout(&mut self.label, bc);
         ctx.place_child(&mut self.label, Point::ORIGIN);
         size
