@@ -10,7 +10,8 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 use crate::theme;
@@ -90,19 +91,42 @@ fn clamp_progress(progress: &mut Option<f64>) {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for ProgressBar {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.label);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
         // TODO: Clearer constraints here
         let label_size = ctx.run_layout(&mut self.label, &bc.loosen());
@@ -121,7 +145,7 @@ impl Widget for ProgressBar {
         final_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
         let border_width = 1.;
 
         let rect = ctx
@@ -163,7 +187,7 @@ impl Widget for ProgressBar {
         Role::ProgressIndicator
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
         node.set_value(self.value_accessibility());
         if let Some(value) = self.progress {
             node.set_numeric_value(value * 100.0);

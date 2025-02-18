@@ -10,8 +10,8 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, QueryCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PointerButton, PointerEvent, Properties, PropertiesMut, QueryCtx, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Insets, Size};
 use crate::theme;
@@ -86,7 +86,12 @@ impl Button {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Button {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 if !ctx.is_disabled() {
@@ -108,9 +113,20 @@ impl Widget for Button {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+    ) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
@@ -121,7 +137,7 @@ impl Widget for Button {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
@@ -134,7 +150,12 @@ impl Widget for Button {
         ctx.register_child(&mut self.label);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
         let label_bc = bc.shrink(padding).loosen();
 
@@ -158,7 +179,7 @@ impl Widget for Button {
         button_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
         let is_active = ctx.is_pointer_capture_target() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
@@ -197,7 +218,7 @@ impl Widget for Button {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.

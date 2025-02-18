@@ -5,7 +5,7 @@ use tracing::info_span;
 use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{UpdateCtx, Widget, WidgetState};
+use crate::core::{PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: UPDATE ANIM ---
@@ -40,7 +40,10 @@ fn update_anim_for_widget(
             widget_children: widget.children.reborrow_mut(),
             properties_children: properties.children.reborrow_mut(),
         };
-        widget.item.on_anim_frame(&mut ctx, elapsed_ns);
+        let mut props = PropertiesMut {
+            map: properties.item,
+        };
+        widget.item.on_anim_frame(&mut ctx, &mut props, elapsed_ns);
     }
 
     let id = state.item.id;

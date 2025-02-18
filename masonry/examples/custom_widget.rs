@@ -14,7 +14,7 @@ use accesskit::{Node, Role};
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
@@ -37,15 +37,38 @@ impl AppDriver for Driver {
 struct CustomWidget(String);
 
 impl Widget for CustomWidget {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn layout(&mut self, _layout_ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _layout_ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         // BoxConstraints are passed by the parent widget.
         // This method can return any Size within those constraints:
         // bc.constrain(my_size)
@@ -68,7 +91,7 @@ impl Widget for CustomWidget {
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
         // Clear the whole widget with the color of your choice
         // (ctx.size() returns the size of the layout rect we're painting in)
         // Note: ctx also has a `clear` method, but that clears the whole context,
@@ -137,7 +160,7 @@ impl Widget for CustomWidget {
         Role::Window
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
         let text = &self.0;
         node.set_label(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),

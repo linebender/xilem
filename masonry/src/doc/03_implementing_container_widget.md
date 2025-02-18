@@ -85,7 +85,7 @@ use masonry::core::{
 impl Widget for VerticalStack {
     // ...
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
         let total_width = bc.max().width;
         let total_height = bc.max().height;
         let total_child_height = total_height - self.gap * (self.children.len() - 1) as f64;
@@ -228,22 +228,22 @@ In the case of our `VerticalStack`, all of them can be left empty:
 
 ```rust,ignore
 impl Widget for VerticalStack {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
 
-    fn on_anim_frame(&mut self, _ctx: &mut UpdateCtx, _interval: u64) {}
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn on_anim_frame(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _interval: u64) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
     // ...
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &Properties<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
 
     // ...
 }
