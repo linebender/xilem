@@ -780,22 +780,14 @@ impl_context_method!(
     }
 );
 
-// Methods on all context types except LayoutCtx and ComposeCtx.
+// Methods on selected context types.
 // Access selected global state information.
-impl_context_method!(
-    MutateCtx<'_>,
-    QueryCtx<'_>,
-    EventCtx<'_>,
-    UpdateCtx<'_>,
-    PaintCtx<'_>,
-    AccessCtx<'_>,
-    {
-        /// Get DPI scaling factor.
-        pub fn get_scale_factor(&self) -> f64 {
-            self.global_state.scale_factor
-        }
+impl_context_method!(PaintCtx<'_>, AccessCtx<'_>, {
+    /// Get DPI scaling factor.
+    pub fn get_scale_factor(&self) -> f64 {
+        self.global_state.scale_factor
     }
-);
+});
 
 // Methods on all context types
 // Access status information (hovered/pointer captured/disabled/etc).
