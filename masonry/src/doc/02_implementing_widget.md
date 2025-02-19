@@ -116,7 +116,7 @@ impl Widget for ColorRectangle {
 
 We handle pointer events and accessibility events the same way: we check the event type, and if it's a left-click, we submit an action.
 
-Submitting an action lets Masonry that a semantically meaningful event has occurred; Masonry will call `AppDriver::on_action()` with the action before the end of the frame.
+Submitting an action lets Masonry know that a semantically meaningful event has occurred; Masonry will call `AppDriver::on_action()` with the action before the end of the frame.
 This lets higher-level frameworks like Xilem react to UI events, like a button being pressed.
 
 Implementing `on_access_event` lets us emulate click behaviors for people using assistive technologies.
