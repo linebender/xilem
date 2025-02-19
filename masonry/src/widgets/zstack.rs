@@ -8,7 +8,7 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, Properties, PropertiesMut, QueryCtx,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
@@ -346,7 +346,7 @@ impl Widget for ZStack {
         max_size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &Properties<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         for child in self.children.iter_mut().map(|x| &mut x.widget) {
@@ -366,7 +366,13 @@ impl Widget for ZStack {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
         trace_span!("ZStack", id = ctx.widget_id().trace())

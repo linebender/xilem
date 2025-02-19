@@ -5,7 +5,11 @@
 
 use anymap3::{AnyMap, Entry};
 
-pub struct Properties<'a> {
+pub struct Properties {
+    pub(crate) map: AnyMap,
+}
+
+pub struct PropertiesRef<'a> {
     pub(crate) map: &'a AnyMap,
 }
 
@@ -13,7 +17,21 @@ pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
 }
 
-impl Properties<'_> {
+impl Properties {
+    pub fn new() -> Self {
+        Self { map: AnyMap::new() }
+    }
+
+    pub fn ref_(&self) -> PropertiesRef<'_> {
+        PropertiesRef { map: &self.map }
+    }
+
+    pub fn mut_(&mut self) -> PropertiesMut<'_> {
+        PropertiesMut { map: &mut self.map }
+    }
+}
+
+impl PropertiesRef<'_> {
     pub fn get<T: 'static>(&self) -> Option<&T> {
         self.map.get::<T>()
     }

@@ -20,8 +20,8 @@ use vello::Scene;
 use crate::AsAny;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetPod, WidgetRef, find_widget_at_pos,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef, find_widget_at_pos,
 };
 use crate::kurbo::{Point, Size};
 use crate::widgets::SizedBox;
@@ -37,9 +37,9 @@ pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>,
 pub type LayoutFn<S> =
     dyn FnMut(&mut S, &mut LayoutCtx, &mut PropertiesMut<'_>, &BoxConstraints) -> Size;
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
-pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &Properties<'_>, &mut Scene);
+pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &PropertiesRef<'_>, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
-pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx, &Properties<'_>, &mut Node);
+pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx, &PropertiesRef<'_>, &mut Node);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
 
 #[cfg(FALSE)]
@@ -278,7 +278,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::paint`]
     pub fn paint_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut PaintCtx, &Properties<'_>, &mut Scene) + 'static,
+        f: impl FnMut(&mut S, &mut PaintCtx, &PropertiesRef<'_>, &mut Scene) + 'static,
     ) -> Self {
         self.paint = Some(Box::new(f));
         self
@@ -293,7 +293,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::accessibility`]
     pub fn access_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut AccessCtx, &Properties<'_>, &mut Node) + 'static,
+        f: impl FnMut(&mut S, &mut AccessCtx, &PropertiesRef<'_>, &mut Node) + 'static,
     ) -> Self {
         self.access = Some(Box::new(f));
         self
@@ -389,13 +389,13 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &PropertiesRef<'_>, node: &mut Node) {
         if let Some(f) = self.access.as_mut() {
             f(&mut self.state, ctx, props, node);
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
         if let Some(f) = self.paint.as_mut() {
             f(&mut self.state, ctx, props, scene);
         }
@@ -525,13 +525,19 @@ impl Widget for ReplaceChild {
 
     fn compose(&mut self, _ctx: &mut ComposeCtx) {}
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &Properties<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         todo!()
@@ -634,7 +640,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.compose(ctx);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
         self.recording.push(Record::Paint);
         self.child.paint(ctx, props, scene);
     }
@@ -643,7 +649,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &PropertiesRef<'_>, node: &mut Node) {
         self.recording.push(Record::Access);
         self.child.accessibility(ctx, props, node);
     }

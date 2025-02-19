@@ -11,7 +11,7 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Padding, TextArea};
@@ -159,7 +159,7 @@ impl Widget for Prose {
         size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &Properties<'_>, _scene: &mut Scene) {
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {
         // All painting is handled by the child
     }
 
@@ -167,7 +167,13 @@ impl Widget for Prose {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.text.id()]

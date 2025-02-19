@@ -13,7 +13,7 @@ use vello::kurbo::{Affine, Cap, Line, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
 use crate::kurbo::{Point, Size, Vec2};
@@ -139,7 +139,7 @@ impl Widget for Spinner {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
         let center = Point::new(width / 2.0, height / 2.0);
@@ -170,7 +170,13 @@ impl Widget for Spinner {
         Role::Unknown
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()

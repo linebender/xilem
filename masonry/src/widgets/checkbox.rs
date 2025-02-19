@@ -11,8 +11,8 @@ use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::theme;
 use crate::util::{UnitPoint, fill_lin_gradient, stroke};
@@ -158,7 +158,7 @@ impl Widget for Checkbox {
         our_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let check_size = theme::BASIC_WIDGET_HEIGHT;
         let border_width = 1.;
 
@@ -214,7 +214,7 @@ impl Widget for Checkbox {
         Role::CheckBox
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.

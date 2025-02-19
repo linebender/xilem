@@ -12,7 +12,7 @@ use vello::peniko::{Brush, Fill};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
 use crate::kurbo::{Point, Size};
@@ -534,7 +534,7 @@ impl Widget for SizedBox {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let corner_radius = self.corner_radius;
 
         if let Some(background) = self.background.as_mut() {
@@ -566,7 +566,13 @@ impl Widget for SizedBox {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         if let Some(child) = &self.child {

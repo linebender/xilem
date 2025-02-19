@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{Widget, WidgetId};
+use crate::core::{Properties, Widget, WidgetId};
 use crate::kurbo::Affine;
 
 /// A container for one widget in the hierarchy.
@@ -25,6 +25,7 @@ pub struct WidgetPod<W: ?Sized> {
 pub(crate) struct CreateWidget<W: ?Sized> {
     pub(crate) widget: Box<W>,
     pub(crate) transform: Affine,
+    pub(crate) properties: Properties,
 }
 
 enum WidgetPodInner<W: ?Sized> {
@@ -60,9 +61,23 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
             inner: WidgetPodInner::Create(CreateWidget {
                 widget: inner,
                 transform,
+                properties: Properties::new(),
             }),
         }
     }
+
+    // TODO - Remove transform, have it as a special-case property instead.
+    pub fn new_with(inner: Box<W>, id: WidgetId, transform: Affine, props: Properties) -> Self {
+        Self {
+            id,
+            inner: WidgetPodInner::Create(CreateWidget {
+                widget: inner,
+                transform,
+                properties: props,
+            }),
+        }
+    }
+
     pub(crate) fn incomplete(&self) -> bool {
         matches!(self.inner, WidgetPodInner::Create(_))
     }
@@ -94,6 +109,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
             inner: WidgetPodInner::Create(CreateWidget {
                 widget: inner.widget.as_box_dyn(),
                 transform: inner.transform,
+                properties: inner.properties,
             }),
         }
     }

@@ -16,8 +16,8 @@ use accesskit::{Node, Role};
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -242,13 +242,13 @@ impl Widget for CalcButton {
         size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &Properties<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::Button
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),

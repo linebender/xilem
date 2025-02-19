@@ -13,7 +13,7 @@ use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
 use crate::kurbo::Size;
@@ -136,7 +136,7 @@ impl Widget for Image {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
         let transform = self.object_fit.affine_to_fill(ctx.size(), image_size);
 
@@ -150,7 +150,12 @@ impl Widget for Image {
         Role::Image
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
         // TODO - Handle alt text and such.
     }
 

@@ -16,8 +16,8 @@ use vello::Scene;
 use crate::AsAny;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
-    WidgetRef,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, WidgetRef,
 };
 use crate::kurbo::{Point, Size};
 
@@ -246,11 +246,11 @@ pub trait Widget: AsAny + AsDynWidget {
     /// children, or annotations (for example, scrollbars) by painting
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene);
 
     fn accessibility_role(&self) -> Role;
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node);
 
     /// Return ids of this widget's children.
     ///

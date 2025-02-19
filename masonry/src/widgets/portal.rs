@@ -13,7 +13,7 @@ use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Axis, ScrollBar};
@@ -454,13 +454,13 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         ctx.set_child_scroll_translation(&mut self.child, Vec2::new(0.0, -self.viewport_pos.y));
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &Properties<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         // TODO - Double check this code
         // Not sure about these values
         if false {

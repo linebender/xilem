@@ -18,7 +18,7 @@ use vello::peniko::{BlendMode, Brush};
 
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
     TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles, render_text,
 };
 use crate::theme;
@@ -420,7 +420,7 @@ impl Widget for Label {
         bc.constrain(label_size)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
@@ -445,7 +445,7 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         let window_origin = ctx.window_origin();
         self.accessibility.build_nodes(
             self.text.as_ref(),

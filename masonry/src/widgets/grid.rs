@@ -9,7 +9,7 @@ use vello::kurbo::{Affine, Line, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 
@@ -302,7 +302,7 @@ impl Widget for Grid {
         total_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // paint the baseline if we're debugging layout
         if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
             let color = ctx.debug_color();
@@ -318,7 +318,13 @@ impl Widget for Grid {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children

@@ -10,7 +10,7 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerButton,
-    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Line, Point, Rect, Size};
@@ -533,7 +533,7 @@ impl Widget for Split {
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // TODO - Paint differently if the bar is draggable and hovered.
         if self.solid {
             self.paint_solid_bar(ctx, scene);
@@ -560,7 +560,13 @@ impl Widget for Split {
         Role::Splitter
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child1.id(), self.child2.id()]

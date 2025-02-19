@@ -1204,7 +1204,12 @@ impl RegisterCtx<'_> {
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
-        let Some(CreateWidget { widget, transform }) = child.take_inner() else {
+        let Some(CreateWidget {
+            widget,
+            transform,
+            properties,
+        }) = child.take_inner()
+        else {
             return;
         };
 
@@ -1218,7 +1223,7 @@ impl RegisterCtx<'_> {
 
         self.widget_children.insert(id, widget.as_box_dyn());
         self.widget_state_children.insert(id, state);
-        self.properties_children.insert(id, AnyMap::new());
+        self.properties_children.insert(id, properties.map);
     }
 }
 

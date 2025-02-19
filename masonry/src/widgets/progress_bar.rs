@@ -10,7 +10,7 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
@@ -145,7 +145,7 @@ impl Widget for ProgressBar {
         final_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let border_width = 1.;
 
         let rect = ctx
@@ -187,7 +187,7 @@ impl Widget for ProgressBar {
         Role::ProgressIndicator
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         node.set_value(self.value_accessibility());
         if let Some(value) = self.progress {
             node.set_numeric_value(value * 100.0);

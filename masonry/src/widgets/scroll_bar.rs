@@ -11,8 +11,8 @@ use vello::kurbo::Rect;
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, Properties, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetMut,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Point, Size};
 use crate::theme;
@@ -207,7 +207,7 @@ impl Widget for ScrollBar {
             .into()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -232,7 +232,12 @@ impl Widget for ScrollBar {
         Role::ScrollBar
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
         // TODO
         // Use set_scroll_x/y_min/max?
     }

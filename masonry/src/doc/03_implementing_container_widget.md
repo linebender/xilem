@@ -237,13 +237,13 @@ impl Widget for VerticalStack {
 
     // ...
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &Properties<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &Properties<'_>, _node: &mut Node) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, _node: &mut Node) {}
 
     // ...
 }
