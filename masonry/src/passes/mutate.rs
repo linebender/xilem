@@ -4,7 +4,7 @@
 use tracing::info_span;
 
 use crate::app::RenderRoot;
-use crate::core::{MutateCtx, Widget, WidgetId, WidgetMut};
+use crate::core::{MutateCtx, PropertiesMut, Widget, WidgetId, WidgetMut};
 use crate::passes::merge_state_up;
 
 pub(crate) fn mutate_widget<R>(
@@ -25,6 +25,9 @@ pub(crate) fn mutate_widget<R>(
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
             properties_children: properties_mut.children,
+        },
+        properties: PropertiesMut {
+            map: properties_mut.item,
         },
         widget: &mut **widget_mut.item,
     };

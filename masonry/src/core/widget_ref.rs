@@ -6,7 +6,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::core::{QueryCtx, Widget, WidgetId};
+use crate::core::{PropertiesRef, QueryCtx, Widget, WidgetId, WidgetProperty};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -22,18 +22,16 @@ use crate::core::{QueryCtx, Widget, WidgetId};
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::core::WidgetMut).
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
     pub(crate) ctx: QueryCtx<'w>,
+    pub(crate) properties: PropertiesRef<'w>,
     pub(crate) widget: &'w W,
 }
 
-// --- TRAIT IMPLS ---
+// --- MARK: TRAIT IMPLS ---
 
 #[allow(clippy::non_canonical_clone_impl)]
 impl<W: Widget + ?Sized> Clone for WidgetRef<'_, W> {
     fn clone(&self) -> Self {
-        Self {
-            ctx: self.ctx,
-            widget: self.widget,
-        }
+        Self { ..*self }
     }
 }
 
@@ -70,7 +68,7 @@ impl<W: Widget + ?Sized> Deref for WidgetRef<'_, W> {
     }
 }
 
-// --- IMPLS ---
+// --- MARK: IMPLS ---
 
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     /// Get a [`QueryCtx`] with information about the current widget.
@@ -88,10 +86,21 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         self.ctx.widget_state.id
     }
 
+    /// Returns true if the widget has a property of type `T`.
+    pub fn get_prop<T: WidgetProperty>(&self) -> Option<&T> {
+        self.properties.get::<T>()
+    }
+
+    /// Get value of property `T`, or None if the widget has no `T` property.
+    pub fn contains_prop<T: WidgetProperty>(&self) -> bool {
+        self.properties.contains::<T>()
+    }
+
     /// Attempt to downcast to `WidgetRef` of concrete Widget type.
     pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
             ctx: self.ctx,
+            properties: self.properties,
             widget: self.widget.as_any().downcast_ref()?,
         })
     }
@@ -136,8 +145,15 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                     widget_state: state_ref.item,
                     properties_children: properties_ref.children,
                 };
+                let properties = PropertiesRef {
+                    map: properties_ref.item,
+                };
 
-                WidgetRef { ctx, widget }
+                WidgetRef {
+                    ctx,
+                    properties,
+                    widget,
+                }
             })
             .collect()
     }
@@ -148,6 +164,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
         WidgetRef {
             ctx: self.ctx,
+            properties: self.properties,
             widget: self.widget,
         }
     }
@@ -172,7 +189,8 @@ impl WidgetRef<'_, dyn Widget> {
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     pub fn find_widget_at_pos(&self, pos: Point) -> Option<Self> {
-        self.widget.find_widget_at_pos(self.ctx, pos)
+        self.widget
+            .find_widget_at_pos(self.ctx, self.properties, pos)
     }
 }
 
