@@ -25,8 +25,10 @@ use crate::kurbo::Affine;
 ///
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
+#[non_exhaustive]
 pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub ctx: MutateCtx<'a>,
+    #[doc(hidden)]
     pub properties: PropertiesMut<'a>,
     pub widget: &'a mut W,
 }

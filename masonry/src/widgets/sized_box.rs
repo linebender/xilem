@@ -16,7 +16,7 @@ use crate::core::{
     WidgetPod,
 };
 use crate::kurbo::{Point, Size};
-use crate::properties::BackgroundBrush;
+use crate::properties::BackgroundColor;
 use crate::util::stroke;
 
 // FIXME - Improve all doc in this module ASAP.
@@ -540,10 +540,11 @@ impl Widget for SizedBox {
 
         // TODO - Handle properties more gracefully.
         // This is more of a proof of concept.
-        let background = self
-            .background
-            .as_ref()
-            .or_else(|| props.get::<BackgroundBrush>().map(|color| &color.brush));
+        let background = self.background.clone().or_else(|| {
+            props
+                .get::<BackgroundColor>()
+                .map(|background| background.color.into())
+        });
 
         if let Some(background) = background {
             let panel = ctx.size().to_rounded_rect(corner_radius);
@@ -552,7 +553,7 @@ impl Widget for SizedBox {
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    background,
+                    &background,
                     Some(Affine::IDENTITY),
                     &panel,
                 );
@@ -757,24 +758,24 @@ mod tests {
         let mut harness = TestHarness::create(widget);
 
         harness.edit_root_widget(|mut sized_box| {
-            let brush = BackgroundBrush {
-                brush: palette::css::RED.into(),
+            let brush = BackgroundColor {
+                color: palette::css::RED.into(),
             };
             sized_box.insert_prop(brush);
         });
         assert_render_snapshot!(harness, "background_brush_red");
 
         harness.edit_root_widget(|mut sized_box| {
-            let brush = BackgroundBrush {
-                brush: palette::css::GREEN.into(),
+            let brush = BackgroundColor {
+                color: palette::css::GREEN.into(),
             };
             *sized_box.get_prop_mut().unwrap() = brush;
         });
         assert_render_snapshot!(harness, "background_brush_green");
 
         harness.edit_root_widget(|mut sized_box| {
-            let brush = BackgroundBrush {
-                brush: palette::css::BLUE.into(),
+            let brush = BackgroundColor {
+                color: palette::css::BLUE.into(),
             };
             sized_box.prop_entry().and_modify(|entry| {
                 *entry = brush;
@@ -783,7 +784,7 @@ mod tests {
         assert_render_snapshot!(harness, "background_brush_blue");
 
         harness.edit_root_widget(|mut sized_box| {
-            sized_box.remove_prop::<BackgroundBrush>();
+            sized_box.remove_prop::<BackgroundColor>();
         });
         assert_render_snapshot!(harness, "background_brush_removed");
     }

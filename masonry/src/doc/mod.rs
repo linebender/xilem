@@ -31,6 +31,10 @@ pub mod doc_03_implementing_container_widget {}
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_04_testing_widget {}
 
+#[doc = include_str!("./04b_widget_properties.md")]
+/// <style> .rustdoc-hidden { display: none; } </style>
+pub mod doc_04b_testing_widget {}
+
 #[doc = include_str!("./05_pass_system.md")]
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_05_pass_system {}

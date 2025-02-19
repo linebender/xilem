@@ -100,6 +100,13 @@ A widget is considered "interactive" if it can still get text and/or pointer eve
 Stashed and disabled widget are non-interactive.
 
 
+## Properties / Props
+
+All widgets have associated data of arbitrary types called "properties".
+These properties are mostly used for styling and event handling.
+
+See [Reading Widget Properties](crate::doc::04b_widget_properties) for more info.
+
 ## Safety rails
 
 When debug assertions are on, Masonry runs a bunch of checks every frame to make sure widget code doesn't have logical errors.
