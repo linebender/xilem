@@ -150,6 +150,7 @@ mod passes;
 
 pub mod app;
 pub mod core;
+pub mod properties;
 pub mod testing;
 pub mod theme;
 pub mod widgets;
