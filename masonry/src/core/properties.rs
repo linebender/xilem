@@ -7,7 +7,7 @@ use crate::core::MutateCtx;
 
 /// A property that can be set on a widget.
 ///
-/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for details.
+/// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
 pub trait WidgetProperty: 'static {
     /// Called when the property is inserted, mutated or removed.
     ///
@@ -20,7 +20,7 @@ pub trait WidgetProperty: 'static {
 
 /// A collection of properties that a widget can be created with.
 ///
-/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for details.
+/// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
 #[derive(Default)]
 pub struct Properties {
     pub(crate) map: AnyMap,
@@ -30,7 +30,7 @@ pub struct Properties {
 ///
 /// Used by the [`Widget`] trait during rendering passes and in some search methods.
 ///
-/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for
+/// See [properties documentation](crate::doc::doc_04b_widget_properties) for
 /// details.
 ///
 /// [`Widget`]: crate::core::Widget
@@ -43,7 +43,7 @@ pub struct PropertiesRef<'a> {
 ///
 /// Used by the [`Widget`] trait during most passes.
 ///
-/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for
+/// See [properties documentation](crate::doc::doc_04b_widget_properties) for
 /// details.
 ///
 /// [`Widget`]: crate::core::Widget
