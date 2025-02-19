@@ -16,6 +16,7 @@ use crate::core::{
     WidgetPod,
 };
 use crate::kurbo::{Point, Size};
+use crate::properties::BackgroundBrush;
 use crate::util::stroke;
 
 // FIXME - Improve all doc in this module ASAP.
@@ -534,10 +535,17 @@ impl Widget for SizedBox {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let corner_radius = self.corner_radius;
 
-        if let Some(background) = self.background.as_mut() {
+        // TODO - Handle properties more gracefully.
+        // This is more of a proof of concept.
+        let background = self
+            .background
+            .as_ref()
+            .or_else(|| props.get::<BackgroundBrush>().map(|color| &color.brush));
+
+        if let Some(background) = background {
             let panel = ctx.size().to_rounded_rect(corner_radius);
 
             trace_span!("paint background").in_scope(|| {
@@ -739,4 +747,44 @@ mod tests {
     }
 
     // TODO - add screenshot tests for different brush types
+
+    // --- MARK: PROP TESTS ---
+
+    #[test]
+    fn background_brush_property() {
+        let widget = SizedBox::empty().width(40.).height(40.).rounded(20.);
+
+        let mut harness = TestHarness::create(widget);
+
+        harness.edit_root_widget(|mut sized_box| {
+            let brush = BackgroundBrush {
+                brush: palette::css::RED.into(),
+            };
+            sized_box.insert_prop(brush);
+        });
+        assert_render_snapshot!(harness, "background_brush_red");
+
+        harness.edit_root_widget(|mut sized_box| {
+            let brush = BackgroundBrush {
+                brush: palette::css::GREEN.into(),
+            };
+            *sized_box.get_prop_mut().unwrap() = brush;
+        });
+        assert_render_snapshot!(harness, "background_brush_green");
+
+        harness.edit_root_widget(|mut sized_box| {
+            let brush = BackgroundBrush {
+                brush: palette::css::BLUE.into(),
+            };
+            sized_box.prop_entry().and_modify(|entry| {
+                *entry = brush;
+            });
+        });
+        assert_render_snapshot!(harness, "background_brush_blue");
+
+        harness.edit_root_widget(|mut sized_box| {
+            sized_box.remove_prop::<BackgroundBrush>();
+        });
+        assert_render_snapshot!(harness, "background_brush_removed");
+    }
 }
