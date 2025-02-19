@@ -34,9 +34,9 @@ trait Widget {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size;
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene);
     fn accessibility_role(&self) -> Role;
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node);
 
     // ...
 }
@@ -182,7 +182,7 @@ use accesskit::{Node, Role};
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         scene.fill(
             Fill::NonZero,
@@ -197,7 +197,7 @@ impl Widget for ColorRectangle {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
@@ -302,7 +302,7 @@ First, we update our paint method:
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         let color = if ctx.is_hovered() {
             Color::WHITE

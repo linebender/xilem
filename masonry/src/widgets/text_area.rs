@@ -19,7 +19,7 @@ use winit::keyboard::{Key, NamedKey};
 
 use crate::core::{
     default_styles, render_text, AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx,
-    LayoutCtx, PaintCtx, PointerButton, PointerEvent, Properties, PropertiesMut, QueryCtx,
+    LayoutCtx, PaintCtx, PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::widgets::Padding;
@@ -928,7 +928,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         bc.constrain(area_size)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
@@ -982,7 +982,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         if !EDITABLE {
             node.set_read_only();
         }

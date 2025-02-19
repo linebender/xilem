@@ -10,8 +10,8 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, Properties, PropertiesMut, QueryCtx, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Insets, Size};
 use crate::theme;
@@ -179,7 +179,7 @@ impl Widget for Button {
         button_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &Properties<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let is_active = ctx.is_pointer_capture_target() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
@@ -218,7 +218,7 @@ impl Widget for Button {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &Properties<'_>, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.
