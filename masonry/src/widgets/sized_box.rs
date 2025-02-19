@@ -560,7 +560,7 @@ impl Widget for SizedBox {
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    &*background,
+                    background,
                     Some(Affine::IDENTITY),
                     &panel,
                 );
