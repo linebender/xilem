@@ -14,6 +14,7 @@ pub trait WidgetProperty: 'static {
 // TODO - Add PropertyValue wrapper struct that implements receiver trait.
 // Return PropertyValue<T> instead of Option<T> from methods.
 
+#[derive(Default)]
 pub struct Properties {
     pub(crate) map: AnyMap,
 }
