@@ -22,8 +22,8 @@ use web_time::Instant;
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, PointerEvent, QueryCtx, TextEvent, Widget, WidgetArena,
-    WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
+    AccessEvent, Action, BrushIndex, PointerEvent, PropertiesRef, QueryCtx, TextEvent, Widget,
+    WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -496,7 +496,14 @@ impl RenderRoot {
             widget_state: state_ref.item,
             properties_children: properties_ref.children,
         };
-        WidgetRef { ctx, widget }
+        let properties = PropertiesRef {
+            map: properties_ref.item,
+        };
+        WidgetRef {
+            ctx,
+            properties,
+            widget,
+        }
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
@@ -521,7 +528,14 @@ impl RenderRoot {
             widget_state: state_ref.item,
             properties_children: properties_ref.children,
         };
-        Some(WidgetRef { ctx, widget })
+        let properties = PropertiesRef {
+            map: properties_ref.item,
+        };
+        Some(WidgetRef {
+            ctx,
+            properties,
+            widget,
+        })
     }
 
     /// Get a [`WidgetMut`] to the root widget.

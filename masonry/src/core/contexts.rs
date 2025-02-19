@@ -13,8 +13,8 @@ use winit::window::ResizeDirection;
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, FromDynWidget, Widget, WidgetId,
-    WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, FromDynWidget, PropertiesMut,
+    PropertiesRef, Widget, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;
@@ -242,6 +242,9 @@ impl MutateCtx<'_> {
         };
         WidgetMut {
             ctx: child_ctx,
+            properties: PropertiesMut {
+                map: child_properties.item,
+            },
             widget: Child::from_dyn_mut(&mut **child_mut.item).unwrap(),
         }
     }
@@ -295,9 +298,13 @@ impl<'w> QueryCtx<'w> {
             widget_state: child_state.item,
             properties_children: child_properties.children,
         };
+        let properties = PropertiesRef {
+            map: child_properties.item,
+        };
 
         WidgetRef {
             ctx,
+            properties,
             widget: &**child_widget.item,
         }
     }

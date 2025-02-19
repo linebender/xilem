@@ -436,9 +436,17 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn find_widget_at_pos<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
+        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_at_pos(&WidgetRef { widget: self, ctx }, pos)
+        find_widget_at_pos(
+            &WidgetRef {
+                widget: self,
+                properties: props,
+                ctx,
+            },
+            pos,
+        )
     }
 
     fn type_name(&self) -> &'static str {
@@ -685,9 +693,10 @@ impl<W: Widget> Widget for Recorder<W> {
     fn find_widget_at_pos<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
+        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.child.find_widget_at_pos(ctx, pos)
+        self.child.find_widget_at_pos(ctx, props, pos)
     }
 
     fn type_name(&self) -> &'static str {
