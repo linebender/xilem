@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Types and logic commonly used across widgets.
-
-// TODO - Add link to doc
+//!
+//! See [properties documentation](crate::doc::doc_03_implementing_container_widget) for details.
 
 #![allow(
     missing_docs,

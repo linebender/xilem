@@ -1,42 +1,68 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(missing_docs, reason = "TODO")]
-
 use anymap3::{AnyMap, Entry};
 
 use crate::core::MutateCtx;
 
+/// A property that can be set on a widget.
+///
+/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for details.
 pub trait WidgetProperty: 'static {
+    /// Called when the property is inserted, mutated or removed.
+    ///
+    /// Should set invalidation flags (relayout, repaint, etc) on the given context.
     fn changed(ctx: &mut MutateCtx<'_>);
 }
 
 // TODO - Add PropertyValue wrapper struct that implements receiver trait.
 // Return PropertyValue<T> instead of Option<T> from methods.
 
+/// A collection of properties that a widget can be created with.
+///
+/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for details.
 #[derive(Default)]
 pub struct Properties {
     pub(crate) map: AnyMap,
 }
 
+/// Reference to a collection of properties that a widget has access to.
+///
+/// Used by the [`Widget`] trait during rendering passes and in some search methods.
+///
+/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for
+/// details.
+///
+/// [`Widget`]: crate::core::Widget
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
     pub(crate) map: &'a AnyMap,
 }
 
+/// Mutable reference to a collection of properties that a widget has access to.
+///
+/// Used by the [`Widget`] trait during most passes.
+///
+/// See [properties documentation](crate::doc::doc_03_implementing_container_widget) for
+/// details.
+///
+/// [`Widget`]: crate::core::Widget
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
 }
 
 impl Properties {
+    /// Create an empty collection of properties.
     pub fn new() -> Self {
         Self { map: AnyMap::new() }
     }
 
+    /// Get a reference to the properties.
     pub fn ref_(&self) -> PropertiesRef<'_> {
         PropertiesRef { map: &self.map }
     }
 
+    /// Get a mutable reference to the properties.
     pub fn mut_(&mut self) -> PropertiesMut<'_> {
         PropertiesMut { map: &mut self.map }
     }

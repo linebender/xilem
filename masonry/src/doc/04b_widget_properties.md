@@ -12,6 +12,8 @@
 
 </div>
 
+<!-- TODO - Rewrite this chapter -->
+
 **TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
 Throughout the previous chapters, you may have noticed that most Widget methods take a `props: &PropertiesRef<'_>` or `props: &mut PropertiesMut<'_>` argument.
