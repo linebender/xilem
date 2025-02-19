@@ -69,7 +69,7 @@ impl PropertiesMut<'_> {
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::get_prop_mut`] instead.
     ///
-    /// [WidgetMut::get_mut]: crate::core::WidgetMut::get_prop_mut
+    /// [`WidgetMut::get_mut`]: crate::core::WidgetMut::get_prop_mut
     pub fn get_mut<T: WidgetProperty>(&mut self) -> Option<&mut T> {
         self.map.get_mut::<T>()
     }
@@ -78,7 +78,7 @@ impl PropertiesMut<'_> {
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::insert_prop`] instead.
     ///
-    /// [WidgetMut::insert]: crate::core::WidgetMut::insert_prop
+    /// [`WidgetMut::insert`]: crate::core::WidgetMut::insert_prop
     pub fn insert<T: WidgetProperty>(&mut self, value: T) -> Option<T> {
         self.map.insert(value)
     }
@@ -87,7 +87,7 @@ impl PropertiesMut<'_> {
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::remove_prop`] instead.
     ///
-    /// [WidgetMut::remove]: crate::core::WidgetMut::remove_prop
+    /// [`WidgetMut::remove`]: crate::core::WidgetMut::remove_prop
     pub fn remove<T: WidgetProperty>(&mut self) -> Option<T> {
         self.map.remove::<T>()
     }
@@ -96,7 +96,7 @@ impl PropertiesMut<'_> {
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::prop_entry`] instead.
     ///
-    /// [WidgetMut::entry]: crate::core::WidgetMut::prop_entry
+    /// [`WidgetMut::entry`]: crate::core::WidgetMut::prop_entry
     pub fn entry<T: WidgetProperty>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
         self.map.entry::<T>()
     }
