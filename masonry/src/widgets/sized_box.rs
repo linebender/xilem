@@ -759,7 +759,7 @@ mod tests {
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = BackgroundColor {
-                color: palette::css::RED.into(),
+                color: palette::css::RED,
             };
             sized_box.insert_prop(brush);
         });
@@ -767,7 +767,7 @@ mod tests {
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = BackgroundColor {
-                color: palette::css::GREEN.into(),
+                color: palette::css::GREEN,
             };
             *sized_box.get_prop_mut().unwrap() = brush;
         });
@@ -775,7 +775,7 @@ mod tests {
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = BackgroundColor {
-                color: palette::css::BLUE.into(),
+                color: palette::css::BLUE,
             };
             sized_box.prop_entry().and_modify(|entry| {
                 *entry = brush;
