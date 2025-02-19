@@ -105,7 +105,7 @@ Stashed and disabled widget are non-interactive.
 All widgets have associated data of arbitrary types called "properties".
 These properties are mostly used for styling and event handling.
 
-See [Reading Widget Properties](crate::doc::04b_widget_properties) for more info.
+See [Reading Widget Properties](crate::doc::doc_04b_widget_properties) for more info.
 
 ## Safety rails
 
