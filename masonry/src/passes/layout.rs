@@ -217,7 +217,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     ctx.place_child(&mut root.root, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.size_policy {
-        let new_size = LogicalSize::new(size.width, size.height).to_physical(root.scale_factor);
+        let new_size =
+            LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);
         if root.size != new_size {
             root.size = new_size;
             root.global_state

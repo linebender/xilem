@@ -64,11 +64,6 @@ pub struct RenderRoot {
     /// Current size of the window.
     pub(crate) size: PhysicalSize<u32>,
 
-    /// DPI scale factor.
-    ///
-    /// Kurbo coordinates are assumed to be in logical pixels
-    pub(crate) scale_factor: f64,
-
     /// Is `Some` if the most recently displayed frame was an animation frame.
     pub(crate) last_anim: Option<Instant>,
 
@@ -147,6 +142,11 @@ pub(crate) struct RenderRootState {
     /// Pass tracing configuration, used to skip tracing to limit overhead.
     pub(crate) trace: PassTracing,
     pub(crate) inspector_state: InspectorState,
+
+    /// DPI scale factor.
+    ///
+    /// Kurbo coordinates are assumed to be in logical pixels
+    pub(crate) scale_factor: f64,
 }
 
 pub(crate) struct MutateCallback {
@@ -258,7 +258,6 @@ impl RenderRoot {
             root: WidgetPod::new(root_widget).erased(),
             size_policy,
             size: PhysicalSize::new(0, 0),
-            scale_factor,
             last_anim: None,
             last_mouse_pos: None,
             global_state: RenderRootState {
@@ -290,6 +289,7 @@ impl RenderRoot {
                     is_picking_widget: false,
                     hovered_widget: None,
                 },
+                scale_factor,
             },
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
@@ -338,7 +338,7 @@ impl RenderRoot {
     pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
         match event {
             WindowEvent::Rescale(scale_factor) => {
-                self.scale_factor = scale_factor;
+                self.global_state.scale_factor = scale_factor;
                 self.request_render_all();
                 Handled::Yes
             }
@@ -443,7 +443,7 @@ impl RenderRoot {
 
         // TODO - Handle invalidation regions
         let scene = run_paint_pass(self);
-        let tree_update = run_accessibility_pass(self, self.scale_factor);
+        let tree_update = run_accessibility_pass(self, self.global_state.scale_factor);
         (scene, tree_update)
     }
 
@@ -539,7 +539,7 @@ impl RenderRoot {
     }
 
     pub(crate) fn get_kurbo_size(&self) -> kurbo::Size {
-        let size = self.size.to_logical(self.scale_factor);
+        let size = self.size.to_logical(self.global_state.scale_factor);
         kurbo::Size::new(size.width, size.height)
     }
 
