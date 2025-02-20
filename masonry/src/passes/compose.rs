@@ -80,18 +80,10 @@ fn compose_widget(
             );
             let parent_bounding_rect = parent_state.bounding_rect;
 
-            // This could be further optimized by more tightly clipping the child bounding rect according to the clip path.
-            let clipped_child_bounding_rect = if let Some(clip_path) = parent_state.clip_path {
-                let clip_path_bounding_rect =
-                    parent_state.window_transform.transform_rect_bbox(clip_path);
-                state.item.bounding_rect.intersect(clip_path_bounding_rect)
-            } else {
-                state.item.bounding_rect
-            };
-            if !clipped_child_bounding_rect.is_zero_area() {
-                parent_state.bounding_rect =
-                    parent_bounding_rect.union(clipped_child_bounding_rect);
+            if let Some(child_bounding_rect) = parent_state.clip_child(state.item.bounding_rect) {
+                parent_state.bounding_rect = parent_bounding_rect.union(child_bounding_rect);
             }
+
             parent_state.merge_up(state.item);
         },
     );
