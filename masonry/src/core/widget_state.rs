@@ -302,11 +302,11 @@ impl WidgetState {
         self.window_transform.translation().to_point()
     }
 
-    /// Return the result of applying the widget's clip shape (if any) to the given rect.
+    /// Return the result of intersecting the widget's clip path (if any) with the given rect.
     ///
-    /// Both the argument and the result are in global coordinates.
+    /// Both the argument and the result are in window coordinates.
     ///
-    /// Returns None if the given rect is out of bounds of the clip.
+    /// Returns `None` if the given rect is clipped out.
     pub(crate) fn clip_child(&self, child_rect: Rect) -> Option<Rect> {
         if let Some(clip_path) = self.clip_path {
             let clip_path_global = self.window_transform.transform_rect_bbox(clip_path);
