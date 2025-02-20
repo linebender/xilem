@@ -96,11 +96,13 @@ pub(crate) struct WidgetState {
     // efficiently hold an arbitrary shape.
     pub(crate) clip_path: Option<Rect>,
 
-    /// This is being computed out of all ancestor transforms and `translation`
-    pub(crate) window_transform: Affine,
     /// Local transform of this widget in the parent coordinate space.
     pub(crate) transform: Affine,
-    /// translation applied by scrolling, this is applied after applying `transform` to this widget.
+    /// Global transform of this widget in the window coordinate space.
+    ///
+    /// Computed from all `transform` and `scroll_translation` values from this to the root widget.
+    pub(crate) window_transform: Affine,
+    /// Translation applied by scrolling, applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
     /// The `transform` or `scroll_translation` has changed.
     pub(crate) transform_changed: bool,
