@@ -1040,13 +1040,6 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         self.request_layout();
     }
 
-    /// Indicate that the transform of this widget has changed.
-    pub fn transform_changed(&mut self) {
-        trace!("transform_changed");
-        self.widget_state.transform_changed = true;
-        self.request_compose();
-    }
-
     /// Indicate that a child is about to be removed from the tree.
     ///
     /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
@@ -1083,7 +1076,8 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// It behaves similarly as CSS transforms
     pub fn set_transform(&mut self, transform: Affine) {
         self.widget_state.transform = transform;
-        self.transform_changed();
+        self.widget_state.transform_changed = true;
+        self.request_compose();
     }
 });
 
