@@ -1,6 +1,8 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::ops::Receiver;
+
 use crate::core::{FromDynWidget, MutateCtx, Widget};
 use crate::kurbo::Affine;
 
@@ -26,6 +28,10 @@ use crate::kurbo::Affine;
 pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub ctx: MutateCtx<'a>,
     pub widget: &'a mut W,
+}
+
+impl<W: Widget + ?Sized> Receiver for WidgetMut<'_, W> {
+    type Target = W;
 }
 
 impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
