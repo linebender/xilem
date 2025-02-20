@@ -768,12 +768,19 @@ impl_context_method!(
             self.widget_state.size
         }
 
-        // TODO - Remove? A widget doesn't really have a concept of its own "origin",
-        // it's more useful for the parent widget.
-        /// The layout rect of the widget.
+        /// The layout rect of the widget in window coordinates.
         ///
-        /// This is the layout [size](Self::size) and origin (in the parent's coordinate space) combined.
-        pub fn layout_rect(&self) -> Rect {
+        /// This is the layout [size](Self::size) and [window_origin](Self::window_origin) combined.
+        ///
+        /// See [layout rect documentation](crate::doc::doc_06_masonry_concepts#layout-rect)
+        /// for details.
+        pub fn global_layout_rect(&self) -> Rect {
+            Rect::from_origin_size(self.widget_state.window_origin(), self.widget_state.size)
+        }
+
+        // TODO - Remove
+        #[allow(dead_code, reason = "Only used in tests")]
+        pub(crate) fn local_layout_rect(&self) -> Rect {
             self.widget_state.layout_rect()
         }
 
@@ -788,7 +795,10 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
-        /// The axis aligned bounding rect of this widget in window coordinates.
+        /// The bounding rect of the widget in window coordinates.
+        ///
+        /// See [bounding rect documentation](crate::doc::doc_06_masonry_concepts#bounding-rect)
+        /// for details.
         pub fn bounding_rect(&self) -> Rect {
             self.widget_state.bounding_rect()
         }

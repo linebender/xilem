@@ -212,12 +212,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     }
 
     pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
-        let portal_size = this.ctx.layout_rect().size();
+        let portal_size = this.ctx.local_layout_rect().size();
         let content_size = this
             .ctx
             .get_mut(&mut this.widget.child)
             .ctx
-            .layout_rect()
+            .local_layout_rect()
             .size();
 
         let pos_changed = this
@@ -269,7 +269,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         const SCROLLING_SPEED: f64 = 10.0;
 
         let portal_size = ctx.size();
-        let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
+        let content_size = ctx
+            .get_raw_ref(&mut self.child)
+            .ctx()
+            .local_layout_rect()
+            .size();
 
         match event {
             PointerEvent::MouseWheel(delta, _) => {
@@ -353,7 +357,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         match event {
             Update::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
-                let content_size = ctx.get_raw_ref(&mut self.child).ctx().layout_rect().size();
+                let content_size = ctx
+                    .get_raw_ref(&mut self.child)
+                    .ctx()
+                    .local_layout_rect()
+                    .size();
 
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
                 ctx.request_compose();
@@ -561,7 +569,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "button_list_scrolled");
 
-        let item_3_rect = harness.get_widget(item_3_id).ctx().layout_rect();
+        let item_3_rect = harness.get_widget(item_3_id).ctx().local_layout_rect();
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
             Portal::pan_viewport_to(&mut portal, item_3_rect);
@@ -569,7 +577,7 @@ mod tests {
 
         assert_render_snapshot!(harness, "button_list_scroll_to_item_3");
 
-        let item_13_rect = harness.get_widget(item_13_id).ctx().layout_rect();
+        let item_13_rect = harness.get_widget(item_13_id).ctx().local_layout_rect();
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
             Portal::pan_viewport_to(&mut portal, item_13_rect);
