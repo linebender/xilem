@@ -25,7 +25,7 @@ fn layout_simple() {
 
     let harness = TestHarness::create(widget);
 
-    let first_box_rect = harness.get_widget(id_1).ctx().layout_rect();
+    let first_box_rect = harness.get_widget(id_1).ctx().local_layout_rect();
     let first_box_paint_rect = harness.get_widget(id_1).ctx().paint_rect();
 
     assert_eq!(first_box_rect.x0, 0.0);
