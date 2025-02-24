@@ -23,8 +23,8 @@
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![cfg_attr(not(test), no_std)]
 #![forbid(unsafe_code)]
+#![no_std]
 // TODO: Remove any items listed as "Deferred"
 #![expect(
     clippy::shadow_unrelated,
@@ -32,6 +32,10 @@
 )]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 extern crate alloc;
+
+// Used only for ad-hoc debugging of tests
+#[cfg(test)]
+extern crate std;
 
 mod deferred;
 pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
