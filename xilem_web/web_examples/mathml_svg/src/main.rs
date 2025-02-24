@@ -4,7 +4,6 @@
 //! Shows using mathml and SVG on the web
 
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::elements::{html, mathml as ml, svg};

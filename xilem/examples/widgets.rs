@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A widget gallery for xilem/masonry
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use masonry::app::{EventLoop, EventLoopBuilder};
 use masonry::dpi::LogicalSize;
