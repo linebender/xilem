@@ -122,6 +122,8 @@ pub trait ViewMessage<State, Action> {
 #[cfg(test)]
 mod tests {
     use alloc::boxed::Box;
+    use alloc::format;
+    use alloc::string::{String, ToString};
     use core::fmt::Debug;
 
     use crate::DynMessage;
