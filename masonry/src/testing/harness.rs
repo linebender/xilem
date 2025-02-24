@@ -715,7 +715,10 @@ impl TestHarness {
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
             new_image.save(&new_path).unwrap();
-            panic!("Snapshot test '{test_name}' failed: No reference file");
+            panic!(
+                "Snapshot test '{test_name}' failed: No reference file\n\
+            New screenshot created with `.new.png` extension. If correct, change to `.png`"
+            );
         }
     }
 }
