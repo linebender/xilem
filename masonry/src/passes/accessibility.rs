@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, NodeId, Tree, TreeUpdate};
+use anymap3::AnyMap;
 use tracing::{debug, info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{AccessCtx, Widget, WidgetState};
+use crate::core::{AccessCtx, PropertiesRef, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: BUILD TREE ---
@@ -16,6 +17,7 @@ fn build_accessibility_tree(
     tree_update: &mut TreeUpdate,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, AnyMap>,
     rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {
@@ -24,6 +26,7 @@ fn build_accessibility_tree(
         global_state,
         widget.reborrow(),
         state.reborrow(),
+        properties.reborrow(),
     );
     let id = state.item.id;
 
@@ -45,11 +48,15 @@ fn build_accessibility_tree(
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
+            properties_children: properties.children.reborrow_mut(),
             tree_update,
             rebuild_all,
         };
         let mut node = build_access_node(&mut **widget.item, &mut ctx, scale_factor);
-        widget.item.accessibility(&mut ctx, &mut node);
+        let props = PropertiesRef {
+            map: properties.item,
+        };
+        widget.item.accessibility(&mut ctx, &props, &mut node);
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {
@@ -67,7 +74,8 @@ fn build_accessibility_tree(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
+        properties.children,
+        |widget, mut state, properties| {
             // TODO - We don't skip updating stashed items because doing so
             // is error-prone. We may want to revisit that decision.
             build_accessibility_tree(
@@ -75,6 +83,7 @@ fn build_accessibility_tree(
                 tree_update,
                 widget,
                 state.reborrow_mut(),
+                properties,
                 rebuild_all,
                 None,
             );
@@ -154,7 +163,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
             .into(),
     };
 
-    let (root_widget, root_state) = {
+    let (root_widget, root_state, root_properties) = {
         let widget_id = root.root.id();
         let widget = root
             .widget_arena
@@ -166,7 +175,12 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
             .states
             .find_mut(widget_id)
             .expect("root_accessibility: root state not in widget tree");
-        (widget, state)
+        let properties = root
+            .widget_arena
+            .properties
+            .find_mut(widget_id)
+            .expect("root_accessibility: root properties not in widget tree");
+        (widget, state, properties)
     };
 
     if root.rebuild_access_tree {
@@ -177,6 +191,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         &mut tree_update,
         root_widget,
         root_state,
+        root_properties,
         root.rebuild_access_tree,
         Some(scale_factor),
     );

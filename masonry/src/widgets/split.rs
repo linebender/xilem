@@ -10,7 +10,8 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerButton,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Line, Point, Rect, Size};
 use crate::peniko::Color;
@@ -367,7 +368,12 @@ impl Split {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Split {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         if self.draggable {
             match event {
                 PointerEvent::PointerDown(PointerButton::Primary, state) => {
@@ -403,16 +409,33 @@ impl Widget for Split {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.child1);
         ctx.register_child(&mut self.child2);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         match self.split_axis {
             Axis::Horizontal => {
                 if !bc.is_width_bounded() {
@@ -510,7 +533,7 @@ impl Widget for Split {
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // TODO - Paint differently if the bar is draggable and hovered.
         if self.solid {
             self.paint_solid_bar(ctx, scene);
@@ -537,7 +560,13 @@ impl Widget for Split {
         Role::Splitter
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         smallvec![self.child1.id(), self.child2.id()]
