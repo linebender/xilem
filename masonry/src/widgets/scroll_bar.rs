@@ -154,7 +154,7 @@ impl Widget for ScrollBar {
                 }
                 ctx.request_render();
             }
-            PointerEvent::PointerUp(_, _) => {
+            PointerEvent::PointerUp(_, _) | PointerEvent::PointerLeave(_) => {
                 self.grab_anchor = None;
                 ctx.request_render();
             }
@@ -233,7 +233,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::core::PointerButton;
+    use crate::core::{PointerButton, PointerState};
     use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     #[test]
@@ -260,6 +260,12 @@ mod tests {
         assert_render_snapshot!(harness, "scrollbar_down");
 
         harness.mouse_move(Point::new(30.0, 300.0));
+        assert_render_snapshot!(harness, "scrollbar_bottom");
+
+        harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
+        // Move the mouse to a place where if the scrollbar was still grabbing, it would move the scrollbar
+        harness.mouse_move(Point::new(30.0, 100.0));
+        // We can reuse the same snapshot, because scrollbars don't currently indicate they are pressed
         assert_render_snapshot!(harness, "scrollbar_bottom");
     }
 
