@@ -1,12 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(
-    // TODO: Instead of being conditionally no_std, instead conditionally use `extern crate std`
-    unused_qualifications,
-    reason = "We have `std` enabled when testing, which means that some items are conditionally in the prelude"
-)]
-
 use crate::{
     DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
