@@ -29,7 +29,7 @@ mod zstack;
 pub use self::align::Align;
 pub use self::button::Button;
 pub use self::canvas::Canvas;
-pub use self::checkbox::Checkbox;
+pub use self::checkbox::{Checkbox, CheckboxToggled};
 pub use self::flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use self::grid::{Grid, GridParams};
 pub use self::image::Image;

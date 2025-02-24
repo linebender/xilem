@@ -1,6 +1,8 @@
 // Copyright 2025 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 //! A canvas widget.
 
 use std::sync::Arc;
