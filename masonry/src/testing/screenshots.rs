@@ -26,8 +26,10 @@ macro_rules! include_screenshot {
 /// Macro used to create markdown img tag, with a different URL when uploading to docs.rs.
 macro_rules! include_screenshot {
     ($path:literal $(, $caption:literal)? $(,)?) => {
+        // This space at the start avoids triggering https://rust-lang.github.io/rust-clippy/master/index.html#suspicious_doc_comments
+        // when using this macro in a `doc` attribute
         concat!(
-            "![", $($caption,)? "]",
+            " ![", $($caption,)? "]",
             "(", env!("CARGO_MANIFEST_DIR"), "/src/", $path, ")",
         )
     };
