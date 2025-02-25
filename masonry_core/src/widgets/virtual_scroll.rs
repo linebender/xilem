@@ -2,11 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![expect(unused, reason = "Development")]
-use std::collections::{BTreeMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use vello::kurbo::Vec2;
+use vello::kurbo::{Size, Vec2};
 
-use crate::core::{Widget, WidgetPod};
+use crate::core::{BoxConstraints, Widget, WidgetPod};
+
+use super::CrossAxisAlignment;
 
 pub struct VirtualScrollAction;
 
@@ -21,7 +23,10 @@ pub struct VirtualScrollAction;
 ///    - It allows for much more control by users of how the scrolling happens
 ///
 pub struct VirtualScroll<W: Widget + ?Sized> {
-    current_items: VecDeque<(i64, WidgetPod<W>)>,
+    first_item: i64,
+    last_item: i64,
+    current_items: BTreeMap<i64, WidgetPod<W>>,
+    items_pending_removal: HashMap<i64, WidgetPod<W>>,
     // TODO: Handle focus even if the focused item scrolls off-screen.
     // TODO: Maybe this should be the focused items and its two neighbours, so tab focusing works?
     // focused_item: Option<(i64, WidgetPod<W>)>,
@@ -34,6 +39,8 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     // This will likely wait for layout to do something similar
     scroll_offset_from_anchor: f64,
     approx_item_height: f64,
+
+    old_width: f64,
 }
 
 impl<W: Widget> Widget for VirtualScroll<W> {
@@ -44,10 +51,80 @@ impl<W: Widget> Widget for VirtualScroll<W> {
     ) -> vello::kurbo::Size {
         // Oh, OK, we actually already know the scroll_offset_from_anchor here...
         let size = bc.max();
+        let child_constraints_changed = size.width == self.old_width;
+        self.old_width = size.width;
         // What do we need the total size above the anchor to be?
         ctx.set_clip_path(size.to_rect());
-        size
+        let child_bc = BoxConstraints::new(
+            Size {
+                width: size.width,
+                height: 0.,
+            },
+            Size {
+                width: size.width,
+                // TODO: Infinite constraints are... not ideal
+                height: f64::INFINITY,
+            },
+        );
+        let mut height_before_anchor = 0.;
+        let mut height_after_anchor = 0.;
+        for (idx, child) in &mut self.current_items {
+            let resulting_size = if child_constraints_changed || ctx.child_needs_layout(child) {
+                ctx.run_layout(child, &child_bc)
+            } else {
+                ctx.skip_layout(child);
+                ctx.child_size(child)
+            };
+            if *idx < self.anchor_index {
+                height_before_anchor += resulting_size.height;
+            } else {
+                height_after_anchor += resulting_size.height;
+            }
+        }
+
+        let previous_anchor = self.anchor_index;
+        loop {
+            let anchor_pod = self.current_items.get(&self.anchor_index);
+            let anchor_height = if let Some(anchor_pod) = anchor_pod {
+                ctx.child_size(anchor_pod).height
+            } else {
+                // TODO: What should we do here?
+                break;
+            };
+            if self.scroll_offset_from_anchor < 0. {
+                if self.anchor_index == self.first_item {
+                    self.scroll_offset_from_anchor = 0.;
+                    break;
+                }
+                let new_idx = self.anchor_index - 1;
+                let new_anchor = self.current_items.get(&new_idx);
+                let new_anchor_height = if let Some(anchor_pod) = anchor_pod {
+                    ctx.child_size(anchor_pod).height
+                } else {
+                    // We will need to request this anchor, but we'll do that in the next step
+                    break;
+                };
+                self.scroll_offset_from_anchor += new_anchor_height;
+                height_after_anchor += anchor_height;
+                self.anchor_index = new_idx;
+            } else if self.scroll_offset_from_anchor > anchor_height {
+                if self.anchor_index != self.last_item {
+                    self.scroll_offset_from_anchor = anchor_height;
+                    break;
+                }
+                self.scroll_offset_from_anchor -= anchor_height;
+                height_before_anchor += anchor_height;
+                self.anchor_index += 1;
+            } else {
+                break;
+            };
+        }
+        // TODO: I *suspect* we need to do something else?
+        // self.anchor_index = new_anchor;
+
+        let mut y = -height_before_anchor;
         // TODO: How can we even plausibly handle arbitrary transforms?
+        size
     }
 
     fn compose(&mut self, ctx: &mut crate::core::ComposeCtx) {
@@ -55,7 +132,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             x: 0.,
             y: self.scroll_offset_from_anchor,
         };
-        for (_, child) in &mut self.current_items {
+        for child in self.current_items.values_mut() {
             ctx.set_child_scroll_translation(child, translation);
         }
     }
