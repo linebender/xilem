@@ -24,6 +24,7 @@ mod split;
 mod text_area;
 mod textbox;
 mod variable_label;
+mod virtual_scroll;
 mod zstack;
 
 pub use self::align::Align;
