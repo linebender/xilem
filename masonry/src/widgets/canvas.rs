@@ -5,6 +5,8 @@
 
 //! A canvas widget.
 
+use std::sync::Arc;
+
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{trace_span, Span};
@@ -18,17 +20,32 @@ use crate::core::{
 
 /// A widget allowing custom drawing.
 pub struct Canvas {
-    draw: Box<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
-    // TODO: pointer events
+    draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
+    alt_text: Option<String>,
 }
 
 // --- MARK: BUILDERS ---
 impl Canvas {
     /// Create a new canvas with the given draw function
     pub fn new(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Self {
+        Self::from_arc(Arc::new(draw))
+    }
+
+    /// Create a new canvas from a function already contained in an [`Arc`].
+    pub fn from_arc(draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>) -> Self {
         Self {
-            draw: Box::new(draw),
+            draw,
+            alt_text: None,
         }
+    }
+
+    /// Set the text that will be used to communicate the meaning of the canvas to
+    /// those using screen readers.
+    ///
+    /// Users are strongly encouraged to set alt text for the canvas.
+    pub fn with_alt_text(mut self, alt_text: impl Into<String>) -> Self {
+        self.alt_text = Some(alt_text.into());
+        self
     }
 }
 
@@ -36,22 +53,28 @@ impl Canvas {
 impl Canvas {
     /// Update the draw function
     pub fn update_draw(
-        this: &mut WidgetMut<'_, Self>,
+        this: WidgetMut<'_, Self>,
         draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static,
     ) {
-        this.widget.draw = Box::new(draw);
+        Self::update_from_arc(this, Arc::new(draw));
+    }
+
+    /// Update the draw function
+    pub fn update_from_arc(
+        mut this: WidgetMut<'_, Self>,
+        draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
+    ) {
+        this.widget.draw = draw;
         this.ctx.request_render();
     }
 }
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Canvas {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {
-        // TODO: ensure coordinates are correct and pass to callback
-    }
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn accepts_pointer_interaction(&self) -> bool {
-        true
+        false
     }
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
@@ -68,15 +91,20 @@ impl Widget for Canvas {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
-        (self.draw)(scene, ctx.size())
+        (self.draw)(scene, ctx.size());
     }
 
     fn accessibility_role(&self) -> Role {
         Role::Canvas
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {
-        // TODO: should probably give the caller the opportunity to handle accessibility
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
+        // TODO: is this correct?
+        if let Some(text) = &self.alt_text {
+            node.set_description(text.clone());
+        } else {
+            node.clear_description();
+        }
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -88,7 +116,7 @@ impl Widget for Canvas {
     }
 
     fn get_debug_text(&self) -> Option<String> {
-        None
+        self.alt_text.clone()
     }
 }
 
