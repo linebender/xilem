@@ -776,7 +776,7 @@ impl MasonryState<'_> {
     }
 
     /// Return references to the wgpu device and queue associated with current window.
-    /// TODO: multi-window interface will require more information to determine which 
+    /// TODO: multi-window interface will require more information to determine which
     /// device and queue to return.
     pub fn get_render_device_and_queue(&self) -> Option<(&wgpu::Device, &wgpu::Queue)> {
         if let WindowState::Rendering { surface, .. } = &self.window {
@@ -793,7 +793,7 @@ impl MasonryState<'_> {
     pub fn get_adapter(&self) -> Option<&wgpu::Adapter> {
         if let WindowState::Rendering { surface, .. } = &self.window {
             let dev_id = surface.dev_id;
-            Some (self.render_cx.devices[dev_id].adapter())
+            Some(self.render_cx.devices[dev_id].adapter())
         } else {
             None
         }
