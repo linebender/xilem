@@ -6,10 +6,10 @@
 use std::ops::Range;
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
-use vello::kurbo::{Point, Rect, Size, Vec2};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
@@ -482,7 +482,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::{widget_ids, TestHarness};
+    use crate::testing::{TestHarness, widget_ids};
     use crate::widgets::{Button, Flex, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {

@@ -10,7 +10,7 @@ mod tracing_backend;
 
 pub use app_driver::{AppDriver, DriverCtx};
 pub use event_loop_runner::{
-    run, run_with, EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent,
+    EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, run, run_with,
 };
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 

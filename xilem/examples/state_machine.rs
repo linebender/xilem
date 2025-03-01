@@ -28,7 +28,7 @@ enum IsEven {
     Success,
 }
 
-fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
+fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
     match app_data.state {
         // The first time we use `OneOf` in a conditional statement, we need
         // to specify the number of `OneOf` variants used - 3 in this case.
@@ -59,7 +59,7 @@ fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView
     })
 }
 
-fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
+fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
     flex((
         button("Reset", |app_data: &mut StateMachine| {
             app_data.history.clear();

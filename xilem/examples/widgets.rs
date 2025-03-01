@@ -8,7 +8,7 @@ use masonry::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
+use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, flex_item, progress_bar, sized_box};
 use xilem::{Color, WidgetView, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
@@ -36,7 +36,7 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
             },
         ),
         button("change progress", |state: &mut Option<f64>| match state {
-            Some(ref mut v) => *v = (*v + 0.1).rem_euclid(1.),
+            Some(v) => *v = (*v + 0.1).rem_euclid(1.),
             None => *state = Some(0.5),
         }),
     ))
@@ -66,7 +66,7 @@ fn border_box<State: 'static, Action: 'static>(
 }
 
 /// Top-level view
-fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
+fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
         flex((
@@ -121,7 +121,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 

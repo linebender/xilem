@@ -78,7 +78,7 @@ pub mod props;
 pub mod svg;
 
 pub use self::after_update::{
-    after_build, after_rebuild, before_teardown, AfterBuild, AfterRebuild, BeforeTeardown,
+    AfterBuild, AfterRebuild, BeforeTeardown, after_build, after_rebuild, before_teardown,
 };
 pub use self::app::App;
 pub use self::attribute_value::{AttributeValue, IntoAttributeValue};
@@ -89,7 +89,7 @@ pub use self::optional_action::{Action, OptionalAction};
 pub use self::pod::{AnyPod, Pod, PodFlags, PodMut};
 pub use self::pointer::{Pointer, PointerDetails, PointerMsg};
 
-pub use templated::{templated, Templated};
+pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 

@@ -9,10 +9,10 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::view::{
-    button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
-    GridSequence, Label,
+    Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, button, flex, grid, label,
+    sized_box,
 };
-use xilem::{palette, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -200,7 +200,7 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
-fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
+fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
     grid(
         (
             // Display
@@ -259,7 +259,7 @@ pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex
 
 /// Returns a label intended to be used in the calculator's top display.
 /// The default text size is out of proportion for this use case.
-fn display_label(text: &str) -> impl WidgetView<Calculator> {
+fn display_label(text: &str) -> impl WidgetView<Calculator> + use<> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
 
@@ -332,7 +332,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 

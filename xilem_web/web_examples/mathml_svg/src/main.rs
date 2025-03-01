@@ -9,7 +9,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use xilem_web::elements::{html, mathml as ml, svg};
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
-use xilem_web::{document_body, App};
+use xilem_web::{App, document_body};
 
 struct Triangle {
     a: u32,

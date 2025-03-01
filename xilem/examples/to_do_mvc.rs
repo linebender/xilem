@@ -8,7 +8,7 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use winit::error::EventLoopError;
-use xilem::view::{button, checkbox, flex, textbox, Axis, FlexSpacer};
+use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, textbox};
 use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 struct Task {
@@ -33,7 +33,7 @@ impl TaskList {
     }
 }
 
-fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> {
+fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
     let input_box = textbox(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {
@@ -117,7 +117,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 

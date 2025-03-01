@@ -10,7 +10,7 @@
 use xilem_web::core::map_action;
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::{Element, HtmlDivElement};
-use xilem_web::{document_body, Action, App};
+use xilem_web::{Action, App, document_body};
 
 #[derive(Debug, Default)]
 struct Model {
@@ -34,7 +34,7 @@ fn update(model: &mut Model, message: Message) {
     log::debug!("Model updated: {model:?}");
 }
 
-fn app_logic(model: &mut Model) -> impl HtmlDivElement<Model> {
+fn app_logic(model: &mut Model) -> impl HtmlDivElement<Model> + use<> {
     log::debug!("Render view");
     el::div((map_action(counter_view(model.count), update),))
 }

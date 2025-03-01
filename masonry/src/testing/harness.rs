@@ -10,16 +10,17 @@ use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
 use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
 use tracing::debug;
-use vello::util::{block_on_wgpu, RenderContext};
 use vello::RendererOptions;
+use vello::util::{RenderContext, block_on_wgpu};
 use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
 use winit::event::Ime;
 
+use crate::Handled;
 use crate::app::{
-    try_init_test_tracing, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+    RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use crate::core::{
     Action, PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WidgetMut,
@@ -31,7 +32,6 @@ use crate::passes::anim::run_update_anim_pass;
 use crate::peniko::Color;
 use crate::testing::screenshots::get_image_diff;
 use crate::testing::snapshot_utils::get_cargo_workspace;
-use crate::Handled;
 
 /// A safe headless environment to test widgets in.
 ///

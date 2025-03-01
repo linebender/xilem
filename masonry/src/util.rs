@@ -6,11 +6,11 @@
 use std::any::Any;
 use std::hash::Hash;
 
+use vello::Scene;
 use vello::kurbo::{
     Affine, Rect, Shape, Stroke, {self},
 };
 use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
-use vello::Scene;
 
 /// Panic in debug and `tracing::error` in release mode.
 ///
@@ -56,11 +56,7 @@ impl Handled {
 impl From<bool> for Handled {
     /// Returns `Handled::Yes` if `handled` is true, and `Handled::No` otherwise.
     fn from(handled: bool) -> Self {
-        if handled {
-            Self::Yes
-        } else {
-            Self::No
-        }
+        if handled { Self::Yes } else { Self::No }
     }
 }
 

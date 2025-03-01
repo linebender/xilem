@@ -173,12 +173,8 @@ pub struct AnyViewState {
     generation: u64,
 }
 
-impl<State, Action, Context, Element, Message> ViewMarker
-    for dyn AnyView<State, Action, Context, Element, Message>
-{
-}
-impl<State, Action, Context, Element, Message> View<State, Action, Context, Message>
-    for dyn AnyView<State, Action, Context, Element, Message>
+impl<State, Action, Context, Element, Message> ViewMarker for dyn AnyView<State, Action, Context, Element, Message> {}
+impl<State, Action, Context, Element, Message> View<State, Action, Context, Message> for dyn AnyView<State, Action, Context, Element, Message>
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,

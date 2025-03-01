@@ -129,7 +129,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in Prose::message, but Prose doesn't consume any messages, this is a bug");
+        tracing::error!(
+            "Message arrived in Prose::message, but Prose doesn't consume any messages, this is a bug"
+        );
         MessageResult::Stale(message)
     }
 }

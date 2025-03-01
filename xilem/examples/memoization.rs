@@ -42,7 +42,7 @@ fn increase_button(state: &mut AppState) -> Arc<AnyWidgetView<AppState>> {
 
 // This is the alternative with Memoize
 // Note how this requires a closure that returns the memoized view, while Arc does not
-fn decrease_button(state: &AppState) -> impl WidgetView<AppState> {
+fn decrease_button(state: &AppState) -> impl WidgetView<AppState> + use<> {
     memoize(state.count, |count| {
         button(
             format!("decrease the count: {count}"),
@@ -57,7 +57,7 @@ fn reset_button() -> impl WidgetView<AppState> {
     frozen(|| button("reset", |data: &mut AppState| data.count = 0))
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     flex((
         increase_button(state),
         decrease_button(state),

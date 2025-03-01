@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use smallvec::smallvec;
 
-use crate::testing::{widget_ids, ModularWidget, ReplaceChild, TestHarness, TestWidgetExt as _};
+use crate::testing::{ModularWidget, ReplaceChild, TestHarness, TestWidgetExt as _, widget_ids};
 use crate::widgets::Flex;
 use crate::*;
 

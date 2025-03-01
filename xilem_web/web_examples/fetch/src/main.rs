@@ -13,7 +13,7 @@ use xilem_web::elements::html::*;
 use xilem_web::interfaces::{
     Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement,
 };
-use xilem_web::{document_body, App};
+use xilem_web::{App, document_body};
 
 const TOO_MANY_CATS: usize = 8;
 
@@ -101,7 +101,7 @@ where
         .unchecked_into::<web_sys::HtmlInputElement>()
 }
 
-fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
+fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> + use<> {
     div((
         cat_fetch_controls(state),
         fork(
@@ -137,7 +137,7 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
     ))
 }
 
-fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<AppState> {
+fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<AppState> + use<> {
     let cat_images = state
         .cats
         .iter()
@@ -163,7 +163,7 @@ fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<Ap
     div((error_message, fetch_state, cat_images))
 }
 
-fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
+fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> + use<> {
     fieldset((
         legend("Cat fetch controls"),
         table((

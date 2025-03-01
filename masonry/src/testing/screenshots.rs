@@ -4,7 +4,7 @@
 //! Helper functions for writing snapshot tests and comparing images.
 
 use image::{GenericImageView as _, RgbImage};
-use nv_flip::{FlipImageRgb8, DEFAULT_PIXELS_PER_DEGREE};
+use nv_flip::{DEFAULT_PIXELS_PER_DEGREE, FlipImageRgb8};
 
 #[cfg(docsrs)]
 #[doc(hidden)]

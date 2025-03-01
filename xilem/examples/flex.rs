@@ -6,7 +6,7 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
+use xilem::view::{Axis, FlexExt as _, FlexSpacer, Label, button, flex, label, sized_box};
 use xilem::{EventLoop, WidgetView, Xilem};
 
 /// A component to make a bigger than usual button
@@ -17,7 +17,7 @@ fn big_button(
     sized_box(button(label, callback)).width(40.).height(40.)
 }
 
-fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
+fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
     flex((
         FlexSpacer::Fixed(30.0),
         big_button("-", |data| {

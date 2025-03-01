@@ -3,9 +3,9 @@
 
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::kurbo::{Affine, Line, Stroke};
+use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::{Affine, Line, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,

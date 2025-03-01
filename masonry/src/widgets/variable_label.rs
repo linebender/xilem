@@ -6,10 +6,10 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
-use vello::kurbo::{Point, Size};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,

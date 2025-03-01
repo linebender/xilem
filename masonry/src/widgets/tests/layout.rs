@@ -5,7 +5,7 @@
 
 use vello::kurbo::{Insets, Size};
 
-use crate::testing::{widget_ids, ModularWidget, TestHarness, TestWidgetExt};
+use crate::testing::{ModularWidget, TestHarness, TestWidgetExt, widget_ids};
 use crate::widgets::{Flex, SizedBox};
 
 #[test]

@@ -4,10 +4,10 @@
 #![warn(missing_docs)]
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
-use vello::kurbo::{Point, Rect, Size};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::{Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
@@ -161,8 +161,8 @@ impl Widget for Prose {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
-    use parley::layout::Alignment;
     use parley::StyleProperty;
+    use parley::layout::Alignment;
     use vello::kurbo::Size;
 
     use super::*;

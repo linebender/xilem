@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use smallvec::smallvec;
 
-use crate::testing::{widget_ids, ModularWidget, TestHarness, TestWidgetExt as _};
+use crate::testing::{ModularWidget, TestHarness, TestWidgetExt as _, widget_ids};
 use crate::widgets::Flex;
 use crate::*;
 
@@ -112,7 +112,14 @@ fn disable_tree() {
             .collect()
     }
 
-    let [root_id, group_1_id, sub_group_1_id, group_2_id, leaf_1_id, leaf_2_id] = widget_ids();
+    let [
+        root_id,
+        group_1_id,
+        sub_group_1_id,
+        group_2_id,
+        leaf_1_id,
+        leaf_2_id,
+    ] = widget_ids();
 
     // Our widget hierarchy is:
     // - root

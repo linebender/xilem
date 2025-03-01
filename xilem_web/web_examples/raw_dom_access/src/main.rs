@@ -16,7 +16,7 @@ use std::rc::Rc;
 use xilem_web::core::one_of::Either;
 use xilem_web::elements::html;
 use xilem_web::interfaces::Element;
-use xilem_web::{document_body, App, DomView};
+use xilem_web::{App, DomView, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -24,7 +24,7 @@ struct AppState {
     show_input: bool,
 }
 
-fn app_logic(app_state: &mut AppState) -> impl Element<AppState> {
+fn app_logic(app_state: &mut AppState) -> impl Element<AppState> + use<> {
     html::div(if app_state.show_input {
         let focus = Rc::clone(&app_state.focus);
         Either::A(html::div((

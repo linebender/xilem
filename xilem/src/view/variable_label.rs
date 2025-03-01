@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::ArcStr;
-use masonry::parley::style::{FontStack, FontWeight};
 use masonry::parley::Alignment as TextAlignment;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
 use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 
-use super::{label, Label};
+use super::{Label, label};
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
@@ -150,7 +150,9 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
             assert_eq!(first.routing_id(), 0);
             self.label.message(&mut (), remainder, message, app_state)
         } else {
-            tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
+            tracing::error!(
+                "Message arrived in Label::message, but Label doesn't consume any messages, this is a bug"
+            );
             MessageResult::Stale(message)
         }
     }

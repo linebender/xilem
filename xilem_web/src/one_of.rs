@@ -3,8 +3,8 @@
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::one_of::{OneOf, OneOfCtx, PhantomElementCtx};
 use crate::core::Mut;
+use crate::core::one_of::{OneOf, OneOfCtx, PhantomElementCtx};
 use crate::{DomNode, Pod, PodFlags, PodMut, ViewCtx};
 
 impl<N1, N2, N3, N4, N5, N6, N7, N8, N9>

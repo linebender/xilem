@@ -6,10 +6,10 @@ use std::rc::Rc;
 
 use wasm_bindgen_futures::spawn_local;
 
+use crate::Message;
 use crate::app::{AppMessage, AppRunner};
 use crate::core::{ViewId, ViewPathTracker};
 use crate::vecmap::VecMap;
-use crate::Message;
 
 /// A thunk to send messages to the views, it's being used for example in event callbacks
 pub struct MessageThunk {

@@ -5,7 +5,7 @@ use wasm_bindgen::JsCast as _;
 
 use super::WithElementProps;
 use crate::modifiers::html_input_element::{Checked, DefaultChecked, Disabled, Multiple, Required};
-use crate::{props, FromWithContext, Pod, PodFlags, ViewCtx};
+use crate::{FromWithContext, Pod, PodFlags, ViewCtx, props};
 
 /// Props specific to an input element.
 pub struct HtmlInputElement {
@@ -123,12 +123,12 @@ pub trait WithHtmlInputElementProps:
 {
 }
 impl<
-        T: WithElementProps
-            + AsMut<Checked>
-            + AsMut<DefaultChecked>
-            + AsMut<Disabled>
-            + AsMut<Required>
-            + AsMut<Multiple>,
-    > WithHtmlInputElementProps for T
+    T: WithElementProps
+        + AsMut<Checked>
+        + AsMut<DefaultChecked>
+        + AsMut<Disabled>
+        + AsMut<Required>
+        + AsMut<Multiple>,
+> WithHtmlInputElementProps for T
 {
 }

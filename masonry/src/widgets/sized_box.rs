@@ -4,11 +4,11 @@
 //! A widget with predefined size.
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, warn, Span};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace_span, warn};
+use vello::Scene;
 use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Fill};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
@@ -139,20 +139,12 @@ impl Padding {
 
     /// Get the padding to the left, given whether we're in a right-to-left context.
     pub const fn get_left(self, is_rtl: bool) -> f64 {
-        if is_rtl {
-            self.trailing
-        } else {
-            self.leading
-        }
+        if is_rtl { self.trailing } else { self.leading }
     }
 
     /// Get the padding to the right, given whether we're in a right-to-left context.
     pub const fn get_right(self, is_rtl: bool) -> f64 {
-        if is_rtl {
-            self.leading
-        } else {
-            self.trailing
-        }
+        if is_rtl { self.leading } else { self.trailing }
     }
 }
 
