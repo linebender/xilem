@@ -8,7 +8,7 @@ use masonry::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;
-use xilem::view::{button, checkbox, flex, flex_item, progress_bar, sized_box, Axis, FlexSpacer};
+use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, flex_item, progress_bar, sized_box};
 use xilem::{Color, WidgetView, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
