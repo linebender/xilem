@@ -8,6 +8,7 @@
 //! Note: Some of these types are undocumented. They're meant to help maintainers of
 //! Masonry, not to be user-facing.
 
+use std::any::TypeId;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
@@ -34,6 +35,7 @@ pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<
 pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, u64);
 pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
 pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, &Update);
+pub type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, TypeId);
 pub type LayoutFn<S> =
     dyn FnMut(&mut S, &mut LayoutCtx, &mut PropertiesMut<'_>, &BoxConstraints) -> Size;
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
@@ -59,6 +61,7 @@ pub struct ModularWidget<S> {
     on_anim_frame: Option<Box<AnimFrameFn<S>>>,
     register_children: Option<Box<RegisterChildrenFn<S>>>,
     update: Option<Box<UpdateFn<S>>>,
+    property_change: Option<Box<PropertyChangeFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     compose: Option<Box<ComposeFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
@@ -122,6 +125,8 @@ pub enum Record {
     RC,
     /// Update
     U(Update),
+    /// Property change.
+    PC(TypeId),
     /// Layout. Records the size returned by the layout method.
     Layout(Size),
     /// Compose.
@@ -169,6 +174,7 @@ impl<S> ModularWidget<S> {
             on_anim_frame: None,
             register_children: None,
             update: None,
+            property_change: None,
             layout: None,
             compose: None,
             paint: None,
@@ -257,6 +263,15 @@ impl<S> ModularWidget<S> {
         f: impl FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, &Update) + 'static,
     ) -> Self {
         self.update = Some(Box::new(f));
+        self
+    }
+
+    /// See [`Widget::property_changed`]
+    pub fn property_change_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut UpdateCtx, TypeId) + 'static,
+    ) -> Self {
+        self.property_change = Some(Box::new(f));
         self
     }
 
@@ -359,6 +374,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn update(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, event: &Update) {
         if let Some(f) = self.update.as_mut() {
             f(&mut self.state, ctx, props, event);
+        }
+    }
+
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        if let Some(f) = self.property_change.as_mut() {
+            f(&mut self.state, ctx, property_type);
         }
     }
 
@@ -522,6 +543,8 @@ impl Widget for ReplaceChild {
 
     fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx, _property_type: TypeId) {}
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx,
@@ -630,6 +653,11 @@ impl<W: Widget> Widget for Recorder<W> {
     fn update(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, event: &Update) {
         self.recording.push(Record::U(event.clone()));
         self.child.update(ctx, props, event);
+    }
+
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        self.recording.push(Record::PC(property_type));
+        self.child.property_changed(ctx, property_type);
     }
 
     fn layout(
