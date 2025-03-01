@@ -31,7 +31,7 @@ pub use event::{
     WindowTheme,
 };
 pub use object_fit::ObjectFit;
-pub use properties::{Properties, PropertiesMut, PropertiesRef, WidgetProperty};
+pub use properties::{Properties, PropertiesMut, PropertiesRef};
 pub use text::{render_text, ArcStr, BrushIndex, StyleProperty, StyleSet};
 pub use widget::find_widget_at_pos;
 pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};

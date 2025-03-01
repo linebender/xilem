@@ -1,9 +1,11 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use anymap3::Entry;
 
-use crate::core::{FromDynWidget, MutateCtx, PropertiesMut, Widget, WidgetProperty};
+use crate::core::{FromDynWidget, MutateCtx, Widget};
 use crate::kurbo::Affine;
 
 // TODO - Document extension trait workaround.
@@ -28,8 +30,6 @@ use crate::kurbo::Affine;
 #[non_exhaustive]
 pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub ctx: MutateCtx<'a>,
-    #[doc(hidden)]
-    pub properties: PropertiesMut<'a>,
     pub widget: &'a mut W,
 }
 
@@ -49,43 +49,46 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         let widget = &mut self.widget;
         WidgetMut {
             ctx: self.ctx.reborrow_mut(),
-            properties: self.properties.reborrow_mut(),
             widget,
         }
     }
 
     /// Returns true if the widget has a property of type `T`.
-    pub fn get_prop<T: WidgetProperty>(&self) -> Option<&T> {
-        self.properties.get::<T>()
+    pub fn get_prop<T: 'static>(&self) -> Option<&T> {
+        self.ctx.properties.get::<T>()
     }
 
     /// Get value of property `T`, or None if the widget has no `T` property.
-    pub fn contains_prop<T: WidgetProperty>(&self) -> bool {
-        self.properties.contains::<T>()
+    pub fn contains_prop<T: 'static>(&self) -> bool {
+        self.ctx.properties.contains::<T>()
     }
 
     /// Get value of property `T`, or None if the widget has no `T` property.
-    pub fn get_prop_mut<T: WidgetProperty>(&mut self) -> Option<&mut T> {
-        T::changed(&mut self.ctx);
-        self.properties.get_mut::<T>()
+    pub fn get_prop_mut<T: 'static>(&mut self) -> Option<&mut T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.get_mut::<T>()
     }
 
     /// Set property `T` to given value. Returns the previous value if `T` was already set.
-    pub fn insert_prop<T: WidgetProperty>(&mut self, value: T) -> Option<T> {
-        T::changed(&mut self.ctx);
-        self.properties.insert(value)
+    pub fn insert_prop<T: 'static>(&mut self, value: T) -> Option<T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.insert(value)
     }
 
     /// Remove property `T`. Returns the previous value if `T` was set.
-    pub fn remove_prop<T: WidgetProperty>(&mut self) -> Option<T> {
-        T::changed(&mut self.ctx);
-        self.properties.remove::<T>()
+    pub fn remove_prop<T: 'static>(&mut self) -> Option<T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.remove::<T>()
     }
 
     /// Returns an entry that can be used to add, update, or remove a property.
-    pub fn prop_entry<T: WidgetProperty>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
-        T::changed(&mut self.ctx);
-        self.properties.entry::<T>()
+    pub fn prop_entry<T: 'static>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.entry::<T>()
     }
 
     /// Set the local transform of this widget.
@@ -101,7 +104,6 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     ) -> Option<WidgetMut<'_, W2>> {
         Some(WidgetMut {
             ctx: self.ctx.reborrow_mut(),
-            properties: self.properties.reborrow_mut(),
             widget: W2::from_dyn_mut(self.widget.as_mut_dyn())?,
         })
     }
@@ -117,7 +119,6 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         match W2::from_dyn_mut(self.widget.as_mut_dyn()) {
             Some(widget) => WidgetMut {
                 ctx: self.ctx.reborrow_mut(),
-                properties: self.properties.reborrow_mut(),
                 widget,
             },
             None => {

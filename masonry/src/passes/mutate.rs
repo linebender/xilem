@@ -24,10 +24,10 @@ pub(crate) fn mutate_widget<R>(
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
+            properties: PropertiesMut {
+                map: properties_mut.item,
+            },
             properties_children: properties_mut.children,
-        },
-        properties: PropertiesMut {
-            map: properties_mut.item,
         },
         widget: &mut **widget_mut.item,
     };

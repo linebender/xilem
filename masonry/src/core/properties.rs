@@ -3,18 +3,6 @@
 
 use anymap3::{AnyMap, Entry};
 
-use crate::core::MutateCtx;
-
-/// A property that can be set on a widget.
-///
-/// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
-pub trait WidgetProperty: 'static {
-    /// Called when the property is inserted, mutated or removed.
-    ///
-    /// Should set invalidation flags (relayout, repaint, etc) on the given context.
-    fn changed(ctx: &mut MutateCtx<'_>);
-}
-
 // TODO - Add PropertyValue wrapper struct that implements receiver trait.
 // Return PropertyValue<T> instead of Option<T> from methods.
 
@@ -70,24 +58,24 @@ impl Properties {
 
 impl PropertiesRef<'_> {
     /// Returns true if the widget has a property of type `T`.
-    pub fn contains<T: WidgetProperty>(&self) -> bool {
+    pub fn contains<T: 'static>(&self) -> bool {
         self.map.contains::<T>()
     }
 
     /// Get value of property `T`, or None if the widget has no `T` property.
-    pub fn get<T: WidgetProperty>(&self) -> Option<&T> {
+    pub fn get<T: 'static>(&self) -> Option<&T> {
         self.map.get::<T>()
     }
 }
 
 impl PropertiesMut<'_> {
     /// Returns true if the widget has a property of type `T`.
-    pub fn contains<T: WidgetProperty>(&self) -> bool {
+    pub fn contains<T: 'static>(&self) -> bool {
         self.map.contains::<T>()
     }
 
     /// Get value of property `T`, or None if the widget has no `T` property.
-    pub fn get<T: WidgetProperty>(&self) -> Option<&T> {
+    pub fn get<T: 'static>(&self) -> Option<&T> {
         self.map.get::<T>()
     }
 
@@ -96,7 +84,7 @@ impl PropertiesMut<'_> {
     /// If you're using a `WidgetMut`, call [`WidgetMut::get_prop_mut`] instead.
     ///
     /// [`WidgetMut::get_prop_mut`]: crate::core::WidgetMut::get_prop_mut
-    pub fn get_mut<T: WidgetProperty>(&mut self) -> Option<&mut T> {
+    pub fn get_mut<T: 'static>(&mut self) -> Option<&mut T> {
         self.map.get_mut::<T>()
     }
 
@@ -105,7 +93,7 @@ impl PropertiesMut<'_> {
     /// If you're using a `WidgetMut`, call [`WidgetMut::insert_prop`] instead.
     ///
     /// [`WidgetMut::insert_prop`]: crate::core::WidgetMut::insert_prop
-    pub fn insert<T: WidgetProperty>(&mut self, value: T) -> Option<T> {
+    pub fn insert<T: 'static>(&mut self, value: T) -> Option<T> {
         self.map.insert(value)
     }
 
@@ -114,7 +102,7 @@ impl PropertiesMut<'_> {
     /// If you're using a `WidgetMut`, call [`WidgetMut::remove_prop`] instead.
     ///
     /// [`WidgetMut::remove_prop`]: crate::core::WidgetMut::remove_prop
-    pub fn remove<T: WidgetProperty>(&mut self) -> Option<T> {
+    pub fn remove<T: 'static>(&mut self) -> Option<T> {
         self.map.remove::<T>()
     }
 
@@ -123,7 +111,7 @@ impl PropertiesMut<'_> {
     /// If you're using a `WidgetMut`, call [`WidgetMut::prop_entry`] instead.
     ///
     /// [`WidgetMut::prop_entry`]: crate::core::WidgetMut::prop_entry
-    pub fn entry<T: WidgetProperty>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
+    pub fn entry<T: 'static>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
         self.map.entry::<T>()
     }
 

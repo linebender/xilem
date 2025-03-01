@@ -10,9 +10,11 @@
     reason = "A lot of properties and especially their fields are self-explanatory."
 )]
 
+use std::any::TypeId;
+
 use vello::peniko::color::{AlphaColor, Srgb};
 
-use crate::core::{MutateCtx, WidgetProperty};
+use crate::core::UpdateCtx;
 
 // TODO - Split out into files.
 
@@ -22,8 +24,10 @@ pub struct BackgroundColor {
     pub color: AlphaColor<Srgb>,
 }
 
-impl WidgetProperty for BackgroundColor {
-    fn changed(ctx: &mut MutateCtx<'_>) {
-        ctx.request_paint_only();
+impl BackgroundColor {
+    pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type == TypeId::of::<Self>() {
+            ctx.request_paint_only();
+        }
     }
 }
