@@ -3,6 +3,8 @@
 
 //! A widget with predefined size.
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
@@ -12,8 +14,8 @@ use vello::peniko::{Brush, Fill};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 use crate::properties::BackgroundColor;
@@ -483,6 +485,10 @@ impl Widget for SizedBox {
         if let Some(ref mut child) = self.child {
             ctx.register_child(child);
         }
+    }
+
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        BackgroundColor::prop_changed(ctx, property_type);
     }
 
     fn layout(

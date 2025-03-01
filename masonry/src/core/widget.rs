@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::fmt::Display;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -205,6 +205,10 @@ pub trait Widget: AsAny + AsDynWidget {
     /// (available in the [`Update`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
     fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {}
+
+    // TODO - Remove default implementation
+    /// Handle a property being added, changed, or removed.
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {}
 
     /// Compute layout and return the widget's size.
     ///

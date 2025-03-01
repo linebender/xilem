@@ -51,6 +51,7 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties: PropertiesMut<'a>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
@@ -238,13 +239,13 @@ impl MutateCtx<'_> {
             widget_state: child_state_mut.item,
             widget_state_children: child_state_mut.children,
             widget_children: child_mut.children,
+            properties: PropertiesMut {
+                map: child_properties.item,
+            },
             properties_children: child_properties.children,
         };
         WidgetMut {
             ctx: child_ctx,
-            properties: PropertiesMut {
-                map: child_properties.item,
-            },
             widget: Child::from_dyn_mut(&mut **child_mut.item).unwrap(),
         }
     }
@@ -256,6 +257,17 @@ impl MutateCtx<'_> {
             // `merge_up` in `WidgetMut::Drop` multiple times for the same state.
             // It will still be called when the original borrow is dropped.
             parent_widget_state: None,
+            widget_state: self.widget_state,
+            widget_state_children: self.widget_state_children.reborrow_mut(),
+            widget_children: self.widget_children.reborrow_mut(),
+            properties: self.properties.reborrow_mut(),
+            properties_children: self.properties_children.reborrow_mut(),
+        }
+    }
+
+    pub(crate) fn update_mut(&mut self) -> UpdateCtx<'_> {
+        UpdateCtx {
+            global_state: self.global_state,
             widget_state: self.widget_state,
             widget_state_children: self.widget_state_children.reborrow_mut(),
             widget_children: self.widget_children.reborrow_mut(),
