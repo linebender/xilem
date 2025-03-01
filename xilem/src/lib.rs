@@ -421,7 +421,7 @@ where
 ///
 /// fn prose_sequence<State: 'static>(
 ///     texts: impl Iterator<Item = &'static str>,
-/// ) -> impl WidgetViewSequence<State> + use<State> {
+/// ) -> impl WidgetViewSequence<State> {
 ///     texts.map(prose).collect::<Vec<_>>()
 /// }
 /// ```
