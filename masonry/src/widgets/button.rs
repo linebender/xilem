@@ -4,8 +4,8 @@
 //! A button widget.
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace, trace_span};
 use vello::Scene;
 
 use crate::core::{
@@ -15,7 +15,7 @@ use crate::core::{
 };
 use crate::kurbo::{Insets, Size};
 use crate::theme;
-use crate::util::{fill_lin_gradient, stroke, UnitPoint};
+use crate::util::{UnitPoint, fill_lin_gradient, stroke};
 use crate::widgets::Label;
 
 // The minimum padding added to a button.
@@ -226,7 +226,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]

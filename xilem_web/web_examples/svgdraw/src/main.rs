@@ -14,7 +14,7 @@ use xilem_web::interfaces::{
 use xilem_web::modifiers::style as s;
 use xilem_web::svg::kurbo::{BezPath, Point, QuadSpline, Shape, Stroke};
 use xilem_web::svg::peniko::Color;
-use xilem_web::{document_body, input_event_target_value, AnyDomView, App, DomFragment};
+use xilem_web::{AnyDomView, App, DomFragment, document_body, input_event_target_value};
 
 const RAINBOW_COLORS: [Color; 11] = [
     Color::from_rgb8(228, 3, 3),     // Red

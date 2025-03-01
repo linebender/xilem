@@ -13,7 +13,7 @@ use xilem_web::elements::html::*;
 use xilem_web::interfaces::{
     Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement,
 };
-use xilem_web::{document_body, App};
+use xilem_web::{App, document_body};
 
 const TOO_MANY_CATS: usize = 8;
 

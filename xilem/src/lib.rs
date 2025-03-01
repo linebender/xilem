@@ -136,7 +136,7 @@ use std::sync::Arc;
 use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::RootWidget;
-use view::{transformed, Transformed};
+use view::{Transformed, transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
 
@@ -146,8 +146,8 @@ use crate::core::{
 };
 pub use masonry::app::{EventLoop, EventLoopBuilder};
 pub use masonry::kurbo::{Affine, Vec2};
-pub use masonry::parley::style::FontWeight;
 pub use masonry::parley::Alignment as TextAlignment;
+pub use masonry::parley::style::FontWeight;
 pub use masonry::peniko::Color;
 pub use masonry::widgets::LineBreaking;
 pub use masonry::{dpi, palette};
@@ -164,7 +164,7 @@ mod one_of;
 
 pub mod view;
 pub use any_view::AnyWidgetView;
-pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
+pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, MasonryProxy, async_action};
 
 /// Runtime builder.
 #[must_use = "A Xilem app does nothing unless ran."]

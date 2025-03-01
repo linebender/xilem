@@ -6,7 +6,7 @@
 
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::{Element, HtmlButtonElement};
-use xilem_web::{document_body, App, DomFragment};
+use xilem_web::{App, DomFragment, document_body};
 
 #[derive(Default)]
 struct AppState {

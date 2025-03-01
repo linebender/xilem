@@ -4,8 +4,8 @@
 //! A progress bar widget.
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
@@ -14,7 +14,7 @@ use crate::core::{
 };
 use crate::kurbo::{Point, Size};
 use crate::theme;
-use crate::util::{fill_lin_gradient, stroke, UnitPoint};
+use crate::util::{UnitPoint, fill_lin_gradient, stroke};
 use crate::widgets::{Label, LineBreaking};
 
 /// A progress bar.
@@ -190,7 +190,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
 
     #[test]
     fn indeterminate_progressbar() {

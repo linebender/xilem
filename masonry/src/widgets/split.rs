@@ -4,8 +4,8 @@
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, warn, Span};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace_span, warn};
 use vello::Scene;
 
 use crate::core::{

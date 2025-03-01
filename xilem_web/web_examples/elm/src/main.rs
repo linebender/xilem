@@ -10,7 +10,7 @@
 use xilem_web::core::map_action;
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::{Element, HtmlDivElement};
-use xilem_web::{document_body, Action, App};
+use xilem_web::{Action, App, document_body};
 
 #[derive(Debug, Default)]
 struct Model {

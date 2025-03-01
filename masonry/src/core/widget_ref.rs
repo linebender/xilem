@@ -174,7 +174,7 @@ impl WidgetRef<'_, dyn Widget> {
 mod tests {
     use assert_matches::assert_matches;
 
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt as _};
+    use crate::testing::{TestHarness, TestWidgetExt as _, widget_ids};
     use crate::widgets::{Button, Label};
 
     #[test]

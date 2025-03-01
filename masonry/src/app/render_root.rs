@@ -8,10 +8,10 @@ use parley::fontique::{self, Collection, CollectionOptions, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
+use vello::Scene;
 use vello::kurbo::{
     Rect, {self},
 };
-use vello::Scene;
 use winit::window::ResizeDirection;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -19,6 +19,7 @@ use std::time::Instant;
 #[cfg(target_arch = "wasm32")]
 use web_time::Instant;
 
+use crate::Handled;
 use crate::core::{
     AccessEvent, Action, BrushIndex, PointerEvent, QueryCtx, TextEvent, Widget, WidgetArena,
     WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
@@ -38,8 +39,7 @@ use crate::passes::update::{
     run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
     run_update_widget_tree_pass,
 };
-use crate::passes::{recurse_on_children, PassTracing};
-use crate::Handled;
+use crate::passes::{PassTracing, recurse_on_children};
 use cursor_icon::CursorIcon;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
@@ -578,7 +578,9 @@ impl RenderRoot {
         }
 
         if self.root_state().needs_rewrite_passes() || self.global_state.needs_rewrite_passes() {
-            warn!("All rewrite passes have run {REWRITE_PASSES_MAX} times, but invalidations are still set");
+            warn!(
+                "All rewrite passes have run {REWRITE_PASSES_MAX} times, but invalidations are still set"
+            );
             // To avoid an infinite loop, we delay re-running the passes until the next frame.
             self.global_state
                 .emit_signal(RenderRootSignal::RequestRedraw);

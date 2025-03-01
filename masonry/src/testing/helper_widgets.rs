@@ -17,14 +17,14 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 
+use crate::AsAny;
 use crate::core::{
-    find_widget_at_pos, AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx,
-    PaintCtx, PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetPod, WidgetRef,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    WidgetRef, find_widget_at_pos,
 };
 use crate::kurbo::{Point, Size};
 use crate::widgets::SizedBox;
-use crate::AsAny;
 use cursor_icon::CursorIcon;
 
 pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
@@ -334,11 +334,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
     }
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let Self {
-            state,
-            layout,
-            ..
-        } = self;
+        let Self { state, layout, .. } = self;
         layout
             .as_mut()
             .map(|f| f(state, ctx, bc))

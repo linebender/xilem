@@ -8,9 +8,9 @@
 use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::view::{
-    button, flex, grid, label, prose, sized_box, Axis, FlexExt, FlexSpacer, GridExt,
+    Axis, FlexExt, FlexSpacer, GridExt, button, flex, grid, label, prose, sized_box,
 };
-use xilem::{palette, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     flex((

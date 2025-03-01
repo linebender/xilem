@@ -7,7 +7,7 @@ use peniko::kurbo::{BezPath, Circle, Line, Rect};
 
 use crate::core::{MessageResult, Mut, OrphanView, ViewId};
 use crate::modifiers::{Attributes, WithModifier};
-use crate::{DynMessage, FromWithContext, Pod, ViewCtx, SVG_NS};
+use crate::{DynMessage, FromWithContext, Pod, SVG_NS, ViewCtx};
 
 fn create_element<R>(
     name: &str,

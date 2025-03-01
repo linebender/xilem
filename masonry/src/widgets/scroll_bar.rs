@@ -5,9 +5,9 @@
 
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::kurbo::Rect;
+use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::Rect;
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -234,7 +234,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::core::PointerButton;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
 
     #[test]
     fn simple_scrollbar() {

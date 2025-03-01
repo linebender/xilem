@@ -7,7 +7,7 @@
 
 use xilem_web::elements::custom_element;
 use xilem_web::interfaces::{Element, HtmlElement};
-use xilem_web::{document_body, App, DomView};
+use xilem_web::{App, DomView, document_body};
 
 #[derive(Default)]
 struct AppState {

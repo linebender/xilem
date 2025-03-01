@@ -7,9 +7,9 @@ use xilem_web::elements::svg::{g, svg, text};
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
 use xilem_web::svg::kurbo::{Circle, Line, Rect, Stroke, Vec2};
-use xilem_web::svg::peniko::color::palette;
 use xilem_web::svg::peniko::Color;
-use xilem_web::{document_body, App, DomView, PointerMsg};
+use xilem_web::svg::peniko::color::palette;
+use xilem_web::{App, DomView, PointerMsg, document_body};
 
 #[derive(Default)]
 struct AppState {

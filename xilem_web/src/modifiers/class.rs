@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
-use crate::diff::{diff_iters, Diff};
+use crate::diff::{Diff, diff_iters};
 use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
 use crate::{DomView, DynMessage, ViewCtx};

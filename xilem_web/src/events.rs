@@ -5,8 +5,8 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 
 use wasm_bindgen::prelude::Closure;
-use wasm_bindgen::{throw_str, JsCast, UnwrapThrowExt};
-use web_sys::{js_sys, AddEventListenerOptions};
+use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
+use web_sys::{AddEventListenerOptions, js_sys};
 
 use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{DomView, DynMessage, OptionalAction, ViewCtx};

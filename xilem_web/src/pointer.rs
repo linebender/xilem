@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 
 use peniko::kurbo::Point;
 use wasm_bindgen::prelude::Closure;
-use wasm_bindgen::{throw_str, JsCast, UnwrapThrowExt};
+use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::PointerEvent;
 
 use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};

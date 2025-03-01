@@ -12,10 +12,10 @@ use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::view::{
-    button, flex, inline_prose, label, portal, prose, sized_box, task, variable_label, Axis,
-    FlexExt, FlexSpacer,
+    Axis, FlexExt, FlexSpacer, button, flex, inline_prose, label, portal, prose, sized_box, task,
+    variable_label,
 };
-use xilem::{palette, EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem, palette};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {

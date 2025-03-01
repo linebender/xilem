@@ -23,9 +23,9 @@ use masonry::widgets::RootWidget;
 use parley::layout::Alignment;
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::peniko::{Fill, Image, ImageFormat};
+use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::peniko::{Fill, Image, ImageFormat};
 use winit::window::Window;
 
 struct Driver;

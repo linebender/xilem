@@ -10,15 +10,15 @@ use accesskit::{Node, Role};
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
-use tracing::{trace_span, Span};
+use tracing::{Span, trace_span};
 use vello::Scene;
 
+use crate::AsAny;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetRef,
 };
 use crate::kurbo::{Point, Size};
-use crate::AsAny;
 
 /// A unique identifier for a single [`Widget`].
 ///

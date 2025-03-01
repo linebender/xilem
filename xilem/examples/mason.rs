@@ -13,11 +13,11 @@ use winit::error::EventLoopError;
 use xilem::core::{fork, run_once};
 use xilem::tokio::time;
 use xilem::view::{
-    button, button_any_pointer, checkbox, flex, label, prose, task, textbox, Axis, FlexExt as _,
-    FlexSpacer, PointerButton,
+    Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
+    label, prose, task, textbox,
 };
 use xilem::{
-    palette, Color, EventLoop, EventLoopBuilder, FontWeight, TextAlignment, WidgetView, Xilem,
+    Color, EventLoop, EventLoopBuilder, FontWeight, TextAlignment, WidgetView, Xilem, palette,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 

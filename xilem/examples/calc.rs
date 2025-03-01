@@ -9,10 +9,10 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::view::{
-    button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
-    GridSequence, Label,
+    Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, button, flex, grid, label,
+    sized_box,
 };
-use xilem::{palette, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
 
 #[derive(Copy, Clone)]
 enum MathOperator {

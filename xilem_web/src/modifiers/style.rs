@@ -11,7 +11,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use super::{Modifier, WithModifier};
 use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
-use crate::diff::{diff_iters, Diff};
+use crate::diff::{Diff, diff_iters};
 use crate::vecmap::VecMap;
 use crate::{DomView, DynMessage, ViewCtx};
 

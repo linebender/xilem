@@ -6,7 +6,7 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
-use xilem::view::{button, grid, label, sized_box, transformed, GridExt as _};
+use xilem::view::{GridExt as _, button, grid, label, sized_box, transformed};
 use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, Xilem};
 
 struct TransformsGame {

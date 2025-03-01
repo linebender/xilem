@@ -16,10 +16,10 @@ use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
-    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, zstack, Axis,
-    FlexExt, FlexSpacer, Padding, ZStackExt,
+    Axis, FlexExt, FlexSpacer, Padding, ZStackExt, button, flex, image, inline_prose, portal,
+    prose, sized_box, spinner, worker, zstack,
 };
-use xilem::{palette, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem, palette};
 
 /// The main state of the application.
 struct HttpCats {

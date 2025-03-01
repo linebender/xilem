@@ -16,7 +16,7 @@ use std::rc::Rc;
 use xilem_web::core::one_of::Either;
 use xilem_web::elements::html;
 use xilem_web::interfaces::Element;
-use xilem_web::{document_body, App, DomView};
+use xilem_web::{App, DomView, document_body};
 
 #[derive(Default)]
 struct AppState {

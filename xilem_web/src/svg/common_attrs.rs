@@ -4,7 +4,7 @@
 use std::fmt::Write as _;
 use std::marker::PhantomData;
 
-use peniko::{kurbo, Brush};
+use peniko::{Brush, kurbo};
 
 use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
 use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
@@ -86,11 +86,7 @@ fn opacity_attr_modifier(attr: &'static str, brush: &Brush) -> AttributeModifier
     let opacity = match brush {
         Brush::Solid(color) => {
             let a = color.components[3];
-            if a < 1.0 {
-                Some(a as f64)
-            } else {
-                None
-            }
+            if a < 1.0 { Some(a as f64) } else { None }
         }
         _ => None,
     };
@@ -295,8 +291,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use peniko::color::palette;
     use peniko::Brush;
+    use peniko::color::palette;
 
     use super::brush_to_string;
 

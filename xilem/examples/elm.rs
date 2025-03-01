@@ -9,8 +9,8 @@
 
 use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::core::{adapt, map_action, MessageResult};
-use xilem::view::{button, flex, label, Axis};
+use xilem::core::{MessageResult, adapt, map_action};
+use xilem::view::{Axis, button, flex, label};
 use xilem::{EventLoop, WidgetView, Xilem};
 
 #[derive(Default)]

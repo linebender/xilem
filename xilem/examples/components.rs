@@ -8,7 +8,7 @@
 use masonry::widgets::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;
-use xilem::view::{button, flex, label, Axis};
+use xilem::view::{Axis, button, flex, label};
 use xilem::{EventLoop, WidgetView, Xilem};
 
 #[derive(Default)]

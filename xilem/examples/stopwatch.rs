@@ -17,7 +17,7 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{button, flex, label, task, FlexSequence, FlexSpacer};
+use xilem::view::{FlexSequence, FlexSpacer, button, flex, label, task};
 use xilem::{WidgetView, Xilem};
 
 /// The state of the entire application.

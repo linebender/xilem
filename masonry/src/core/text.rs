@@ -40,9 +40,9 @@ pub(crate) fn default_styles(styles: &mut StyleSet) {
 }
 
 use parley::{Layout, PositionedLayoutItem};
+use vello::Scene;
 use vello::kurbo::{Affine, Line, Stroke};
 use vello::peniko::{Brush, Fill};
-use vello::Scene;
 
 /// A function that renders laid out glyphs to a [`Scene`].
 ///

@@ -18,7 +18,7 @@ use wasm_bindgen::JsCast;
 
 use crate::modifiers::{Attr, Class, ClassIter, Rotate, Scale, ScaleValue, Style, StyleIter};
 use crate::props::{WithElementProps, WithHtmlInputElementProps};
-use crate::{events, DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg};
+use crate::{DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg, events};
 
 macro_rules! event_handler_mixin {
     ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {
@@ -807,10 +807,10 @@ use crate::modifiers::html_input_element;
 // #[cfg(feature = "HtmlInputElement")]
 pub trait HtmlInputElement<State, Action = ()>:
     HtmlElement<
-    State,
-    Action,
-    DomNode: DomNode<Props: WithHtmlInputElementProps> + AsRef<web_sys::HtmlInputElement>,
->
+        State,
+        Action,
+        DomNode: DomNode<Props: WithHtmlInputElementProps> + AsRef<web_sys::HtmlInputElement>,
+    >
 {
     /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked> for more details.
     ///
