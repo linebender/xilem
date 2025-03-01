@@ -4,6 +4,7 @@
 //! The context types that are passed into various widget methods.
 
 use accesskit::TreeUpdate;
+use anymap3::AnyMap;
 use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
@@ -12,8 +13,8 @@ use winit::window::ResizeDirection;
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, FromDynWidget, Widget, WidgetId,
-    WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, FromDynWidget, PropertiesMut,
+    PropertiesRef, Widget, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;
@@ -50,6 +51,8 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties: PropertiesMut<'a>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
 /// A context provided inside of [`WidgetRef`].
@@ -61,6 +64,7 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaRefList<'a, WidgetState>,
     pub(crate) widget_children: ArenaRefList<'a, Box<dyn Widget>>,
+    pub(crate) properties_children: ArenaRefList<'a, AnyMap>,
 }
 
 /// A context provided to Widget event-handling methods.
@@ -69,6 +73,7 @@ pub struct EventCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
@@ -78,6 +83,7 @@ pub struct EventCtx<'a> {
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     #[cfg(debug_assertions)]
     pub(crate) registered_ids: Vec<WidgetId>,
 }
@@ -88,6 +94,7 @@ pub struct UpdateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
 // TODO - Change this once other layout methods are added.
@@ -97,6 +104,7 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
 /// A context provided to the [`Widget::compose`] method.
@@ -122,6 +130,7 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) rebuild_all: bool,
 }
@@ -220,12 +229,20 @@ impl MutateCtx<'_> {
             .widget_children
             .item_mut(child.id())
             .expect("get_mut: child not found");
+        let child_properties = self
+            .properties_children
+            .item_mut(child.id())
+            .expect("get_mut: child not found");
         let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: Some(&mut self.widget_state),
             widget_state: child_state_mut.item,
             widget_state_children: child_state_mut.children,
             widget_children: child_mut.children,
+            properties: PropertiesMut {
+                map: child_properties.item,
+            },
+            properties_children: child_properties.children,
         };
         WidgetMut {
             ctx: child_ctx,
@@ -243,6 +260,18 @@ impl MutateCtx<'_> {
             widget_state: self.widget_state,
             widget_state_children: self.widget_state_children.reborrow_mut(),
             widget_children: self.widget_children.reborrow_mut(),
+            properties: self.properties.reborrow_mut(),
+            properties_children: self.properties_children.reborrow_mut(),
+        }
+    }
+
+    pub(crate) fn update_mut(&mut self) -> UpdateCtx<'_> {
+        UpdateCtx {
+            global_state: self.global_state,
+            widget_state: self.widget_state,
+            widget_state_children: self.widget_state_children.reborrow_mut(),
+            widget_children: self.widget_children.reborrow_mut(),
+            properties_children: self.properties_children.reborrow_mut(),
         }
     }
 
@@ -265,21 +294,30 @@ impl<'w> QueryCtx<'w> {
             .widget_state_children
             .into_item(child)
             .expect("get: child not found");
-        let child = self
+        let child_widget = self
             .widget_children
+            .into_item(child)
+            .expect("get: child not found");
+        let child_properties = self
+            .properties_children
             .into_item(child)
             .expect("get: child not found");
 
         let ctx = QueryCtx {
             global_state: self.global_state,
             widget_state_children: child_state.children,
-            widget_children: child.children,
+            widget_children: child_widget.children,
             widget_state: child_state.item,
+            properties_children: child_properties.children,
+        };
+        let properties = PropertiesRef {
+            map: child_properties.item,
         };
 
         WidgetRef {
             ctx,
-            widget: &**child.item,
+            properties,
+            widget: &**child_widget.item,
         }
     }
 }
@@ -1185,7 +1223,12 @@ impl RegisterCtx<'_> {
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
-        let Some(CreateWidget { widget, transform }) = child.take_inner() else {
+        let Some(CreateWidget {
+            widget,
+            transform,
+            properties,
+        }) = child.take_inner()
+        else {
             return;
         };
 
@@ -1199,6 +1242,7 @@ impl RegisterCtx<'_> {
 
         self.widget_children.insert(id, widget.as_box_dyn());
         self.widget_state_children.insert(id, state);
+        self.properties_children.insert(id, properties.map);
     }
 }
 
@@ -1250,11 +1294,16 @@ macro_rules! impl_get_raw {
                     .widget_children
                     .item_mut(child.id())
                     .expect("get_raw_ref: child not found");
+                let child_properties = self
+                    .properties_children
+                    .item_mut(child.id())
+                    .expect("get_raw_ref: child not found");
                 #[allow(clippy::needless_update)]
                 let child_ctx = $SomeCtx {
                     widget_state: child_state_mut.item,
                     widget_state_children: child_state_mut.children,
                     widget_children: child_mut.children,
+                    properties_children: child_properties.children,
                     global_state: self.global_state,
                     ..*self
                 };
@@ -1283,11 +1332,16 @@ macro_rules! impl_get_raw {
                     .widget_children
                     .item_mut(child.id())
                     .expect("get_raw_mut: child not found");
+                let child_properties = self
+                    .properties_children
+                    .item_mut(child.id())
+                    .expect("get_raw_mut: child not found");
                 #[allow(clippy::needless_update)]
                 let child_ctx = $SomeCtx {
                     widget_state: child_state_mut.item,
                     widget_state_children: child_state_mut.children,
                     widget_children: child_mut.children,
+                    properties_children: child_properties.children,
                     global_state: self.global_state,
                     ..*self
                 };
@@ -1323,10 +1377,15 @@ impl<'s> AccessCtx<'s> {
             .widget_children
             .item_mut(child.id())
             .expect("get_raw_ref: child not found");
+        let child_properties = self
+            .properties_children
+            .item_mut(child.id())
+            .expect("get_raw_ref: child not found");
         let child_ctx = AccessCtx {
             widget_state: child_state_mut.item,
             widget_state_children: child_state_mut.children,
             widget_children: child_mut.children,
+            properties_children: child_properties.children,
             global_state: self.global_state,
             tree_update: self.tree_update,
             rebuild_all: self.rebuild_all,

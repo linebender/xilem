@@ -1,6 +1,10 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
+use anymap3::Entry;
+
 use crate::core::{FromDynWidget, MutateCtx, Widget};
 use crate::kurbo::Affine;
 
@@ -23,6 +27,7 @@ use crate::kurbo::Affine;
 ///
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
+#[non_exhaustive]
 pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub ctx: MutateCtx<'a>,
     pub widget: &'a mut W,
@@ -46,6 +51,44 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
             ctx: self.ctx.reborrow_mut(),
             widget,
         }
+    }
+
+    /// Returns true if the widget has a property of type `T`.
+    pub fn get_prop<T: 'static>(&self) -> Option<&T> {
+        self.ctx.properties.get::<T>()
+    }
+
+    /// Get value of property `T`, or None if the widget has no `T` property.
+    pub fn contains_prop<T: 'static>(&self) -> bool {
+        self.ctx.properties.contains::<T>()
+    }
+
+    /// Get value of property `T`, or None if the widget has no `T` property.
+    pub fn get_prop_mut<T: 'static>(&mut self) -> Option<&mut T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.get_mut::<T>()
+    }
+
+    /// Set property `T` to given value. Returns the previous value if `T` was already set.
+    pub fn insert_prop<T: 'static>(&mut self, value: T) -> Option<T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.insert(value)
+    }
+
+    /// Remove property `T`. Returns the previous value if `T` was set.
+    pub fn remove_prop<T: 'static>(&mut self) -> Option<T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.remove::<T>()
+    }
+
+    /// Returns an entry that can be used to add, update, or remove a property.
+    pub fn prop_entry<T: 'static>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+        self.ctx.properties.entry::<T>()
     }
 
     /// Set the local transform of this widget.
