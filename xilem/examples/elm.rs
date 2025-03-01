@@ -65,7 +65,7 @@ fn adapt_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
     .direction(Axis::Horizontal)
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     flex((
         map_action(
             elm_counter(state.map_action_count),

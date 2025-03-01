@@ -23,7 +23,7 @@ const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. M
 
 Phasellus in viverra dolor, vitae facilisis est. Maecenas malesuada massa vel ultricies feugiat. Vivamus venenatis et nibh nec pharetra. Phasellus vestibulum elit enim, nec scelerisque orci faucibus id. Vivamus consequat purus sit amet orci egestas, non iaculis massa porttitor. Vestibulum ut eros leo. In fermentum convallis magna in finibus. Donec justo leo, maximus ac laoreet id, volutpat ut elit. Mauris sed leo non neque laoreet faucibus. Aliquam orci arcu, faucibus in molestie eget, ornare non dui. Donec volutpat nulla in fringilla elementum. Aliquam vitae ante egestas ligula tempus vestibulum sit amet sed ante. ";
 
-fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
+fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     // here's some logic, deriving state for the view from our state
     let count = data.count;
     let button_label = if count == 1 {
@@ -119,7 +119,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> {
     )
 }
 
-fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> {
+fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     if data.active {
         fork(
             flex((

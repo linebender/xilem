@@ -335,8 +335,8 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
         let Self {
-            ref mut state,
-            ref mut layout,
+            state,
+            layout,
             ..
         } = self;
         layout

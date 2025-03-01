@@ -17,7 +17,7 @@ fn big_button(
     sized_box(button(label, callback)).width(40.).height(40.)
 }
 
-fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
+fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
     flex((
         FlexSpacer::Fixed(30.0),
         big_button("-", |data| {

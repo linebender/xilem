@@ -16,7 +16,7 @@ struct TransformsGame {
 }
 
 impl TransformsGame {
-    fn view(&mut self) -> impl WidgetView<Self> {
+    fn view(&mut self) -> impl WidgetView<Self> + use<> {
         let rotation_correct = (self.rotation % TAU).abs() < 0.001;
         let scale_correct = self.scale >= 0.99 && self.scale <= 1.01;
         let translation_correct = self.translation.x == 0.0 && self.translation.y == 0.0;

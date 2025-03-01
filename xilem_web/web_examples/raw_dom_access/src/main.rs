@@ -24,7 +24,7 @@ struct AppState {
     show_input: bool,
 }
 
-fn app_logic(app_state: &mut AppState) -> impl Element<AppState> {
+fn app_logic(app_state: &mut AppState) -> impl Element<AppState> + use<> {
     html::div(if app_state.show_input {
         let focus = Rc::clone(&app_state.focus);
         Either::A(html::div((

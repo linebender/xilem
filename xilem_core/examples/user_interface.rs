@@ -10,7 +10,7 @@ use xilem_core::{
     ViewPathTracker,
 };
 
-fn app_logic(_: &mut u32) -> impl WidgetView<u32> {
+fn app_logic(_: &mut u32) -> impl WidgetView<u32> + use<> {
     Button {}
 }
 

@@ -17,7 +17,7 @@ struct AppState {
     global_count: i32,
 }
 
-fn modular_counter(count: &mut i32) -> impl WidgetView<i32> {
+fn modular_counter(count: &mut i32) -> impl WidgetView<i32> + use<> {
     flex((
         label(format!("modularized count: {count}")),
         button("+", |count| *count += 1),
@@ -25,7 +25,7 @@ fn modular_counter(count: &mut i32) -> impl WidgetView<i32> {
     ))
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     flex((
         lens(modular_counter, state, |state| &mut state.modularized_count),
         button(

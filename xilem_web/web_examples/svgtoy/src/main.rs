@@ -51,7 +51,7 @@ impl GrabState {
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> + use<> {
     let v = (0..10)
         .map(|i| {
             Rect::from_origin_size((10.0 * i as f64, 150.0), (8.0, 8.0))

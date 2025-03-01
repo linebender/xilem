@@ -200,7 +200,7 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
-fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
+fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
     grid(
         (
             // Display
@@ -259,7 +259,7 @@ pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex
 
 /// Returns a label intended to be used in the calculator's top display.
 /// The default text size is out of proportion for this use case.
-fn display_label(text: &str) -> impl WidgetView<Calculator> {
+fn display_label(text: &str) -> impl WidgetView<Calculator> + use<> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
 

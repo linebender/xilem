@@ -45,7 +45,7 @@ enum ImageState {
 }
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<Self> {
+    fn view(&mut self) -> impl WidgetView<Self> + use<> {
         let left_column = sized_box(portal(flex((
             prose("Status"),
             self.statuses
@@ -163,7 +163,7 @@ async fn image_from_url(url: &str) -> anyhow::Result<Image> {
 }
 
 impl Status {
-    fn list_view(&mut self) -> impl WidgetView<HttpCats> {
+    fn list_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
         let code = self.code;
         flex((
             // TODO: Reduce allocations here?
@@ -180,7 +180,7 @@ impl Status {
         .direction(Axis::Horizontal)
     }
 
-    fn details_view(&mut self) -> impl WidgetView<HttpCats> {
+    fn details_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")

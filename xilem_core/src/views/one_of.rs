@@ -286,7 +286,7 @@ where
         let id = ViewId::new(view_state.generation);
         // If both elements are of the same type, do a simple rebuild
         match (self, prev, &mut view_state.inner_state) {
-            (Self::A(this), Self::A(prev), OneOf::A(ref mut state)) => {
+            (Self::A(this), Self::A(prev), OneOf::A(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_a(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -294,7 +294,7 @@ where
                 });
                 return;
             }
-            (Self::B(this), Self::B(prev), OneOf::B(ref mut state)) => {
+            (Self::B(this), Self::B(prev), OneOf::B(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_b(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -302,7 +302,7 @@ where
                 });
                 return;
             }
-            (Self::C(this), Self::C(prev), OneOf::C(ref mut state)) => {
+            (Self::C(this), Self::C(prev), OneOf::C(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_c(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -310,7 +310,7 @@ where
                 });
                 return;
             }
-            (Self::D(this), Self::D(prev), OneOf::D(ref mut state)) => {
+            (Self::D(this), Self::D(prev), OneOf::D(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_d(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -318,7 +318,7 @@ where
                 });
                 return;
             }
-            (Self::E(this), Self::E(prev), OneOf::E(ref mut state)) => {
+            (Self::E(this), Self::E(prev), OneOf::E(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_e(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -326,7 +326,7 @@ where
                 });
                 return;
             }
-            (Self::F(this), Self::F(prev), OneOf::F(ref mut state)) => {
+            (Self::F(this), Self::F(prev), OneOf::F(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_f(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -334,7 +334,7 @@ where
                 });
                 return;
             }
-            (Self::G(this), Self::G(prev), OneOf::G(ref mut state)) => {
+            (Self::G(this), Self::G(prev), OneOf::G(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_g(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -342,7 +342,7 @@ where
                 });
                 return;
             }
-            (Self::H(this), Self::H(prev), OneOf::H(ref mut state)) => {
+            (Self::H(this), Self::H(prev), OneOf::H(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_h(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -350,7 +350,7 @@ where
                 });
                 return;
             }
-            (Self::I(this), Self::I(prev), OneOf::I(ref mut state)) => {
+            (Self::I(this), Self::I(prev), OneOf::I(state)) => {
                 ctx.with_id(id, |ctx| {
                     Context::with_downcast_i(&mut element, |element| {
                         this.rebuild(prev, state, ctx, element);
@@ -363,47 +363,47 @@ where
 
         // We're changing the type of the view. Teardown the old version
         ctx.with_id(id, |ctx| match (prev, &mut view_state.inner_state) {
-            (Self::A(prev), OneOf::A(ref mut state)) => {
+            (Self::A(prev), OneOf::A(state)) => {
                 Context::with_downcast_a(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::B(prev), OneOf::B(ref mut state)) => {
+            (Self::B(prev), OneOf::B(state)) => {
                 Context::with_downcast_b(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::C(prev), OneOf::C(ref mut state)) => {
+            (Self::C(prev), OneOf::C(state)) => {
                 Context::with_downcast_c(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::D(prev), OneOf::D(ref mut state)) => {
+            (Self::D(prev), OneOf::D(state)) => {
                 Context::with_downcast_d(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::E(prev), OneOf::E(ref mut state)) => {
+            (Self::E(prev), OneOf::E(state)) => {
                 Context::with_downcast_e(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::F(prev), OneOf::F(ref mut state)) => {
+            (Self::F(prev), OneOf::F(state)) => {
                 Context::with_downcast_f(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::G(prev), OneOf::G(ref mut state)) => {
+            (Self::G(prev), OneOf::G(state)) => {
                 Context::with_downcast_g(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::H(prev), OneOf::H(ref mut state)) => {
+            (Self::H(prev), OneOf::H(state)) => {
                 Context::with_downcast_h(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
             }
-            (Self::I(prev), OneOf::I(ref mut state)) => {
+            (Self::I(prev), OneOf::I(state)) => {
                 Context::with_downcast_i(&mut element, |element| {
                     prev.teardown(state, ctx, element);
                 });
@@ -468,47 +468,47 @@ where
     ) {
         ctx.with_id(ViewId::new(view_state.generation), |ctx| {
             match (self, &mut view_state.inner_state) {
-                (Self::A(v), OneOf::A(ref mut state)) => {
+                (Self::A(v), OneOf::A(state)) => {
                     Context::with_downcast_a(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::B(v), OneOf::B(ref mut state)) => {
+                (Self::B(v), OneOf::B(state)) => {
                     Context::with_downcast_b(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::C(v), OneOf::C(ref mut state)) => {
+                (Self::C(v), OneOf::C(state)) => {
                     Context::with_downcast_c(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::D(v), OneOf::D(ref mut state)) => {
+                (Self::D(v), OneOf::D(state)) => {
                     Context::with_downcast_d(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::E(v), OneOf::E(ref mut state)) => {
+                (Self::E(v), OneOf::E(state)) => {
                     Context::with_downcast_e(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::F(v), OneOf::F(ref mut state)) => {
+                (Self::F(v), OneOf::F(state)) => {
                     Context::with_downcast_f(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::G(v), OneOf::G(ref mut state)) => {
+                (Self::G(v), OneOf::G(state)) => {
                     Context::with_downcast_g(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::H(v), OneOf::H(ref mut state)) => {
+                (Self::H(v), OneOf::H(state)) => {
                     Context::with_downcast_h(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
                 }
-                (Self::I(v), OneOf::I(ref mut state)) => {
+                (Self::I(v), OneOf::I(state)) => {
                     Context::with_downcast_i(&mut element, |element| {
                         v.teardown(state, ctx, element);
                     });
@@ -533,15 +533,15 @@ where
             return MessageResult::Stale(message);
         }
         match (self, &mut view_state.inner_state) {
-            (Self::A(v), OneOf::A(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::B(v), OneOf::B(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::C(v), OneOf::C(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::D(v), OneOf::D(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::E(v), OneOf::E(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::F(v), OneOf::F(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::G(v), OneOf::G(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::H(v), OneOf::H(ref mut state)) => v.message(state, rest, message, app_state),
-            (Self::I(v), OneOf::I(ref mut state)) => v.message(state, rest, message, app_state),
+            (Self::A(v), OneOf::A(state)) => v.message(state, rest, message, app_state),
+            (Self::B(v), OneOf::B(state)) => v.message(state, rest, message, app_state),
+            (Self::C(v), OneOf::C(state)) => v.message(state, rest, message, app_state),
+            (Self::D(v), OneOf::D(state)) => v.message(state, rest, message, app_state),
+            (Self::E(v), OneOf::E(state)) => v.message(state, rest, message, app_state),
+            (Self::F(v), OneOf::F(state)) => v.message(state, rest, message, app_state),
+            (Self::G(v), OneOf::G(state)) => v.message(state, rest, message, app_state),
+            (Self::H(v), OneOf::H(state)) => v.message(state, rest, message, app_state),
+            (Self::I(v), OneOf::I(state)) => v.message(state, rest, message, app_state),
             _ => unreachable!(),
         }
     }

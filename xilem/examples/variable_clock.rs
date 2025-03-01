@@ -35,7 +35,7 @@ struct TimeZone {
     offset: UtcOffset,
 }
 
-fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
+fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
     let view = flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
@@ -68,7 +68,7 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
 
 /// Shows the current system time on a best-effort basis.
 // TODO: Maybe make this have a larger font size?
-fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
+fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
     let (error_view, offset) = if let Ok(offset) = data.local_offset {
         (None, offset)
     } else {
@@ -112,7 +112,7 @@ fn controls() -> impl WidgetView<Clocks> {
 
 impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
-    fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> {
+    fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
         sized_box(flex((
             flex((

@@ -27,7 +27,7 @@ enum TodoAction {
 
 impl Action for TodoAction {}
 
-fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
+fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> + use<> {
     let checkbox = el::input(())
         .class("toggle")
         .type_("checkbox")
@@ -75,7 +75,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
     .class(editing.then_some("editing"))
 }
 
-fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
+fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> + use<> {
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
         el::button("Clear completed")
             .class("clear-completed")
@@ -126,7 +126,7 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
     .style((!should_display).then_some(s("display", "none")))
 }
 
-fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
+fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> + use<> {
     let editing_id = state.editing_id;
     let todos: Vec<_> = state
         .visible_todos()
@@ -165,7 +165,7 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     .style((!should_display).then_some(s("display", "none")))
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> + use<> {
     tracing::debug!("render: {state:?}");
     let some_todos = !state.todos.is_empty();
     let main = main_view(state, some_todos);

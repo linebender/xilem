@@ -68,7 +68,7 @@ impl<V, State, Action> DocsView<State, Action> for V where V: View<State, Action
 pub struct State;
 
 /// A minimal component.
-pub fn some_component<Action>(_: &mut State) -> impl DocsView<State, Action> {
+pub fn some_component<Action>(_: &mut State) -> impl DocsView<State, Action> + use<Action> {
     // The view which does nothing already exists in `run_once`.
     run_once(|| {})
 }

@@ -52,7 +52,7 @@ async fn create_ping_task(proxy: TaskProxy, shutdown_signal: ShutdownSignal) {
     log::debug!("Stop ping task");
 }
 
-fn app_logic(state: &mut AppState) -> impl Element<AppState> {
+fn app_logic(state: &mut AppState) -> impl Element<AppState> + use<> {
     let task = task(
         create_ping_task,
         |state: &mut AppState, message: Message| match message {

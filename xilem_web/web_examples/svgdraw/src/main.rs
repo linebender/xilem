@@ -45,7 +45,7 @@ impl SplineLine {
         }
     }
 
-    fn view<State: 'static>(&self) -> impl SvgPathElement<State> {
+    fn view<State: 'static>(&self) -> impl SvgPathElement<State> + use<State> {
         QuadSpline::new(self.points.clone())
             .to_quads()
             .fold(BezPath::new(), |mut b, q| {
@@ -135,7 +135,7 @@ impl Draw {
         }
     }
 
-    fn view(&mut self) -> impl DomFragment<Self> {
+    fn view(&mut self) -> impl DomFragment<Self> + use<> {
         let x = -self.canvas_position.x;
         let y = -self.canvas_position.y;
         let zoom = self.zoom;

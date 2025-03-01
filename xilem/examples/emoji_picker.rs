@@ -12,7 +12,7 @@ use xilem::view::{
 };
 use xilem::{palette, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
-fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     flex((
         sized_box(flex(()).must_fill_major_axis(true)).height(50.), // Padding because of the info bar on Android
         flex((
@@ -43,7 +43,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
     .must_fill_major_axis(true)
 }
 
-fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
+fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     let mut grid_items = vec![];
     'outer: for y in 0..data.size as usize {
         let row_idx = data.start_index + y * data.size as usize;

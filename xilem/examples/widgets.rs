@@ -36,7 +36,7 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
             },
         ),
         button("change progress", |state: &mut Option<f64>| match state {
-            Some(ref mut v) => *v = (*v + 0.1).rem_euclid(1.),
+            Some(v) => *v = (*v + 0.1).rem_euclid(1.),
             None => *state = Some(0.5),
         }),
     ))
@@ -66,7 +66,7 @@ fn border_box<State: 'static, Action: 'static>(
 }
 
 /// Top-level view
-fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> {
+fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
         flex((

@@ -35,7 +35,7 @@ fn btn(
     })
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> + use<> {
     custom_element(
         "div",
         (
