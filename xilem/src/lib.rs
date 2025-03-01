@@ -34,7 +34,7 @@
 //!     num: i32,
 //! }
 //!
-//! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> {
+//! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
 //!     flex((
 //!         label(format!("{}", data.num)),
 //!         button("increment", |data: &mut Counter| data.num += 1),
@@ -376,7 +376,7 @@ pub trait WidgetView<State, Action = ()>:
     /// ```
     /// use xilem::{view::label, WidgetView};
     ///
-    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> + use<> {
     /// label("a label").boxed()
     /// # }
     ///
@@ -421,7 +421,7 @@ where
 ///
 /// fn prose_sequence<State: 'static>(
 ///     texts: impl Iterator<Item = &'static str>,
-/// ) -> impl WidgetViewSequence<State> {
+/// ) -> impl WidgetViewSequence<State> + use<> {
 ///     texts.map(prose).collect::<Vec<_>>()
 /// }
 /// ```

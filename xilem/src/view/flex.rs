@@ -26,7 +26,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// fn big_button(
 ///     label: impl Into<Label>,
 ///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
-/// ) -> impl WidgetView<i32> {
+/// ) -> impl WidgetView<i32> + use<> {
 ///     sized_box(button(label, callback)).width(40.).height(40.)
 /// }
 ///
