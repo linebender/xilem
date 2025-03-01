@@ -376,7 +376,7 @@ pub trait WidgetView<State, Action = ()>:
     /// ```
     /// use xilem::{view::label, WidgetView};
     ///
-    /// # fn view<State: 'static>() -> impl WidgetView<State> + use<> {
+    /// # fn view<State: 'static>() -> impl WidgetView<State> + use<State> {
     /// label("a label").boxed()
     /// # }
     ///
@@ -421,7 +421,7 @@ where
 ///
 /// fn prose_sequence<State: 'static>(
 ///     texts: impl Iterator<Item = &'static str>,
-/// ) -> impl WidgetViewSequence<State> + use<> {
+/// ) -> impl WidgetViewSequence<State> + use<State> {
 ///     texts.map(prose).collect::<Vec<_>>()
 /// }
 /// ```
