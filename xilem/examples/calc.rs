@@ -9,10 +9,10 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::view::{
-    Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, button, flex, grid, label,
-    sized_box,
+    button, flex, grid, label, sized_box, Axis, Flex, FlexSequence, FlexSpacer, GridExt,
+    GridSequence, Label,
 };
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
+use xilem::{palette, EventLoop, EventLoopBuilder, WidgetView, Xilem};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -332,7 +332,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
