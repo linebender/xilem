@@ -23,6 +23,7 @@ pub struct VirtualScrollAction;
 ///    - It allows for much more control by users of how the scrolling happens
 ///
 pub struct VirtualScroll<W: Widget + ?Sized> {
+    /// Must be less than `last_item`
     first_item: i64,
     last_item: i64,
     current_items: BTreeMap<i64, WidgetPod<W>>,
@@ -38,7 +39,6 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     // TODO: Use a fixed-point scheme, because
     // This will likely wait for layout to do something similar
     scroll_offset_from_anchor: f64,
-    approx_item_height: f64,
 
     old_width: f64,
 }
@@ -49,6 +49,9 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         ctx: &mut crate::core::LayoutCtx,
         bc: &crate::core::BoxConstraints,
     ) -> vello::kurbo::Size {
+        for child in self.items_pending_removal.values_mut() {
+            ctx.skip_layout(child);
+        }
         // Oh, OK, we actually already know the scroll_offset_from_anchor here...
         let size = bc.max();
         let child_constraints_changed = size.width == self.old_width;
@@ -67,6 +70,8 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             },
         );
         let mut height_before_anchor = 0.;
+        // The height of all loaded items after the anchor.
+        // Note that this includes the height of the anchor itself.
         let mut height_after_anchor = 0.;
         for (idx, child) in &mut self.current_items {
             let resulting_size = if child_constraints_changed || ctx.child_needs_layout(child) {
@@ -82,42 +87,77 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             }
         }
 
-        let previous_anchor = self.anchor_index;
-        loop {
-            let anchor_pod = self.current_items.get(&self.anchor_index);
-            let anchor_height = if let Some(anchor_pod) = anchor_pod {
-                ctx.child_size(anchor_pod).height
-            } else {
-                // TODO: What should we do here?
-                break;
-            };
-            if self.scroll_offset_from_anchor < 0. {
-                if self.anchor_index == self.first_item {
-                    self.scroll_offset_from_anchor = 0.;
-                    break;
+        let count = self.current_items.len();
+        let mean_item_size = (height_before_anchor + height_after_anchor) / count as f64;
+        // If we've significantly out-ran the virtual scrolling (as a loose heuristic), calculate the current anchor using a heuristic
+        // and drop all currently loaded items.
+        if (self.scroll_offset_from_anchor > height_after_anchor + 3. * size.height + 3000.)
+            || (self.scroll_offset_from_anchor < -height_before_anchor - 3. * size.height - 3000.)
+        {
+            let items = core::mem::take(&mut self.current_items);
+            for (idx, item) in items {
+                self.items_pending_removal.insert(idx, item);
+            }
+            // TODO: Consolidate these mutations
+            ctx.mutate_self_later(|mut this| {
+                let mut this = this.downcast::<Self>();
+                for element in this.widget.items_pending_removal.values_mut() {
+                    this.ctx.set_stashed(element, true);
                 }
-                let new_idx = self.anchor_index - 1;
-                let new_anchor = self.current_items.get(&new_idx);
-                let new_anchor_height = if let Some(anchor_pod) = anchor_pod {
+            });
+            if mean_item_size.is_finite() {
+                let diff_count = self.scroll_offset_from_anchor / mean_item_size;
+                let diff_count = diff_count.floor();
+                self.anchor_index =
+                    (self.anchor_index + diff_count as i64).clamp(self.first_item, self.last_item);
+                self.scroll_offset_from_anchor += diff_count * mean_item_size;
+            } else {
+                debug_assert_eq!(
+                    count,
+                    0,
+                    "Assumption: If the division produced an infinite result, it's because of a divide by zero."
+                );
+                // TODO: How can we handle this sanely? We're scrolled very far down (3 pages + 3000 logical pixels),
+                // but we don't have any idea how big the items are; that could be within a single item.
+            }
+        } else {
+            let previous_anchor = self.anchor_index;
+            loop {
+                let anchor_pod = self.current_items.get(&self.anchor_index);
+                let anchor_height = if let Some(anchor_pod) = anchor_pod {
                     ctx.child_size(anchor_pod).height
                 } else {
-                    // We will need to request this anchor, but we'll do that in the next step
+                    // TODO: What should we do here?
                     break;
                 };
-                self.scroll_offset_from_anchor += new_anchor_height;
-                height_after_anchor += anchor_height;
-                self.anchor_index = new_idx;
-            } else if self.scroll_offset_from_anchor > anchor_height {
-                if self.anchor_index != self.last_item {
-                    self.scroll_offset_from_anchor = anchor_height;
+                if self.scroll_offset_from_anchor < 0. {
+                    if self.anchor_index == self.first_item {
+                        self.scroll_offset_from_anchor = 0.;
+                        break;
+                    }
+                    let new_idx = self.anchor_index - 1;
+                    let new_anchor = self.current_items.get(&new_idx);
+                    let new_anchor_height = if let Some(anchor_pod) = anchor_pod {
+                        ctx.child_size(anchor_pod).height
+                    } else {
+                        // We will need to request this anchor, but we'll do that in the next step
+                        break;
+                    };
+                    self.scroll_offset_from_anchor += new_anchor_height;
+                    height_after_anchor += anchor_height;
+                    self.anchor_index = new_idx;
+                } else if self.scroll_offset_from_anchor > anchor_height {
+                    if self.anchor_index != self.last_item {
+                        self.scroll_offset_from_anchor = anchor_height;
+                        break;
+                    }
+                    self.scroll_offset_from_anchor -= anchor_height;
+                    height_before_anchor += anchor_height;
+                    self.anchor_index += 1;
+                } else {
                     break;
-                }
-                self.scroll_offset_from_anchor -= anchor_height;
-                height_before_anchor += anchor_height;
-                self.anchor_index += 1;
-            } else {
-                break;
-            };
+                };
+            }
         }
         // TODO: I *suspect* we need to do something else?
         // self.anchor_index = new_anchor;
