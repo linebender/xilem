@@ -60,6 +60,8 @@ impl From<WinitMouseButton> for PointerButton {
     }
 }
 
+/// Represents the state of a window.
+/// Note: This is an internal representation that is provisionally being made public in order to facilitate externally driven rendering.
 pub enum WindowState<'a> {
     Uninitialized(WindowAttributes),
     Rendering {
