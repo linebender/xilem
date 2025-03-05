@@ -17,7 +17,7 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{button, flex, label, task, FlexSequence, FlexSpacer};
+use xilem::view::{FlexSequence, FlexSpacer, button, flex, label, task};
 use xilem::{WidgetView, Xilem};
 
 /// The state of the entire application.
@@ -108,7 +108,7 @@ fn get_formatted_duration(dur: Duration) -> String {
     format!("{hours}:{minutes:0>2}:{seconds:0>4.1}")
 }
 
-fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
+fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     fork(
         flex((
             FlexSpacer::Fixed(5.0),
@@ -139,7 +139,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
 }
 
 /// Creates a list of items that shows the lap number, split time, and total cumulative time.
-fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> {
+fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> + use<> {
     let mut items = Vec::new();
     let mut total_dur = Duration::ZERO;
     let current_lap = data.completed_lap_splits.len();
@@ -176,7 +176,7 @@ fn single_lap(
     .must_fill_major_axis(true)
 }
 
-fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
+fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     if data.active {
         Either::A(button("Stop", |data: &mut Stopwatch| {
             data.stop();
@@ -188,7 +188,7 @@ fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
     }
 }
 
-fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> {
+fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     if data.active {
         Either::A(button("  Lap  ", |data: &mut Stopwatch| {
             data.lap();
@@ -240,7 +240,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 

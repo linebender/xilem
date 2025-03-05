@@ -17,14 +17,14 @@ enum State {
     Complex(String),
 }
 
-fn complex_state(value: &str) -> impl FileView<State> {
+fn complex_state(value: &str) -> impl FileView<State> + use<> {
     File {
         name: value.to_string(),
         contents: value.to_string(),
     }
 }
 
-fn app_logic(state: &mut State) -> impl FileView<State> {
+fn app_logic(state: &mut State) -> impl FileView<State> + use<> {
     let res: DynFileView<State> = match state {
         State::Setup => Box::new(File {
             name: "file1.txt".into(),

@@ -80,7 +80,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         message: DynMessage,
         _: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
+        tracing::error!(
+            "Message arrived in Label::message, but Label doesn't consume any messages, this is a bug"
+        );
         MessageResult::Stale(message)
     }
 }

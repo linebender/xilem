@@ -5,7 +5,7 @@ use assert_matches::assert_matches;
 
 use crate::core::{PointerButton, PointerEvent, PointerState, Update, WidgetId};
 use crate::kurbo::Vec2;
-use crate::testing::{widget_ids, Record, Recording, TestHarness, TestWidgetExt as _};
+use crate::testing::{Record, Recording, TestHarness, TestWidgetExt as _, widget_ids};
 use crate::widgets::{Button, Flex, SizedBox};
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
@@ -189,11 +189,7 @@ fn update_hovered_from_layout() {
         })
         .layout_fn(
             move |collapsed, _ctx, _bc| {
-                if *collapsed {
-                    Size::ZERO
-                } else {
-                    BOX_SIZE
-                }
+                if *collapsed { Size::ZERO } else { BOX_SIZE }
             },
         );
 

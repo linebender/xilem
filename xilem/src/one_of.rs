@@ -9,24 +9,24 @@ use masonry::core::{
     PointerEvent, RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 use vello::Scene;
 
-use crate::core::one_of::OneOf;
 use crate::core::Mut;
+use crate::core::one_of::OneOf;
 use crate::{Pod, ViewCtx};
 
 impl<
-        A: Widget + FromDynWidget + ?Sized,
-        B: Widget + FromDynWidget + ?Sized,
-        C: Widget + FromDynWidget + ?Sized,
-        D: Widget + FromDynWidget + ?Sized,
-        E: Widget + FromDynWidget + ?Sized,
-        F: Widget + FromDynWidget + ?Sized,
-        G: Widget + FromDynWidget + ?Sized,
-        H: Widget + FromDynWidget + ?Sized,
-        I: Widget + FromDynWidget + ?Sized,
-    >
+    A: Widget + FromDynWidget + ?Sized,
+    B: Widget + FromDynWidget + ?Sized,
+    C: Widget + FromDynWidget + ?Sized,
+    D: Widget + FromDynWidget + ?Sized,
+    E: Widget + FromDynWidget + ?Sized,
+    F: Widget + FromDynWidget + ?Sized,
+    G: Widget + FromDynWidget + ?Sized,
+    H: Widget + FromDynWidget + ?Sized,
+    I: Widget + FromDynWidget + ?Sized,
+>
     crate::core::one_of::OneOfCtx<
         Pod<A>,
         Pod<B>,
@@ -171,16 +171,16 @@ pub enum OneOfWidget<
 }
 
 impl<
-        A: Widget + FromDynWidget + ?Sized,
-        B: Widget + FromDynWidget + ?Sized,
-        C: Widget + FromDynWidget + ?Sized,
-        D: Widget + FromDynWidget + ?Sized,
-        E: Widget + FromDynWidget + ?Sized,
-        F: Widget + FromDynWidget + ?Sized,
-        G: Widget + FromDynWidget + ?Sized,
-        H: Widget + FromDynWidget + ?Sized,
-        I: Widget + FromDynWidget + ?Sized,
-    > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
+    A: Widget + FromDynWidget + ?Sized,
+    B: Widget + FromDynWidget + ?Sized,
+    C: Widget + FromDynWidget + ?Sized,
+    D: Widget + FromDynWidget + ?Sized,
+    E: Widget + FromDynWidget + ?Sized,
+    F: Widget + FromDynWidget + ?Sized,
+    G: Widget + FromDynWidget + ?Sized,
+    H: Widget + FromDynWidget + ?Sized,
+    I: Widget + FromDynWidget + ?Sized,
+> Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}

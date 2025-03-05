@@ -7,9 +7,9 @@ use xilem_web::elements::svg::{g, svg, text};
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
 use xilem_web::svg::kurbo::{Circle, Line, Rect, Stroke, Vec2};
-use xilem_web::svg::peniko::color::palette;
 use xilem_web::svg::peniko::Color;
-use xilem_web::{document_body, App, DomView, PointerMsg};
+use xilem_web::svg::peniko::color::palette;
+use xilem_web::{App, DomView, PointerMsg, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -51,7 +51,7 @@ impl GrabState {
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> + use<> {
     let v = (0..10)
         .map(|i| {
             Rect::from_origin_size((10.0 * i as f64, 150.0), (8.0, 8.0))

@@ -6,10 +6,10 @@
 
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
+use tracing::{Span, trace_span};
+use vello::Scene;
 use vello::kurbo::Affine;
 use vello::peniko::{BlendMode, Image as ImageBuf};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx, PointerEvent,

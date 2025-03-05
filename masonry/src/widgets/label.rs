@@ -11,15 +11,15 @@ use accesskit::{Node, NodeId, Role};
 use parley::layout::Alignment;
 use parley::{Layout, LayoutAccessibility};
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
+use tracing::{Span, trace_span};
+use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Brush};
-use vello::Scene;
 
 use crate::core::{
-    default_styles, render_text, AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex,
-    EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, QueryCtx, RegisterCtx, StyleProperty, StyleSet, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetMut, default_styles, render_text,
 };
 use crate::theme;
 

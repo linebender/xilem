@@ -3,7 +3,7 @@
 
 use insta::assert_debug_snapshot;
 
-use crate::testing::{widget_ids, TestHarness};
+use crate::testing::{TestHarness, widget_ids};
 use crate::widgets::{Flex, Label};
 
 #[test]

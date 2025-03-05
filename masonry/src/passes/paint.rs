@@ -5,9 +5,9 @@ use std::collections::HashMap;
 
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
+use vello::Scene;
 use vello::kurbo::Affine;
 use vello::peniko::{Color, Fill, Mix};
-use vello::Scene;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{PaintCtx, Widget, WidgetId, WidgetState};

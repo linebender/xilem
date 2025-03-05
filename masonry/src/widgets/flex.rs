@@ -5,10 +5,10 @@
 
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
+use tracing::{Span, trace_span};
+use vello::Scene;
 use vello::kurbo::common::FloatExt;
 use vello::kurbo::{Affine, Line, Stroke, Vec2};
-use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
@@ -893,7 +893,9 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
                 flex,
             }
         } else {
-            tracing::warn!("Flex value should be > 0.0 (was {flex}). See the docs for masonry::widgets::Flex for more information");
+            tracing::warn!(
+                "Flex value should be > 0.0 (was {flex}). See the docs for masonry::widgets::Flex for more information"
+            );
             Child::Fixed {
                 widget,
                 alignment: params.alignment,

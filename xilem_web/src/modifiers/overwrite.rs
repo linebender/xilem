@@ -184,10 +184,10 @@ macro_rules! overwrite_bool_modifier_view {
             State: 'static,
             Action: 'static,
             V: $crate::DomView<
-                State,
-                Action,
-                Element: $crate::modifiers::WithModifier<super::$modifier>,
-            >,
+                    State,
+                    Action,
+                    Element: $crate::modifiers::WithModifier<super::$modifier>,
+                >,
             for<'a> <V::Element as $crate::core::ViewElement>::Mut<'a>:
                 $crate::modifiers::WithModifier<super::$modifier>,
         {

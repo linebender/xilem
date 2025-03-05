@@ -23,8 +23,8 @@ use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
 use masonry::peniko::Color;
 use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace, trace_span};
 use vello::Scene;
 use winit::window::Window;
 

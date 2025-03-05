@@ -6,7 +6,7 @@
 use insta::assert_debug_snapshot;
 
 use crate::testing::{
-    widget_ids, Record, Recording, ReplaceChild, TestHarness, TestWidgetExt as _,
+    Record, Recording, ReplaceChild, TestHarness, TestWidgetExt as _, widget_ids,
 };
 use crate::widgets::{Flex, Label, SizedBox};
 use crate::*;

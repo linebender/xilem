@@ -16,10 +16,10 @@ use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
-    button, flex, image, inline_prose, portal, prose, sized_box, spinner, worker, zstack, Axis,
-    FlexExt, FlexSpacer, Padding, ZStackExt,
+    Axis, FlexExt, FlexSpacer, Padding, ZStackExt, button, flex, image, inline_prose, portal,
+    prose, sized_box, spinner, worker, zstack,
 };
-use xilem::{palette, EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem, palette};
 
 /// The main state of the application.
 struct HttpCats {
@@ -45,7 +45,7 @@ enum ImageState {
 }
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<Self> {
+    fn view(&mut self) -> impl WidgetView<Self> + use<> {
         let left_column = sized_box(portal(flex((
             prose("Status"),
             self.statuses
@@ -163,7 +163,7 @@ async fn image_from_url(url: &str) -> anyhow::Result<Image> {
 }
 
 impl Status {
-    fn list_view(&mut self) -> impl WidgetView<HttpCats> {
+    fn list_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
         let code = self.code;
         flex((
             // TODO: Reduce allocations here?
@@ -180,7 +180,7 @@ impl Status {
         .direction(Axis::Horizontal)
     }
 
-    fn details_view(&mut self) -> impl WidgetView<HttpCats> {
+    fn details_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")
@@ -276,7 +276,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 

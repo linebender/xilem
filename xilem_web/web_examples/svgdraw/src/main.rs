@@ -14,7 +14,7 @@ use xilem_web::interfaces::{
 use xilem_web::modifiers::style as s;
 use xilem_web::svg::kurbo::{BezPath, Point, QuadSpline, Shape, Stroke};
 use xilem_web::svg::peniko::Color;
-use xilem_web::{document_body, input_event_target_value, AnyDomView, App, DomFragment};
+use xilem_web::{AnyDomView, App, DomFragment, document_body, input_event_target_value};
 
 const RAINBOW_COLORS: [Color; 11] = [
     Color::from_rgb8(228, 3, 3),     // Red
@@ -45,7 +45,7 @@ impl SplineLine {
         }
     }
 
-    fn view<State: 'static>(&self) -> impl SvgPathElement<State> {
+    fn view<State: 'static>(&self) -> impl SvgPathElement<State> + use<State> {
         QuadSpline::new(self.points.clone())
             .to_quads()
             .fold(BezPath::new(), |mut b, q| {
@@ -135,7 +135,7 @@ impl Draw {
         }
     }
 
-    fn view(&mut self) -> impl DomFragment<Self> {
+    fn view(&mut self) -> impl DomFragment<Self> + use<> {
         let x = -self.canvas_position.x;
         let y = -self.canvas_position.y;
         let zoom = self.zoom;

@@ -9,8 +9,8 @@
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
 use accesskit::{Node, Role};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace_span, Span};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{

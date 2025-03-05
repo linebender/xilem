@@ -78,7 +78,7 @@ struct Counter {
     num: i32,
 }
 
-fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> {
+fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
     flex((
         label(format!("{}", data.num)),
         button("increment", |data: &mut Counter| data.num += 1),
@@ -149,7 +149,7 @@ You should also expect to use the adapters from Xilem Core, including:
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Xilem has been verified to compile with **Rust 1.82** and later.
+This version of Xilem has been verified to compile with **Rust 1.85** and later.
 
 Future versions of Xilem might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

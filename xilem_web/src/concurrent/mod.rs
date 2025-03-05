@@ -4,10 +4,10 @@
 //! Async views, allowing concurrent operations, like fetching data from a server
 
 mod task;
-pub use task::{task, task_raw, ShutdownSignal, Task, TaskProxy};
+pub use task::{ShutdownSignal, Task, TaskProxy, task, task_raw};
 
 mod interval;
-pub use interval::{interval, Interval};
+pub use interval::{Interval, interval};
 
 mod memoized_await;
-pub use memoized_await::{memoized_await, MemoizedAwait};
+pub use memoized_await::{MemoizedAwait, memoized_await};

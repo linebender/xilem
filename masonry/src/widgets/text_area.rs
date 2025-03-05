@@ -7,20 +7,20 @@ use std::mem::Discriminant;
 use std::time::Instant;
 
 use accesskit::{Node, NodeId, Role};
+use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use parley::layout::Alignment;
-use parley::PlainEditor;
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
+use tracing::{Span, trace_span};
+use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
 use vello::peniko::{Brush, Fill};
-use vello::Scene;
 use winit::keyboard::{Key, NamedKey};
 
 use crate::core::{
-    default_styles, render_text, AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx,
-    LayoutCtx, PaintCtx, PointerButton, PointerEvent, QueryCtx, RegisterCtx, StyleProperty,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
+    PointerButton, PointerEvent, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, default_styles, render_text,
 };
 use crate::widgets::Padding;
 use crate::{palette, theme};

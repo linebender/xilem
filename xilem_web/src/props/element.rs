@@ -4,7 +4,7 @@
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use crate::modifiers::{Attributes, Children, Classes, Modifier, Styles};
-use crate::{document, AnyPod, Pod, PodFlags, ViewCtx};
+use crate::{AnyPod, Pod, PodFlags, ViewCtx, document};
 
 // Lazy access to attributes etc. to avoid allocating unnecessary memory when it isn't needed
 // Benchmarks have shown, that this can significantly increase performance and reduce memory usage...

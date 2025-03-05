@@ -16,10 +16,10 @@ use std::time::UNIX_EPOCH;
 
 use time::macros::format_description;
 use tracing::subscriber::SetGlobalDefaultError;
+use tracing_subscriber::EnvFilter;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
-use tracing_subscriber::EnvFilter;
 
 #[cfg(not(target_arch = "wasm32"))]
 /// Initialise tracing for a non-web platform with the given `default_level`.

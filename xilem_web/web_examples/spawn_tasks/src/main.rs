@@ -6,14 +6,14 @@
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use futures::{select, FutureExt};
+use futures::{FutureExt, select};
 use gloo_timers::future::TimeoutFuture;
-use xilem_web::concurrent::{task, ShutdownSignal, TaskProxy};
+use xilem_web::concurrent::{ShutdownSignal, TaskProxy, task};
 use xilem_web::core::fork;
 use xilem_web::core::one_of::Either;
 use xilem_web::elements::html;
 use xilem_web::interfaces::Element;
-use xilem_web::{document_body, App};
+use xilem_web::{App, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -52,7 +52,7 @@ async fn create_ping_task(proxy: TaskProxy, shutdown_signal: ShutdownSignal) {
     log::debug!("Stop ping task");
 }
 
-fn app_logic(state: &mut AppState) -> impl Element<AppState> {
+fn app_logic(state: &mut AppState) -> impl Element<AppState> + use<> {
     let task = task(
         create_ping_task,
         |state: &mut AppState, message: Message| match message {

@@ -6,7 +6,7 @@
 
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::{Element, HtmlButtonElement};
-use xilem_web::{document_body, App, DomFragment};
+use xilem_web::{App, DomFragment, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -51,12 +51,12 @@ fn btn(
 }
 
 /// And functions that return a sequence of views.
-fn huzzah(state: &mut AppState) -> impl DomFragment<AppState> {
+fn huzzah(state: &mut AppState) -> impl DomFragment<AppState> + use<> {
     (state.clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 }
 
 /// Even the root `app_logic` can return a sequence of views
-fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> + use<> {
     (
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),

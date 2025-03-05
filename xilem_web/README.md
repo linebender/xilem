@@ -37,7 +37,7 @@ use xilem_web::{
     App,
 };
 
-fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> {
+fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> + use<> {
     div((
         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
@@ -52,7 +52,7 @@ pub fn main() {
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Xilem Web has been verified to compile with **Rust 1.82** and later.
+This version of Xilem Web has been verified to compile with **Rust 1.85** and later.
 
 Future versions of Xilem Web might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

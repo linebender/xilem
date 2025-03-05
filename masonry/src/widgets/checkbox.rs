@@ -4,10 +4,10 @@
 //! A checkbox widget.
 
 use accesskit::{Node, Role, Toggled};
-use smallvec::{smallvec, SmallVec};
-use tracing::{trace, trace_span, Span};
-use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
+use smallvec::{SmallVec, smallvec};
+use tracing::{Span, trace, trace_span};
 use vello::Scene;
+use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -15,7 +15,7 @@ use crate::core::{
     WidgetPod,
 };
 use crate::theme;
-use crate::util::{fill_lin_gradient, stroke, UnitPoint};
+use crate::util::{UnitPoint, fill_lin_gradient, stroke};
 use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
@@ -235,7 +235,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
-    use crate::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     use crate::theme::PRIMARY_LIGHT;
 
     #[test]

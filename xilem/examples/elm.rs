@@ -9,8 +9,8 @@
 
 use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::core::{adapt, map_action, MessageResult};
-use xilem::view::{button, flex, label, Axis};
+use xilem::core::{MessageResult, adapt, map_action};
+use xilem::view::{Axis, button, flex, label};
 use xilem::{EventLoop, WidgetView, Xilem};
 
 #[derive(Default)]
@@ -65,7 +65,7 @@ fn adapt_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
     .direction(Axis::Horizontal)
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     flex((
         map_action(
             elm_counter(state.map_action_count),

@@ -14,7 +14,7 @@ use crate::core::{AppendVec, ElementSplice, MessageResult, Mut, View, ViewId, Vi
 use crate::modifiers::Children;
 use crate::vec_splice::VecSplice;
 use crate::{
-    document, AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, Pod, ViewCtx, HTML_NS,
+    AnyPod, DomFragment, DomNode, DynMessage, FromWithContext, HTML_NS, Pod, ViewCtx, document,
 };
 
 // sealed, because this should only cover `ViewSequences` with the blanket impl below

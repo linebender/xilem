@@ -8,11 +8,11 @@
 use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::view::{
-    button, flex, grid, label, prose, sized_box, Axis, FlexExt, FlexSpacer, GridExt,
+    Axis, FlexExt, FlexSpacer, GridExt, button, flex, grid, label, prose, sized_box,
 };
-use xilem::{palette, Color, EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
 
-fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     flex((
         sized_box(flex(()).must_fill_major_axis(true)).height(50.), // Padding because of the info bar on Android
         flex((
@@ -43,7 +43,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
     .must_fill_major_axis(true)
 }
 
-fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> {
+fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     let mut grid_items = vec![];
     'outer: for y in 0..data.size as usize {
         let row_idx = data.start_index + y * data.size as usize;
@@ -186,7 +186,7 @@ fn main() -> Result<(), EventLoopError> {
     unsafe_code,
     reason = "We believe that there are no other declarations using this name in the compiled objects here"
 )]
-#[no_mangle]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 

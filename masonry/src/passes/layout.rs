@@ -117,9 +117,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     if trace {
         trace!(
             "Computed layout: size={}, baseline={}, insets={:?}",
-            new_size,
-            state.item.baseline_offset,
-            state.item.paint_insets,
+            new_size, state.item.baseline_offset, state.item.paint_insets,
         );
     }
 
