@@ -632,12 +632,8 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).baseline_offset
     }
 
-    /// Get the given child's layout rect.
-    ///
-    /// ## Panics
-    ///
-    /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
-    /// have not been called yet for the child.
+    // TODO - Remove (used in Flex)
+    #[doc(hidden)]
     #[track_caller]
     pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Rect {
         self.assert_layout_done(child, "child_layout_rect");
@@ -667,7 +663,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
         self.assert_layout_done(child, "child_size");
-        self.get_child_state(child).layout_rect().size()
+        self.get_child_state(child).size
     }
 
     /// Skips running the layout pass and calling [`LayoutCtx::place_child`] on the child.
@@ -766,16 +762,6 @@ impl_context_method!(
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
             self.widget_state.size
-        }
-
-        /// The layout rect of the widget in window coordinates.
-        ///
-        /// This is the layout [size](Self::size) and [window_origin](Self::window_origin) combined.
-        ///
-        /// See [layout rect documentation](crate::doc::doc_06_masonry_concepts#layout-rect)
-        /// for details.
-        pub fn global_layout_rect(&self) -> Rect {
-            Rect::from_origin_size(self.widget_state.window_origin(), self.widget_state.size)
         }
 
         // TODO - Remove

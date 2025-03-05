@@ -294,6 +294,8 @@ impl WidgetState {
     ///
     /// By default, returns the same as [`Self::bounding_rect`].
     pub(crate) fn get_ime_area(&self) -> Rect {
+        // Note: this returns sensible values for a widget that is translated and/or rescaled.
+        // Other transformations like rotation may produce weird IME areas.
         self.window_transform
             .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size.to_rect()))
     }

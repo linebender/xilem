@@ -472,7 +472,8 @@ impl TestHarness {
     #[track_caller]
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         let widget = self.get_widget(id);
-        let widget_center = widget.ctx().global_layout_rect().center();
+        let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
+        let widget_center = widget.ctx().widget_state.window_transform * local_widget_center;
 
         if !widget.ctx().accepts_pointer_interaction() {
             panic!("Widget {id} doesn't accept pointer events");

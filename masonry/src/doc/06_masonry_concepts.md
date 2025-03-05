@@ -108,24 +108,24 @@ These properties are mostly used for styling and event handling.
 See [Reading Widget Properties](crate::doc::doc_04b_widget_properties) for more info.
 
 
-## Layout rect
-
-A widget's layout rect includes its self-declared size, and the position attributed by its parent (local position) / parents (global position).
-
-Pointer events cannot target a widget if they are outside its layout rect, though they can target its children (see **Bounding rect** section).
-
-A layout rect doesn't necessarily have a formal definition; it's generally where the widget will be drawn, though a widget can be drawn outside its layout rect; it's usually a widget's own space and containers will try to avoid having its children's layout rects overlap.
-
-
 ## Bounding rect
 
-A widget's bounding rect is a rectangle inside of which pointer events might affect either the widget or its descendants.
+A widget's bounding rect is a window-space axis-aligned rectangle inside of which pointer events might affect either the widget or its descendants.
 
 In general, the bounding rect is a union or a widget's layout rect and the bounding rects of all its descendants.
 
 The bounding rects of the widget tree form a kind of "bounding volume hierarchy": when looking to find which widget a pointer is on, Masonry will automatically exclude any widget if the pointer is outside its bounding rect.
 
 <!-- TODO - Include illustration. -->
+
+<!-- TODO - Add section about clip paths and pointer detection. -->
+
+
+## Layout rect
+
+Previous versions of Masonry had a concept of a widget's "layout rect", composed of its self-declared size and the position attributed by its parent.
+
+However, given that widgets can have arbitrary transforms, the concept of an axis-aligned layout rect doesn't really make sense anymore.
 
 
 ## Safety rails
