@@ -263,7 +263,7 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Checkout LFS files
-        run: git lfs checkout ${{ env.LFS_FILES }}
+        run: git lfs checkout '${{ env.LFS_FILES }}'
         continue-on-error: true
 
       - name: Install Rust ${{ env.RUST_STABLE_VER }}
