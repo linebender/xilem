@@ -343,6 +343,14 @@ impl Widget for ColorRectangle {
 }
 ```
 
+## Properties
+
+Most of the methods we've listed take a `props: &mut PropertiesMut<'_>` argument.
+
+We won't cover properties in this chapter.
+See [Reading Widget Properties](crate::doc::doc_04b_widget_properties) for more info.
+
+
 ## Widget mutation
 
 In Masonry, widgets generally can't be mutated directly.
