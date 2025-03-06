@@ -741,7 +741,8 @@ impl MasonryState<'_> {
                     window.show_window_menu(position);
                 }
                 RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
-                    let (widget, state) = self.render_root.widget_arena.get_pair(widget_id);
+                    let (widget, state, _properties) =
+                        self.render_root.widget_arena.get_all(widget_id);
                     let widget_name = widget.item.short_type_name();
                     let display_name = if let Some(debug_text) = widget.item.get_debug_text() {
                         format!("{widget_name}<{debug_text}>")

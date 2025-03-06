@@ -6,7 +6,8 @@
 use accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
+    WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
 use smallvec::{SmallVec, smallvec};
@@ -182,9 +183,27 @@ impl<
     I: Widget + FromDynWidget + ?Sized,
 > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         match self {
@@ -200,7 +219,12 @@ impl<
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         match self {
             Self::A(w) => {
                 let size = ctx.run_layout(w, bc);
@@ -250,13 +274,19 @@ impl<
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         match self {

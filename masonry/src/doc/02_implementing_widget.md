@@ -25,18 +25,18 @@ Widgets are types which implement the [`Widget`] trait:
 
 ```rust,ignore
 trait Widget {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent);
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent);
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent);
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &PointerEvent);
+    fn on_text_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &TextEvent);
+    fn on_access_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &AccessEvent);
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64);
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update);
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, interval: u64);
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update);
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
+    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size;
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene);
     fn accessibility_role(&self) -> Role;
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node);
 
     // ...
 }
@@ -90,7 +90,7 @@ use masonry::core::{
 };
 
 impl Widget for ColorRectangle {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
         match event {
             PointerEvent::PointerDown(PointerButton::Primary, _) => {
                 ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
@@ -99,9 +99,9 @@ impl Widget for ColorRectangle {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+    fn on_access_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
             match event.action {
                 accesskit::Action::Default => {
                     ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
@@ -116,7 +116,7 @@ impl Widget for ColorRectangle {
 
 We handle pointer events and accessibility events the same way: we check the event type, and if it's a left-click, we submit an action.
 
-Submitting an action lets Masonry that a semantically meaningful event has occurred; Masonry will call `AppDriver::on_action()` with the action before the end of the frame.
+Submitting an action lets Masonry know that a semantically meaningful event has occurred; Masonry will call `AppDriver::on_action()` with the action before the end of the frame.
 This lets higher-level frameworks like Xilem react to UI events, like a button being pressed.
 
 Implementing `on_access_event` lets us emulate click behaviors for people using assistive technologies.
@@ -136,8 +136,8 @@ use masonry::core::{
 impl Widget for ColorRectangle {
     // ...
 
-    fn on_anim_frame(&mut self, _ctx: &mut UpdateCtx, _interval: u64) {}
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn on_anim_frame(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _interval: u64) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
     // ...
 }
@@ -155,7 +155,7 @@ use masonry::core::{
 impl Widget for ColorRectangle {
     // ...
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(&mut self, _ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
         bc.constrain(self.size)
     }
 
@@ -182,7 +182,7 @@ use accesskit::{Node, Role};
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         scene.fill(
             Fill::NonZero,
@@ -197,7 +197,7 @@ impl Widget for ColorRectangle {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         node.set_default_action_verb(DefaultActionVerb::Click);
     }
 
@@ -302,7 +302,7 @@ First, we update our paint method:
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         let color = if ctx.is_hovered() {
             Color::WHITE
@@ -330,7 +330,7 @@ Let's re-implement the `update` method:
 impl Widget for ColorRectangle {
     // ...
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::HoveredChanged(_) => {
                 ctx.request_render();
@@ -342,6 +342,14 @@ impl Widget for ColorRectangle {
     // ...
 }
 ```
+
+## Properties
+
+Most of the methods we've listed take a `props: &mut PropertiesMut<'_>` argument.
+
+We won't cover properties in this chapter.
+See [Reading Widget Properties](crate::doc::doc_04b_widget_properties) for more info.
+
 
 ## Widget mutation
 

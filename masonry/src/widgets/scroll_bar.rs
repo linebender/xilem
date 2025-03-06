@@ -11,7 +11,8 @@ use vello::kurbo::Rect;
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Point, Size};
 use crate::theme;
@@ -121,7 +122,12 @@ impl ScrollBar {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for ScrollBar {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         match event {
             PointerEvent::PointerDown(_, _) => {
                 ctx.capture_pointer();
@@ -162,17 +168,33 @@ impl Widget for ScrollBar {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
         // TODO - Handle scroll-related events?
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         // TODO - handle resize
 
         let scrollbar_width = theme::SCROLLBAR_WIDTH;
@@ -185,7 +207,7 @@ impl Widget for ScrollBar {
             .into()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -210,7 +232,12 @@ impl Widget for ScrollBar {
         Role::ScrollBar
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
         // TODO
         // Use set_scroll_x/y_min/max?
     }

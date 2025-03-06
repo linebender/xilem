@@ -8,6 +8,7 @@
 //! Note: Some of these types are undocumented. They're meant to help maintainers of
 //! Masonry, not to be user-facing.
 
+use std::any::TypeId;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
@@ -20,24 +21,27 @@ use vello::Scene;
 use crate::AsAny;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
-    WidgetRef, find_widget_at_pos,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef, find_widget_at_pos,
 };
 use crate::kurbo::{Point, Size};
 use crate::widgets::SizedBox;
 use cursor_icon::CursorIcon;
 
-pub type PointerEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &PointerEvent);
-pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &TextEvent);
-pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &AccessEvent);
-pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, u64);
+pub type PointerEventFn<S> =
+    dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent);
+pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &TextEvent);
+pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &AccessEvent);
+pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, u64);
 pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
-pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &Update);
-pub type LayoutFn<S> = dyn FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size;
+pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, &Update);
+pub type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, TypeId);
+pub type LayoutFn<S> =
+    dyn FnMut(&mut S, &mut LayoutCtx, &mut PropertiesMut<'_>, &BoxConstraints) -> Size;
 pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
-pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &mut Scene);
+pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &PropertiesRef<'_>, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
-pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx, &mut Node);
+pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx, &PropertiesRef<'_>, &mut Node);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
 
 #[cfg(FALSE)]
@@ -57,6 +61,7 @@ pub struct ModularWidget<S> {
     on_anim_frame: Option<Box<AnimFrameFn<S>>>,
     register_children: Option<Box<RegisterChildrenFn<S>>>,
     update: Option<Box<UpdateFn<S>>>,
+    property_change: Option<Box<PropertyChangeFn<S>>>,
     layout: Option<Box<LayoutFn<S>>>,
     compose: Option<Box<ComposeFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
@@ -120,6 +125,8 @@ pub enum Record {
     RC,
     /// Update
     U(Update),
+    /// Property change.
+    PC(TypeId),
     /// Layout. Records the size returned by the layout method.
     Layout(Size),
     /// Compose.
@@ -167,6 +174,7 @@ impl<S> ModularWidget<S> {
             on_anim_frame: None,
             register_children: None,
             update: None,
+            property_change: None,
             layout: None,
             compose: None,
             paint: None,
@@ -207,7 +215,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::on_pointer_event`]
     pub fn pointer_event_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut EventCtx, &PointerEvent) + 'static,
+        f: impl FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent) + 'static,
     ) -> Self {
         self.on_pointer_event = Some(Box::new(f));
         self
@@ -216,7 +224,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::on_text_event`]
     pub fn text_event_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut EventCtx, &TextEvent) + 'static,
+        f: impl FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &TextEvent) + 'static,
     ) -> Self {
         self.on_text_event = Some(Box::new(f));
         self
@@ -225,14 +233,17 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::on_access_event`]
     pub fn access_event_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut EventCtx, &AccessEvent) + 'static,
+        f: impl FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &AccessEvent) + 'static,
     ) -> Self {
         self.on_access_event = Some(Box::new(f));
         self
     }
 
     /// See [`Widget::on_anim_frame`]
-    pub fn anim_frame_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, u64) + 'static) -> Self {
+    pub fn anim_frame_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, u64) + 'static,
+    ) -> Self {
         self.on_anim_frame = Some(Box::new(f));
         self
     }
@@ -247,15 +258,27 @@ impl<S> ModularWidget<S> {
     }
 
     /// See [`Widget::update`]
-    pub fn update_fn(mut self, f: impl FnMut(&mut S, &mut UpdateCtx, &Update) + 'static) -> Self {
+    pub fn update_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, &Update) + 'static,
+    ) -> Self {
         self.update = Some(Box::new(f));
+        self
+    }
+
+    /// See [`Widget::property_changed`]
+    pub fn property_change_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut UpdateCtx, TypeId) + 'static,
+    ) -> Self {
+        self.property_change = Some(Box::new(f));
         self
     }
 
     /// See [`Widget::layout`]
     pub fn layout_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LayoutCtx, &BoxConstraints) -> Size + 'static,
+        f: impl FnMut(&mut S, &mut LayoutCtx, &mut PropertiesMut<'_>, &BoxConstraints) -> Size + 'static,
     ) -> Self {
         self.layout = Some(Box::new(f));
         self
@@ -268,7 +291,10 @@ impl<S> ModularWidget<S> {
     }
 
     /// See [`Widget::paint`]
-    pub fn paint_fn(mut self, f: impl FnMut(&mut S, &mut PaintCtx, &mut Scene) + 'static) -> Self {
+    pub fn paint_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut PaintCtx, &PropertiesRef<'_>, &mut Scene) + 'static,
+    ) -> Self {
         self.paint = Some(Box::new(f));
         self
     }
@@ -280,7 +306,10 @@ impl<S> ModularWidget<S> {
     }
 
     /// See [`Widget::accessibility`]
-    pub fn access_fn(mut self, f: impl FnMut(&mut S, &mut AccessCtx, &mut Node) + 'static) -> Self {
+    pub fn access_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut AccessCtx, &PropertiesRef<'_>, &mut Node) + 'static,
+    ) -> Self {
         self.access = Some(Box::new(f));
         self
     }
@@ -297,27 +326,42 @@ impl<S> ModularWidget<S> {
 
 #[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         if let Some(f) = self.on_pointer_event.as_mut() {
-            f(&mut self.state, ctx, event);
+            f(&mut self.state, ctx, props, event);
         }
     }
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
         if let Some(f) = self.on_text_event.as_mut() {
-            f(&mut self.state, ctx, event);
+            f(&mut self.state, ctx, props, event);
         }
     }
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+    ) {
         if let Some(f) = self.on_access_event.as_mut() {
-            f(&mut self.state, ctx, event);
+            f(&mut self.state, ctx, props, event);
         }
     }
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, interval: u64) {
         if let Some(f) = self.on_anim_frame.as_mut() {
-            f(&mut self.state, ctx, interval);
+            f(&mut self.state, ctx, props, interval);
         }
     }
 
@@ -327,17 +371,28 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, event: &Update) {
         if let Some(f) = self.update.as_mut() {
-            f(&mut self.state, ctx, event);
+            f(&mut self.state, ctx, props, event);
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        if let Some(f) = self.property_change.as_mut() {
+            f(&mut self.state, ctx, property_type);
+        }
+    }
+
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let Self { state, layout, .. } = self;
         layout
             .as_mut()
-            .map(|f| f(state, ctx, bc))
+            .map(|f| f(state, ctx, props, bc))
             .unwrap_or_else(|| Size::new(100., 100.))
     }
 
@@ -355,15 +410,15 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &PropertiesRef<'_>, node: &mut Node) {
         if let Some(f) = self.access.as_mut() {
-            f(&mut self.state, ctx, node);
+            f(&mut self.state, ctx, props, node);
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
         if let Some(f) = self.paint.as_mut() {
-            f(&mut self.state, ctx, scene);
+            f(&mut self.state, ctx, props, scene);
         }
     }
 
@@ -402,9 +457,17 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn find_widget_at_pos<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
+        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_at_pos(&WidgetRef { widget: self, ctx }, pos)
+        find_widget_at_pos(
+            &WidgetRef {
+                widget: self,
+                properties: props,
+                ctx,
+            },
+            pos,
+        )
     }
 
     fn type_name(&self) -> &'static str {
@@ -438,7 +501,7 @@ impl ReplaceChild {
 
 impl Widget for ReplaceChild {
     #[cfg(FALSE)]
-    fn on_event(&mut self, ctx: &mut EventCtx, event: &Event) {
+    fn on_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &Event) {
         #[cfg(FALSE)]
         if let Event::Command(cmd) = event {
             if cmd.is(REPLACE_CHILD) {
@@ -450,31 +513,62 @@ impl Widget for ReplaceChild {
         self.child.on_event(ctx, event)
     }
 
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.child);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx, _property_type: TypeId) {}
+
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         ctx.run_layout(&mut self.child, bc)
     }
 
     fn compose(&mut self, _ctx: &mut ComposeCtx) {}
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         todo!()
@@ -516,24 +610,39 @@ impl Recording {
 
 #[warn(clippy::missing_trait_methods)]
 impl<W: Widget> Widget for Recorder<W> {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         self.recording.push(Record::PE(event.clone()));
-        self.child.on_pointer_event(ctx, event);
+        self.child.on_pointer_event(ctx, props, event);
     }
 
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
         self.recording.push(Record::TE(event.clone()));
-        self.child.on_text_event(ctx, event);
+        self.child.on_text_event(ctx, props, event);
     }
 
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+    ) {
         self.recording.push(Record::AE(event.clone()));
-        self.child.on_access_event(ctx, event);
+        self.child.on_access_event(ctx, props, event);
     }
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, interval: u64) {
         self.recording.push(Record::AF(interval));
-        self.child.on_anim_frame(ctx, interval);
+        self.child.on_anim_frame(ctx, props, interval);
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
@@ -541,13 +650,23 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.register_children(ctx);
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, event: &Update) {
         self.recording.push(Record::U(event.clone()));
-        self.child.update(ctx, event);
+        self.child.update(ctx, props, event);
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
-        let size = self.child.layout(ctx, bc);
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        self.recording.push(Record::PC(property_type));
+        self.child.property_changed(ctx, property_type);
+    }
+
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
+        let size = self.child.layout(ctx, props, bc);
         self.recording.push(Record::Layout(size));
         size
     }
@@ -557,18 +676,18 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.compose(ctx);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
         self.recording.push(Record::Paint);
-        self.child.paint(ctx, scene);
+        self.child.paint(ctx, props, scene);
     }
 
     fn accessibility_role(&self) -> Role {
         self.child.accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &PropertiesRef<'_>, node: &mut Node) {
         self.recording.push(Record::Access);
-        self.child.accessibility(ctx, node);
+        self.child.accessibility(ctx, props, node);
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
@@ -602,9 +721,10 @@ impl<W: Widget> Widget for Recorder<W> {
     fn find_widget_at_pos<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
+        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.child.find_widget_at_pos(ctx, pos)
+        self.child.find_widget_at_pos(ctx, props, pos)
     }
 
     fn type_name(&self) -> &'static str {

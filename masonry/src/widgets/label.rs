@@ -18,8 +18,8 @@ use vello::peniko::{BlendMode, Brush};
 
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, StyleProperty, StyleSet, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetMut, default_styles, render_text,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles, render_text,
 };
 use crate::theme;
 
@@ -311,19 +311,37 @@ impl Label {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Label {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
     fn accepts_pointer_interaction(&self) -> bool {
         false
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::DisabledChanged(_) => {
                 if self.disabled_brush.is_some() {
@@ -334,7 +352,12 @@ impl Widget for Label {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let available_width = if bc.max().width.is_finite() {
             Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
         } else {
@@ -397,7 +420,7 @@ impl Widget for Label {
         bc.constrain(label_size)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
@@ -422,7 +445,7 @@ impl Widget for Label {
         Role::Label
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
         let window_origin = ctx.window_origin();
         self.accessibility.build_nodes(
             self.text.as_ref(),

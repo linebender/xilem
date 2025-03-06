@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+use std::any::{Any, TypeId};
 use std::fmt::Display;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -16,7 +16,8 @@ use vello::Scene;
 use crate::AsAny;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetRef,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, WidgetRef,
 };
 use crate::kurbo::{Point, Size};
 
@@ -128,19 +129,37 @@ pub trait Widget: AsAny + AsDynWidget {
     ///
     /// Pointer events will target the widget under the pointer, and then the
     /// event will bubble to each of its parents.
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx, event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
+    }
 
     /// Handle a text event.
     ///
     /// Text events will target the [focused widget], then bubble to each parent.
     ///
     /// [focused widget]: crate::doc::doc_06_masonry_concepts#text-focus
-    fn on_text_event(&mut self, ctx: &mut EventCtx, event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
+    }
 
     /// Handle an event from the platform's accessibility API.
     ///
     /// Accessibility events target a specific widget id, then bubble to each parent.
-    fn on_access_event(&mut self, ctx: &mut EventCtx, event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+    ) {
+    }
 
     /// Called at the beginning of a new animation frame.
     ///
@@ -161,7 +180,13 @@ pub trait Widget: AsAny + AsDynWidget {
     /// For that reason, you should try to avoid doing anything computationally
     /// intensive in response to an `AnimFrame` event: it might make the app miss
     /// the monitor's refresh, causing lag or jerky animations.
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {}
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+    }
 
     // TODO - Reorder methods to match 02_implementing_widget.md
 
@@ -179,7 +204,11 @@ pub trait Widget: AsAny + AsDynWidget {
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`Update`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {}
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {}
+
+    // TODO - Remove default implementation
+    /// Handle a property being added, changed, or removed.
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {}
 
     /// Compute layout and return the widget's size.
     ///
@@ -206,7 +235,12 @@ pub trait Widget: AsAny + AsDynWidget {
     /// While each widget should try to return a size that fits the input constraints,
     /// **any widget may return a size that doesn't fit its constraints**, and container
     /// widgets should handle those cases gracefully.
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size;
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size;
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
@@ -216,11 +250,11 @@ pub trait Widget: AsAny + AsDynWidget {
     /// children, or annotations (for example, scrollbars) by painting
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene);
 
     fn accessibility_role(&self) -> Role;
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, node: &mut Node);
+    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node);
 
     /// Return ids of this widget's children.
     ///
@@ -315,11 +349,13 @@ pub trait Widget: AsAny + AsDynWidget {
     fn find_widget_at_pos<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
+        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
         find_widget_at_pos(
             &WidgetRef {
                 widget: self.as_dyn(),
+                properties: props,
                 ctx,
             },
             pos,
@@ -383,7 +419,11 @@ pub fn find_widget_at_pos<'c>(
         // of overlapping children.
         for child_id in widget.children_ids().iter().rev() {
             let child_ref = widget.ctx.get(*child_id);
-            if let Some(child) = child_ref.widget.find_widget_at_pos(child_ref.ctx, pos) {
+            if let Some(child) =
+                child_ref
+                    .widget
+                    .find_widget_at_pos(child_ref.ctx, child_ref.properties, pos)
+            {
                 return Some(child);
             }
         }

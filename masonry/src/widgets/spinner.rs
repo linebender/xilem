@@ -12,8 +12,9 @@ use vello::Scene;
 use vello::kurbo::{Affine, Cap, Line, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut,
 };
 use crate::kurbo::{Point, Size, Vec2};
 use crate::peniko::Color;
@@ -73,13 +74,36 @@ impl Spinner {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Spinner {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, interval: u64) {
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
         self.t += (interval as f64) * 1e-9;
         if self.t >= 1.0 {
             self.t = self.t.rem_euclid(1.0);
@@ -90,7 +114,7 @@ impl Widget for Spinner {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn update(&mut self, ctx: &mut UpdateCtx, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::WidgetAdded => {
                 ctx.request_anim_frame();
@@ -99,7 +123,12 @@ impl Widget for Spinner {
         }
     }
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()
         } else {
@@ -110,7 +139,7 @@ impl Widget for Spinner {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
         let center = Point::new(width / 2.0, height / 2.0);
@@ -141,7 +170,13 @@ impl Widget for Spinner {
         Role::Unknown
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         SmallVec::new()

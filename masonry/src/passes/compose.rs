@@ -1,6 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use anymap3::AnyMap;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
@@ -14,6 +15,7 @@ fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
+    mut properties: ArenaMut<'_, AnyMap>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {
@@ -22,6 +24,7 @@ fn compose_widget(
         global_state,
         widget.reborrow(),
         state.reborrow(),
+        properties.reborrow(),
     );
 
     let transformed = parent_transformed || state.item.transform_changed;
@@ -65,11 +68,13 @@ fn compose_widget(
         id,
         widget.reborrow_mut(),
         state.children,
-        |widget, mut state| {
+        properties.children,
+        |widget, mut state, properties| {
             compose_widget(
                 global_state,
                 widget,
                 state.reborrow_mut(),
+                properties,
                 transformed,
                 parent_transform,
             );
@@ -103,11 +108,12 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
         root.global_state.needs_pointer_pass = true;
     }
 
-    let (root_widget, root_state) = root.widget_arena.get_pair_mut(root.root.id());
+    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     compose_widget(
         &mut root.global_state,
         root_widget,
         root_state,
+        root_properties,
         false,
         Affine::IDENTITY,
     );

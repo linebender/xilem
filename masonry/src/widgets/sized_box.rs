@@ -3,6 +3,8 @@
 
 //! A widget with predefined size.
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
@@ -11,10 +13,12 @@ use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
+use crate::properties::BackgroundColor;
 use crate::util::stroke;
 
 // FIXME - Improve all doc in this module ASAP.
@@ -453,11 +457,29 @@ impl SizedBox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for SizedBox {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx) {
         if let Some(ref mut child) = self.child {
@@ -465,7 +487,16 @@ impl Widget for SizedBox {
         }
     }
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        BackgroundColor::prop_changed(ctx, property_type);
+    }
+
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         // Shrink constraints by border offset
         let border_width = match &self.border {
             Some(border) => border.width,
@@ -510,17 +541,25 @@ impl Widget for SizedBox {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let corner_radius = self.corner_radius;
 
-        if let Some(background) = self.background.as_mut() {
+        // TODO - Handle properties more gracefully.
+        // This is more of a proof of concept.
+        let background = self.background.clone().or_else(|| {
+            props
+                .get::<BackgroundColor>()
+                .map(|background| background.color.into())
+        });
+
+        if let Some(background) = background {
             let panel = ctx.size().to_rounded_rect(corner_radius);
 
             trace_span!("paint background").in_scope(|| {
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    &*background,
+                    &background,
                     Some(Affine::IDENTITY),
                     &panel,
                 );
@@ -542,7 +581,13 @@ impl Widget for SizedBox {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         if let Some(child) = &self.child {
@@ -709,4 +754,44 @@ mod tests {
     }
 
     // TODO - add screenshot tests for different brush types
+
+    // --- MARK: PROP TESTS ---
+
+    #[test]
+    fn background_brush_property() {
+        let widget = SizedBox::empty().width(40.).height(40.).rounded(20.);
+
+        let mut harness = TestHarness::create(widget);
+
+        harness.edit_root_widget(|mut sized_box| {
+            let brush = BackgroundColor {
+                color: palette::css::RED,
+            };
+            sized_box.insert_prop(brush);
+        });
+        assert_render_snapshot!(harness, "background_brush_red");
+
+        harness.edit_root_widget(|mut sized_box| {
+            let brush = BackgroundColor {
+                color: palette::css::GREEN,
+            };
+            *sized_box.get_prop_mut().unwrap() = brush;
+        });
+        assert_render_snapshot!(harness, "background_brush_green");
+
+        harness.edit_root_widget(|mut sized_box| {
+            let brush = BackgroundColor {
+                color: palette::css::BLUE,
+            };
+            sized_box.prop_entry().and_modify(|entry| {
+                *entry = brush;
+            });
+        });
+        assert_render_snapshot!(harness, "background_brush_blue");
+
+        harness.edit_root_widget(|mut sized_box| {
+            sized_box.remove_prop::<BackgroundColor>();
+        });
+        assert_render_snapshot!(harness, "background_brush_removed");
+    }
 }

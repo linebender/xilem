@@ -4,6 +4,7 @@
 use std::collections::{HashMap, VecDeque};
 
 use accesskit::{ActionRequest, TreeUpdate};
+use anymap3::AnyMap;
 use parley::fontique::{self, Collection, CollectionOptions, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
@@ -21,8 +22,8 @@ use web_time::Instant;
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, PointerEvent, QueryCtx, TextEvent, Widget, WidgetArena,
-    WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
+    AccessEvent, Action, BrushIndex, PointerEvent, PropertiesRef, QueryCtx, TextEvent, Widget,
+    WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -294,6 +295,7 @@ impl RenderRoot {
             widget_arena: WidgetArena {
                 widgets: TreeArena::new(),
                 states: TreeArena::new(),
+                properties: TreeArena::new(),
             },
             rebuild_access_tree: true,
             debug_paint,
@@ -476,21 +478,32 @@ impl RenderRoot {
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.states.roots();
         let root_widget_token = self.widget_arena.widgets.roots();
+        let root_properties_token = self.widget_arena.properties.roots();
         let state_ref = root_state_token
             .into_item(self.root.id())
             .expect("root widget not in widget tree");
         let widget_ref = root_widget_token
             .into_item(self.root.id())
             .expect("root widget not in widget tree");
-
+        let properties_ref = root_properties_token
+            .into_item(self.root.id())
+            .expect("root widget not in widget tree");
         let widget = &**widget_ref.item;
         let ctx = QueryCtx {
             global_state: &self.global_state,
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
+            properties_children: properties_ref.children,
         };
-        WidgetRef { ctx, widget }
+        let properties = PropertiesRef {
+            map: properties_ref.item,
+        };
+        WidgetRef {
+            ctx,
+            properties,
+            widget,
+        }
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
@@ -501,6 +514,11 @@ impl RenderRoot {
             .widgets
             .find(id)
             .expect("found state but not widget");
+        let properties_ref = self
+            .widget_arena
+            .properties
+            .find(id)
+            .expect("found state but not properties");
 
         let widget = &**widget_ref.item;
         let ctx = QueryCtx {
@@ -508,8 +526,16 @@ impl RenderRoot {
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
+            properties_children: properties_ref.children,
         };
-        Some(WidgetRef { ctx, widget })
+        let properties = PropertiesRef {
+            map: properties_ref.item,
+        };
+        Some(WidgetRef {
+            ctx,
+            properties,
+            widget,
+        })
     }
 
     /// Get a [`WidgetMut`] to the root widget.
@@ -622,6 +648,7 @@ impl RenderRoot {
         fn request_render_all_in(
             mut widget: ArenaMut<'_, Box<dyn Widget>>,
             state: ArenaMut<'_, WidgetState>,
+            properties: ArenaMut<'_, AnyMap>,
         ) {
             state.item.needs_paint = true;
             state.item.needs_accessibility = true;
@@ -633,14 +660,16 @@ impl RenderRoot {
                 id,
                 widget.reborrow_mut(),
                 state.children,
-                |widget, mut state| {
-                    request_render_all_in(widget, state.reborrow_mut());
+                properties.children,
+                |widget, state, properties| {
+                    request_render_all_in(widget, state, properties);
                 },
             );
         }
 
-        let (root_widget, mut root_state) = self.widget_arena.get_pair_mut(self.root.id());
-        request_render_all_in(root_widget, root_state.reborrow_mut());
+        let (root_widget, root_state, root_properties) =
+            self.widget_arena.get_all_mut(self.root.id());
+        request_render_all_in(root_widget, root_state, root_properties);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
     }
