@@ -105,17 +105,17 @@ impl ScrollBar {
 // --- MARK: WIDGETMUT ---
 impl ScrollBar {
     // TODO - Remove?
-    pub fn set_sizes(this: &mut WidgetMut<'_, Self>, portal_size: f64, content_size: f64) {
-        this.widget.portal_size = portal_size;
-        this.widget.content_size = content_size;
-        this.ctx.request_render();
+    pub fn set_sizes(self: &mut WidgetMut<'_, Self>, portal_size: f64, content_size: f64) {
+        self.widget.portal_size = portal_size;
+        self.widget.content_size = content_size;
+        self.ctx.request_render();
     }
 
     // TODO - Remove?
-    pub fn set_content_size(this: &mut WidgetMut<'_, Self>, content_size: f64) {
+    pub fn set_content_size(self: &mut WidgetMut<'_, Self>, content_size: f64) {
         // TODO - cursor_progress
-        this.widget.content_size = content_size;
-        this.ctx.request_render();
+        self.widget.content_size = content_size;
+        self.ctx.request_render();
     }
 }
 
