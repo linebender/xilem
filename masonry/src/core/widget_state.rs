@@ -96,11 +96,13 @@ pub(crate) struct WidgetState {
     // efficiently hold an arbitrary shape.
     pub(crate) clip_path: Option<Rect>,
 
-    /// This is being computed out of all ancestor transforms and `translation`
-    pub(crate) window_transform: Affine,
     /// Local transform of this widget in the parent coordinate space.
     pub(crate) transform: Affine,
-    /// translation applied by scrolling, this is applied after applying `transform` to this widget.
+    /// Global transform of this widget in the window coordinate space.
+    ///
+    /// Computed from all `transform` and `scroll_translation` values from this to the root widget.
+    pub(crate) window_transform: Affine,
+    /// Translation applied by scrolling, applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
     /// The `transform` or `scroll_translation` has changed.
     pub(crate) transform_changed: bool,
@@ -292,12 +294,32 @@ impl WidgetState {
     ///
     /// By default, returns the same as [`Self::bounding_rect`].
     pub(crate) fn get_ime_area(&self) -> Rect {
+        // Note: this returns sensible values for a widget that is translated and/or rescaled.
+        // Other transformations like rotation may produce weird IME areas.
         self.window_transform
             .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size.to_rect()))
     }
 
     pub(crate) fn window_origin(&self) -> Point {
         self.window_transform.translation().to_point()
+    }
+
+    /// Return the result of intersecting the widget's clip path (if any) with the given rect.
+    ///
+    /// Both the argument and the result are in window coordinates.
+    ///
+    /// Returns `None` if the given rect is clipped out.
+    pub(crate) fn clip_child(&self, child_rect: Rect) -> Option<Rect> {
+        if let Some(clip_path) = self.clip_path {
+            let clip_path_global = self.window_transform.transform_rect_bbox(clip_path);
+            if clip_path_global.overlaps(child_rect) {
+                Some(clip_path_global.intersect(child_rect))
+            } else {
+                None
+            }
+        } else {
+            Some(child_rect)
+        }
     }
 
     pub(crate) fn needs_rewrite_passes(&self) -> bool {

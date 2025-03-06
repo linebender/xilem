@@ -107,6 +107,27 @@ These properties are mostly used for styling and event handling.
 
 See [Reading Widget Properties](crate::doc::doc_04b_widget_properties) for more info.
 
+
+## Bounding rect
+
+A widget's bounding rect is a window-space axis-aligned rectangle inside of which pointer events might affect either the widget or its descendants.
+
+In general, the bounding rect is a union or a widget's layout rect and the bounding rects of all its descendants.
+
+The bounding rects of the widget tree form a kind of "bounding volume hierarchy": when looking to find which widget a pointer is on, Masonry will automatically exclude any widget if the pointer is outside its bounding rect.
+
+<!-- TODO - Include illustration. -->
+
+<!-- TODO - Add section about clip paths and pointer detection. -->
+
+
+## Layout rect
+
+Previous versions of Masonry had a concept of a widget's "layout rect", composed of its self-declared size and the position attributed by its parent.
+
+However, given that widgets can have arbitrary transforms, the concept of an axis-aligned layout rect doesn't really make sense anymore.
+
+
 ## Safety rails
 
 When debug assertions are on, Masonry runs a bunch of checks every frame to make sure widget code doesn't have logical errors.
