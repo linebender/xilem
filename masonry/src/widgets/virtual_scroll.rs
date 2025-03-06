@@ -4,13 +4,17 @@
 #![expect(unused, reason = "Development")]
 use std::collections::{BTreeMap, HashMap, VecDeque};
 
-use vello::kurbo::{Size, Vec2};
+use smallvec::SmallVec;
+use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::{BoxConstraints, Widget, WidgetPod};
 
 use super::CrossAxisAlignment;
 
-pub struct VirtualScrollAction;
+pub struct VirtualScrollAction {
+    add: SmallVec<[i64; 8]>,
+    remove: SmallVec<[i64; 8]>,
+}
 
 /// The model of this virtual scrolling is thus:
 ///
@@ -52,19 +56,17 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         for child in self.items_pending_removal.values_mut() {
             ctx.skip_layout(child);
         }
-        // Oh, OK, we actually already know the scroll_offset_from_anchor here...
-        let size = bc.max();
-        let child_constraints_changed = size.width == self.old_width;
-        self.old_width = size.width;
-        // What do we need the total size above the anchor to be?
-        ctx.set_clip_path(size.to_rect());
+        let viewport_size = bc.max();
+        let child_constraints_changed = viewport_size.width == self.old_width;
+        self.old_width = viewport_size.width;
+        ctx.set_clip_path(viewport_size.to_rect());
         let child_bc = BoxConstraints::new(
             Size {
-                width: size.width,
+                width: viewport_size.width,
                 height: 0.,
             },
             Size {
-                width: size.width,
+                width: viewport_size.width,
                 // TODO: Infinite constraints are... not ideal
                 height: f64::INFINITY,
             },
@@ -89,13 +91,17 @@ impl<W: Widget> Widget for VirtualScroll<W> {
 
         let count = self.current_items.len();
         let mean_item_size = (height_before_anchor + height_after_anchor) / count as f64;
-        // If we've significantly out-ran the virtual scrolling (as a loose heuristic), calculate the current anchor using a heuristic
+
+        // If we've significantly out-ran the virtual scrolling (as a loose heuristic), calculate a new anchor using a heuristic
         // and drop all currently loaded items.
-        if (self.scroll_offset_from_anchor > height_after_anchor + 3. * size.height + 3000.)
-            || (self.scroll_offset_from_anchor < -height_before_anchor - 3. * size.height - 3000.)
+        if (self.scroll_offset_from_anchor
+            > height_after_anchor + 3. * viewport_size.height + 3000.)
+            || (self.scroll_offset_from_anchor
+                < -height_before_anchor - 3. * viewport_size.height - 3000.)
         {
             let items = core::mem::take(&mut self.current_items);
-            for (idx, item) in items {
+            for (idx, mut item) in items {
+                ctx.skip_layout(&mut item);
                 self.items_pending_removal.insert(idx, item);
             }
             // TODO: Consolidate these mutations
@@ -110,26 +116,19 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                 let diff_count = diff_count.floor();
                 self.anchor_index =
                     (self.anchor_index + diff_count as i64).clamp(self.first_item, self.last_item);
-                self.scroll_offset_from_anchor += diff_count * mean_item_size;
+                self.scroll_offset_from_anchor -= diff_count * mean_item_size;
             } else {
                 debug_assert_eq!(
-                    count,
-                    0,
+                    count, 0,
                     "Assumption: If the division produced an infinite result, it's because of a divide by zero."
                 );
                 // TODO: How can we handle this sanely? We're scrolled very far down (3 pages + 3000 logical pixels),
                 // but we don't have any idea how big the items are; that could be within a single item.
+                // I guess we need to just wait for the anchor to be loaded?
             }
         } else {
             let previous_anchor = self.anchor_index;
             loop {
-                let anchor_pod = self.current_items.get(&self.anchor_index);
-                let anchor_height = if let Some(anchor_pod) = anchor_pod {
-                    ctx.child_size(anchor_pod).height
-                } else {
-                    // TODO: What should we do here?
-                    break;
-                };
                 if self.scroll_offset_from_anchor < 0. {
                     if self.anchor_index == self.first_item {
                         self.scroll_offset_from_anchor = 0.;
@@ -137,34 +136,74 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                     }
                     let new_idx = self.anchor_index - 1;
                     let new_anchor = self.current_items.get(&new_idx);
-                    let new_anchor_height = if let Some(anchor_pod) = anchor_pod {
-                        ctx.child_size(anchor_pod).height
+                    let new_anchor_height = if let Some(new_anchor) = new_anchor {
+                        ctx.child_size(new_anchor).height
                     } else {
-                        // We will need to request this anchor, but we'll do that in the next step
+                        // We need to request this new anchor to be loaded
                         break;
                     };
                     self.scroll_offset_from_anchor += new_anchor_height;
-                    height_after_anchor += anchor_height;
+                    height_before_anchor -= new_anchor_height;
+                    height_after_anchor += new_anchor_height;
                     self.anchor_index = new_idx;
-                } else if self.scroll_offset_from_anchor > anchor_height {
-                    if self.anchor_index != self.last_item {
-                        self.scroll_offset_from_anchor = anchor_height;
+                } else {
+                    let anchor_pod = self.current_items.get(&self.anchor_index);
+                    let anchor_height = if let Some(anchor_pod) = anchor_pod {
+                        ctx.child_size(anchor_pod).height
+                    } else {
+                        // We need to request this new anchor to be loaded
+                        break;
+                    };
+                    if self.scroll_offset_from_anchor > anchor_height {
+                        if self.anchor_index != self.last_item {
+                            self.scroll_offset_from_anchor = anchor_height;
+                            break;
+                        }
+                        self.scroll_offset_from_anchor -= anchor_height;
+                        height_before_anchor += anchor_height;
+                        self.anchor_index += 1;
+                    } else {
                         break;
                     }
-                    self.scroll_offset_from_anchor -= anchor_height;
-                    height_before_anchor += anchor_height;
-                    self.anchor_index += 1;
-                } else {
-                    break;
-                };
+                }
             }
         }
         // TODO: I *suspect* we need to do something else?
         // self.anchor_index = new_anchor;
 
-        let mut y = -height_before_anchor;
         // TODO: How can we even plausibly handle arbitrary transforms?
-        size
+        let mut y = -height_before_anchor;
+        for (idx, item) in &mut self.current_items {
+            let size = ctx.child_size(item);
+            ctx.place_child(item, Point::new(0., y));
+            // TODO: Padding/gap?
+            y += size.height;
+        }
+
+        let target_range = if mean_item_size.is_finite() {
+            let up = (viewport_size.height * 1.5 / mean_item_size).ceil() as i64 + 1;
+            let down = (viewport_size.height * 2.5 / mean_item_size).ceil() as i64 + 1;
+            (self.anchor_index - up)..(self.anchor_index + down)
+        } else {
+            ((self.anchor_index - 2)..(self.anchor_index + 5))
+        };
+        let mut additions = SmallVec::new();
+        let mut removals = SmallVec::new();
+        for id in target_range.clone() {
+            if !self.current_items.contains_key(&id) {
+                additions.push(id);
+            }
+        }
+        for id in self.current_items.keys() {
+            if !target_range.contains(id) {
+                removals.push(*id);
+            }
+        }
+        ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
+            add: additions,
+            remove: removals,
+        })));
+        viewport_size
     }
 
     fn compose(&mut self, ctx: &mut crate::core::ComposeCtx) {
