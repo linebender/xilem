@@ -2,7 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #![expect(unused, reason = "Development")]
-use std::collections::{BTreeMap, HashMap, VecDeque};
+use std::{
+    collections::{BTreeMap, HashMap, VecDeque},
+    i64,
+    ops::Range,
+};
 
 use smallvec::SmallVec;
 use vello::kurbo::{Point, Size, Vec2};
@@ -27,11 +31,27 @@ pub struct VirtualScrollAction {
 ///    - It allows for much more control by users of how the scrolling happens
 ///
 pub struct VirtualScroll<W: Widget + ?Sized> {
-    /// Must be less than `last_item`
-    first_item: i64,
-    last_item: i64,
-    current_items: BTreeMap<i64, WidgetPod<W>>,
-    items_pending_removal: HashMap<i64, WidgetPod<W>>,
+    /// The range of items in the "id" space which are able to be used.
+    ///
+    /// This is used to cap scrolling; the items included can never scroll off-screen[^1][^2].
+    /// For example, in an email program, this would be `[id_of_most_recent_email]..=[id_of_oldest_email]`
+    /// (note that the id of the oldest email might not be known; as soon as it is known, `id_of_oldest_email`
+    /// can be set).
+    ///
+    /// The default is `i64::MIN..i64::MAX`
+    ///
+    /// [^1]: The exact interaction with a "drag down to refresh" feature has not been scrutinised.
+    /// [^2]: Currently, we lock the bottom of the range to the bottom of the final item. This should be configurable.
+    valid_range: Range<i64>,
+
+    /// The range in the id space which is "active", i.e. which the virtual scrolling controller has the
+    /// ability to lay out. Note that items is not necessarily dense in these; that is, if an
+    /// item has not been provided by the application, we don't fall over.
+    active_range: Range<i64>,
+
+    /// All children of the virtual scroller.
+    // TODO: Does this need to be a `BTreeMap`, or maybe a sparse `VecDeque`
+    items: HashMap<i64, WidgetPod<W>>,
     // TODO: Handle focus even if the focused item scrolls off-screen.
     // TODO: Maybe this should be the focused items and its two neighbours, so tab focusing works?
     // focused_item: Option<(i64, WidgetPod<W>)>,
@@ -53,9 +73,6 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         ctx: &mut crate::core::LayoutCtx,
         bc: &crate::core::BoxConstraints,
     ) -> vello::kurbo::Size {
-        for child in self.items_pending_removal.values_mut() {
-            ctx.skip_layout(child);
-        }
         let viewport_size = bc.max();
         let child_constraints_changed = viewport_size.width == self.old_width;
         self.old_width = viewport_size.width;
@@ -75,7 +92,19 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         // The height of all loaded items after the anchor.
         // Note that this includes the height of the anchor itself.
         let mut height_after_anchor = 0.;
-        for (idx, child) in &mut self.current_items {
+        let mut count = 0_u64;
+        let mut first_item = i64::MAX;
+        let mut last_item = i64::MIN;
+        for (idx, child) in &mut self.items {
+            if !self.active_range.contains(idx) {
+                // This item is stashed, and so can't be used.
+                // (If we decide we want to use it, we'll do so by re-enabling
+                // it in a following mutate pass). Note that we might still access its height;
+                // that might not be *right*, but it gives an estimate anyway
+                ctx.skip_layout(child);
+                continue;
+            }
+
             let resulting_size = if child_constraints_changed || ctx.child_needs_layout(child) {
                 ctx.run_layout(child, &child_bc)
             } else {
@@ -87,11 +116,12 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             } else {
                 height_after_anchor += resulting_size.height;
             }
+            count += 1;
         }
 
-        let count = self.current_items.len();
         let mean_item_size = (height_before_anchor + height_after_anchor) / count as f64;
-
+        let mut additions = SmallVec::new();
+        let mut removals = SmallVec::new();
         // If we've significantly out-ran the virtual scrolling (as a loose heuristic), calculate a new anchor using a heuristic
         // and drop all currently loaded items.
         if (self.scroll_offset_from_anchor
@@ -100,17 +130,12 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                 < -height_before_anchor - 3. * viewport_size.height - 3000.)
         {
             let items = core::mem::take(&mut self.current_items);
+            // TODO: We *probably* want to slide down the items.
             for (idx, mut item) in items {
                 ctx.skip_layout(&mut item);
                 self.items_pending_removal.insert(idx, item);
+                removals.push(idx);
             }
-            // TODO: Consolidate these mutations
-            ctx.mutate_self_later(|mut this| {
-                let mut this = this.downcast::<Self>();
-                for element in this.widget.items_pending_removal.values_mut() {
-                    this.ctx.set_stashed(element, true);
-                }
-            });
             if mean_item_size.is_finite() {
                 let diff_count = self.scroll_offset_from_anchor / mean_item_size;
                 let diff_count = diff_count.floor();
@@ -187,8 +212,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         } else {
             ((self.anchor_index - 2)..(self.anchor_index + 5))
         };
-        let mut additions = SmallVec::new();
-        let mut removals = SmallVec::new();
+
         for id in target_range.clone() {
             if !self.current_items.contains_key(&id) {
                 additions.push(id);
@@ -199,6 +223,13 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                 removals.push(*id);
             }
         }
+        let removals = removals.clone();
+        ctx.mutate_self_later(|mut this| {
+            let mut this = this.downcast::<Self>();
+            for idx in removals {
+                this.ctx.set_stashed(element, true);
+            }
+        });
         ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
             add: additions,
             remove: removals,
