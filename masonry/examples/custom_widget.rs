@@ -20,7 +20,7 @@ use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
 use masonry::peniko::Color;
 use masonry::widgets::RootWidget;
-use parley::layout::Alignment;
+use parley::layout::{Alignment, AlignmentOptions};
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
@@ -138,7 +138,13 @@ impl Widget for CustomWidget {
 
         let mut text_layout = text_layout_builder.build(&self.0);
         text_layout.break_all_lines(None);
-        text_layout.align(None, Alignment::Start, false);
+        text_layout.align(
+            None,
+            Alignment::Start,
+            AlignmentOptions {
+                align_when_overflowing: false,
+            },
+        );
 
         // We can pass a transform matrix to rotate the text we render
         masonry::core::render_text(
