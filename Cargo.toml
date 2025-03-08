@@ -90,9 +90,7 @@ tree_arena = { version = "0.1.0", path = "tree_arena" }
 vello = "0.4.0"
 wgpu = "23.0.1"
 kurbo = "0.11.1"
-parley = { version = "0.3.0", features = [
-    "accesskit",
-] }
+parley = { version = "0.3.0", features = ["accesskit"] }
 peniko = "0.3.1"
 winit = "0.30.4"
 tracing = { version = "0.1.40", default-features = false }
