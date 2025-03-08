@@ -90,7 +90,7 @@ tree_arena = { version = "0.1.0", path = "tree_arena" }
 vello = "0.4.0"
 wgpu = "23.0.1"
 kurbo = "0.11.1"
-parley = { git = "https://github.com/linebender/parley", rev = "d4bb51b0e684681bd07be95fe0e5ad20068a10a3", features = [
+parley = { version = "0.3.0", features = [
     "accesskit",
 ] }
 peniko = "0.3.1"
