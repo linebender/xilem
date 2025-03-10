@@ -411,9 +411,7 @@ impl Widget for Label {
             self.text_layout.align(
                 Some(alignment_width),
                 self.alignment,
-                AlignmentOptions {
-                    align_when_overflowing: false,
-                },
+                AlignmentOptions::default(),
             );
         }
         let text_size = Size::new(alignment_width.into(), self.text_layout.height().into());
