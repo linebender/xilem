@@ -7,13 +7,14 @@ use std::sync::Arc;
 
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
-use tracing::{trace_span, Span};
-use vello::kurbo::Size;
+use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::Size;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut,
 };
 
 /// A widget allowing custom drawing.
@@ -82,26 +83,49 @@ impl Canvas {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Canvas {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut,
+        _event: &PointerEvent,
+    ) {
+    }
 
     fn accepts_pointer_interaction(&self) -> bool {
         true
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut,
+        _event: &TextEvent,
+    ) {
+    }
 
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _event: &AccessEvent) {}
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _event: &Update) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut, _event: &Update) {}
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut,
+        bc: &BoxConstraints,
+    ) -> Size {
         // use as much space as possible - caller can size it as necessary
         bc.max()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef, scene: &mut Scene) {
         (self.draw)(scene, ctx.size());
     }
 
@@ -109,7 +133,7 @@ impl Widget for Canvas {
         Role::Canvas
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
+    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef, node: &mut Node) {
         if let Some(text) = &self.alt_text {
             node.set_description(text.clone());
         }
