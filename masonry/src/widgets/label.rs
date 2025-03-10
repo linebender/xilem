@@ -8,7 +8,7 @@
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
-use parley::layout::Alignment;
+use parley::layout::{Alignment, AlignmentOptions};
 use parley::{Layout, LayoutAccessibility};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
@@ -408,8 +408,11 @@ impl Widget for Label {
             self.text_layout.width()
         };
         if self.alignment_changed {
-            self.text_layout
-                .align(Some(alignment_width), self.alignment, false);
+            self.text_layout.align(
+                Some(alignment_width),
+                self.alignment,
+                AlignmentOptions::default(),
+            );
         }
         let text_size = Size::new(alignment_width.into(), self.text_layout.height().into());
 
