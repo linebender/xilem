@@ -4,8 +4,8 @@
 use std::sync::Arc;
 
 use masonry::widgets;
-use vello::kurbo::Size;
 use vello::Scene;
+use vello::kurbo::Size;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -84,7 +84,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in Canvas::message, but Canvas doesn't consume any messages, this is a bug");
+        tracing::error!(
+            "Message arrived in Canvas::message, but Canvas doesn't consume any messages, this is a bug"
+        );
         MessageResult::Stale(message)
     }
 }
