@@ -1,8 +1,6 @@
 // Copyright 2025 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![warn(missing_docs)]
-
 //! A canvas widget.
 
 use std::sync::Arc;
@@ -42,7 +40,7 @@ impl Canvas {
     /// Set the text that will be used to communicate the meaning of the canvas to
     /// those using screen readers.
     ///
-    /// Users are strongly encouraged to set alt text for the canvas.
+    /// Users are encouraged to set alt text for the canvas.
     /// If possible, the alt-text should succinctly describe what the canvas represents.
     ///
     /// If the canvas is decorative or too hard to describe through text, users should set alt text to `""`.
@@ -55,20 +53,30 @@ impl Canvas {
 // --- MARK: WIDGETMUT ---
 impl Canvas {
     /// Update the draw function
-    pub fn update_draw(
+    pub fn set_painter(
         this: WidgetMut<'_, Self>,
         draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static,
     ) {
-        Self::update_from_arc(this, Arc::new(draw));
+        Self::set_painter_arc(this, Arc::new(draw));
     }
 
     /// Update the draw function
-    pub fn update_from_arc(
+    pub fn set_painter_arc(
         mut this: WidgetMut<'_, Self>,
         draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
     ) {
         this.widget.draw = draw;
         this.ctx.request_render();
+    }
+
+    pub fn set_alt_text(mut this: WidgetMut<'_, Self>, alt_text: String) {
+        this.widget.alt_text = Some(alt_text);
+        this.ctx.request_accessibility_update();
+    }
+
+    pub fn remove_alt_text(mut this: WidgetMut<'_, Self>) {
+        this.widget.alt_text = None;
+        this.ctx.request_accessibility_update();
     }
 }
 
@@ -77,7 +85,7 @@ impl Widget for Canvas {
     fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _event: &PointerEvent) {}
 
     fn accepts_pointer_interaction(&self) -> bool {
-        false
+        true
     }
 
     fn on_text_event(&mut self, _ctx: &mut EventCtx, _event: &TextEvent) {}
@@ -102,11 +110,8 @@ impl Widget for Canvas {
     }
 
     fn accessibility(&mut self, _ctx: &mut AccessCtx, node: &mut Node) {
-        // TODO: is this correct?
         if let Some(text) = &self.alt_text {
             node.set_description(text.clone());
-        } else {
-            node.clear_description();
         }
     }
 
