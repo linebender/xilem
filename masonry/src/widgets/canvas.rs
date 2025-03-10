@@ -26,7 +26,7 @@ pub struct Canvas {
 
 // --- MARK: BUILDERS ---
 impl Canvas {
-    /// Create a new canvas with the given draw function
+    /// Create a new canvas with the given draw function.
     pub fn new(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Self {
         Self::from_arc(Arc::new(draw))
     }
@@ -43,6 +43,9 @@ impl Canvas {
     /// those using screen readers.
     ///
     /// Users are strongly encouraged to set alt text for the canvas.
+    /// If possible, the alt-text should succinctly describe what the canvas represents.
+    ///
+    /// If the canvas is decorative or too hard to describe through text, users should set alt text to `""`.
     pub fn with_alt_text(mut self, alt_text: impl Into<String>) -> Self {
         self.alt_text = Some(alt_text.into());
         self
