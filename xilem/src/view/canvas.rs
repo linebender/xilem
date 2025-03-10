@@ -71,7 +71,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
         element: Mut<Self::Element>,
     ) {
         if !Arc::ptr_eq(&self.draw, &prev.draw) {
-            widgets::Canvas::update_from_arc(element, self.draw.clone());
+            widgets::Canvas::set_painter_arc(element, self.draw.clone());
         }
     }
 
