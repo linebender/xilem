@@ -20,6 +20,13 @@ pub struct VirtualScrollAction {
     remove: SmallVec<[i64; 8]>,
 }
 
+/// We assume that by default, virtual scrolling items are at least ~30 logical pixels tall (two lines of text + a bit).
+/// Because we load the visible page, and a page above and below that, a safety margin of 2 effectively applies.
+///
+/// We err in the positive direction because we expect to end up in a fixed-point loop, so if we have loaded
+/// too few items, that will be sorted relatively quickly.
+const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
+
 /// The model of this virtual scrolling is thus:
 ///
 /// 1) The `VirtualScroll` "knows" what item "index" it is using as an anchor
@@ -151,16 +158,28 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         } else {
             self.mean_item_height
         };
+        if !mean_item_height.is_finite() {
+            tracing::warn!(
+                "Got a non-finite mean item height {mean_item_height} in virtual scrolling"
+            );
+        }
         self.mean_item_height = mean_item_height;
 
         let items_after_anchor: u64 = (self.active_range.end - self.anchor_index)
             .try_into()
-            .unwrap();
-        let height_after_anchor =
-        // count_before_anchor < count as only conditionally incremented, when count is unconditionally incremented
-            height_after_anchor + (items_after_anchor - count - count_before_anchor) as f64 * mean_item_height;
-        let height_before_anchor =
-            height_after_anchor + count_before_anchor as f64 * mean_item_height;
+            .expect("Anchor is within the active range.");
+        let items_before_anchor: u64 = (self.anchor_index - self.active_range.start)
+            .try_into()
+            .expect("Anchor is within the active range.");
+
+        // The total height of all active items which are after the current anchor
+        // Note that this
+        let height_after_anchor = height_after_anchor
+            + (items_after_anchor - (count - count_before_anchor)) as f64 * mean_item_height;
+        // The total height of all active items which are after the current anchor
+        // Note that this uses the mean height for any items not loaded
+        let height_before_anchor = height_before_anchor
+            + (items_before_anchor - count_before_anchor) as f64 * mean_item_height;
         // If we've significantly out-ran the virtual scrolling (as a loose heuristic), calculate a new anchor using a heuristic
         // and drop all currently loaded items.
         // if (self.scroll_offset_from_anchor
@@ -193,53 +212,56 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         // } else
 
         // Determine the new anchor
-        {
-            // let previous_anchor = self.anchor_index;
-            loop {
-                if self.scroll_offset_from_anchor < 0. {
-                    if self.anchor_index <= self.active_range.start {
-                        // TODO: Is this the right time to do this clamping?
-                        self.anchor_index = self.active_range.start;
-                        // Don't scroll above the old anchor
-                        self.scroll_offset_from_anchor = 0.;
-                        break;
-                    }
-                    self.anchor_index = self.anchor_index - 1;
+
+        // let previous_anchor = self.anchor_index;
+        loop {
+            if self.scroll_offset_from_anchor < 0. {
+                if self.anchor_index <= self.active_range.start {
+                    // TODO: Is this the right time to do this clamping?
+                    self.anchor_index = self.active_range.start;
+                    // Don't scroll above the old anchor
+                    self.scroll_offset_from_anchor = 0.;
+                    break;
+                }
+                self.anchor_index = self.anchor_index - 1;
+                let new_anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let new_anchor = self.items.get(&self.anchor_index);
-                    let new_anchor_height = if let Some(new_anchor) = new_anchor {
-                        // Note: This child might be stashed, but our best estimate of its height is its old height?
-                        // This would only be the case if actions haven't been re-ran, I think?
+                    if let Some(new_anchor) = new_anchor {
                         ctx.child_size(new_anchor).height
                     } else {
                         mean_item_height
-                    };
-                    self.scroll_offset_from_anchor += new_anchor_height;
+                    }
                 } else {
-                    let current_anchor = self.items.get(&self.anchor_index);
-                    let anchor_height = if let Some(anchor_pod) = current_anchor {
-                        ctx.child_size(anchor_pod).height
-                    } else {
-                        mean_item_height
-                    };
-                    if self.scroll_offset_from_anchor > anchor_height {
-                        if self.anchor_index >= self.active_range.end {
-                            // TODO: Is this the right time to do this clamping?
-                            self.anchor_index = self.active_range.end;
-                            self.scroll_offset_from_anchor = self
-                                .scroll_offset_from_anchor
-                                // Lock scrolling to be at most a page below the last item
-                                .max(anchor_height + viewport_size.height);
-                            break;
-                        }
-                        self.scroll_offset_from_anchor -= anchor_height;
-                        height_before_anchor += anchor_height;
-                        self.anchor_index += 1;
-                    } else {
+                    mean_item_height
+                };
+
+                self.scroll_offset_from_anchor += new_anchor_height;
+            } else {
+                let current_anchor = self.items.get(&self.anchor_index);
+                let anchor_height = if let Some(anchor_pod) = current_anchor {
+                    ctx.child_size(anchor_pod).height
+                } else {
+                    mean_item_height
+                };
+                if self.scroll_offset_from_anchor > anchor_height {
+                    if self.anchor_index >= self.active_range.end {
+                        // TODO: Is this the right time to do this clamping?
+                        self.anchor_index = self.active_range.end;
+                        self.scroll_offset_from_anchor = self
+                            .scroll_offset_from_anchor
+                            // Lock scrolling to be at most a page below the last item
+                            .max(anchor_height + viewport_size.height);
                         break;
                     }
+                    self.scroll_offset_from_anchor -= anchor_height;
+                    height_before_anchor += anchor_height;
+                    self.anchor_index += 1;
+                } else {
+                    break;
                 }
             }
         }
+
         // TODO: I *suspect* we need to do something else?
         // self.anchor_index = new_anchor;
 
