@@ -4,7 +4,6 @@
 #![expect(unused, reason = "Development")]
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
-    i64,
     ops::Range,
 };
 
@@ -16,8 +15,8 @@ use crate::core::{BoxConstraints, Widget, WidgetPod};
 use super::CrossAxisAlignment;
 
 pub struct VirtualScrollAction {
-    add: SmallVec<[i64; 8]>,
-    remove: SmallVec<[i64; 8]>,
+    pub old_active: Range<i64>,
+    pub target: Range<i64>,
 }
 
 /// We assume that by default, virtual scrolling items are at least ~30 logical pixels tall (two lines of text + a bit).
@@ -60,7 +59,7 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     active_range: Range<i64>,
 
     /// The range in the id space which the virtual scrolling controller *wants* to layout.
-    /// Items which are in active_range but not in this range will be stashed in the mutate pass.
+    /// Items which are in `active_range` but not in this range will be stashed in the mutate pass.
     target_range: Range<i64>,
 
     /// All children of the virtual scroller.
@@ -115,7 +114,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             },
         );
         // The number of loaded items before the anchor
-        let count_before_anchor = 0;
+        let mut count_before_anchor = 0;
         let mut height_before_anchor = 0.;
         // The height of all loaded items after the anchor.
         // Note that this includes the height of the anchor itself.
@@ -132,8 +131,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                 }
                 // This item is stashed, and so can't be used.
                 // (If we decide we want to use it, we'll do so by re-enabling
-                // it in a following mutate pass). Note that we might still access to its height;
-                // that might not be *right*, but it gives an estimate anyway
+                // it in a following mutate pass).
                 ctx.skip_layout(child);
                 continue;
             }
@@ -158,11 +156,14 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         } else {
             self.mean_item_height
         };
-        if !mean_item_height.is_finite() {
+        let mean_item_height = if !mean_item_height.is_finite() {
             tracing::warn!(
                 "Got a non-finite mean item height {mean_item_height} in virtual scrolling"
             );
-        }
+            DEFAULT_MEAN_ITEM_HEIGHT
+        } else {
+            mean_item_height
+        };
         self.mean_item_height = mean_item_height;
 
         let items_after_anchor: u64 = (self.active_range.end - self.anchor_index)
@@ -173,12 +174,14 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             .expect("Anchor is within the active range.");
 
         // The total height of all active items which are after the current anchor
-        // Note that this
-        let height_after_anchor = height_after_anchor
-            + (items_after_anchor - (count - count_before_anchor)) as f64 * mean_item_height;
-        // The total height of all active items which are after the current anchor
-        // Note that this uses the mean height for any items not loaded
-        let height_before_anchor = height_before_anchor
+        // Note that this includes our best estimate of the
+        // let height_after_anchor = height_after_anchor
+        //     + (items_after_anchor - (count - count_before_anchor)) as f64 * mean_item_height;
+
+        // The total height of all active items which are before the current anchor
+        // Note that this uses the mean height for any items not currently loaded (i.e. provided by the user)
+        // In most cases, these items being missing is a bug in the driver, but we avoid falling down anyway.
+        let mut height_before_anchor = height_before_anchor
             + (items_before_anchor - count_before_anchor) as f64 * mean_item_height;
         // If we've significantly out-ran the virtual scrolling (as a loose heuristic), calculate a new anchor using a heuristic
         // and drop all currently loaded items.
@@ -216,14 +219,14 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         // let previous_anchor = self.anchor_index;
         loop {
             if self.scroll_offset_from_anchor < 0. {
-                if self.anchor_index <= self.active_range.start {
+                if self.anchor_index <= self.valid_range.start {
                     // TODO: Is this the right time to do this clamping?
-                    self.anchor_index = self.active_range.start;
-                    // Don't scroll above the old anchor
+                    self.anchor_index = self.valid_range.start;
+                    // Don't scroll above the topmost item
                     self.scroll_offset_from_anchor = 0.;
                     break;
                 }
-                self.anchor_index = self.anchor_index - 1;
+                self.anchor_index -= 1;
                 let new_anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let new_anchor = self.items.get(&self.anchor_index);
                     if let Some(new_anchor) = new_anchor {
@@ -232,30 +235,39 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                         mean_item_height
                     }
                 } else {
+                    // In theory, even for inactive items which haven't been removed, we could
+                    // get their prior height.
+                    // However, we choose not to do this to make behaviour predictable; we don't
+                    // want there to be any advantage to not removing items which should be removed.
                     mean_item_height
                 };
 
                 self.scroll_offset_from_anchor += new_anchor_height;
+                height_before_anchor -= new_anchor_height;
             } else {
-                let current_anchor = self.items.get(&self.anchor_index);
-                let anchor_height = if let Some(anchor_pod) = current_anchor {
-                    ctx.child_size(anchor_pod).height
+                let anchor_height = if self.active_range.contains(&self.anchor_index) {
+                    let current_anchor = self.items.get(&self.anchor_index);
+                    if let Some(anchor_pod) = current_anchor {
+                        ctx.child_size(anchor_pod).height
+                    } else {
+                        mean_item_height
+                    }
                 } else {
                     mean_item_height
                 };
                 if self.scroll_offset_from_anchor > anchor_height {
-                    if self.anchor_index >= self.active_range.end {
+                    if self.anchor_index >= self.valid_range.end {
                         // TODO: Is this the right time to do this clamping?
-                        self.anchor_index = self.active_range.end;
+                        self.anchor_index = self.valid_range.end;
                         self.scroll_offset_from_anchor = self
                             .scroll_offset_from_anchor
                             // Lock scrolling to be at most a page below the last item
                             .max(anchor_height + viewport_size.height);
                         break;
                     }
+                    self.anchor_index += 1;
                     self.scroll_offset_from_anchor -= anchor_height;
                     height_before_anchor += anchor_height;
-                    self.anchor_index += 1;
                 } else {
                     break;
                 }
@@ -266,42 +278,57 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         // self.anchor_index = new_anchor;
 
         // TODO: How can we even plausibly handle arbitrary transforms?
+        // Answer: We clip each child to a box at most (say) 20% taller than their layout box.
         let mut y = -height_before_anchor;
-        for (idx, item) in &mut self.current_items {
-            let size = ctx.child_size(item);
-            ctx.place_child(item, Point::new(0., y));
-            // TODO: Padding/gap?
-            y += size.height;
+        // We lay all of the active items out, even if some of them will be outside the requested range.
+        for idx in self.active_range.clone() {
+            let item = self.items.get_mut(&idx);
+            if let Some(item) = item {
+                let size = ctx.child_size(item);
+                ctx.place_child(item, Point::new(0., y));
+                // TODO: Padding/gap?
+                y += size.height;
+            } else {
+                y += mean_item_height;
+            }
         }
 
-        let target_range = if mean_item_size.is_finite() {
-            let up = (viewport_size.height * 1.5 / mean_item_size).ceil() as i64 + 1;
-            let down = (viewport_size.height * 2.5 / mean_item_size).ceil() as i64 + 1;
+        let target_range = if mean_item_height.is_finite() {
+            let up = (viewport_size.height * 1.5 / mean_item_height).ceil() as i64 + 1;
+            let down = (viewport_size.height * 2.5 / mean_item_height).ceil() as i64 + 1;
             (self.anchor_index - up)..(self.anchor_index + down)
         } else {
             ((self.anchor_index - 2)..(self.anchor_index + 5))
         };
+        self.target_range = target_range;
 
-        for id in target_range.clone() {
-            if !self.current_items.contains_key(&id) {
-                additions.push(id);
-            }
-        }
-        for id in self.current_items.keys() {
-            if !target_range.contains(id) {
-                removals.push(*id);
-            }
-        }
-        let removals = removals.clone();
-        ctx.mutate_self_later(|mut this| {
+        ctx.mutate_self_later(move |mut this| {
             let mut this = this.downcast::<Self>();
-            for idx in removals {
-                this.ctx.set_stashed(element, true);
+            for idx in this.widget.active_range.clone() {
+                if !this.widget.target_range.contains(&idx) {
+                    let item = this.widget.items.get_mut(&idx);
+                    if let Some(item) = item {
+                        this.ctx.set_stashed(item, true);
+                    }
+                }
+            }
+            for idx in this.widget.target_range.clone() {
+                if !this.widget.active_range.contains(&idx) {
+                    let item = this.widget.items.get_mut(&idx);
+                    if let Some(item) = item {
+                        // TODO: Are there reasonable cases where this happens?
+                        // A widget that scrolls a different widget into view in response to being stashed?!
+                        tracing::debug!(
+                            "Found item {:?} (index {idx}) which should have been removed by driver, in `VirtualScroll`", item.id()
+                        );
+                        this.ctx.set_stashed(item, false);
+                    }
+                }
             }
         });
         ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
-            add: additions,
-            remove: removals,
+            old_active: self.active_range.clone(),
+            target: self.target_range.clone(),
         })));
         viewport_size
     }
@@ -311,8 +338,10 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             x: 0.,
             y: self.scroll_offset_from_anchor,
         };
-        for child in self.current_items.values_mut() {
-            ctx.set_child_scroll_translation(child, translation);
+        for idx in self.active_range.clone() {
+            if let Some(child) = self.items.get_mut(&idx) {
+                ctx.set_child_scroll_translation(child, translation);
+            }
         }
     }
 
@@ -348,11 +377,11 @@ impl<W: Widget> Widget for VirtualScroll<W> {
     }
 
     fn children_ids(&self) -> smallvec::SmallVec<[crate::core::WidgetId; 16]> {
-        self.current_items.iter().map(|(_, pod)| pod.id()).collect()
+        self.items.values().map(|pod| pod.id()).collect()
     }
 
     fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
-        for (_, child) in &mut self.current_items {
+        for child in self.items.values_mut() {
             ctx.register_child(child);
         }
     }
