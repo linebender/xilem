@@ -4,13 +4,15 @@
 #![expect(unused, reason = "Development")]
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
-    ops::Range,
+    ops::{Range, RangeInclusive},
 };
 
 use smallvec::SmallVec;
 use vello::kurbo::{Point, Size, Vec2};
 
-use crate::core::{BoxConstraints, PropertiesMut, PropertiesRef, Widget, WidgetPod};
+use crate::core::{
+    BoxConstraints, PointerEvent, PropertiesMut, PropertiesRef, Widget, WidgetMut, WidgetPod,
+};
 
 use super::CrossAxisAlignment;
 
@@ -51,7 +53,7 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     /// [^1]: The exact interaction with a "drag down to refresh" feature has not been scrutinised.
     /// [^2]: Currently, we lock the bottom of the range to the bottom of the final item. This should be configurable.
     /// [^3]: Behaviour when the range is shrunk to something containing the active range has not been considered.
-    valid_range: Range<i64>,
+    valid_range: RangeInclusive<i64>,
 
     /// The range in the id space which is "active", i.e. which the virtual scrolling controller has the
     /// ability to lay out. Note that items is not necessarily dense in these; that is, if an
@@ -85,14 +87,45 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     mean_item_height: f64,
 
     /// The height of the current anchor.
-    /// Used to determine if scrolling will require a relayout (because the anchor has changed).
+    /// Used to determine if scrolling will require a relayout (because the anchor will have changed).
     anchor_height: f64,
 
     /// The available width in the last layout call, used so that layout of children can be skipped if it won't have changed.
     old_width: f64,
 }
 
-impl<W: Widget> Widget for VirtualScroll<W> {
+impl<W: Widget + ?Sized> VirtualScroll<W> {
+    pub fn new(initial_anchor: i64) -> Self {
+        Self {
+            valid_range: i64::MIN..=i64::MAX,
+            // Both of these ranges start empty; this is intentional
+            active_range: initial_anchor..initial_anchor,
+            target_range: initial_anchor..initial_anchor,
+            items: HashMap::default(),
+            anchor_index: initial_anchor,
+            scroll_offset_from_anchor: 0.0,
+            mean_item_height: DEFAULT_MEAN_ITEM_HEIGHT,
+            anchor_height: DEFAULT_MEAN_ITEM_HEIGHT,
+            old_width: f64::NAN,
+        }
+    }
+
+    pub fn remove_child(this: &mut WidgetMut<Self>, idx: i64) -> Option<WidgetPod<W>> {
+        this.ctx.children_changed();
+        this.widget.items.remove(&idx)
+    }
+
+    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, mut child: WidgetPod<W>) {
+        this.ctx.children_changed();
+        // let active = this.widget.active_range.contains(&idx);
+        // this.ctx.set_stashed(&mut child, !active);
+        if this.widget.items.insert(idx, child).is_some() {
+            tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
+        };
+    }
+}
+
+impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
     fn layout(
         &mut self,
         ctx: &mut crate::core::LayoutCtx,
@@ -128,7 +161,9 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         for (idx, child) in &mut self.items {
             if !self.active_range.contains(idx) {
                 if cfg!(debug_assertions) && ctx.child_needs_layout(child) {
-                    unreachable!("Mutate pass didn't run before layout, breaking assumptions.")
+                    unreachable!(
+                        "Mutate pass didn't run before layout, breaking assumptions @ {idx}."
+                    )
                 }
                 // This item is stashed, and so can't be used.
                 // (If we decide we want to use it, we'll do so by re-enabling
@@ -184,45 +219,13 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         // In most cases, these items being missing is a bug in the driver, but we avoid falling down anyway.
         let mut height_before_anchor = height_before_anchor
             + (items_before_anchor - count_before_anchor) as f64 * mean_item_height;
-        // If we've significantly out-ran the virtual scrolling (as a loose heuristic), calculate a new anchor using a heuristic
-        // and drop all currently loaded items.
-        // if (self.scroll_offset_from_anchor
-        //     > height_after_anchor + 3. * viewport_size.height + 3000.)
-        //     || (self.scroll_offset_from_anchor
-        //         < -height_before_anchor - 3. * viewport_size.height - 3000.)
-        // {
-        // let items = core::mem::take(&mut self.current_items);
-        // // TODO: We *probably* want to slide down the items.
-        // for (idx, mut item) in items {
-        //     ctx.skip_layout(&mut item);
-        //     self.items_pending_removal.insert(idx, item);
-        //     removals.push(idx);
-        // }
-        // if mean_item_size.is_finite() {
-        //     let diff_count = self.scroll_offset_from_anchor / mean_item_size;
-        //     let diff_count = diff_count.floor();
-        //     self.anchor_index =
-        //         (self.anchor_index + diff_count as i64).clamp(self.first_item, self.last_item);
-        //     self.scroll_offset_from_anchor -= diff_count * mean_item_size;
-        // } else {
-        //     debug_assert_eq!(
-        //         count, 0,
-        //         "Assumption: If the division produced an infinite result, it's because of a divide by zero."
-        //     );
-        //     // TODO: How can we handle this sanely? We're scrolled very far down (3 pages + 3000 logical pixels),
-        //     // but we don't have any idea how big the items are; that could be within a single item.
-        //     // I guess we need to just wait for the anchor to be loaded?
-        // }
-        // } else
 
         // Determine the new anchor
-
-        // let previous_anchor = self.anchor_index;
         loop {
             if self.scroll_offset_from_anchor < 0. {
-                if self.anchor_index <= self.valid_range.start {
+                if self.anchor_index <= *self.valid_range.start() {
                     // TODO: Is this the right time to do this clamping?
-                    self.anchor_index = self.valid_range.start;
+                    self.anchor_index = *self.valid_range.start();
                     // Don't scroll above the topmost item
                     self.scroll_offset_from_anchor = 0.;
                     break;
@@ -257,9 +260,9 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                     mean_item_height
                 };
                 if self.scroll_offset_from_anchor > anchor_height {
-                    if self.anchor_index >= self.valid_range.end {
+                    if self.anchor_index >= *self.valid_range.end() {
                         // TODO: Is this the right time to do this clamping?
-                        self.anchor_index = self.valid_range.end;
+                        self.anchor_index = *self.valid_range.end();
                         self.scroll_offset_from_anchor = self
                             .scroll_offset_from_anchor
                             // Lock scrolling to be at most a page below the last item
@@ -274,6 +277,11 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                 }
             }
         }
+        self.anchor_height = if let Some(anchor) = self.items.get(&self.anchor_index) {
+            ctx.child_size(anchor).height
+        } else {
+            mean_item_height
+        };
 
         // TODO: I *suspect* we need to do something else?
         // self.anchor_index = new_anchor;
@@ -281,7 +289,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         // TODO: How can we even plausibly handle arbitrary transforms?
         // Answer: We clip each child to a box at most (say) 20% taller than their layout box.
         let mut y = -height_before_anchor;
-        // We lay all of the active items out, even if some of them will be outside the requested range.
+        // We lay all of the active items out, even if some of them will be stashed imminently.
         for idx in self.active_range.clone() {
             let item = self.items.get_mut(&idx);
             if let Some(item) = item {
@@ -313,19 +321,21 @@ impl<W: Widget> Widget for VirtualScroll<W> {
                     }
                 }
             }
-            for idx in this.widget.target_range.clone() {
-                if !this.widget.active_range.contains(&idx) {
-                    let item = this.widget.items.get_mut(&idx);
-                    if let Some(item) = item {
-                        // TODO: Are there reasonable cases where this happens?
-                        // A widget that scrolls a different widget into view in response to being stashed?!
-                        tracing::debug!(
-                            "Found item {:?} (index {idx}) which should have been removed by driver, in `VirtualScroll`", item.id()
-                        );
-                        this.ctx.set_stashed(item, false);
-                    }
-                }
-            }
+            // TODO: Something about this is invalid, and it's not clear what
+            // for idx in this.widget.target_range.clone() {
+            //     if !this.widget.active_range.contains(&idx) {
+            //         let item = this.widget.items.get_mut(&idx);
+            //         if let Some(item) = item {
+            //             // TODO: Are there reasonable cases where this happens?
+            //             // A widget that scrolls a different widget into view in response to being stashed?!
+            //             tracing::debug!(
+            //                 "Found item {:?} (index {idx}) which should have been removed by driver, in `VirtualScroll`", item.id()
+            //             );
+            //             this.ctx.set_stashed(item, false);
+            //         }
+            //     }
+            // }
+            this.widget.active_range = this.widget.target_range.clone();
         });
         ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
             old_active: self.active_range.clone(),
@@ -377,6 +387,24 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         _props: &mut PropertiesMut<'_>,
         event: &crate::core::PointerEvent,
     ) {
+        const SCROLLING_SPEED: f64 = 10.0;
+
+        let portal_size = ctx.size();
+
+        match event {
+            PointerEvent::MouseWheel(delta, _) => {
+                let delta = delta.y * -SCROLLING_SPEED;
+                self.scroll_offset_from_anchor += delta;
+                if self.scroll_offset_from_anchor < 0.
+                    || self.scroll_offset_from_anchor > self.anchor_height
+                {
+                    ctx.request_layout();
+                }
+                ctx.request_compose();
+            }
+            _ => (),
+        }
+
         // TODO: Handle scroll wheel
     }
     fn accepts_pointer_interaction(&self) -> bool {
