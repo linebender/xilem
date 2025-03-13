@@ -7,7 +7,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, WidgetId, WidgetPod};
+use masonry::core::{Action, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
 
@@ -37,7 +37,11 @@ impl AppDriver for Driver {
                             VirtualScroll::add_child(
                                 &mut scroll,
                                 idx,
-                                WidgetPod::new(Label::new(format!("Child {idx}"))),
+                                WidgetPod::new(Label::new(format!("Child {idx}")).with_style(
+                                    StyleProperty::FontSize(
+                                        8., /*  if idx % 100 == 0 { 40. } else { 8. } */
+                                    ),
+                                )),
                             );
                         }
                     }
