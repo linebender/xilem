@@ -10,7 +10,7 @@ use std::{
 use smallvec::SmallVec;
 use vello::kurbo::{Point, Size, Vec2};
 
-use crate::core::{BoxConstraints, Widget, WidgetPod};
+use crate::core::{BoxConstraints, PropertiesMut, PropertiesRef, Widget, WidgetPod};
 
 use super::CrossAxisAlignment;
 
@@ -96,6 +96,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
     fn layout(
         &mut self,
         ctx: &mut crate::core::LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
         bc: &crate::core::BoxConstraints,
     ) -> vello::kurbo::Size {
         let viewport_size = bc.max();
@@ -350,7 +351,12 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         accesskit::Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut crate::core::AccessCtx, node: &mut accesskit::Node) {
+    fn accessibility(
+        &mut self,
+        ctx: &mut crate::core::AccessCtx,
+        _props: &PropertiesRef<'_>,
+        node: &mut accesskit::Node,
+    ) {
         // TODO: Better virtual scrolling accessibility
         // Intended as a follow-up collaboration with Matt
         node.set_clips_children();
@@ -359,6 +365,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
     fn on_access_event(
         &mut self,
         ctx: &mut crate::core::EventCtx,
+        _props: &mut PropertiesMut<'_>,
         event: &crate::core::AccessEvent,
     ) {
         // TODO: Handle scroll events
@@ -367,6 +374,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
     fn on_pointer_event(
         &mut self,
         ctx: &mut crate::core::EventCtx,
+        _props: &mut PropertiesMut<'_>,
         event: &crate::core::PointerEvent,
     ) {
         // TODO: Handle scroll wheel
@@ -386,16 +394,32 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         }
     }
 
-    fn paint(&mut self, _ctx: &mut crate::core::PaintCtx, _scene: &mut vello::Scene) {}
+    fn paint(
+        &mut self,
+        _ctx: &mut crate::core::PaintCtx,
+        _props: &PropertiesRef<'_>,
+        _scene: &mut vello::Scene,
+    ) {
+    }
 
-    fn on_text_event(&mut self, ctx: &mut crate::core::EventCtx, event: &crate::core::TextEvent) {
+    fn on_text_event(
+        &mut self,
+        ctx: &mut crate::core::EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &crate::core::TextEvent,
+    ) {
         // Maybe? Handle pagedown? or something like escape for keyboard focus to escape the virtual list
     }
     fn accepts_text_input(&self) -> bool {
         false
     }
 
-    fn update(&mut self, ctx: &mut crate::core::UpdateCtx, event: &crate::core::Update) {
+    fn update(
+        &mut self,
+        ctx: &mut crate::core::UpdateCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &crate::core::Update,
+    ) {
         match event {
             crate::core::Update::WidgetAdded => {}
             crate::core::Update::DisabledChanged(_) => {}
