@@ -405,7 +405,7 @@ impl<W: Widget> Widget for VirtualScroll<W> {
             crate::core::Update::ChildHoveredChanged(_) => {}
             crate::core::Update::FocusChanged(_) => {
                 if cfg!(debug_assertions) {
-                    unreachable!()
+                    unreachable!("VirtualScroll can't be focused")
                 }
             }
             crate::core::Update::ChildFocusChanged(_) => {
@@ -419,11 +419,6 @@ impl<W: Widget> Widget for VirtualScroll<W> {
         false
     }
 
-    // TODO: Optimise?
-    // fn find_widget_at_pos<'c>(
-    //     &'c self,
-    //     ctx: crate::core::QueryCtx<'c>,
-    //     pos: vello::kurbo::Point,
-    // ) -> Option<crate::core::WidgetRef<'c, dyn Widget>> {
-    // }
+    // TODO: Optimise using binary search?
+    // fn find_widget_at_pos(..);
 }
