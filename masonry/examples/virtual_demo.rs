@@ -7,7 +7,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, StyleProperty, WidgetId, WidgetPod};
+use masonry::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
 
@@ -15,6 +15,9 @@ use winit::window::Window;
 
 struct Driver {
     scroll_id: WidgetId,
+    fizz: ArcStr,
+    buzz: ArcStr,
+    fizzbuzz: ArcStr,
 }
 
 impl AppDriver for Driver {
@@ -27,22 +30,48 @@ impl AppDriver for Driver {
                     let mut scroll = RootWidget::child_mut(&mut root);
                     for idx in action.old_active.clone() {
                         if !action.target.contains(&idx) {
-                            eprintln!("Removing {idx}");
                             VirtualScroll::remove_child(&mut scroll, idx);
                         }
                     }
                     for idx in action.target.clone() {
                         if !action.old_active.contains(&idx) {
-                            eprintln!("Adding {idx}");
-                            VirtualScroll::add_child(
-                                &mut scroll,
-                                idx,
-                                WidgetPod::new(Label::new(format!("Child {idx}")).with_style(
-                                    StyleProperty::FontSize(
-                                        8., /*  if idx % 100 == 0 { 40. } else { 8. } */
-                                    ),
-                                )),
-                            );
+                            let evil = false;
+                            if evil {
+                                // Pathological implementation: we should handle this well (although we warn)
+                                if idx % 10 == 0 {
+                                    VirtualScroll::add_child(
+                                        &mut scroll,
+                                        idx,
+                                        WidgetPod::new(
+                                            Label::new(format!("Child {idx}")).with_style(
+                                                StyleProperty::FontSize(if idx % 3 == 0 {
+                                                    100.
+                                                } else {
+                                                    10.
+                                                }),
+                                            ),
+                                        ),
+                                    );
+                                }
+                            } else {
+                                let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
+                                    (false, true) => self.buzz.clone(),
+                                    (true, false) => self.fizz.clone(),
+                                    (true, true) => self.fizzbuzz.clone(),
+                                    (false, false) => format!("{idx}").into(),
+                                };
+                                VirtualScroll::add_child(
+                                    &mut scroll,
+                                    idx,
+                                    WidgetPod::new(Label::new(label).with_style(
+                                        StyleProperty::FontSize(if idx % 100 == 0 {
+                                            40.
+                                        } else {
+                                            20.
+                                        }),
+                                    )),
+                                );
+                            }
                         }
                     }
                 });
@@ -63,6 +92,9 @@ fn main() {
     let main_widget = WidgetPod::new(make_scroll());
     let driver = Driver {
         scroll_id: main_widget.id(),
+        fizz: "Fizz".into(),
+        buzz: "Buzz".into(),
+        fizzbuzz: "FizzBuzz".into(),
     };
     let window_size = LogicalSize::new(800.0, 500.0);
     let window_attributes = Window::default_attributes()
