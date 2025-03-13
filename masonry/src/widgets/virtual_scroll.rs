@@ -9,9 +9,11 @@ use std::{
 
 use smallvec::SmallVec;
 use vello::kurbo::{Point, Size, Vec2};
+use winit::keyboard::{Key, NamedKey};
 
 use crate::core::{
-    BoxConstraints, PointerEvent, PropertiesMut, PropertiesRef, Widget, WidgetMut, WidgetPod,
+    BoxConstraints, PointerEvent, PropertiesMut, PropertiesRef, TextEvent, Widget, WidgetMut,
+    WidgetPod,
 };
 
 use super::CrossAxisAlignment;
@@ -434,8 +436,35 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         &mut self,
         ctx: &mut crate::core::EventCtx,
         _props: &mut PropertiesMut<'_>,
-        event: &crate::core::TextEvent,
+        event: &TextEvent,
     ) {
+        match event {
+            TextEvent::KeyboardKey(key_event, modifiers_state) => {
+                // To get to this state, you currently need to press "tab" to focus this widget in the example.
+                if key_event.state.is_pressed() {
+                    let delta = 2000.;
+                    if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
+                        self.scroll_offset_from_anchor += delta;
+                        if self.scroll_offset_from_anchor < 0.
+                            || self.scroll_offset_from_anchor > self.anchor_height
+                        {
+                            ctx.request_layout();
+                        }
+                        ctx.request_compose();
+                    }
+                    if matches!(key_event.logical_key, Key::Named(NamedKey::PageUp)) {
+                        self.scroll_offset_from_anchor -= delta;
+                        if self.scroll_offset_from_anchor < 0.
+                            || self.scroll_offset_from_anchor > self.anchor_height
+                        {
+                            ctx.request_layout();
+                        }
+                        ctx.request_compose();
+                    }
+                }
+            }
+            _ => {}
+        }
         // Maybe? Handle pagedown? or something like escape for keyboard focus to escape the virtual list
     }
     fn accepts_text_input(&self) -> bool {
@@ -468,7 +497,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
     }
     fn accepts_focus(&self) -> bool {
         // TODO: Maybe we should make this true, to properly capture tab?
-        false
+        true
     }
 
     // TODO: Optimise using binary search?
