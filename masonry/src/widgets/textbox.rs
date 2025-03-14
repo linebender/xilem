@@ -7,7 +7,7 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Insets, Point, Rect, Size, Stroke};
+use vello::kurbo::{Insets, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
@@ -15,6 +15,7 @@ use crate::core::{
     WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
+use crate::util::stroke;
 use crate::widgets::{Padding, TextArea};
 
 /// Added padding between each horizontal edge of the widget
@@ -170,13 +171,7 @@ impl Widget for Textbox {
             -TEXTBOX_MARGIN.trailing - border_width / 2.,
             -TEXTBOX_MARGIN.bottom - border_width / 2.,
         ));
-        scene.stroke(
-            &Stroke::new(border_width),
-            Affine::IDENTITY,
-            Color::WHITE,
-            None,
-            &outline_rect,
-        );
+        stroke(scene, &outline_rect, Color::WHITE, border_width);
     }
 
     fn accessibility_role(&self) -> Role {
