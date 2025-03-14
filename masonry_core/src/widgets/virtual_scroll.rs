@@ -118,9 +118,13 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         }
     }
 
-    pub fn remove_child(this: &mut WidgetMut<Self>, idx: i64) -> Option<WidgetPod<W>> {
-        this.ctx.children_changed();
-        this.widget.items.remove(&idx)
+    pub fn remove_child(this: &mut WidgetMut<Self>, idx: i64) {
+        let child = this.widget.items.remove(&idx);
+        if let Some(child) = child {
+            this.ctx.remove_child(child);
+        } else {
+            tracing::warn!("Tried to remove child which has already been removed");
+        }
     }
 
     pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, mut child: WidgetPod<W>) {
@@ -475,7 +479,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
                 // To get to this state, you currently need to press "tab" to focus this widget in the example.
                 if key_event.state.is_pressed() {
-                    let delta = 2000.;
+                    let delta = 20000.;
                     if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
                         if self.scroll_offset_from_anchor < 0.
