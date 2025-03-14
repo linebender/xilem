@@ -1041,6 +1041,10 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
             .widget_children
             .remove(id)
             .expect("remove_child: child not found");
+        let _ = self
+            .properties_children
+            .remove(id)
+            .expect("remove_child: child not found");
         self.global_state.scenes.remove(&child.id());
 
         self.children_changed();
