@@ -40,6 +40,7 @@ const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 ///    - It allows for "infinite" virtual up and down-scrolling
 ///    - It allows for much more control by users of how the scrolling happens
 ///
+// TODO: Should `W` be a generic, or just always `dyn Widget`?
 pub struct VirtualScroll<W: Widget + ?Sized> {
     /// The range of items in the "id" space which are able to be used.
     ///
@@ -48,27 +49,24 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     /// (note that the id of the oldest email might not be known; as soon as it is known, `id_of_oldest_email`
     /// can be set).
     ///
-    /// The default is `i64::MIN..i64::MAX`
-    ///
-    /// Items outside of this range will be stashed.
+    /// The default is `i64::MIN..i64::MAX`. Note that this *is* exclusive of the item with id `i64::MAX`.
+    /// That additional item being missing allows for using half-open ranges in all of this code,
+    /// which makes our lives much easier.
     ///
     /// [^1]: The exact interaction with a "drag down to refresh" feature has not been scrutinised.
     /// [^2]: Currently, we lock the bottom of the range to the bottom of the final item. This should be configurable.
     /// [^3]: Behaviour when the range is shrunk to something containing the active range has not been considered.
-    // We know this means that the final item can't be included. That's pretty unavoidable.
+    // TODO: We should check that this is not "backwards" (normal empty is fine).
     valid_range: Range<i64>,
 
-    /// The range in the id space which is "active", i.e. which the virtual scrolling controller has the
-    /// ability to lay out. Note that items is not necessarily dense in these; that is, if an
-    /// item has not been provided by the application, we avoid falling over.
+    /// The range in the id space which is "active", i.e. which the virtual scrolling has decided
+    /// are in the range of the viewport and should be shown on screen.
+    /// Note that `items` is not necessarily dense in these; that is, if an
+    /// item has not been provided by the application, we don't fall over.
+    /// This is still an invalid state, but we handle it as well as we can.
     active_range: Range<i64>,
 
-    /// The range in the id space which the virtual scrolling controller *wants* to layout.
-    /// Items which are in `active_range` but not in this range will be stashed in the mutate pass.
-    target_range: Range<i64>,
-
     /// All children of the virtual scroller.
-    // TODO: Does this need to be a `BTreeMap`, or maybe a sparse `VecDeque` (for quicker in-order iteration)
     items: HashMap<i64, WidgetPod<W>>,
     // TODO: Handle focus even if the focused item scrolls off-screen.
     // TODO: Maybe this should be the focused items and its two neighbours, so tab focusing works?
@@ -78,8 +76,7 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     // Answer: Let's say yes for now, and re-evaluate if it becomes necessary.
     //  - Reason to not have this is that it adds some potential worst-case performance issues if scrolling up/down
     anchor_index: i64,
-    // TODO: Use a fixed-point scheme, because adding and subtracting amounts could change the scale, theoretically causing visible jumps.
-    // This will likely wait for layout to do something similar
+    /// The amount the user has scrolled from the anchor point, in logical pixels.
     scroll_offset_from_anchor: f64,
 
     /// The average height of items, determined experimentally.
@@ -90,30 +87,29 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     mean_item_height: f64,
 
     /// The height of the current anchor.
-    /// Used to determine if scrolling will require a relayout (because the anchor will have changed).
+    /// Used to determine if scrolling will require a relayout (because the anchor will have changed if the user has scrolled past it).
     anchor_height: f64,
 
     /// The available width in the last layout call, used so that layout of children can be skipped if it won't have changed.
     old_width: f64,
 
-    layouts_since_compose: u64,
+    /// We don't want to spam warnings about not being dense, but we want the user to be aware of it.
     warned_not_dense: bool,
 }
 
 impl<W: Widget + ?Sized> VirtualScroll<W> {
     pub fn new(initial_anchor: i64) -> Self {
         Self {
+            // TODO: This isn't handled correctly
             valid_range: i64::MIN..i64::MAX,
             // Both of these ranges start empty; this is intentional
             active_range: initial_anchor..initial_anchor,
-            target_range: initial_anchor..initial_anchor,
             items: HashMap::default(),
             anchor_index: initial_anchor,
             scroll_offset_from_anchor: 0.0,
             mean_item_height: DEFAULT_MEAN_ITEM_HEIGHT,
             anchor_height: DEFAULT_MEAN_ITEM_HEIGHT,
             old_width: f64::NAN,
-            layouts_since_compose: 0,
             warned_not_dense: false,
         }
     }
@@ -290,7 +286,9 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         // TODO: How can we even plausibly handle arbitrary transforms?
         // Answer: We clip each child to a box at most (say) 20% taller than their layout box.
         let mut y = -height_before_anchor;
-        // We lay all of the active items out, even if some of them will be stashed imminently.
+        let mut was_dense = true;
+        // We lay all of the active items out (even though some of them will be made inactive
+        // after layout is done)
         for idx in self.active_range.clone() {
             if y <= -cutoff_up {
                 item_crossing_top = Some(idx);
@@ -305,6 +303,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 // TODO: Padding/gap?
                 y += size.height;
             } else {
+                was_dense = false;
                 // We expect the virtual scrolling to be dense; we are designed
                 // to handle the non-dense case gracefully, but it is a bug in your
                 // component/app if the results are not dense.
@@ -312,13 +311,17 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                     self.warned_not_dense = true;
                     tracing::error!(
                         "Virtual Scrolling items in {:?} ({}) not dense.\n\
-    Expected to be dense in {:?}, but missing {idx}",
+                        Expected to be dense in {:?}, but missing {idx}",
                         ctx.widget_id(),
                         self.type_name(),
                         self.active_range,
                     );
                 }
             }
+        }
+        if was_dense {
+            // For each time we have the falling edge of becoming not dense, we want to warn.
+            self.warned_not_dense = false;
         }
 
         let target_range = if mean_item_height.is_finite() {
@@ -340,46 +343,51 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         } else {
             ((self.anchor_index - 2)..(self.anchor_index + 5))
         };
-        // Avoid requesting invalid items
+        // Avoid requesting invalid items by clamping to the valid range
         let target_range = target_range.start.max(self.valid_range.start)
             ..target_range.end.min(self.valid_range.end);
-        self.target_range = target_range;
 
-        if self.target_range != self.active_range {
-            ctx.mutate_self_later(move |mut this| {
-                let mut this = this.downcast::<Self>();
-                for idx in this.widget.active_range.clone() {
-                    if !this.widget.target_range.contains(&idx) {
+        if self.active_range != target_range {
+            let previous_active = self.active_range.clone();
+            self.active_range = target_range;
+
+            {
+                let previous_active = previous_active.clone();
+                // Stash all previously active widgets which are still loaded.
+                // This is needed for the case where there is a second iteration of passes (incl. layout)
+                // of the normal passes *before* the action gets handled.
+                // This is done this way because `LayoutCtx::set_stashed` is documented to be planned for removal.
+                // Note that this will never unstash items; those must be removed and re-added.
+                // N.B. this could break with an adversarial set of circumstances, because:
+                // - `mutate_self_later` doesn't actually force a new run of the rewrite passes
+                //    (https://xi.zulipchat.com/#narrow/channel/354396-xilem/topic/Virtual.20scrolling.20list.20redux/near/505728926); AND
+                // - `mutate_self_later` runs before the Update Tree (which adds new widgets added by the action); AND
+                // - `set_stashed` panics if the item hasn't been "recorded", i.e. it's a new item since the last time update tree ran.
+                // Therefore, an adversarial driver could force this code to panic by adding a widget which is in the old set, which won't
+                // be valid to call `set_stashed` on.
+                // However, there's no other way to encode this operation at the moment.
+                ctx.mutate_self_later(move |mut this| {
+                    let mut this = this.downcast::<Self>();
+                    for idx in opt_iter_difference(&previous_active, &this.widget.active_range) {
                         let item = this.widget.items.get_mut(&idx);
                         if let Some(item) = item {
                             this.ctx.set_stashed(item, true);
                         }
                     }
-                }
-                // TODO: Something about this is invalid, and it's not clear what
-                // for idx in this.widget.target_range.clone() {
-                //     if !this.widget.active_range.contains(&idx) {
-                //         let item = this.widget.items.get_mut(&idx);
-                //         if let Some(item) = item {
-                //             // TODO: Are there reasonable cases where this happens?
-                //             // A widget that scrolls a different widget into view in response to being stashed?!
-                //             tracing::debug!(
-                //                 "Found item {:?} (index {idx}) which should have been removed by driver, in `VirtualScroll`", item.id()
-                //             );
-                //             this.ctx.set_stashed(item, false);
-                //         }
-                //     }
-                // }
-                this.widget.active_range = this.widget.target_range.clone();
-            });
+                });
+            }
+
             ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
-                old_active: self.active_range.clone(),
-                target: self.target_range.clone(),
+                old_active: previous_active,
+                target: self.active_range.clone(),
             })));
         }
         // TODO: We should still try and find a way to detect infinite loops;
-        // Ideally, actions would be handled during the mutate pass, but that isn't how things are set up.
+        // our pattern for this should avoid it, but if that assessment is wrong, the outcome would be very bad
+        // (a driver which didn't correctly set `valid_range` would be one cause).
 
+        // In theory, if we have loaded all of the items in self.valid_range, we can tell the platform that this is our full size.
+        // Practically, that is such a rare case that it isn't worth doing.
         viewport_size
     }
 
@@ -479,7 +487,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
                 // To get to this state, you currently need to press "tab" to focus this widget in the example.
                 if key_event.state.is_pressed() {
-                    let delta = 2000.;
+                    let delta = 500.;
                     if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
                         if self.scroll_offset_from_anchor < 0.
@@ -521,11 +529,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             crate::core::Update::RequestPanToChild(rect) => {} // TODO,
             crate::core::Update::HoveredChanged(_) => {}
             crate::core::Update::ChildHoveredChanged(_) => {}
-            crate::core::Update::FocusChanged(_) => {
-                if cfg!(debug_assertions) {
-                    unreachable!("VirtualScroll can't be focused")
-                }
-            }
+            crate::core::Update::FocusChanged(_) => {}
             crate::core::Update::ChildFocusChanged(_) => {
                 // TODO: We won't actually get this event if *which* child element is focused changes...
                 // In fact, there's *no* reliable way to detect that, which makes proper focus management impossible
@@ -539,4 +543,65 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
 
     // TODO: Optimise using binary search?
     // fn find_widget_at_pos(..);
+}
+
+/// Optimisation for:
+/// ```
+/// let old_range = 0i64..10;
+/// let new_range = 0i64..10;
+/// for idx in old_range {
+///     if !new_range.contains(&idx) {
+///         // ...
+///     }
+/// }
+/// ```
+/// as an iterator
+fn opt_iter_difference(
+    old_range: &Range<i64>,
+    new_range: &Range<i64>,
+) -> std::iter::Chain<Range<i64>, Range<i64>> {
+    (old_range.start..(new_range.start.min(old_range.end)))
+        .chain(new_range.end.max(old_range.start)..old_range.end)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+
+    use super::opt_iter_difference;
+
+    #[test]
+    #[expect(
+        clippy::reversed_empty_ranges,
+        reason = "Testing technically possible behaviour"
+    )]
+    fn opt_iter_difference_equiv() {
+        let ranges = [
+            5..10,
+            7..15,
+            -10..7,
+            // Negative ranges are empty; those should be respected.
+            // The optimised version does actually do more than is needed if the new range is negative
+            // However, we don't expect negative ranges to be common (only supported for robustness), so
+            // we don't care if they aren't handled as performantly as possible, so long as it doesn't miss anything
+            20..10,
+            12..17,
+        ];
+        for old_range in &ranges {
+            for new_range in &ranges {
+                let opt_result = opt_iter_difference(old_range, new_range).collect::<HashSet<_>>();
+                let mut naive_result = HashSet::new();
+                for idx in old_range.clone() {
+                    if !new_range.contains(&idx) {
+                        naive_result.insert(idx);
+                    }
+                }
+                assert_eq!(
+                    opt_result, naive_result,
+                    "The optimised version of differences should be equivalent to the trivially \
+                    correct method, but wasn't for {old_range:?} and {new_range:?}"
+                );
+            }
+        }
+    }
 }
