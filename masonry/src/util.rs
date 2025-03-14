@@ -7,6 +7,7 @@ use std::any::Any;
 use std::hash::Hash;
 
 use vello::Scene;
+use vello::kurbo::Join;
 use vello::kurbo::{
     Affine, Rect, Shape, Stroke, {self},
 };
@@ -102,13 +103,13 @@ pub fn stroke<'b>(
     brush: impl Into<BrushRef<'b>>,
     stroke_width: f64,
 ) {
-    scene.stroke(
-        &Stroke::new(stroke_width),
-        Affine::IDENTITY,
-        brush,
-        None,
-        path,
-    );
+    // Using Join::Miter avoids rounding corners when a widget has a wide border.
+    let style = Stroke {
+        width: stroke_width,
+        join: Join::Miter,
+        ..Default::default()
+    };
+    scene.stroke(&style, Affine::IDENTITY, brush, None, path);
 }
 
 #[allow(unused)]
