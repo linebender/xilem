@@ -86,6 +86,9 @@ crate-type = ["cdylib"]
 name = "emoji_picker"
 
 [[example]]
+name = "gallery_button_xilem_view"
+
+[[example]]
 name = "emoji_picker_android"
 path = "examples/emoji_picker.rs"
 # cdylib is required for cargo-apk
