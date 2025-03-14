@@ -479,7 +479,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
                 // To get to this state, you currently need to press "tab" to focus this widget in the example.
                 if key_event.state.is_pressed() {
-                    let delta = 20000.;
+                    let delta = 2000.;
                     if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
                         if self.scroll_offset_from_anchor < 0.
