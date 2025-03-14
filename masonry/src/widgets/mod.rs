@@ -27,6 +27,7 @@ mod split;
 mod text_area;
 mod textbox;
 mod variable_label;
+mod virtual_scroll;
 mod zstack;
 
 pub use self::align::Align;
@@ -47,4 +48,5 @@ pub use self::split::Split;
 pub use self::text_area::TextArea;
 pub use self::textbox::Textbox;
 pub use self::variable_label::VariableLabel;
+pub use self::virtual_scroll::{VirtualScroll, VirtualScrollAction};
 pub use self::zstack::{Alignment, ChildAlignment, HorizontalAlignment, VerticalAlignment, ZStack};
