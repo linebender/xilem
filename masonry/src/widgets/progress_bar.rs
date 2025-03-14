@@ -147,22 +147,17 @@ impl Widget for ProgressBar {
 
     fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let border_width = 1.;
+        let size = ctx.size();
+        let border_radius = 2.;
 
-        let rect = ctx
-            .size()
+        let bg_rect = size
             .to_rect()
-            .inset(-border_width / 2.)
-            .to_rounded_rect(2.);
-
-        fill_lin_gradient(
-            scene,
-            &rect,
-            [theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK],
-            UnitPoint::TOP,
-            UnitPoint::BOTTOM,
-        );
-
-        stroke(scene, &rect, theme::BORDER_DARK, border_width);
+            .inset(-border_width)
+            .to_rounded_rect(border_radius - border_width);
+        let border_rect = size
+            .to_rect()
+            .inset(-border_width / 2.0)
+            .to_rounded_rect(border_radius);
 
         let progress_rect_size = Size::new(
             ctx.size().width * self.progress.unwrap_or(1.),
@@ -170,9 +165,16 @@ impl Widget for ProgressBar {
         );
         let progress_rect = progress_rect_size
             .to_rect()
-            .inset(-border_width / 2.)
-            .to_rounded_rect(2.);
+            .inset(-border_width)
+            .to_rounded_rect(border_radius - border_width);
 
+        fill_lin_gradient(
+            scene,
+            &bg_rect,
+            [theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK],
+            UnitPoint::TOP,
+            UnitPoint::BOTTOM,
+        );
         fill_lin_gradient(
             scene,
             &progress_rect,
@@ -180,7 +182,7 @@ impl Widget for ProgressBar {
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
-        stroke(scene, &progress_rect, theme::BORDER_DARK, border_width);
+        stroke(scene, &border_rect, theme::BORDER_DARK, border_width);
     }
 
     fn accessibility_role(&self) -> Role {
