@@ -163,14 +163,15 @@ impl Widget for Textbox {
 
     fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let size = ctx.size();
+        let border_width = 1.0;
         let outline_rect = size.to_rect().inset(Insets::new(
-            -TEXTBOX_MARGIN.leading,
-            -TEXTBOX_MARGIN.top,
-            -TEXTBOX_MARGIN.trailing,
-            -TEXTBOX_MARGIN.bottom,
+            -TEXTBOX_MARGIN.leading - border_width / 2.,
+            -TEXTBOX_MARGIN.top - border_width / 2.,
+            -TEXTBOX_MARGIN.trailing - border_width / 2.,
+            -TEXTBOX_MARGIN.bottom - border_width / 2.,
         ));
         scene.stroke(
-            &Stroke::new(1.0),
+            &Stroke::new(border_width),
             Affine::IDENTITY,
             Color::WHITE,
             None,
