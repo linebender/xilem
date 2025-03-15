@@ -46,42 +46,38 @@ where
 
 // --- MARK: BUILDERS ---
 impl<ChildA: Widget, ChildB: Widget> Split<ChildA, ChildB> {
-    /// Create a new split panel, with the specified axis being split in two.
-    ///
-    /// Horizontal split axis means that the children are left and right.
-    /// Vertical split axis means that the children are up and down.
-    pub fn new(split_axis: Axis, child1: ChildA, child2: ChildB) -> Self {
-        Self::new_pod(split_axis, WidgetPod::new(child1), WidgetPod::new(child2))
-    }
-
-    /// Create a new split panel, with the horizontal axis split in two by a vertical bar.
-    /// The children are laid out left and right.
-    pub fn columns(child1: ChildA, child2: ChildB) -> Self {
-        Self::new(Axis::Horizontal, child1, child2)
-    }
-
-    /// Create a new split panel, with the vertical axis split in two by a horizontal bar.
-    /// The children are laid out up and down.
-    pub fn rows(child1: ChildA, child2: ChildB) -> Self {
-        Self::new(Axis::Vertical, child1, child2)
+    /// Create a new split panel.
+    pub fn new(child1: ChildA, child2: ChildB) -> Self {
+        Self::new_pod(WidgetPod::new(child1), WidgetPod::new(child2))
     }
 }
 
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
-    pub fn new_pod(split_axis: Axis, child1: WidgetPod<ChildA>, child2: WidgetPod<ChildB>) -> Self {
+    pub fn new_pod(child1: WidgetPod<ChildA>, child2: WidgetPod<ChildB>) -> Self {
         Self {
-            split_axis,
+            split_axis: Axis::Horizontal,
             split_point_chosen: 0.5,
             split_point_effective: 0.5,
             min_size: (0.0, 0.0),
             bar_size: 6.0,
             min_bar_area: 6.0,
             solid: false,
-            draggable: false,
+            draggable: true,
             click_offset: 0.0,
             child1,
             child2,
         }
+    }
+
+    /// Builder-style method to set the split axis.
+    ///
+    /// Horizontal split axis means that the children are left and right.
+    /// Vertical split axis means that the children are up and down.
+    ///
+    /// The default split point is horizontal.
+    pub fn split_axis(mut self, split_axis: Axis) -> Self {
+        self.split_axis = split_axis;
+        self
     }
 
     /// Builder-style method to set the split point as a fraction of the split axis.
@@ -576,7 +572,7 @@ where
         let local_mouse_pos = pos - ctx.window_origin().to_vec2();
         let is_bar_hovered = self.bar_hit_test(ctx.size(), local_mouse_pos);
 
-        if ctx.is_pointer_capture_target() || is_bar_hovered {
+        if self.draggable && (ctx.is_pointer_capture_target() || is_bar_hovered) {
             match self.split_axis {
                 Axis::Horizontal => CursorIcon::EwResize,
                 Axis::Vertical => CursorIcon::NsResize,
@@ -620,10 +616,10 @@ mod tests {
     #[test]
     fn columns() {
         #[rustfmt::skip]
-        let widget = Split::columns(
+        let widget = Split::new(
             Label::new("Hello"),
             Label::new("World"),
-        );
+        ).split_axis(Axis::Horizontal).draggable(false);
 
         let mut harness = TestHarness::create(widget);
 
@@ -634,10 +630,10 @@ mod tests {
     #[test]
     fn rows() {
         #[rustfmt::skip]
-        let widget = Split::rows(
+        let widget = Split::new(
             Label::new("Hello"),
             Label::new("World"),
-        );
+        ).split_axis(Axis::Vertical).draggable(false);
 
         let mut harness = TestHarness::create(widget);
 
@@ -651,7 +647,7 @@ mod tests {
     #[test]
     fn edit_splitter() {
         let image_1 = {
-            let widget = Split::rows(Label::new("Hello"), Label::new("World"))
+            let widget = Split::new(Label::new("Hello"), Label::new("World"))
                 .split_point(0.3)
                 .min_size(40.0, 10.0)
                 .bar_size(12.0)
@@ -664,7 +660,7 @@ mod tests {
         };
 
         let image_2 = {
-            let widget = Split::rows(Label::new("Hello"), Label::new("World"));
+            let widget = Split::new(Label::new("Hello"), Label::new("World"));
 
             let mut harness = TestHarness::create_with_size(widget, Size::new(100.0, 100.0));
 

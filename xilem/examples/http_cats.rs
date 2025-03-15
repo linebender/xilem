@@ -16,8 +16,8 @@ use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
-    Axis, FlexExt, FlexSpacer, Padding, ZStackExt, button, flex, image, inline_prose, portal,
-    prose, sized_box, spinner, worker, zstack,
+    Axis, FlexSpacer, Padding, ZStackExt, button, flex, image, inline_prose, portal, prose,
+    sized_box, spinner, split, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem, palette};
 
@@ -102,13 +102,7 @@ impl HttpCats {
             flex((
                 // Add padding to the top for Android. Still a horrible hack
                 FlexSpacer::Fixed(40.),
-                flex((
-                    left_column.flex(1.),
-                    portal(sized_box(info_area).expand_width()).flex(1.),
-                ))
-                .direction(Axis::Horizontal)
-                .must_fill_major_axis(true)
-                .flex(1.),
+                split(left_column, portal(sized_box(info_area).expand_width())).split_point(0.4),
             ))
             .must_fill_major_axis(true),
             worker(

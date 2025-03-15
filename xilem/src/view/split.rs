@@ -1,3 +1,6 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use std::marker::PhantomData;
 
 use masonry::widgets::{self, Axis};
@@ -5,6 +8,34 @@ use xilem_core::{DynMessage, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{Pod, ViewCtx, WidgetView};
 
+/// A container containing two other widgets, splitting the area either horizontally or vertically.
+///
+/// The split view will by default be draggable,
+/// which means that the relative size of each child view can be changed by dragging the mouse.
+///
+/// # Examples
+/// To create a split view, provide it with two child views.
+///
+/// ```ignore
+/// use xilem::view::{split, label};
+///
+/// split(
+///     label("Left view"),
+///     label("Right view")
+/// )
+/// ```
+///
+/// The split axis and split point can be changed.
+/// For the full list of modifiers see the [`Split`] struct.
+///
+/// ```ignore
+/// use xilem::view::{split, label};
+///
+/// split(label("Left view"), label("Right view"))
+///     .split_axis(Axis::Horizontal)
+///     .split_point(0.25)
+/// ```
+///
 pub fn split<State, Action, ChildA, ChildB>(
     child1: ChildA,
     child2: ChildB,
@@ -14,13 +45,13 @@ where
     ChildB: WidgetView<State, Action>,
 {
     Split {
-        split_axis: Axis::Vertical,
+        split_axis: Axis::Horizontal,
         split_point: 0.5,
         min_size: (0.0, 0.0),
         bar_size: 6.0,
         min_bar_area: 6.0,
         solid_bar: false,
-        draggable: false,
+        draggable: true,
         child1,
         child2,
         phantom: PhantomData,
@@ -45,7 +76,12 @@ pub struct Split<ChildA, ChildB, State, Action = ()> {
 }
 
 impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
-    /// Set the split axis
+    /// Set the split axis.
+    ///
+    /// Horizontal split axis means that the children are left and right.
+    /// Vertical split axis means that the children are up and down.
+    ///
+    /// The default split point is horizontal.
     pub fn split_axis(mut self, axis: Axis) -> Self {
         self.split_axis = axis;
         self
@@ -141,11 +177,16 @@ where
         let (child1, child1_state) = ctx.with_id(CHILD1_VIEW_ID, |ctx| self.child1.build(ctx));
         let (child2, child2_state) = ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx));
 
-        let widget_pod = ctx.new_pod(widgets::Split::new_pod(
-            self.split_axis,
-            child1.into_widget_pod(),
-            child2.into_widget_pod(),
-        ));
+        let widget_pod = ctx.new_pod(
+            widgets::Split::new_pod(child1.into_widget_pod(), child2.into_widget_pod())
+                .split_axis(self.split_axis)
+                .split_point(self.split_point)
+                .min_size(self.min_size.0, self.min_size.1)
+                .bar_size(self.bar_size)
+                .min_bar_area(self.min_bar_area)
+                .draggable(self.draggable)
+                .solid_bar(self.solid_bar),
+        );
 
         (widget_pod, (child1_state, child2_state))
     }
