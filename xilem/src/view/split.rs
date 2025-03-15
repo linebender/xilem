@@ -157,8 +157,8 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     }
 }
 
-const CHILD1_VIEW_ID: ViewId = ViewId::new(0);
-const CHILD2_VIEW_ID: ViewId = ViewId::new(0);
+const CHILD1_VIEW_ID: ViewId = ViewId::new(5436781);
+const CHILD2_VIEW_ID: ViewId = ViewId::new(5436782);
 
 impl<ChildA, ChildB, State, Action> ViewMarker for Split<ChildA, ChildB, State, Action> {}
 impl<ChildA, ChildB, State, Action> View<State, Action, ViewCtx>
@@ -259,22 +259,16 @@ where
         message: DynMessage,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<Action, DynMessage> {
-        let (view_id, rest) = id_path
-            .split_first()
-            .expect("message should contain id_path to child in Split view");
-
-        if view_id == &CHILD1_VIEW_ID {
-            return self
-                .child1
-                .message(&mut view_state.0, rest, message, app_state);
+        match id_path.split_first() {
+            Some((&CHILD1_VIEW_ID, rest)) => {
+                self.child1
+                    .message(&mut view_state.0, rest, message, app_state)
+            }
+            Some((&CHILD2_VIEW_ID, rest)) => {
+                self.child2
+                    .message(&mut view_state.1, rest, message, app_state)
+            }
+            _ => unreachable!("invalid id_path for Split view message: {:?}", id_path),
         }
-
-        if view_id == &CHILD2_VIEW_ID {
-            return self
-                .child2
-                .message(&mut view_state.1, rest, message, app_state);
-        }
-
-        unreachable!("invalid id_path for Split view message: {:?}", id_path)
     }
 }
