@@ -81,7 +81,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         _: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
-            "Message arrived in Label::message, but Label doesn't consume any messages, this is a bug"
+            "Message arrived in Image::message, but Image doesn't consume any messages, this is a bug"
         );
         MessageResult::Stale(message)
     }
