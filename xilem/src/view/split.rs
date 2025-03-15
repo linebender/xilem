@@ -226,13 +226,17 @@ where
             widgets::Split::set_bar_solid(&mut element, self.solid_bar);
         }
 
-        let child1_element = widgets::Split::child1_mut(&mut element);
-        self.child1
-            .rebuild(&prev.child1, &mut view_state.0, ctx, child1_element);
+        ctx.with_id(CHILD1_VIEW_ID, |ctx| {
+            let child1_element = widgets::Split::child1_mut(&mut element);
+            self.child1
+                .rebuild(&prev.child1, &mut view_state.0, ctx, child1_element);
+        });
 
-        let child2_element = widgets::Split::child2_mut(&mut element);
-        self.child2
-            .rebuild(&prev.child2, &mut view_state.1, ctx, child2_element);
+        ctx.with_id(CHILD2_VIEW_ID, |ctx| {
+            let child2_element = widgets::Split::child2_mut(&mut element);
+            self.child2
+                .rebuild(&prev.child2, &mut view_state.1, ctx, child2_element);
+        });
     }
 
     fn teardown(
