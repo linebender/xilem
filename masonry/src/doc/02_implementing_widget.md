@@ -223,9 +223,9 @@ For more info on which role `accessibility_role` should return and how the acces
 
 ... Well, in theory.
 In practice, accesskit is currently sparsely documented ([see accesskit#402](https://github.com/AccessKit/accesskit/issues/402)), and some values are subject to interpretation.
-AccessKit is inspired by Chromium's accessibility API, which is undocumented, and the ARIA standard.
+AccessKit is inspired by Chromium's accessibility API, which is undocumented, and by the ARIA standard.
 
-In practice, if you're not sure about what a certain value means or how to implement a certain feature, your recourses are:
+Pragmatically, if you're not sure about what a certain value means or how to implement a certain feature, your recourses are:
 
 - Read the accesskit documentation.
 - Read the ARIA documentation.
