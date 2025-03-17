@@ -151,7 +151,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
             self.label.message(&mut (), remainder, message, app_state)
         } else {
             tracing::error!(
-                "Message arrived in Label::message, but Label doesn't consume any messages, this is a bug"
+                "Message arrived in VariableLabel::message, but VariableLabel doesn't consume any messages, this is a bug"
             );
             MessageResult::Stale(message)
         }
