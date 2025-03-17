@@ -252,8 +252,14 @@ pub trait Widget: AsAny + AsDynWidget {
     /// the render context, which is especially useful for scrolling.
     fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene);
 
+    /// Return what kind of "thing" the widget fundamentally is.
     fn accessibility_role(&self) -> Role;
 
+    /// Describe the widget's contents for accessibility APIs.
+    ///
+    /// This method takes a mutable reference to a node which is already initialized
+    /// with some information about the current widget (coordinates, status flags), and
+    /// and mutates that node to set widget-specific information.
     fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node);
 
     /// Return ids of this widget's children.

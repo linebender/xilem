@@ -103,7 +103,7 @@ impl Widget for ColorRectangle {
 
     fn on_access_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
             match event.action {
-                accesskit::Action::Default => {
+                accesskit::Action::Click => {
                     ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
                 }
                 _ => {}
@@ -198,7 +198,7 @@ impl Widget for ColorRectangle {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
-        node.set_default_action_verb(DefaultActionVerb::Click);
+        node.add_action(accesskit::Action::Click);
     }
 
     // ...
@@ -212,11 +212,27 @@ The rectangle's origin is zero (because coordinates in our scene are local to ou
 Next we define our accessibility role.
 Returning [`Role::Button`] means that screen readers will report our widget as a button, which roughly makes sense since it is clickable.
 
-<!-- TODO - Add more detail about how you should choose your role. -->
+In `accessibility`, we're given a mutable reference to a node from the accessibility tree representing the current widget, pre-filled with some information about it.
 
-In `accessibility`, we define a default action of `Click`, which is how we register our widget to be eligible for the `accesskit::Action::Default` event reported above.
+We edit that node to mark that our widget accepts the `accesskit::Action::Click` event.
 
-<!-- TODO - Is that actually true? I'm not sure what set_default_action does. -->
+#### Writing accessibility code
+
+Masonry's support of accessibility APIs is based on the [accesskit](https://github.com/AccessKit/accesskit) crate.
+For more info on which role `accessibility_role` should return and how the accessibility node should be edited, consult the accesskit documentation.
+
+... Well, in theory.
+In practice, accesskit is currently sparsely documented ([see accesskit#402](https://github.com/AccessKit/accesskit/issues/402)), and some values are subject to interpretation.
+AccessKit is inspired by Chromium's accessibility API, which is undocumented, and by the ARIA standard.
+
+Pragmatically, if you're not sure about what a certain value means or how to implement a certain feature, your recourses are:
+
+- Read the accesskit documentation.
+- Read the ARIA documentation.
+- Look at the egui and Masonry widget implementations.
+- Look at the accesskit platform bindings code.
+- Ask your question on the Linebender zulip, in [the #accessibility channel](https://xi.zulipchat.com/#narrow/channel/359997-accessibility/).
+
 
 ### Other methods
 
