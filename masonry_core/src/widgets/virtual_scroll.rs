@@ -97,12 +97,28 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     warned_not_dense: bool,
 }
 
+impl<W: Widget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("VirtualScroll")
+            .field("valid_range", &self.valid_range)
+            .field("active_range", &self.active_range)
+            .field("items", &self.items.keys().collect::<Vec<_>>())
+            .field("anchor_index", &self.anchor_index)
+            .field("scroll_offset_from_anchor", &self.scroll_offset_from_anchor)
+            .field("mean_item_height", &self.mean_item_height)
+            .field("anchor_height", &self.anchor_height)
+            .field("old_width", &self.old_width)
+            .field("warned_not_dense", &self.warned_not_dense)
+            .finish()
+    }
+}
+
 impl<W: Widget + ?Sized> VirtualScroll<W> {
     pub fn new(initial_anchor: i64) -> Self {
         Self {
-            // TODO: This isn't handled correctly
+            // TODO: Allow configuring this.
             valid_range: i64::MIN..i64::MAX,
-            // Both of these ranges start empty; this is intentional
+            // This range starts intentionally empty, as no items have been loaded.
             active_range: initial_anchor..initial_anchor,
             items: HashMap::default(),
             anchor_index: initial_anchor,
@@ -130,6 +146,31 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         if this.widget.items.insert(idx, child).is_some() {
             tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
         };
+    }
+
+    fn post_scroll(&mut self, ctx: &mut crate::core::EventCtx<'_>) {
+        self.cap_scroll_range(self.anchor_height, ctx.size().height);
+        if self.scroll_offset_from_anchor < 0.
+            || self.scroll_offset_from_anchor > self.anchor_height
+        {
+            ctx.request_layout();
+        }
+        ctx.request_compose();
+    }
+
+    /// Lock scrolling so that:
+    /// 1) Every part of the last item can be seen.
+    /// 2) The last item never scrolls completely out of view (currently, the bottom of the last item can be halfway down the screen)
+    ///
+    /// Ideally, this would be configurable (so that e.g. the bottom of the last item aligns with
+    /// the bottom of the viewport), but that requires more care, since it effectively changes what the last valid anchor is.
+    fn cap_scroll_range(&mut self, anchor_height: f64, viewport_height: f64) {
+        if self.anchor_index + 1 >= self.valid_range.end {
+            self.scroll_offset_from_anchor = self
+                .scroll_offset_from_anchor
+                .min(anchor_height - viewport_height / 2.)
+                .max(0.0);
+        }
     }
 }
 
@@ -255,11 +296,8 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 if self.scroll_offset_from_anchor > anchor_height {
                     if self.anchor_index >= self.valid_range.end {
                         // TODO: Is this the right time to do this clamping?
-                        self.anchor_index = self.valid_range.end;
-                        self.scroll_offset_from_anchor = self
-                            .scroll_offset_from_anchor
-                            // Lock scrolling to be at most a page below the last item
-                            .max(anchor_height + viewport_size.height);
+                        self.anchor_index = self.valid_range.end - 1;
+                        self.cap_scroll_range(anchor_height, viewport_size.height);
                         break;
                     }
                     self.anchor_index += 1;
@@ -324,7 +362,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             self.warned_not_dense = false;
         }
 
-        let target_range = if mean_item_height.is_finite() {
+        let target_range = {
             let start = if let Some(item_crossing_top) = item_crossing_top {
                 item_crossing_top
             } else {
@@ -332,7 +370,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                     ((cutoff_up - height_before_anchor) / mean_item_height).ceil() as i64;
                 self.active_range.start - number_needed
             };
-            let end = if y > viewport_size.height * 2.5 {
+            let end = if y > cutoff_down {
                 item_crossing_bottom + 1
             } else {
                 // `y` is the bottom of the bottommost loaded item
@@ -340,12 +378,16 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 self.active_range.end + number_needed
             };
             start..end
-        } else {
-            ((self.anchor_index - 2)..(self.anchor_index + 5))
         };
         // Avoid requesting invalid items by clamping to the valid range
-        let target_range = target_range.start.max(self.valid_range.start)
-            ..target_range.end.min(self.valid_range.end);
+        let target_range = target_range
+            .start
+            .max(self.valid_range.start)
+            .min(self.valid_range.end - 1)
+            ..target_range
+                .end
+                .min(self.valid_range.end)
+                .max(self.valid_range.start);
 
         if self.active_range != target_range {
             let previous_active = self.active_range.clone();
@@ -442,12 +484,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             PointerEvent::MouseWheel(delta, _) => {
                 let delta = delta.y * -SCROLLING_SPEED;
                 self.scroll_offset_from_anchor += delta;
-                if self.scroll_offset_from_anchor < 0.
-                    || self.scroll_offset_from_anchor > self.anchor_height
-                {
-                    ctx.request_layout();
-                }
-                ctx.request_compose();
+                self.post_scroll(ctx);
             }
             _ => (),
         }
@@ -490,21 +527,11 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                     let delta = 500.;
                     if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
-                        if self.scroll_offset_from_anchor < 0.
-                            || self.scroll_offset_from_anchor > self.anchor_height
-                        {
-                            ctx.request_layout();
-                        }
-                        ctx.request_compose();
+                        self.post_scroll(ctx);
                     }
                     if matches!(key_event.logical_key, Key::Named(NamedKey::PageUp)) {
                         self.scroll_offset_from_anchor -= delta;
-                        if self.scroll_offset_from_anchor < 0.
-                            || self.scroll_offset_from_anchor > self.anchor_height
-                        {
-                            ctx.request_layout();
-                        }
-                        ctx.request_compose();
+                        self.post_scroll(ctx);
                     }
                 }
             }
@@ -543,6 +570,8 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
 
     // TODO: Optimise using binary search?
     // fn find_widget_at_pos(..);
+
+    // fn get_debug_text(&self) -> Option<String> { Some(format!("{self:#?}")) }
 }
 
 /// Optimisation for:
