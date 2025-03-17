@@ -130,12 +130,12 @@ pub trait Widget: AsAny + AsDynWidget {
     /// Pointer events will target the widget under the pointer, and then the
     /// event will bubble to each of its parents.
     fn on_pointer_event(
-    &mut self,
-    ctx: &mut EventCtx,
-    _props: &mut PropertiesMut<'_>,
-    event: &PointerEvent,
-) {
-}
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
+    }
 
     /// Handle a text event.
     ///
@@ -143,23 +143,23 @@ pub trait Widget: AsAny + AsDynWidget {
     ///
     /// [focused widget]: crate::doc::doc_06_masonry_concepts#text-focus
     fn on_text_event(
-    &mut self,
-    ctx: &mut EventCtx,
-    _props: &mut PropertiesMut<'_>,
-    event: &TextEvent,
-) {
-}
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
+    }
 
     /// Handle an event from the platform's accessibility API.
     ///
     /// Accessibility events target a specific widget id, then bubble to each parent.
     fn on_access_event(
-    &mut self,
-    ctx: &mut EventCtx,
-    _props: &mut PropertiesMut<'_>,
-    event: &AccessEvent,
-) {
-}
+        &mut self,
+        ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+    ) {
+    }
 
     /// Called at the beginning of a new animation frame.
     ///
@@ -181,12 +181,12 @@ pub trait Widget: AsAny + AsDynWidget {
     /// intensive in response to an `AnimFrame` event: it might make the app miss
     /// the monitor's refresh, causing lag or jerky animations.
     fn on_anim_frame(
-    &mut self,
-    ctx: &mut UpdateCtx,
-    _props: &mut PropertiesMut<'_>,
-    interval: u64,
-) {
-}
+        &mut self,
+        ctx: &mut UpdateCtx,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+    }
 
     // TODO - Reorder methods to match 02_implementing_widget.md
 
@@ -236,11 +236,11 @@ pub trait Widget: AsAny + AsDynWidget {
     /// **any widget may return a size that doesn't fit its constraints**, and container
     /// widgets should handle those cases gracefully.
     fn layout(
-    &mut self,
-    ctx: &mut LayoutCtx,
-    _props: &mut PropertiesMut<'_>,
-    bc: &BoxConstraints,
-) -> Size;
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size;
 
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
@@ -283,8 +283,8 @@ pub trait Widget: AsAny + AsDynWidget {
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
     fn accepts_pointer_interaction(&self) -> bool {
-    true
-}
+        true
+    }
 
     /// Whether this widget gets text focus. False by default.
     ///
@@ -292,8 +292,8 @@ pub trait Widget: AsAny + AsDynWidget {
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
     fn accepts_focus(&self) -> bool {
-    false
-}
+        false
+    }
 
     /// Whether this widget gets IME events. False by default.
     ///
@@ -301,8 +301,8 @@ pub trait Widget: AsAny + AsDynWidget {
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
     fn accepts_text_input(&self) -> bool {
-    false
-}
+        false
+    }
 
     // TODO - Write a generic default implementation once
     // `const std::any::type_name` is stable.
@@ -313,12 +313,12 @@ pub trait Widget: AsAny + AsDynWidget {
     /// widget visited, and popped when control flow goes back to the parent. This method
     /// returns a static span (that you can use to filter traces and logs).
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-    trace_span!(
-        "Widget",
-        r#type = self.short_type_name(),
-        id = ctx.widget_id().trace()
-    )
-}
+        trace_span!(
+            "Widget",
+            r#type = self.short_type_name(),
+            id = ctx.widget_id().trace()
+        )
+    }
 
     /// Return a small string representing important info about this widget instance.
     ///
@@ -327,8 +327,8 @@ pub trait Widget: AsAny + AsDynWidget {
     /// `get_debug_text` will appear with that text next to their type name. This can
     /// be eg a label's text, or whether a checkbox is checked.
     fn get_debug_text(&self) -> Option<String> {
-    None
-}
+        None
+    }
 
     /// Return the cursor icon for this widget.
     ///
@@ -337,8 +337,8 @@ pub trait Widget: AsAny + AsDynWidget {
     /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
-    CursorIcon::Default
-}
+        CursorIcon::Default
+    }
 
     // --- Auto-generated implementations ---
 
@@ -353,20 +353,20 @@ pub trait Widget: AsAny + AsDynWidget {
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     fn find_widget_at_pos<'c>(
-    &'c self,
-    ctx: QueryCtx<'c>,
-    props: PropertiesRef<'c>,
-    pos: Point,
-) -> Option<WidgetRef<'c, dyn Widget>> {
-    find_widget_at_pos(
-        &WidgetRef {
-            widget: self.as_dyn(),
-            properties: props,
-            ctx,
-        },
-        pos,
-    )
-}
+        &'c self,
+        ctx: QueryCtx<'c>,
+        props: PropertiesRef<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn Widget>> {
+        find_widget_at_pos(
+            &WidgetRef {
+                widget: self.as_dyn(),
+                properties: props,
+                ctx,
+            },
+            pos,
+        )
+    }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
     /// You should not override this method.
