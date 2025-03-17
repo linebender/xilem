@@ -149,9 +149,14 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
     }
 
     fn post_scroll(&mut self, ctx: &mut crate::core::EventCtx<'_>) {
-        self.cap_scroll_range(self.anchor_height, ctx.size().height);
+        if self.anchor_index + 1 >= self.valid_range.end {
+            self.cap_scroll_range_down(self.anchor_height, ctx.size().height);
+        }
+        if self.anchor_index <= self.valid_range.start {
+            self.cap_scroll_range_up();
+        }
         if self.scroll_offset_from_anchor < 0.
-            || self.scroll_offset_from_anchor > self.anchor_height
+            || self.scroll_offset_from_anchor >= self.anchor_height
         {
             ctx.request_layout();
         }
@@ -164,13 +169,14 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
     ///
     /// Ideally, this would be configurable (so that e.g. the bottom of the last item aligns with
     /// the bottom of the viewport), but that requires more care, since it effectively changes what the last valid anchor is.
-    fn cap_scroll_range(&mut self, anchor_height: f64, viewport_height: f64) {
-        if self.anchor_index + 1 >= self.valid_range.end {
-            self.scroll_offset_from_anchor = self
-                .scroll_offset_from_anchor
-                .min(anchor_height - viewport_height / 2.)
-                .max(0.0);
-        }
+    fn cap_scroll_range_down(&mut self, anchor_height: f64, viewport_height: f64) {
+        self.scroll_offset_from_anchor = self
+            .scroll_offset_from_anchor
+            // TODO: There is still some jankiness when scrolling into the last item; this is for reasons unknown.
+            .min((anchor_height - viewport_height / 2.).max(0.0));
+    }
+    fn cap_scroll_range_up(&mut self) {
+        self.scroll_offset_from_anchor = self.scroll_offset_from_anchor.max(0.0);
     }
 }
 
@@ -255,10 +261,8 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         loop {
             if self.scroll_offset_from_anchor < 0. {
                 if self.anchor_index <= self.valid_range.start {
-                    // TODO: Is this the right time to do this clamping?
                     self.anchor_index = self.valid_range.start;
-                    // Don't scroll above the topmost item
-                    self.scroll_offset_from_anchor = 0.;
+                    self.cap_scroll_range_up();
                     break;
                 }
                 self.anchor_index -= 1;
@@ -283,6 +287,10 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 self.scroll_offset_from_anchor += new_anchor_height;
                 height_before_anchor -= new_anchor_height;
             } else {
+                let last_item = self.anchor_index + 1 >= self.valid_range.end;
+                if last_item {
+                    self.anchor_index = self.valid_range.end - 1;
+                }
                 let anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let current_anchor = self.items.get(&self.anchor_index);
                     if let Some(anchor_pod) = current_anchor {
@@ -293,13 +301,11 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 } else {
                     mean_item_height
                 };
-                if self.scroll_offset_from_anchor > anchor_height {
-                    if self.anchor_index >= self.valid_range.end {
-                        // TODO: Is this the right time to do this clamping?
-                        self.anchor_index = self.valid_range.end - 1;
-                        self.cap_scroll_range(anchor_height, viewport_size.height);
-                        break;
-                    }
+                if last_item {
+                    self.cap_scroll_range_down(anchor_height, viewport_size.height);
+                    break;
+                }
+                if self.scroll_offset_from_anchor >= anchor_height {
                     self.anchor_index += 1;
                     self.scroll_offset_from_anchor -= anchor_height;
                     height_before_anchor += anchor_height;
@@ -571,7 +577,9 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
     // TODO: Optimise using binary search?
     // fn find_widget_at_pos(..);
 
-    // fn get_debug_text(&self) -> Option<String> { Some(format!("{self:#?}")) }
+    fn get_debug_text(&self) -> Option<String> {
+        Some(format!("{self:#?}"))
+    }
 }
 
 /// Optimisation for:
