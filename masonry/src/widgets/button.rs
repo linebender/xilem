@@ -184,11 +184,16 @@ impl Widget for Button {
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
         let stroke_width = theme::BUTTON_BORDER_WIDTH;
+        let border_radius = theme::BUTTON_BORDER_RADIUS;
 
-        let rounded_rect = size
+        let bg_rect = size
+            .to_rect()
+            .inset(-stroke_width)
+            .to_rounded_rect(border_radius - stroke_width);
+        let border_rect = size
             .to_rect()
             .inset(-stroke_width / 2.0)
-            .to_rounded_rect(theme::BUTTON_BORDER_RADIUS);
+            .to_rounded_rect(border_radius);
 
         let bg_gradient = if ctx.is_disabled() {
             [theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]
@@ -204,10 +209,10 @@ impl Widget for Button {
             theme::BORDER_DARK
         };
 
-        stroke(scene, &rounded_rect, border_color, stroke_width);
+        stroke(scene, &border_rect, border_color, stroke_width);
         fill_lin_gradient(
             scene,
-            &rounded_rect,
+            &bg_rect,
             bg_gradient,
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
