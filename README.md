@@ -155,6 +155,17 @@ cargo update -p package_name --precise 0.1.1
 
 </details>
 
+## Footprint
+
+The Xilem repository includes a lot of projects and examples, most of them pulling a lot of dependencies.
+
+If you contribute to Xilem on Linux or MacOS, we recommend using `split-debuginfo` in your `config.toml` file to reduce the size of the `target/` folder:
+
+```toml
+[profile.dev]
+split-debuginfo="unpacked" # Leave debuginfo in separate files for smaller footprint.
+```
+
 ## License
 
 Licensed under the Apache License, Version 2.0
