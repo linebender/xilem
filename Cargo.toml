@@ -106,9 +106,13 @@ accesskit = "0.17.0"
 accesskit_winit = "0.23.0"
 time = "0.3.36"
 
+[profile.dev.package."*"]
+opt-level = 2 # Dependencies are rarely rebuilt, so we can spend time optimizing them.
+
 [profile.ci]
 inherits = "dev"
 debug = 0 # Don't compile debug info to reduce compilation artifact size for cache benefits.
 strip = "debuginfo" # Implied by debug = 0 since Rust 1.77, but still needed for an older MSRV.
 [profile.ci.package."*"]
 debug-assertions = true # Keep always on for dependencies for cache reuse.
+opt-level = "s" # Optimize dependencies for cache reuse.
