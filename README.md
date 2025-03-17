@@ -155,6 +155,21 @@ cargo update -p package_name --precise 0.1.1
 
 </details>
 
+## Recommended Cargo Config
+
+The Xilem repository includes a lot of projects and examples, most of them pulling a lot of dependencies.
+
+If you contribute to Xilem on Linux or MacOS, we recommend using [`split-debuginfo`](https://doc.rust-lang.org/cargo/reference/profiles.html#split-debuginfo) in your
+[`.cargo/config.toml`](https://doc.rust-lang.org/cargo/reference/config.html#hierarchical-structure) file to reduce the size of the `target/` folder:
+
+```toml
+[profile.dev]
+# One debuginfo file per dependency, to reduce file size of tests/examples.
+# Note that this value is not supported on Windows.
+# See https://doc.rust-lang.org/cargo/reference/profiles.html#split-debuginfo
+split-debuginfo="unpacked"
+```
+
 ## License
 
 Licensed under the Apache License, Version 2.0
