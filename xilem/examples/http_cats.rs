@@ -193,9 +193,11 @@ impl Status {
                     .rounded(4.)
                     .background(palette::css::BLACK.multiply_alpha(0.5)),
                 )
-                .padding((30., 42., 0., 0.))
-                .alignment(Alignment::TopTrailing);
-                OneOf3::C(zstack((image(image_data), attribution)))
+                .padding((30., 42., 0., 0.));
+                OneOf3::C(zstack((
+                    image(image_data),
+                    attribution.alignment(Alignment::TopTrailing),
+                )))
             }
         };
         flex((
