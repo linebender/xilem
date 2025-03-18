@@ -9,9 +9,9 @@ use tracing::{Span, trace_span, warn};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerButton,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
+    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Line, Point, Rect, Size};
 use crate::peniko::Color;
@@ -20,12 +20,14 @@ use crate::util::{fill_color, stroke};
 use crate::widgets::flex::Axis;
 use cursor_icon::CursorIcon;
 
-// TODO - Have child widget type as generic argument
-
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
 #[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__split__tests__columns.png", "Split panel with two labels.")]
-pub struct Split {
+pub struct Split<ChildA, ChildB>
+where
+    ChildA: Widget + ?Sized,
+    ChildB: Widget + ?Sized,
+{
     split_axis: Axis,
     split_point_chosen: f64,
     split_point_effective: f64,
@@ -38,42 +40,44 @@ pub struct Split {
     /// bar was clicked. This is used to ensure a click without mouse move is a no-op,
     /// instead of re-centering the bar on the mouse.
     click_offset: f64,
-    child1: WidgetPod<dyn Widget>,
-    child2: WidgetPod<dyn Widget>,
+    child1: WidgetPod<ChildA>,
+    child2: WidgetPod<ChildB>,
 }
 
 // --- MARK: BUILDERS ---
-impl Split {
-    /// Create a new split panel, with the specified axis being split in two.
-    ///
-    /// Horizontal split axis means that the children are left and right.
-    /// Vertical split axis means that the children are up and down.
-    fn new(split_axis: Axis, child1: impl Widget + 'static, child2: impl Widget + 'static) -> Self {
+impl<ChildA: Widget, ChildB: Widget> Split<ChildA, ChildB> {
+    /// Create a new split panel.
+    pub fn new(child1: ChildA, child2: ChildB) -> Self {
+        Self::new_pod(WidgetPod::new(child1), WidgetPod::new(child2))
+    }
+}
+
+impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
+    pub fn new_pod(child1: WidgetPod<ChildA>, child2: WidgetPod<ChildB>) -> Self {
         Self {
-            split_axis,
+            split_axis: Axis::Horizontal,
             split_point_chosen: 0.5,
             split_point_effective: 0.5,
             min_size: (0.0, 0.0),
             bar_size: 6.0,
             min_bar_area: 6.0,
             solid: false,
-            draggable: false,
+            draggable: true,
             click_offset: 0.0,
-            child1: WidgetPod::new(child1).erased(),
-            child2: WidgetPod::new(child2).erased(),
+            child1,
+            child2,
         }
     }
 
-    /// Create a new split panel, with the horizontal axis split in two by a vertical bar.
-    /// The children are laid out left and right.
-    pub fn columns(child1: impl Widget + 'static, child2: impl Widget + 'static) -> Self {
-        Self::new(Axis::Horizontal, child1, child2)
-    }
-
-    /// Create a new split panel, with the vertical axis split in two by a horizontal bar.
-    /// The children are laid out up and down.
-    pub fn rows(child1: impl Widget + 'static, child2: impl Widget + 'static) -> Self {
-        Self::new(Axis::Vertical, child1, child2)
+    /// Builder-style method to set the split axis.
+    ///
+    /// Horizontal split axis means that the children are left and right.
+    /// Vertical split axis means that the children are up and down.
+    ///
+    /// The default split point is horizontal.
+    pub fn split_axis(mut self, split_axis: Axis) -> Self {
+        self.split_axis = split_axis;
+        self
     }
 
     /// Builder-style method to set the split point as a fraction of the split axis.
@@ -83,7 +87,7 @@ impl Split {
     pub fn split_point(mut self, split_point: f64) -> Self {
         assert!(
             (0.0..=1.0).contains(&split_point),
-            "split_point must be in the range [0.0-1.0]!"
+            "split_point must be in the range [0.0, 1.0], got {split_point}"
         );
         self.split_point_chosen = split_point;
         self
@@ -145,7 +149,7 @@ impl Split {
 }
 
 // --- MARK: INTERNALS ---
-impl Split {
+impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the size of the splitter bar area.
     #[inline]
     fn bar_area(&self) -> f64 {
@@ -294,7 +298,25 @@ impl Split {
 // FIXME - Add unit tests for WidgetMut<Split>
 
 // --- MARK: WIDGETMUT ---
-impl Split {
+impl<ChildA, ChildB> Split<ChildA, ChildB>
+where
+    ChildA: Widget + FromDynWidget + ?Sized,
+    ChildB: Widget + FromDynWidget + ?Sized,
+{
+    pub fn child1_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildA> {
+        this.ctx.get_mut(&mut this.widget.child1)
+    }
+
+    pub fn child2_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildB> {
+        this.ctx.get_mut(&mut this.widget.child2)
+    }
+
+    /// Set the split axis.
+    pub fn set_split_axis(this: &mut WidgetMut<'_, Self>, split_axis: Axis) {
+        this.widget.split_axis = split_axis;
+        this.ctx.request_layout();
+    }
+
     /// Set the split point as a fraction of the split axis.
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.
@@ -367,7 +389,11 @@ impl Split {
 }
 
 // --- MARK: IMPL WIDGET ---
-impl Widget for Split {
+impl<ChildA, ChildB> Widget for Split<ChildA, ChildB>
+where
+    ChildA: Widget + ?Sized,
+    ChildB: Widget + ?Sized,
+{
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,
@@ -546,7 +572,7 @@ impl Widget for Split {
         let local_mouse_pos = pos - ctx.window_origin().to_vec2();
         let is_bar_hovered = self.bar_hit_test(ctx.size(), local_mouse_pos);
 
-        if ctx.is_pointer_capture_target() || is_bar_hovered {
+        if self.draggable && (ctx.is_pointer_capture_target() || is_bar_hovered) {
             match self.split_axis {
                 Axis::Horizontal => CursorIcon::EwResize,
                 Axis::Vertical => CursorIcon::NsResize,
@@ -590,10 +616,10 @@ mod tests {
     #[test]
     fn columns() {
         #[rustfmt::skip]
-        let widget = Split::columns(
+        let widget = Split::new(
             Label::new("Hello"),
             Label::new("World"),
-        );
+        ).split_axis(Axis::Horizontal).draggable(false);
 
         let mut harness = TestHarness::create(widget);
 
@@ -604,10 +630,10 @@ mod tests {
     #[test]
     fn rows() {
         #[rustfmt::skip]
-        let widget = Split::rows(
+        let widget = Split::new(
             Label::new("Hello"),
             Label::new("World"),
-        );
+        ).split_axis(Axis::Vertical).draggable(false);
 
         let mut harness = TestHarness::create(widget);
 
@@ -621,7 +647,7 @@ mod tests {
     #[test]
     fn edit_splitter() {
         let image_1 = {
-            let widget = Split::rows(Label::new("Hello"), Label::new("World"))
+            let widget = Split::new(Label::new("Hello"), Label::new("World"))
                 .split_point(0.3)
                 .min_size(40.0, 10.0)
                 .bar_size(12.0)
@@ -634,12 +660,12 @@ mod tests {
         };
 
         let image_2 = {
-            let widget = Split::rows(Label::new("Hello"), Label::new("World"));
+            let widget = Split::new(Label::new("Hello"), Label::new("World"));
 
             let mut harness = TestHarness::create_with_size(widget, Size::new(100.0, 100.0));
 
             harness.edit_root_widget(|mut splitter| {
-                let mut splitter = splitter.downcast::<Split>();
+                let mut splitter = splitter.downcast::<Split<Label, Label>>();
 
                 Split::set_split_point(&mut splitter, 0.3);
                 Split::set_min_size(&mut splitter, 40.0, 10.0);
