@@ -148,6 +148,12 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         };
     }
 
+    pub fn overwrite_anchor(this: &mut WidgetMut<Self>, idx: i64) {
+        this.widget.anchor_index = idx;
+        this.widget.scroll_offset_from_anchor = 0.;
+        this.ctx.request_layout();
+    }
+
     fn post_scroll(&mut self, ctx: &mut crate::core::EventCtx<'_>) {
         if self.anchor_index + 1 >= self.valid_range.end {
             self.cap_scroll_range_down(self.anchor_height, ctx.size().height);
@@ -188,7 +194,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         bc: &crate::core::BoxConstraints,
     ) -> vello::kurbo::Size {
         let viewport_size = bc.max();
-        let child_constraints_changed = viewport_size.width == self.old_width;
+        let child_constraints_changed = viewport_size.width != self.old_width;
         self.old_width = viewport_size.width;
         ctx.set_clip_path(viewport_size.to_rect());
         let child_bc = BoxConstraints::new(
@@ -367,8 +373,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             // For each time we have the falling edge of becoming not dense, we want to warn.
             self.warned_not_dense = false;
         }
-
-        let target_range = {
+        let target_range = if self.active_range.contains(&self.anchor_index) {
             let start = if let Some(item_crossing_top) = item_crossing_top {
                 item_crossing_top
             } else {
@@ -384,16 +389,22 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 self.active_range.end + number_needed
             };
             start..end
+        } else {
+            // We've jumped a huge distance in view space (see `Self::overwrite_anchor`)
+            // Handle that sanely.
+            let start = self.anchor_index - (cutoff_up / mean_item_height).ceil() as i64;
+            let end = self.anchor_index + (cutoff_down / mean_item_height).ceil() as i64;
+            start..end
         };
+
         // Avoid requesting invalid items by clamping to the valid range
         let target_range = target_range
             .start
-            .max(self.valid_range.start)
-            .min(self.valid_range.end - 1)
+            // target_range.start is inclusive whereas valid_range.end is exclusive; convert between the two.
+            .clamp(self.valid_range.start, self.valid_range.end - 1)
             ..target_range
                 .end
-                .min(self.valid_range.end)
-                .max(self.valid_range.start);
+                .clamp(self.valid_range.start, self.valid_range.end);
 
         if self.active_range != target_range {
             let previous_active = self.active_range.clone();
@@ -415,6 +426,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 // be valid to call `set_stashed` on.
                 // However, there's no other way to encode this operation at the moment.
                 ctx.mutate_self_later(move |mut this| {
+                    // It's critical that nothing here produces a layout pass, otherwise we would get into an infinite loop
                     let mut this = this.downcast::<Self>();
                     for idx in opt_iter_difference(&previous_active, &this.widget.active_range) {
                         let item = this.widget.items.get_mut(&idx);
@@ -530,7 +542,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             TextEvent::KeyboardKey(key_event, modifiers_state) => {
                 // To get to this state, you currently need to press "tab" to focus this widget in the example.
                 if key_event.state.is_pressed() {
-                    let delta = 500.;
+                    let delta = 20000.;
                     if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
                         self.post_scroll(ctx);
@@ -605,6 +617,16 @@ fn opt_iter_difference(
 mod tests {
     use std::collections::HashSet;
 
+    use parley::StyleProperty;
+    use vello::kurbo::Size;
+
+    use crate::{
+        assert_render_snapshot,
+        core::{Widget, WidgetMut, WidgetPod},
+        testing::{TestHarness, widget_ids},
+        widgets::{Label, VirtualScroll, VirtualScrollAction},
+    };
+
     use super::opt_iter_difference;
 
     #[test]
@@ -639,6 +661,94 @@ mod tests {
                     correct method, but wasn't for {old_range:?} and {new_range:?}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn sensible_driver() {
+        let [item_3_id, item_13_id] = widget_ids();
+
+        type ScrollContents = Label;
+
+        let widget = VirtualScroll::<ScrollContents>::new(0);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            for idx in action.old_active {
+                VirtualScroll::remove_child(&mut scroll, idx);
+            }
+            for idx in action.target {
+                VirtualScroll::add_child(
+                    &mut scroll,
+                    idx,
+                    WidgetPod::new(
+                        Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                    ),
+                );
+            }
+        }
+
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        assert_render_snapshot!(harness, "virtual_scroll_basic");
+        harness.edit_widget(virtual_scroll_id, |mut portal| {
+            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+            VirtualScroll::overwrite_anchor(&mut scroll, 100);
+        });
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        assert_render_snapshot!(harness, "virtual_scroll_moved");
+        // let item_3_rect = harness.get_widget(item_3_id).ctx().local_layout_rect();
+        // harness.edit_root_widget(|mut portal| {
+        //     let mut portal = portal.downcast::<Portal<Flex>>();
+        //     Portal::pan_viewport_to(&mut portal, item_3_rect);
+        // });
+
+        // assert_render_snapshot!(harness, "button_list_scroll_to_item_3");
+
+        // let item_13_rect = harness.get_widget(item_13_id).ctx().local_layout_rect();
+        // harness.edit_root_widget(|mut portal| {
+        //     let mut portal = portal.downcast::<Portal<Flex>>();
+        //     Portal::pan_viewport_to(&mut portal, item_13_rect);
+        // });
+
+        // assert_render_snapshot!(harness, "button_list_scroll_to_item_13");
+    }
+
+    fn drive_to_fixpoint<T: Widget + ?Sized>(
+        harness: &mut TestHarness,
+        virtual_scroll_id: crate::core::WidgetId,
+        mut f: impl FnMut(VirtualScrollAction, WidgetMut<'_, VirtualScroll<T>>),
+    ) {
+        let mut iteration = 0;
+        let mut old_active = None;
+        loop {
+            iteration += 1;
+            if iteration > 10 {
+                panic!("Took too long to reach fixpoint");
+            }
+            let Some((action, id)) = harness.pop_action() else {
+                break;
+            };
+            assert_eq!(
+                id, virtual_scroll_id,
+                "Only widget in tree should give action"
+            );
+            assert_eq!(harness.pop_action(), None);
+            let crate::core::Action::Other(action) = action else {
+                unreachable!()
+            };
+            let action = action.downcast::<VirtualScrollAction>().unwrap();
+            if let Some(old_active) = old_active.take() {
+                assert_eq!(action.old_active, old_active);
+            }
+            old_active = Some(action.target.clone());
+            // This could happen iff the valid range is empty, which is case I've not reasoned about yet.
+            assert!(!action.target.is_empty());
+
+            harness.edit_widget(virtual_scroll_id, |mut portal| {
+                let mut scroll = portal.downcast::<VirtualScroll<T>>();
+                f(*action, scroll);
+            });
         }
     }
 }
