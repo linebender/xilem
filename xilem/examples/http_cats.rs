@@ -175,6 +175,19 @@ impl Status {
     }
 
     fn details_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
+        let image_attribution = sized_box(
+            sized_box(
+                prose("Copyright ©️ https://http.cat")
+                    .line_break_mode(LineBreaking::Clip)
+                    .alignment(TextAlignment::End),
+            )
+            .padding(4.)
+            .rounded(4.)
+            .background(palette::css::BLACK.multiply_alpha(0.5)),
+        )
+        .padding((30., 42., 0., 0.))
+        .alignment(Alignment::TopTrailing);
+
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")
@@ -182,7 +195,9 @@ impl Status {
             ),
             ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.).height(80.)),
             // TODO: Alt text?
-            ImageState::Available(image_data) => OneOf3::C(image(image_data)),
+            ImageState::Available(image_data) => {
+                OneOf3::C(zstack((image(image_data), image_attribution)))
+            }
         };
         flex((
             prose(format!("HTTP Status Code: {}", self.code)).alignment(TextAlignment::Middle),
@@ -190,21 +205,7 @@ impl Status {
                 .text_size(20.)
                 .alignment(TextAlignment::Middle),
             FlexSpacer::Fixed(10.),
-            zstack((
-                image,
-                sized_box(
-                    sized_box(
-                        prose("Copyright ©️ https://http.cat")
-                            .line_break_mode(LineBreaking::Clip)
-                            .alignment(TextAlignment::End),
-                    )
-                    .padding(4.)
-                    .rounded(4.)
-                    .background(palette::css::BLACK.multiply_alpha(0.5)),
-                )
-                .padding((30., 42., 0., 0.))
-                .alignment(Alignment::TopTrailing),
-            )),
+            image,
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)
     }
