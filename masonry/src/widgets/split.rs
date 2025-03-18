@@ -621,7 +621,8 @@ mod tests {
             Label::new("World"),
         ).split_axis(Axis::Horizontal).draggable(false);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 150.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "columns");
@@ -635,7 +636,8 @@ mod tests {
             Label::new("World"),
         ).split_axis(Axis::Vertical).draggable(false);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 150.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "rows");

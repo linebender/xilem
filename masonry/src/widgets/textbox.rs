@@ -213,9 +213,9 @@ mod tests {
     #[test]
     fn textbox_outline() {
         let textbox = Textbox::from_text_area(
-            TextArea::new_editable("Textbox contents").with_style(StyleProperty::FontSize(10.0)),
+            TextArea::new_editable("Textbox contents").with_style(StyleProperty::FontSize(14.0)),
         );
-        let mut harness = TestHarness::create_with_size(textbox, Size::new(150.0, 20.0));
+        let mut harness = TestHarness::create_with_size(textbox, Size::new(150.0, 40.0));
 
         assert_render_snapshot!(harness, "textbox_outline");
 

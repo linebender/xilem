@@ -491,7 +491,8 @@ mod tests {
     fn simple_label() {
         let label = Label::new("Hello");
 
-        let mut harness = TestHarness::create(label);
+        let window_size = Size::new(100.0, 40.0);
+        let mut harness = TestHarness::create_with_size(label, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");
@@ -517,7 +518,8 @@ mod tests {
             .with_line_break_mode(LineBreaking::WordWrap)
             .with_style(StyleProperty::Underline(true));
 
-        let mut harness = TestHarness::create_with_size(label, Size::new(100.0, 20.));
+        let window_size = Size::new(100.0, 40.0);
+        let mut harness = TestHarness::create_with_size(label, window_size);
 
         assert_render_snapshot!(harness, "underline_label");
     }
@@ -528,7 +530,8 @@ mod tests {
             .with_style(StyleProperty::Strikethrough(true))
             .with_style(StyleProperty::StrikethroughSize(Some(4.)));
 
-        let mut harness = TestHarness::create_with_size(label, Size::new(100.0, 20.));
+        let window_size = Size::new(100.0, 40.0);
+        let mut harness = TestHarness::create_with_size(label, window_size);
 
         assert_render_snapshot!(harness, "strikethrough_label");
     }
@@ -539,7 +542,7 @@ mod tests {
     fn label_alignment_flex() {
         fn base_label() -> Label {
             Label::new("Hello")
-                .with_style(StyleProperty::FontSize(10.0))
+                .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
         }
         let label1 = base_label().with_alignment(Alignment::Start);
@@ -558,7 +561,7 @@ mod tests {
             .with_flex_child(label6, CrossAxisAlignment::Center)
             .gap(0.0);
 
-        let mut harness = TestHarness::create_with_size(flex, Size::new(80.0, 80.0));
+        let mut harness = TestHarness::create_with_size(flex, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "label_alignment_flex");
     }
@@ -572,7 +575,7 @@ mod tests {
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_line_break_mode(LineBreaking::WordWrap),
                 )
-                .width(200.0),
+                .width(180.0),
             )
             .with_spacer(20.0)
             .with_child(
@@ -580,7 +583,7 @@ mod tests {
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_line_break_mode(LineBreaking::Clip),
                 )
-                .width(200.0),
+                .width(180.0),
             )
             .with_spacer(20.0)
             .with_child(
@@ -588,11 +591,11 @@ mod tests {
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_line_break_mode(LineBreaking::Overflow),
                 )
-                .width(200.0),
+                .width(180.0),
             )
             .with_flex_spacer(1.0);
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create_with_size(widget, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "line_break_modes");
     }

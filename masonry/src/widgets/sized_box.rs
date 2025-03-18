@@ -635,12 +635,13 @@ mod tests {
     #[test]
     fn empty_box() {
         let widget = SizedBox::empty()
-            .width(40.0)
-            .height(40.0)
+            .width(20.0)
+            .height(20.0)
             .border(palette::css::BLUE, 5.0)
             .rounded(5.0);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "empty_box");
@@ -652,7 +653,8 @@ mod tests {
             .border(palette::css::BLUE, 5.0)
             .rounded(5.0);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_no_size");
@@ -661,12 +663,13 @@ mod tests {
     #[test]
     fn label_box_with_size() {
         let widget = SizedBox::new(Label::new("hello"))
-            .width(40.0)
-            .height(40.0)
+            .width(20.0)
+            .height(20.0)
             .border(palette::css::BLUE, 5.0)
             .rounded(5.0);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_with_size");
@@ -677,9 +680,10 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello"))
             .border(palette::css::BLUE, 5.0)
             .rounded(5.0)
-            .padding((60., 40.));
+            .padding((15., 10.));
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_with_padding");
@@ -688,11 +692,12 @@ mod tests {
     #[test]
     fn label_box_with_solid_background() {
         let widget = SizedBox::new(Label::new("hello"))
-            .width(40.0)
-            .height(40.0)
+            .width(20.0)
+            .height(20.0)
             .background(palette::css::PLUM);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_with_solid_background");
@@ -701,9 +706,9 @@ mod tests {
     #[test]
     fn empty_box_with_gradient_background() {
         let widget = SizedBox::empty()
-            .width(40.)
-            .height(40.)
-            .rounded(20.)
+            .width(20.)
+            .height(20.)
+            .rounded(10.)
             .border(palette::css::LIGHT_SKY_BLUE, 5.)
             .background(
                 Gradient::new_sweep((30., 30.), 0., std::f32::consts::TAU).with_stops([
@@ -715,7 +720,8 @@ mod tests {
                 ]),
             );
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "empty_box_with_gradient_background");
@@ -724,13 +730,14 @@ mod tests {
     #[test]
     fn label_box_with_padding_and_background() {
         let widget = SizedBox::new(Label::new("hello"))
-            .width(40.0)
-            .height(40.0)
+            .width(20.0)
+            .height(20.0)
             .background(palette::css::PLUM)
             .border(palette::css::LIGHT_SKY_BLUE, 5.)
-            .padding(100.);
+            .padding(25.);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_with_background_and_padding");
@@ -740,14 +747,15 @@ mod tests {
     fn label_box_with_padding_outside() {
         let widget = SizedBox::new(
             SizedBox::new(Label::new("hello"))
-                .width(40.0)
-                .height(40.0)
+                .width(20.0)
+                .height(20.0)
                 .background(palette::css::PLUM)
                 .border(palette::css::LIGHT_SKY_BLUE, 5.),
         )
-        .padding(100.);
+        .padding(25.);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_box_with_outer_padding");
@@ -759,9 +767,10 @@ mod tests {
 
     #[test]
     fn background_brush_property() {
-        let widget = SizedBox::empty().width(40.).height(40.).rounded(20.);
+        let widget = SizedBox::empty().width(20.).height(20.).rounded(10.);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = BackgroundColor {

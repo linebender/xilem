@@ -205,15 +205,15 @@ mod tests {
     /// its parent's alignment.
     fn prose_clipping() {
         let prose = Prose::from_text_area(
-            TextArea::new_immutable("Hello this text should be truncated")
-                .with_style(StyleProperty::FontSize(10.0))
+            TextArea::new_immutable("Truncated text - you should not see this")
+                .with_style(StyleProperty::FontSize(14.0))
                 .with_word_wrap(false),
         )
         .with_clip(true);
 
         let sized_box = Flex::row().with_child(SizedBox::new(prose).width(60.));
 
-        let mut harness = TestHarness::create_with_size(sized_box, Size::new(80.0, 15.0));
+        let mut harness = TestHarness::create_with_size(sized_box, Size::new(100.0, 40.0));
 
         assert_render_snapshot!(harness, "prose_clipping");
     }
@@ -226,7 +226,7 @@ mod tests {
             // Trailing whitespace is displayed when laying out prose.
             Prose::from_text_area(
                 TextArea::new_immutable("Hello  ")
-                    .with_style(StyleProperty::FontSize(10.0))
+                    .with_style(StyleProperty::FontSize(14.0))
                     .with_alignment(alignment)
                     .with_word_wrap(true),
             )
@@ -246,7 +246,7 @@ mod tests {
             .with_flex_child(prose6, CrossAxisAlignment::Center)
             .gap(0.0);
 
-        let mut harness = TestHarness::create_with_size(flex, Size::new(80.0, 80.0));
+        let mut harness = TestHarness::create_with_size(flex, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "prose_alignment_flex");
     }
