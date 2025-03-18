@@ -76,33 +76,12 @@ profiling = { version = "1.0.15", features = ["profile-with-tracing"] }
 tracing_android_trace = "0.1.0"
 
 [[example]]
-name = "calc_masonry"
-test = true
-
-[[example]]
-name = "custom_widget"
-test = true
-
-[[example]]
-name = "grid_masonry"
-test = true
-
-[[example]]
-name = "hello_masonry"
-test = true
-
-[[example]]
 name = "simple_image"
-test = true
 #required-features = ["image", "png"]
 # This actually enables scraping for all examples, not just this one.
 # However it is possible to set doc-scrape-examples to false for other specific examples.
 doc-scrape-examples = true
 
 [[example]]
-name = "to_do_list"
-test = true
-
-[[example]]
-name = "two_textboxes"
+name = "tests"
 test = true

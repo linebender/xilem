@@ -1,6 +1,6 @@
 ---
-source: masonry/examples/calc_masonry.rs
-assertion_line: 416
+source: masonry/examples/tests.rs
+assertion_line: 30
 expression: harness.root_widget()
 ---
 Flex(

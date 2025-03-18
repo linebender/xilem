@@ -5,7 +5,7 @@
 //! We draw an image, some text, a shape, and a curve.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::shadow_unrelated, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
@@ -34,7 +34,14 @@ impl AppDriver for Driver {
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
-struct CustomWidget(String);
+/// A struct that implements the Widget trait.
+///
+/// This struct will be the root widget of the application.
+#[derive(Debug)]
+pub struct CustomWidget(
+    /// A string that will be displayed in the widget.
+    pub String,
+);
 
 impl Widget for CustomWidget {
     fn on_pointer_event(
@@ -201,23 +208,4 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
         }
     }
     result
-}
-
-// --- MARK: TESTS ---
-#[cfg(test)]
-mod tests {
-    use insta::assert_debug_snapshot;
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
-
-    use super::*;
-
-    #[test]
-    fn screenshot_test() {
-        let my_string = "Masonry + Vello".to_string();
-
-        let mut harness = TestHarness::create(CustomWidget(my_string));
-        assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
-    }
 }

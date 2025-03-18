@@ -4,7 +4,7 @@
 //! Shows how to use a grid layout in Masonry.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{Action, PointerButton, StyleProperty, WidgetId};
@@ -45,7 +45,8 @@ fn grid_button(params: GridParams) -> Button {
     ))
 }
 
-fn make_grid(grid_spacing: f64) -> Grid {
+/// Create a grid layout with buttons that change the grid spacing.
+pub fn make_grid(grid_spacing: f64) -> Grid {
     let label = SizedBox::new(Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
@@ -126,23 +127,4 @@ fn main() {
         driver,
     )
     .unwrap();
-}
-
-// --- MARK: TESTS ---
-#[cfg(test)]
-mod tests {
-    use insta::assert_debug_snapshot;
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
-
-    use super::*;
-
-    #[test]
-    fn screenshot_test() {
-        let mut harness = TestHarness::create(make_grid(1.0));
-        assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
-
-        // TODO - Test clicking buttons
-    }
 }

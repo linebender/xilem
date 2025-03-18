@@ -5,7 +5,7 @@
 //! It does the almost bare minimum while still being useful.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{Action, Widget, WidgetId};
@@ -46,7 +46,8 @@ impl AppDriver for Driver {
     }
 }
 
-fn make_widget_tree() -> impl Widget {
+/// Create a widget tree for an empty to-do list.
+pub fn make_widget_tree() -> impl Widget {
     Portal::new(
         Flex::column()
             .with_child(
@@ -74,24 +75,4 @@ fn main() {
         },
     )
     .unwrap();
-}
-
-// --- MARK: TESTS ---
-#[cfg(test)]
-mod tests {
-    use insta::assert_debug_snapshot;
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
-
-    use super::*;
-
-    #[test]
-    fn screenshot_test() {
-        let mut harness = TestHarness::create(make_widget_tree());
-        assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
-
-        // TODO - Test clicking buttons
-        // TODO - Test typing text
-    }
 }

@@ -1,6 +1,6 @@
 ---
-source: masonry/examples/grid_masonry.rs
-assertion_line: 142
+source: masonry/examples/tests.rs
+assertion_line: 48
 expression: harness.root_widget()
 ---
 Grid(
