@@ -747,7 +747,9 @@ impl RenderRootState {
     }
 
     pub(crate) fn needs_rewrite_passes(&self) -> bool {
-        self.needs_pointer_pass || self.focused_widget != self.next_focused_widget
+        self.needs_pointer_pass
+            || self.focused_widget != self.next_focused_widget
+            || !self.mutate_callbacks.is_empty()
     }
 }
 
