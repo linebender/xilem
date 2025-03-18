@@ -87,7 +87,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     pub fn split_point(mut self, split_point: f64) -> Self {
         assert!(
             (0.0..=1.0).contains(&split_point),
-            "split_point must be in the range [0.0-1.0]!"
+            "split_point must be in the range [0.0, 1.0], got {split_point}"
         );
         self.split_point_chosen = split_point;
         self

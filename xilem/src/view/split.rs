@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::widgets::{self, Axis};
-use xilem_core::{DynMessage, View, ViewId, ViewMarker, ViewPathTracker};
+use xilem_core::{DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -91,16 +91,17 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     ///
     /// The value must be between `0.0` and `1.0`, inclusive.
     /// The default split point is `0.5`.
+    #[track_caller]
     pub fn split_point(mut self, split_point: f64) -> Self {
         assert!(
             (0.0..=1.0).contains(&split_point),
-            "split_point must be in the range [0.0-1.0]!"
+            "split_point must be in the range [0.0, 1.0], got {split_point}"
         );
         self.split_point = split_point;
         self
     }
 
-    /// Set the minimum size for both sides of the split axis.
+    /// Set the minimum size for both sides of the split axis in logical pixels.
     ///
     /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
@@ -111,18 +112,19 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
         self
     }
 
-    /// Set the size of the splitter bar.
+    /// Set the size of the splitter bar in logical pixels.
     ///
     /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
+    #[track_caller]
     pub fn bar_size(mut self, bar_size: f64) -> Self {
         assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater!");
         self.bar_size = bar_size.ceil();
         self
     }
 
-    /// Set the minimum size of the splitter bar area.
+    /// Set the minimum size of the splitter bar area in logical pixels.
     ///
     /// The minimum splitter bar area defines the minimum size of the area
     /// where mouse hit detection is done for the splitter bar.
@@ -134,6 +136,7 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
+    #[track_caller]
     pub fn min_bar_area(mut self, min_bar_area: f64) -> Self {
         assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater!");
         self.min_bar_area = min_bar_area.ceil();
@@ -157,8 +160,8 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     }
 }
 
-const CHILD1_VIEW_ID: ViewId = ViewId::new(5436781);
-const CHILD2_VIEW_ID: ViewId = ViewId::new(5436782);
+const CHILD1_VIEW_ID: ViewId = ViewId::new(0);
+const CHILD2_VIEW_ID: ViewId = ViewId::new(1);
 
 impl<ChildA, ChildB, State, Action> ViewMarker for Split<ChildA, ChildB, State, Action> {}
 impl<ChildA, ChildB, State, Action> View<State, Action, ViewCtx>
@@ -268,7 +271,15 @@ where
                 self.child2
                     .message(&mut view_state.1, rest, message, app_state)
             }
-            _ => unreachable!("invalid id_path for Split view message: {:?}", id_path),
+            view_id => {
+                tracing::error!(
+                    "Invalid message arrived in Split::message, expected {:?} or {:?}, got {:?}. This is a bug.",
+                    CHILD1_VIEW_ID,
+                    CHILD2_VIEW_ID,
+                    view_id
+                );
+                MessageResult::Stale(message)
+            }
         }
     }
 }
