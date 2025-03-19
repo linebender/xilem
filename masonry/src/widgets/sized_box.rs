@@ -327,6 +327,7 @@ impl SizedBox {
 
 // --- MARK: WIDGETMUT ---
 impl SizedBox {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
         if let Some(child) = this.widget.child.take() {
             this.ctx.remove_child(child);
@@ -336,6 +337,7 @@ impl SizedBox {
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn remove_child(this: &mut WidgetMut<'_, Self>) {
         if let Some(child) = this.widget.child.take() {
             this.ctx.remove_child(child);
@@ -420,7 +422,7 @@ impl SizedBox {
         this.ctx.request_layout();
     }
 
-    // TODO - Doc
+    #[expect(missing_docs, reason = "TODO")]
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> Option<WidgetMut<'t, dyn Widget>> {
         let child = this.widget.child.as_mut()?;
         Some(this.ctx.get_mut(child))

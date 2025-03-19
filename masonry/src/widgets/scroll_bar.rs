@@ -1,8 +1,6 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(missing_docs)]
-
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
@@ -40,6 +38,7 @@ pub struct ScrollBar {
 
 // --- MARK: BUILDERS ---
 impl ScrollBar {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn new(axis: Axis, portal_size: f64, content_size: f64) -> Self {
         Self {
             axis,
@@ -106,6 +105,7 @@ impl ScrollBar {
 // --- MARK: WIDGETMUT ---
 impl ScrollBar {
     // TODO - Remove?
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_sizes(this: &mut WidgetMut<'_, Self>, portal_size: f64, content_size: f64) {
         this.widget.portal_size = portal_size;
         this.widget.content_size = content_size;
@@ -113,6 +113,7 @@ impl ScrollBar {
     }
 
     // TODO - Remove?
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_content_size(this: &mut WidgetMut<'_, Self>, content_size: f64) {
         // TODO - cursor_progress
         this.widget.content_size = content_size;

@@ -1,8 +1,6 @@
 // Copyright 2020 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(missing_docs)]
-
 use std::ops::Range;
 
 use accesskit::{Node, Role};
@@ -23,6 +21,7 @@ use crate::widgets::{Axis, ScrollBar};
 // TODO - Document which cases need request_layout, request_compose and request_render
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see
+#[expect(missing_docs, reason = "TODO")]
 pub struct Portal<W: Widget + ?Sized> {
     child: WidgetPod<W>,
     // TODO - differentiate between the "explicit" viewport pos determined
@@ -42,12 +41,14 @@ pub struct Portal<W: Widget + ?Sized> {
 
 // --- MARK: BUILDERS ---
 impl<W: Widget> Portal<W> {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn new(child: W) -> Self {
         Self::new_pod(WidgetPod::new(child))
     }
 }
 
 impl<W: Widget + ?Sized> Portal<W> {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn new_pod(child: WidgetPod<W>) -> Self {
         Self {
             child,
@@ -63,6 +64,7 @@ impl<W: Widget + ?Sized> Portal<W> {
         }
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn get_viewport_pos(&self) -> Point {
         self.viewport_pos
     }
@@ -171,16 +173,19 @@ impl<W: Widget + ?Sized> Portal<W> {
 
 // --- MARK: WIDGETMUT ---
 impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn horizontal_scrollbar_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
         this.ctx.get_mut(&mut this.widget.scrollbar_horizontal)
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn vertical_scrollbar_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
@@ -211,6 +216,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
         let portal_size = this.ctx.local_layout_rect().size();
         let content_size = this
@@ -235,10 +241,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         pos_changed
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn pan_viewport_by(this: &mut WidgetMut<'_, Self>, translation: Vec2) -> bool {
         Self::set_viewport_pos(this, this.widget.viewport_pos + translation)
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     // Note - Rect is in child coordinates
     pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
         let viewport = Rect::from_origin_size(this.widget.viewport_pos, this.ctx.widget_state.size);

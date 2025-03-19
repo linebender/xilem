@@ -3,9 +3,6 @@
 
 //! Common widgets.
 
-// We use allow because expect(missing_docs) is noisy with rust-analyzer.
-#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
-
 #[cfg(test)]
 mod tests;
 

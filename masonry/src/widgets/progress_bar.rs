@@ -63,6 +63,7 @@ impl ProgressBar {
 
 // --- MARK: WIDGETMUT ---
 impl ProgressBar {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_progress(this: &mut WidgetMut<'_, Self>, mut progress: Option<f64>) {
         clamp_progress(&mut progress);
         let progress_changed = this.widget.progress != progress;
