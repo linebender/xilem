@@ -54,43 +54,19 @@ impl AppDriver for Driver {
                     }
                     for idx in action.target.clone() {
                         if !action.old_active.contains(&idx) {
-                            let evil = false;
-                            if evil {
-                                // Adversarial implementation: we should handle this well (although we warn)
-                                if idx % 10 == 0 {
-                                    VirtualScroll::add_child(
-                                        &mut scroll,
-                                        idx,
-                                        WidgetPod::new(
-                                            Label::new(format!("Child {idx}")).with_style(
-                                                StyleProperty::FontSize(if idx % 3 == 0 {
-                                                    100.
-                                                } else {
-                                                    10.
-                                                }),
-                                            ),
-                                        ),
-                                    );
-                                }
-                            } else {
-                                let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
-                                    (false, true) => self.buzz.clone(),
-                                    (true, false) => self.fizz.clone(),
-                                    (true, true) => self.fizzbuzz.clone(),
-                                    (false, false) => format!("{idx}").into(),
-                                };
-                                VirtualScroll::add_child(
-                                    &mut scroll,
-                                    idx,
-                                    WidgetPod::new(Label::new(label).with_style(
-                                        StyleProperty::FontSize(if idx % 100 == 0 {
-                                            40.
-                                        } else {
-                                            20.
-                                        }),
-                                    )),
-                                );
-                            }
+                            let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
+                                (false, true) => self.buzz.clone(),
+                                (true, false) => self.fizz.clone(),
+                                (true, true) => self.fizzbuzz.clone(),
+                                (false, false) => format!("{idx}").into(),
+                            };
+                            VirtualScroll::add_child(
+                                &mut scroll,
+                                idx,
+                                WidgetPod::new(Label::new(label).with_style(
+                                    StyleProperty::FontSize(if idx % 100 == 0 { 40. } else { 20. }),
+                                )),
+                            );
                         }
                     }
                 });
