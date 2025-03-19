@@ -19,7 +19,7 @@ use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_childr
 // --- MARK: HELPERS ---
 /// Returns the id path starting from the given widget id and ending at the root.
 ///
-/// If `widget_id` is None, returns an empty Vec.
+/// If `widget_id` is `None`, returns an empty `Vec`.
 fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
         return Vec::new();

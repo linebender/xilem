@@ -86,12 +86,12 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         self.ctx.widget_state.id
     }
 
-    /// Returns true if the widget has a property of type `T`.
+    /// Returns `true` if the widget has a property of type `T`.
     pub fn get_prop<T: 'static>(&self) -> Option<&T> {
         self.properties.get::<T>()
     }
 
-    /// Get value of property `T`, or None if the widget has no `T` property.
+    /// Get value of property `T`, or `None` if the widget has no `T` property.
     pub fn contains_prop<T: 'static>(&self) -> bool {
         self.properties.contains::<T>()
     }

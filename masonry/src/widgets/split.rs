@@ -195,7 +195,7 @@ impl Split {
         }
     }
 
-    /// Returns true if the provided mouse position is inside the splitter bar area.
+    /// Returns `true` if the provided mouse position is inside the splitter bar area.
     fn bar_hit_test(&self, size: Size, mouse_pos: Point) -> bool {
         let (edge1, edge2) = self.bar_edges(size);
         match self.split_axis {

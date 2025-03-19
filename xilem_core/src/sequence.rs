@@ -205,7 +205,7 @@ pub struct OptionSeqState<InnerState> {
     inner: Option<InnerState>,
     /// The generation this option is at.
     ///
-    /// If the inner sequence was Some, then None, then Some, the sequence
+    /// If the inner sequence was `Some`, then `None`, then `Some`, the sequence
     /// is treated as a new sequence, as e.g. build has been called again.
     generation: u64,
 }
