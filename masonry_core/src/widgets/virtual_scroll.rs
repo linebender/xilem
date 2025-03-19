@@ -697,21 +697,14 @@ mod tests {
         });
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_moved");
-        // let item_3_rect = harness.get_widget(item_3_id).ctx().local_layout_rect();
-        // harness.edit_root_widget(|mut portal| {
-        //     let mut portal = portal.downcast::<Portal<Flex>>();
-        //     Portal::pan_viewport_to(&mut portal, item_3_rect);
-        // });
-
-        // assert_render_snapshot!(harness, "button_list_scroll_to_item_3");
-
-        // let item_13_rect = harness.get_widget(item_13_id).ctx().local_layout_rect();
-        // harness.edit_root_widget(|mut portal| {
-        //     let mut portal = portal.downcast::<Portal<Flex>>();
-        //     Portal::pan_viewport_to(&mut portal, item_13_rect);
-        // });
-
-        // assert_render_snapshot!(harness, "button_list_scroll_to_item_13");
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 200.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        assert_render_snapshot!(harness, "virtual_scroll_scrolled");
+    }
     }
 
     fn drive_to_fixpoint<T: Widget + ?Sized>(
