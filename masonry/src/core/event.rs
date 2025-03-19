@@ -405,7 +405,7 @@ impl PointerEvent {
         }
     }
 
-    /// Returns true if the event is likely to occur every frame.
+    /// Returns `true` if the event is likely to occur every frame.
     ///
     /// Developers should avoid logging during high-density events to avoid
     /// cluttering the console.
@@ -491,7 +491,7 @@ impl TextEvent {
         }
     }
 
-    /// Returns true if the event is likely to occur every frame.
+    /// Returns `true` if the event is likely to occur every frame.
     ///
     /// Developers should avoid logging during high-density events to avoid
     /// cluttering the console.

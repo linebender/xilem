@@ -19,7 +19,7 @@ struct TreeNode<T> {
 struct DataMap<T> {
     /// The items in the tree
     items: HashMap<NodeId, Box<UnsafeCell<TreeNode<T>>>>,
-    /// The parent of each node, or None if it is the root
+    /// The parent of each node, or `None` if it is the root
     parents: HashMap<NodeId, Option<NodeId>>,
 }
 
@@ -315,7 +315,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
         }
     }
 
-    /// Returns true if the list has an element with the given id.
+    /// Returns `true` if the list has an element with the given id.
     pub fn has(&self, id: impl Into<NodeId>) -> bool {
         let child_id = id.into();
         let parent_id = self.parent_id;
@@ -407,7 +407,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         self.reborrow().is_descendant(id)
     }
 
-    /// Returns true if the list has an element with the given id.
+    /// Returns `true` if the list has an element with the given id.
     pub fn has(&self, id: impl Into<NodeId>) -> bool {
         self.reborrow().has(id)
     }
@@ -506,7 +506,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// Remove the item with the given id from the arena.
     ///
     /// If the id isn't in the list (even if it's e.g. a descendant), does nothing
-    /// and returns None.
+    /// and returns `None`.
     ///
     /// Else, returns the removed item.
     ///

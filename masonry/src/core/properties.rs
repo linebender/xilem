@@ -57,29 +57,29 @@ impl Properties {
 }
 
 impl PropertiesRef<'_> {
-    /// Returns true if the widget has a property of type `T`.
+    /// Returns `true` if the widget has a property of type `T`.
     pub fn contains<T: 'static>(&self) -> bool {
         self.map.contains::<T>()
     }
 
-    /// Get value of property `T`, or None if the widget has no `T` property.
+    /// Get value of property `T`, or `None` if the widget has no `T` property.
     pub fn get<T: 'static>(&self) -> Option<&T> {
         self.map.get::<T>()
     }
 }
 
 impl PropertiesMut<'_> {
-    /// Returns true if the widget has a property of type `T`.
+    /// Returns `true` if the widget has a property of type `T`.
     pub fn contains<T: 'static>(&self) -> bool {
         self.map.contains::<T>()
     }
 
-    /// Get value of property `T`, or None if the widget has no `T` property.
+    /// Get value of property `T`, or `None` if the widget has no `T` property.
     pub fn get<T: 'static>(&self) -> Option<&T> {
         self.map.get::<T>()
     }
 
-    /// Get value of property `T`, or None if the widget has no `T` property.
+    /// Get value of property `T`, or `None` if the widget has no `T` property.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::get_prop_mut`] instead.
     ///

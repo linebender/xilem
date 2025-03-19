@@ -263,7 +263,7 @@ impl<T> ArenaMut<'_, T> {
 }
 
 impl<'arena, T> ArenaRefList<'arena, T> {
-    /// Returns true if the list has an element with the given id.
+    /// Returns `true` if the list has an element with the given id.
     pub fn has(self, id: impl Into<NodeId>) -> bool {
         let id = id.into();
         self.children.contains_key(&id)
@@ -321,7 +321,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
 }
 
 impl<'arena, T> ArenaMutList<'arena, T> {
-    /// Returns true if the list has an element with the given id.
+    /// Returns `true` if the list has an element with the given id.
     pub fn has(self, id: impl Into<NodeId>) -> bool {
         let id = id.into();
         self.children.contains_key(&id)
@@ -409,7 +409,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// Remove the item with the given id from the arena.
     ///
     /// If the id isn't in the list (even if it's e.g. a descendant), does nothing
-    /// and returns None.
+    /// and returns `None`.
     ///
     /// Else, returns the removed item.
     ///
