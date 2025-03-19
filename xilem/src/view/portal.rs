@@ -20,8 +20,8 @@ where
         phantom: PhantomData,
     }
 }
-/// The [`View`] created by [`portal`].
 
+/// The [`View`] created by [`portal`].
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Portal<V, State, Action> {
     child: V,

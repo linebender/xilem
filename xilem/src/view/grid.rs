@@ -106,7 +106,7 @@ where
         widget = widget.with_spacing(self.spacing);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
         for element in elements.into_inner() {
-            widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params)
+            widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
         }
         let pod = ctx.new_pod(widget);
         (pod, seq_state)
