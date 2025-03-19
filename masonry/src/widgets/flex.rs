@@ -226,6 +226,7 @@ impl Flex {
         self.with_child_pod(WidgetPod::new_with_id(child, id).erased())
     }
 
+    /// Builder-style method for [adding](Flex::add_child) a type-erased child to this.
     pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>) -> Self {
         let child = Child::Fixed {
             widget,
@@ -293,10 +294,12 @@ impl Flex {
         self
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn len(&self) -> usize {
         self.children.len()
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -387,6 +390,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
         let child = Child::Fixed {
             widget: WidgetPod::new_with_id(child, id).erased(),
@@ -472,6 +476,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn insert_flex_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -481,6 +486,7 @@ impl Flex {
         Self::insert_flex_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn insert_flex_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -533,6 +539,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
@@ -541,6 +548,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
@@ -615,6 +623,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn clear(this: &mut WidgetMut<'_, Self>) {
         if !this.widget.children.is_empty() {
             this.ctx.request_layout();

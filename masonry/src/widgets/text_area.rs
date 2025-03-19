@@ -1,8 +1,6 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![warn(missing_docs)]
-
 use std::mem::Discriminant;
 use std::time::Instant;
 

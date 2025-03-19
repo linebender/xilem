@@ -32,6 +32,7 @@ struct Child {
 }
 
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
+#[expect(missing_docs, reason = "TODO")]
 pub struct GridParams {
     pub x: i32,
     pub y: i32,
@@ -41,6 +42,7 @@ pub struct GridParams {
 
 // --- MARK: IMPL GRID ---
 impl Grid {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn with_dimensions(width: i32, height: i32) -> Self {
         Self {
             children: Vec::new(),
@@ -50,6 +52,7 @@ impl Grid {
         }
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn with_spacing(mut self, spacing: f64) -> Self {
         self.grid_spacing = spacing;
         self
@@ -62,10 +65,12 @@ impl Grid {
         self.with_child_pod(WidgetPod::new(child).erased(), params)
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: GridParams) -> Self {
         self.with_child_pod(WidgetPod::new_with_id(child, id).erased(), params)
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>, params: GridParams) -> Self {
         let child = Child {
             widget,
@@ -108,6 +113,7 @@ fn new_grid_child(params: GridParams, widget: WidgetPod<dyn Widget>) -> Child {
 
 // --- MARK: IMPL GRIDPARAMS ---
 impl GridParams {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> Self {
         if x < 0 {
             debug_panic!("Grid x value should be a non-negative number; got {}", x);
@@ -152,6 +158,7 @@ impl Grid {
         Self::insert_child_pod(this, child_pod, params);
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn add_child_id(
         this: &mut WidgetMut<'_, Self>,
         child: impl Widget,
@@ -174,6 +181,7 @@ impl Grid {
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn insert_grid_child_at(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -183,6 +191,7 @@ impl Grid {
         Self::insert_grid_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn insert_grid_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -195,21 +204,25 @@ impl Grid {
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: f64) {
         this.widget.grid_spacing = spacing;
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_width(this: &mut WidgetMut<'_, Self>, width: i32) {
         this.widget.grid_width = width;
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn set_height(this: &mut WidgetMut<'_, Self>, height: i32) {
         this.widget.grid_height = height;
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
@@ -233,6 +246,7 @@ impl Grid {
         this.ctx.request_layout();
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);

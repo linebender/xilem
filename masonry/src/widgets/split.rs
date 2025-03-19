@@ -53,6 +53,7 @@ impl<ChildA: Widget, ChildB: Widget> Split<ChildA, ChildB> {
 }
 
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn new_pod(child1: WidgetPod<ChildA>, child2: WidgetPod<ChildB>) -> Self {
         Self {
             split_axis: Axis::Horizontal,
@@ -303,10 +304,12 @@ where
     ChildA: Widget + FromDynWidget + ?Sized,
     ChildB: Widget + FromDynWidget + ?Sized,
 {
+    #[expect(missing_docs, reason = "TODO")]
     pub fn child1_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildA> {
         this.ctx.get_mut(&mut this.widget.child1)
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn child2_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildB> {
         this.ctx.get_mut(&mut this.widget.child2)
     }

@@ -133,10 +133,12 @@ impl VariableLabel {
         Self::from_label_pod(WidgetPod::new(Label::new(text)))
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn from_label(label: Label) -> Self {
         Self::from_label_pod(WidgetPod::new(label))
     }
 
+    #[expect(missing_docs, reason = "TODO")]
     pub fn from_label_pod(label: WidgetPod<Label>) -> Self {
         Self {
             label,
