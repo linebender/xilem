@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![warn(missing_docs)]
-
 use std::marker::PhantomData;
 
 use masonry::core::{FromDynWidget, Widget, WidgetMut};

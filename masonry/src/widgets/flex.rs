@@ -294,12 +294,12 @@ impl Flex {
         self
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Returns the number of children (widgets and spacers) this flex container has.
     pub fn len(&self) -> usize {
         self.children.len()
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Returns true if this flex container has no children (widgets or spacers).
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -390,7 +390,11 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Add a non-flex child widget with a pre-assigned id.
+    ///
+    /// See also [`with_child_id`].
+    ///
+    /// [`with_child_id`]: Flex::with_child_id
     pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
         let child = Child::Fixed {
             widget: WidgetPod::new_with_id(child, id).erased(),
@@ -476,7 +480,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Add a flex child widget.
     pub fn insert_flex_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -486,7 +490,7 @@ impl Flex {
         Self::insert_flex_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Add a flex child widget.
     pub fn insert_flex_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -539,7 +543,13 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Remove the child at `idx`.
+    ///
+    /// This child can be a widget or a spacer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
@@ -548,7 +558,13 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Returns a mutable reference to the child widget at `idx`.
+    ///
+    /// Returns None if the child at `idx` is a spacer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
@@ -623,7 +639,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Remove all children from the container.
     pub fn clear(this: &mut WidgetMut<'_, Self>) {
         if !this.widget.children.is_empty() {
             this.ctx.request_layout();

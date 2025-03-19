@@ -12,7 +12,7 @@ use super::{Label, label};
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
-/// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
+/// Returns a view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
     VariableLabel {
         label: label(text),
@@ -21,6 +21,7 @@ pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
     }
 }
 
+/// The [`View`] created by [`variable_label`].
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct VariableLabel {
     label: Label,
@@ -63,17 +64,20 @@ impl VariableLabel {
         self
     }
 
+    /// Set the brush used to paint the text.
     #[doc(alias = "color")]
     pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
         self.label = self.label.brush(brush);
         self
     }
 
+    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
         self.label = self.label.alignment(alignment);
         self
     }
 
+    /// Set the font size of the text.
     #[doc(alias = "font_size")]
     pub fn text_size(mut self, text_size: f32) -> Self {
         self.label = self.label.text_size(text_size);

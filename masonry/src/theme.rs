@@ -1,9 +1,9 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Theme keys and initial values.
+//! Default values used by various widgets in their paint methods.
 
-#![allow(missing_docs)]
+#![allow(missing_docs, reason = "Names are self-explanatory.")]
 
 use crate::kurbo::Insets;
 use crate::peniko::Color;

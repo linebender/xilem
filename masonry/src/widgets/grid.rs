@@ -32,17 +32,21 @@ struct Child {
 }
 
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
-#[expect(missing_docs, reason = "TODO")]
+/// Parameters required when adding an item to a [`Grid`] container.
 pub struct GridParams {
+    /// Index of the column this item is starting from.
     pub x: i32,
+    /// Index of the row this item is starting from.
     pub y: i32,
+    /// Number of columns this item spans.
     pub width: i32,
+    /// Number of rows this item spans.
     pub height: i32,
 }
 
 // --- MARK: IMPL GRID ---
 impl Grid {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Create a new grid with the given number of columns and rows.
     pub fn with_dimensions(width: i32, height: i32) -> Self {
         Self {
             children: Vec::new(),
@@ -52,25 +56,23 @@ impl Grid {
         }
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Builder-style method for setting the spacing between grid items.
     pub fn with_spacing(mut self, spacing: f64) -> Self {
         self.grid_spacing = spacing;
         self
     }
 
-    /// Builder-style variant of [`Grid::add_child`].
-    ///
-    /// Convenient for assembling a group of widgets in a single expression.
+    /// Builder-style method to add a child widget.
     pub fn with_child(self, child: impl Widget, params: GridParams) -> Self {
         self.with_child_pod(WidgetPod::new(child).erased(), params)
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Builder-style method to add a child widget with a pre-assigned id.
     pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: GridParams) -> Self {
         self.with_child_pod(WidgetPod::new_with_id(child, id).erased(), params)
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
     pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>, params: GridParams) -> Self {
         let child = Child {
             widget,
@@ -86,13 +88,6 @@ impl Grid {
 
 // --- MARK: IMPL CHILD ---
 impl Child {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<dyn Widget>> {
-        Some(&mut self.widget)
-    }
-    fn widget(&self) -> Option<&WidgetPod<dyn Widget>> {
-        Some(&self.widget)
-    }
-
     fn update_params(&mut self, params: GridParams) {
         self.x = params.x;
         self.y = params.y;
@@ -113,8 +108,13 @@ fn new_grid_child(params: GridParams, widget: WidgetPod<dyn Widget>) -> Child {
 
 // --- MARK: IMPL GRIDPARAMS ---
 impl GridParams {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Get grid parameters with the given values.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the width or height is less than or equal to zero.
     pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> Self {
+        // TODO - Use u32 params instead?
         if x < 0 {
             debug_panic!("Grid x value should be a non-negative number; got {}", x);
             x = 0;
@@ -150,15 +150,15 @@ impl GridParams {
 impl Grid {
     /// Add a child widget.
     ///
-    /// See also [`with_child`].
-    ///
-    /// [`with_child`]: Grid::with_child
+    /// See also [`with_child`](Grid::with_child).
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
         let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
-        Self::insert_child_pod(this, child_pod, params);
+        Self::add_child_pod(this, child_pod, params);
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Add a child widget with a pre-assigned id.
+    ///
+    /// See also [`with_child_id`](Grid::with_child_id).
     pub fn add_child_id(
         this: &mut WidgetMut<'_, Self>,
         child: impl Widget,
@@ -166,11 +166,13 @@ impl Grid {
         params: GridParams,
     ) {
         let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
-        Self::insert_child_pod(this, child_pod, params);
+        Self::add_child_pod(this, child_pod, params);
     }
 
-    /// Add a child widget.
-    pub fn insert_child_pod(
+    /// Add a child widget already wrapped in a [`WidgetPod`].
+    ///
+    /// See also [`with_child_pod`](Grid::with_child_pod).
+    pub fn add_child_pod(
         this: &mut WidgetMut<'_, Self>,
         widget: WidgetPod<dyn Widget>,
         params: GridParams,
@@ -181,7 +183,13 @@ impl Grid {
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Insert a child widget at the giving index.
+    ///
+    /// This lets you control the order in which the children are drawn.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_grid_child_at(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -191,7 +199,13 @@ impl Grid {
         Self::insert_grid_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Insert a child widget already wrapped in a [`WidgetPod`] at the giving index.
+    ///
+    /// This lets you control the order in which the children are drawn.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_grid_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -204,31 +218,35 @@ impl Grid {
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Set the spacing between grid items.
     pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: f64) {
         this.widget.grid_spacing = spacing;
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Set the number of columns of the grid.
     pub fn set_width(this: &mut WidgetMut<'_, Self>, width: i32) {
         this.widget.grid_width = width;
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Set the number of rows of the grid.
     pub fn set_height(this: &mut WidgetMut<'_, Self>, height: i32) {
         this.widget.grid_height = height;
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Get a mutable reference to the child at `idx`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, dyn Widget>> {
-        let child = this.widget.children[idx].widget_mut()?;
-        Some(this.ctx.get_mut(child))
+    ) -> WidgetMut<'t, dyn Widget> {
+        let child = &mut this.widget.children[idx].widget;
+        this.ctx.get_mut(child)
     }
 
     /// Updates the grid parameters for the child at `idx`,
@@ -246,7 +264,11 @@ impl Grid {
         this.ctx.request_layout();
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Removes a child widget at the specified index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is out of bounds.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         this.ctx.remove_child(child.widget);
@@ -281,8 +303,8 @@ impl Widget for Grid {
     }
 
     fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
-        for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
-            ctx.register_child(child);
+        for child in self.children.iter_mut() {
+            ctx.register_child(&mut child.widget);
         }
     }
 
@@ -343,8 +365,7 @@ impl Widget for Grid {
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
         self.children
             .iter()
-            .filter_map(|child| child.widget())
-            .map(|widget_pod| widget_pod.id())
+            .map(|child| child.widget.id())
             .collect()
     }
 

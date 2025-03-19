@@ -33,11 +33,11 @@ pub struct ProgressBar {
 impl ProgressBar {
     /// Create a new `ProgressBar`.
     ///
-    /// `progress` is a number between 0 and 1 inclusive. If it is `NaN`, then an
-    /// indefinite progress bar will be shown.
-    /// Otherwise, the input will be clamped to [0, 1].
-    pub fn new(mut progress: Option<f64>) -> Self {
-        clamp_progress(&mut progress);
+    /// The progress value will be clamped to [0, 1].
+    ///
+    /// A `None` value (or NaN) will show an indeterminate progress bar.
+    pub fn new(progress: Option<f64>) -> Self {
+        let progress = clamp_progress(progress);
         let label = WidgetPod::new(
             Label::new(Self::value(progress)).with_line_break_mode(LineBreaking::Overflow),
         );
@@ -63,9 +63,13 @@ impl ProgressBar {
 
 // --- MARK: WIDGETMUT ---
 impl ProgressBar {
-    #[expect(missing_docs, reason = "TODO")]
-    pub fn set_progress(this: &mut WidgetMut<'_, Self>, mut progress: Option<f64>) {
-        clamp_progress(&mut progress);
+    /// Set the progress displayed by the bar.
+    ///
+    /// The progress value will be clamped to [0, 1].
+    ///
+    /// A `None` value (or NaN) will show an indeterminate progress bar.
+    pub fn set_progress(this: &mut WidgetMut<'_, Self>, progress: Option<f64>) {
+        let progress = clamp_progress(progress);
         let progress_changed = this.widget.progress != progress;
         if progress_changed {
             this.widget.progress = progress;
@@ -80,13 +84,12 @@ impl ProgressBar {
 /// Helper to ensure progress is either a number between [0, 1] inclusive, or `None`.
 ///
 /// NaNs are converted to `None`.
-fn clamp_progress(progress: &mut Option<f64>) {
-    if let Some(value) = progress {
-        if value.is_nan() {
-            *progress = None;
-        } else {
-            *progress = Some(value.clamp(0., 1.));
-        }
+fn clamp_progress(progress: Option<f64>) -> Option<f64> {
+    let progress = progress?;
+    if progress.is_nan() {
+        None
+    } else {
+        Some(progress.clamp(0., 1.))
     }
 }
 

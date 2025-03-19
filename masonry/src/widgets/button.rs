@@ -79,7 +79,7 @@ impl Button {
         Label::set_text(&mut Self::label_mut(this), new_text);
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Get a mutable reference to the label.
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.label)
     }

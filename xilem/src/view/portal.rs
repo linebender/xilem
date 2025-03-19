@@ -8,7 +8,7 @@ use masonry::widgets;
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
 
-/// A view which puts `child` into a scrollable region.
+/// Returns a view which puts `child` into a scrollable region.
 ///
 /// This corresponds to the Masonry [`Portal`](masonry::widgets::Portal) widget.
 pub fn portal<Child, State, Action>(child: Child) -> Portal<Child, State, Action>
@@ -20,6 +20,7 @@ where
         phantom: PhantomData,
     }
 }
+/// The [`View`] created by [`portal`].
 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Portal<V, State, Action> {

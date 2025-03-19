@@ -45,6 +45,7 @@ use crate::kurbo::{Point, Size};
 pub struct WidgetId(pub(crate) NonZeroU64);
 
 impl WidgetId {
+    /// A serialized representation of the `WidgetId` for debugging purposes.
     pub fn trace(self) -> DisplayValue<Self> {
         tracing::field::display(self)
     }
@@ -242,6 +243,7 @@ pub trait Widget: AsAny + AsDynWidget {
         bc: &BoxConstraints,
     ) -> Size;
 
+    /// Runs after the widget's final transform has been computed.
     fn compose(&mut self, ctx: &mut ComposeCtx) {}
 
     /// Paint the widget appearance.
@@ -495,6 +497,7 @@ impl WidgetId {
         }
     }
 
+    /// Returns the integer value of the `WidgetId`.
     pub fn to_raw(self) -> u64 {
         self.0.into()
     }

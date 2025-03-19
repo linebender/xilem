@@ -14,15 +14,14 @@ use crate::core::{
 };
 use crate::kurbo::Size;
 
-// TODO: This is a hack to provide an accessibility node with a Window type.
-// This should eventually be removed.
-#[expect(missing_docs, reason = "TODO")]
+// TODO: This should eventually be removed once accesskit does that for us.
+/// A widget wrapper that reports a [`Role::Window`] to the accessibility API.
 pub struct RootWidget<W: ?Sized> {
     pub(crate) pod: WidgetPod<W>,
 }
 
 impl<W: Widget> RootWidget<W> {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Create a new root widget.
     pub fn new(widget: W) -> Self {
         Self {
             pod: WidgetPod::new(widget),
@@ -31,14 +30,14 @@ impl<W: Widget> RootWidget<W> {
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Create a new root widget from a [`WidgetPod`].
     pub fn from_pod(pod: WidgetPod<W>) -> Self {
         Self { pod }
     }
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Get a mutable reference to the child widget.
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.pod)
     }
