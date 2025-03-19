@@ -260,7 +260,8 @@ mod tests {
         let [button_id] = widget_ids();
         let widget = Button::new("Hello").with_id(button_id);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(100.0, 40.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");

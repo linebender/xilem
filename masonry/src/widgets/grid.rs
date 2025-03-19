@@ -352,7 +352,8 @@ mod tests {
         // Start with a 1x1 grid
         let widget = Grid::with_dimensions(1, 1)
             .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(200.0, 200.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "initial_1x1");
 
@@ -421,7 +422,8 @@ mod tests {
     fn test_widget_removal_and_modification() {
         let widget = Grid::with_dimensions(2, 2)
             .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(200.0, 200.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "initial_2x2");
 
@@ -462,7 +464,8 @@ mod tests {
     fn test_widget_order() {
         let widget = Grid::with_dimensions(2, 2)
             .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(200.0, 200.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "initial_2x2");
 

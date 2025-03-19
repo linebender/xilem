@@ -223,7 +223,8 @@ mod tests {
         let [progressbar_id] = widget_ids();
         let widget = ProgressBar::new(None).with_id(progressbar_id);
 
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "indeterminate_progressbar");
@@ -234,7 +235,8 @@ mod tests {
         let [_0percent] = widget_ids();
 
         let widget = ProgressBar::new(Some(0.)).with_id(_0percent);
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "0_percent_progressbar");
     }
@@ -244,7 +246,8 @@ mod tests {
         let [_25percent] = widget_ids();
 
         let widget = ProgressBar::new(Some(0.25)).with_id(_25percent);
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "25_percent_progressbar");
     }
@@ -254,7 +257,8 @@ mod tests {
         let [_50percent] = widget_ids();
 
         let widget = ProgressBar::new(Some(0.5)).with_id(_50percent);
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "50_percent_progressbar");
     }
@@ -264,7 +268,8 @@ mod tests {
         let [_75percent] = widget_ids();
 
         let widget = ProgressBar::new(Some(0.75)).with_id(_75percent);
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "75_percent_progressbar");
     }
@@ -274,7 +279,8 @@ mod tests {
         let [_100percent] = widget_ids();
 
         let widget = ProgressBar::new(Some(1.)).with_id(_100percent);
-        let mut harness = TestHarness::create(widget);
+        let window_size = Size::new(150.0, 60.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "100_percent_progressbar");
     }
