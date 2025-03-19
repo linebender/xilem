@@ -18,6 +18,7 @@ use crate::core::{
 
 use super::CrossAxisAlignment;
 
+#[derive(Debug)]
 pub struct VirtualScrollAction {
     pub old_active: Range<i64>,
     pub target: Range<i64>,
@@ -134,15 +135,16 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         let child = this.widget.items.remove(&idx);
         if let Some(child) = child {
             this.ctx.remove_child(child);
-        } else {
-            tracing::warn!("Tried to remove child which has already been removed");
+        } else if !this.widget.warned_not_dense {
+            // If we have already warned because there's a density problem, don't duplicate it with this error.
+            tracing::error!(
+                "Tried to remove child ({idx}) which has already been removed or was never added."
+            );
         }
     }
 
-    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, mut child: WidgetPod<W>) {
+    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, child: WidgetPod<W>) {
         this.ctx.children_changed();
-        // let active = this.widget.active_range.contains(&idx);
-        // this.ctx.set_stashed(&mut child, !active);
         if this.widget.items.insert(idx, child).is_some() {
             tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
         };
@@ -209,14 +211,13 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             },
         );
         // The number of loaded items before the anchor
-        let mut count_before_anchor = 0;
         let mut height_before_anchor = 0.;
         // The height of all loaded items after the anchor.
         // Note that this includes the height of the anchor itself.
         let mut height_after_anchor = 0.;
         let mut count = 0_u64;
-        let mut first_item = i64::MAX;
-        let mut last_item = i64::MIN;
+        let mut first_item: Option<i64> = None;
+        let mut last_item: Option<i64> = None;
 
         // Calculate the sizes of all children
         for (idx, child) in &mut self.items {
@@ -232,7 +233,8 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 ctx.skip_layout(child);
                 continue;
             }
-
+            first_item = first_item.map(|it| it.min(*idx)).or(Some(*idx));
+            last_item = last_item.map(|it| it.max(*idx)).or(Some(*idx));
             let resulting_size = if child_constraints_changed || ctx.child_needs_layout(child) {
                 ctx.run_layout(child, &child_bc)
             } else {
@@ -240,7 +242,6 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
                 ctx.child_size(child)
             };
             if *idx < self.anchor_index {
-                count_before_anchor += 1;
                 height_before_anchor += resulting_size.height;
             } else {
                 height_after_anchor += resulting_size.height;
@@ -253,9 +254,9 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         } else {
             self.mean_item_height
         };
-        let mean_item_height = if !mean_item_height.is_finite() {
+        let mean_item_height = if !mean_item_height.is_finite() || mean_item_height < 0.01 {
             tracing::warn!(
-                "Got a non-finite mean item height {mean_item_height} in virtual scrolling"
+                "Got an unreasonable mean item height {mean_item_height} in virtual scrolling"
             );
             DEFAULT_MEAN_ITEM_HEIGHT
         } else {
@@ -373,20 +374,30 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             // For each time we have the falling edge of becoming not dense, we want to warn.
             self.warned_not_dense = false;
         }
+
         let target_range = if self.active_range.contains(&self.anchor_index) {
             let start = if let Some(item_crossing_top) = item_crossing_top {
                 item_crossing_top
             } else {
                 let number_needed =
                     ((cutoff_up - height_before_anchor) / mean_item_height).ceil() as i64;
-                self.active_range.start - number_needed
+                // Previous versions of this code had a positive feedback loop, if the driver
+                // refused to give items for ranges it claimed to support (such as if the
+                // valid_range were misconfigured).
+                // Ideally, we'd warn in this situation, but it isn't feasible
+                // to know if we're here because:
+                // 1) The driver is misbehaving; OR
+                // 2) We've reran the passes for some other reason.
+                let start_anchor = first_item.unwrap_or(self.anchor_index);
+                start_anchor - number_needed
             };
             let end = if y > cutoff_down {
                 item_crossing_bottom + 1
             } else {
                 // `y` is the bottom of the bottommost loaded item
                 let number_needed = ((cutoff_down - y) / mean_item_height).ceil() as i64;
-                self.active_range.end + number_needed
+                let end_anchor = last_item.unwrap_or(self.anchor_index);
+                end_anchor + number_needed
             };
             start..end
         } else {
@@ -506,8 +517,6 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             }
             _ => (),
         }
-
-        // TODO: Handle scroll wheel
     }
     fn accepts_pointer_interaction(&self) -> bool {
         // We handle e.g. scroll wheel events
@@ -617,12 +626,13 @@ fn opt_iter_difference(
 mod tests {
     use std::collections::HashSet;
 
+    use dpi::LogicalPosition;
     use parley::StyleProperty;
     use vello::kurbo::Size;
 
     use crate::{
         assert_render_snapshot,
-        core::{Widget, WidgetMut, WidgetPod},
+        core::{PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
         testing::{TestHarness, widget_ids},
         widgets::{Label, VirtualScroll, VirtualScrollAction},
     };
@@ -666,8 +676,6 @@ mod tests {
 
     #[test]
     fn sensible_driver() {
-        let [item_3_id, item_13_id] = widget_ids();
-
         type ScrollContents = Label;
 
         let widget = VirtualScroll::<ScrollContents>::new(0);
@@ -705,6 +713,127 @@ mod tests {
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_scrolled");
     }
+
+    #[test]
+    /// We shouldn't panic or loop if there are small gaps in the items provided by the driver.
+    fn small_gaps() {
+        type ScrollContents = Label;
+
+        let widget = VirtualScroll::<ScrollContents>::new(0);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            for idx in action.old_active {
+                VirtualScroll::remove_child(&mut scroll, idx);
+            }
+            for idx in action.target {
+                if idx % 2 == 0 {
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
+            }
+        }
+
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        harness.edit_widget(virtual_scroll_id, |mut portal| {
+            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+            VirtualScroll::overwrite_anchor(&mut scroll, 100);
+        });
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 200.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+    }
+
+    #[test]
+    /// We shouldn't panic or loop if there are big gaps in the items provided by the driver.
+    /// Note that we don't test rendering in this case, because this is a driver which breaks our contract.
+    fn big_gaps() {
+        type ScrollContents = Label;
+
+        let widget = VirtualScroll::<ScrollContents>::new(0);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            for idx in action.old_active {
+                VirtualScroll::remove_child(&mut scroll, idx);
+            }
+            for idx in action.target {
+                if idx % 100 == 1 {
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
+            }
+        }
+
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        harness.edit_widget(virtual_scroll_id, |mut portal| {
+            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+            VirtualScroll::overwrite_anchor(&mut scroll, 200);
+        });
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 200.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+    }
+
+    #[test]
+    /// We shouldn't panic or loop if the driver is very poorly written (doesn't set `valid_range` correctly)
+    /// Note that we don't test rendering in this case, because this is a driver which breaks our contract.
+    fn degenerate_driver() {
+        type ScrollContents = Label;
+
+        let widget = VirtualScroll::<ScrollContents>::new(0);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            for idx in action.old_active {
+                VirtualScroll::remove_child(&mut scroll, idx);
+            }
+            for idx in action.target {
+                if idx < 5 {
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
+            }
+        }
+
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        harness.edit_widget(virtual_scroll_id, |mut portal| {
+            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+            VirtualScroll::overwrite_anchor(&mut scroll, 200);
+        });
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 200.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
     }
 
     fn drive_to_fixpoint<T: Widget + ?Sized>(
