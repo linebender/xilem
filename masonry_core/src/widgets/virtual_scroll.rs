@@ -1,13 +1,8 @@
 // Copyright 2025 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(unused, reason = "Development")]
-use std::{
-    collections::{BTreeMap, HashMap, VecDeque},
-    ops::{Range, RangeInclusive},
-};
+use std::{collections::HashMap, ops::Range};
 
-use smallvec::SmallVec;
 use vello::kurbo::{Point, Size, Vec2};
 use winit::keyboard::{Key, NamedKey};
 
@@ -15,8 +10,6 @@ use crate::core::{
     BoxConstraints, PointerEvent, PropertiesMut, PropertiesRef, TextEvent, Widget, WidgetMut,
     WidgetPod,
 };
-
-use super::CrossAxisAlignment;
 
 #[derive(Debug)]
 pub struct VirtualScrollAction {
@@ -481,7 +474,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
 
     fn accessibility(
         &mut self,
-        ctx: &mut crate::core::AccessCtx,
+        _ctx: &mut crate::core::AccessCtx,
         _props: &PropertiesRef<'_>,
         node: &mut accesskit::Node,
     ) {
@@ -492,11 +485,11 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_access_event(
         &mut self,
-        ctx: &mut crate::core::EventCtx,
+        _ctx: &mut crate::core::EventCtx,
         _props: &mut PropertiesMut<'_>,
-        event: &crate::core::AccessEvent,
+        _event: &crate::core::AccessEvent,
     ) {
-        // TODO: Handle scroll events
+        // TODO: Handle scroll-etc. eventss
     }
 
     fn on_pointer_event(
@@ -506,8 +499,6 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         event: &crate::core::PointerEvent,
     ) {
         const SCROLLING_SPEED: f64 = 10.0;
-
-        let portal_size = ctx.size();
 
         match event {
             PointerEvent::MouseWheel(delta, _) => {
@@ -548,7 +539,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
         event: &TextEvent,
     ) {
         match event {
-            TextEvent::KeyboardKey(key_event, modifiers_state) => {
+            TextEvent::KeyboardKey(key_event, _) => {
                 // To get to this state, you currently need to press "tab" to focus this widget in the example.
                 if key_event.state.is_pressed() {
                     let delta = 20000.;
@@ -572,7 +563,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
 
     fn update(
         &mut self,
-        ctx: &mut crate::core::UpdateCtx,
+        _ctx: &mut crate::core::UpdateCtx,
         _props: &mut PropertiesMut<'_>,
         event: &crate::core::Update,
     ) {
@@ -580,7 +571,7 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
             crate::core::Update::WidgetAdded => {}
             crate::core::Update::DisabledChanged(_) => {}
             crate::core::Update::StashedChanged(_) => {}
-            crate::core::Update::RequestPanToChild(rect) => {} // TODO,
+            crate::core::Update::RequestPanToChild(_rect) => {} // TODO,
             crate::core::Update::HoveredChanged(_) => {}
             crate::core::Update::ChildHoveredChanged(_) => {}
             crate::core::Update::FocusChanged(_) => {}
@@ -633,7 +624,7 @@ mod tests {
     use crate::{
         assert_render_snapshot,
         core::{PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
-        testing::{TestHarness, widget_ids},
+        testing::TestHarness,
         widgets::{Label, VirtualScroll, VirtualScrollAction},
     };
 
@@ -868,7 +859,7 @@ mod tests {
             assert!(!action.target.is_empty());
 
             harness.edit_widget(virtual_scroll_id, |mut portal| {
-                let mut scroll = portal.downcast::<VirtualScroll<T>>();
+                let scroll = portal.downcast::<VirtualScroll<T>>();
                 f(*action, scroll);
             });
         }
