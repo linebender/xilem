@@ -767,7 +767,7 @@ mod tests {
         assert_render_snapshot!(harness, "virtual_scroll_moved");
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::MouseWheel(
-            LogicalPosition::new(0., 200.),
+            LogicalPosition::new(0., 2.5),
             PointerState::empty(),
         ));
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
