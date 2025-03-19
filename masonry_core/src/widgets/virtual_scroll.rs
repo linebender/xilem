@@ -1,6 +1,8 @@
 // Copyright 2025 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![warn(missing_docs)]
+
 use std::{collections::HashMap, ops::Range};
 
 use vello::kurbo::{Point, Size, Vec2};
@@ -17,23 +19,85 @@ pub struct VirtualScrollAction {
     pub target: Range<i64>,
 }
 
-/// We assume that by default, virtual scrolling items are at least ~30 logical pixels tall (two lines of text + a bit).
-/// Because we load the visible page, and a page above and below that, a safety margin of 2 effectively applies.
+/// A (vertical) virtual scrolling widget.
 ///
-/// We err in the positive direction because we expect to end up in a fixed-point loop, so if we have loaded
-/// too few items, that will be sorted relatively quickly.
-const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
-
-/// The model of this virtual scrolling is thus:
+/// Each child of the virtual scroll widget has a signed 64 bit id (i.e. an `i64`), and items are laid out
+/// in order of these ids.
+/// The widget keeps track of which of these ids are loaded, and requests that more are loaded.
+/// The widget requires these ids to be dense (that is, if it has a child with ids 1 and 3, it must have a child
+/// with id 2).
 ///
-/// 1) The `VirtualScroll` "knows" what item "index" it is using as an anchor
-/// 2) It "knows" how far away from that anchor it is
-/// 3) It keeps the item which is focused in its awareness at all times
-/// 4) It knows how tall any item it requests is, only once layout happens
-/// 5) It importantly does not *care* about scrollbars. This has several big advantages:
-///    - It allows for "infinite" virtual up and down-scrolling
-///    - It allows for much more control by users of how the scrolling happens
+/// This widget works in close coordinate with the [driver](crate::doc::doc_01_creating_app#the-driver) to
+/// load the children; that is, the driver must provide the children when requested.
+/// See [usage](#usage) for more details.
 ///
+/// The Masonry example `virtual_fizzbuzz` shows how to use this widget.
+/// It creates an infinitely explorable implementation of the game [Fizz buzz](https://en.wikipedia.org/wiki/Fizz_buzz).
+///
+/// ## Usage
+///
+/// When you create the virtual scroll, you specify the initial "anchor"; that is an id for which the item will be on-screen.
+/// If only a subset of ids are valid, then the valid range of ids widget *must* be set.
+// TODO: Allow setting the active range, and test that.
+///
+/// The widget will send a [`VirtualScrollAction`] whenever it needs to set.
+/// The driver must [add](Self::add_child) the widgets which are in `target` but not in `old_active`,
+/// and [remove](Self::remove_child) those which are in `old_active` but not in `target`.
+/// (that second part is to enable cleanup before the children are removed).
+/// See the docs on `VirtualScrollAction` for more details.
+///
+/// It is invalid to not provide all items requested.
+/// For items which have not yet loaded, you should either:
+/// 1) Provide a placeholder
+/// 2) Restrict the valid range to exclude them
+///
+/// It is also currently invalid for there to be no items in the virtual scrolling list.
+/// We plan to remove this limitation, but it requires validation work which has not yet been done.
+///
+/// ## Caveats
+///
+/// This widget has been developed as an minimum viable solution, and so there are a number of known issues with it.
+/// These are discussed below.
+///
+/// ### Transforms
+///
+/// Widgets can be [transformed](crate::core::WidgetMut::set_transform) arbitrarily from where their parent lays them out.
+/// This interacts poorly with virtual scrolling, because an item which would be visible.
+/// Currently, the virtual scrolling controller ignores this case.
+/// The long term plan is for each child to be clipped to a reasonable range around itself.
+/// The details of how large this clipping area will be have not been decided.
+///
+/// This will mean that once this is done, the behaviour with transformed widgets will be consistent but not
+/// necessarily intuitive (that is, for a given row on screen, the displayed content will always be the same,
+/// but some widgets with transforms might not be visible - in the worst case, completely hidden).
+// TODO: Implement this.
+///
+/// ### Focus
+///
+/// Currently, this widget does not correctly handle focused child widgets.
+/// This means that if (for example) the user is typing in a text box in a virtual scroll, and scrolls down,
+/// continuing to type will stop working.
+///
+/// ### Accessibility
+///
+/// A proper virtual scrolling list needs accessibility support (such as for scrolling, but
+/// also to ensure that focus does not get trapped, that the correct set of items are reported,
+/// if/that there are more items following, etc.).
+/// This has not yet been designed, and will be a follow-up.
+///
+/// ### Scrollbars
+///
+/// There is not yet any integration with scrollbars for this widget.
+/// This is planned; however there is no universally correct scrollbar implementation for virtual scrolling.
+/// This widget will support user-provided scrollbar types, through some yet-to-be-determined mechanism.
+/// There will also be provided implementations of reasonable scrollbar kinds.
+///
+/// ## Scrolling past the end of the list
+///
+/// Scrolling at the end of the list is locked, however it is not currently supported to lock scrolling
+/// such that the bottom of the last item cannot be above the bottom of the `VirtualScroll`.
+/// That is, it is always possible to scroll past the loaded items to the background (if the user
+/// reaches the end of the valid range).
 // TODO: Should `W` be a generic, or just always `dyn Widget`?
 pub struct VirtualScroll<W: Widget + ?Sized> {
     /// The range of items in the "id" space which are able to be used.
@@ -181,6 +245,13 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
     }
 }
 
+/// We assume that by default, virtual scrolling items are at least ~30 logical pixels tall (two lines of text + a bit).
+/// Because we load the visible page, and a page above and below that, a safety margin of 2 effectively applies.
+///
+/// We start by guessing too large, because we expect to end up in a fixed-point loop, so if we have loaded
+/// too few items, that will be sorted relatively quickly.
+const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
+
 impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
     fn layout(
         &mut self,
@@ -327,8 +398,6 @@ impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
 
         let mut item_crossing_top = None;
         let mut item_crossing_bottom = self.active_range.start;
-        // TODO: How can we even plausibly handle arbitrary transforms?
-        // Answer: We clip each child to a box at most (say) 20% taller than their layout box.
         let mut y = -height_before_anchor;
         let mut was_dense = true;
         // We lay all of the active items out (even though some of them will be made inactive
