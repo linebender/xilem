@@ -13,7 +13,6 @@ use crate::core::{
     WidgetMut, WidgetPod,
 };
 
-#[derive(Debug)]
 /// The action type sent by the [`VirtualScroll`] widget.
 ///
 /// This will be sent to the driver as an [`Action::Other`](crate::core::Action::Other).
@@ -49,6 +48,7 @@ use crate::core::{
 ///     }
 /// }
 /// ```
+#[derive(Debug)]
 pub struct VirtualScrollAction {
     /// The range of items which were previously active.
     /// Any items which were in `old_active` and aren't in `target` should
@@ -80,10 +80,11 @@ pub struct VirtualScrollAction {
 /// When you create the virtual scroll, you specify the initial "anchor"; that is an id for which the item will be on-screen.
 /// If only a subset of ids are valid, then the valid range of ids widget *must* be set.
 ///
-/// The widget will send a [`VirtualScrollAction`] whenever it needs to set.
-/// The driver must [add](Self::add_child) the widgets which are in `target` but not in `old_active`,
-/// and [remove](Self::remove_child) those which are in `old_active` but not in `target`.
-/// (that second part is to enable cleanup before the children are removed).
+/// The widget will send a [`VirtualScrollAction`] whenever the children it requires to be loaded changes.
+/// To handle this, the driver must [add](Self::add_child) the widgets which are in `target` but not in
+/// `old_active`, and [remove](Self::remove_child) those which are in `old_active` but not in `target`.
+/// (`VirtualScroll` does not remove the children itself to enable cleanup by the driver before the
+/// children get removed).
 ///
 /// It is invalid to not provide all items requested.
 /// For items which have not yet loaded, you should either:
@@ -317,7 +318,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     }
 
     /// Lock scrolling so that:
-    /// 1) Every part of the last item can be seen.
+    /// 1) Every part of the last valid item can be seen.
     /// 2) The last item never scrolls completely out of view (currently, the bottom of the last item can be halfway down the screen)
     ///
     /// Ideally, this would be configurable (so that e.g. the bottom of the last item aligns with
@@ -328,6 +329,8 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
             // TODO: There is still some jankiness when scrolling into the last item; this is for reasons unknown.
             .min((anchor_height - viewport_height / 2.).max(0.0));
     }
+
+    /// Lock scrolling so that the top of the first valid item doesn't go above the top of the virtual scrolling area.
     fn cap_scroll_range_up(&mut self) {
         self.scroll_offset_from_anchor = self.scroll_offset_from_anchor.max(0.0);
     }

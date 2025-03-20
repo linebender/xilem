@@ -296,6 +296,8 @@ impl TestHarness {
         handled
     }
 
+    // This should be ran after any operation which runs the rewrite passes
+    // (i.e. processing an event, etc.)
     fn process_signals(&mut self) {
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
