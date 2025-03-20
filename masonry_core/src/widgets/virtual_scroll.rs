@@ -14,8 +14,49 @@ use crate::core::{
 };
 
 #[derive(Debug)]
+/// The action type sent by the [`VirtualScroll`] widget.
+///
+/// This will be sent to the driver as an [`Action::Other`](crate::core::Action::Other).
+///
+/// Currently, this does not have utilities to produce the ranges which should be added and removed.
+/// The recommended approach is just to use the two loops, as the ranges are expected to be relatively small:
+///
+/// ```rust
+/// # use masonry::core::Action;
+/// # use masonry::widgets::{VirtualScrollAction, Label};
+/// # use core::marker::PhantomData;
+/// # let action: Action = Action::Other(Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 }));
+/// # struct WidgetPod<W>(W);
+/// # impl<W> WidgetPod<W> { fn new(val: W) -> Self { Self(val) } }
+/// # struct VirtualScroll<W>(PhantomData<W>);
+/// # impl<W> VirtualScroll<W> { fn remove_child(&mut self, idx: i64){} fn add_child(&mut self, idx: i64, pod: WidgetPod<W>){}}
+/// # let mut scroll = VirtualScroll::<Label>(PhantomData);
+/// let Action::Other(action) = action else { unreachable!() };
+/// let action = action.downcast::<VirtualScrollAction>().unwrap();
+/// for idx in action.old_active.clone() {
+///     if !action.target.contains(&idx) {
+///         VirtualScroll::remove_child(&mut scroll, idx);
+///     }
+/// }
+/// for idx in action.target.clone() {
+///     if !action.old_active.contains(&idx) {
+///         let label = Label::new(format!("Child {idx}"));
+///         VirtualScroll::add_child(
+///             &mut scroll,
+///             idx,
+///             WidgetPod::new(label),
+///         );
+///     }
+/// }
+/// ```
 pub struct VirtualScrollAction {
+    /// The range of items which were previously active.
+    /// Any items which were in `old_active` and aren't in `target` should
+    /// be removed from the `VirtualScroll` using [`remove_child`](VirtualScroll::remove_child).
     pub old_active: Range<i64>,
+    /// The range of items which are now active.
+    /// Any items which are in `target` and aren't in `old_active` should
+    /// be materialised and added to the `VirtualScroll` using [`add_child`](VirtualScroll::add_child).
     pub target: Range<i64>,
 }
 
@@ -38,21 +79,22 @@ pub struct VirtualScrollAction {
 ///
 /// When you create the virtual scroll, you specify the initial "anchor"; that is an id for which the item will be on-screen.
 /// If only a subset of ids are valid, then the valid range of ids widget *must* be set.
-// TODO: Allow setting the active range, and test that.
 ///
 /// The widget will send a [`VirtualScrollAction`] whenever it needs to set.
 /// The driver must [add](Self::add_child) the widgets which are in `target` but not in `old_active`,
 /// and [remove](Self::remove_child) those which are in `old_active` but not in `target`.
 /// (that second part is to enable cleanup before the children are removed).
-/// See the docs on `VirtualScrollAction` for more details.
 ///
 /// It is invalid to not provide all items requested.
 /// For items which have not yet loaded, you should either:
 /// 1) Provide a placeholder
 /// 2) Restrict the valid range to exclude them
 ///
-/// It is also currently invalid for there to be no items in the virtual scrolling list.
-/// We plan to remove this limitation, but it requires validation work which has not yet been done.
+/// This widget avoids panicking and infinite loops in these cases, but this widget is not designed to
+/// handle them, and so arbitrarily janky behaviour may occur.
+///
+/// As a special case, it is not possible to have an item with id [`i64::MAX`].
+/// This is because of the internal use of exclusive ranges.
 ///
 /// ## Caveats
 ///
@@ -92,14 +134,20 @@ pub struct VirtualScrollAction {
 /// This widget will support user-provided scrollbar types, through some yet-to-be-determined mechanism.
 /// There will also be provided implementations of reasonable scrollbar kinds.
 ///
-/// ## Scrolling past the end of the list
+/// ## Valid range
 ///
-/// Scrolling at the end of the list is locked, however it is not currently supported to lock scrolling
+/// We don't yet support setting the valid range.
+/// This is because there are several edge cases which need to be handled, which we're deferring for this MVP.
+/// The plan would be to add appropriate setters for this, and test using it.
+///
+/// Scrolling at the end of the valid range is locked, however it is not currently supported to lock scrolling
 /// such that the bottom of the last item cannot be above the bottom of the `VirtualScroll`.
 /// That is, it is always possible to scroll past the loaded items to the background (if the user
 /// reaches the end of the valid range).
-// TODO: Should `W` be a generic, or just always `dyn Widget`?
+///
+/// If the valid range is backwards, i.e. the start is greater than the end, things might break.
 pub struct VirtualScroll<W: Widget + ?Sized> {
+    // TODO: Should `W` be a generic, or just always be `dyn Widget`?
     /// The range of items in the "id" space which are able to be used.
     ///
     /// This is used to cap scrolling; items outside of this range will never be loaded[^1][^2][^3].
@@ -114,7 +162,6 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     /// [^1]: The exact interaction with a "drag down to refresh" feature has not been scrutinised.
     /// [^2]: Currently, we lock the bottom of the range to the bottom of the final item. This should be configurable.
     /// [^3]: Behaviour when the range is shrunk to something containing the active range has not been considered.
-    // TODO: We should check that this is not "backwards" (normal empty is fine).
     valid_range: Range<i64>,
 
     /// The range in the id space which is "active", i.e. which the virtual scrolling has decided
@@ -172,9 +219,16 @@ impl<W: Widget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
 }
 
 impl<W: Widget + ?Sized> VirtualScroll<W> {
+    /// Create a new virtual scrolling list.
+    ///
+    /// The item at `initial_anchor` will have its top aligned with the top of
+    /// the scroll area to start with.
+    ///
+    /// Note that it is not possible to add children before the widget is "live".
+    /// This is for simplicity, as the set of the children which should be loaded has
+    /// not yet been determined.
     pub fn new(initial_anchor: i64) -> Self {
         Self {
-            // TODO: Allow configuring this.
             valid_range: i64::MIN..i64::MAX,
             // This range starts intentionally empty, as no items have been loaded.
             active_range: initial_anchor..initial_anchor,
@@ -188,6 +242,12 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         }
     }
 
+    /// Remove the child widget with id `idx`.
+    ///
+    /// This will log an error if there was no child at the given index.
+    /// This should only happen if the driver does not meet the usage contract.
+    ///
+    /// This should be done only in the handling of a [`VirtualScrollAction`].
     pub fn remove_child(this: &mut WidgetMut<Self>, idx: i64) {
         let child = this.widget.items.remove(&idx);
         if let Some(child) = child {
@@ -200,6 +260,9 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         }
     }
 
+    /// Add the child widget for the given index.
+    ///
+    /// This should be done only in the handling of a [`VirtualScrollAction`].
     pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, child: WidgetPod<W>) {
         this.ctx.children_changed();
         if this.widget.items.insert(idx, child).is_some() {
@@ -207,6 +270,13 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         };
     }
 
+    /// Forcefully align the top of the item at `idx` with the top of the
+    /// virtual scroll area.
+    ///
+    /// That is, scroll to the item at `idx`, losing any scroll progress by the user.
+    ///
+    /// This method is mostly useful for tests, but can be used outside of tests
+    /// (for example, in certain scrollbar schemes).
     pub fn overwrite_anchor(this: &mut WidgetMut<Self>, idx: i64) {
         this.widget.anchor_index = idx;
         this.widget.scroll_offset_from_anchor = 0.;
