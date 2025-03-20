@@ -9,8 +9,8 @@ use vello::kurbo::{Point, Size, Vec2};
 use winit::keyboard::{Key, NamedKey};
 
 use crate::core::{
-    BoxConstraints, PointerEvent, PropertiesMut, PropertiesRef, TextEvent, Widget, WidgetMut,
-    WidgetPod,
+    BoxConstraints, FromDynWidget, PointerEvent, PropertiesMut, PropertiesRef, TextEvent, Widget,
+    WidgetMut, WidgetPod,
 };
 
 #[derive(Debug)]
@@ -146,7 +146,7 @@ pub struct VirtualScrollAction {
 /// reaches the end of the valid range).
 ///
 /// If the valid range is backwards, i.e. the start is greater than the end, things might break.
-pub struct VirtualScroll<W: Widget + ?Sized> {
+pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     // TODO: Should `W` be a generic, or just always be `dyn Widget`?
     /// The range of items in the "id" space which are able to be used.
     ///
@@ -202,7 +202,7 @@ pub struct VirtualScroll<W: Widget + ?Sized> {
     warned_not_dense: bool,
 }
 
-impl<W: Widget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
+impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VirtualScroll")
             .field("valid_range", &self.valid_range)
@@ -218,7 +218,7 @@ impl<W: Widget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
     }
 }
 
-impl<W: Widget + ?Sized> VirtualScroll<W> {
+impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Create a new virtual scrolling list.
     ///
     /// The item at `initial_anchor` will have its top aligned with the top of
@@ -268,6 +268,24 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
         if this.widget.items.insert(idx, child).is_some() {
             tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
         };
+    }
+
+    /// Modify the child widget at `idx`.
+    ///
+    /// # Panics
+    ///
+    /// If the widget at `idx` is not in the scroll area.
+    #[track_caller]
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>, idx: i64) -> WidgetMut<'t, W> {
+        let child = this.widget.items.get_mut(&idx).unwrap_or_else(|| {
+            panic!(
+                "`VirtualScroll::child_mut` called with non-present index {idx}.\n\
+                Active range is {:?}.",
+                &this.widget.active_range
+            )
+        });
+
+        this.ctx.get_mut(child)
     }
 
     /// Forcefully align the top of the item at `idx` with the top of the
@@ -322,7 +340,7 @@ impl<W: Widget + ?Sized> VirtualScroll<W> {
 /// too few items, that will be sorted relatively quickly.
 const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 
-impl<W: Widget + ?Sized> Widget for VirtualScroll<W> {
+impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     fn layout(
         &mut self,
         ctx: &mut crate::core::LayoutCtx,
@@ -762,7 +780,7 @@ mod tests {
 
     use crate::{
         assert_render_snapshot,
-        core::{PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
+        core::{FromDynWidget, PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
         testing::TestHarness,
         widgets::{Label, VirtualScroll, VirtualScrollAction},
     };
@@ -966,7 +984,7 @@ mod tests {
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
     }
 
-    fn drive_to_fixpoint<T: Widget + ?Sized>(
+    fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
         harness: &mut TestHarness,
         virtual_scroll_id: crate::core::WidgetId,
         mut f: impl FnMut(VirtualScrollAction, WidgetMut<'_, VirtualScroll<T>>),
