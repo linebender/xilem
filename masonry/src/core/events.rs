@@ -688,7 +688,7 @@ impl Force {
     /// consistent across devices.
     pub fn normalized(&self) -> f64 {
         match self {
-            Force::Calibrated {
+            Self::Calibrated {
                 force,
                 max_possible_force,
                 altitude_angle,
@@ -699,7 +699,7 @@ impl Force {
                 };
                 force / max_possible_force
             }
-            Force::Normalized(force) => *force,
+            Self::Normalized(force) => *force,
         }
     }
 }

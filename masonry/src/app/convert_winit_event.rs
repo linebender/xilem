@@ -47,7 +47,7 @@ pub(crate) fn winit_ime_to_masonry(event: WinitIme) -> Ime {
 pub(crate) fn winit_key_event_to_kbt(event: &WinitKeyEvent, mods: WinitModifiers) -> KeyboardEvent {
     KeyboardEvent {
         key: winit_key_to_kbt_key(&event.logical_key),
-        code: winit_physical_key_to_kbt_code(&event.physical_key),
+        code: winit_physical_key_to_kbt_code(event.physical_key),
         modifiers: winit_modifiers_to_kbt_modifiers(mods),
         location: winit_key_location_to_kbt_location(event.location),
         is_composing: false,
@@ -85,7 +85,7 @@ pub(crate) fn winit_key_location_to_kbt_location(location: WinitKeyLocation) -> 
     }
 }
 
-pub(crate) fn winit_physical_key_to_kbt_code(physical_key: &WinitPhysicalKey) -> Code {
+pub(crate) fn winit_physical_key_to_kbt_code(physical_key: WinitPhysicalKey) -> Code {
     match physical_key {
         WinitPhysicalKey::Unidentified(_) => Code::Unidentified,
         WinitPhysicalKey::Code(key_code) => match key_code {
