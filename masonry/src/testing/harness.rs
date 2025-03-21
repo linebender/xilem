@@ -4,12 +4,13 @@
 //! Tools and infrastructure for testing widgets.
 
 use std::collections::VecDeque;
+use std::io::Cursor;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
 
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
-use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
+use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
@@ -705,8 +706,12 @@ impl TestHarness {
         }
 
         fn save_image(image: &DynamicImage, path: &PathBuf) {
-            let image_data = image.as_bytes();
-            let data = optimize_from_memory(image_data, &Options::from_preset(5)).unwrap();
+            let mut buffer = Cursor::new(Vec::new());
+            image.write_to(&mut buffer, ImageFormat::Png).unwrap();
+
+            let image_data = buffer.into_inner();
+            let data =
+                optimize_from_memory(image_data.as_slice(), &Options::from_preset(5)).unwrap();
             std::fs::write(path, data).unwrap();
         }
 
