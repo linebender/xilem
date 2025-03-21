@@ -569,12 +569,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
         // Determine the new anchor
         loop {
+            if self.anchor_index <= self.valid_range.start {
+                self.anchor_index = self.valid_range.start;
+                self.cap_scroll_range_up();
+                break;
+            }
             if self.scroll_offset_from_anchor < 0. {
-                if self.anchor_index <= self.valid_range.start {
-                    self.anchor_index = self.valid_range.start;
-                    self.cap_scroll_range_up();
-                    break;
-                }
                 self.anchor_index -= 1;
                 let new_anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let new_anchor = self.items.get(&self.anchor_index);
