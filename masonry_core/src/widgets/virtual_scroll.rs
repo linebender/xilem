@@ -269,6 +269,17 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         }
     }
 
+    /// Set the range of child ids which are valid.
+    ///
+    /// Note that this is a half-open range, so the end id of the range is not valid.
+    pub fn with_valid_range(mut self, valid_range: Range<i64>) -> Self {
+        self.valid_range = valid_range;
+        self
+    }
+}
+
+// --- MARK: WIDGETMUT ---
+impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Remove the child widget with id `idx`.
     ///
     /// This will log an error if there was no child at the given index.
