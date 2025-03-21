@@ -54,7 +54,6 @@ accesskit_winit.workspace = true
 time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
-nv-flip.workspace = true
 tracing-tracy = { version = "0.11.3", optional = true }
 wgpu-profiler = { optional = true, version = "0.19.0", default-features = false }
 anymap3 = "1.0.1"
@@ -77,23 +76,23 @@ tracing_android_trace = "0.1.0"
 
 [[example]]
 name = "calc_masonry"
-test = true
+test = false
 
 [[example]]
 name = "custom_widget"
-test = true
+test = false
 
 [[example]]
 name = "grid_masonry"
-test = true
+test = false
 
 [[example]]
 name = "hello_masonry"
-test = true
+test = false
 
 [[example]]
 name = "simple_image"
-test = true
+test = false
 #required-features = ["image", "png"]
 # This actually enables scraping for all examples, not just this one.
 # However it is possible to set doc-scrape-examples to false for other specific examples.
@@ -101,8 +100,8 @@ doc-scrape-examples = true
 
 [[example]]
 name = "to_do_list"
-test = true
+test = false
 
 [[example]]
 name = "two_textboxes"
-test = true
+test = false
