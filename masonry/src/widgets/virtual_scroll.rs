@@ -580,8 +580,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             ..target_range
                 .end
                 .clamp(self.valid_range.start, self.valid_range.end);
-
-        if self.active_range != target_range {
+        // If both ranges are empty, then they're equivalent. This can happen due to the initial layout of size 0x0
+        // This check is mostly here to simplify writing tests
+        if self.active_range != target_range
+            && !(self.active_range.is_empty() && target_range.is_empty())
+        {
             let previous_active = self.active_range.clone();
             self.active_range = target_range;
 
