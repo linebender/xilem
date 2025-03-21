@@ -63,7 +63,7 @@ pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Opti
         max_distance = std::cmp::max(max_distance, new_max);
     }
 
-    const EXPECTED_MAX_DISTANCE: u32 = 16;
+    const EXPECTED_MAX_DISTANCE: u32 = 12;
     if max_distance <= EXPECTED_MAX_DISTANCE {
         return None;
     }
