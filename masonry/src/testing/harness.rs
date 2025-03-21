@@ -167,6 +167,8 @@ macro_rules! assert_render_snapshot {
 /// detect changes and regressions.
 ///
 /// This macro is read-only and will not write any new screenshots.
+///
+/// [`assert_render_snapshot`]: crate::assert_render_snapshot
 #[macro_export]
 macro_rules! assert_failing_render_snapshot {
     ($test_harness:expr, $name:expr) => {
@@ -673,7 +675,7 @@ impl TestHarness {
 
     // --- MARK: SNAPSHOT ---
 
-    /// Method used by [`assert_render_snapshot`]. Use the macro instead.
+    /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
     ///
     /// Renders the current Widget tree to a pixmap, and compares the pixmap against the
     /// snapshot stored in `./screenshots/module_path__test_name.png`.
@@ -682,6 +684,7 @@ impl TestHarness {
     /// * `test_file_path`: file path the current test is in.
     /// * `test_module_path`: import path of the module the current test is in.
     /// * `test_name`: arbitrary name; second argument of [`assert_render_snapshot`].
+    /// * `expect_failure`: whether the snapshot is expected to fail to match.
     #[doc(hidden)]
     #[track_caller]
     pub fn check_render_snapshot(
