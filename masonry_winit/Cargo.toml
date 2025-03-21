@@ -1,7 +1,7 @@
 [package]
-name = "masonry_core"
+name = "masonry"
 version = "0.2.0"
-description = "Traits and types of the Masonry toolkit."
+description = "Data-oriented Rust UI design toolkit."
 keywords = ["gui", "ui", "toolkit"]
 categories = ["gui", "internationalization", "accessibility"]
 edition.workspace = true
@@ -35,6 +35,7 @@ tracy = [
 workspace = true
 
 [dependencies]
+masonry_core.workspace = true
 vello.workspace = true
 wgpu.workspace = true
 parley.workspace = true
@@ -74,3 +75,35 @@ profiling = { version = "1.0.15", features = ["profile-with-tracing"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 tracing_android_trace = "0.1.0"
+
+[[example]]
+name = "calc_masonry"
+test = true
+
+[[example]]
+name = "custom_widget"
+test = true
+
+[[example]]
+name = "grid_masonry"
+test = true
+
+[[example]]
+name = "hello_masonry"
+test = true
+
+[[example]]
+name = "simple_image"
+test = true
+#required-features = ["image", "png"]
+# This actually enables scraping for all examples, not just this one.
+# However it is possible to set doc-scrape-examples to false for other specific examples.
+doc-scrape-examples = true
+
+[[example]]
+name = "to_do_list"
+test = true
+
+[[example]]
+name = "two_textboxes"
+test = true
