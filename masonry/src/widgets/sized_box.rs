@@ -810,6 +810,8 @@ mod tests {
         assert_render_snapshot!(harness, "background_brush_removed");
     }
 
+    // TODO - Write a new assert_failing_render_snapshot macro and
+    // use it instead.
     #[test]
     #[should_panic(expected = "Images are different")]
     fn invalid_screenshot() {
