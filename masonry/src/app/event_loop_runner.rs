@@ -23,6 +23,8 @@ use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app::{
     AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+    winit_force_to_masonry, winit_ime_to_masonry, winit_key_event_to_kbt,
+    winit_modifiers_to_kbt_modifiers,
 };
 use crate::core::{
     PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
@@ -79,6 +81,7 @@ pub struct MasonryState<'a> {
     render_cx: RenderContext,
     render_root: RenderRoot,
     pointer_state: PointerState,
+    winit_mods: winit::event::Modifiers,
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
@@ -247,6 +250,7 @@ impl MasonryState<'_> {
             #[cfg(feature = "tracy")]
             frame: None,
             pointer_state: PointerState::empty(),
+            winit_mods: winit::event::Modifiers::default(),
             proxy: event_loop.create_proxy(),
 
             window: WindowState::Uninitialized(window),
@@ -500,21 +504,26 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Resize(size));
             }
             WinitWindowEvent::ModifiersChanged(modifiers) => {
-                self.pointer_state.mods = modifiers;
+                self.pointer_state.mods = winit_modifiers_to_kbt_modifiers(modifiers.state());
+                self.winit_mods = modifiers;
                 self.render_root
-                    .handle_text_event(TextEvent::ModifierChange(modifiers.state()));
+                    .handle_text_event(TextEvent::ModifierChange(self.pointer_state.mods));
             }
             WinitWindowEvent::KeyboardInput {
                 device_id: _,
                 event,
                 is_synthetic: false, // TODO: Introduce an escape hatch for synthetic keys
             } => {
+                let text = event.text.as_ref().map(|text| text.to_string());
+                let event = winit_key_event_to_kbt(&event, self.winit_mods.state());
                 self.render_root.handle_text_event(TextEvent::KeyboardKey(
                     event,
-                    self.pointer_state.mods.state(),
+                    self.pointer_state.mods,
+                    text,
                 ));
             }
             WinitWindowEvent::Ime(ime) => {
+                let ime = winit_ime_to_masonry(ime);
                 self.render_root.handle_text_event(TextEvent::Ime(ime));
             }
             WinitWindowEvent::Focused(new_focus) => {
@@ -578,7 +587,7 @@ impl MasonryState<'_> {
                 //        It will also interact with gesture discrimination.
                 self.pointer_state.physical_position = location;
                 self.pointer_state.position = location.to_logical(window.scale_factor());
-                self.pointer_state.force = force;
+                self.pointer_state.force = force.map(winit_force_to_masonry);
                 match phase {
                     winit::event::TouchPhase::Started => {
                         self.render_root

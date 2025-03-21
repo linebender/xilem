@@ -22,7 +22,7 @@ use web_time::Instant;
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, PointerEvent, PropertiesRef, QueryCtx, TextEvent, Widget,
+    AccessEvent, Action, BrushIndex, Ime, PointerEvent, PropertiesRef, QueryCtx, TextEvent, Widget,
     WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
@@ -396,7 +396,7 @@ impl RenderRoot {
         let handled = run_on_text_event_pass(self, &event);
         run_update_focus_pass(self);
 
-        if matches!(event, TextEvent::Ime(winit::event::Ime::Enabled)) {
+        if matches!(event, TextEvent::Ime(Ime::Enabled)) {
             // Reset the last sent IME area, as the platform reset the IME state and may have
             // forgotten it.
             self.global_state.last_sent_ime_area = INVALID_IME_AREA;
