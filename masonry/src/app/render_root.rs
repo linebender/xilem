@@ -746,8 +746,15 @@ impl RenderRootState {
         self.focused_widget == Some(id)
     }
 
+    /// Does something in this state indicate that the rewrite passes need to be reran.
+    ///
+    /// This is checked in conjunction with [`WidgetState::needs_rewrite_passes`] - if
+    /// either returns true, the fixed point loop of the rewrite passes will be run again.
+    /// All passes have a fast-path exit check; these together are the union of those checks.
     pub(crate) fn needs_rewrite_passes(&self) -> bool {
-        self.needs_pointer_pass || self.focused_widget != self.next_focused_widget
+        self.needs_pointer_pass
+            || self.focused_widget != self.next_focused_widget
+            || !self.mutate_callbacks.is_empty()
     }
 }
 
