@@ -5,10 +5,12 @@
 
 use std::collections::VecDeque;
 use std::num::NonZeroUsize;
+use std::path::PathBuf;
 
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
 use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
+use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
 use vello::util::{RenderContext, block_on_wgpu};
@@ -702,6 +704,12 @@ impl TestHarness {
             return;
         }
 
+        fn save_image(image: &DynamicImage, path: &PathBuf) {
+            let image_data = image.as_bytes();
+            let data = optimize_from_memory(image_data, &Options::from_preset(5)).unwrap();
+            std::fs::write(path, data).unwrap();
+        }
+
         let new_image: DynamicImage = self.render().into();
 
         let workspace_path = get_cargo_workspace(manifest_dir);
@@ -723,7 +731,7 @@ impl TestHarness {
         let Ok(reference_file) = ImageReader::open(&reference_path) else {
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
-            new_image.save(&new_path).unwrap();
+            save_image(&new_image, &new_path);
             panic!("Snapshot test '{test_name}' failed: No reference file");
         };
 
@@ -743,10 +751,10 @@ impl TestHarness {
             if std::env::var_os("MASONRY_TEST_BLESS").is_some_and(|it| !it.is_empty()) {
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
-                new_image.save(&reference_path).unwrap();
+                save_image(&new_image, &reference_path);
             } else {
-                new_image.save(&new_path).unwrap();
-                diff_image.save(&diff_path).unwrap();
+                save_image(&new_image, &new_path);
+                save_image(&diff_image.into(), &diff_path);
                 panic!("Snapshot test '{test_name}' failed: Images are different");
             }
         } else {
