@@ -35,7 +35,7 @@ macro_rules! include_screenshot {
 }
 
 // Copy-pasted from kompari
-fn pixel_min_max_distance(left: &Rgb<u8>, right: &Rgb<u8>) -> (u8, u8) {
+fn pixel_min_max_distance(left: Rgb<u8>, right: Rgb<u8>) -> (u8, u8) {
     left.channels()
         .iter()
         .zip(right.channels())
@@ -58,7 +58,7 @@ pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Opti
 
     let mut max_distance: u32 = 0;
     for (p1, p2) in ref_image.pixels().zip(new_image.pixels()) {
-        let (diff_min, diff_max) = pixel_min_max_distance(p1, p2);
+        let (diff_min, diff_max) = pixel_min_max_distance(*p1, *p2);
         let new_max = std::cmp::max(diff_max, diff_min) as u32;
         max_distance = std::cmp::max(max_distance, new_max);
     }
@@ -83,7 +83,7 @@ pub(crate) fn get_image_diff(ref_image: &RgbImage, new_image: &RgbImage) -> Opti
             [255, 255, 255].into()
         };
 
-        let (diff_min, diff_max) = pixel_min_max_distance(&ref_pixel, &new_pixel);
+        let (diff_min, diff_max) = pixel_min_max_distance(ref_pixel, new_pixel);
         let diff_abs = std::cmp::max(diff_min, diff_max);
 
         if diff_abs as u32 > EXPECTED_MAX_DISTANCE {
