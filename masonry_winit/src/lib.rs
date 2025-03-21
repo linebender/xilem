@@ -108,3 +108,6 @@ pub use masonry_core::{
     include_screenshot, kurbo, palette, parley, peniko, properties, testing, theme, util, vello,
     widgets,
 };
+
+#[cfg(doc)]
+pub use masonry_core::doc;

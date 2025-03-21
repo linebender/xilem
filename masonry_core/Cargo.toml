@@ -63,6 +63,9 @@ keyboard-types = "0.7.0"
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
 
+[target.'cfg(doc)'.dependencies]
+winit.workspace = true
+
 [dev-dependencies]
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
 image = { workspace = true, features = ["png"] }

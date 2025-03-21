@@ -49,7 +49,7 @@
 #[macro_use]
 pub mod util;
 
-#[cfg(doc)]
+#[doc(hidden)]
 pub mod doc;
 
 mod passes;

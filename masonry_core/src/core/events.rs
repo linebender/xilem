@@ -572,12 +572,12 @@ impl Update {
 
 /// Describes [input method](https://en.wikipedia.org/wiki/Input_method) events.
 ///
-/// Mirrors [`winit::event::Ime`](https://docs.rs/winit/latest/x86_64-unknown-linux-gnu/winit/event/enum.Ime.html).
+/// Mirrors [`winit::event::Ime`].
 ///
 /// This is also called a "composition event".
 ///
 /// Most keypresses using a latin-like keyboard layout simply generate a
-/// [`WindowEvent::KeyboardInput`]. However, one couldn't possibly have a key for every single
+/// [`winit::event::WindowEvent::KeyboardInput`]. However, one couldn't possibly have a key for every single
 /// unicode character that the user might want to type
 /// - so the solution operating systems employ is to allow the user to type these using _a sequence
 ///   of keypresses_ instead.
@@ -596,7 +596,7 @@ impl Update {
 ///
 /// Additionally, certain input devices are configured to display a candidate box that allow the
 /// user to select the desired character interactively. (To properly position this box, you must use
-/// [`Window::set_ime_cursor_area`].)
+/// [`winit::window::Window::set_ime_cursor_area`].)
 ///
 /// An example of a keyboard layout which uses candidate boxes is pinyin. On a latin keyboard the
 /// following event sequence could be obtained:
@@ -621,7 +621,7 @@ pub enum Ime {
     ///
     /// After getting this event you could receive [`Preedit`][Self::Preedit] and
     /// [`Commit`][Self::Commit] events. You should also start performing IME related requests
-    /// like [`Window::set_ime_cursor_area`].
+    /// like [`winit::window::Window::set_ime_cursor_area`].
     Enabled,
 
     /// Notifies when a new composing text should be set at the cursor position.
@@ -642,14 +642,14 @@ pub enum Ime {
     ///
     /// After receiving this event you won't get any more [`Preedit`][Self::Preedit] or
     /// [`Commit`][Self::Commit] events until the next [`Enabled`][Self::Enabled] event. You should
-    /// also stop issuing IME related requests like [`Window::set_ime_cursor_area`] and clear
+    /// also stop issuing IME related requests like [`winit::window::Window::set_ime_cursor_area`] and clear
     /// pending preedit text.
     Disabled,
 }
 
 /// Describes the force of a touch event
 ///
-/// Mirrors [`winit::event::Force`](https://docs.rs/winit/latest/x86_64-unknown-linux-gnu/winit/event/enum.Force.html).
+/// Mirrors [`winit::event::Force`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Force {
     /// On iOS, the force is calibrated so that the same number corresponds to
@@ -708,7 +708,7 @@ impl Force {
 
 /// Defines the orientation that a window resize will be performed.
 ///
-/// Mirrors [`winit::window::ResizeDirection`](https://docs.rs/winit/latest/x86_64-unknown-linux-gnu/winit/window/enum.ResizeDirection.html).
+/// Mirrors [`winit::window::ResizeDirection`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[expect(missing_docs, reason = "Copied from winit")]
 pub enum ResizeDirection {
