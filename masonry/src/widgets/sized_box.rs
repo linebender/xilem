@@ -816,9 +816,11 @@ mod tests {
         let widget = SizedBox::empty()
             .width(20.0)
             .height(20.0)
-            // This is the difference
-            .border(palette::css::BLUE, 5.2)
+            .border(palette::css::BLUE, 5.0)
             .rounded(5.0);
+
+        // This is the difference
+        let widget = widget.border(palette::css::BLUE, 5.2);
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
@@ -833,9 +835,10 @@ mod tests {
             .width(20.0)
             .height(20.0)
             .border(palette::css::BLUE, 5.0)
-            .rounded(5.0)
-            // This is the difference
-            .padding(0.2);
+            .rounded(5.0);
+
+        // This is the difference
+        let widget = widget.padding(0.2);
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
