@@ -76,23 +76,23 @@ tracing_android_trace = "0.1.0"
 
 [[example]]
 name = "calc_masonry"
-test = false
+test = true
 
 [[example]]
 name = "custom_widget"
-test = false
+test = true
 
 [[example]]
 name = "grid_masonry"
-test = false
+test = true
 
 [[example]]
 name = "hello_masonry"
-test = false
+test = true
 
 [[example]]
 name = "simple_image"
-test = false
+test = true
 #required-features = ["image", "png"]
 # This actually enables scraping for all examples, not just this one.
 # However it is possible to set doc-scrape-examples to false for other specific examples.
@@ -100,8 +100,8 @@ doc-scrape-examples = true
 
 [[example]]
 name = "to_do_list"
-test = false
+test = true
 
 [[example]]
 name = "two_textboxes"
-test = false
+test = true
