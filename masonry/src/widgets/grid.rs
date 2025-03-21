@@ -108,11 +108,11 @@ fn new_grid_child(params: GridParams, widget: WidgetPod<dyn Widget>) -> Child {
 
 // --- MARK: IMPL GRIDPARAMS ---
 impl GridParams {
-    /// Get grid parameters with the given values.
+    /// Create grid parameters with the given values.
     ///
     /// # Panics
     ///
-    /// Panics if the width or height is less than or equal to zero.
+    /// When debug assertions are on, panics if the width or height is less than or equal to zero or if x or y is negative.
     pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> Self {
         // TODO - Use u32 params instead?
         if x < 0 {
@@ -183,9 +183,10 @@ impl Grid {
         this.ctx.request_layout();
     }
 
-    /// Insert a child widget at the giving index.
+    /// Insert a child widget at the given index.
     ///
-    /// This lets you control the order in which the children are drawn.
+    /// This lets you control the order in which the children are drawn. Children are
+    /// drawn in index order (i.e. each child is drawn on top of the children with lower indices).
     ///
     /// # Panics
     ///
@@ -199,9 +200,10 @@ impl Grid {
         Self::insert_grid_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
-    /// Insert a child widget already wrapped in a [`WidgetPod`] at the giving index.
+    /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.
     ///
-    /// This lets you control the order in which the children are drawn.
+    /// This lets you control the order in which the children are drawn. Children are
+    /// drawn in index order (i.e. each child is drawn on top of the children with lower indices).
     ///
     /// # Panics
     ///
@@ -264,7 +266,7 @@ impl Grid {
         this.ctx.request_layout();
     }
 
-    /// Removes a child widget at the specified index.
+    /// Removes a child widget at the given index.
     ///
     /// # Panics
     ///

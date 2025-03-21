@@ -8,7 +8,7 @@ use masonry::widgets;
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
 
-/// Returns a view which puts `child` into a scrollable region.
+/// A view which puts `child` into a scrollable region.
 ///
 /// This corresponds to the Masonry [`Portal`](masonry::widgets::Portal) widget.
 pub fn portal<Child, State, Action>(child: Child) -> Portal<Child, State, Action>

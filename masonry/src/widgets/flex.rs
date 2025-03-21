@@ -299,7 +299,7 @@ impl Flex {
         self.children.len()
     }
 
-    /// Returns true if this flex container has no children (widgets or spacers).
+    /// Returns `true` if this flex container has no children (widgets or spacers).
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
@@ -457,16 +457,20 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Add a non-flex child widget.
+    /// Insert a non-flex child widget at the given index.
     ///
-    /// See also [`with_child`].
+    /// # Panics
     ///
-    /// [`with_child`]: Flex::with_child
+    /// Panics if the index is larger than the number of children.
     pub fn insert_child(this: &mut WidgetMut<'_, Self>, idx: usize, child: impl Widget) {
         Self::insert_child_pod(this, idx, WidgetPod::new(child).erased());
     }
 
-    /// Add a non-flex child widget.
+    /// Insert a non-flex child widget wrapped in a [`WidgetPod`] at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -480,7 +484,11 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Add a flex child widget.
+    /// Insert a flex child widget at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_flex_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -490,7 +498,11 @@ impl Flex {
         Self::insert_flex_child_pod(this, idx, WidgetPod::new(child).erased(), params);
     }
 
-    /// Add a flex child widget.
+    /// Insert a flex child widget wrapped in a [`WidgetPod`] at the given index.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_flex_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
@@ -503,22 +515,30 @@ impl Flex {
     }
 
     // TODO - remove
-    /// Add a spacer widget with a standard size.
+    /// Insert a spacer widget with a standard size at the given index.
     ///
     /// The actual value of this spacer depends on whether this container is
     /// a row or column, as well as theme settings.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_default_spacer(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let key = axis_default_spacer(this.widget.direction);
         Self::insert_spacer(this, idx, key);
         this.ctx.request_layout();
     }
 
-    /// Add an empty spacer widget with the given size.
+    /// Insert an empty spacer widget with the given size at the given index.
     ///
     /// If you are laying out standard controls in this container, you should
     /// generally prefer to use [`add_default_spacer`].
     ///
     /// [`add_default_spacer`]: Flex::add_default_spacer
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -531,6 +551,10 @@ impl Flex {
     }
 
     /// Add an empty spacer widget with a specific `flex` factor.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
     pub fn insert_flex_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, flex: f64) {
         let flex = if flex >= 0.0 {
             flex
@@ -549,7 +573,7 @@ impl Flex {
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
+    /// Panics if the index is larger than the number of children.
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
@@ -560,11 +584,11 @@ impl Flex {
 
     /// Returns a mutable reference to the child widget at `idx`.
     ///
-    /// Returns None if the child at `idx` is a spacer.
+    /// Returns `None` if the child at `idx` is a spacer.
     ///
     /// # Panics
     ///
-    /// Panics if the index is out of bounds.
+    /// Panics if the index is larger than the number of children.
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,

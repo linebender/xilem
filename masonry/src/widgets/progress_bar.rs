@@ -18,6 +18,8 @@ use crate::theme;
 use crate::util::{UnitPoint, fill_lin_gradient, stroke};
 use crate::widgets::{Label, LineBreaking};
 
+// TODO - NaN probably shouldn't be a meaningful value in our API.
+
 /// A progress bar.
 ///
 #[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__progress_bar__tests__25_percent_progressbar.png", "25% progress bar.")]

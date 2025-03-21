@@ -15,6 +15,7 @@ use crate::core::{
 use crate::kurbo::Size;
 
 // TODO: This should eventually be removed once accesskit does that for us.
+// See https://github.com/AccessKit/accesskit/issues/531
 /// A widget wrapper that reports a [`Role::Window`] to the accessibility API.
 pub struct RootWidget<W: ?Sized> {
     pub(crate) pod: WidgetPod<W>,
