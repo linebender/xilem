@@ -1,6 +1,6 @@
 ---
-source: masonry/examples/to_do_list.rs
-assertion_line: 90
+source: masonry/examples/tests.rs
+assertion_line: 64
 expression: harness.root_widget()
 ---
 Portal(

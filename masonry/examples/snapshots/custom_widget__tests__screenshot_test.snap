@@ -1,6 +1,0 @@
----
-source: masonry/examples/custom_widget.rs
-assertion_line: 195
-expression: harness.root_widget()
----
-CustomWidget

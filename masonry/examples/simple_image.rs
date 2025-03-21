@@ -6,7 +6,7 @@
 //! everything behaves.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{Action, ObjectFit, WidgetId};
@@ -21,7 +21,8 @@ impl AppDriver for Driver {
     fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
 }
 
-fn make_image() -> Image {
+/// Creates an image widget with a PNG image.
+pub fn make_image() -> Image {
     let image_bytes = include_bytes!("./assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();
@@ -49,21 +50,4 @@ fn main() {
         Driver,
     )
     .unwrap();
-}
-
-// --- MARK: TESTS ---
-#[cfg(test)]
-mod tests {
-    use insta::assert_debug_snapshot;
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
-
-    use super::*;
-
-    #[test]
-    fn screenshot_test() {
-        let mut harness = TestHarness::create(make_image());
-        assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
-    }
 }

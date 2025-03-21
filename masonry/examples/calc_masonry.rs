@@ -4,7 +4,7 @@
 //! Simple calculator.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 #![allow(
     variant_size_differences,
     clippy::single_match,
@@ -341,7 +341,8 @@ fn flex_row(
         .with_flex_child(w4, 1.0)
 }
 
-fn build_calc() -> impl Widget {
+/// Builds the calculator widget.
+pub fn build_calc() -> impl Widget {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
     Flex::column()
         .gap(0.0)
@@ -422,23 +423,4 @@ fn main() {
         calc_state,
     )
     .unwrap();
-}
-
-// --- MARK: TESTS ---
-#[cfg(test)]
-mod tests {
-    use insta::assert_debug_snapshot;
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
-
-    use super::*;
-
-    #[test]
-    fn screenshot_test() {
-        let mut harness = TestHarness::create(build_calc());
-        assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
-
-        // TODO - Test clicking buttons
-    }
 }

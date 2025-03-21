@@ -1,0 +1,6 @@
+---
+source: masonry/examples/tests.rs
+assertion_line: 57
+expression: harness.root_widget()
+---
+Image
