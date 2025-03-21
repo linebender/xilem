@@ -727,7 +727,7 @@ impl TestHarness {
         let ref_image = reference_file.decode().unwrap().to_rgb8();
 
         if expect_failure {
-            if let Some(_) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
+            if get_image_diff(&ref_image, &new_image.to_rgb8()).is_some() {
                 return;
             } else {
                 panic!(
