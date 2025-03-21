@@ -21,6 +21,7 @@ where
     }
 }
 
+/// The [`View`] created by [`portal`].
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Portal<V, State, Action> {
     child: V,

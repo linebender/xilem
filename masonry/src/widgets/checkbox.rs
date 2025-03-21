@@ -46,7 +46,7 @@ impl Checkbox {
 
 // --- MARK: WIDGETMUT ---
 impl Checkbox {
-    #[expect(missing_docs, reason = "TODO")]
+    /// Check or uncheck the box.
     pub fn set_checked(this: &mut WidgetMut<'_, Self>, checked: bool) {
         this.widget.checked = checked;
         // Checked state impacts appearance and accessibility node
@@ -60,7 +60,7 @@ impl Checkbox {
         Label::set_text(&mut Self::label_mut(this), new_text);
     }
 
-    #[expect(missing_docs, reason = "TODO")]
+    /// Get a mutable reference to the label.
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
         this.ctx.get_mut(&mut this.widget.label)
     }

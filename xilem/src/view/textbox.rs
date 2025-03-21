@@ -13,6 +13,7 @@ use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
 
+/// A view which displays editable text.
 pub fn textbox<F, State, Action>(contents: String, on_changed: F) -> Textbox<State, Action>
 where
     F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
@@ -28,6 +29,7 @@ where
     }
 }
 
+/// The [`View`] created by [`textbox`].
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Textbox<State, Action> {
     contents: String,
@@ -39,17 +41,20 @@ pub struct Textbox<State, Action> {
 }
 
 impl<State, Action> Textbox<State, Action> {
+    /// Set the brush used to paint the text.
     #[doc(alias = "color")]
     pub fn brush(mut self, color: impl Into<Brush>) -> Self {
         self.text_brush = color.into();
         self
     }
 
+    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
         self.alignment = alignment;
         self
     }
 
+    /// Set a callback that will be run when the user presses the `Enter` key to submit their input.
     pub fn on_enter<F>(mut self, on_enter: F) -> Self
     where
         F: Fn(&mut State, String) -> Action + Send + Sync + 'static,

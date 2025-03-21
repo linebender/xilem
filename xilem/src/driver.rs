@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+#![expect(missing_docs, reason = "TODO - Document these items")]
+
 use std::sync::Arc;
 
 use masonry::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};

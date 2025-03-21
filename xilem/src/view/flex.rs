@@ -84,20 +84,23 @@ pub struct Flex<Seq, State, Action = ()> {
 }
 
 impl<Seq, State, Action> Flex<Seq, State, Action> {
+    /// Set the flex direction (see [`Axis`]).
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
     }
+    /// Set the childrens' [`CrossAxisAlignment`].
     pub fn cross_axis_alignment(mut self, axis: CrossAxisAlignment) -> Self {
         self.cross_axis_alignment = axis;
         self
     }
-
+    /// Set the childrens' [`MainAxisAlignment`].
     pub fn main_axis_alignment(mut self, axis: MainAxisAlignment) -> Self {
         self.main_axis_alignment = axis;
         self
     }
-
+    /// Set whether the container must expand to fill the available space on
+    /// its main axis.
     pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
         self.fill_major_axis = fill_major_axis;
         self
@@ -214,12 +217,17 @@ where
     }
 }
 
+/// A child element of a [`Flex`] view.
 pub enum FlexElement {
+    /// Child widget.
     Child(Pod<dyn Widget>, FlexParams),
+    /// Child spacer with fixed size.
     FixedSpacer(f64),
+    /// Child spacer with flex size.
     FlexSpacer(f64),
 }
 
+/// A mutable reference to a [`FlexElement`], used internally by Xilem traits.
 pub struct FlexElementMut<'w> {
     parent: WidgetMut<'w, widgets::Flex>,
     idx: usize,
@@ -549,6 +557,7 @@ where
 
 /// A spacer that can be used within a [`Flex`] [`View`]
 #[derive(Copy, Clone, PartialEq)]
+#[expect(missing_docs, reason = "TODO - Need to document units used.")]
 pub enum FlexSpacer {
     Fixed(f64),
     Flex(f64),
@@ -610,7 +619,9 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
 
 /// A widget-type-erased flex child [`View`], can be used within a [`Flex`] [`View`]
 pub enum AnyFlexChild<State, Action = ()> {
+    /// A child widget.
     Item(FlexItem<Box<AnyWidgetView<State, Action>>, State, Action>),
+    /// A spacer.
     Spacer(FlexSpacer),
 }
 

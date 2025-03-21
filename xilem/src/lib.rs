@@ -128,7 +128,6 @@
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
-#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::collections::HashMap;
@@ -178,11 +177,13 @@ pub struct Xilem<State, Logic> {
     fonts: Vec<Vec<u8>>,
 }
 
+#[expect(missing_docs, reason = "TODO - Document these items")]
 impl<State, Logic, View> Xilem<State, Logic>
 where
     Logic: FnMut(&mut State) -> View,
     View: WidgetView<State>,
 {
+    /// Initialize the builder state for your app.
     pub fn new(state: State, logic: Logic) -> Self {
         let runtime = tokio::runtime::Runtime::new().unwrap();
         Self {
@@ -287,6 +288,7 @@ where
 ///    and so might not actually own the underlying widget value.
 ///    When creating widgets in Xilem, layered views all want access to the - using
 ///    `WidgetPod` for this purpose would require fallible unwrapping.
+#[expect(missing_docs, reason = "TODO - Document these items")]
 pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
     pub widget: Box<W>,
     pub id: WidgetId,
@@ -366,6 +368,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<d
     }
 }
 
+#[expect(missing_docs, reason = "TODO - Document these items")]
 pub trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
@@ -438,6 +441,7 @@ impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
 
 type WidgetMap = HashMap<WidgetId, Vec<ViewId>>;
 
+/// A context type passed to various methods of Xilem traits.
 pub struct ViewCtx {
     /// The map from a widgets id to its position in the View tree.
     ///
@@ -462,6 +466,7 @@ impl ViewPathTracker for ViewCtx {
     }
 }
 
+#[expect(missing_docs, reason = "TODO - Document these items")]
 impl ViewCtx {
     pub fn new_pod<W: Widget + FromDynWidget>(&mut self, widget: W) -> Pod<W> {
         Pod::new(widget)

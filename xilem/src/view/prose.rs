@@ -10,6 +10,7 @@ use vello::peniko::Brush;
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
+/// A view which displays selectable text.
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
         content: content.into(),
@@ -30,6 +31,7 @@ pub fn inline_prose(content: impl Into<ArcStr>) -> Prose {
     prose(content).line_break_mode(LineBreaking::Overflow)
 }
 
+/// The [`View`] created by [`prose`] or [`inline_prose`].
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Prose {
     content: ArcStr,
@@ -43,22 +45,27 @@ pub struct Prose {
 }
 
 impl Prose {
+    /// Set the brush used to paint the text.
     #[doc(alias = "color")]
     pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
         self.text_brush = brush.into();
         self
     }
 
+    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
         self.alignment = alignment;
         self
     }
 
+    /// Set the font size of the text.
     #[doc(alias = "font_size")]
     pub fn text_size(mut self, text_size: f32) -> Self {
         self.text_size = text_size;
         self
     }
+
+    /// Set how the text is broken when the content is too wide for its container.
     pub fn line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
         self.line_break_mode = line_break_mode;
         self

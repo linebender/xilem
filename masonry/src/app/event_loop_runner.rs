@@ -1,8 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// We use allow because expect(missing_docs) is noisy with rust-analyzer.
-#![allow(missing_docs, reason = "We have many as-yet undocumented items")]
+#![expect(missing_docs, reason = "TODO - Document these items")]
 
 use std::num::NonZeroUsize;
 use std::sync::Arc;

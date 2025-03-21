@@ -76,6 +76,7 @@ pub struct Grid<Seq, State, Action = ()> {
 }
 
 impl<Seq, State, Action> Grid<Seq, State, Action> {
+    /// Set the spacing (both vertical and horizontal) between grid items.
     #[track_caller]
     pub fn spacing(mut self, spacing: f64) -> Self {
         if spacing.is_finite() && spacing >= 0.0 {
@@ -104,12 +105,8 @@ where
         let mut widget = widgets::Grid::with_dimensions(self.width, self.height);
         widget = widget.with_spacing(self.spacing);
         let seq_state = self.sequence.seq_build(ctx, &mut elements);
-        for child in elements.into_inner() {
-            widget = match child {
-                GridElement::Child(child, params) => {
-                    widget.with_child_pod(child.erased_widget_pod(), params)
-                }
-            }
+        for element in elements.into_inner() {
+            widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
         }
         let pod = ctx.new_pod(widget);
         (pod, seq_state)
@@ -195,7 +192,11 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridE
         // There is not much else, beyond purposefully failing, that can be done here,
         // because there isn't enough information to determine an appropriate spot
         // for the widget.
-        Self::Child(child.erased(), GridParams::new(1, 1, 1, 1))
+        Self {
+            child: child.erased(),
+            // TODO - Should be 0, 0?
+            params: GridParams::new(1, 1, 1, 1),
+        }
     }
 
     fn with_downcast_val<R>(
@@ -203,8 +204,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridE
         f: impl FnOnce(Mut<Pod<W>>) -> R,
     ) -> (Mut<Self>, R) {
         let ret = {
-            let mut child = widgets::Grid::child_mut(&mut this.parent, this.idx)
-                .expect("This is supposed to be a widget");
+            let mut child = widgets::Grid::child_mut(&mut this.parent, this.idx);
             let downcast = child.downcast();
             f(downcast)
         };
@@ -218,32 +218,24 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {
-            match element {
-                GridElement::Child(child, params) => {
-                    widgets::Grid::insert_grid_child_pod(
-                        &mut self.element,
-                        self.idx,
-                        child.erased_widget_pod(),
-                        params,
-                    );
-                }
-            };
+            widgets::Grid::insert_grid_child_pod(
+                &mut self.element,
+                self.idx,
+                element.child.erased_widget_pod(),
+                element.params,
+            );
             self.idx += 1;
         }
         ret
     }
 
     fn insert(&mut self, element: GridElement) {
-        match element {
-            GridElement::Child(child, params) => {
-                widgets::Grid::insert_grid_child_pod(
-                    &mut self.element,
-                    self.idx,
-                    child.erased_widget_pod(),
-                    params,
-                );
-            }
-        };
+        widgets::Grid::insert_grid_child_pod(
+            &mut self.element,
+            self.idx,
+            element.child.erased_widget_pod(),
+            element.params,
+        );
         self.idx += 1;
     }
 
@@ -342,17 +334,22 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
 
 impl<State, Action, V: WidgetView<State, Action>> GridExt<State, Action> for V {}
 
-pub enum GridElement {
-    Child(Pod<dyn Widget>, GridParams),
+/// A child widget within a [`Grid`] view.
+pub struct GridElement {
+    /// The child widget.
+    child: Pod<dyn Widget>,
+    /// The grid parameters of the child widget.
+    params: GridParams,
 }
 
+/// A mutable reference to a [`GridElement`], used internally by Xilem traits.
 pub struct GridElementMut<'w> {
     parent: WidgetMut<'w, widgets::Grid>,
     idx: usize,
 }
 
 // Used for manipulating the ViewSequence.
-pub struct GridSplice<'w> {
+struct GridSplice<'w> {
     idx: usize,
     element: WidgetMut<'w, widgets::Grid>,
     scratch: AppendVec<GridElement>,
@@ -375,6 +372,7 @@ pub struct GridItem<V, State, Action> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
+/// Creates a [`GridItem`] from a view and [`GridParams`].
 pub fn grid_item<V, State, Action>(
     view: V,
     params: impl Into<GridParams>,
@@ -405,7 +403,13 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx);
-        (GridElement::Child(pod.erased(), self.params), state)
+        (
+            GridElement {
+                child: pod.erased(),
+                params: self.params,
+            },
+            state,
+        )
     }
 
     fn rebuild(
@@ -423,8 +427,7 @@ where
                     self.params,
                 );
             }
-            let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx)
-                .expect("GridWrapper always has a widget child");
+            let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
             self.view
                 .rebuild(&prev.view, view_state, ctx, child.downcast());
         }
@@ -436,8 +439,7 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
-        let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx)
-            .expect("GridWrapper always has a widget child");
+        let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
         self.view.teardown(view_state, ctx, child.downcast());
     }
 

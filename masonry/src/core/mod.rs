@@ -10,12 +10,9 @@ mod event;
 mod object_fit;
 mod properties;
 mod text;
-#[allow(missing_docs, reason = "TODO")]
 mod widget;
 mod widget_arena;
-#[allow(missing_docs, reason = "TODO")]
 mod widget_mut;
-#[allow(missing_docs, reason = "TODO")]
 mod widget_pod;
 mod widget_ref;
 mod widget_state;

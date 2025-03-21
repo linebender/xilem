@@ -8,8 +8,6 @@ use anymap3::Entry;
 use crate::core::{FromDynWidget, MutateCtx, Widget};
 use crate::kurbo::Affine;
 
-// TODO - Document extension trait workaround.
-// See https://xi.zulipchat.com/#narrow/stream/317477-masonry/topic/Thoughts.20on.20simplifying.20WidgetMut/near/436478885
 /// A rich mutable reference to a [`Widget`].
 ///
 /// In Masonry, widgets can't be mutated directly. All mutations go through a `WidgetMut`
@@ -29,8 +27,10 @@ use crate::kurbo::Affine;
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
 #[non_exhaustive]
 pub struct WidgetMut<'a, W: Widget + ?Sized> {
-    pub ctx: MutateCtx<'a>,
+    /// The widget we're mutating.
     pub widget: &'a mut W,
+    /// A context handle that points to the widget state and other relevant data.
+    pub ctx: MutateCtx<'a>,
 }
 
 impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
@@ -48,8 +48,8 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;
         WidgetMut {
-            ctx: self.ctx.reborrow_mut(),
             widget,
+            ctx: self.ctx.reborrow_mut(),
         }
     }
 
@@ -118,8 +118,8 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         let w1_name = self.widget.type_name();
         match W2::from_dyn_mut(self.widget.as_mut_dyn()) {
             Some(widget) => WidgetMut {
-                ctx: self.ctx.reborrow_mut(),
                 widget,
+                ctx: self.ctx.reborrow_mut(),
             },
             None => {
                 panic!(

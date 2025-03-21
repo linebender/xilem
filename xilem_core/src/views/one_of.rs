@@ -21,9 +21,9 @@ pub trait PhantomElementCtx: ViewPathTracker {
 }
 
 /// A [`View`] which can be one of nine inner view types.
-#[allow(missing_docs)] // On variants
 #[derive(Debug)]
 #[must_use = "View values do nothing unless provided to Xilem."]
+#[expect(missing_docs, reason = "No need to document all variants")]
 pub enum OneOf<A = (), B = (), C = (), D = (), E = (), F = (), G = (), H = (), I = ()> {
     A(A),
     B(B),

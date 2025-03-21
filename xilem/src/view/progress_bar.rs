@@ -6,10 +6,15 @@ use masonry::widgets;
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
+/// A view which displays a progress bar.
+///
+/// This can be for showing progress of a task or a download.
 pub fn progress_bar(progress: Option<f64>) -> ProgressBar {
     ProgressBar { progress }
 }
 
+/// The [`View`] created by [`progress_bar`].
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct ProgressBar {
     progress: Option<f64>,
 }

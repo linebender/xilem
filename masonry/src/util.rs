@@ -86,7 +86,9 @@ impl<T: Any> AsAny for T {
 // --- MARK: PAINT HELPERS ---
 
 #[derive(Debug, Clone, Copy)]
-#[allow(missing_docs)]
+/// A point with coordinates in the range [0.0, 1.0].
+///
+/// This is useful for specifying points in a normalized space, such as a gradient.
 pub struct UnitPoint {
     u: f64,
     v: f64,
@@ -96,7 +98,7 @@ pub struct UnitPoint {
     single_use_lifetimes,
     reason = "Anonymous lifetimes in `impl Trait` are unstable, see https://github.com/rust-lang/rust/issues/129255"
 )]
-#[allow(missing_docs)]
+/// Helper function for [`Scene::stroke`].
 pub fn stroke<'b>(
     scene: &mut Scene,
     path: &impl Shape,
@@ -112,8 +114,6 @@ pub fn stroke<'b>(
     scene.stroke(&style, Affine::IDENTITY, brush, None, path);
 }
 
-#[allow(unused)]
-#[allow(missing_docs)]
 impl UnitPoint {
     /// `(0.0, 0.0)`
     pub const TOP_LEFT: Self = Self::new(0.0, 0.0);
@@ -151,7 +151,7 @@ impl UnitPoint {
     }
 }
 
-#[allow(missing_docs)]
+/// Helper function for [`Scene::fill`] with a linear gradient as the brush.
 pub fn fill_lin_gradient(
     scene: &mut Scene,
     path: &impl Shape,
@@ -164,7 +164,7 @@ pub fn fill_lin_gradient(
     scene.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
 }
 
-#[allow(missing_docs)]
+/// Helper function for [`Scene::fill`] with a uniform color as the brush.
 pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
     scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
 }

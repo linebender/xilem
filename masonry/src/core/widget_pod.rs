@@ -55,6 +55,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
         Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
     }
 
+    /// Create a new widget pod with a custom transform and a pre-set [`WidgetId`].
     pub fn new_with_id_and_transform(inner: Box<W>, id: WidgetId, transform: Affine) -> Self {
         Self {
             id,
@@ -67,6 +68,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
     }
 
     // TODO - Remove transform, have it as a special-case property instead.
+    /// Create a new widget pod with a custom transform and custom [`Properties`].
     pub fn new_with(inner: Box<W>, id: WidgetId, transform: Affine, props: Properties) -> Self {
         Self {
             id,
