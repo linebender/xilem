@@ -9,12 +9,11 @@ use dpi::LogicalPosition;
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMutList, ArenaRefList};
-use winit::window::ResizeDirection;
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, FromDynWidget, PropertiesMut,
-    PropertiesRef, Widget, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;

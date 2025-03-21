@@ -16,8 +16,8 @@ pub use event_loop_runner::{
 pub use render_root::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 
 pub(crate) use convert_winit_event::{
-    winit_force_to_masonry, winit_ime_to_masonry, winit_key_event_to_kbt,
-    winit_modifiers_to_kbt_modifiers,
+    masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
+    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers,
 };
 pub(crate) use render_root::{MutateCallback, RenderRootState};
 pub(crate) use tracing_backend::{try_init_test_tracing, try_init_tracing};

@@ -23,8 +23,8 @@ use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app::{
     AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
-    winit_force_to_masonry, winit_ime_to_masonry, winit_key_event_to_kbt,
-    winit_modifiers_to_kbt_modifiers,
+    masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
+    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers,
 };
 use crate::core::{
     PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
@@ -734,6 +734,7 @@ impl MasonryState<'_> {
                 }
                 RenderRootSignal::DragResizeWindow(direction) => {
                     // TODO - Handle return value?
+                    let direction = masonry_resize_direction_to_winit(direction);
                     let _ = window.drag_resize_window(direction);
                 }
                 RenderRootSignal::ToggleMaximized => {

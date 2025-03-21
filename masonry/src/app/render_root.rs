@@ -13,7 +13,6 @@ use vello::Scene;
 use vello::kurbo::{
     Rect, {self},
 };
-use winit::window::ResizeDirection;
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Instant;
@@ -22,8 +21,9 @@ use web_time::Instant;
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, Ime, PointerEvent, PropertiesRef, QueryCtx, TextEvent, Widget,
-    WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
+    AccessEvent, Action, BrushIndex, Ime, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection,
+    TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;

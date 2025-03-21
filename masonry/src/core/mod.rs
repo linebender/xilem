@@ -24,8 +24,8 @@ pub use contexts::{
     RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
 };
 pub use events::{
-    AccessEvent, Force, Ime, PointerButton, PointerEvent, PointerState, TextEvent, Update,
-    WindowEvent, WindowTheme,
+    AccessEvent, Force, Ime, PointerButton, PointerEvent, PointerState, ResizeDirection, TextEvent,
+    Update, WindowEvent, WindowTheme,
 };
 pub use object_fit::ObjectFit;
 pub use properties::{Properties, PropertiesMut, PropertiesRef};

@@ -572,7 +572,7 @@ impl Update {
 
 /// Describes [input method](https://en.wikipedia.org/wiki/Input_method) events.
 ///
-/// (Mirrors [`winit::event::Ime`](https://docs.rs/winit/latest/x86_64-unknown-linux-gnu/winit/event/enum.Ime.html).)
+/// Mirrors [`winit::event::Ime`](https://docs.rs/winit/latest/x86_64-unknown-linux-gnu/winit/event/enum.Ime.html).
 ///
 /// This is also called a "composition event".
 ///
@@ -648,6 +648,8 @@ pub enum Ime {
 }
 
 /// Describes the force of a touch event
+///
+/// Mirrors [`winit::event::Force`](https://docs.rs/winit/latest/x86_64-unknown-linux-gnu/winit/event/enum.Force.html).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Force {
     /// On iOS, the force is calibrated so that the same number corresponds to
@@ -702,4 +704,20 @@ impl Force {
             Self::Normalized(force) => *force,
         }
     }
+}
+
+/// Defines the orientation that a window resize will be performed.
+///
+/// Mirrors [`winit::window::ResizeDirection`](https://docs.rs/winit/latest/x86_64-unknown-linux-gnu/winit/window/enum.ResizeDirection.html).
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[expect(missing_docs, reason = "Copied from winit")]
+pub enum ResizeDirection {
+    East,
+    North,
+    NorthEast,
+    NorthWest,
+    South,
+    SouthEast,
+    SouthWest,
+    West,
 }
