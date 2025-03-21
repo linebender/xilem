@@ -269,10 +269,6 @@ pub struct PointerState {
     /// The number of successive clicks registered. This is used to detect e.g. double-clicks.
     pub count: u8,
 
-    // TODO - Find out why this was added, maybe remove it.
-    /// Currently unused.
-    pub focus: bool,
-
     /// The force of a touch event.
     pub force: Option<Force>,
 }
@@ -444,7 +440,6 @@ impl PointerEvent {
             buttons: PointerButtons::default(),
             mods: Modifiers::default(),
             count: 0,
-            focus: false,
             force: None,
         };
         Self::PointerLeave(pointer_state)
@@ -553,7 +548,6 @@ impl PointerState {
             buttons: PointerButtons::default(),
             mods: Modifiers::default(),
             count: 0,
-            focus: false,
             force: None,
         }
     }
