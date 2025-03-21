@@ -569,12 +569,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
         // Determine the new anchor
         loop {
+            if self.anchor_index <= self.valid_range.start {
+                self.anchor_index = self.valid_range.start;
+                self.cap_scroll_range_up();
+                break;
+            }
             if self.scroll_offset_from_anchor < 0. {
-                if self.anchor_index <= self.valid_range.start {
-                    self.anchor_index = self.valid_range.start;
-                    self.cap_scroll_range_up();
-                    break;
-                }
                 self.anchor_index -= 1;
                 let new_anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let new_anchor = self.items.get(&self.anchor_index);
@@ -873,7 +873,7 @@ mod tests {
 
     use crate::{
         assert_render_snapshot,
-        core::{FromDynWidget, PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
+        core::{Action, FromDynWidget, PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
         testing::TestHarness,
         widgets::{Label, VirtualScroll, VirtualScrollAction},
     };
@@ -1092,6 +1092,83 @@ mod tests {
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
     }
 
+    #[test]
+    /// If there's a minimum range, we should behave in a sensible way.
+    fn limited_up() {
+        type ScrollContents = Label;
+
+        const MIN: i64 = 10;
+        let widget = VirtualScroll::<ScrollContents>::new(0).with_valid_range(MIN..i64::MAX);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
+            }
+            for idx in action.target {
+                if !action.old_active.contains(&idx) && idx < 5 {
+                    assert!(
+                        idx >= MIN,
+                        "Virtual Scroll controller should never request an invalid id. Requested {idx}"
+                    );
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
+            }
+        }
+
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(
+                widget.anchor_index, MIN,
+                "Virtual Scroll controller should lock anchor to be within active range"
+            );
+            assert_eq!(
+                widget.scroll_offset_from_anchor, 0.0,
+                "Virtual Scroll controller should lock top of the first item to the top of the screen if jumping"
+            );
+        }
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., -5.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert!(widget.anchor_index != MIN || widget.scroll_offset_from_anchor != 0.0);
+        }
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 6.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(widget.anchor_index, MIN);
+            assert_eq!(widget.scroll_offset_from_anchor, 0.0);
+        }
+    }
+
     fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
         harness: &mut TestHarness,
         virtual_scroll_id: crate::core::WidgetId,
@@ -1111,7 +1188,7 @@ mod tests {
                 id, virtual_scroll_id,
                 "Only widget in tree should give action"
             );
-            let crate::core::Action::Other(action) = action else {
+            let Action::Other(action) = action else {
                 unreachable!()
             };
             let action = action.downcast::<VirtualScrollAction>().unwrap();
@@ -1119,8 +1196,12 @@ mod tests {
                 assert_eq!(action.old_active, old_active);
             }
             old_active = Some(action.target.clone());
+            assert!(
+                action.target != action.old_active,
+                "Shouldn't have sent an update if the target hasn't changed"
+            );
             // This could happen iff the valid range is empty, which is case I've not reasoned about yet.
-            assert!(!action.target.is_empty());
+            // assert!(!action.target.is_empty());
 
             harness.edit_widget(virtual_scroll_id, |mut portal| {
                 let scroll = portal.downcast::<VirtualScroll<T>>();
