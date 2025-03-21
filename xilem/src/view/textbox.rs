@@ -13,7 +13,7 @@ use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
 
-/// Returns a view which displays editable text.
+/// A view which displays editable text.
 pub fn textbox<F, State, Action>(contents: String, on_changed: F) -> Textbox<State, Action>
 where
     F: Fn(&mut State, String) -> Action + Send + Sync + 'static,

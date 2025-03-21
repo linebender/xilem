@@ -12,7 +12,7 @@ use super::{Label, label};
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
-/// Returns a view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
+/// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
     VariableLabel {
         label: label(text),

@@ -226,6 +226,8 @@ impl Grid {
         this.ctx.request_layout();
     }
 
+    // TODO - Some of these method names should maybe be changed.
+    // "height" and "width" are misleading, since they suggest a pixel size.
     /// Set the number of columns of the grid.
     pub fn set_width(this: &mut WidgetMut<'_, Self>, width: i32) {
         this.widget.grid_width = width;

@@ -10,7 +10,7 @@ use vello::peniko::Brush;
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 
-/// Returns a view which displays selectable text.
+/// A view which displays selectable text.
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
         content: content.into(),
