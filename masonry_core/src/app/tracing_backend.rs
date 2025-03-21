@@ -124,7 +124,7 @@ fn try_init_wasm_tracing(max_level: LevelFilter) -> Result<(), SetGlobalDefaultE
 
 /// Initialise tracing for a unit test.
 /// This ignores most messages to limit noise (but will still log all messages to a file).
-pub(crate) fn try_init_test_tracing() -> Result<(), SetGlobalDefaultError> {
+pub fn try_init_test_tracing() -> Result<(), SetGlobalDefaultError> {
     // For unit tests we want to suppress most messages.
     let default_level = LevelFilter::WARN;
     #[cfg(not(target_arch = "wasm32"))]
@@ -139,7 +139,7 @@ pub(crate) fn try_init_test_tracing() -> Result<(), SetGlobalDefaultError> {
 }
 
 /// Initialise tracing for an end-user application.
-pub(crate) fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
+pub fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
     // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
     // DEBUG should print a few logs per low-density event.
     // INFO should only print logs for noteworthy things.

@@ -102,12 +102,35 @@
     clippy::needless_doctest_main,
     reason = "The doctest for lib.rs should have a main function"
 )]
+#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Potentially controversial code style"
+)]
 
 pub use masonry_core::{
-    AsAny, Handled, UnitPoint, app, assert_render_snapshot, core, cursor_icon, dpi,
-    include_screenshot, kurbo, palette, parley, peniko, properties, testing, theme, util, vello,
-    widgets,
+    AsAny, Handled, UnitPoint, assert_render_snapshot, core, cursor_icon, dpi, include_screenshot,
+    kurbo, palette, parley, peniko, properties, testing, theme, util, vello, widgets,
 };
 
 #[cfg(doc)]
 pub use masonry_core::doc;
+
+mod app_driver;
+mod convert_winit_event;
+mod event_loop_runner;
+
+/// Types needed for running a Masonry app.
+pub mod app {
+    pub use crate::app_driver::{AppDriver, DriverCtx};
+    pub use crate::event_loop_runner::{
+        EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, WindowState,
+        run, run_with,
+    };
+
+    pub(crate) use masonry_core::app::try_init_tracing;
+    pub use masonry_core::app::{
+        RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+    };
+}

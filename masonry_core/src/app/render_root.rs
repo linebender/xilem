@@ -723,8 +723,16 @@ impl RenderRoot {
         &self.root_state().focus_chain
     }
 
-    pub(crate) fn needs_rewrite_passes(&self) -> bool {
+    // TODO - Figure out if this should be public
+    #[doc(hidden)]
+    pub fn needs_rewrite_passes(&self) -> bool {
         self.root_state().needs_rewrite_passes() || self.global_state.focus_changed()
+    }
+
+    // TODO - Figure out if this should be public
+    #[doc(hidden)]
+    pub fn emit_signal(&mut self, signal: RenderRootSignal) {
+        self.global_state.emit_signal(signal);
     }
 }
 

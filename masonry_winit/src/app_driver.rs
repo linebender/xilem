@@ -1,8 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::app::{MasonryState, RenderRoot};
+use crate::app::MasonryState;
 use crate::core::{Action, WidgetId};
+
+use masonry_core::app::RenderRoot;
 
 /// Context for the [`AppDriver`] trait.
 ///
@@ -30,7 +32,7 @@ pub trait AppDriver {
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
     ///
     /// Use cases include loading fonts.
-    fn on_start(&mut self, state: &mut MasonryState) {}
+    fn on_start(&mut self, state: &mut MasonryState<'_>) {}
 }
 
 impl DriverCtx<'_> {

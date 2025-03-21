@@ -14,50 +14,34 @@ use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
-use winit::event::{
-    DeviceEvent as WinitDeviceEvent, DeviceId, MouseButton as WinitMouseButton,
-    WindowEvent as WinitWindowEvent,
-};
+use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes, WindowId};
 
-use crate::app::{
-    AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use masonry_core::core::{
+    Action, PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
+};
+use masonry_core::debug_panic;
+use masonry_core::dpi::LogicalPosition;
+use masonry_core::peniko::Color;
+
+use crate::app::{AppDriver, DriverCtx};
+use crate::convert_winit_event::{
     masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
-    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers,
+    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers, winit_mouse_button_to_masonry,
 };
-use crate::core::{
-    PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
-};
-use crate::dpi::LogicalPosition;
-use crate::peniko::Color;
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
     AccessKit(accesskit_winit::Event),
     // TODO: A more considered design here
-    Action(crate::core::Action, WidgetId),
+    Action(Action, WidgetId),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {
     fn from(value: accesskit_winit::Event) -> Self {
         Self::AccessKit(value)
-    }
-}
-
-impl From<WinitMouseButton> for PointerButton {
-    fn from(button: WinitMouseButton) -> Self {
-        match button {
-            WinitMouseButton::Left => Self::Primary,
-            WinitMouseButton::Right => Self::Secondary,
-            WinitMouseButton::Middle => Self::Auxiliary,
-            WinitMouseButton::Back => Self::X1,
-            WinitMouseButton::Forward => Self::X2,
-            WinitMouseButton::Other(other) => {
-                warn!("Got winit MouseButton::Other({other}) which is not yet fully supported.");
-                Self::Other
-            }
-        }
     }
 }
 
@@ -544,22 +528,30 @@ impl MasonryState<'_> {
                 self.render_root
                     .handle_pointer_event(PointerEvent::PointerLeave(self.pointer_state.clone()));
             }
-            WinitWindowEvent::MouseInput { state, button, .. } => match state {
-                winit::event::ElementState::Pressed => {
-                    self.render_root
-                        .handle_pointer_event(PointerEvent::PointerDown(
-                            button.into(),
-                            self.pointer_state.clone(),
-                        ));
+            WinitWindowEvent::MouseInput { state, button, .. } => {
+                if let winit::event::MouseButton::Other(other) = button {
+                    warn!(
+                        "Got winit MouseButton::Other({other}) which is not yet fully supported."
+                    );
                 }
-                winit::event::ElementState::Released => {
-                    self.render_root
-                        .handle_pointer_event(PointerEvent::PointerUp(
-                            button.into(),
-                            self.pointer_state.clone(),
-                        ));
+                let button = winit_mouse_button_to_masonry(button);
+                match state {
+                    winit::event::ElementState::Pressed => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerDown(
+                                button,
+                                self.pointer_state.clone(),
+                            ));
+                    }
+                    winit::event::ElementState::Released => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerUp(
+                                button,
+                                self.pointer_state.clone(),
+                            ));
+                    }
                 }
-            },
+            }
             WinitWindowEvent::MouseWheel { delta, .. } => {
                 // TODO - This delta value doesn't quite make sense.
                 // Figure out and document a better standard.
@@ -665,9 +657,7 @@ impl MasonryState<'_> {
             }
             MasonryUserEvent::Action(action, widget) => self
                 .render_root
-                .global_state
-                .signal_queue
-                .push_back(RenderRootSignal::Action(action, widget)),
+                .emit_signal(RenderRootSignal::Action(action, widget)),
         }
 
         self.handle_signals(event_loop, app_driver);
@@ -750,16 +740,19 @@ impl MasonryState<'_> {
                     window.show_window_menu(position);
                 }
                 RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
-                    let (widget, state, _properties) =
-                        self.render_root.widget_arena.get_all(widget_id);
-                    let widget_name = widget.item.short_type_name();
-                    let display_name = if let Some(debug_text) = widget.item.get_debug_text() {
+                    let Some(widget_ref) = self.render_root.get_widget(widget_id) else {
+                        info!("Widget not found: {widget_id}");
+                        return;
+                    };
+                    let widget_name = widget_ref.short_type_name();
+                    let display_name = if let Some(debug_text) = widget_ref.get_debug_text() {
                         format!("{widget_name}<{debug_text}>")
                     } else {
                         widget_name.into()
                     };
                     info!("Widget selected in inspector: {widget_id} - {display_name}");
-                    info!("{:#?}", state.item);
+                    // TODO
+                    // info!("{:#?}", widget_ref.state());
                 }
             }
         }
@@ -771,7 +764,7 @@ impl MasonryState<'_> {
         }
     }
 
-    pub fn get_window_state(&self) -> &WindowState {
+    pub fn get_window_state(&self) -> &WindowState<'_> {
         &self.window
     }
 

@@ -7,10 +7,13 @@
 
 use keyboard_types::KeyState;
 use keyboard_types::{Code, Key, KeyboardEvent, Location, Modifiers};
+use masonry_core::core::{Force, Ime, PointerButton, ResizeDirection};
+
 use winit::event::ElementState;
 use winit::event::Force as WinitForce;
 use winit::event::Ime as WinitIme;
 use winit::event::KeyEvent as WinitKeyEvent;
+use winit::event::MouseButton as WinitMouseButton;
 use winit::keyboard::Key as WinitKey;
 use winit::keyboard::KeyCode as WinitKeyCode;
 use winit::keyboard::KeyLocation as WinitKeyLocation;
@@ -19,7 +22,16 @@ use winit::keyboard::NamedKey as WinitNamedKey;
 use winit::keyboard::PhysicalKey as WinitPhysicalKey;
 use winit::window::ResizeDirection as WinitResizeDirection;
 
-use crate::core::{Force, Ime, ResizeDirection};
+pub(crate) fn winit_mouse_button_to_masonry(button: WinitMouseButton) -> PointerButton {
+    match button {
+        WinitMouseButton::Left => PointerButton::Primary,
+        WinitMouseButton::Right => PointerButton::Secondary,
+        WinitMouseButton::Middle => PointerButton::Auxiliary,
+        WinitMouseButton::Back => PointerButton::X1,
+        WinitMouseButton::Forward => PointerButton::X2,
+        WinitMouseButton::Other(_) => PointerButton::Other,
+    }
+}
 
 pub(crate) fn masonry_resize_direction_to_winit(dir: ResizeDirection) -> WinitResizeDirection {
     match dir {
@@ -299,7 +311,7 @@ pub(crate) fn winit_physical_key_to_kbt_code(physical_key: WinitPhysicalKey) -> 
             WinitKeyCode::F33 => Code::F33,
             WinitKeyCode::F34 => Code::F34,
             WinitKeyCode::F35 => Code::F35,
-            _ => todo!(),
+            _ => panic!("Key code not supported: {:?}", key_code),
         },
     }
 }
