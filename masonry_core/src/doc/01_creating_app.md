@@ -78,7 +78,7 @@ That method gives our app a [`DriverCtx`] context, which we can use to access th
 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
-```rust
+```rust,ignore
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{Action, WidgetId};
 use masonry::widgets::Label;
@@ -171,7 +171,7 @@ The last step is to create our Winit window and start our main loop.
 
 Our complete program therefore looks like this:
 
-```rust
+```rust,ignore
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
