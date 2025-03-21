@@ -157,7 +157,7 @@ macro_rules! assert_render_snapshot {
     };
 }
 
-/// Assert a snapshot of a rendered frame of your app.
+/// Assert a snapshot of a rendered frame of your app, expecting it to fail.
 ///
 /// This macro does essentially the same thing as [`assert_render_snapshot`], but
 /// instead of asserting that the rendered frame matches the existing screenshot,
