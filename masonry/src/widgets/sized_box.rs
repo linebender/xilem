@@ -617,7 +617,7 @@ mod tests {
     use super::*;
     use crate::testing::TestHarness;
     use crate::widgets::Label;
-    use crate::{assert_render_snapshot, palette};
+    use crate::{assert_failing_render_snapshot, assert_render_snapshot, palette};
 
     // TODO - Add WidgetMut tests
 
@@ -810,10 +810,7 @@ mod tests {
         assert_render_snapshot!(harness, "background_brush_removed");
     }
 
-    // TODO - Write a new assert_failing_render_snapshot macro and
-    // use it instead.
     #[test]
-    #[should_panic(expected = "Images are different")]
     fn invalid_screenshot() {
         // Copy-pasted from empty_box
         let widget = SizedBox::empty()
@@ -826,11 +823,10 @@ mod tests {
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
 
-        assert_render_snapshot!(harness, "empty_box");
+        assert_failing_render_snapshot!(harness, "empty_box");
     }
 
     #[test]
-    #[should_panic(expected = "Images are different")]
     fn invalid_screenshot_2() {
         // Copy-pasted from label_box_with_size
         let widget = SizedBox::new(Label::new("hello"))
@@ -844,6 +840,6 @@ mod tests {
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
 
-        assert_render_snapshot!(harness, "label_box_with_size");
+        assert_failing_render_snapshot!(harness, "label_box_with_size");
     }
 }
