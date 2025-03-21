@@ -809,4 +809,39 @@ mod tests {
         });
         assert_render_snapshot!(harness, "background_brush_removed");
     }
+
+    #[test]
+    #[should_panic(expected = "Images are different")]
+    fn invalid_screenshot() {
+        // Copy-pasted from empty_box
+        let widget = SizedBox::empty()
+            .width(20.0)
+            .height(20.0)
+            // This is the difference
+            .border(palette::css::BLUE, 5.2)
+            .rounded(5.0);
+
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
+
+        assert_render_snapshot!(harness, "empty_box");
+    }
+
+    #[test]
+    #[should_panic(expected = "Images are different")]
+    fn invalid_screenshot_2() {
+        // Copy-pasted from label_box_with_size
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(20.0)
+            .height(20.0)
+            .border(palette::css::BLUE, 5.0)
+            .rounded(5.0)
+            // This is the difference
+            .padding(0.2);
+
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
+
+        assert_render_snapshot!(harness, "label_box_with_size");
+    }
 }
