@@ -617,7 +617,7 @@ mod tests {
     use super::*;
     use crate::testing::TestHarness;
     use crate::widgets::Label;
-    use crate::{assert_render_snapshot, palette};
+    use crate::{assert_failing_render_snapshot, assert_render_snapshot, palette};
 
     // TODO - Add WidgetMut tests
 
@@ -808,5 +808,41 @@ mod tests {
             sized_box.remove_prop::<BackgroundColor>();
         });
         assert_render_snapshot!(harness, "background_brush_removed");
+    }
+
+    #[test]
+    fn invalid_screenshot() {
+        // Copy-pasted from empty_box
+        let widget = SizedBox::empty()
+            .width(20.0)
+            .height(20.0)
+            .border(palette::css::BLUE, 5.0)
+            .rounded(5.0);
+
+        // This is the difference
+        let widget = widget.border(palette::css::BLUE, 5.2);
+
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
+
+        assert_failing_render_snapshot!(harness, "empty_box");
+    }
+
+    #[test]
+    fn invalid_screenshot_2() {
+        // Copy-pasted from label_box_with_size
+        let widget = SizedBox::new(Label::new("hello"))
+            .width(20.0)
+            .height(20.0)
+            .border(palette::css::BLUE, 5.0)
+            .rounded(5.0);
+
+        // This is the difference
+        let widget = widget.padding(0.2);
+
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
+
+        assert_failing_render_snapshot!(harness, "label_box_with_size");
     }
 }

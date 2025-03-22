@@ -3,6 +3,8 @@
 
 //! A button widget.
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
@@ -13,15 +15,26 @@ use crate::core::{
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Insets, Size};
+use crate::kurbo::Size;
+use crate::properties::*;
 use crate::theme;
 use crate::util::{UnitPoint, fill_lin_gradient, stroke};
 use crate::widgets::Label;
 
-// The minimum padding added to a button.
+// --- MARK: CONSTANTS ---
+const DEFAULT_BORDER_COLOR: BorderColor = BorderColor {
+    color: theme::BORDER_DARK,
+};
+const DEFAULT_BORDER_WIDTH: BorderWidth = BorderWidth {
+    width: theme::BUTTON_BORDER_WIDTH,
+};
+const DEFAULT_BORDER_RADII: CornerRadius = CornerRadius {
+    radius: theme::BUTTON_BORDER_RADIUS,
+};
+
 // NOTE: these values are chosen to match the existing look of TextBox; these
 // should be reevaluated at some point.
-const LABEL_INSETS: Insets = Insets::uniform_xy(8., 2.);
+const DEFAULT_PADDING: Padding = Padding { x: 8., y: 2. };
 
 /// A button with a text label.
 ///
@@ -151,66 +164,82 @@ impl Widget for Button {
         ctx.register_child(&mut self.label);
     }
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        BorderColor::prop_changed(ctx, property_type);
+        BorderWidth::prop_changed(ctx, property_type);
+        CornerRadius::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
+    }
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let padding = Size::new(LABEL_INSETS.x_value(), LABEL_INSETS.y_value());
-        let label_bc = bc.shrink(padding).loosen();
+        let border = props.get::<BorderWidth>().unwrap_or(&DEFAULT_BORDER_WIDTH);
+        let padding = props.get::<Padding>().unwrap_or(&DEFAULT_PADDING);
 
-        let label_size = ctx.run_layout(&mut self.label, &label_bc);
+        let initial_bc = bc;
 
+        let bc = bc.loosen();
+        let bc = border.layout_down(bc);
+        let bc = padding.layout_down(bc);
+
+        let label_size = ctx.run_layout(&mut self.label, &bc);
         let baseline = ctx.child_baseline_offset(&self.label);
-        ctx.set_baseline_offset(baseline + LABEL_INSETS.y1);
 
+        let size = label_size;
+        let (size, baseline) = padding.layout_up(size, baseline);
+        let (size, baseline) = border.layout_up(size, baseline);
+
+        // TODO - Add MinimumSize property.
         // HACK: to make sure we look okay at default sizes when beside a textbox,
         // we make sure we will have at least the same height as the default textbox.
-        let min_height = theme::BORDERED_WIDGET_HEIGHT;
+        let mut size = size;
+        size.height = size.height.max(theme::BORDERED_WIDGET_HEIGHT);
 
-        let button_size = bc.constrain(Size::new(
-            label_size.width + padding.width,
-            (label_size.height + padding.height).max(min_height),
-        ));
-
-        let label_offset = (button_size.to_vec2() - label_size.to_vec2()) / 2.0;
+        // TODO - Figure out how to handle cases where label size doesn't fit bc.
+        let size = initial_bc.constrain(size);
+        let label_offset = (size.to_vec2() - label_size.to_vec2()) / 2.0;
         ctx.place_child(&mut self.label, label_offset.to_point());
 
-        button_size
+        // TODO - pos = (size - label_size) / 2
+
+        ctx.set_baseline_offset(baseline);
+        size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_active = ctx.is_pointer_capture_target() && !ctx.is_disabled();
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let is_pressed = ctx.is_pointer_capture_target() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
-        let stroke_width = theme::BUTTON_BORDER_WIDTH;
-        let border_radius = theme::BUTTON_BORDER_RADIUS;
 
-        let bg_rect = size
-            .to_rect()
-            .inset(-stroke_width)
-            .to_rounded_rect(border_radius - stroke_width);
-        let border_rect = size
-            .to_rect()
-            .inset(-stroke_width / 2.0)
-            .to_rounded_rect(border_radius);
+        let border_color = props.get::<BorderColor>().unwrap_or(&DEFAULT_BORDER_COLOR);
+        let border_width = props.get::<BorderWidth>().unwrap_or(&DEFAULT_BORDER_WIDTH);
+        let border_radius = props.get::<CornerRadius>().unwrap_or(&DEFAULT_BORDER_RADII);
 
+        let bg_rect = border_width.bg_rect(size, border_radius);
+        let border_rect = border_width.border_rect(size, border_radius);
+
+        // TODO - Handle gradient bg with properties.
         let bg_gradient = if ctx.is_disabled() {
             [theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]
-        } else if is_active {
+        } else if is_pressed {
             [theme::BUTTON_DARK, theme::BUTTON_LIGHT]
         } else {
             [theme::BUTTON_LIGHT, theme::BUTTON_DARK]
         };
 
+        // TODO - Handle hovered color with properties.
         let border_color = if is_hovered && !ctx.is_disabled() {
-            theme::BORDER_LIGHT
+            BorderColor {
+                color: theme::BORDER_LIGHT,
+            }
         } else {
-            theme::BORDER_DARK
+            *border_color
         };
 
-        stroke(scene, &border_rect, border_color, stroke_width);
         fill_lin_gradient(
             scene,
             &bg_rect,
@@ -218,6 +247,7 @@ impl Widget for Button {
             UnitPoint::TOP,
             UnitPoint::BOTTOM,
         );
+        stroke(scene, &border_rect, border_color.color, border_width.width);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -308,5 +338,28 @@ mod tests {
 
         // We don't use assert_eq because we don't want rich assert
         assert!(image_1 == image_2);
+    }
+
+    #[test]
+    fn set_properties() {
+        let red = crate::palette::css::RED;
+        let button = Button::new("Some random text");
+
+        let window_size = Size::new(200.0, 80.0);
+        let mut harness = TestHarness::create_with_size(button, window_size);
+
+        harness.edit_root_widget(|mut button| {
+            let mut button = button.downcast::<Button>();
+
+            button.insert_prop(BorderColor { color: red });
+            button.insert_prop(BorderWidth { width: 5.0 });
+            button.insert_prop(CornerRadius { radius: 20.0 });
+            button.insert_prop(Padding { x: 8.0, y: 3.0 });
+
+            let mut label = Button::label_mut(&mut button);
+            Label::set_brush(&mut label, red);
+        });
+
+        assert_render_snapshot!(harness, "set_properties");
     }
 }
