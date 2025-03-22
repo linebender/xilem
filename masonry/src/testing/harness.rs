@@ -16,14 +16,13 @@ use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
-use winit::event::Ime;
 
 use crate::Handled;
 use crate::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use crate::core::{
-    Action, PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WidgetMut,
+    Action, Ime, PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};

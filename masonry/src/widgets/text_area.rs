@@ -5,6 +5,7 @@ use std::mem::Discriminant;
 use std::time::Instant;
 
 use accesskit::{Node, NodeId, Role};
+use keyboard_types::{Key, KeyState};
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use parley::layout::Alignment;
@@ -13,10 +14,9 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
 use vello::peniko::{Brush, Fill};
-use winit::keyboard::{Key, NamedKey};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles,
     render_text,
@@ -578,24 +578,23 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         event: &TextEvent,
     ) {
         match event {
-            TextEvent::KeyboardKey(key_event, modifiers_state) => {
-                if !key_event.state.is_pressed() || self.editor.is_composing() {
+            TextEvent::KeyboardKey(key_event, modifiers_state, key_text) => {
+                if key_event.state != KeyState::Down || self.editor.is_composing() {
                     return;
                 }
                 #[allow(unused)]
                 let (shift, action_mod) = (
-                    modifiers_state.shift_key(),
+                    modifiers_state.shift(),
                     if cfg!(target_os = "macos") {
-                        modifiers_state.super_key()
+                        modifiers_state.meta()
                     } else {
-                        modifiers_state.control_key()
+                        modifiers_state.ctrl()
                     },
                 );
                 let (fctx, lctx) = ctx.text_contexts();
                 // Whether the text was changed.
                 let mut edited = false;
-                // Ideally we'd use key_without_modifiers, but that's broken
-                match &key_event.logical_key {
+                match &key_event.key {
                     // Cut
                     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
                     Key::Character(x)
@@ -640,7 +639,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.select_all();
                         }
                     }
-                    Key::Named(NamedKey::ArrowLeft) => {
+                    Key::ArrowLeft => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -654,7 +653,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_left();
                         }
                     }
-                    Key::Named(NamedKey::ArrowRight) => {
+                    Key::ArrowRight => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -668,7 +667,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_right();
                         }
                     }
-                    Key::Named(NamedKey::ArrowUp) => {
+                    Key::ArrowUp => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if shift {
                             drv.select_up();
@@ -676,7 +675,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_up();
                         }
                     }
-                    Key::Named(NamedKey::ArrowDown) => {
+                    Key::ArrowDown => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if shift {
                             drv.select_down();
@@ -684,7 +683,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_down();
                         }
                     }
-                    Key::Named(NamedKey::Home) => {
+                    Key::Home => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -698,7 +697,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_to_line_start();
                         }
                     }
-                    Key::Named(NamedKey::End) => {
+                    Key::End => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -712,7 +711,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_to_line_end();
                         }
                     }
-                    Key::Named(NamedKey::Delete) if EDITABLE => {
+                    Key::Delete if EDITABLE => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             drv.delete_word();
@@ -722,7 +721,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
                         edited = true;
                     }
-                    Key::Named(NamedKey::Backspace) if EDITABLE => {
+                    Key::Backspace if EDITABLE => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             drv.backdelete_word();
@@ -732,13 +731,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
                         edited = true;
                     }
-                    Key::Named(NamedKey::Space) if EDITABLE => {
+                    Key::Character(sp) if EDITABLE && sp.as_str() == " " => {
                         self.editor
                             .driver(fctx, lctx)
                             .insert_or_replace_selection(" ");
                         edited = true;
                     }
-                    Key::Named(NamedKey::Enter) => {
+                    Key::Enter => {
                         // TODO: Multiline?
                         let multiline = false;
                         if multiline {
@@ -754,12 +753,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         }
                     }
 
-                    Key::Named(NamedKey::Tab) => {
+                    Key::Tab => {
                         // Intentionally do nothing so that tabbing from a textbox/Prose works.
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
                         return;
                     }
-                    _ if EDITABLE => match &key_event.text {
+                    _ if EDITABLE => match &key_text {
                         Some(text) => {
                             self.editor
                                 .driver(fctx, lctx)
@@ -801,10 +800,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 // We don't send a TextChanged when the preedit changes
                 let mut edited = false;
                 match e {
-                    winit::event::Ime::Disabled => {
+                    Ime::Disabled => {
                         self.editor.driver(fctx, lctx).clear_compose();
                     }
-                    winit::event::Ime::Preedit(text, cursor) => {
+                    Ime::Preedit(text, cursor) => {
                         if text.is_empty() {
                             self.editor.driver(fctx, lctx).clear_compose();
                         } else {
@@ -812,13 +811,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             edited = true;
                         }
                     }
-                    winit::event::Ime::Commit(text) => {
+                    Ime::Commit(text) => {
                         self.editor
                             .driver(fctx, lctx)
                             .insert_or_replace_selection(text);
                         edited = true;
                     }
-                    winit::event::Ime::Enabled => {}
+                    Ime::Enabled => {}
                 }
 
                 ctx.set_handled();

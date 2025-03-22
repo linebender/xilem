@@ -6,7 +6,7 @@
 mod action;
 mod box_constraints;
 mod contexts;
-mod event;
+mod events;
 mod object_fit;
 mod properties;
 mod text;
@@ -23,9 +23,9 @@ pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
     RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
 };
-pub use event::{
-    AccessEvent, PointerButton, PointerEvent, PointerState, TextEvent, Update, WindowEvent,
-    WindowTheme,
+pub use events::{
+    AccessEvent, Force, Ime, PointerButton, PointerEvent, PointerState, ResizeDirection, TextEvent,
+    Update, WindowEvent, WindowTheme,
 };
 pub use object_fit::ObjectFit;
 pub use properties::{Properties, PropertiesMut, PropertiesRef};

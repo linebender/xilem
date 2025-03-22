@@ -23,6 +23,8 @@ use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app::{
     AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+    masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
+    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers, winit_mouse_button_to_masonry,
 };
 use crate::core::{
     PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
@@ -40,22 +42,6 @@ pub enum MasonryUserEvent {
 impl From<accesskit_winit::Event> for MasonryUserEvent {
     fn from(value: accesskit_winit::Event) -> Self {
         Self::AccessKit(value)
-    }
-}
-
-impl From<WinitMouseButton> for PointerButton {
-    fn from(button: WinitMouseButton) -> Self {
-        match button {
-            WinitMouseButton::Left => Self::Primary,
-            WinitMouseButton::Right => Self::Secondary,
-            WinitMouseButton::Middle => Self::Auxiliary,
-            WinitMouseButton::Back => Self::X1,
-            WinitMouseButton::Forward => Self::X2,
-            WinitMouseButton::Other(other) => {
-                warn!("Got winit MouseButton::Other({other}) which is not yet fully supported.");
-                Self::Other
-            }
-        }
     }
 }
 
@@ -79,6 +65,7 @@ pub struct MasonryState<'a> {
     render_cx: RenderContext,
     render_root: RenderRoot,
     pointer_state: PointerState,
+    winit_mods: winit::event::Modifiers,
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
@@ -247,6 +234,7 @@ impl MasonryState<'_> {
             #[cfg(feature = "tracy")]
             frame: None,
             pointer_state: PointerState::empty(),
+            winit_mods: winit::event::Modifiers::default(),
             proxy: event_loop.create_proxy(),
 
             window: WindowState::Uninitialized(window),
@@ -500,21 +488,26 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Resize(size));
             }
             WinitWindowEvent::ModifiersChanged(modifiers) => {
-                self.pointer_state.mods = modifiers;
+                self.pointer_state.mods = winit_modifiers_to_kbt_modifiers(modifiers.state());
+                self.winit_mods = modifiers;
                 self.render_root
-                    .handle_text_event(TextEvent::ModifierChange(modifiers.state()));
+                    .handle_text_event(TextEvent::ModifierChange(self.pointer_state.mods));
             }
             WinitWindowEvent::KeyboardInput {
                 device_id: _,
                 event,
                 is_synthetic: false, // TODO: Introduce an escape hatch for synthetic keys
             } => {
+                let text = event.text.as_ref().map(|text| text.to_string());
+                let event = winit_key_event_to_kbt(&event, self.winit_mods.state());
                 self.render_root.handle_text_event(TextEvent::KeyboardKey(
                     event,
-                    self.pointer_state.mods.state(),
+                    self.pointer_state.mods,
+                    text,
                 ));
             }
             WinitWindowEvent::Ime(ime) => {
+                let ime = winit_ime_to_masonry(ime);
                 self.render_root.handle_text_event(TextEvent::Ime(ime));
             }
             WinitWindowEvent::Focused(new_focus) => {
@@ -535,22 +528,31 @@ impl MasonryState<'_> {
                 self.render_root
                     .handle_pointer_event(PointerEvent::PointerLeave(self.pointer_state.clone()));
             }
-            WinitWindowEvent::MouseInput { state, button, .. } => match state {
-                winit::event::ElementState::Pressed => {
-                    self.render_root
-                        .handle_pointer_event(PointerEvent::PointerDown(
-                            button.into(),
-                            self.pointer_state.clone(),
-                        ));
+            WinitWindowEvent::MouseInput { state, button, .. } => {
+                if let WinitMouseButton::Other(other) = button {
+                    warn!(
+                        "Got winit MouseButton::Other({other}) which is not yet fully supported."
+                    );
                 }
-                winit::event::ElementState::Released => {
-                    self.render_root
-                        .handle_pointer_event(PointerEvent::PointerUp(
-                            button.into(),
-                            self.pointer_state.clone(),
-                        ));
+                let button = winit_mouse_button_to_masonry(button);
+
+                match state {
+                    winit::event::ElementState::Pressed => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerDown(
+                                button,
+                                self.pointer_state.clone(),
+                            ));
+                    }
+                    winit::event::ElementState::Released => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerUp(
+                                button,
+                                self.pointer_state.clone(),
+                            ));
+                    }
                 }
-            },
+            }
             WinitWindowEvent::MouseWheel { delta, .. } => {
                 // TODO - This delta value doesn't quite make sense.
                 // Figure out and document a better standard.
@@ -578,7 +580,7 @@ impl MasonryState<'_> {
                 //        It will also interact with gesture discrimination.
                 self.pointer_state.physical_position = location;
                 self.pointer_state.position = location.to_logical(window.scale_factor());
-                self.pointer_state.force = force;
+                self.pointer_state.force = force.map(winit_force_to_masonry);
                 match phase {
                     winit::event::TouchPhase::Started => {
                         self.render_root
@@ -725,6 +727,7 @@ impl MasonryState<'_> {
                 }
                 RenderRootSignal::DragResizeWindow(direction) => {
                     // TODO - Handle return value?
+                    let direction = masonry_resize_direction_to_winit(direction);
                     let _ = window.drag_resize_window(direction);
                 }
                 RenderRootSignal::ToggleMaximized => {

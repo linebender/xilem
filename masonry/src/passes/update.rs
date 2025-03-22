@@ -10,7 +10,7 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
-    PointerEvent, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    Ime, PointerEvent, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
@@ -507,7 +507,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // IME was active, but the next focused widget is going to receive the Ime::Disabled event
         // sent by the platform. Synthesize an `Ime::Disabled` event here and send it to the widget
         // about to be unfocused.
-        run_on_text_event_pass(root, &TextEvent::Ime(winit::event::Ime::Disabled));
+        run_on_text_event_pass(root, &TextEvent::Ime(Ime::Disabled));
 
         // Disable the IME, which was enabled specifically for this widget. Note that if the newly
         // focused widget also requires IME, we will request it again - this resets the platform's
