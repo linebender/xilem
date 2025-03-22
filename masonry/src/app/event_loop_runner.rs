@@ -24,15 +24,13 @@ use winit::window::{Window, WindowAttributes, WindowId};
 use crate::app::{
     AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
     masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
-    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers,
+    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers, winit_mouse_button_to_masonry,
 };
 use crate::core::{
     PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
 };
 use crate::dpi::LogicalPosition;
 use crate::peniko::Color;
-
-use super::convert_winit_event::winit_mouse_button_to_masonry;
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
