@@ -13,7 +13,8 @@ pub struct BackgroundColor {
 }
 
 impl BackgroundColor {
-    pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {
             return;
         }

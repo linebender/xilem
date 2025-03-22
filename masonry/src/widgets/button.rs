@@ -15,7 +15,7 @@ use crate::core::{
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::kurbo::Size;
 use crate::properties::*;
 use crate::theme;
 use crate::util::{UnitPoint, fill_lin_gradient, stroke};
