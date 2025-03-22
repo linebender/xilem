@@ -32,6 +32,8 @@ use crate::core::{
 use crate::dpi::LogicalPosition;
 use crate::peniko::Color;
 
+use super::convert_winit_event::winit_mouse_button_to_masonry;
+
 #[derive(Debug)]
 pub enum MasonryUserEvent {
     AccessKit(accesskit_winit::Event),
@@ -42,22 +44,6 @@ pub enum MasonryUserEvent {
 impl From<accesskit_winit::Event> for MasonryUserEvent {
     fn from(value: accesskit_winit::Event) -> Self {
         Self::AccessKit(value)
-    }
-}
-
-impl From<WinitMouseButton> for PointerButton {
-    fn from(button: WinitMouseButton) -> Self {
-        match button {
-            WinitMouseButton::Left => Self::Primary,
-            WinitMouseButton::Right => Self::Secondary,
-            WinitMouseButton::Middle => Self::Auxiliary,
-            WinitMouseButton::Back => Self::X1,
-            WinitMouseButton::Forward => Self::X2,
-            WinitMouseButton::Other(other) => {
-                warn!("Got winit MouseButton::Other({other}) which is not yet fully supported.");
-                Self::Other
-            }
-        }
     }
 }
 
@@ -544,22 +530,31 @@ impl MasonryState<'_> {
                 self.render_root
                     .handle_pointer_event(PointerEvent::PointerLeave(self.pointer_state.clone()));
             }
-            WinitWindowEvent::MouseInput { state, button, .. } => match state {
-                winit::event::ElementState::Pressed => {
-                    self.render_root
-                        .handle_pointer_event(PointerEvent::PointerDown(
-                            button.into(),
-                            self.pointer_state.clone(),
-                        ));
+            WinitWindowEvent::MouseInput { state, button, .. } => {
+                if let WinitMouseButton::Other(other) = button {
+                    warn!(
+                        "Got winit MouseButton::Other({other}) which is not yet fully supported."
+                    );
                 }
-                winit::event::ElementState::Released => {
-                    self.render_root
-                        .handle_pointer_event(PointerEvent::PointerUp(
-                            button.into(),
-                            self.pointer_state.clone(),
-                        ));
+                let button = winit_mouse_button_to_masonry(button);
+
+                match state {
+                    winit::event::ElementState::Pressed => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerDown(
+                                button,
+                                self.pointer_state.clone(),
+                            ));
+                    }
+                    winit::event::ElementState::Released => {
+                        self.render_root
+                            .handle_pointer_event(PointerEvent::PointerUp(
+                                button,
+                                self.pointer_state.clone(),
+                            ));
+                    }
                 }
-            },
+            }
             WinitWindowEvent::MouseWheel { delta, .. } => {
                 // TODO - This delta value doesn't quite make sense.
                 // Figure out and document a better standard.

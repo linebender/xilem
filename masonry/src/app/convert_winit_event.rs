@@ -11,6 +11,7 @@ use winit::event::ElementState;
 use winit::event::Force as WinitForce;
 use winit::event::Ime as WinitIme;
 use winit::event::KeyEvent as WinitKeyEvent;
+use winit::event::MouseButton as WinitMouseButton;
 use winit::keyboard::Key as WinitKey;
 use winit::keyboard::KeyCode as WinitKeyCode;
 use winit::keyboard::KeyLocation as WinitKeyLocation;
@@ -19,8 +20,18 @@ use winit::keyboard::NamedKey as WinitNamedKey;
 use winit::keyboard::PhysicalKey as WinitPhysicalKey;
 use winit::window::ResizeDirection as WinitResizeDirection;
 
-use crate::core::{Force, Ime, ResizeDirection};
+use crate::core::{Force, Ime, PointerButton, ResizeDirection};
 
+pub(crate) fn winit_mouse_button_to_masonry(button: WinitMouseButton) -> PointerButton {
+    match button {
+        WinitMouseButton::Left => PointerButton::Primary,
+        WinitMouseButton::Right => PointerButton::Secondary,
+        WinitMouseButton::Middle => PointerButton::Auxiliary,
+        WinitMouseButton::Back => PointerButton::X1,
+        WinitMouseButton::Forward => PointerButton::X2,
+        WinitMouseButton::Other(_) => PointerButton::Other,
+    }
+}
 pub(crate) fn masonry_resize_direction_to_winit(dir: ResizeDirection) -> WinitResizeDirection {
     match dir {
         ResizeDirection::East => WinitResizeDirection::East,
