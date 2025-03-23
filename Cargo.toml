@@ -102,7 +102,6 @@ web-time = "1.1.0"
 bitflags = "2.6.0"
 accesskit = "0.17.0"
 accesskit_winit = "0.23.0"
-nv-flip = "0.1.2"
 time = "0.3.36"
 
 [profile.ci]

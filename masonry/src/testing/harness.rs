@@ -4,11 +4,14 @@
 //! Tools and infrastructure for testing widgets.
 
 use std::collections::VecDeque;
+use std::io::Cursor;
 use std::num::NonZeroUsize;
+use std::path::PathBuf;
 
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
-use image::{DynamicImage, ImageReader, Rgba, RgbaImage};
+use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
+use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
 use vello::util::{RenderContext, block_on_wgpu};
@@ -152,6 +155,32 @@ macro_rules! assert_render_snapshot {
             file!(),
             module_path!(),
             $name,
+            false,
+        )
+    };
+}
+
+/// Assert a snapshot of a rendered frame of your app, expecting it to fail.
+///
+/// This macro does essentially the same thing as [`assert_render_snapshot`], but
+/// instead of asserting that the rendered frame matches the existing screenshot,
+/// it asserts that it does not match.
+///
+/// This is mostly used internally by Masonry to test that the image diffing does
+/// detect changes and regressions.
+///
+/// This macro is read-only and will not write any new screenshots.
+///
+/// [`assert_render_snapshot`]: crate::assert_render_snapshot
+#[macro_export]
+macro_rules! assert_failing_render_snapshot {
+    ($test_harness:expr, $name:expr) => {
+        $test_harness.check_render_snapshot(
+            env!("CARGO_MANIFEST_DIR"),
+            file!(),
+            module_path!(),
+            $name,
+            true,
         )
     };
 }
@@ -649,7 +678,7 @@ impl TestHarness {
 
     // --- MARK: SNAPSHOT ---
 
-    /// Method used by [`assert_render_snapshot`]. Use the macro instead.
+    /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
     ///
     /// Renders the current Widget tree to a pixmap, and compares the pixmap against the
     /// snapshot stored in `./screenshots/module_path__test_name.png`.
@@ -658,6 +687,7 @@ impl TestHarness {
     /// * `test_file_path`: file path the current test is in.
     /// * `test_module_path`: import path of the module the current test is in.
     /// * `test_name`: arbitrary name; second argument of [`assert_render_snapshot`].
+    /// * `expect_failure`: whether the snapshot is expected to fail to match.
     #[doc(hidden)]
     #[track_caller]
     pub fn check_render_snapshot(
@@ -666,12 +696,23 @@ impl TestHarness {
         test_file_path: &str,
         test_module_path: &str,
         test_name: &str,
+        expect_failure: bool,
     ) {
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             // We still redraw to get some coverage in the paint code.
             let _ = self.render_root.redraw();
 
             return;
+        }
+
+        fn save_image(image: &DynamicImage, path: &PathBuf) {
+            let mut buffer = Cursor::new(Vec::new());
+            image.write_to(&mut buffer, ImageFormat::Png).unwrap();
+
+            let image_data = buffer.into_inner();
+            let data =
+                optimize_from_memory(image_data.as_slice(), &Options::from_preset(5)).unwrap();
+            std::fs::write(path, data).unwrap();
         }
 
         let new_image: DynamicImage = self.render().into();
@@ -692,29 +733,39 @@ impl TestHarness {
         // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
         // Have a warning for that case (i.e. differentiation between not-found and invalid format)
         // and a environment variable to ignore the test in that case.
-        if let Ok(reference_file) = ImageReader::open(&reference_path) {
-            let ref_image = reference_file.decode().unwrap().to_rgb8();
-
-            if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
-                if std::env::var_os("MASONRY_TEST_BLESS").is_some_and(|it| !it.is_empty()) {
-                    let _ = std::fs::remove_file(&new_path);
-                    let _ = std::fs::remove_file(&diff_path);
-                    new_image.save(&reference_path).unwrap();
-                } else {
-                    new_image.save(&new_path).unwrap();
-                    diff_image.save(&diff_path).unwrap();
-                    panic!("Snapshot test '{test_name}' failed: Images are different");
-                }
-            } else {
-                // Remove the vestigial new and diff images
-                let _ = std::fs::remove_file(&new_path);
-                let _ = std::fs::remove_file(&diff_path);
-            }
-        } else {
+        let Ok(reference_file) = ImageReader::open(&reference_path) else {
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
-            new_image.save(&new_path).unwrap();
+            save_image(&new_image, &new_path);
             panic!("Snapshot test '{test_name}' failed: No reference file");
+        };
+
+        let ref_image = reference_file.decode().unwrap().to_rgb8();
+
+        if expect_failure {
+            if get_image_diff(&ref_image, &new_image.to_rgb8()).is_some() {
+                return;
+            } else {
+                panic!(
+                    "Snapshot test '{test_name}' did not fail as expected: Images are identical"
+                );
+            }
+        }
+
+        if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
+            if std::env::var_os("MASONRY_TEST_BLESS").is_some_and(|it| !it.is_empty()) {
+                let _ = std::fs::remove_file(&new_path);
+                let _ = std::fs::remove_file(&diff_path);
+                save_image(&new_image, &reference_path);
+            } else {
+                save_image(&new_image, &new_path);
+                save_image(&diff_image.into(), &diff_path);
+                panic!("Snapshot test '{test_name}' failed: Images are different");
+            }
+        } else {
+            // Remove the vestigial new and diff images
+            let _ = std::fs::remove_file(&new_path);
+            let _ = std::fs::remove_file(&diff_path);
         }
     }
 }
