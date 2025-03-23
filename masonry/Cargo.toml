@@ -21,6 +21,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 default = []
+tracy = ["masonry/tracy"]
 
 [lints]
 workspace = true
@@ -47,7 +48,6 @@ accesskit_winit.workspace = true
 time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
-nv-flip.workspace = true
 wgpu-profiler = { optional = true, version = "0.19.0", default-features = false }
 anymap3 = "1.0.1"
 keyboard-types = "0.7.0"

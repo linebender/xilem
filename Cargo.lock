@@ -1982,7 +1982,6 @@ dependencies = [
  "insta",
  "keyboard-types",
  "masonry",
- "nv-flip",
  "once_cell",
  "parley",
  "pollster",
