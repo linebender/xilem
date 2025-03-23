@@ -1993,7 +1993,6 @@ dependencies = [
  "time",
  "tracing",
  "tracing-subscriber",
- "tracing-tracy",
  "tracing_android_trace",
  "tree_arena",
  "vello",
