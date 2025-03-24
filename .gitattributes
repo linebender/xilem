@@ -1,3 +1,4 @@
 # LFS settings
 # If changing, also change in .github/workflows/ci.yml
 masonry/**/screenshots/*.png filter=lfs diff=lfs merge=lfs -text
+masonry_core/**/screenshots/*.png filter=lfs diff=lfs merge=lfs -text
