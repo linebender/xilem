@@ -46,7 +46,7 @@
 #[macro_use]
 pub mod util;
 
-#[cfg(doc)]
+// TODO - re-add #[doc(hidden)]
 pub mod doc;
 
 mod passes;
