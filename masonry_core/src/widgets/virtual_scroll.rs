@@ -5,8 +5,8 @@
 
 use std::{collections::HashMap, ops::Range};
 
+use keyboard_types::{Key, KeyState};
 use vello::kurbo::{Point, Size, Vec2};
-use winit::keyboard::{Key, NamedKey};
 
 use crate::core::{
     BoxConstraints, FromDynWidget, PointerEvent, PropertiesMut, PropertiesRef, TextEvent, Widget,
@@ -696,18 +696,18 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         event: &TextEvent,
     ) {
         match event {
-            TextEvent::KeyboardKey(key_event, _) => {
+            TextEvent::KeyboardKey(key_event, _, _undocumented_string) => {
                 // To get to this state, you currently need to press "tab" to focus this widget in the example.
-                if key_event.state.is_pressed() {
+                if matches!(key_event.state, KeyState::Down) {
                     // We use an unreasonably large delta (logical pixels) here to allow testing that the case where the
                     // scrolling "jumps" the area is handled correctly.
                     // In future, this manual testing would be achieved through use of a scrollbar.
                     let delta = 20000.;
-                    if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
+                    if matches!(key_event.key, Key::PageDown) {
                         self.scroll_offset_from_anchor += delta;
                         self.post_scroll(ctx);
                     }
-                    if matches!(key_event.logical_key, Key::Named(NamedKey::PageUp)) {
+                    if matches!(key_event.key, Key::PageUp) {
                         self.scroll_offset_from_anchor -= delta;
                         self.post_scroll(ctx);
                     }
