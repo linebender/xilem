@@ -684,6 +684,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             TextEvent::KeyboardKey(key_event, _) => {
                 // To get to this state, you currently need to press "tab" to focus this widget in the example.
                 if key_event.state.is_pressed() {
+                    // We use an unreasonably large delta (logical pixels) here to allow testing that the case where the
+                    // scrolling "jumps" the area is handled correctly.
+                    // In future, this manual testing would be achieved through use of a scrollbar.
                     let delta = 20000.;
                     if matches!(key_event.logical_key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
@@ -697,7 +700,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             }
             _ => {}
         }
-        // Maybe? Handle pagedown? or something like escape for keyboard focus to escape the virtual list
     }
     fn accepts_text_input(&self) -> bool {
         false
@@ -724,7 +726,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         }
     }
     fn accepts_focus(&self) -> bool {
-        // TODO: Maybe we should make this true, to properly capture tab?
+        // Our focus behaviour is not carefully designed.
+        // There are a few things to consider:
+        // - We want this widget to accept e.g. pagedown events, even when there is no focusable child
+        // - We want the keyboard focus to be able to "escape" the virtual list, rather than be trapped.
+        // See also the caveat in the main docs for this widget.
+        // This is true for now to allow PageDown events to be handled.
         true
     }
 
