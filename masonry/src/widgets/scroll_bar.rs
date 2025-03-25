@@ -130,7 +130,7 @@ impl Widget for ScrollBar {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::PointerDown(_, _) => {
+            PointerEvent::PointerDown(..) => {
                 ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
@@ -148,7 +148,7 @@ impl Widget for ScrollBar {
                 };
                 ctx.request_render();
             }
-            PointerEvent::PointerMove(_) => {
+            PointerEvent::PointerMove(..) => {
                 if let Some(grab_anchor) = self.grab_anchor {
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     self.cursor_progress = self.progress_from_mouse_pos(
@@ -161,7 +161,7 @@ impl Widget for ScrollBar {
                 }
                 ctx.request_render();
             }
-            PointerEvent::PointerUp(_, _) => {
+            PointerEvent::PointerUp(..) | PointerEvent::PointerLost(..) => {
                 self.grab_anchor = None;
                 ctx.request_render();
             }

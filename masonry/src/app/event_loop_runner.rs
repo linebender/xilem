@@ -608,7 +608,7 @@ impl MasonryState<'_> {
                     }
                     winit::event::TouchPhase::Cancelled => {
                         self.render_root
-                            .handle_pointer_event(PointerEvent::PointerLeave(
+                            .handle_pointer_event(PointerEvent::PointerLost(
                                 self.pointer_state.clone(),
                             ));
                     }
