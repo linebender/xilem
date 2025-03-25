@@ -46,6 +46,9 @@ impl AppDriver for Driver {
                 ctx.render_root().edit_root_widget(|mut root| {
                     let mut root = root.downcast::<RootWidget<VirtualScroll<ScrollContents>>>();
                     let mut scroll = RootWidget::child_mut(&mut root);
+                    // We need to tell the `VirtualScroll` which request this is associated with
+                    // This is so that the controller knows which actions have been handled.
+                    VirtualScroll::will_handle_action(&mut scroll, &action);
                     for idx in action.old_active.clone() {
                         if !action.target.contains(&idx) {
                             // If we had different work to do in response to the item being unloaded

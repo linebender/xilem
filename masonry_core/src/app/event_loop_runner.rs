@@ -143,7 +143,8 @@ pub fn run_with(
 
 impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        self.masonry_state.handle_resumed(event_loop);
+        self.masonry_state
+            .handle_resumed(event_loop, &mut *self.app_driver);
     }
 
     fn suspended(&mut self, event_loop: &ActiveEventLoop) {
@@ -243,7 +244,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: RESUMED ---
-    pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop) {
+    pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         match std::mem::replace(
             &mut self.window,
             // TODO: Is there a better default value which could be used?
@@ -277,6 +278,8 @@ impl MasonryState<'_> {
                 };
                 self.render_root
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
+                // Handle any signals caused by the initial layout or by the rescale
+                self.handle_signals(event_loop, app_driver);
                 // Render one frame before showing the window to avoid flashing
                 if visible {
                     let (scene, tree_update) = self.render_root.redraw();

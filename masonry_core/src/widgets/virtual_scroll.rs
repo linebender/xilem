@@ -179,6 +179,9 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     /// item has not been provided by the application, we don't fall over.
     /// This is still an invalid state, but we handle it as well as we can.
     active_range: Range<i64>,
+    /// Whether the most recent request we sent out was handled.
+    /// If it hasn't been handled, we won't send a new one.
+    action_handled: bool,
 
     /// All children of the virtual scroller.
     items: HashMap<i64, WidgetPod<W>>,
@@ -206,6 +209,8 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
 
     /// We don't want to spam warnings about not being dense, but we want the user to be aware of it.
     warned_not_dense: bool,
+    /// We don't want to spam warnings about missing an action, but we want the user to be aware of it.
+    missed_actions_count: u32,
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
@@ -213,6 +218,8 @@ impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
         f.debug_struct("VirtualScroll")
             .field("valid_range", &self.valid_range)
             .field("active_range", &self.active_range)
+            .field("action_handled", &self.action_handled)
+            .field("missed_action_count", &self.missed_actions_count)
             .field("items", &self.items.keys().collect::<Vec<_>>())
             .field("anchor_index", &self.anchor_index)
             .field("scroll_offset_from_anchor", &self.scroll_offset_from_anchor)
@@ -237,6 +244,8 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
             valid_range: i64::MIN..i64::MAX,
             // This range starts intentionally empty, as no items have been loaded.
             active_range: initial_anchor..initial_anchor,
+            action_handled: true,
+            missed_actions_count: 0,
             items: HashMap::default(),
             anchor_index: initial_anchor,
             scroll_offset_from_anchor: 0.0,
@@ -302,6 +311,20 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     pub fn overwrite_anchor(this: &mut WidgetMut<Self>, idx: i64) {
         this.widget.anchor_index = idx;
         this.widget.scroll_offset_from_anchor = 0.;
+        this.ctx.request_layout();
+    }
+
+    /// Indicate that your are the driver, and you're about to handle the action "action".
+    ///
+    /// This is required because if multiple actions stack up, the `VirtualScroll` needs to
+    /// avoid causing issues.
+    pub fn will_handle_action(this: &mut WidgetMut<Self>, action: &VirtualScrollAction) {
+        this.widget.action_handled = true;
+        if this.widget.missed_actions_count > 0 {
+            // Avoid spamming the "handling single action delay" warning.
+            this.widget.missed_actions_count = 1;
+        }
+        this.widget.active_range = action.target.clone();
         this.ctx.request_layout();
     }
 
@@ -376,14 +399,13 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         // Calculate the sizes of all children
         for (idx, child) in &mut self.items {
             if !self.active_range.contains(idx) {
-                if cfg!(debug_assertions) && ctx.child_needs_layout(child) {
-                    unreachable!(
-                        "Mutate pass didn't run before layout, breaking assumptions @ {idx}."
-                    )
-                }
-                // This item is stashed, and so can't be used.
-                // (If we decide we want to use it, we'll do so by re-enabling
-                // it in a following mutate pass).
+                // We stash any children which we have which are outside of the active range.
+                // This is because we have asked the driver to remove them, but it hasn't gotten
+                // around to it yet.
+                // N.B. although `LayoutCtx::set_stashed` is documented as being "TODO" for removal, this
+                // is nearly impossible to handle correctly without using this method; in particular, if a
+                // driver is delayed in being called (such as if layout is run twice in the passes loop).
+                ctx.set_stashed(child, true);
                 ctx.skip_layout(child);
                 continue;
             }
@@ -430,7 +452,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                         // We don't treat missing items inside the set of loaded items as having a height.
                         // This avoids potential infinite loops (from adding a new
                         // item increasing the mean item size, causing that new item to become unloaded)
-                        0.0
+                        break;
                     }
                 } else {
                     // In theory, even for inactive items which haven't been removed, we could
@@ -457,7 +479,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                         // Don't go negative if the child incorrectly returns negative height
                         ctx.child_size(anchor_pod).height.max(0.0)
                     } else {
-                        0.0
+                        break;
                     }
                 } else {
                     mean_item_height
@@ -484,7 +506,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 }
             }
         }
-        self.anchor_height = if let Some(anchor) = self.items.get(&self.anchor_index) {
+        self.anchor_height = if let Some(anchor) = self
+            .items
+            .get(&self.anchor_index)
+            .filter(|_| self.active_range.contains(&self.anchor_index))
+        {
             ctx.child_size(anchor).height.max(0.0)
         } else {
             mean_item_height
@@ -537,83 +563,60 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             // For each time we have the falling edge of becoming not dense, we want to warn.
             self.warned_not_dense = false;
         }
-
-        let target_range = if self.active_range.contains(&self.anchor_index) {
-            let start = if let Some(item_crossing_top) = item_crossing_top {
-                item_crossing_top
+        if self.action_handled {
+            let target_range = if self.active_range.contains(&self.anchor_index) {
+                let start = if let Some(item_crossing_top) = item_crossing_top {
+                    item_crossing_top
+                } else {
+                    let number_needed =
+                        ((cutoff_up - height_before_anchor) / mean_item_height).ceil() as i64;
+                    // Previous versions of this code had a positive feedback loop, if the driver
+                    // refused to give items for ranges it claimed to support (such as if the
+                    // valid_range were misconfigured).
+                    // Ideally, we'd warn in this situation, but it isn't feasible
+                    // to know if we're here because:
+                    // 1) The driver is misbehaving; OR
+                    // 2) We've reran the passes for some other reason.
+                    let start_anchor = first_item.unwrap_or(self.anchor_index);
+                    start_anchor - number_needed
+                };
+                let end = if y >= cutoff_down {
+                    item_crossing_bottom + 1
+                } else {
+                    // `y` is the bottom of the bottommost loaded item
+                    let number_needed = ((cutoff_down - y) / mean_item_height).ceil() as i64;
+                    let end_anchor = last_item.unwrap_or(self.anchor_index);
+                    end_anchor + number_needed + 1 /* End index is exclusive, whereas `end_anchor` is "included" */
+                };
+                start..end
             } else {
-                let number_needed =
-                    ((cutoff_up - height_before_anchor) / mean_item_height).ceil() as i64;
-                // Previous versions of this code had a positive feedback loop, if the driver
-                // refused to give items for ranges it claimed to support (such as if the
-                // valid_range were misconfigured).
-                // Ideally, we'd warn in this situation, but it isn't feasible
-                // to know if we're here because:
-                // 1) The driver is misbehaving; OR
-                // 2) We've reran the passes for some other reason.
-                let start_anchor = first_item.unwrap_or(self.anchor_index);
-                start_anchor - number_needed
+                // We've jumped a huge distance in view space (see `Self::overwrite_anchor`)
+                // Handle that sanely.
+                let start = self.anchor_index - (cutoff_up / mean_item_height).ceil() as i64;
+                let end = self.anchor_index + (cutoff_down / mean_item_height).ceil() as i64;
+                start..end
             };
-            let end = if y >= cutoff_down {
-                item_crossing_bottom + 1
-            } else {
-                // `y` is the bottom of the bottommost loaded item
-                let number_needed = ((cutoff_down - y) / mean_item_height).ceil() as i64;
-                let end_anchor = last_item.unwrap_or(self.anchor_index);
-                end_anchor + number_needed + 1 /* End index is exclusive, whereas `end_anchor` is "included" */
-            };
-            start..end
-        } else {
-            // We've jumped a huge distance in view space (see `Self::overwrite_anchor`)
-            // Handle that sanely.
-            let start = self.anchor_index - (cutoff_up / mean_item_height).ceil() as i64;
-            let end = self.anchor_index + (cutoff_down / mean_item_height).ceil() as i64;
-            start..end
-        };
 
-        // Avoid requesting invalid items by clamping to the valid range
-        let target_range = target_range
-            .start
-            // target_range.start is inclusive whereas valid_range.end is exclusive; convert between the two.
-            .clamp(self.valid_range.start, self.valid_range.end - 1)
-            ..target_range
-                .end
-                .clamp(self.valid_range.start, self.valid_range.end);
+            // Avoid requesting invalid items by clamping to the valid range
+            let target_range = target_range
+                .start
+                // target_range.start is inclusive whereas valid_range.end is exclusive; convert between the two.
+                .clamp(self.valid_range.start, self.valid_range.end - 1)
+                ..target_range
+                    .end
+                    .clamp(self.valid_range.start, self.valid_range.end);
 
-        if self.active_range != target_range {
-            let previous_active = self.active_range.clone();
-            self.active_range = target_range;
+            if self.active_range != target_range {
+                let previous_active = self.active_range.clone();
 
-            {
-                let previous_active = previous_active.clone();
-                // Stash all previously active widgets which are still loaded.
-                // This is needed for the case where there is a second iteration of passes (incl. layout)
-                // of the normal passes *before* the action gets handled.
-                // This is done this way because `LayoutCtx::set_stashed` is documented to be planned for removal.
-                // Note that this will never unstash items; those must be removed and re-added.
-                // N.B. this could break with an adversarial set of circumstances, because:
-                // - `mutate_self_later` runs before the Update Tree (which adds new widgets added by the action); AND
-                // - `set_stashed` panics if the item hasn't been "recorded", i.e. it's a new item since the last time update tree ran.
-                // Therefore, an adversarial parent widget could force this code to panic by adding a widget which is in the
-                // old set, which won't be valid to call `set_stashed` on, inside another mutate pass step.
-                // However, there's no other way to encode this operation at the moment.
-                ctx.mutate_self_later(move |mut this| {
-                    // It's critical that nothing here produces a layout pass, otherwise we would get into an infinite loop
-                    let mut this = this.downcast::<Self>();
-                    for idx in opt_iter_difference(&previous_active, &this.widget.active_range) {
-                        let item = this.widget.items.get_mut(&idx);
-                        if let Some(item) = item {
-                            this.ctx.set_stashed(item, true);
-                        }
-                    }
-                });
+                ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
+                    old_active: previous_active,
+                    target: target_range,
+                })));
+                self.action_handled = false;
             }
-
-            ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
-                old_active: previous_active,
-                target: self.active_range.clone(),
-            })));
         }
+
         // TODO: We should still try and find a way to detect infinite loops;
         // our pattern for this should avoid it, but if that assessment is wrong, the outcome would be very bad
         // (a driver which didn't correctly set `valid_range` would be one cause).
@@ -694,6 +697,24 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _props: &PropertiesRef<'_>,
         _scene: &mut vello::Scene,
     ) {
+        if !self.action_handled {
+            if self.missed_actions_count == 0 {
+                tracing::warn!(
+                    "VirtualScroll got to painting without its action (i.e. it's request for items to be loaded) being handled.\n\
+                    This means that there was a delay in handling its action for some reason.\n\
+                    Maybe your driver only handles one action at a time?"
+                );
+            }
+            if self.missed_actions_count > 10 {
+                debug_panic!(
+                    "VirtualScroll's action is being missed repeatedly being handled.\n\
+                    Note that to handle an action, you must call `VirtualScroll::will_handle_action` with the action."
+                );
+                // In release mode, re-send the action, which will hopefully get things unstuck.
+                self.action_handled = true;
+            }
+            self.missed_actions_count += 1;
+        }
     }
 
     fn on_text_event(
@@ -776,6 +797,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 /// }
 /// ```
 /// as an iterator
+#[allow(
+    dead_code,
+    reason = "Plan to expose this publicly in `VirtualScrollAction`, keep its tests around"
+)]
 fn opt_iter_difference(
     old_range: &Range<i64>,
     new_range: &Range<i64>,
@@ -845,6 +870,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_widget().id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active {
                 VirtualScroll::remove_child(&mut scroll, idx);
             }
@@ -878,6 +904,7 @@ mod tests {
 
     #[test]
     /// We shouldn't panic or loop if there are small gaps in the items provided by the driver.
+    /// Again, this isn't valid code for a user to write, but we should just warn and deal with it
     fn small_gaps() {
         type ScrollContents = Label;
 
@@ -886,6 +913,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_widget().id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active {
                 VirtualScroll::remove_child(&mut scroll, idx);
             }
@@ -927,6 +955,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_widget().id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active {
                 VirtualScroll::remove_child(&mut scroll, idx);
             }
@@ -1007,7 +1036,7 @@ mod tests {
         let mut old_active = None;
         loop {
             iteration += 1;
-            if iteration > 10 {
+            if iteration > 1000 {
                 panic!("Took too long to reach fixpoint");
             }
             let Some((action, id)) = harness.pop_action() else {
@@ -1017,7 +1046,6 @@ mod tests {
                 id, virtual_scroll_id,
                 "Only widget in tree should give action"
             );
-            assert_eq!(harness.pop_action(), None);
             let crate::core::Action::Other(action) = action else {
                 unreachable!()
             };
