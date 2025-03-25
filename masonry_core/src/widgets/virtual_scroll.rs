@@ -477,7 +477,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             }
         }
         self.anchor_height = if let Some(anchor) = self.items.get(&self.anchor_index) {
-            ctx.child_size(anchor).height
+            ctx.child_size(anchor).height.max(0.0)
         } else {
             mean_item_height
         };
@@ -485,7 +485,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         // Load a page and a half above the screen
         let cutoff_up = viewport_size.height * 1.5;
         // Load a page and a half below the screen (note that this cutoff "includes" the screen)
-        let cutoff_down = viewport_size.height * 2.5;
+        // We also need to allow scrolling *at least* to the top of the current anchor; therefore, we load items sufficiently
+        // that scrolling the bottom of the anchor to the top of the screen, we still have the desired margin
+        let cutoff_down = viewport_size.height * 2.5 + self.anchor_height;
 
         let mut item_crossing_top = None;
         let mut item_crossing_bottom = self.active_range.start;
@@ -505,7 +507,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 let size = ctx.child_size(item);
                 ctx.place_child(item, Point::new(0., y));
                 // TODO: Padding/gap?
-                y += size.height;
+                y += size.height.max(0.0);
             } else {
                 was_dense = false;
                 // We expect the virtual scrolling to be dense; we are designed
@@ -550,7 +552,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 // `y` is the bottom of the bottommost loaded item
                 let number_needed = ((cutoff_down - y) / mean_item_height).ceil() as i64;
                 let end_anchor = last_item.unwrap_or(self.anchor_index);
-                end_anchor + number_needed
+                end_anchor + number_needed + 1 /* End index is exclusive, whereas `end_anchor` is "included" */
             };
             start..end
         } else {
