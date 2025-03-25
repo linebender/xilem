@@ -92,7 +92,7 @@ impl Gradient {
 impl GradientShape {
     pub fn get_peniko_kind_for_rect(&self, rect: Rect) -> crate::peniko::GradientKind {
         match self {
-            GradientShape::Linear { angle } => Self::get_peniko_linear_for_rect(*angle, rect),
+            Self::Linear { angle } => Self::get_peniko_linear_for_rect(*angle, rect),
         }
     }
 
