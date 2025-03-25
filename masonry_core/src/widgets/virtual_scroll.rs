@@ -48,15 +48,23 @@ use crate::core::{
 ///     }
 /// }
 /// ```
+///
+/// That is:
+/// - Any items which were in `old_active` and aren't in `target` should
+///   be removed from the `VirtualScroll` using [`remove_child`](VirtualScroll::remove_child).
+/// - Any items which are in `target` and aren't in `old_active` should
+///   be materialised and added to the `VirtualScroll` using [`add_child`](VirtualScroll::add_child).
 #[derive(Debug)]
 pub struct VirtualScrollAction {
-    /// The range of items which were previously active.
-    /// Any items which were in `old_active` and aren't in `target` should
-    /// be removed from the `VirtualScroll` using [`remove_child`](VirtualScroll::remove_child).
+    /// The range of children ids which were "active" before this change.
+    /// That is, the items which the driver wanted to have available, to properly load what it needs.
+    /// Note that many of these items will likely still be active even after this event;
+    /// only those which aren't also in `target` must be removed.
     pub old_active: Range<i64>,
     /// The range of items which are now active.
-    /// Any items which are in `target` and aren't in `old_active` should
-    /// be materialised and added to the `VirtualScroll` using [`add_child`](VirtualScroll::add_child).
+    ///
+    /// Note that many of these items will have previously been active before this event (and so require no action);
+    /// only those which aren't also in `target` must be removed.
     pub target: Range<i64>,
 }
 
@@ -80,8 +88,8 @@ pub struct VirtualScrollAction {
 /// When you create the virtual scroll, you specify the initial "anchor"; that is an id for which the item will be on-screen.
 /// If only a subset of ids are valid, then the valid range of ids widget *must* be set.
 ///
-/// The widget will send a [`VirtualScrollAction`] whenever the children it requires to be loaded changes.
-/// To handle this, the driver must [add](Self::add_child) the widgets which are in `target` but not in
+/// The widget will send a [`VirtualScrollAction`] whenever the children it requires to be loaded (the active children) changes.
+/// To handle this, the driver must [add](Self::add_child) widgets for the ids which are in `target` but not in
 /// `old_active`, and [remove](Self::remove_child) those which are in `old_active` but not in `target`.
 /// (`VirtualScroll` does not remove the children itself to enable cleanup by the driver before the
 /// children get removed).
