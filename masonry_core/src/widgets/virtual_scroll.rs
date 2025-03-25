@@ -570,12 +570,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 // This is done this way because `LayoutCtx::set_stashed` is documented to be planned for removal.
                 // Note that this will never unstash items; those must be removed and re-added.
                 // N.B. this could break with an adversarial set of circumstances, because:
-                // - `mutate_self_later` doesn't actually force a new run of the rewrite passes
-                //    (https://xi.zulipchat.com/#narrow/channel/354396-xilem/topic/Virtual.20scrolling.20list.20redux/near/505728926); AND
                 // - `mutate_self_later` runs before the Update Tree (which adds new widgets added by the action); AND
                 // - `set_stashed` panics if the item hasn't been "recorded", i.e. it's a new item since the last time update tree ran.
-                // Therefore, an adversarial driver could force this code to panic by adding a widget which is in the old set, which won't
-                // be valid to call `set_stashed` on.
+                // Therefore, an adversarial parent widget could force this code to panic by adding a widget which is in the
+                // old set, which won't be valid to call `set_stashed` on, inside another mutate pass step.
                 // However, there's no other way to encode this operation at the moment.
                 ctx.mutate_self_later(move |mut this| {
                     // It's critical that nothing here produces a layout pass, otherwise we would get into an infinite loop
