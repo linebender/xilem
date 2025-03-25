@@ -295,7 +295,7 @@ fn get_pointer_events_while_active() {
 }
 
 #[test]
-fn automatically_lose_pointer_on_pointer_leave() {
+fn automatically_lose_pointer_on_pointer_lost() {
     let [button, root, empty] = widget_ids();
 
     let button_rec = Recording::default();
@@ -335,13 +335,13 @@ fn automatically_lose_pointer_on_pointer_leave() {
     );
     assert_eq!(harness.pointer_capture_target_id(), Some(button));
 
-    // The pointer leaves, without releasing the primary button first
-    harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
+    // The pointer is lost, without releasing the primary button first
+    harness.process_pointer_event(PointerEvent::PointerLost(PointerState::empty()));
 
-    // The button holds the capture during this event and should be notified the pointer is leaving
+    // The button holds the capture during this event and should be notified the pointer is lost
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerLeave(_))
+        Some(PointerEvent::PointerLost(_))
     );
 
     // The button should have lost the pointer capture
