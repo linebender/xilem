@@ -87,3 +87,14 @@ An implementation of Xilem running on the DOM.
 
 ### `masonry/`
 See `ARCHITECTURE.md` file located under `crates/masonry/doc`
+
+## Screenshot tests
+
+Multiple crates in this repository use screenshot tests to ensure the UI renders as expected.
+
+Screenshots are all saved as PNG files in `screenshots/` folders at different places in the repo.
+Because of this, we assume that any file matching `**/screenshots/*.png` is a saved screenshot.
+
+The screenshots are stored using git LFS, which adds some minor complications but avoids the overhead of committing files directly to Git.
+In theory, using LFS gives us a stronger dependency on Github.
+In practice, the screenshots can be re-generated at any point by running the test suite, and they're guaranteed to be valid since only commits passing the test suite are merged.
