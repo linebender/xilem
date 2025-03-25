@@ -16,7 +16,7 @@ env:
   # Whether the workspace contains Rust code using the debug_assertions configuration option.
   USING_DEBUG_ASSERTIONS: "true"
   # The files stored in LFS the tests need to access
-  LFS_FILES: "masonry/**/screenshots/*.png masonry_core/**/screenshots/*.png"
+  LFS_FILES: "**/screenshots/*.png"
 
 
 # Rationale
