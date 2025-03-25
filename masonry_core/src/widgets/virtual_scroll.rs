@@ -655,10 +655,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             _ => (),
         }
     }
-    fn accepts_pointer_interaction(&self) -> bool {
-        // We handle e.g. scroll wheel events
-        true
-    }
 
     fn children_ids(&self) -> smallvec::SmallVec<[crate::core::WidgetId; 16]> {
         self.items.values().map(|pod| pod.id()).collect()
