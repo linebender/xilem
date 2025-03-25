@@ -360,9 +360,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         );
         // The number of loaded items before the anchor
         let mut height_before_anchor = 0.;
-        // The height of all loaded items after the anchor.
-        // Note that this includes the height of the anchor itself.
-        let mut height_after_anchor = 0.;
+        let mut total_height = 0.;
         let mut count = 0_u64;
         let mut first_item: Option<i64> = None;
         let mut last_item: Option<i64> = None;
@@ -385,15 +383,14 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             last_item = last_item.map(|it| it.max(*idx)).or(Some(*idx));
             let child_size = ctx.run_layout(child, &child_bc);
             if *idx < self.anchor_index {
-                height_before_anchor += child_size.height;
-            } else {
-                height_after_anchor += child_size.height;
+                height_before_anchor += child_size.height.max(0.0);
             }
+            total_height += child_size.height.max(0.0);
             count += 1;
         }
 
         let mean_item_height = if count > 0 {
-            (height_before_anchor + height_after_anchor) / count as f64
+            total_height / count as f64
         } else {
             self.mean_item_height
         };
