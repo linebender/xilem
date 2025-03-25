@@ -50,7 +50,8 @@ struct ExternalApp {
 
 impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        self.masonry_state.handle_resumed(event_loop);
+        self.masonry_state
+            .handle_resumed(event_loop, &mut *self.app_driver);
     }
 
     fn suspended(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
