@@ -196,9 +196,6 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     /// Used to determine if scrolling will require a relayout (because the anchor will have changed if the user has scrolled past it).
     anchor_height: f64,
 
-    /// The available width in the last layout call, used so that layout of children can be skipped if it won't have changed.
-    old_width: f64,
-
     /// We don't want to spam warnings about not being dense, but we want the user to be aware of it.
     warned_not_dense: bool,
 }
@@ -213,7 +210,6 @@ impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
             .field("scroll_offset_from_anchor", &self.scroll_offset_from_anchor)
             .field("mean_item_height", &self.mean_item_height)
             .field("anchor_height", &self.anchor_height)
-            .field("old_width", &self.old_width)
             .field("warned_not_dense", &self.warned_not_dense)
             .finish()
     }
@@ -238,7 +234,6 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
             scroll_offset_from_anchor: 0.0,
             mean_item_height: DEFAULT_MEAN_ITEM_HEIGHT,
             anchor_height: DEFAULT_MEAN_ITEM_HEIGHT,
-            old_width: f64::NAN,
             warned_not_dense: false,
         }
     }
@@ -351,8 +346,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         bc: &crate::core::BoxConstraints,
     ) -> vello::kurbo::Size {
         let viewport_size = bc.max();
-        let child_constraints_changed = viewport_size.width != self.old_width;
-        self.old_width = viewport_size.width;
         ctx.set_clip_path(viewport_size.to_rect());
         let child_bc = BoxConstraints::new(
             Size {
@@ -390,16 +383,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             }
             first_item = first_item.map(|it| it.min(*idx)).or(Some(*idx));
             last_item = last_item.map(|it| it.max(*idx)).or(Some(*idx));
-            let resulting_size = if child_constraints_changed || ctx.child_needs_layout(child) {
-                ctx.run_layout(child, &child_bc)
-            } else {
-                ctx.skip_layout(child);
-                ctx.child_size(child)
-            };
+            let child_size = ctx.run_layout(child, &child_bc);
             if *idx < self.anchor_index {
-                height_before_anchor += resulting_size.height;
+                height_before_anchor += child_size.height;
             } else {
-                height_after_anchor += resulting_size.height;
+                height_after_anchor += child_size.height;
             }
             count += 1;
         }
