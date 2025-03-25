@@ -198,10 +198,9 @@ pub enum PointerEvent {
     /// A pointer entered the window.
     PointerEnter(PointerState),
     /// A pointer left the window.
-    ///
-    /// A synthetic `PointerLeave` event may also be sent when a widget
-    /// loses [pointer capture](crate::doc::doc_06_masonry_concepts#pointer-capture).
     PointerLeave(PointerState),
+    /// A pointer was removed from the device, or a [captured pointer](crate::doc::doc_06_masonry_concepts#pointer-capture) was forcefully released.
+    PointerLost(PointerState),
     /// A mouse wheel event.
     ///
     /// The first tuple value is the scrolled distances. In most cases with a
@@ -366,6 +365,7 @@ impl PointerEvent {
             | Self::PointerMove(state)
             | Self::PointerEnter(state)
             | Self::PointerLeave(state)
+            | Self::PointerLost(state)
             | Self::MouseWheel(_, state)
             | Self::HoverFile(_, state)
             | Self::DropFile(_, state)
@@ -392,6 +392,7 @@ impl PointerEvent {
             Self::PointerMove(_) => "PointerMove",
             Self::PointerEnter(_) => "PointerEnter",
             Self::PointerLeave(_) => "PointerLeave",
+            Self::PointerLost(_) => "PointerLost",
             Self::MouseWheel(_, _) => "MouseWheel",
             Self::HoverFile(_, _) => "HoverFile",
             Self::DropFile(_, _) => "DropFile",
@@ -411,6 +412,7 @@ impl PointerEvent {
             Self::PointerMove(_) => true,
             Self::PointerEnter(_) => false,
             Self::PointerLeave(_) => false,
+            Self::PointerLost(_) => false,
             Self::MouseWheel(_, _) => true,
             Self::HoverFile(_, _) => true,
             Self::DropFile(_, _) => false,
@@ -426,11 +428,11 @@ impl PointerEvent {
         ctx.widget_state.window_transform.inverse() * Point::new(position.x, position.y)
     }
 
-    /// Create a [`PointerEvent::PointerLeave`] event with dummy values.
+    /// Create a [`PointerEvent::PointerLost`] event with dummy values.
     ///
-    /// This is used internally to create synthetic `PointerLeave` events when pointer
+    /// This is used internally to create synthetic `PointerLost` events when pointer
     /// capture is lost.
-    pub fn new_pointer_leave() -> Self {
+    pub fn new_pointer_lost() -> Self {
         // TODO - The fact we're creating so many dummy values might be
         // a sign we should refactor that struct
         let pointer_state = PointerState {
@@ -441,7 +443,7 @@ impl PointerEvent {
             count: 0,
             force: None,
         };
-        Self::PointerLeave(pointer_state)
+        Self::PointerLost(pointer_state)
     }
 }
 

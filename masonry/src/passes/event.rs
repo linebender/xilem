@@ -172,7 +172,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
     if matches!(
         event,
-        PointerEvent::PointerUp(..) | PointerEvent::PointerLeave(..)
+        PointerEvent::PointerUp(..) | PointerEvent::PointerLost(..)
     ) {
         // Automatically release the pointer on pointer up or leave. If a widget holds the capture,
         // it is notified of the pointer event before the capture is released, so it knows it is
@@ -195,7 +195,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::WindowFocusChange(false)) {
-        run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
+        run_on_pointer_event_pass(root, &PointerEvent::new_pointer_lost());
     }
 
     let _span = info_span!("dispatch_text_event").entered();

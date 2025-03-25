@@ -366,26 +366,26 @@ impl EventCtx<'_> {
     /// # Releasing the pointer
     ///
     /// Any widget can [`release`] the pointer during any event. The pointer is automatically
-    /// released after handling of a [`PointerUp`] or [`PointerLeave`] event completes. A widget
+    /// released after handling of a [`PointerUp`] or [`PointerLost`] event completes. A widget
     /// holding the pointer capture will be the target of these events.
     ///
     /// If pointer capture is lost for external reasons (the widget is disabled, the window
-    /// lost focus, etc), the widget will still get a [`PointerLeave`] event.
+    /// lost focus, etc), the widget will still get a [`PointerLost`] event.
     ///
     /// [Pointer capture]: crate::doc::doc_06_masonry_concepts#pointer-capture
     /// [`PointerDown`]: crate::core::PointerEvent::PointerDown
     /// [`PointerUp`]: crate::core::PointerEvent::PointerUp
-    /// [`PointerLeave`]: crate::core::PointerEvent::PointerLeave
+    /// [`PointerLost`]: crate::core::PointerEvent::PointerLost
     /// [`release`]: Self::release_pointer
     #[track_caller]
     pub fn capture_pointer(&mut self) {
-        debug_assert!(
-            self.allow_pointer_capture,
-            "Error in {}: event does not allow pointer capture",
-            self.widget_id(),
-        );
+        let id = self.widget_id();
+        if !self.allow_pointer_capture {
+            debug_panic!("capture_pointer - '{id}': event does not allow pointer capture");
+            return;
+        }
         // TODO: plumb pointer capture through to platform (through winit)
-        self.global_state.pointer_capture_target = Some(self.widget_state.id);
+        self.global_state.pointer_capture_target = Some(id);
     }
 
     /// Release the pointer previously [captured] through [`capture_pointer`].
@@ -393,6 +393,15 @@ impl EventCtx<'_> {
     /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
     /// [`capture_pointer`]: EventCtx::capture_pointer
     pub fn release_pointer(&mut self) {
+        let id = self.widget_id();
+        if self.global_state.pointer_capture_target.is_none() {
+            warn!("release_pointer - '{id}': no widget is captured");
+            return;
+        }
+        if self.global_state.pointer_capture_target != Some(self.widget_state.id) {
+            warn!("release_pointer - '{id}': widget does not have pointer capture");
+            return;
+        }
         self.global_state.pointer_capture_target = None;
     }
 

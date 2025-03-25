@@ -692,8 +692,8 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     // Release pointer capture if target can no longer hold it.
     if let Some(id) = root.global_state.pointer_capture_target {
         if !root.is_still_interactive(id) {
-            root.global_state.pointer_capture_target = None;
-            run_on_pointer_event_pass(root, &PointerEvent::new_pointer_leave());
+            // The event pass will set pointer_capture_target to None.
+            run_on_pointer_event_pass(root, &PointerEvent::new_pointer_lost());
         }
     }
 
