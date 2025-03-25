@@ -62,6 +62,8 @@ use crate::core::{
 ///   be removed from the `VirtualScroll` using [`remove_child`](VirtualScroll::remove_child).
 /// - Any items which are in `target` and aren't in `old_active` should
 ///   be materialised and added to the `VirtualScroll` using [`add_child`](VirtualScroll::add_child).
+// TODO: This definitely needs helper functions (that is, the fields shouldn't be public); this is extremely easy to misuse.
+// That can be a follow-up.
 #[derive(Debug)]
 pub struct VirtualScrollAction {
     /// The range of children ids which were "active" before this change.
@@ -909,7 +911,9 @@ mod tests {
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active {
-                VirtualScroll::remove_child(&mut scroll, idx);
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
             }
             for idx in action.target {
                 VirtualScroll::add_child(
@@ -951,11 +955,13 @@ mod tests {
         let virtual_scroll_id = harness.root_widget().id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
-            for idx in action.old_active {
-                VirtualScroll::remove_child(&mut scroll, idx);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
             }
             for idx in action.target {
-                if idx % 2 == 0 {
+                if !action.old_active.contains(&idx) && idx % 2 == 0 {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
@@ -993,11 +999,13 @@ mod tests {
         let virtual_scroll_id = harness.root_widget().id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
-            for idx in action.old_active {
-                VirtualScroll::remove_child(&mut scroll, idx);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
             }
             for idx in action.target {
-                if idx % 100 == 1 {
+                if !action.old_active.contains(&idx) && idx % 100 == 1 {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
@@ -1034,11 +1042,14 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_widget().id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
-            for idx in action.old_active {
-                VirtualScroll::remove_child(&mut scroll, idx);
+            VirtualScroll::will_handle_action(&mut scroll, &action);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
             }
             for idx in action.target {
-                if idx < 5 {
+                if !action.old_active.contains(&idx) && idx < 5 {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
