@@ -547,7 +547,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 let start_anchor = first_item.unwrap_or(self.anchor_index);
                 start_anchor - number_needed
             };
-            let end = if y > cutoff_down {
+            let end = if y >= cutoff_down {
                 item_crossing_bottom + 1
             } else {
                 // `y` is the bottom of the bottommost loaded item
