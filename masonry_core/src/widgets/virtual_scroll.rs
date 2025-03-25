@@ -419,7 +419,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 let new_anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let new_anchor = self.items.get(&self.anchor_index);
                     if let Some(new_anchor) = new_anchor {
-                        ctx.child_size(new_anchor).height
+                        // Don't go negative if the child incorrectly returns negative height
+                        ctx.child_size(new_anchor).height.max(0.0)
                     } else {
                         // We don't treat missing items inside the set of loaded items as having a height.
                         // This avoids potential infinite loops (from adding a new
@@ -434,6 +435,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     mean_item_height
                 };
 
+                // We know that this will eventually become larger than zero because:
+                // 1) `mean_item_height` has been validated to be greater than zero
+                // 2) There are a finite number of items which might have zero height (the items in the active_range)
+                // Therefore, the else block of the original area will always be entered if we reach this point.
                 self.scroll_offset_from_anchor += new_anchor_height;
                 height_before_anchor -= new_anchor_height;
             } else {
@@ -444,7 +449,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 let anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let current_anchor = self.items.get(&self.anchor_index);
                     if let Some(anchor_pod) = current_anchor {
-                        ctx.child_size(anchor_pod).height
+                        // Don't go negative if the child incorrectly returns negative height
+                        ctx.child_size(anchor_pod).height.max(0.0)
                     } else {
                         0.0
                     }
@@ -455,8 +461,17 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     self.cap_scroll_range_down(anchor_height, viewport_size.height);
                     break;
                 }
+
+                // We only ever subtract a from `scroll_offset_from_anchor` less than
+                // or equal to its current value.
+                // Therefore: In this half of the loop, we never make `self.scroll_offset_from_anchor < 0.`,
+                // so we never re-enter the first half of the loop.
                 if self.scroll_offset_from_anchor >= anchor_height {
                     self.anchor_index += 1;
+                    // `anchor_height` is definitely eventually greater than zero here because:
+                    // 1) `mean_item_height` has been validated to be greater than zero
+                    // 2) There are a finite number of items which might have zero height (the items in the active_range)
+                    // Therefore, this block will always eventually reach its else condition, ending the loop.
                     self.scroll_offset_from_anchor -= anchor_height;
                     height_before_anchor += anchor_height;
                 } else {
