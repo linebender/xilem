@@ -1,5 +1,5 @@
 [package]
-name = "masonry"
+name = "masonry_core"
 version = "0.2.0"
 description = "Traits and types of the Masonry toolkit."
 

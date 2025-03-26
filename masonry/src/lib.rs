@@ -128,4 +128,4 @@
 
 // TODO - Add logo
 
-pub use masonry::*;
+pub use masonry_core::*;
