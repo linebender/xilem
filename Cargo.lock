@@ -1936,28 +1936,16 @@ version = "0.2.0"
 dependencies = [
  "accesskit",
  "accesskit_winit",
- "anymap3",
- "assert_matches",
- "cursor-icon",
- "dpi",
- "float-cmp",
- "futures-intrusive",
  "image",
  "insta",
  "keyboard-types",
  "masonry_core",
- "once_cell",
  "parley",
  "pollster",
  "profiling",
- "serde",
- "serde_json",
  "smallvec",
- "time",
  "tracing",
- "tracing-subscriber",
  "tracing_android_trace",
- "tree_arena",
  "vello",
  "web-time",
  "wgpu",
@@ -1970,7 +1958,6 @@ name = "masonry_core"
 version = "0.2.0"
 dependencies = [
  "accesskit",
- "accesskit_winit",
  "anymap3",
  "assert_matches",
  "cursor-icon",
@@ -1998,7 +1985,6 @@ dependencies = [
  "web-time",
  "wgpu",
  "wgpu-profiler",
- "winit",
 ]
 
 [[package]]

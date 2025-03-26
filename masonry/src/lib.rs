@@ -117,15 +117,34 @@
         reason = "False-positive with dev-dependencies only used in examples"
     )
 )]
-#![cfg_attr(
-    not(test),
-    expect(
-        unused_crate_dependencies,
-        reason = "TODO - Remove masonry_core dependencies from masonry"
-    )
-)]
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
+#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Potentially controversial code style"
+)]
 
 // TODO - Add logo
 
 pub use masonry_core::*;
+
+// TODO - Restructure re-exports.
+
+mod app_driver;
+mod convert_winit_event;
+mod event_loop_runner;
+
+/// Types needed for running a Masonry app.
+pub mod app {
+    pub use masonry_core::app::*;
+
+    pub use super::app_driver::{AppDriver, DriverCtx};
+    pub use super::event_loop_runner::{
+        EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, run, run_with,
+    };
+
+    pub(crate) use super::convert_winit_event::{
+        masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
+        winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers, winit_mouse_button_to_masonry,
+    };
+}

@@ -310,7 +310,7 @@ pub(crate) fn winit_physical_key_to_kbt_code(physical_key: WinitPhysicalKey) -> 
             WinitKeyCode::F33 => Code::F33,
             WinitKeyCode::F34 => Code::F34,
             WinitKeyCode::F35 => Code::F35,
-            _ => todo!(),
+            _ => Code::Unidentified,
         },
     }
 }

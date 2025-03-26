@@ -7,7 +7,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::{debug, info, info_span, warn};
+use tracing::{debug, error, info, info_span, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -45,6 +45,7 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
     }
 }
 
+#[expect(unnameable_types, reason = "TODO")]
 pub enum WindowState<'a> {
     Uninitialized(WindowAttributes),
     Rendering {
@@ -407,8 +408,7 @@ impl MasonryState<'_> {
             let _render_span = tracing::info_span!("Rendering using Vello").entered();
             self.renderer
                 .get_or_insert_with(|| {
-                    // Should be `expect`, when we up our MSRV.
-                    #[cfg_attr(not(feature = "tracy"), allow(unused_mut))]
+                    #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
                     let mut renderer = Renderer::new(device, renderer_options).unwrap();
                     #[cfg(feature = "tracy")]
                     {
@@ -474,7 +474,7 @@ impl MasonryState<'_> {
                     accesskit_adapter, ..
                 } = &mut self.window
                 else {
-                    debug_panic!("Suspended inside event");
+                    error!("Suspended inside event");
                     return;
                 };
                 accesskit_adapter.update_if_active(|| tree_update);
@@ -659,11 +659,10 @@ impl MasonryState<'_> {
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
                 }
             }
+            // TODO - Not sure what the use-case for this is.
             MasonryUserEvent::Action(action, widget) => self
                 .render_root
-                .global_state
-                .signal_queue
-                .push_back(RenderRootSignal::Action(action, widget)),
+                .emit_signal(RenderRootSignal::Action(action, widget)),
         }
 
         self.handle_signals(event_loop, app_driver);
@@ -746,16 +745,16 @@ impl MasonryState<'_> {
                     window.show_window_menu(position);
                 }
                 RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
-                    let (widget, state, _properties) =
-                        self.render_root.widget_arena.get_all(widget_id);
-                    let widget_name = widget.item.short_type_name();
-                    let display_name = if let Some(debug_text) = widget.item.get_debug_text() {
+                    let Some(widget) = self.render_root.get_widget(widget_id) else {
+                        return;
+                    };
+                    let widget_name = widget.short_type_name();
+                    let display_name = if let Some(debug_text) = widget.get_debug_text() {
                         format!("{widget_name}<{debug_text}>")
                     } else {
                         widget_name.into()
                     };
                     info!("Widget selected in inspector: {widget_id} - {display_name}");
-                    info!("{:#?}", state.item);
                 }
             }
         }
@@ -767,7 +766,7 @@ impl MasonryState<'_> {
         }
     }
 
-    pub fn get_window_state(&self) -> &WindowState {
+    pub fn get_window_state(&self) -> &WindowState<'_> {
         &self.window
     }
 
