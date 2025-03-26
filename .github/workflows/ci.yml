@@ -10,14 +10,13 @@ env:
   # plus all the README.md files of the affected packages.
   RUST_MIN_VER: "1.85"
   # List of packages that can not target Wasm.
-  NO_WASM_PKGS: "--exclude masonry --exclude xilem"
+  NO_WASM_PKGS: "--exclude masonry --exclude masonry_winit --exclude xilem"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
   # Whether the workspace contains Rust code using the debug_assertions configuration option.
   USING_DEBUG_ASSERTIONS: "true"
   # The files stored in LFS the tests need to access
-  # This should mirror the values in .gitattributes
-  LFS_FILES: "masonry/**/screenshots/*.png"
+  LFS_FILES: "**/screenshots/*.png"
 
 
 # Rationale
@@ -109,6 +108,9 @@ jobs:
       - name: Run cargo rdme (masonry)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry
 
+      - name: Run cargo rdme (masonry_winit)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_winit
+    
       - name: Run cargo rdme (tree_arena)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
       

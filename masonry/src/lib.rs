@@ -1,4 +1,4 @@
-// Copyright 2018 the Xilem Authors and the Druid Authors
+// Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Masonry gives you a platform to create windows (using [winit] as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
@@ -78,7 +78,7 @@
 //! }
 //! ```
 //!
-//! For more information, see [the documentation module](crate::doc).
+//! For more information, see [the documentation module](masonry::doc).
 //!
 //! ### Crate feature flags
 //!
@@ -117,47 +117,15 @@
         reason = "False-positive with dev-dependencies only used in examples"
     )
 )]
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
-// TODO: Remove any items listed as "Deferred"
+#![cfg_attr(
+    not(test),
+    expect(
+        unused_crate_dependencies,
+        reason = "TODO - Remove masonry_core dependencies from masonry_winit"
+    )
+)]
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
-#![expect(clippy::should_implement_trait, reason = "Deferred: Noisy")]
-#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
-#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
-#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(unreachable_pub, reason = "Potentially controversial code style")]
-#![expect(
-    unnameable_types,
-    reason = "Requires lint_reasons rustc feature for exceptions"
-)]
-#![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Potentially controversial code style"
-)]
-#![expect(clippy::single_match, reason = "General policy not decided")]
 
 // TODO - Add logo
 
-#[macro_use]
-pub mod util;
-
-#[cfg(doc)]
-pub mod doc;
-
-mod passes;
-
-pub mod app;
-pub mod core;
-pub mod properties;
-pub mod testing;
-pub mod theme;
-pub mod widgets;
-
-pub use vello::peniko::color::palette;
-pub use vello::{kurbo, peniko};
-pub use {cursor_icon, dpi, parley, vello};
-
-// TODO - Move to core?
-pub use util::{AsAny, Handled, UnitPoint};
+pub use masonry::*;

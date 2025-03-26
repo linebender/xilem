@@ -100,7 +100,7 @@ fn main() {
 }
 ```
 
-For more information, see [the documentation module](https://docs.rs/masonry/latest/masonry/doc/).
+For more information, see [the documentation module](masonry::doc).
 
 ### Crate feature flags
 
