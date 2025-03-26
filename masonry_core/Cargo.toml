@@ -22,15 +22,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 default = []
-# Enables tracing using tracy if the default Masonry tracing is used.
-# https://github.com/wolfpld/tracy can be connected to when this feature is enabled.
-tracy = [
-    "tracing-tracy/enable",
-    "dep:tracing-tracy",
-    "dep:wgpu-profiler",
-    "wgpu-profiler/tracy",
-    "vello/wgpu-profiler",
-]
+tracy = []
 
 [lints]
 workspace = true
@@ -53,8 +45,6 @@ accesskit.workspace = true
 time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
-tracing-tracy = { version = "0.11.3", optional = true }
-wgpu-profiler = { optional = true, version = "0.19.0", default-features = false }
 anymap3 = "1.0.1"
 keyboard-types = "0.7.0"
 oxipng = { version = "9.1.4", default-features = false }

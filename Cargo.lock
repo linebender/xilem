@@ -1945,6 +1945,7 @@ dependencies = [
  "profiling",
  "smallvec",
  "tracing",
+ "tracing-tracy",
  "tracing_android_trace",
  "vello",
  "web-time",
@@ -1978,13 +1979,11 @@ dependencies = [
  "time",
  "tracing",
  "tracing-subscriber",
- "tracing-tracy",
  "tracing_android_trace",
  "tree_arena",
  "vello",
  "web-time",
  "wgpu",
- "wgpu-profiler",
 ]
 
 [[package]]
