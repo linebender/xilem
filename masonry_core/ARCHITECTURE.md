@@ -114,7 +114,7 @@ The current passes are:
 - **paint** Paint every widget.
 - **accessibility:** Compute every widget's node in the accessibility tree.
 
-See [masonry/src/doc/05_pass_system.md] for details.
+See [masonry_core/src/doc/05_pass_system.md] for details.
 
 
 ### WidgetMut
