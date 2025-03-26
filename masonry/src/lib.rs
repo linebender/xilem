@@ -78,7 +78,7 @@
 //! }
 //! ```
 //!
-//! For more information, see [the documentation module](masonry::doc).
+//! For more information, see [the documentation module](masonry_core::doc).
 //!
 //! ### Crate feature flags
 //!
