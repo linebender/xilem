@@ -1,5 +1,5 @@
 ---
-source: masonry_core/src//widget/label.rs
+source: masonry_core/src/widget/label.rs
 expression: harness.root_widget()
 
 ---

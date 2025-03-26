@@ -1,5 +1,5 @@
 ---
-source: masonry_core/src//widget/progress_bar.rs
+source: masonry_core/src/widget/progress_bar.rs
 expression: harness.root_widget()
 snapshot_kind: text
 ---

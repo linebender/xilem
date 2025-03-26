@@ -1,5 +1,5 @@
 ---
-source: masonry_core/src//widget/scroll_bar.rs
+source: masonry_core/src/widget/scroll_bar.rs
 assertion_line: 256
 expression: harness.root_widget()
 

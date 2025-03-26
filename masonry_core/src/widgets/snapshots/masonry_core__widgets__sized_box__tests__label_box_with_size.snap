@@ -1,5 +1,5 @@
 ---
-source: masonry_core/src//widget/sized_box.rs
+source: masonry_core/src/widget/sized_box.rs
 assertion_line: 318
 expression: harness.root_widget()
 
