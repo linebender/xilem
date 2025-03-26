@@ -1946,7 +1946,6 @@ dependencies = [
  "smallvec",
  "tracing",
  "tracing-tracy",
- "tracing_android_trace",
  "vello",
  "web-time",
  "wgpu",
