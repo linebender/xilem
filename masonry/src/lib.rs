@@ -78,7 +78,7 @@
 //! }
 //! ```
 //!
-//! For more information, see [the documentation module](masonry::doc).
+//! For more information, see [the documentation module](masonry_core::doc).
 //!
 //! ### Crate feature flags
 //!
@@ -121,11 +121,11 @@
     not(test),
     expect(
         unused_crate_dependencies,
-        reason = "TODO - Remove masonry_core dependencies from masonry_winit"
+        reason = "TODO - Remove masonry_core dependencies from masonry"
     )
 )]
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
 
 // TODO - Add logo
 
-pub use masonry::*;
+pub use masonry_core::*;

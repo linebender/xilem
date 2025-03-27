@@ -1945,8 +1945,8 @@ dependencies = [
  "image",
  "insta",
  "keyboard-types",
+ "masonry_core",
  "once_cell",
- "oxipng",
  "parley",
  "pollster",
  "profiling",
@@ -1956,7 +1956,6 @@ dependencies = [
  "time",
  "tracing",
  "tracing-subscriber",
- "tracing-tracy",
  "tracing_android_trace",
  "tree_arena",
  "vello",
@@ -1967,7 +1966,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "masonry_winit"
+name = "masonry_core"
 version = "0.2.0"
 dependencies = [
  "accesskit",
@@ -1981,8 +1980,8 @@ dependencies = [
  "image",
  "insta",
  "keyboard-types",
- "masonry",
  "once_cell",
+ "oxipng",
  "parley",
  "pollster",
  "profiling",
@@ -1992,6 +1991,7 @@ dependencies = [
  "time",
  "tracing",
  "tracing-subscriber",
+ "tracing-tracy",
  "tracing_android_trace",
  "tree_arena",
  "vello",

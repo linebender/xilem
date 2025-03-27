@@ -1,5 +1,5 @@
 [package]
-name = "masonry_winit"
+name = "masonry"
 version = "0.2.0"
 description = "Data-oriented Rust UI design toolkit."
 keywords = ["gui", "ui", "toolkit"]
@@ -21,14 +21,13 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 default = []
-tracy = ["masonry/tracy"]
+tracy = ["masonry_core/tracy"]
 
 [lints]
 workspace = true
 
 [dependencies]
-# TODO - Rename this dependency to masonry_core
-masonry.workspace = true
+masonry_core.workspace = true
 vello.workspace = true
 wgpu.workspace = true
 parley.workspace = true
