@@ -914,19 +914,21 @@ mod tests {
         let virtual_scroll_id = harness.root_widget().id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
-            for idx in action.old_active {
+            for idx in action.old_active.clone() {
                 if !action.target.contains(&idx) {
                     VirtualScroll::remove_child(&mut scroll, idx);
                 }
             }
             for idx in action.target {
-                VirtualScroll::add_child(
-                    &mut scroll,
-                    idx,
-                    WidgetPod::new(
-                        Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
-                    ),
-                );
+                if !action.old_active.contains(&idx) {
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
             }
         }
 
