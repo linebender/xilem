@@ -409,6 +409,89 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 
 impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut crate::core::EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &crate::core::PointerEvent,
+    ) {
+        const SCROLLING_SPEED: f64 = 10.0;
+
+        match event {
+            PointerEvent::MouseWheel(delta, _) => {
+                let delta = delta.y * -SCROLLING_SPEED;
+                self.scroll_offset_from_anchor += delta;
+                self.post_scroll(ctx);
+            }
+            _ => (),
+        }
+    }
+
+    fn on_text_event(
+        &mut self,
+        ctx: &mut crate::core::EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+    ) {
+        match event {
+            TextEvent::KeyboardKey(key_event, _, _undocumented_string) => {
+                // To get to this state, you currently need to press "tab" to focus this widget in the example.
+                if matches!(key_event.state, KeyState::Down) {
+                    // We use an unreasonably large delta (logical pixels) here to allow testing that the case where the
+                    // scrolling "jumps" the area is handled correctly.
+                    // In future, this manual testing would be achieved through use of a scrollbar.
+                    let delta = 20000.;
+                    if matches!(key_event.key, Key::PageDown) {
+                        self.scroll_offset_from_anchor += delta;
+                        self.post_scroll(ctx);
+                    }
+                    if matches!(key_event.key, Key::PageUp) {
+                        self.scroll_offset_from_anchor -= delta;
+                        self.post_scroll(ctx);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut crate::core::EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &crate::core::AccessEvent,
+    ) {
+        // TODO: Handle scroll-etc. eventss
+    }
+
+    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
+        // TODO: Register in id order
+        for child in self.items.values_mut() {
+            ctx.register_child(child);
+        }
+    }
+
+    fn update(
+        &mut self,
+        _ctx: &mut crate::core::UpdateCtx,
+        _props: &mut PropertiesMut<'_>,
+        event: &crate::core::Update,
+    ) {
+        match event {
+            crate::core::Update::WidgetAdded => {}
+            crate::core::Update::DisabledChanged(_) => {}
+            crate::core::Update::StashedChanged(_) => {}
+            crate::core::Update::RequestPanToChild(_rect) => {} // TODO,
+            crate::core::Update::HoveredChanged(_) => {}
+            crate::core::Update::ChildHoveredChanged(_) => {}
+            crate::core::Update::FocusChanged(_) => {}
+            crate::core::Update::ChildFocusChanged(_) => {
+                // TODO: We won't actually get this event if *which* child element is focused changes...
+                // In fact, there's *no* reliable way to detect that, which makes proper focus management impossible
+            }
+        }
+    }
+
     fn layout(
         &mut self,
         ctx: &mut crate::core::LayoutCtx,
@@ -677,65 +760,13 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         }
     }
 
-    fn accessibility_role(&self) -> accesskit::Role {
-        // TODO: accesskit::Role::ScrollView ?
-        accesskit::Role::GenericContainer
-    }
-
-    fn accessibility(
-        &mut self,
-        _ctx: &mut crate::core::AccessCtx,
-        _props: &PropertiesRef<'_>,
-        node: &mut accesskit::Node,
-    ) {
-        // TODO: Better virtual scrolling accessibility
-        // Intended as a follow-up collaboration with Matt
-        node.set_clips_children();
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut crate::core::EventCtx,
-        _props: &mut PropertiesMut<'_>,
-        _event: &crate::core::AccessEvent,
-    ) {
-        // TODO: Handle scroll-etc. eventss
-    }
-
-    fn on_pointer_event(
-        &mut self,
-        ctx: &mut crate::core::EventCtx,
-        _props: &mut PropertiesMut<'_>,
-        event: &crate::core::PointerEvent,
-    ) {
-        const SCROLLING_SPEED: f64 = 10.0;
-
-        match event {
-            PointerEvent::MouseWheel(delta, _) => {
-                let delta = delta.y * -SCROLLING_SPEED;
-                self.scroll_offset_from_anchor += delta;
-                self.post_scroll(ctx);
-            }
-            _ => (),
-        }
-    }
-
-    fn children_ids(&self) -> smallvec::SmallVec<[crate::core::WidgetId; 16]> {
-        self.items.values().map(|pod| pod.id()).collect()
-    }
-
-    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
-        for child in self.items.values_mut() {
-            ctx.register_child(child);
-        }
-    }
-
     fn paint(
         &mut self,
         _ctx: &mut crate::core::PaintCtx,
         _props: &PropertiesRef<'_>,
         _scene: &mut vello::Scene,
     ) {
+        // We run these checks in `paint` as they are outside of the pass-based fixedpoint loop
         if !self.action_handled {
             if self.missed_actions_count == 0 {
                 tracing::warn!(
@@ -756,57 +787,30 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         }
     }
 
-    fn on_text_event(
-        &mut self,
-        ctx: &mut crate::core::EventCtx,
-        _props: &mut PropertiesMut<'_>,
-        event: &TextEvent,
-    ) {
-        match event {
-            TextEvent::KeyboardKey(key_event, _, _undocumented_string) => {
-                // To get to this state, you currently need to press "tab" to focus this widget in the example.
-                if matches!(key_event.state, KeyState::Down) {
-                    // We use an unreasonably large delta (logical pixels) here to allow testing that the case where the
-                    // scrolling "jumps" the area is handled correctly.
-                    // In future, this manual testing would be achieved through use of a scrollbar.
-                    let delta = 20000.;
-                    if matches!(key_event.key, Key::PageDown) {
-                        self.scroll_offset_from_anchor += delta;
-                        self.post_scroll(ctx);
-                    }
-                    if matches!(key_event.key, Key::PageUp) {
-                        self.scroll_offset_from_anchor -= delta;
-                        self.post_scroll(ctx);
-                    }
-                }
-            }
-            _ => {}
-        }
+    fn accessibility_role(&self) -> accesskit::Role {
+        // TODO: accesskit::Role::ScrollView ?
+        accesskit::Role::GenericContainer
     }
+
+    fn accessibility(
+        &mut self,
+        _ctx: &mut crate::core::AccessCtx,
+        _props: &PropertiesRef<'_>,
+        node: &mut accesskit::Node,
+    ) {
+        // TODO: Better virtual scrolling accessibility
+        // Intended as a follow-up collaboration with Matt
+        node.set_clips_children();
+    }
+
+    fn children_ids(&self) -> smallvec::SmallVec<[crate::core::WidgetId; 16]> {
+        self.items.values().map(|pod| pod.id()).collect()
+    }
+
     fn accepts_text_input(&self) -> bool {
         false
     }
 
-    fn update(
-        &mut self,
-        _ctx: &mut crate::core::UpdateCtx,
-        _props: &mut PropertiesMut<'_>,
-        event: &crate::core::Update,
-    ) {
-        match event {
-            crate::core::Update::WidgetAdded => {}
-            crate::core::Update::DisabledChanged(_) => {}
-            crate::core::Update::StashedChanged(_) => {}
-            crate::core::Update::RequestPanToChild(_rect) => {} // TODO,
-            crate::core::Update::HoveredChanged(_) => {}
-            crate::core::Update::ChildHoveredChanged(_) => {}
-            crate::core::Update::FocusChanged(_) => {}
-            crate::core::Update::ChildFocusChanged(_) => {
-                // TODO: We won't actually get this event if *which* child element is focused changes...
-                // In fact, there's *no* reliable way to detect that, which makes proper focus management impossible
-            }
-        }
-    }
     fn accepts_focus(&self) -> bool {
         // Our focus behaviour is not carefully designed.
         // There are a few things to consider:
