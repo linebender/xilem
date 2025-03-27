@@ -50,7 +50,7 @@ impl DriverCtx<'_> {
 /// Doctests aren't collected under `cfg(test)`; we can use `cfg(doctest)` instead
 mod doctests {
     /// ```no_run
-    /// use masonry_core::app::DriverCtx;
+    /// use masonry::app::DriverCtx;
     /// let _ctx = DriverCtx {
     ///     render_root: unimplemented!()
     /// };
