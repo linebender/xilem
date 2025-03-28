@@ -159,16 +159,13 @@ pub struct VirtualScrollAction {
 ///
 /// ## Valid range
 ///
-/// We don't yet support setting the valid range.
-/// This is because there are several edge cases which need to be handled, which we're deferring for this MVP.
-/// The plan would be to add appropriate setters for this, and test using it.
-///
 /// Scrolling at the end of the valid range is locked, however it is not currently supported to lock scrolling
 /// such that the bottom of the last item cannot be above the bottom of the `VirtualScroll`.
 /// That is, it is always possible to scroll past the loaded items to the background (if the user
 /// reaches the end of the valid range).
 ///
-/// If the valid range is backwards, i.e. the start is greater than the end, things might break.
+/// If the valid range is empty, i.e. the start and the end are equal, then there is jank which we haven't
+/// resolved. However, this case should not cause crashes.
 pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     // TODO: Should `W` be a generic, or just always be `dyn Widget`?
     /// The range of items in the "id" space which are able to be used.
@@ -272,9 +269,28 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Set the range of child ids which are valid.
     ///
     /// Note that this is a half-open range, so the end id of the range is not valid.
+    ///
+    /// # Panics
+    ///
+    /// If `valid_range.start >= valid_range.end`.
+    /// Note that other empty ranges are fine, although the exact behaviour hasn't been carefully validated.
+    #[track_caller]
     pub fn with_valid_range(mut self, valid_range: Range<i64>) -> Self {
         self.valid_range = valid_range;
+        self.validate_valid_range();
         self
+    }
+
+    fn validate_valid_range(&mut self) {
+        if self.valid_range.end < self.valid_range.start {
+            debug_panic!(
+                "Expected valid range to not have end less than its start, got {:?}",
+                self.valid_range
+            );
+            // In release mode, we don't want this to take down the program;
+            // an empty range is supported.
+            self.valid_range = self.valid_range.start..self.valid_range.start;
+        }
     }
 }
 
@@ -378,6 +394,21 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.get_mut(child)
     }
 
+    /// Set the valid range of ids.
+    ///
+    /// That is, the children which the virtual scrolling area will request within.
+    /// Runtime equivalent of [`with_valid_range`](Self::with_valid_range).
+    ///
+    /// # Panics
+    ///
+    /// If `valid_range.start >= valid_range.end`.
+    /// Note that other empty ranges are fine, although the exact behaviour hasn't been carefully validated.
+    pub fn set_valid_range(this: &mut WidgetMut<'_, Self>, range: Range<i64>) {
+        this.widget.valid_range = range;
+        this.widget.validate_valid_range();
+        this.ctx.request_layout();
+    }
+
     /// Forcefully align the top of the item at `idx` with the top of the
     /// virtual scroll area.
     ///
@@ -417,7 +448,6 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Ideally, this would be configurable (so that e.g. the bottom of the last item aligns with
     /// the bottom of the viewport), but that requires more care, since it effectively changes what the last valid anchor is.
     fn cap_scroll_range_down(&mut self, anchor_height: f64, viewport_height: f64) {
-        // TODO: There is still some jankiness when scrolling into the last item; this is for reasons unknown.
         let max_scroll = (anchor_height - viewport_height / 2.).max(0.0);
         self.scroll_offset_from_anchor = self.scroll_offset_from_anchor.min(max_scroll);
     }
@@ -646,14 +676,14 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 }
             }
         }
+        let at_valid_end = self.anchor_index + 1 >= self.valid_range.end;
+        if at_valid_end {
+            self.anchor_index = self.valid_range.end - 1;
+        }
         if self.anchor_index < self.valid_range.start {
             self.anchor_index = self.valid_range.start;
             // If even after applying the "stored" scroll, we're outside the valid range, cap it.
             self.scroll_offset_from_anchor = 0.;
-        }
-        let at_valid_end = self.anchor_index + 1 >= self.valid_range.end;
-        if at_valid_end {
-            self.anchor_index = self.valid_range.end - 1;
         }
         self.anchor_height = if let Some(anchor) = self
             .items
