@@ -296,6 +296,8 @@ impl TestHarness {
         handled
     }
 
+    // This should be ran after any operation which runs the rewrite passes
+    // (i.e. processing an event, etc.)
     fn process_signals(&mut self) {
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
@@ -625,7 +627,9 @@ impl TestHarness {
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
-        self.render_root.edit_root_widget(f)
+        let ret = self.render_root.edit_root_widget(f);
+        self.process_signals();
+        ret
     }
 
     /// Get a [`WidgetMut`] to a specific widget.
@@ -636,7 +640,9 @@ impl TestHarness {
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
-        self.render_root.edit_widget(id, f)
+        let ret = self.render_root.edit_widget(id, f);
+        self.process_signals();
+        ret
     }
 
     /// Pop the oldest [`Action`] emitted by the widget tree.

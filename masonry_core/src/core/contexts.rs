@@ -199,6 +199,7 @@ impl_context_method!(
         ///
         /// This one isn't defined for `PaintCtx` and `AccessCtx` because those contexts
         /// can't mutate `WidgetState`.
+        #[track_caller]
         fn get_child_state_mut<Child: Widget + ?Sized>(
             &mut self,
             child: &'_ mut WidgetPod<Child>,
