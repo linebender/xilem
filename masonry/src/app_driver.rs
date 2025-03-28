@@ -25,12 +25,11 @@ pub trait AppDriver {
     /// A hook which will be executed when a widget emits an [`Action`].
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
 
-    #[allow(unused_variables)]
-    // reason: otherwise `state` would need to be named `_state` which behaves badly when using rust-analyzer to implement the trait
+    #[expect(unused_variables, reason = "Default impl doesn't use arguments")]
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
     ///
     /// Use cases include loading fonts.
-    fn on_start(&mut self, state: &mut MasonryState) {}
+    fn on_start(&mut self, state: &mut MasonryState<'_>) {}
 }
 
 impl DriverCtx<'_> {
@@ -51,7 +50,7 @@ impl DriverCtx<'_> {
 /// Doctests aren't collected under `cfg(test)`; we can use `cfg(doctest)` instead
 mod doctests {
     /// ```no_run
-    /// use masonry_core::app::DriverCtx;
+    /// use masonry::app::DriverCtx;
     /// let _ctx = DriverCtx {
     ///     render_root: unimplemented!()
     /// };

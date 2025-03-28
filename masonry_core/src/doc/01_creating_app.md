@@ -13,6 +13,10 @@
 </div>
 
 
+<!-- TODO - This doc is located in masonry_core, but gives a tutorial for Masonry. -->
+<!-- Because the `masonry_core` doc has several links to this folder, -->
+<!-- we can't easily move it to `masonry`. We need to sort that out. -->
+
 **TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
 This tutorial explains how to build a simple Masonry app, step by step.
@@ -64,7 +68,7 @@ During the course of the event loop, the widget tree will be displayed, and upda
 
 ## The `Driver`
 
-To handle user interactions, we need to implement the [`AppDriver`] trait:
+To handle user interactions, we need to implement the `AppDriver` trait:
 
 ```rust,ignore
 trait AppDriver {
@@ -74,7 +78,7 @@ trait AppDriver {
 
 Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), an [`Action`] is emitted, and the `on_action` method is called.
 
-That method gives our app a [`DriverCtx`] context, which we can use to access the root widget, and a [`WidgetId`] identifying the widget that emitted the action.
+That method gives our app a `DriverCtx` context, which we can use to access the root widget, and a [`WidgetId`] identifying the widget that emitted the action.
 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
@@ -264,9 +268,7 @@ Most of this documentation is written to help developers trying to build such a 
 [`Button`]: crate::widgets::Button
 [`RootWidget`]: crate::widgets::RootWidget
 
-[`AppDriver`]: crate::app::AppDriver
 [`Action`]: crate::core::Action
-[`DriverCtx`]: crate::app::DriverCtx
 [`WidgetId`]: crate::core::WidgetId
 [`WidgetMut`]: crate::core::WidgetMut
 [add_child]: crate::widgets::Flex::add_child

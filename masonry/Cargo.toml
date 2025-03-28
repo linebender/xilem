@@ -21,7 +21,9 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 default = []
-tracy = ["masonry_core/tracy"]
+# Enables tracing using tracy if the default Masonry tracing is used.
+# https://github.com/wolfpld/tracy can be connected to when this feature is enabled.
+tracy = ["dep:tracing-tracy", "dep:wgpu-profiler", "wgpu-profiler/tracy", "masonry_core/tracy"]
 
 [lints]
 workspace = true
@@ -30,41 +32,27 @@ workspace = true
 masonry_core.workspace = true
 vello.workspace = true
 wgpu.workspace = true
-parley.workspace = true
 winit.workspace = true
-tree_arena.workspace = true
-smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
-image.workspace = true
-once_cell = "1.19.0"
-serde = { version = "1.0.204", features = ["derive"] }
-serde_json = "1.0.120"
-futures-intrusive = "0.5.0"
+tracing-tracy = { version = "0.11.3", optional = true }
 pollster = "0.4.0"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter", "time"] }
-accesskit.workspace = true
 accesskit_winit.workspace = true
-time = { workspace = true, features = ["macros", "formatting"] }
-cursor-icon = "1.1.0"
-dpi.workspace = true
 wgpu-profiler = { optional = true, version = "0.19.0", default-features = false }
-anymap3 = "1.0.1"
 keyboard-types = "0.7.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
 
 [dev-dependencies]
-float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
+parley.workspace = true
+smallvec.workspace = true
+tracing = { workspace = true, features = ["default"] }
 image = { workspace = true, features = ["png"] }
 insta = { version = "1.39.0" }
-assert_matches = "1.5.0"
+accesskit.workspace = true
 
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.15", features = ["profile-with-tracing"] }
-
-[target.'cfg(target_os = "android")'.dependencies]
-tracing_android_trace = "0.1.0"
 
 [[example]]
 name = "calc_masonry"
