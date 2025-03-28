@@ -392,10 +392,14 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     }
 
     fn post_scroll(&mut self, ctx: &mut crate::core::EventCtx<'_>) {
-        if self.anchor_index + 1 >= self.valid_range.end {
+        // We only lock scrolling if we're *exactly* at the end of the range, because
+        // if the valid range has changed "during" an active scroll, we still want to handle
+        // that scroll (specifically, in case it happens to scroll us back into the active
+        // range "naturally")
+        if self.anchor_index + 1 == self.valid_range.end {
             self.cap_scroll_range_down(self.anchor_height, ctx.size().height);
         }
-        if self.anchor_index <= self.valid_range.start {
+        if self.anchor_index == self.valid_range.start {
             self.cap_scroll_range_up();
         }
         if self.scroll_offset_from_anchor < 0.
@@ -413,10 +417,9 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Ideally, this would be configurable (so that e.g. the bottom of the last item aligns with
     /// the bottom of the viewport), but that requires more care, since it effectively changes what the last valid anchor is.
     fn cap_scroll_range_down(&mut self, anchor_height: f64, viewport_height: f64) {
-        self.scroll_offset_from_anchor = self
-            .scroll_offset_from_anchor
-            // TODO: There is still some jankiness when scrolling into the last item; this is for reasons unknown.
-            .min((anchor_height - viewport_height / 2.).max(0.0));
+        // TODO: There is still some jankiness when scrolling into the last item; this is for reasons unknown.
+        let max_scroll = (anchor_height - viewport_height / 2.).max(0.0);
+        self.scroll_offset_from_anchor = self.scroll_offset_from_anchor.min(max_scroll);
     }
 
     /// Lock scrolling so that the top of the first valid item doesn't go above the top of the virtual scrolling area.
@@ -582,12 +585,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
         // Determine the new anchor
         loop {
-            if self.anchor_index <= self.valid_range.start {
-                self.anchor_index = self.valid_range.start;
-                self.cap_scroll_range_up();
-                break;
-            }
             if self.scroll_offset_from_anchor < 0. {
+                if self.anchor_index <= self.valid_range.start {
+                    self.cap_scroll_range_up();
+                    break;
+                }
                 self.anchor_index -= 1;
                 let new_anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let new_anchor = self.items.get(&self.anchor_index);
@@ -615,10 +617,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 self.scroll_offset_from_anchor += new_anchor_height;
                 height_before_anchor -= new_anchor_height;
             } else {
-                let last_item = self.anchor_index + 1 >= self.valid_range.end;
-                if last_item {
-                    self.anchor_index = self.valid_range.end - 1;
-                }
                 let anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let current_anchor = self.items.get(&self.anchor_index);
                     if let Some(anchor_pod) = current_anchor {
@@ -630,10 +628,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 } else {
                     mean_item_height
                 };
-                if last_item {
-                    self.cap_scroll_range_down(anchor_height, viewport_size.height);
-                    break;
-                }
 
                 // We only ever subtract a from `scroll_offset_from_anchor` less than
                 // or equal to its current value.
@@ -652,6 +646,15 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 }
             }
         }
+        if self.anchor_index < self.valid_range.start {
+            self.anchor_index = self.valid_range.start;
+            // If even after applying the "stored" scroll, we're outside the valid range, cap it.
+            self.scroll_offset_from_anchor = 0.;
+        }
+        let at_valid_end = self.anchor_index + 1 >= self.valid_range.end;
+        if at_valid_end {
+            self.anchor_index = self.valid_range.end - 1;
+        }
         self.anchor_height = if let Some(anchor) = self
             .items
             .get(&self.anchor_index)
@@ -661,6 +664,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         } else {
             mean_item_height
         };
+        if at_valid_end {
+            self.cap_scroll_range_down(self.anchor_height, viewport_size.height);
+        }
 
         // Load a page and a half above the screen
         let cutoff_up = viewport_size.height * 1.5;
@@ -709,6 +715,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             // For each time we have the falling edge of becoming not dense, we want to warn.
             self.warned_not_dense = false;
         }
+        // We only send an updated request if the driver has actioned the previous request.
         if self.action_handled {
             let target_range = if self.active_range.contains(&self.anchor_index) {
                 let start = if let Some(item_crossing_top) = item_crossing_top {
@@ -1123,7 +1130,7 @@ mod tests {
                 }
             }
             for idx in action.target {
-                if !action.old_active.contains(&idx) && idx < 5 {
+                if !action.old_active.contains(&idx) {
                     assert!(
                         idx >= MIN,
                         "Virtual Scroll controller should never request an invalid id. Requested {idx}"
@@ -1139,6 +1146,7 @@ mod tests {
             }
         }
 
+        let original_range;
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness
@@ -1153,6 +1161,7 @@ mod tests {
                 widget.scroll_offset_from_anchor, 0.0,
                 "Virtual Scroll controller should lock top of the first item to the top of the screen if jumping"
             );
+            original_range = widget.active_range.clone();
         }
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::MouseWheel(
@@ -1165,7 +1174,8 @@ mod tests {
                 .root_widget()
                 .downcast::<VirtualScroll<ScrollContents>>()
                 .unwrap();
-            assert!(widget.anchor_index != MIN || widget.scroll_offset_from_anchor != 0.0);
+            assert_ne!(widget.anchor_index, MIN);
+            assert_ne!(widget.active_range, original_range);
         }
         harness.process_pointer_event(PointerEvent::MouseWheel(
             LogicalPosition::new(0., 6.),
