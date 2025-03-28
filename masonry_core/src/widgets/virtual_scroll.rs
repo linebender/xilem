@@ -378,6 +378,15 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.get_mut(child)
     }
 
+    /// Set the valid range of ids.
+    ///
+    /// That is, the children which the virtual scrolling area will request within.
+    /// Runtime equivalent of [`with_valid_range`](Self::with_valid_range).
+    pub fn set_valid_range(this: &mut WidgetMut<'_, Self>, range: Range<i64>) {
+        this.widget.valid_range = range;
+        this.ctx.request_layout();
+    }
+
     /// Forcefully align the top of the item at `idx` with the top of the
     /// virtual scroll area.
     ///
