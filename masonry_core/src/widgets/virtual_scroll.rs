@@ -280,6 +280,54 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 
 // --- MARK: WIDGETMUT ---
 impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
+    /// Indicates that `action` is about to be handled by the driver (which is calling this method).
+    ///
+    /// This is required because if multiple actions stack up, `VirtualScroll` would assume that they have all been handled.
+    /// In particular, this method existing allows layout operations to happen after each individual action is handled, which
+    /// achieves several things:
+    /// - It improves robustness, by allowing layout methods to know exactly which indices are valid.
+    /// - It makes writing drivers easier, as the safety rails in `VirtualScroll` can be more precise.
+    // (It also simplifies writing tests)
+    // TODO: This could instead take ownership of the action, and return some kind of `{to_remove, to_add}` iterator index pair.
+    pub fn will_handle_action(this: &mut WidgetMut<Self>, action: &VirtualScrollAction) {
+        if this.widget.active_range != action.old_active {
+            debug_panic!(
+                "Handling a VirtualScrollAction with the wrong range; got {:?}, expected {:?} for widget {}.\n\
+                Maybe this has been routed to the wrong `VirtualScroll`?",
+                action.old_active,
+                this.widget.active_range,
+                this.ctx.widget_id(),
+            );
+        }
+        this.widget.action_handled = true;
+        if this.widget.missed_actions_count > 0 {
+            // Avoid spamming the "handling single action delay" warning.
+            this.widget.missed_actions_count = 1;
+        }
+        this.widget.active_range = action.target.clone();
+        this.ctx.request_layout();
+    }
+
+    /// Add the child widget for the given index.
+    ///
+    /// This should be done only in the handling of a [`VirtualScrollAction`].
+    /// This must be called after [`VirtualScroll::will_handle_action`].
+    #[track_caller]
+    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, child: WidgetPod<W>) {
+        // TODO: Maybe just warn?
+        debug_assert!(
+            this.widget.action_handled,
+            "You must call `will_handle_action` before `add_child`."
+        );
+        debug_assert!(
+            this.widget.active_range.contains(&idx),
+            "`add_child` should only be called with an index requested by the controller."
+        );
+        this.ctx.children_changed();
+        if this.widget.items.insert(idx, child).is_some() {
+            tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
+        };
+    }
     /// Remove the child widget with id `idx`.
     ///
     /// This will log an error if there was no child at the given index.
@@ -312,27 +360,6 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         }
     }
 
-    /// Add the child widget for the given index.
-    ///
-    /// This should be done only in the handling of a [`VirtualScrollAction`].
-    /// This must be called after [`VirtualScroll::will_handle_action`].
-    #[track_caller]
-    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, child: WidgetPod<W>) {
-        // TODO: Maybe just warn?
-        debug_assert!(
-            this.widget.action_handled,
-            "You must call `will_handle_action` before `add_child`."
-        );
-        debug_assert!(
-            this.widget.active_range.contains(&idx),
-            "`add_child` should only be called with an index requested by the controller."
-        );
-        this.ctx.children_changed();
-        if this.widget.items.insert(idx, child).is_some() {
-            tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
-        };
-    }
-
     /// Modify the child widget at `idx`.
     ///
     /// # Panics
@@ -361,20 +388,6 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     pub fn overwrite_anchor(this: &mut WidgetMut<Self>, idx: i64) {
         this.widget.anchor_index = idx;
         this.widget.scroll_offset_from_anchor = 0.;
-        this.ctx.request_layout();
-    }
-
-    /// To be called by the driver.Indicate that you are the driver, and you're about to handle the action "action".
-    ///
-    /// This is required because if multiple actions stack up, the `VirtualScroll` needs to
-    /// avoid causing issues.
-    pub fn will_handle_action(this: &mut WidgetMut<Self>, action: &VirtualScrollAction) {
-        this.widget.action_handled = true;
-        if this.widget.missed_actions_count > 0 {
-            // Avoid spamming the "handling single action delay" warning.
-            this.widget.missed_actions_count = 1;
-        }
-        this.widget.active_range = action.target.clone();
         this.ctx.request_layout();
     }
 
