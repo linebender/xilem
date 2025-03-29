@@ -18,7 +18,7 @@ use crate::core::{
 use crate::kurbo::Size;
 use crate::properties::*;
 use crate::theme;
-use crate::util::{UnitPoint, fill_lin_gradient, stroke};
+use crate::util::{fill, stroke};
 use crate::widgets::Label;
 
 // --- MARK: CONSTANTS ---
@@ -219,16 +219,29 @@ impl Widget for Button {
         let border_width = props.get::<BorderWidth>().unwrap_or(&DEFAULT_BORDER_WIDTH);
         let border_radius = props.get::<CornerRadius>().unwrap_or(&DEFAULT_BORDER_RADII);
 
+        // TODO - Add DEFAULT_BACKGROUND_GRADIENT constant.
+        let bg_gradient = BackgroundGradient {
+            gradient: Gradient::new_linear(0.0)
+                .with_stops([theme::BUTTON_LIGHT, theme::BUTTON_DARK]),
+        };
+        let bg_gradient = props.get::<BackgroundGradient>().unwrap_or(&bg_gradient);
+
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        // TODO - Handle gradient bg with properties.
+        // TODO - Handle disabled and pressed bg with properties.
         let bg_gradient = if ctx.is_disabled() {
-            [theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]
+            &BackgroundGradient {
+                gradient: Gradient::new_linear(0.0)
+                    .with_stops([theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]),
+            }
         } else if is_pressed {
-            [theme::BUTTON_DARK, theme::BUTTON_LIGHT]
+            &BackgroundGradient {
+                gradient: Gradient::new_linear(0.0)
+                    .with_stops([theme::BUTTON_DARK, theme::BUTTON_LIGHT]),
+            }
         } else {
-            [theme::BUTTON_LIGHT, theme::BUTTON_DARK]
+            bg_gradient
         };
 
         // TODO - Handle hovered color with properties.
@@ -240,13 +253,10 @@ impl Widget for Button {
             *border_color
         };
 
-        fill_lin_gradient(
-            scene,
-            &bg_rect,
-            bg_gradient,
-            UnitPoint::TOP,
-            UnitPoint::BOTTOM,
-        );
+        let brush = bg_gradient
+            .gradient
+            .get_peniko_gradient_for_rect(bg_rect.rect());
+        fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
     }
 
