@@ -24,6 +24,9 @@ impl BackgroundColor {
     }
 }
 
+// TODO - Split BackgroundGradient (widget propertiy) and Gradient, GradientShape
+// (subtypes of that property) into separate modules.
+
 #[derive(Clone, Debug)]
 pub struct BackgroundGradient {
     pub gradient: Gradient,
