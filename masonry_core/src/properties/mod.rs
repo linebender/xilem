@@ -16,7 +16,7 @@ mod border_width;
 mod corner_radius;
 mod padding;
 
-pub use background_color::*;
+pub use background_color::{BackgroundColor, BackgroundGradient, Gradient, GradientShape};
 pub use border_color::BorderColor;
 pub use border_width::BorderWidth;
 pub use corner_radius::CornerRadius;
