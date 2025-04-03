@@ -780,14 +780,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 start..end
             };
 
-            // Avoid requesting invalid items by clamping to the valid range
-            let target_range = target_range
-                .start
-                // target_range.start is inclusive whereas valid_range.end is exclusive; convert between the two.
-                .clamp(self.valid_range.start, self.valid_range.end - 1)
-                ..target_range
+            let target_range = if self.valid_range.is_empty() {
+                self.valid_range.clone()
+            } else {
+                // Avoid requesting invalid items by clamping to the valid range
+                let start = target_range
+                    .start
+                    // target_range.start is inclusive whereas valid_range.end is exclusive; convert between the two.
+                    .clamp(self.valid_range.start, self.valid_range.end - 1);
+                let end = target_range
                     .end
                     .clamp(self.valid_range.start, self.valid_range.end);
+                start..end
+            };
 
             if self.active_range != target_range {
                 let previous_active = self.active_range.clone();
