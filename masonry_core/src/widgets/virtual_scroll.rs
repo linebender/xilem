@@ -695,6 +695,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             mean_item_height
         };
         if at_valid_end {
+            self.scroll_offset_from_anchor = f64::INFINITY;
             self.cap_scroll_range_down(self.anchor_height, viewport_size.height);
         }
 
@@ -1148,7 +1149,7 @@ mod tests {
     }
 
     #[test]
-    /// If there's a minimum range, we should behave in a sensible way.
+    /// If there's a minimum to the valid range, we should behave in a sensible way.
     fn limited_up() {
         type ScrollContents = Label;
 
@@ -1227,6 +1228,91 @@ mod tests {
         }
     }
 
+    #[test]
+    /// If there's a maximum to the valid range, we should behave in a sensible way.
+    fn limited_down() {
+        type ScrollContents = Label;
+
+        const MAX: i64 = 10;
+        let widget = VirtualScroll::<ScrollContents>::new(100).with_valid_range(i64::MIN..MAX);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
+            }
+            for idx in action.target {
+                if !action.old_active.contains(&idx) {
+                    assert!(
+                        idx < MAX,
+                        "Virtual Scroll controller should never request an invalid id. Requested {idx}"
+                    );
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
+            }
+        }
+
+        let original_range;
+        let original_scroll;
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(
+                widget.anchor_index,
+                MAX - 1,
+                "Virtual Scroll controller should lock anchor to be within active range"
+            );
+            // We are scrolled down as far as possible. This is hard to write a convincing code test for,
+            // so validate it with code.
+            original_scroll = widget.scroll_offset_from_anchor;
+            original_range = widget.active_range.clone();
+            assert_render_snapshot!(harness, "virtual_scroll_limited_up_bottom");
+        }
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 5.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_ne!(widget.anchor_index, MAX);
+            assert_ne!(widget.active_range, original_range);
+        }
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., -6.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(widget.anchor_index, MAX - 1);
+            assert_eq!(
+                widget.scroll_offset_from_anchor, original_scroll,
+                "Should be scrolled as far as possible (which is the same as we originally were)"
+            );
+        }
+    }
+
     fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
         harness: &mut TestHarness,
         virtual_scroll_id: crate::core::WidgetId,
@@ -1256,7 +1342,7 @@ mod tests {
             old_active = Some(action.target.clone());
             assert!(
                 action.target != action.old_active,
-                "Shouldn't have sent an update if the target hasn't changed"
+                "Shouldn't have sent an update if tUsehe target hasn't changed"
             );
             // This could happen iff the valid range is empty, which is case I've not reasoned about yet.
             // assert!(!action.target.is_empty());
