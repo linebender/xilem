@@ -98,19 +98,25 @@ where
             );
             return;
         };
+        let stashed_view;
         let rebuild = match message_result {
             MessageResult::Action(()) => {
-                // It's not entirely clear what to do here
-                true
+                let next_view = (self.logic)(&mut self.state);
+                self.ctx.state_changed = true;
+                stashed_view = std::mem::replace(&mut self.current_view, next_view);
+
+                Some(&stashed_view)
             }
-            MessageResult::RequestRebuild => true,
-            MessageResult::Nop => false,
+            MessageResult::RequestRebuild => {
+                self.ctx.state_changed = false;
+                None
+            }
             MessageResult::Stale(_) => {
                 tracing::info!("Discarding message");
-                false
+                None
             }
         };
-        if rebuild {
+        if let Some(prior_view) = rebuild_from { {
             let next_view = (self.logic)(&mut self.state);
 
             masonry_ctx.render_root().edit_root_widget(|mut root| {
@@ -124,7 +130,7 @@ where
                 self.current_view = next_view;
             });
         }
-        if cfg!(debug_assertions) && rebuild && !masonry_ctx.content_changed() {
+        if cfg!(debug_assertions) && rebuild_from.is_some() && !masonry_ctx.content_changed() {
             tracing::debug!("Nothing changed as result of action");
         }
     }

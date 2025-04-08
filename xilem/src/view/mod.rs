@@ -45,6 +45,9 @@ pub use prose::*;
 mod textbox;
 pub use textbox::*;
 
+mod virtual_scroll;
+pub use virtual_scroll::*;
+
 mod portal;
 pub use portal::*;
 
