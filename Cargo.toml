@@ -23,7 +23,7 @@ members = [
 [workspace.package]
 edition = "2024"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
-rust-version = "1.85"
+rust-version = "1.86"
 license = "Apache-2.0"
 repository = "https://github.com/linebender/xilem"
 homepage = "https://xilem.dev/"
