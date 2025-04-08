@@ -100,7 +100,7 @@ where
                     MessageResult::Action((self.callback)(app_state, checked))
                 } else {
                     tracing::error!("Wrong action type in Checkbox::message: {action:?}");
-                    MessageResult::Stale(action)
+                    MessageResult::Stale(DynMessage(action))
                 }
             }
             Err(message) => {

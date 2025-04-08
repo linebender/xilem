@@ -9,7 +9,7 @@
 
 use std::sync::Arc;
 
-use xilem_core::{MessageResult, View};
+use xilem_core::{DynMessage, MessageResult, View};
 
 mod common;
 use common::*;
@@ -103,7 +103,7 @@ fn arc_passthrough_message() {
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, Box::new(()), &mut ());
+    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
 }
 
@@ -178,7 +178,7 @@ fn box_passthrough_message() {
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, Box::new(()), &mut ());
+    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
     let MessageResult::Action(inner) = result else {
         panic!()
     };

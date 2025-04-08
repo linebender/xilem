@@ -3,7 +3,7 @@
 
 //! Tests that [`AnyView`] has the correct routing behaviour
 
-use xilem_core::{AnyView, MessageResult, View};
+use xilem_core::{AnyView, DynMessage, MessageResult, View};
 
 mod common;
 use common::*;
@@ -18,7 +18,7 @@ fn messages_to_inner_view() {
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view.message(&mut state, &element.view_path, Box::new(()), &mut ());
+    let result = view.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
 }
 
@@ -38,7 +38,7 @@ fn message_after_rebuild() {
         &[Operation::Build(0), Operation::Rebuild { from: 0, to: 1 }]
     );
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert_action(result, 1);
 }
 
@@ -62,7 +62,7 @@ fn no_message_after_stale() {
         ]
     );
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }
 
@@ -100,6 +100,6 @@ fn no_message_after_stale_then_same_type() {
         ]
     );
 
-    let result = view3.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view3.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }

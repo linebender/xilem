@@ -12,7 +12,7 @@
 
 mod common;
 use common::*;
-use xilem_core::{MessageResult, View};
+use xilem_core::{DynMessage, MessageResult, View};
 
 fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
@@ -56,7 +56,7 @@ fn one_element_sequence_passthrough() {
         &[Operation::Build(0), Operation::Rebuild { from: 0, to: 2 }]
     );
 
-    let result = view2.message(&mut state, &[], Box::new(()), &mut ());
+    let result = view2.message(&mut state, &[], DynMessage::new(()), &mut ());
     // The message should have been routed to the only child
     assert_action(result, 2);
 
@@ -299,7 +299,7 @@ fn option_message_some() {
     let child = seq_children.active.first().unwrap();
     let path = child.view_path.to_vec();
 
-    let result = view.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
 }
 
@@ -318,7 +318,7 @@ fn option_message_some_some() {
     let view2 = sequence(0, Some(record_ops(1)));
     view2.rebuild(&view, &mut state, &mut ctx, &mut element);
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert_action(result, 1);
 }
 
@@ -337,7 +337,7 @@ fn option_message_some_none_stale() {
     let view2 = sequence(0, None);
     view2.rebuild(&view, &mut state, &mut ctx, &mut element);
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }
 
@@ -359,6 +359,6 @@ fn option_message_some_none_some_stale() {
     let view3 = sequence(0, Some(record_ops(1)));
     view3.rebuild(&view2, &mut state, &mut ctx, &mut element);
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }
