@@ -1344,8 +1344,6 @@ mod tests {
                 action.target != action.old_active,
                 "Shouldn't have sent an update if tUsehe target hasn't changed"
             );
-            // This could happen iff the valid range is empty, which is case I've not reasoned about yet.
-            // assert!(!action.target.is_empty());
 
             harness.edit_widget(virtual_scroll_id, |mut portal| {
                 let scroll = portal.downcast::<VirtualScroll<T>>();
