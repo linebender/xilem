@@ -107,14 +107,16 @@ where
             //     avoiding infinite loops.
             MessageResult::Action(()) => {
                 let next_view = (self.logic)(&mut self.state);
+                self.ctx.state_changed = true;
                 stashed_view = std::mem::replace(&mut self.current_view, next_view);
 
                 Some(&stashed_view)
             }
             MessageResult::RequestRebuild => {
                 self.ctx.state_changed = false;
-                None
+                Some(&self.current_view)
             }
+            MessageResult::Nop => None,
             MessageResult::Stale(_) => {
                 tracing::info!("Discarding message");
                 None
