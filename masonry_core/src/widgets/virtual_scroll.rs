@@ -159,16 +159,13 @@ pub struct VirtualScrollAction {
 ///
 /// ## Valid range
 ///
-/// We don't yet support setting the valid range.
-/// This is because there are several edge cases which need to be handled, which we're deferring for this MVP.
-/// The plan would be to add appropriate setters for this, and test using it.
-///
 /// Scrolling at the end of the valid range is locked, however it is not currently supported to lock scrolling
 /// such that the bottom of the last item cannot be above the bottom of the `VirtualScroll`.
 /// That is, it is always possible to scroll past the loaded items to the background (if the user
 /// reaches the end of the valid range).
 ///
-/// If the valid range is backwards, i.e. the start is greater than the end, things might break.
+/// If the valid range is empty, i.e. the start and the end are equal, then there is jank which we haven't
+/// resolved. However, this case should not cause crashes.
 pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     // TODO: Should `W` be a generic, or just always be `dyn Widget`?
     /// The range of items in the "id" space which are able to be used.
@@ -269,6 +266,84 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         }
     }
 
+    /// Set the range of child ids which are valid.
+    ///
+    /// Note that this is a half-open range, so the end id of the range is not valid.
+    ///
+    /// # Panics
+    ///
+    /// If `valid_range.start >= valid_range.end`.
+    /// Note that other empty ranges are fine, although the exact behaviour hasn't been carefully validated.
+    #[track_caller]
+    pub fn with_valid_range(mut self, valid_range: Range<i64>) -> Self {
+        self.valid_range = valid_range;
+        self.validate_valid_range();
+        self
+    }
+
+    fn validate_valid_range(&mut self) {
+        if self.valid_range.end < self.valid_range.start {
+            debug_panic!(
+                "Expected valid range to not have end less than its start, got {:?}",
+                self.valid_range
+            );
+            // In release mode, we don't want this to take down the program;
+            // an empty range is supported.
+            self.valid_range = self.valid_range.start..self.valid_range.start;
+        }
+    }
+}
+
+// --- MARK: WIDGETMUT ---
+impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
+    /// Indicates that `action` is about to be handled by the driver (which is calling this method).
+    ///
+    /// This is required because if multiple actions stack up, `VirtualScroll` would assume that they have all been handled.
+    /// In particular, this method existing allows layout operations to happen after each individual action is handled, which
+    /// achieves several things:
+    /// - It improves robustness, by allowing layout methods to know exactly which indices are valid.
+    /// - It makes writing drivers easier, as the safety rails in `VirtualScroll` can be more precise.
+    // (It also simplifies writing tests)
+    // TODO: This could instead take ownership of the action, and return some kind of `{to_remove, to_add}` iterator index pair.
+    pub fn will_handle_action(this: &mut WidgetMut<Self>, action: &VirtualScrollAction) {
+        if this.widget.active_range != action.old_active {
+            debug_panic!(
+                "Handling a VirtualScrollAction with the wrong range; got {:?}, expected {:?} for widget {}.\n\
+                Maybe this has been routed to the wrong `VirtualScroll`?",
+                action.old_active,
+                this.widget.active_range,
+                this.ctx.widget_id(),
+            );
+        }
+        this.widget.action_handled = true;
+        if this.widget.missed_actions_count > 0 {
+            // Avoid spamming the "handling single action delay" warning.
+            this.widget.missed_actions_count = 1;
+        }
+        this.widget.active_range = action.target.clone();
+        this.ctx.request_layout();
+    }
+
+    /// Add the child widget for the given index.
+    ///
+    /// This should be done only in the handling of a [`VirtualScrollAction`].
+    /// This must be called after [`VirtualScroll::will_handle_action`].
+    #[track_caller]
+    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, child: WidgetPod<W>) {
+        // TODO: Maybe just warn?
+        debug_assert!(
+            this.widget.action_handled,
+            "You must call `will_handle_action` before `add_child`."
+        );
+        debug_assert!(
+            this.widget.active_range.contains(&idx),
+            "`add_child` should only be called with an index requested by the controller."
+        );
+        this.ctx.children_changed();
+        if this.widget.items.insert(idx, child).is_some() {
+            tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
+        };
+    }
     /// Remove the child widget with id `idx`.
     ///
     /// This will log an error if there was no child at the given index.
@@ -301,27 +376,6 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         }
     }
 
-    /// Add the child widget for the given index.
-    ///
-    /// This should be done only in the handling of a [`VirtualScrollAction`].
-    /// This must be called after [`VirtualScroll::will_handle_action`].
-    #[track_caller]
-    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, child: WidgetPod<W>) {
-        // TODO: Maybe just warn?
-        debug_assert!(
-            this.widget.action_handled,
-            "You must call `will_handle_action` before `add_child`."
-        );
-        debug_assert!(
-            this.widget.active_range.contains(&idx),
-            "`add_child` should only be called with an index requested by the controller."
-        );
-        this.ctx.children_changed();
-        if this.widget.items.insert(idx, child).is_some() {
-            tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
-        };
-    }
-
     /// Modify the child widget at `idx`.
     ///
     /// # Panics
@@ -340,6 +394,21 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.get_mut(child)
     }
 
+    /// Set the valid range of ids.
+    ///
+    /// That is, the children which the virtual scrolling area will request within.
+    /// Runtime equivalent of [`with_valid_range`](Self::with_valid_range).
+    ///
+    /// # Panics
+    ///
+    /// If `valid_range.start >= valid_range.end`.
+    /// Note that other empty ranges are fine, although the exact behaviour hasn't been carefully validated.
+    pub fn set_valid_range(this: &mut WidgetMut<'_, Self>, range: Range<i64>) {
+        this.widget.valid_range = range;
+        this.widget.validate_valid_range();
+        this.ctx.request_layout();
+    }
+
     /// Forcefully align the top of the item at `idx` with the top of the
     /// virtual scroll area.
     ///
@@ -353,25 +422,15 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
-    /// To be called by the driver.Indicate that you are the driver, and you're about to handle the action "action".
-    ///
-    /// This is required because if multiple actions stack up, the `VirtualScroll` needs to
-    /// avoid causing issues.
-    pub fn will_handle_action(this: &mut WidgetMut<Self>, action: &VirtualScrollAction) {
-        this.widget.action_handled = true;
-        if this.widget.missed_actions_count > 0 {
-            // Avoid spamming the "handling single action delay" warning.
-            this.widget.missed_actions_count = 1;
-        }
-        this.widget.active_range = action.target.clone();
-        this.ctx.request_layout();
-    }
-
     fn post_scroll(&mut self, ctx: &mut crate::core::EventCtx<'_>) {
-        if self.anchor_index + 1 >= self.valid_range.end {
+        // We only lock scrolling if we're *exactly* at the end of the range, because
+        // if the valid range has changed "during" an active scroll, we still want to handle
+        // that scroll (specifically, in case it happens to scroll us back into the active
+        // range "naturally")
+        if self.anchor_index + 1 == self.valid_range.end {
             self.cap_scroll_range_down(self.anchor_height, ctx.size().height);
         }
-        if self.anchor_index <= self.valid_range.start {
+        if self.anchor_index == self.valid_range.start {
             self.cap_scroll_range_up();
         }
         if self.scroll_offset_from_anchor < 0.
@@ -389,10 +448,8 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Ideally, this would be configurable (so that e.g. the bottom of the last item aligns with
     /// the bottom of the viewport), but that requires more care, since it effectively changes what the last valid anchor is.
     fn cap_scroll_range_down(&mut self, anchor_height: f64, viewport_height: f64) {
-        self.scroll_offset_from_anchor = self
-            .scroll_offset_from_anchor
-            // TODO: There is still some jankiness when scrolling into the last item; this is for reasons unknown.
-            .min((anchor_height - viewport_height / 2.).max(0.0));
+        let max_scroll = (anchor_height - viewport_height / 2.).max(0.0);
+        self.scroll_offset_from_anchor = self.scroll_offset_from_anchor.min(max_scroll);
     }
 
     /// Lock scrolling so that the top of the first valid item doesn't go above the top of the virtual scrolling area.
@@ -560,7 +617,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         loop {
             if self.scroll_offset_from_anchor < 0. {
                 if self.anchor_index <= self.valid_range.start {
-                    self.anchor_index = self.valid_range.start;
                     self.cap_scroll_range_up();
                     break;
                 }
@@ -591,10 +647,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 self.scroll_offset_from_anchor += new_anchor_height;
                 height_before_anchor -= new_anchor_height;
             } else {
-                let last_item = self.anchor_index + 1 >= self.valid_range.end;
-                if last_item {
-                    self.anchor_index = self.valid_range.end - 1;
-                }
                 let anchor_height = if self.active_range.contains(&self.anchor_index) {
                     let current_anchor = self.items.get(&self.anchor_index);
                     if let Some(anchor_pod) = current_anchor {
@@ -606,10 +658,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 } else {
                     mean_item_height
                 };
-                if last_item {
-                    self.cap_scroll_range_down(anchor_height, viewport_size.height);
-                    break;
-                }
 
                 // We only ever subtract a from `scroll_offset_from_anchor` less than
                 // or equal to its current value.
@@ -628,6 +676,15 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 }
             }
         }
+        let at_valid_end = self.anchor_index + 1 >= self.valid_range.end;
+        if at_valid_end {
+            self.anchor_index = self.valid_range.end - 1;
+        }
+        if self.anchor_index < self.valid_range.start {
+            self.anchor_index = self.valid_range.start;
+            // If even after applying the "stored" scroll, we're outside the valid range, cap it.
+            self.scroll_offset_from_anchor = 0.;
+        }
         self.anchor_height = if let Some(anchor) = self
             .items
             .get(&self.anchor_index)
@@ -637,6 +694,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         } else {
             mean_item_height
         };
+        if at_valid_end {
+            self.scroll_offset_from_anchor = f64::INFINITY;
+            self.cap_scroll_range_down(self.anchor_height, viewport_size.height);
+        }
 
         // Load a page and a half above the screen
         let cutoff_up = viewport_size.height * 1.5;
@@ -685,6 +746,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             // For each time we have the falling edge of becoming not dense, we want to warn.
             self.warned_not_dense = false;
         }
+        // We only send an updated request if the driver has actioned the previous request.
         if self.action_handled {
             let target_range = if self.active_range.contains(&self.anchor_index) {
                 let start = if let Some(item_crossing_top) = item_crossing_top {
@@ -719,14 +781,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 start..end
             };
 
-            // Avoid requesting invalid items by clamping to the valid range
-            let target_range = target_range
-                .start
-                // target_range.start is inclusive whereas valid_range.end is exclusive; convert between the two.
-                .clamp(self.valid_range.start, self.valid_range.end - 1)
-                ..target_range
+            let target_range = if self.valid_range.is_empty() {
+                self.valid_range.clone()
+            } else {
+                // Avoid requesting invalid items by clamping to the valid range
+                let start = target_range
+                    .start
+                    // target_range.start is inclusive whereas valid_range.end is exclusive; convert between the two.
+                    .clamp(self.valid_range.start, self.valid_range.end - 1);
+                let end = target_range
                     .end
                     .clamp(self.valid_range.start, self.valid_range.end);
+                start..end
+            };
 
             if self.active_range != target_range {
                 let previous_active = self.active_range.clone();
@@ -862,7 +929,7 @@ mod tests {
 
     use crate::{
         assert_render_snapshot,
-        core::{FromDynWidget, PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
+        core::{Action, FromDynWidget, PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
         testing::TestHarness,
         widgets::{Label, VirtualScroll, VirtualScrollAction},
     };
@@ -1081,6 +1148,171 @@ mod tests {
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
     }
 
+    #[test]
+    /// If there's a minimum to the valid range, we should behave in a sensible way.
+    fn limited_up() {
+        type ScrollContents = Label;
+
+        const MIN: i64 = 10;
+        let widget = VirtualScroll::<ScrollContents>::new(0).with_valid_range(MIN..i64::MAX);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
+            }
+            for idx in action.target {
+                if !action.old_active.contains(&idx) {
+                    assert!(
+                        idx >= MIN,
+                        "Virtual Scroll controller should never request an invalid id. Requested {idx}"
+                    );
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
+            }
+        }
+
+        let original_range;
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(
+                widget.anchor_index, MIN,
+                "Virtual Scroll controller should lock anchor to be within active range"
+            );
+            assert_eq!(
+                widget.scroll_offset_from_anchor, 0.0,
+                "Virtual Scroll controller should lock top of the first item to the top of the screen if jumping"
+            );
+            original_range = widget.active_range.clone();
+        }
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., -5.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_ne!(widget.anchor_index, MIN);
+            assert_ne!(widget.active_range, original_range);
+        }
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 6.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(widget.anchor_index, MIN);
+            assert_eq!(widget.scroll_offset_from_anchor, 0.0);
+        }
+    }
+
+    #[test]
+    /// If there's a maximum to the valid range, we should behave in a sensible way.
+    fn limited_down() {
+        type ScrollContents = Label;
+
+        const MAX: i64 = 10;
+        let widget = VirtualScroll::<ScrollContents>::new(100).with_valid_range(i64::MIN..MAX);
+
+        let mut harness = TestHarness::create_with_size(widget, Size::new(100., 200.));
+        let virtual_scroll_id = harness.root_widget().id();
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+            VirtualScroll::will_handle_action(&mut scroll, &action);
+            for idx in action.old_active.clone() {
+                if !action.target.contains(&idx) {
+                    VirtualScroll::remove_child(&mut scroll, idx);
+                }
+            }
+            for idx in action.target {
+                if !action.old_active.contains(&idx) {
+                    assert!(
+                        idx < MAX,
+                        "Virtual Scroll controller should never request an invalid id. Requested {idx}"
+                    );
+                    VirtualScroll::add_child(
+                        &mut scroll,
+                        idx,
+                        WidgetPod::new(
+                            Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
+                        ),
+                    );
+                }
+            }
+        }
+
+        let original_range;
+        let original_scroll;
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(
+                widget.anchor_index,
+                MAX - 1,
+                "Virtual Scroll controller should lock anchor to be within active range"
+            );
+            // We are scrolled down as far as possible. This is hard to write a convincing code test for,
+            // so validate it with code.
+            original_scroll = widget.scroll_offset_from_anchor;
+            original_range = widget.active_range.clone();
+            assert_render_snapshot!(harness, "virtual_scroll_limited_up_bottom");
+        }
+        harness.mouse_move_to(virtual_scroll_id);
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., 5.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_ne!(widget.anchor_index, MAX);
+            assert_ne!(widget.active_range, original_range);
+        }
+        harness.process_pointer_event(PointerEvent::MouseWheel(
+            LogicalPosition::new(0., -6.),
+            PointerState::empty(),
+        ));
+        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        {
+            let widget = harness
+                .root_widget()
+                .downcast::<VirtualScroll<ScrollContents>>()
+                .unwrap();
+            assert_eq!(widget.anchor_index, MAX - 1);
+            assert_eq!(
+                widget.scroll_offset_from_anchor, original_scroll,
+                "Should be scrolled as far as possible (which is the same as we originally were)"
+            );
+        }
+    }
+
     fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
         harness: &mut TestHarness,
         virtual_scroll_id: crate::core::WidgetId,
@@ -1100,7 +1332,7 @@ mod tests {
                 id, virtual_scroll_id,
                 "Only widget in tree should give action"
             );
-            let crate::core::Action::Other(action) = action else {
+            let Action::Other(action) = action else {
                 unreachable!()
             };
             let action = action.downcast::<VirtualScrollAction>().unwrap();
@@ -1108,8 +1340,10 @@ mod tests {
                 assert_eq!(action.old_active, old_active);
             }
             old_active = Some(action.target.clone());
-            // This could happen iff the valid range is empty, which is case I've not reasoned about yet.
-            assert!(!action.target.is_empty());
+            assert!(
+                action.target != action.old_active,
+                "Shouldn't have sent an update if tUsehe target hasn't changed"
+            );
 
             harness.edit_widget(virtual_scroll_id, |mut portal| {
                 let scroll = portal.downcast::<VirtualScroll<T>>();
