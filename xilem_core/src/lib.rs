@@ -46,7 +46,7 @@ pub use views::{
 };
 
 mod message;
-pub use message::{DynMessage, Message, MessageResult};
+pub use message::{AnyMessage, DynMessage, MessageResult};
 
 mod element;
 pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};

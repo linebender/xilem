@@ -136,11 +136,11 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
                 }
                 masonry::core::Action::TextEntered(_) => {
                     tracing::error!("Textbox::message: on_enter is not set");
-                    MessageResult::Stale(action)
+                    MessageResult::Stale(DynMessage(action))
                 }
                 _ => {
                     tracing::error!("Wrong action type in Textbox::message: {action:?}");
-                    MessageResult::Stale(action)
+                    MessageResult::Stale(DynMessage(action))
                 }
             },
             Err(message) => {

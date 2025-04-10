@@ -158,7 +158,7 @@ where
                         (self.callback)(app_state, button)
                     } else {
                         tracing::error!("Wrong action type in Button::message: {action:?}");
-                        MessageResult::Stale(action)
+                        MessageResult::Stale(DynMessage(action))
                     }
                 }
                 Err(message) => {

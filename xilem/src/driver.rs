@@ -9,7 +9,7 @@ use masonry::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};
 use masonry::core::WidgetId;
 use masonry::widgets::RootWidget;
 
-use crate::core::{DynMessage, Message, MessageResult, ProxyError, RawProxy, ViewId};
+use crate::core::{DynMessage, MessageResult, ProxyError, RawProxy, ViewId};
 use crate::{ViewCtx, WidgetView};
 
 pub struct MasonryDriver<State, Logic, View, ViewState> {
@@ -26,7 +26,7 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
 pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
 
 /// The action which should be used for async events.
-pub fn async_action(path: Arc<[ViewId]>, message: Box<dyn Message>) -> masonry::core::Action {
+pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> masonry::core::Action {
     masonry::core::Action::Other(Box::<MessagePackage>::new((path, message)))
 }
 
@@ -89,7 +89,7 @@ where
             self.current_view.message(
                 &mut self.view_state,
                 id_path.as_slice(),
-                Box::new(action),
+                DynMessage::new(action),
                 &mut self.state,
             )
         } else {

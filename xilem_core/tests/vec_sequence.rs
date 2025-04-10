@@ -10,7 +10,7 @@
 
 mod common;
 use common::*;
-use xilem_core::{MessageResult, View};
+use xilem_core::{DynMessage, MessageResult, View};
 
 fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
@@ -199,18 +199,18 @@ fn normal_messages() {
     let second_child = &seq_children.active[1];
     let second_path = second_child.view_path.to_vec();
 
-    let result = view.message(&mut state, &first_path, Box::new(()), &mut ());
+    let result = view.message(&mut state, &first_path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
-    let result = view.message(&mut state, &second_path, Box::new(()), &mut ());
+    let result = view.message(&mut state, &second_path, DynMessage::new(()), &mut ());
     assert_action(result, 1);
 
     let view2 = sequence(0, vec![record_ops(2), record_ops(3)]);
     view2.rebuild(&view, &mut state, &mut ctx, &mut element);
     ctx.assert_empty();
 
-    let result = view2.message(&mut state, &first_path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &first_path, DynMessage::new(()), &mut ());
     assert_action(result, 2);
-    let result = view2.message(&mut state, &second_path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &second_path, DynMessage::new(()), &mut ());
     assert_action(result, 3);
 }
 
@@ -228,20 +228,20 @@ fn stale_messages() {
     let first_child = seq_children.active.first().unwrap();
     let first_path = first_child.view_path.to_vec();
 
-    let result = view.message(&mut state, &first_path, Box::new(()), &mut ());
+    let result = view.message(&mut state, &first_path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
 
     let view2 = sequence(0, vec![]);
     view2.rebuild(&view, &mut state, &mut ctx, &mut element);
     ctx.assert_empty();
 
-    let result = view2.message(&mut state, &first_path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &first_path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 
     let view3 = sequence(0, vec![record_ops(1)]);
     view3.rebuild(&view2, &mut state, &mut ctx, &mut element);
     ctx.assert_empty();
 
-    let result = view3.message(&mut state, &first_path, Box::new(()), &mut ());
+    let result = view3.message(&mut state, &first_path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }
