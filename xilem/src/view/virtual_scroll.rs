@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::marker::PhantomData;
+use std::{collections::HashMap, marker::PhantomData};
 
 use masonry::{
     core::Widget,
@@ -12,6 +12,7 @@ use xilem_core::{AsyncCtx, DynMessage, MessageResult, View, ViewId, ViewMarker, 
 
 use crate::{Pod, ViewCtx, WidgetView};
 
+/// A virtual scrolling View, for Masonry's [`VirtualScroll`]
 pub struct VirtualScroll<State, Action, ChildrenViews, F, Element> {
     phantom: PhantomData<fn() -> (Element, State, Action, ChildrenViews)>,
     // TODO: Work out whether `func` need to be zero sized?
@@ -19,6 +20,20 @@ pub struct VirtualScroll<State, Action, ChildrenViews, F, Element> {
     func: F,
     // TODO: If https://github.com/linebender/xilem/pull/906 gets merged.
     // valid_range: Range<i64>,
+}
+
+/// Component for [`VirtualScroll`]
+pub fn virtual_scroll<State, Action, ChildrenViews, F, Element>(
+    func: F,
+) -> VirtualScroll<State, Action, ChildrenViews, F, Element>
+where
+    ChildrenViews: WidgetView<State, Action, Widget = Element>,
+    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+{
+    VirtualScroll {
+        phantom: PhantomData,
+        func,
+    }
 }
 
 mod private {
@@ -34,11 +49,12 @@ mod private {
     pub struct VirtualScrollState<View, State> {
         pub(super) pending_action: Option<VirtualScrollAction>,
         pub(super) previous_views: HashMap<i64, View>,
-        pub(super) current_active: bool,
+        pub(super) current_updated: bool,
         pub(super) pending_children_update: bool,
         pub(super) current_views: HashMap<i64, View>,
         pub(super) view_states: HashMap<i64, ChildState<State>>,
         pub(super) my_path: Arc<[ViewId]>,
+        pub(super) cleanup_queue: Vec<i64>,
     }
 
     pub(super) struct ChildState<State> {
@@ -53,6 +69,14 @@ mod private {
 const fn view_id_for_index(idx: i64) -> ViewId {
     /* i64::cast_unsigned is unstable */
     ViewId::new(idx as u64)
+}
+
+/// Get the index stored in the view id.
+///
+/// This is a minimal function around [`u64::cast_signed`] (which is unstable, so polyfilled).
+const fn index_for_view_id(id: ViewId) -> i64 {
+    /* u64::cast_unsigned is unstable */
+    id.routing_id() as i64
 }
 
 #[derive(Debug)]
@@ -79,32 +103,50 @@ where
         // Setting that seems like an imperative action?
         let widget = Pod::new(widgets::VirtualScroll::<Element>::new(0));
         ctx.record_action(widget.id);
-        (widget, todo!())
+        (
+            widget,
+            private::VirtualScrollState {
+                pending_action: None,
+                previous_views: HashMap::default(),
+                current_updated: false,
+                pending_children_update: false,
+                current_views: HashMap::default(),
+                view_states: HashMap::default(),
+                my_path: ctx.view_path().into(),
+                cleanup_queue: Vec::default(),
+            },
+        )
     }
 
     fn rebuild(
         &self,
-        prev: &Self,
+        _prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
     ) {
         if ctx.state_changed() && !view_state.pending_children_update {
             let proxy = ctx.proxy();
-            proxy.send_message(view_state.my_path.clone(), Box::new(UpdateVirtualChildren));
+            proxy
+                .send_message(view_state.my_path.clone(), Box::new(UpdateVirtualChildren))
+                .unwrap();
             view_state.pending_children_update = true;
             // Either rebuilding or not rebuilding would be fine here. We choose not to
             // because we know another rebuild is coming once this message is handled.
         }
-        if !view_state.current_active {
-            // If the current values are not active, we still need to rebuild
-            // any children which have requested a rebuild.
-            debug_assert!(view_state.pending_action.is_none(),);
+        let used_action = view_state.pending_action.is_some();
+        if let Some(pending_action) = view_state.pending_action.take() {
+            debug_assert!(view_state.current_updated);
+            widgets::VirtualScroll::will_handle_action(&mut element, &pending_action);
+        } else {
+            // We should never change the number of children unless we're responding to an action
             debug_assert_eq!(
                 view_state.previous_views.len(),
-                view_state.view_states.len(),
-                "View states should be updated as views are removed"
+                view_state.current_views.len()
             );
+        };
+        if !view_state.current_updated {
+            // The set of children is the same, and our app state hasn't changed. Use a fast path for this.
             for (idx, view) in &view_state.previous_views {
                 let state = view_state
                     .view_states
@@ -125,38 +167,81 @@ where
                 }
             }
         } else {
-            if let Some(pending_action) = view_state.pending_action.take() {
-                debug_assert!(view_state.current_active);
-                widgets::VirtualScroll::will_handle_action(&mut element, &pending_action);
-            } else {
-                // We should never change the number of children unless we're responding to an action
-                debug_assert_eq!(
-                    view_state.previous_views.len(),
-                    view_state.current_views.len()
-                );
+            debug_assert!(view_state.cleanup_queue.is_empty());
+            for (&idx, child) in &view_state.previous_views {
+                if view_state.current_views.contains_key(&idx) {
+                    // We will handle this in the second loop
+                    continue;
+                }
+                ctx.with_id(view_id_for_index(idx), |ctx| {
+                    let state = view_state.view_states.get_mut(&idx).unwrap();
+                    child.teardown(
+                        &mut state.state,
+                        ctx,
+                        widgets::VirtualScroll::child_mut(&mut element, idx),
+                    );
+                    widgets::VirtualScroll::remove_child(&mut element, idx);
+                    view_state.cleanup_queue.push(idx);
+                });
             }
-            let prev = &view_state.previous_views;
-            // Apply the difference between the two sets of views
-            // If we know they aren't the same, we can avoid one of these loops.
+            for to_cleanup in view_state.cleanup_queue.drain(..) {
+                view_state.previous_views.remove(&to_cleanup).unwrap();
+                view_state.view_states.remove(&to_cleanup).unwrap();
+            }
+            for (idx, child) in view_state.current_views.drain() {
+                ctx.with_id(view_id_for_index(idx), |ctx| {
+                    if let Some(prev) = view_state.previous_views.get(&idx) {
+                        let state = view_state.view_states.get_mut(&idx).unwrap();
+                        child.rebuild(
+                            prev,
+                            &mut state.state,
+                            ctx,
+                            widgets::VirtualScroll::child_mut(&mut element, idx),
+                        );
+                        state.requested_rebuild = false;
+                        view_state.previous_views.insert(idx, child);
+                    } else {
+                        debug_assert!(used_action);
+                        let (new_child, child_state) = child.build(ctx);
+                        widgets::VirtualScroll::add_child(
+                            &mut element,
+                            idx,
+                            new_child.into_widget_pod(),
+                        );
 
-            std::mem::swap(
-                &mut view_state.previous_views,
-                &mut view_state.current_views,
-            );
+                        view_state.previous_views.insert(idx, child);
+                        view_state.view_states.insert(
+                            idx,
+                            private::ChildState {
+                                state: child_state,
+                                requested_rebuild: false,
+                            },
+                        );
+                    }
+                });
+            }
             // We have just "used" up the current states, so mark them as inactive
-            view_state.current_active = false;
+            view_state.current_updated = false;
         }
-
-        todo!()
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: xilem_core::Mut<'_, Self::Element>,
+        mut element: xilem_core::Mut<'_, Self::Element>,
     ) {
-        todo!()
+        for (&idx, child) in &view_state.previous_views {
+            ctx.with_id(view_id_for_index(idx), |ctx| {
+                let view_state = view_state.view_states.get_mut(&idx).unwrap();
+                child.teardown(
+                    &mut view_state.state,
+                    ctx,
+                    widgets::VirtualScroll::child_mut(&mut element, idx),
+                );
+            });
+        }
+        ctx.teardown_leaf(element);
     }
 
     fn message(
@@ -167,9 +252,19 @@ where
         app_state: &mut State,
     ) -> xilem_core::MessageResult<Action> {
         if let [first, tail @ ..] = id_path {
-            // let result = self.children[idx].message(...);
-            // if result.request_rebuild {...}
-            todo!()
+            let child_idx = index_for_view_id(*first);
+            let target = view_state.previous_views.get(&child_idx);
+            if let Some(target) = target {
+                let state = view_state.view_states.get_mut(&child_idx).unwrap();
+                let result = target.message(&mut state.state, tail, message, app_state);
+                if matches!(result, MessageResult::RequestRebuild) {
+                    state.requested_rebuild = true;
+                }
+                return result;
+            } else {
+                tracing::error!("Message sent type in VirtualScroll::message: {message:?}");
+                return MessageResult::Stale(message);
+            }
         }
         if message.as_any().is::<masonry::core::Action>() {
             let action = message.downcast::<masonry::core::Action>().unwrap();
@@ -182,10 +277,12 @@ where
                 // We check then unwrap to avoid unwrapping a box (also, it makes the check path an early-exit)
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
 
-                view_state.current_active = true;
-                // TODO: Do we know that the current views are actually current? I'm not sure we do.
+                view_state.current_updated = true;
+                // We know that the `current_views` have not been applied, so we can just brute force overwrite them.
                 view_state.current_views.clear();
                 for new_targets in action.target.clone() {
+                    // TODO: Ideally, we'd avoid updating the already existing items
+                    // Doing so however dramatically increases the complexity in `rebuild`
                     view_state
                         .current_views
                         .insert(new_targets, (self.func)(app_state, new_targets));
@@ -201,13 +298,13 @@ where
                 &mut view_state.previous_views,
                 &mut view_state.current_views,
             );
-            view_state.current_active = true;
+            view_state.current_updated = true;
             view_state.current_views.clear();
             view_state.pending_children_update = false;
-            for state in view_state.previous_views.keys() {
+            for &key in view_state.previous_views.keys() {
                 view_state
                     .current_views
-                    .insert(new_targets, (self.func)(app_state, new_targets));
+                    .insert(key, (self.func)(app_state, key));
             }
             MessageResult::RequestRebuild
         } else {

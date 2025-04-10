@@ -14,7 +14,7 @@ use xilem::core::{fork, run_once};
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
-    label, prose, task, textbox,
+    label, prose, sized_box, task, textbox, virtual_scroll,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
@@ -100,6 +100,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
             toggleable(data),
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
+            sized_box(virtual_scroll(|_, idx| label(format!("Virtual {:?}", idx)))).height(200.),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
         // The following `task` view only exists whilst the example is in the "active" state, so
