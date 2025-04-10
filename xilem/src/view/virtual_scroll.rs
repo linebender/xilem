@@ -138,13 +138,7 @@ where
         if let Some(pending_action) = view_state.pending_action.take() {
             debug_assert!(view_state.current_updated);
             widgets::VirtualScroll::will_handle_action(&mut element, &pending_action);
-        } else {
-            // We should never change the number of children unless we're responding to an action
-            debug_assert_eq!(
-                view_state.previous_views.len(),
-                view_state.current_views.len()
-            );
-        };
+        }
         if !view_state.current_updated {
             // The set of children is the same, and our app state hasn't changed. Use a fast path for this.
             for (idx, view) in &view_state.previous_views {
@@ -223,6 +217,10 @@ where
             // We have just "used" up the current states, so mark them as inactive
             view_state.current_updated = false;
         }
+        debug_assert_eq!(
+            view_state.previous_views.len(),
+            view_state.view_states.len()
+        );
     }
 
     fn teardown(
@@ -294,10 +292,6 @@ where
                 MessageResult::Stale(action)
             }
         } else if message.as_any().is::<UpdateVirtualChildren>() {
-            std::mem::swap(
-                &mut view_state.previous_views,
-                &mut view_state.current_views,
-            );
             view_state.current_updated = true;
             view_state.current_views.clear();
             view_state.pending_children_update = false;
