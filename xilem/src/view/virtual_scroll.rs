@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{collections::HashMap, marker::PhantomData};
+use std::{collections::HashMap, marker::PhantomData, ops::Range};
 
 use masonry::{
     core::Widget,
@@ -18,12 +18,12 @@ pub struct VirtualScroll<State, Action, ChildrenViews, F, Element> {
     // TODO: Work out whether `func` need to be zero sized?
     // TODO: Assume for the sake of argument that it does.
     func: F,
-    // TODO: If https://github.com/linebender/xilem/pull/906 gets merged.
-    // valid_range: Range<i64>,
+    valid_range: Range<i64>,
 }
 
-/// Component for [`VirtualScroll`]
+/// Component for [`VirtualScroll`].
 pub fn virtual_scroll<State, Action, ChildrenViews, F, Element>(
+    valid_range: Range<i64>,
     func: F,
 ) -> VirtualScroll<State, Action, ChildrenViews, F, Element>
 where
@@ -33,6 +33,22 @@ where
     VirtualScroll {
         phantom: PhantomData,
         func,
+        valid_range,
+    }
+}
+
+/// Component for a [`VirtualScroll`] with unlimited children.
+pub fn unlimited_virtual_scroll<State, Action, ChildrenViews, F, Element>(
+    func: F,
+) -> VirtualScroll<State, Action, ChildrenViews, F, Element>
+where
+    ChildrenViews: WidgetView<State, Action, Widget = Element>,
+    F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+{
+    VirtualScroll {
+        phantom: PhantomData,
+        func,
+        valid_range: i64::MIN..i64::MAX,
     }
 }
 
@@ -101,7 +117,9 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         // TODO: How does the anchor interact with Xilem?
         // Setting that seems like an imperative action?
-        let widget = Pod::new(widgets::VirtualScroll::<Element>::new(0));
+        let widget = Pod::new(
+            widgets::VirtualScroll::<Element>::new(0).with_valid_range(self.valid_range.clone()),
+        );
         ctx.record_action(widget.id);
         (
             widget,
@@ -120,11 +138,14 @@ where
 
     fn rebuild(
         &self,
-        _prev: &Self,
+        prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
     ) {
+        if self.valid_range != prev.valid_range {
+            widgets::VirtualScroll::set_valid_range(&mut element, self.valid_range.clone());
+        }
         if ctx.state_changed() && !view_state.pending_children_update {
             let proxy = ctx.proxy();
             proxy
@@ -184,10 +205,10 @@ where
             }
             for (idx, child) in view_state.current_views.drain() {
                 ctx.with_id(view_id_for_index(idx), |ctx| {
-                    if let Some(prev) = view_state.previous_views.get(&idx) {
+                    if let Some(child_prev) = view_state.previous_views.get(&idx) {
                         let state = view_state.view_states.get_mut(&idx).unwrap();
                         child.rebuild(
-                            prev,
+                            child_prev,
                             &mut state.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, idx),
