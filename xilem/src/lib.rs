@@ -149,7 +149,7 @@ pub use masonry::kurbo::{Affine, Vec2};
 pub use masonry::parley::Alignment as TextAlignment;
 pub use masonry::parley::style::FontWeight;
 pub use masonry::peniko::Color;
-pub use masonry::widgets::LineBreaking;
+pub use masonry::widgets::{InsertNewline, LineBreaking};
 pub use masonry::{dpi, palette};
 pub use xilem_core as core;
 

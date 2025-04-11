@@ -42,7 +42,7 @@ pub use self::scroll_bar::ScrollBar;
 pub use self::sized_box::{Padding, SizedBox};
 pub use self::spinner::Spinner;
 pub use self::split::Split;
-pub use self::text_area::TextArea;
+pub use self::text_area::{InsertNewline, TextArea};
 pub use self::textbox::Textbox;
 pub use self::variable_label::VariableLabel;
 pub use self::virtual_scroll::{VirtualScroll, VirtualScrollAction};

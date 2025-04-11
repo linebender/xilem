@@ -9,7 +9,7 @@
 
 use winit::error::EventLoopError;
 use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, textbox};
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, Xilem};
 
 struct Task {
     description: String,
@@ -40,6 +40,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
             task_list.next_task = new_value;
         },
     )
+    .insert_newline(InsertNewline::OnShiftEnter)
     .on_enter(|task_list: &mut TaskList, _| {
         task_list.add_task();
     });

@@ -17,7 +17,8 @@ use xilem::view::{
     label, prose, task, textbox,
 };
 use xilem::{
-    Color, EventLoop, EventLoopBuilder, FontWeight, TextAlignment, WidgetView, Xilem, palette,
+    Color, EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
+    Xilem, palette,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -73,12 +74,15 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 // label("Disabled label").disabled(),
             ))
             .direction(Axis::Horizontal),
-            flex(textbox(
-                data.textbox_contents.clone(),
-                |data: &mut AppData, new_value| {
-                    data.textbox_contents = new_value;
-                },
-            ))
+            flex(
+                textbox(
+                    data.textbox_contents.clone(),
+                    |data: &mut AppData, new_value| {
+                        data.textbox_contents = new_value;
+                    },
+                )
+                .insert_newline(InsertNewline::OnEnter),
+            )
             .direction(Axis::Horizontal),
             prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
             button_any_pointer(button_label, |data: &mut AppData, button| match button {
