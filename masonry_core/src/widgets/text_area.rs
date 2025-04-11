@@ -40,7 +40,8 @@ use cursor_icon::CursorIcon;
 ///
 /// This widget emits the following actions only when `USER_EDITABLE` is true:
 ///
-/// - `TextEntered`, which is sent when the enter key is pressed
+/// - `TextEntered`, which is sent when the enter key is pressed (this can be
+///   configured using [`with_insert_newline`](Self::with_insert_newline))
 /// - `TextChanged`, which is sent whenever the text is changed
 ///
 /// The exact semantics of how much horizontal space this widget takes up has not been determined.
@@ -101,6 +102,10 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// Can be set using [`set_padding`](Self::set_padding).
     /// Immediate parent widgets should use [`with_padding_if_default`](Self::with_padding_if_default).
     padding: Padding,
+
+    /// What key combination should trigger a newline insertion.
+    /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a `TextEntered` event.
+    insert_newline: InsertNewline,
 }
 
 // --- MARK: BUILDERS ---
@@ -148,6 +153,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             // We use -0.0 to mark the default padding.
             // This allows parent views to overwrite it only if another source didn't configure it.
             padding: Padding::UNSET,
+            insert_newline: InsertNewline::default(),
         }
     }
 
@@ -276,6 +282,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         if self.padding.is_unset() {
             self.padding = padding;
         }
+        self
+    }
+
+    /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
+    pub fn with_insert_newline(mut self, insert_newline: InsertNewline) -> Self {
+        self.insert_newline = insert_newline;
         self
     }
 
@@ -425,6 +437,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.widget.editor.set_alignment(alignment);
 
         this.ctx.request_layout();
+    }
+
+    /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
+    pub fn set_insert_newline(this: &mut WidgetMut<'_, Self>, insert_newline: InsertNewline) {
+        this.widget.insert_newline = insert_newline;
+        this.ctx.request_accessibility_update();
     }
 
     #[doc(alias = "set_color")]
@@ -738,9 +756,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         edited = true;
                     }
                     Key::Enter => {
-                        // TODO: Multiline?
-                        let multiline = false;
-                        if multiline {
+                        let insert_newline = match self.insert_newline {
+                            InsertNewline::OnEnter => true,
+                            InsertNewline::OnShiftEnter => shift,
+                            InsertNewline::Never => false,
+                        };
+                        if insert_newline {
                             let (fctx, lctx) = ctx.text_contexts();
                             self.editor
                                 .driver(fctx, lctx)
@@ -979,8 +1000,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn accessibility_role(&self) -> Role {
         if EDITABLE {
-            Role::TextInput
-            // TODO: Role::MultilineTextInput
+            match self.insert_newline {
+                InsertNewline::OnShiftEnter | InsertNewline::OnEnter => Role::MultilineTextInput,
+                _ => Role::TextInput,
+            }
         } else {
             Role::Document
         }
@@ -1018,16 +1041,34 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 }
 
+/// When to insert a newline in a text area.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum InsertNewline {
+    /// Insert a newline when the user presses Enter.
+    ///
+    /// Note that if this is enabled, then the text area will never emit a `TextEntered` event.
+    OnEnter,
+    /// Insert a newline when the user presses Shift+Enter.
+    OnShiftEnter,
+    /// Never insert a newline.
+    #[default]
+    Never,
+}
+
 // TODO: What other tests can we have? Some options:
 // - Clicking in the right place changes the selection as expected?
 // - Keyboard actions have expected results?
 
 #[cfg(test)]
 mod tests {
+    use keyboard_types::{KeyboardEvent, Modifiers};
     use vello::kurbo::Size;
 
     use super::*;
-    use crate::testing::TestHarness;
+    use crate::{
+        core::Action,
+        testing::{TestHarness, TestWidgetExt, widget_ids},
+    };
     // Tests of alignment happen in Prose.
 
     #[test]
@@ -1118,5 +1159,84 @@ mod tests {
                 );
             }
         };
+    }
+
+    #[test]
+    fn insert_newline_behavior() {
+        #[derive(Debug)]
+        struct Scenario {
+            insert_newline: InsertNewline,
+            key: Key,
+            modifiers: Modifiers,
+            expect_text_entered_event: bool,
+        }
+        let scenarios = vec![
+            Scenario {
+                insert_newline: InsertNewline::OnEnter,
+                key: Key::Enter,
+                modifiers: Modifiers::default(),
+                expect_text_entered_event: false,
+            },
+            Scenario {
+                insert_newline: InsertNewline::OnShiftEnter,
+                key: Key::Enter,
+                modifiers: Modifiers::default(),
+                expect_text_entered_event: true,
+            },
+            Scenario {
+                insert_newline: InsertNewline::OnShiftEnter,
+                key: Key::Enter,
+                modifiers: Modifiers::SHIFT,
+                expect_text_entered_event: false,
+            },
+            Scenario {
+                insert_newline: InsertNewline::Never,
+                key: Key::Enter,
+                modifiers: Modifiers::default(),
+                expect_text_entered_event: true,
+            },
+            Scenario {
+                insert_newline: InsertNewline::Never,
+                key: Key::Enter,
+                modifiers: Modifiers::SHIFT,
+                expect_text_entered_event: true,
+            },
+        ];
+        for scenario in scenarios {
+            let [text_id] = widget_ids();
+            let area = TextArea::new_editable("hello world")
+                .with_insert_newline(scenario.insert_newline)
+                .with_id(text_id);
+
+            let mut harness = TestHarness::create(area);
+
+            harness.focus_on(Some(text_id));
+            harness.process_text_event(TextEvent::KeyboardKey(
+                KeyboardEvent {
+                    key: scenario.key,
+                    ..Default::default()
+                },
+                scenario.modifiers,
+                None,
+            ));
+
+            let widget = harness.try_get_widget(text_id).unwrap();
+            let area = widget.downcast::<TextArea<true>>().unwrap();
+            let text = area.widget.text().to_string();
+            let (action, widget_id) = harness.pop_action().unwrap();
+            assert_eq!(widget_id, text_id);
+
+            // Check that only the one action was emitted so we don't miss an error case
+            // where TextEntered _and_ TextChanged actions are emitted
+            assert!(harness.pop_action().is_none());
+
+            if scenario.expect_text_entered_event {
+                assert_eq!(action, Action::TextEntered("hello world".to_string()));
+                assert_eq!(text, "hello world");
+            } else {
+                assert_eq!(action, Action::TextChanged("\nhello world".to_string()));
+                assert_eq!(text, "\nhello world");
+            }
+        }
     }
 }
