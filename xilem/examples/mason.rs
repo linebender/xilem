@@ -100,9 +100,12 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
             toggleable(data),
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
-            sized_box(virtual_scroll(|data: &mut AppData, idx| {
-                label(format!("Virtual {idx:?}: {:?}", (data.count as i64) + idx))
-            }))
+            sized_box(virtual_scroll(
+                i64::MIN..(data.count as i64),
+                |data: &mut AppData, idx| {
+                    label(format!("Virtual {idx:?}: {:?}", (data.count as i64) + idx))
+                },
+            ))
             .height(200.),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
         )),
