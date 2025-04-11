@@ -98,33 +98,42 @@ where
             );
             return;
         };
-        let rebuild = match message_result {
+        let stashed_view;
+        let rebuild_from = match message_result {
+            // The semantics here haven't exactly been worked out.
+            // This version of the implementation is based on the assumptions that:
+            // 1) `MessageResult::Action` means that the app's state has changed (and so the logic needs to be reran)
+            // 2) `MessageResult::RequestRebuild` requires that the app state is *not* rebuilt; this allows
+            //     avoiding infinite loops.
             MessageResult::Action(()) => {
-                // It's not entirely clear what to do here
-                true
+                let next_view = (self.logic)(&mut self.state);
+                self.ctx.state_changed = true;
+                stashed_view = std::mem::replace(&mut self.current_view, next_view);
+
+                Some(&stashed_view)
             }
-            MessageResult::RequestRebuild => true,
-            MessageResult::Nop => false,
+            MessageResult::RequestRebuild => {
+                self.ctx.state_changed = false;
+                Some(&self.current_view)
+            }
+            MessageResult::Nop => None,
             MessageResult::Stale(_) => {
                 tracing::info!("Discarding message");
-                false
+                None
             }
         };
-        if rebuild {
-            let next_view = (self.logic)(&mut self.state);
-
+        if let Some(prior_view) = rebuild_from {
             masonry_ctx.render_root().edit_root_widget(|mut root| {
                 let mut root = root.downcast::<RootWidget<View::Widget>>();
-                next_view.rebuild(
-                    &self.current_view,
+                self.current_view.rebuild(
+                    prior_view,
                     &mut self.view_state,
                     &mut self.ctx,
                     RootWidget::child_mut(&mut root),
                 );
-                self.current_view = next_view;
             });
         }
-        if cfg!(debug_assertions) && rebuild && !masonry_ctx.content_changed() {
+        if cfg!(debug_assertions) && rebuild_from.is_some() && !masonry_ctx.content_changed() {
             tracing::debug!("Nothing changed as result of action");
         }
     }
