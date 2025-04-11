@@ -5,7 +5,7 @@ use masonry::widgets;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -25,6 +25,7 @@ where
         on_enter: None,
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
+        insert_newline: InsertNewline::default(),
         // TODO?: disabled: false,
     }
 }
@@ -37,6 +38,7 @@ pub struct Textbox<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_brush: Brush,
     alignment: TextAlignment,
+    insert_newline: InsertNewline,
     // TODO: add more attributes of `masonry::widgets::TextBox`
 }
 
@@ -51,6 +53,12 @@ impl<State, Action> Textbox<State, Action> {
     /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     pub fn alignment(mut self, alignment: TextAlignment) -> Self {
         self.alignment = alignment;
+        self
+    }
+
+    /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
+    pub fn insert_newline(mut self, insert_newline: InsertNewline) -> Self {
+        self.insert_newline = insert_newline;
         self
     }
 
@@ -73,7 +81,8 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
             .with_brush(self.text_brush.clone())
-            .with_alignment(self.alignment);
+            .with_alignment(self.alignment)
+            .with_insert_newline(self.insert_newline);
         let textbox = widgets::Textbox::from_text_area(text_area);
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
@@ -108,6 +117,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         }
         if prev.alignment != self.alignment {
             widgets::TextArea::set_alignment(&mut text_area, self.alignment);
+        }
+        if prev.insert_newline != self.insert_newline {
+            widgets::TextArea::set_insert_newline(&mut text_area, self.insert_newline);
         }
     }
 
