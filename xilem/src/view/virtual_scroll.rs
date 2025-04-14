@@ -4,7 +4,7 @@
 use std::{collections::HashMap, marker::PhantomData, ops::Range};
 
 use masonry::{
-    core::Widget,
+    core::{FromDynWidget, Widget, WidgetPod},
     widgets::{self, VirtualScrollAction},
 };
 use private::VirtualScrollState;
@@ -13,8 +13,8 @@ use xilem_core::{AsyncCtx, DynMessage, MessageResult, View, ViewId, ViewMarker, 
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A virtual scrolling View, for Masonry's [`VirtualScroll`]
-pub struct VirtualScroll<State, Action, ChildrenViews, F, Element> {
-    phantom: PhantomData<fn() -> (Element, State, Action, ChildrenViews)>,
+pub struct VirtualScroll<State, Action, ChildrenViews, F, Element: ?Sized> {
+    phantom: PhantomData<fn() -> (WidgetPod<Element>, State, Action, ChildrenViews)>,
     // TODO: Work out whether `func` need to be zero sized?
     // TODO: Assume for the sake of argument that it does.
     func: F,
@@ -29,6 +29,7 @@ pub fn virtual_scroll<State, Action, ChildrenViews, F, Element>(
 where
     ChildrenViews: WidgetView<State, Action, Widget = Element>,
     F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+    Element: Widget + FromDynWidget + ?Sized,
 {
     VirtualScroll {
         phantom: PhantomData,
@@ -98,17 +99,18 @@ const fn index_for_view_id(id: ViewId) -> i64 {
 #[derive(Debug)]
 struct UpdateVirtualChildren;
 
-impl<State, Action, ChildrenViews, F, Element: Widget> ViewMarker
+impl<State, Action, ChildrenViews, F, Element: Widget + FromDynWidget + ?Sized> ViewMarker
     for VirtualScroll<State, Action, ChildrenViews, F, Element>
 {
 }
-impl<State, Action, Element: Widget, ChildrenViews, F> View<State, Action, ViewCtx>
+impl<State, Action, Element, ChildrenViews, F> View<State, Action, ViewCtx>
     for VirtualScroll<State, Action, ChildrenViews, F, Element>
 where
     State: 'static,
     Action: 'static,
     ChildrenViews: WidgetView<State, Action, Widget = Element>,
     F: Fn(&mut State, i64) -> ChildrenViews + 'static,
+    Element: Widget + FromDynWidget + ?Sized,
 {
     type Element = Pod<widgets::VirtualScroll<Element>>;
 
