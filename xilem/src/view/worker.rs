@@ -43,8 +43,7 @@ where
         assert!(
             size_of::<F>() == 0,
             "`worker` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `worker_raw`.
-            To provide an updating value to this task, use the "
+            To ignore this warning, use `worker_raw`."
         );
     };
     Worker {

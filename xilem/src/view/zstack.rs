@@ -4,9 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
-use masonry::widgets::{
-    Alignment, ChildAlignment, {self},
-};
+use masonry::widgets;
 use xilem_core::{MessageResult, ViewId};
 
 use crate::core::{
@@ -14,6 +12,8 @@ use crate::core::{
     ViewSequence,
 };
 use crate::{Pod, ViewCtx, WidgetView};
+
+pub use masonry::widgets::{Alignment, ChildAlignment};
 
 /// A widget that lays out its children on top of each other.
 /// The children are laid out back to front.
