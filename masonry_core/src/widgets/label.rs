@@ -447,15 +447,14 @@ impl Widget for Label {
     }
 
     fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
-        let window_origin = ctx.window_origin();
         self.accessibility.build_nodes(
             self.text.as_ref(),
             &self.text_layout,
             ctx.tree_update,
             node,
             || NodeId::from(WidgetId::next()),
-            window_origin.x + LABEL_X_PADDING,
-            window_origin.y,
+            LABEL_X_PADDING,
+            0.0,
         );
     }
 

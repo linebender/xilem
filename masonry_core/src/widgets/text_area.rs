@@ -1016,14 +1016,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let (fctx, lctx) = ctx.text_contexts();
         let layout = self.editor.layout(fctx, lctx);
         let is_rtl = layout.is_rtl();
-        let origin = ctx.window_origin();
         self.editor
             .try_accessibility(
                 ctx.tree_update,
                 node,
                 || NodeId::from(WidgetId::next()),
-                origin.x + self.padding.get_left(is_rtl),
-                origin.y + self.padding.top,
+                self.padding.get_left(is_rtl),
+                self.padding.top,
             )
             .expect("We just performed a layout");
     }
