@@ -7,19 +7,18 @@
 
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
 use masonry::widgets::Alignment;
-use tokio::sync::mpsc::Sender;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::fork;
 use xilem::view::{
-    ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, task_raw, virtual_scroll, zstack,
+    ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, LineBreaking, TextAlignment, WidgetView, Xilem, palette};
 use xilem_core::one_of::Either;
@@ -27,7 +26,6 @@ use xilem_core::one_of::Either;
 /// The main state of the application.
 struct VirtualCats {
     statuses: Vec<Status>,
-    tx: Option<Sender<u32>>,
 }
 
 #[derive(Debug)]
@@ -40,7 +38,6 @@ struct Status {
 #[derive(Debug)]
 /// The state of the download of an image from a URL
 enum ImageState {
-    NotRequested,
     Pending,
     // Error(?),
     Available(Image),
@@ -54,16 +51,45 @@ impl VirtualCats {
             .get_mut(index)
             .expect("VirtualScroll bounds set correctly.");
         let img = match &item.image {
-            ImageState::NotRequested => {
-                // We can't store the items to be scheduled in `self`, because the parent view isn't re-run when this function is executed
-                // This is for the reasonable reason that that could create a loop, if this weren't conditional.
-                // However, we probably should have an escape hatch for when this is conditional.
-                self.tx.as_ref().unwrap().blocking_send(item.code).unwrap();
-                item.image = ImageState::Pending;
-                None
-            }
             ImageState::Pending => None,
             ImageState::Available(image) => Some(image),
+        };
+        let task = if img.is_none() {
+            // Capturing the code is valid here, because this will never change for this view.
+            let code = item.code;
+            // If the cat is not loaded yet, we create a task to load it.
+            // N.B. If we wanted to batch requests, the lifecycle unfortunately gets a
+            // lot more complicated currently.
+            // Note that if this item scrolls offscreen, the ongoing load will be cancelled.
+            Some(xilem::view::task_raw(
+                move |proxy| {
+                    async move {
+                        let url = format!("https://http.cat/{code}");
+                        // Add an artificial delay to show how variable sizes work
+                        tokio::time::sleep(Duration::from_millis(300)).await;
+                        let result = image_from_url(&url).await;
+                        match result {
+                            // We choose not to handle the case where the event loop has ended
+                            Ok(image) => drop(proxy.message(image)),
+                            // TODO: Report in the frontend
+                            Err(err) => {
+                                tracing::warn!(
+                                    "Loading image for HTTP status code {code} from {url} failed: {err:?}"
+                                );
+                            }
+                        }
+                    }
+                },
+                move |state: &mut Self, image| {
+                    if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
+                        status.image = ImageState::Available(image);
+                    } else {
+                        // TODO: Error handling?
+                    }
+                },
+            ))
+        } else {
+            None
         };
         let img = if let Some(img) = img {
             let attribution = sized_box(
@@ -84,55 +110,11 @@ impl VirtualCats {
         } else {
             Either::B(sized_box(spinner()).width(80.).height(80.))
         };
-        flex((prose(item.message.clone()), img))
+        fork(flex((prose(item.message.clone()), img)), task)
     }
 
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
-        let rx = if self.tx.is_none() {
-            let (tx, rx) = tokio::sync::mpsc::channel(10);
-            self.tx = Some(tx);
-            Some(Mutex::new(Some(rx)))
-        } else {
-            None
-        };
-        fork(
-            virtual_scroll(0..self.statuses.len() as i64, Self::virtual_item),
-            // TODO: This is really awful...
-            // Ultimately, this doesn't really make sense as a view?
-            task_raw(
-                move |proxy| {
-                    let mut rx = rx.as_ref().unwrap().lock().unwrap().take().unwrap();
-                    async move {
-                        while let Some(code) = rx.recv().await {
-                            let proxy = proxy.clone();
-                            tokio::task::spawn(async move {
-                                let url = format!("https://http.cat/{code}");
-                                // Add an artificial delay to show how variable sizes work
-                                tokio::time::sleep(Duration::from_millis(300)).await;
-                                let result = image_from_url(&url).await;
-                                match result {
-                                    // We choose not to handle the case where the event loop has ended
-                                    Ok(image) => drop(proxy.message((code, image))),
-                                    // TODO: Report in the frontend
-                                    Err(err) => {
-                                        tracing::warn!(
-                                            "Loading image for HTTP status code {code} from {url} failed: {err:?}"
-                                        );
-                                    }
-                                }
-                            });
-                        }
-                    }
-                },
-                |state: &mut Self, (code, image): (u32, Image)| {
-                    if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
-                        status.image = ImageState::Available(image);
-                    } else {
-                        // TODO: Error handling?
-                    }
-                },
-            ),
-        )
+        virtual_scroll(0..self.statuses.len() as i64, Self::virtual_item)
     }
 }
 
@@ -155,7 +137,6 @@ async fn image_from_url(url: &str) -> anyhow::Result<Image> {
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = VirtualCats {
         statuses: Status::parse_file(),
-        tx: None,
     };
 
     let app = Xilem::new(data, VirtualCats::view);
@@ -183,7 +164,7 @@ impl Status {
         Some(Self {
             code: code.parse().ok()?,
             message: format!("{}:", message.trim()).into(),
-            image: ImageState::NotRequested,
+            image: ImageState::Pending,
         })
     }
 }
