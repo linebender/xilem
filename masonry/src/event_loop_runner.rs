@@ -557,11 +557,12 @@ impl MasonryState<'_> {
                 }
             }
             WinitWindowEvent::MouseWheel { delta, .. } => {
-                // TODO - This delta value doesn't quite make sense.
-                // Figure out and document a better standard.
                 let delta = match delta {
+                    // 120 pixels is the default in Chrome and various other software
+                    // (when not overridden by configuration).
+                    // This is arbitrary, but better than nothing.
                     winit::event::MouseScrollDelta::LineDelta(x, y) => {
-                        LogicalPosition::new(x as f64, y as f64)
+                        LogicalPosition::new(120. * x as f64, 120. * y as f64)
                     }
                     winit::event::MouseScrollDelta::PixelDelta(delta) => {
                         delta.to_logical(window.scale_factor())
