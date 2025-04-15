@@ -12,16 +12,33 @@ use xilem_core::{AsyncCtx, DynMessage, MessageResult, View, ViewId, ViewMarker, 
 
 use crate::{Pod, ViewCtx, WidgetView};
 
-/// A virtual scrolling View, for Masonry's [`VirtualScroll`]
+/// A (vertical) virtual scrolling View, for Masonry's [`VirtualScroll`](widgets::VirtualScroll).
+///
+/// Virtual scrolling is a technique to improve performance when scrolling through long lists, by
+/// only loading (and therefore laying out, drawing, processing for event handling), the items visible to the user.
+///
+/// The implementation has some caveats, which are discussed in the documentation of the [underlying widget](widgets::VirtualScroll).
+///
+/// Whenever this view is rebuilt, all of the loaded children are rebuild.
+/// The child creation function is a "component" context, (alike to the usual `app_logic` functions), which means
+/// that changing the app's state in this function will *not* cause a rebuild or rerunning of the app
+/// logic (this avoids infinite loops).
+/// It is correct for `func` to capture, if necessary.
+/// However, it also has access to the app's state, so this is unlikely to be needed.
 pub struct VirtualScroll<State, Action, ChildrenViews, F, Element: ?Sized> {
     phantom: PhantomData<fn() -> (WidgetPod<Element>, State, Action, ChildrenViews)>,
-    // TODO: Work out whether `func` need to be zero sized?
-    // TODO: Assume for the sake of argument that it does.
     func: F,
     valid_range: Range<i64>,
 }
 
 /// Component for [`VirtualScroll`].
+///
+/// Arguments:
+/// - `valid_range` is the range of ids which are supported.
+/// - `func` is the component for this element's children.
+///   It is provided with the app's state and the index of the child.
+///
+/// For full details, see the documentation on the [view type](VirtualScroll).
 pub fn virtual_scroll<State, Action, ChildrenViews, F, Element>(
     valid_range: Range<i64>,
     func: F,
@@ -39,6 +56,12 @@ where
 }
 
 /// Component for a [`VirtualScroll`] with unlimited children.
+///
+/// Arguments:
+/// - `func` is the component for this element's children.
+///   It is provided with the app's state and the index of the child.
+///
+/// For full details, see the documentation on the [view type](VirtualScroll).
 pub fn unlimited_virtual_scroll<State, Action, ChildrenViews, F, Element>(
     func: F,
 ) -> VirtualScroll<State, Action, ChildrenViews, F, Element>
