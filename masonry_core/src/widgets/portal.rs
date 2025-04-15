@@ -274,8 +274,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        const SCROLLING_SPEED: f64 = 10.0;
-
         let portal_size = ctx.size();
         let content_size = ctx
             .get_raw_ref(&mut self.child)
@@ -285,7 +283,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 
         match event {
             PointerEvent::MouseWheel(delta, _) => {
-                let delta = Vec2::new(delta.x * -SCROLLING_SPEED, delta.y * -SCROLLING_SPEED);
+                let delta = -Vec2::new(delta.x, delta.y);
                 self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
                 ctx.request_compose();
 

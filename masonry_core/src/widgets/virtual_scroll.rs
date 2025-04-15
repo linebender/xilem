@@ -472,11 +472,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _props: &mut PropertiesMut<'_>,
         event: &crate::core::PointerEvent,
     ) {
-        const SCROLLING_SPEED: f64 = 10.0;
-
         match event {
             PointerEvent::MouseWheel(delta, _) => {
-                let delta = delta.y * -SCROLLING_SPEED;
+                let delta = -delta.y;
                 self.scroll_offset_from_anchor += delta;
                 self.post_scroll(ctx);
             }
