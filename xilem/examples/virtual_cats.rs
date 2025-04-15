@@ -98,7 +98,7 @@ impl VirtualCats {
         fork(
             virtual_scroll(0..self.statuses.len() as i64, Self::virtual_item),
             // TODO: This is really awful...
-            // Ultimately, this doesn't really make snse as a view?
+            // Ultimately, this doesn't really make sense as a view?
             task_raw(
                 move |proxy| {
                     let mut rx = rx.as_ref().unwrap().lock().unwrap().take().unwrap();
