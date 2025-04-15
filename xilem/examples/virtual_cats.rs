@@ -10,6 +10,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use masonry::core::ArcStr;
 use masonry::widgets::Alignment;
 use tokio::sync::mpsc::Sender;
 use vello::peniko::{Blob, Image};
@@ -32,7 +33,7 @@ struct VirtualCats {
 #[derive(Debug)]
 struct Status {
     code: u32,
-    message: &'static str,
+    message: ArcStr,
     image: ImageState,
 }
 
@@ -83,7 +84,7 @@ impl VirtualCats {
         } else {
             Either::B(sized_box(spinner()).width(80.).height(80.))
         };
-        flex((img, prose(item.message)))
+        flex((prose(item.message.clone()), img))
     }
 
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
@@ -181,7 +182,7 @@ impl Status {
         let (code, message) = line.split_once(',')?;
         Some(Self {
             code: code.parse().ok()?,
-            message: message.trim(),
+            message: format!("{}:", message.trim()).into(),
             image: ImageState::NotRequested,
         })
     }
