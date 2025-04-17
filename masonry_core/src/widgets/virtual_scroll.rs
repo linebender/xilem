@@ -1007,7 +1007,7 @@ mod tests {
         assert_render_snapshot!(harness, "virtual_scroll_moved");
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::MouseWheel(
-            LogicalPosition::new(0., 2.5),
+            LogicalPosition::new(0., 25.),
             PointerState::empty(),
         ));
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
@@ -1199,7 +1199,7 @@ mod tests {
         }
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::MouseWheel(
-            LogicalPosition::new(0., -5.),
+            LogicalPosition::new(0., -50.),
             PointerState::empty(),
         ));
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
@@ -1212,7 +1212,7 @@ mod tests {
             assert_ne!(widget.active_range, original_range);
         }
         harness.process_pointer_event(PointerEvent::MouseWheel(
-            LogicalPosition::new(0., 6.),
+            LogicalPosition::new(0., 60.),
             PointerState::empty(),
         ));
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
