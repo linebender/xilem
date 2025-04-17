@@ -24,7 +24,7 @@ use masonry::parley::fontique;
 use masonry::peniko::Color;
 use winit::error::EventLoopError;
 use xilem::view::{
-    flex, grid, label, label as l, portal, prose, sized_box, Axis, GridExt, Label, Padding, Prose,
+    flex, grid, label, portal, prose, sized_box, Axis, GridExt, Label, Padding, Prose,
 };
 use xilem::{palette::css, EventLoop, FontWeight, LineBreaking, TextAlignment, WidgetView, Xilem};
 const LABEL_COLOR: Color = css::ROYAL_BLUE;
@@ -79,7 +79,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
     //   ).width(200f64).height(70f64).padding(Padding::from(0.))
     //    .background(css::LIGHT_GRAY) // .border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     // ,),
-    (l("  •grid in a 200×70 sized_box to make labels same-width (one per row in 4×1 table)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • grid in a 200×70 sized_box to make labels same-width (one per row in 4×1 table)").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(
         grid((
             lc("1/4 alignment Start"        ).alignment(TextAlignment::Start        ).grid_pos(0,0),
@@ -90,14 +90,14 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
         ).width(200_f64).height(70_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY) //.border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ,),
-    (l("  •unboxed (constrained by root parent's flex in a portal)\n  (Start=Middle: parent Flex container ≝CrossAxisAlignment::Center,\n  so the alignment for a label starts at the center)").alignment(TextAlignment::Justified).brush(m_c),
-    l("  can be fixed with a custom per-element override .flex(FlexParams::new(1.0,CrossAxisAlignment::Start))").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • unboxed (constrained by root parent's flex in a portal)\n  (Start=Middle: parent Flex container ≝CrossAxisAlignment::Center,\n  so the alignment for a label starts at the center)").alignment(TextAlignment::Justified).brush(m_c),
+    label("  can be fixed with a custom per-element override .flex(FlexParams::new(1.0,CrossAxisAlignment::Start))").alignment(TextAlignment::Justified).brush(m_c),
     lc("1/4 alignment Start"        ).alignment(TextAlignment::Start        ),
     lc("2/4 alignment Middle"       ).alignment(TextAlignment::Middle       ),
     lc("3/4 alignment End"          ).alignment(TextAlignment::End          ),
     lc("4/4 alignment Justified"    ).alignment(TextAlignment::Justified    ),
     ),
-    (l("  •flex in a 500×140 sized_box (🐞? unboxed .flex override removes Portal scrolling)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • flex in a 500×140 sized_box (🐞? unboxed .flex override removes Portal scrolling)").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(flex((
         lc("1/4 alignment Start"                                ).alignment(TextAlignment::Start        ),
         lc("1/4 alignment Start + CrossAxisAlignment::Start "   ).alignment(TextAlignment::Start        ).flex(FlexParams::new(1.0,CrossAxisAlignment::Start)),
@@ -110,7 +110,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
     ),
     (title_prose(format!("§{i} .line_break_mode")),{i+=1;},
     txt_prose("  3 options: ≝WordWrap Clip Overflow\n  https://docs.rs/masonry/latest/masonry/widget/enum.LineBreaking.html"),
-    l("  •grid in a 340×120 box to make labels same-width (one per row in 3×1 table)").alignment(TextAlignment::Justified).brush(m_c),
+    label("  • grid in a 340×120 box to make labels same-width (one per row in 3×1 table)").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(
         grid((
             lc("1/3 WordWrap: break at word boundaries = abcd-efgh-ijkl-mnop-qrst-uvwx-yz"  ).line_break_mode(LineBreaking::WordWrap    ).grid_pos(0,0),
