@@ -21,7 +21,7 @@ use vello::Scene;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef, find_widget_at_pos,
+    UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef, find_widget_under_pointer,
 };
 use crate::kurbo::{Point, Size};
 use crate::widgets::SizedBox;
@@ -453,13 +453,13 @@ impl<S: 'static> Widget for ModularWidget<S> {
         CursorIcon::Default
     }
 
-    fn find_widget_at_pos<'c>(
+    fn find_widget_under_pointer<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
         props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_at_pos(
+        find_widget_under_pointer(
             &WidgetRef {
                 widget: self,
                 properties: props,
@@ -709,13 +709,13 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.get_cursor(ctx, pos)
     }
 
-    fn find_widget_at_pos<'c>(
+    fn find_widget_under_pointer<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
         props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.child.find_widget_at_pos(ctx, props, pos)
+        self.child.find_widget_under_pointer(ctx, props, pos)
     }
 
     fn type_name(&self) -> &'static str {

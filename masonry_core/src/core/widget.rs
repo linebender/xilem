@@ -353,13 +353,13 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    fn find_widget_at_pos<'c>(
+    fn find_widget_under_pointer<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
         props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_at_pos(
+        find_widget_under_pointer(
             &WidgetRef {
                 widget: self.as_dyn(),
                 properties: props,
@@ -391,38 +391,43 @@ pub trait Widget: AsDynWidget + Any {
 }
 
 /// See [`Widget::find_widget_at_pos`] for more details.
-pub fn find_widget_at_pos<'c>(
+pub fn find_widget_under_pointer<'c>(
     widget: &WidgetRef<'c, dyn Widget>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
-    if widget.ctx.widget_state.bounding_rect.contains(pos) {
-        let local_pos = widget.ctx().widget_state.window_transform.inverse() * pos;
+    let ctx = widget.ctx();
 
-        if widget.ctx.is_stashed()
-            || Some(false) == widget.ctx.clip_path().map(|clip| clip.contains(local_pos))
-        {
+    if !ctx.bounding_rect().contains(pos) {
+        return None;
+    }
+    if ctx.is_stashed() {
+        return None;
+    }
+
+    let local_pos = ctx.window_transform().inverse() * pos;
+
+    if let Some(clip) = ctx.clip_path() {
+        if !clip.contains(local_pos) {
             return None;
         }
+    }
 
-        // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
-        // of overlapping children.
-        for child_id in widget.children_ids().iter().rev() {
-            let child_ref = widget.ctx.get(*child_id);
-            if let Some(child) =
-                child_ref
-                    .widget
-                    .find_widget_at_pos(child_ref.ctx, child_ref.properties, pos)
-            {
-                return Some(child);
-            }
-        }
-        if widget.ctx.accepts_pointer_interaction()
-            && widget.ctx.size().to_rect().contains(local_pos)
+    // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
+    // of overlapping children.
+    for child_id in widget.children_ids().iter().rev() {
+        let child_ref = ctx.get(*child_id);
+        if let Some(child) =
+            child_ref
+                .widget
+                .find_widget_under_pointer(child_ref.ctx, child_ref.properties, pos)
         {
-            Some(*widget)
-        } else {
-            None
+            return Some(child);
         }
+    }
+
+    // If no child is under pointer, test the current widget.
+    if ctx.accepts_pointer_interaction() && ctx.size().to_rect().contains(local_pos) {
+        Some(*widget)
     } else {
         None
     }

@@ -794,6 +794,13 @@ impl_context_method!(
             self.widget_state.window_origin()
         }
 
+        /// Global transform of this widget in the window coordinate space.
+        ///
+        /// Computed from all `transform` and `scroll_translation` values from this to the root widget.
+        pub fn window_transform(&self) -> Affine {
+            self.widget_state.window_transform
+        }
+
         /// The bounding rect of the widget in window coordinates.
         ///
         /// See [bounding rect documentation](crate::doc::doc_06_masonry_concepts#bounding-rect)

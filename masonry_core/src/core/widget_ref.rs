@@ -189,9 +189,9 @@ impl WidgetRef<'_, dyn Widget> {
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    pub fn find_widget_at_pos(&self, pos: Point) -> Option<Self> {
+    pub fn find_widget_under_pointer(&self, pos: Point) -> Option<Self> {
         self.widget
-            .find_widget_at_pos(self.ctx, self.properties, pos)
+            .find_widget_under_pointer(self.ctx, self.properties, pos)
     }
 }
 
