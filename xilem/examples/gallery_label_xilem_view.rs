@@ -16,8 +16,6 @@
 use masonry::dpi::LogicalSize;
 use winit::window::Window;
 use xilem::view::{CrossAxisAlignment, FlexExt, FlexParams};
-#[derive(Default)]
-struct AppState {}
 
 use masonry::core::ArcStr;
 use masonry::parley::fontique;
@@ -27,7 +25,11 @@ use xilem::view::{
     flex, grid, label, portal, prose, sized_box, Axis, GridExt, Label, Padding, Prose,
 };
 use xilem::{palette::css, EventLoop, FontWeight, LineBreaking, TextAlignment, WidgetView, Xilem};
+
 const LABEL_COLOR: Color = css::ROYAL_BLUE;
+
+#[derive(Default)]
+struct AppState {}
 
 fn title_prose(text: impl Into<ArcStr>) -> Prose {
     prose(text)
