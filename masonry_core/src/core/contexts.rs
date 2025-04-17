@@ -3,6 +3,8 @@
 
 //! The context types that are passed into various widget methods.
 
+use std::any::Any;
+
 use accesskit::TreeUpdate;
 use anymap3::AnyMap;
 use dpi::LogicalPosition;
@@ -158,7 +160,9 @@ impl_context_method!(
                 .widget_children
                 .item(child.id())
                 .expect("get_child: child not found");
-            child_ref.item.as_dyn_any().downcast_ref::<Child>().unwrap()
+            (child_ref.item as &dyn Any)
+                .downcast_ref::<Child>()
+                .unwrap()
         }
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
@@ -168,7 +172,7 @@ impl_context_method!(
                 .widget_children
                 .item(child.id())
                 .expect("get_child: child not found");
-            child_ref.item.as_dyn()
+            &**child_ref.item
         }
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]

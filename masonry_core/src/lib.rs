@@ -63,4 +63,4 @@ pub use vello::{kurbo, peniko};
 pub use {cursor_icon, dpi, parley, vello};
 
 // TODO - Move to core?
-pub use util::{AsAny, Handled, UnitPoint};
+pub use util::{Handled, UnitPoint};

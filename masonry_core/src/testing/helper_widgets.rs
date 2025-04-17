@@ -18,7 +18,6 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 
-use crate::AsAny;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
@@ -477,14 +476,6 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn short_type_name(&self) -> &'static str {
         "ModularWidget"
     }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self.as_dyn_any()
-    }
-
-    fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
-        self.as_mut_dyn_any()
-    }
 }
 
 impl ReplaceChild {
@@ -733,13 +724,5 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn short_type_name(&self) -> &'static str {
         "Recorder"
-    }
-
-    fn as_any(&self) -> &dyn std::any::Any {
-        self.child.as_any()
-    }
-
-    fn as_mut_any(&mut self) -> &mut dyn std::any::Any {
-        self.child.as_mut_any()
     }
 }
