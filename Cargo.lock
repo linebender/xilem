@@ -1967,7 +1967,6 @@ dependencies = [
  "image",
  "insta",
  "keyboard-types",
- "once_cell",
  "oxipng",
  "parley",
  "pollster",

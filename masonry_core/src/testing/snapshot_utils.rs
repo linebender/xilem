@@ -10,11 +10,9 @@ use std::env;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use once_cell::sync::Lazy;
 use serde::Deserialize;
 
-static WORKSPACES: Lazy<Mutex<BTreeMap<String, Arc<PathBuf>>>> =
-    Lazy::new(|| Mutex::new(BTreeMap::new()));
+static WORKSPACES: Mutex<BTreeMap<String, Arc<PathBuf>>> = Mutex::new(BTreeMap::new());
 
 /// Return the cargo workspace for a manifest
 pub(crate) fn get_cargo_workspace(manifest_dir: &str) -> Arc<PathBuf> {
