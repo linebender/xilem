@@ -30,7 +30,7 @@ pub use events::{
 pub use object_fit::ObjectFit;
 pub use properties::{Properties, PropertiesMut, PropertiesRef};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
-pub use widget::find_widget_at_pos;
+pub use widget::find_widget_under_pointer;
 pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
