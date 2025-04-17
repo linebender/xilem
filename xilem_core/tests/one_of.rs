@@ -8,7 +8,7 @@
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::one_of::{OneOf, OneOf2, OneOfCtx, PhantomElementCtx};
-use xilem_core::{MessageResult, Mut, View, ViewId};
+use xilem_core::{DynMessage, MessageResult, Mut, View, ViewId};
 
 mod common;
 use common::*;
@@ -231,7 +231,7 @@ fn one_of_passthrough_message() {
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, Box::new(()), &mut ());
+    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
 }
 
@@ -255,7 +255,7 @@ fn one_of_no_message_after_stale() {
         ]
     );
 
-    let result = view2.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }
 
@@ -293,6 +293,6 @@ fn one_of_no_message_after_stale_then_same_type() {
         ]
     );
 
-    let result = view3.message(&mut state, &path, Box::new(()), &mut ());
+    let result = view3.message(&mut state, &path, DynMessage::new(()), &mut ());
     assert!(matches!(result, MessageResult::Stale(_)));
 }

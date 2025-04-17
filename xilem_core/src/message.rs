@@ -42,82 +42,75 @@ impl<A, Message> MessageResult<A, Message> {
     }
 }
 
-/// A dynamically typed message for the [`View`] trait.
+/// A simple dynamically typed message for the [`View`] trait.
 ///
-/// Mostly equivalent to `Box<dyn Any>`, but with support for debug printing.
-// We can't use intra-doc links here because of rustdoc doesn't understand impls on `dyn Message`
-/// The primary interface for this type is [`dyn Message::downcast`](trait.Message.html#method.downcast).
+/// This is a thin wrapper around `Box<dyn Any>`, with added support for debug printing.
+/// It is used as the default message type in Xilem Core.
+/// The contained messages must also be [`Send`], which makes using this message type in a multithreaded context easier.
+/// [`View`] is generic over the message type, in case this requirement is too restrictive.
+/// Indeed, this functionality is used in Xilem Web.
 ///
-/// These messages must also be [`Send`].
-/// This makes using this message type in a multithreaded context easier.
+/// To convert a `DynMessage` into its concrete message type, you should use
+/// [`downcast`](Self::downcast).
+///
+/// This type is a struct rather than (say) a type alias, because type aliases are sometimes resolved by
+/// rust-analyzer when autofilling a trait, which can also lead to buggy behaviour (we've previously seen
+/// `Box<dyn Box<dyn Message>>` be generated).
+///
+/// If the message contains sensitive data, make sure this isn't output in its `Debug` implementation,
+/// as that may be called by the Xilem runtime (e.g. due to a bug meaning messages are redirected) or
+/// any parent views. (That is, views do not need to design themselves as if the Debug implementation is )
 ///
 /// [`View`]: crate::View
-pub type DynMessage = Box<dyn Message>;
-/// Types which can be contained in a [`DynMessage`].
-// The `View` trait could have been made generic over the message type,
-// primarily to enable flexibility around Send/Sync and avoid the need
-// for allocation.
-pub trait Message: 'static + Send {
-    /// Convert `self` into a [`Box<dyn Any>`].
-    fn into_any(self: Box<Self>) -> Box<dyn Any + Send>;
-    /// Convert `self` into a [`Box<dyn Any>`].
-    fn as_any(&self) -> &(dyn Any + Send);
-    /// Gets the debug representation of this message.
-    fn dyn_debug(&self) -> &dyn Debug;
-}
+#[derive(Debug)]
+pub struct DynMessage(pub Box<dyn AnyMessage>);
 
-impl<T> Message for T
-where
-    T: Any + Debug + Send,
-{
-    fn into_any(self: Box<Self>) -> Box<dyn Any + Send> {
-        self
+impl DynMessage {
+    /// Utility to make a `DynMessage` from a message value.
+    pub fn new(x: impl AnyMessage) -> Self {
+        Self(Box::new(x))
     }
-    fn as_any(&self) -> &(dyn Any + Send) {
-        self
-    }
-    fn dyn_debug(&self) -> &dyn Debug {
-        self
-    }
-}
-
-impl dyn Message {
     /// Access the actual type of this [`DynMessage`].
     ///
-    /// In most cases, this will be unwrapped, as each [`View`](crate::View) will
-    /// coordinate with their runner and/or element type to only receive messages
-    /// of a single, expected, underlying type.
+    /// ## Errors
+    ///
+    /// If the message contained within `self` is not of type `T`, returns `self`
+    /// (so that e.g. a different type can be used).
+    ///
+    /// In most cases, to handle this error, you will want to make an `error` log,
+    /// and return this as [`MessageResult::Stale`]; this case indicates that a parent
+    /// view has routed things incorrectly, but it's reasonable to be robust.
+    pub fn downcast<T: AnyMessage>(self) -> Result<Box<T>, Self> {
+        self.0.downcast().map_err(Self)
+    }
+}
+
+/// Types which can be used in [`DynMessage`] (and so can be the messages for Xilem views).
+///
+/// The `Debug` requirement allows inspecting messages which were sent to the wrong place.
+// TODO: Should/Could we remove the `Send` requirement here?
+// It's not like implementing message handling in parallel is a meaningful operation.
+// (If you need to send one, you can always use `dyn AnyMessage + Send`)
+// Making that change would mean we could make View no longer generic over the message type again.
+pub trait AnyMessage: Any + Debug + Send {}
+impl<T> AnyMessage for T where T: Any + Debug + Send {}
+
+impl dyn AnyMessage {
+    /// Access the actual type of this [`DynMessage`].
     ///
     /// ## Errors
     ///
     /// If the message contained within `self` is not of type `T`, returns `self`
     /// (so that e.g. a different type can be used)
-    pub fn downcast<T: Message>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        if self.deref().as_any().is::<T>() {
-            Ok(self
-                .into_any()
-                .downcast::<T>()
-                .expect("`as_any` should correspond with `into_any`"))
+    fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
+        let this: &dyn Any = self.deref();
+        if this.is::<T>() {
+            Ok((self as Box<dyn Any>).downcast::<T>().unwrap())
         } else {
             Err(self)
         }
     }
 }
-
-impl Debug for dyn Message {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        let inner = self.dyn_debug();
-        f.debug_tuple("Message").field(&inner).finish()
-    }
-}
-
-/* /// Types which can route a message to a child [`View`].
-// TODO: This trait needs to exist for desktop hot reloading
-// This would be a supertrait of View
-pub trait ViewMessage<State, Action> {
-    type ViewState;
-}
-*/
 
 #[cfg(test)]
 mod tests {
@@ -132,7 +125,7 @@ mod tests {
 
     impl Debug for MyMessage {
         fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-            f.write_str("A present message")
+            f.write_fmt(format_args!("A present message: {:?}", self.0))
         }
     }
 
@@ -140,27 +133,28 @@ mod tests {
     struct NotMyMessage;
 
     #[test]
-    /// Downcasting a message to the correct type should work
+    /// Downcasting a message to the correct type should work.
     fn message_downcast() {
-        let message: DynMessage = Box::new(MyMessage("test".to_string()));
+        let message = DynMessage::new(MyMessage("test".to_string()));
         let result: Box<MyMessage> = message.downcast().unwrap();
         assert_eq!(&result.0, "test");
     }
     #[test]
-    /// Downcasting a message to the wrong type shouldn't panic
+    /// Downcasting a message to the wrong type shouldn't panic, and should allow
+    /// using the message with the right type.
     fn message_downcast_wrong_type() {
-        let message: DynMessage = Box::new(MyMessage("test".to_string()));
+        let message = DynMessage::new(MyMessage("test".to_string()));
         let message = message.downcast::<NotMyMessage>().unwrap_err();
         let result: Box<MyMessage> = message.downcast().unwrap();
         assert_eq!(&result.0, "test");
     }
 
     #[test]
-    /// `DynMessage`'s debug should pass through the debug implementation of
+    /// `DynMessage`'s debug should pass through the debug implementation of.
     fn message_debug() {
-        let message: DynMessage = Box::new(MyMessage("".to_string()));
+        let message = DynMessage::new(MyMessage("".to_string()));
         let debug_result = format!("{message:?}");
-        // Note that we
+
         assert!(debug_result.contains("A present message"));
     }
 }

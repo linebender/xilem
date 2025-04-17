@@ -10,7 +10,7 @@
 
 mod common;
 use common::*;
-use xilem_core::View;
+use xilem_core::{DynMessage, View};
 
 fn record_ops(id: u32) -> OperationView<0> {
     OperationView(id)
@@ -63,7 +63,7 @@ fn one_element_passthrough() {
         &[Operation::Build(0), Operation::Rebuild { from: 0, to: 2 }]
     );
 
-    let result = view2.message(&mut state, &[], Box::new(()), &mut ());
+    let result = view2.message(&mut state, &[], DynMessage::new(()), &mut ());
     // The message should have been routed to the only child
     assert_action(result, 2);
 
@@ -192,10 +192,10 @@ fn two_element_message() {
     assert_eq!(second_child.operations, &[Operation::Build(1)]);
     let second_path = second_child.view_path.to_vec();
 
-    let result = view.message(&mut state, &first_path, Box::new(()), &mut ());
+    let result = view.message(&mut state, &first_path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
 
-    let result = view.message(&mut state, &second_path, Box::new(()), &mut ());
+    let result = view.message(&mut state, &second_path, DynMessage::new(()), &mut ());
     assert_action(result, 1);
 }
 

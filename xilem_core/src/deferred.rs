@@ -6,7 +6,7 @@ use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
+use crate::{AnyMessage, DynMessage, NoElement, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
@@ -59,13 +59,13 @@ impl<Message: 'static> Debug for dyn RawProxy<Message> {
 
 /// A way to send a message of an expected type to a specific view.
 #[derive(Debug)]
-pub struct MessageProxy<M: Message> {
+pub struct MessageProxy<M: AnyMessage> {
     proxy: Arc<dyn RawProxy<DynMessage>>,
     path: Arc<[ViewId]>,
     message: PhantomData<fn(M)>,
 }
 
-impl<M: Message> Clone for MessageProxy<M> {
+impl<M: AnyMessage> Clone for MessageProxy<M> {
     fn clone(&self) -> Self {
         Self {
             proxy: self.proxy.clone(),
@@ -75,7 +75,7 @@ impl<M: Message> Clone for MessageProxy<M> {
     }
 }
 
-impl<M: Message> MessageProxy<M> {
+impl<M: AnyMessage> MessageProxy<M> {
     /// Create a new `MessageProxy`
     pub fn new(proxy: Arc<dyn RawProxy<DynMessage>>, path: Arc<[ViewId]>) -> Self {
         Self {
@@ -95,7 +95,7 @@ impl<M: Message> MessageProxy<M> {
     /// This method is currently not expected to return `ViewExpired`, as it does not block.
     pub fn message(&self, message: M) -> Result<(), ProxyError> {
         self.proxy
-            .send_message(self.path.clone(), Box::new(message))
+            .send_message(self.path.clone(), DynMessage::new(message))
     }
 }
 
