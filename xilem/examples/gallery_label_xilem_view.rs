@@ -69,18 +69,6 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
     title_prose(format!("§ {i} .alignment")),{i+=1;},
     txt_prose("  4 options: ≝Start Middle End Justified\n  https://docs.rs/parley/latest/parley/layout/enum.Alignment.html")
     ),
-    // doesn't seem to be different now vs unconstrained
-    // (lc("  •flex in a 200×70 box to show impact of constraints ").alignment(TextAlignment::Start),
-    // sized_box(
-    //   flex((
-    //     lc("1/4 alignment Start"     ).alignment(TextAlignment::Start        ),
-    //     lc("2/4 alignment Middle"    ).alignment(TextAlignment::Middle       ),
-    //     lc("3/4 alignment End"       ).alignment(TextAlignment::End          ),
-    //     lc("4/4 alignment Justified" ).alignment(TextAlignment::Justified    ),
-    //   ))
-    //   ).width(200f64).height(70f64).padding(Padding::from(0.))
-    //    .background(css::LIGHT_GRAY) // .border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
-    // ,),
     (label("  • grid in a 200×70 sized_box to make labels same-width (one per row in 4×1 table)").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(
         grid((
