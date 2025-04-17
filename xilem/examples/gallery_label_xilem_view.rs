@@ -7,9 +7,6 @@
 // add the same code in a context menu as a "copy" command
 // add URL support for doc links
 // add non-desktop platforms
-// add to a CI build so you can simply download a binary and use it as a reference
-//   have both debug/release builds so that you can use F11/F12 inspectors?
-//     is a release build useful for basic examples?
 
 #![allow(
     unused_assignments,
