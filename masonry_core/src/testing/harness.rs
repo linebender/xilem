@@ -514,7 +514,7 @@ impl TestHarness {
         if self
             .render_root
             .get_root_widget()
-            .find_widget_at_pos(widget_center)
+            .find_widget_under_pointer(widget_center)
             .map(|w| w.id())
             != Some(id)
         {

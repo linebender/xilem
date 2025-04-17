@@ -27,7 +27,7 @@ fn get_pointer_target(
         let pointer_pos = (pointer_pos.x, pointer_pos.y).into();
         return root
             .get_root_widget()
-            .find_widget_at_pos(pointer_pos)
+            .find_widget_under_pointer(pointer_pos)
             .map(|widget| widget.id());
     }
 
