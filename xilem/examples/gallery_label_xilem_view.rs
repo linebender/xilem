@@ -64,7 +64,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
         .brush(l_c) //impl Into<peniko:Brush> brush sets text color, but gradients and images are also supported Solid(color::AlphaColor<Srgb>) Gradient(Gradient) Image(Image),
         .line_break_mode(LineBreaking::Overflow) //WordWrap Clip Overflow
         ,
-    title_prose(format!("§{i} .alignment")),{i+=1;},
+    title_prose(format!("§ {i} .alignment")),{i+=1;},
     txt_prose("  4 options: ≝Start Middle End Justified\n  https://docs.rs/parley/latest/parley/layout/enum.Alignment.html")
     ),
     // doesn't seem to be different now vs unconstrained
@@ -108,7 +108,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
         ).width(500_f64).height(140_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY) //.border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ),
-    (title_prose(format!("§{i} .line_break_mode")),{i+=1;},
+    (title_prose(format!("§ {i} .line_break_mode")),{i+=1;},
     txt_prose("  3 options: ≝WordWrap Clip Overflow\n  https://docs.rs/masonry/latest/masonry/widget/enum.LineBreaking.html"),
     label("  • grid in a 340×120 box to make labels same-width (one per row in 3×1 table)").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(
@@ -121,7 +121,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
          .background(css::LIGHT_GRAY)
     ),
 
-    (title_prose(format!("§{i}a .font")),
+    (title_prose(format!("§ {i}a .font")),
     txt_prose(" (some options might be invisible due to missing fonts. 🐞❓font substitution?)"),
     flex((
         (lc("1Times New Roman"  ).font("Times New Roman"    ),
@@ -131,7 +131,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
         lc("5Verdana"           ).font("Verdana"            ),
         ),
     )).direction(Axis::Horizontal),
-    title_prose(format!("§{i}b .font(fontique::GenericFamily::↓)")),{i+=1;},
+    title_prose(format!("§ {i}b .font(fontique::GenericFamily::↓)")),{i+=1;},
     flex((
         lc("1Serif"     ).font(fontique::GenericFamily::Serif       ),
         lc("2SansSerif" ).font(fontique::GenericFamily::SansSerif   ),
@@ -154,7 +154,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
     )).direction(Axis::Horizontal),
     ),
 
-    (title_prose(format!("§{i} Unsupported Masonry options")),{i+=1;},
+    (title_prose(format!("§ {i} Unsupported Masonry options")),{i+=1;},
     txt_prose("  hinting, disabled color, styles (underline, strikethrough, word/letter spacing, font features etc. https://docs.rs/parley/latest/parley/style/enum.StyleProperty.html)"),
     ),
     ))//flex
