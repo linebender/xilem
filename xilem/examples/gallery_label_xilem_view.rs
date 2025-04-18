@@ -239,7 +239,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
     sized_box(
         grid((
             lc("1/3 WordWrap: break at word boundaries = abcd-efgh-ijkl-mnop-qrst-uvwx-yz"  ).line_break_mode(LineBreaking::WordWrap    ).grid_pos(0,0),
-            lc("2/3 Clip    : truncate to label's width = abcd-efgh-ijkl-mnop-qrst-uvwx-yz" ).line_break_mode(LineBreaking::Clip        ).grid_pos(0,1),
+            lc("2/3 Clip: truncate to label's width = abcd-efgh-ijkl-mnop-qrst-uvwx-yz" ).line_break_mode(LineBreaking::Clip        ).grid_pos(0,1),
             lc("3/3 Overflow: overflow the label = abcd-efgh-ijkl-mnop-qrst-uvwx-yz"        ).line_break_mode(LineBreaking::Overflow    ).grid_pos(0,2),
             ),1,3,).spacing(0.0)
         ).width(340_f64).height(120_f64).padding(Padding::from(0.))
@@ -247,7 +247,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
     ),
 
     (title_prose(format!("§ {i}a .font")),
-    txt_prose(" (some options might be invisible due to missing fonts. 🐞❓font substitution?)"),
+    txt_prose(" (5 examples, some might be invisible due to missing fonts. 🐞❓font substitution?)"),
     flex((
         (lc("1Times New Roman"  ).font("Times New Roman"    ),
         lc("2Arial"             ).font("Arial"              ),
