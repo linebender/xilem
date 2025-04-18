@@ -183,7 +183,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> {
       ).width(200f64).height(170f64).padding(Padding::from(0.))
        .background(css::LIGHT_GRAY) // .border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ,),
-    (label("  • grid in a 200×170 sized_box to make labels same-width (one per row in 4×1 table; buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • grid in a 200×170 sized_box to make labels same-width (one per row in a 4×1 table; buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
       button("Δ1/4", |d:&mut AppState|{d.realign("l2i1");}),
       button("Δ2/4", |d:&mut AppState|{d.realign("l2i2");}),
@@ -233,7 +233,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> {
     ),
     {i+=1;},(title_prose(format!("§ {i} .line_break_mode")),
     txt_prose("  3 options: ≝WordWrap Clip Overflow\n  https://docs.rs/masonry/latest/masonry/widget/enum.LineBreaking.html"),
-    label("  • grid in a 340×120 box to make labels same-width (one per row in 3×1 table)").alignment(TextAlignment::Justified).brush(m_c),
+    label("  • grid in a 340×120 box to make labels same-width (one per row in a 3×1 table)").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(
         grid((
             lc("1/3 WordWrap: break at word boundaries = abcd-efgh-ijkl-mnop-qrst-uvwx-yz"  ).line_break_mode(LineBreaking::WordWrap    ).grid_pos(0,0),
