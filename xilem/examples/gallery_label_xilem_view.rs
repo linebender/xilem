@@ -8,8 +8,8 @@
 // add URL support for doc links
 // add non-desktop platforms
 
-use tracing::warn;
 use masonry::dpi::LogicalSize;
+use tracing::warn;
 use winit::window::Window;
 use xilem::view::{CrossAxisAlignment, FlexExt, FlexParams};
 
@@ -25,84 +25,105 @@ use xilem::{palette::css, EventLoop, FontWeight, LineBreaking, TextAlignment, Wi
 const LABEL_COLOR: Color = css::ROYAL_BLUE;
 
 struct AppState {
-    l1i1:TextAlignment,
-    l1i2:TextAlignment,
-    l1i3:TextAlignment,
-    l1i4:TextAlignment,
-    l2i1:TextAlignment,
-    l2i2:TextAlignment,
-    l2i3:TextAlignment,
-    l2i4:TextAlignment,
-    l3i1:TextAlignment,
-    l3i2:TextAlignment,
-    l3i3:TextAlignment,
-    l3i4:TextAlignment,
-    l4i1:TextAlignment,
-    l4i1x:CrossAxisAlignment,
-    l4i2:TextAlignment,
-    l4i3:TextAlignment,
-    l4i4:TextAlignment,
+    l1i1: TextAlignment,
+    l1i2: TextAlignment,
+    l1i3: TextAlignment,
+    l1i4: TextAlignment,
+    l2i1: TextAlignment,
+    l2i2: TextAlignment,
+    l2i3: TextAlignment,
+    l2i4: TextAlignment,
+    l3i1: TextAlignment,
+    l3i2: TextAlignment,
+    l3i3: TextAlignment,
+    l3i4: TextAlignment,
+    l4i1: TextAlignment,
+    l4i1x: CrossAxisAlignment,
+    l4i2: TextAlignment,
+    l4i3: TextAlignment,
+    l4i4: TextAlignment,
 }
-impl Default for AppState { fn default() -> AppState {
-    AppState {
-        l1i1: TextAlignment::Start ,
-        l1i2: TextAlignment::Middle,
-        l1i3: TextAlignment::End,
-        l1i4: TextAlignment::Justified,
-        l2i1: TextAlignment::Start ,
-        l2i2: TextAlignment::Middle,
-        l2i3: TextAlignment::End,
-        l2i4: TextAlignment::Justified,
-        l3i1: TextAlignment::Start ,
-        l3i2: TextAlignment::Middle,
-        l3i3: TextAlignment::End,
-        l3i4: TextAlignment::Justified,
-        l4i1: TextAlignment::Start ,
-        l4i1x: CrossAxisAlignment::Start ,
-        l4i2: TextAlignment::Middle,
-        l4i3: TextAlignment::End,
-        l4i4: TextAlignment::Justified,
-  }}
+impl Default for AppState {
+    fn default() -> AppState {
+        AppState {
+            l1i1: TextAlignment::Start,
+            l1i2: TextAlignment::Middle,
+            l1i3: TextAlignment::End,
+            l1i4: TextAlignment::Justified,
+            l2i1: TextAlignment::Start,
+            l2i2: TextAlignment::Middle,
+            l2i3: TextAlignment::End,
+            l2i4: TextAlignment::Justified,
+            l3i1: TextAlignment::Start,
+            l3i2: TextAlignment::Middle,
+            l3i3: TextAlignment::End,
+            l3i4: TextAlignment::Justified,
+            l4i1: TextAlignment::Start,
+            l4i1x: CrossAxisAlignment::Start,
+            l4i2: TextAlignment::Middle,
+            l4i3: TextAlignment::End,
+            l4i4: TextAlignment::Justified,
+        }
+    }
 }
-fn text_align_cycle(cur:&TextAlignment) -> TextAlignment {
+fn text_align_cycle(cur: &TextAlignment) -> TextAlignment {
     match cur {
-        TextAlignment::Start     => TextAlignment::Middle,
-        TextAlignment::Middle    => TextAlignment::End,
-        TextAlignment::End       => TextAlignment::Justified,
+        TextAlignment::Start => TextAlignment::Middle,
+        TextAlignment::Middle => TextAlignment::End,
+        TextAlignment::End => TextAlignment::Justified,
         TextAlignment::Justified => TextAlignment::Start,
     }
 }
-fn text_x_align_cycle(cur:&CrossAxisAlignment) -> CrossAxisAlignment {
+fn text_x_align_cycle(cur: &CrossAxisAlignment) -> CrossAxisAlignment {
     match cur {
-        CrossAxisAlignment::Start    => CrossAxisAlignment::Center,
-        CrossAxisAlignment::Center   => CrossAxisAlignment::End,
-        CrossAxisAlignment::End      => CrossAxisAlignment::Baseline,
+        CrossAxisAlignment::Start => CrossAxisAlignment::Center,
+        CrossAxisAlignment::Center => CrossAxisAlignment::End,
+        CrossAxisAlignment::End => CrossAxisAlignment::Baseline,
         CrossAxisAlignment::Baseline => CrossAxisAlignment::Fill,
-        CrossAxisAlignment::Fill     => CrossAxisAlignment::Start,
+        CrossAxisAlignment::Fill => CrossAxisAlignment::Start,
     }
 }
 
 impl AppState {
-    fn realign(&mut self, pos:impl AsRef<str> + std::fmt::Debug) {
+    fn realign(&mut self, pos: impl AsRef<str> + std::fmt::Debug) {
         let p = pos.as_ref();
-        if       p=="l1i1" {self.l1i1 = text_align_cycle(&self.l1i1)
-        }else if p=="l1i2" {self.l1i2 = text_align_cycle(&self.l1i2)
-        }else if p=="l1i3" {self.l1i3 = text_align_cycle(&self.l1i3)
-        }else if p=="l1i4" {self.l1i4 = text_align_cycle(&self.l1i4)
-        }else if p=="l2i1" {self.l2i1 = text_align_cycle(&self.l2i1)
-        }else if p=="l2i2" {self.l2i2 = text_align_cycle(&self.l2i2)
-        }else if p=="l2i3" {self.l2i3 = text_align_cycle(&self.l2i3)
-        }else if p=="l2i4" {self.l2i4 = text_align_cycle(&self.l2i4)
-        }else if p=="l3i1" {self.l3i1 = text_align_cycle(&self.l3i1)
-        }else if p=="l3i2" {self.l3i2 = text_align_cycle(&self.l3i2)
-        }else if p=="l3i3" {self.l3i3 = text_align_cycle(&self.l3i3)
-        }else if p=="l3i4" {self.l3i4 = text_align_cycle(&self.l3i4)
-        }else if p=="l4i1" {self.l4i1 = text_align_cycle(&self.l4i1)
-        }else if p=="l4i2" {self.l4i2 = text_align_cycle(&self.l4i2)
-        }else if p=="l4i3" {self.l4i3 = text_align_cycle(&self.l4i3)
-        }else if p=="l4i4" {self.l4i4 = text_align_cycle(&self.l4i4)
-        }else if p=="l4i1x" {self.l4i1x = text_x_align_cycle(&self.l4i1x)
-        }else              {warn!("expecting either of ‘l1–4i1–4’ or ‘l4i1x’, got {:?}",pos)}
+        if p == "l1i1" {
+            self.l1i1 = text_align_cycle(&self.l1i1)
+        } else if p == "l1i2" {
+            self.l1i2 = text_align_cycle(&self.l1i2)
+        } else if p == "l1i3" {
+            self.l1i3 = text_align_cycle(&self.l1i3)
+        } else if p == "l1i4" {
+            self.l1i4 = text_align_cycle(&self.l1i4)
+        } else if p == "l2i1" {
+            self.l2i1 = text_align_cycle(&self.l2i1)
+        } else if p == "l2i2" {
+            self.l2i2 = text_align_cycle(&self.l2i2)
+        } else if p == "l2i3" {
+            self.l2i3 = text_align_cycle(&self.l2i3)
+        } else if p == "l2i4" {
+            self.l2i4 = text_align_cycle(&self.l2i4)
+        } else if p == "l3i1" {
+            self.l3i1 = text_align_cycle(&self.l3i1)
+        } else if p == "l3i2" {
+            self.l3i2 = text_align_cycle(&self.l3i2)
+        } else if p == "l3i3" {
+            self.l3i3 = text_align_cycle(&self.l3i3)
+        } else if p == "l3i4" {
+            self.l3i4 = text_align_cycle(&self.l3i4)
+        } else if p == "l4i1" {
+            self.l4i1 = text_align_cycle(&self.l4i1)
+        } else if p == "l4i2" {
+            self.l4i2 = text_align_cycle(&self.l4i2)
+        } else if p == "l4i3" {
+            self.l4i3 = text_align_cycle(&self.l4i3)
+        } else if p == "l4i4" {
+            self.l4i4 = text_align_cycle(&self.l4i4)
+        } else if p == "l4i1x" {
+            self.l4i1x = text_x_align_cycle(&self.l4i1x)
+        } else {
+            warn!("expecting either of ‘l1–4i1–4’ or ‘l4i1x’, got {:?}", pos)
+        }
     }
 }
 
