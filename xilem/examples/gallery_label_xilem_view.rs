@@ -68,9 +68,11 @@ impl Default for AppState {
 }
 fn text_align_cycle(cur: &TextAlignment) -> TextAlignment {
     match cur {
-        TextAlignment::Start => TextAlignment::Middle,
+        TextAlignment::Start => TextAlignment::Left,
+        TextAlignment::Left => TextAlignment::Middle,
         TextAlignment::Middle => TextAlignment::End,
-        TextAlignment::End => TextAlignment::Justified,
+        TextAlignment::End => TextAlignment::Right,
+        TextAlignment::Right => TextAlignment::Justified,
         TextAlignment::Justified => TextAlignment::Start,
     }
 }
@@ -163,7 +165,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> {
         .line_break_mode(LineBreaking::Overflow) //WordWrap Clip Overflow
         ,
     {i+=1;},title_prose(format!("§ {i} .alignment")),
-    txt_prose("  4 options: ≝Start Middle End Justified\n  https://docs.rs/parley/latest/parley/layout/enum.Alignment.html")
+    txt_prose("  6 options: ≝Start Middle End Justified Left Right\n  https://docs.rs/parley/latest/parley/layout/enum.Alignment.html")
     ),
     (label("  • flex in a 200×170 sized_box to show the impact of constraints (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
