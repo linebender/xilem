@@ -18,9 +18,9 @@ use masonry::parley::fontique;
 use masonry::peniko::Color;
 use winit::error::EventLoopError;
 use xilem::view::{
-    button, flex, grid, label, portal, prose, sized_box, Axis, GridExt, Label, Padding, Prose,
+    Axis, GridExt, Label, Padding, Prose, button, flex, grid, label, portal, prose, sized_box,
 };
-use xilem::{palette::css, EventLoop, FontWeight, LineBreaking, TextAlignment, WidgetView, Xilem};
+use xilem::{EventLoop, FontWeight, LineBreaking, TextAlignment, WidgetView, Xilem, palette::css};
 
 const LABEL_COLOR: Color = css::ROYAL_BLUE;
 
