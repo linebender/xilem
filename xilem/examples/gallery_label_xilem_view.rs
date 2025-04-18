@@ -213,6 +213,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> {
     lc(format!("4/4 alignment {:?}",d.l3i4)).alignment(d.l3i4),
     ),
     (label("  • flex in a 500×140 sized_box (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
+    txt_prose("  5 cross-alignment options: Start Center End Baseline Fill"),
     flex((
       button("Δ1/4", |d:&mut AppState|{d.realign("l4i1");}),
       button("Δ1/4 cross", |d:&mut AppState|{d.realign("l4i1x");d.realign("l4i1x");}),
