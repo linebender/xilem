@@ -82,7 +82,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
     lc("3/4 alignment End"          ).alignment(TextAlignment::End          ),
     lc("4/4 alignment Justified"    ).alignment(TextAlignment::Justified    ),
     ),
-    (label("  • flex in a 500×140 sized_box (🐞? unboxed .flex override removes Portal scrolling)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • flex in a 500×140 sized_box").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(flex((
         lc("1/4 alignment Start"                                ).alignment(TextAlignment::Start        ),
         lc("1/4 alignment Start + CrossAxisAlignment::Start "   ).alignment(TextAlignment::Start        ).flex(FlexParams::new(1.0,CrossAxisAlignment::Start)),
