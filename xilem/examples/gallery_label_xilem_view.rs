@@ -64,7 +64,18 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
     {i+=1;},title_prose(format!("§ {i} .alignment")),
     txt_prose("  4 options: ≝Start Middle End Justified\n  https://docs.rs/parley/latest/parley/layout/enum.Alignment.html")
     ),
-    (label("  • grid in a 200×70 sized_box to make labels same-width (one per row in 4×1 table)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • flex in a 200×170 sized_box to show the impact of constraints").alignment(TextAlignment::Justified).brush(m_c),
+    sized_box(
+      flex((
+        lc("1/4 alignment Start"     ).alignment(TextAlignment::Start        ),
+        lc("2/4 alignment Middle"    ).alignment(TextAlignment::Middle       ),
+        lc("3/4 alignment End"       ).alignment(TextAlignment::End          ),
+        lc("4/4 alignment Justified" ).alignment(TextAlignment::Justified    ),
+      ))
+      ).width(200f64).height(170f64).padding(Padding::from(0.))
+       .background(css::LIGHT_GRAY) // .border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
+    ,),
+    (label("  • grid in a 200×170 sized_box to make labels same-width (one per row in 4×1 table)").alignment(TextAlignment::Justified).brush(m_c),
     sized_box(
         grid((
             lc("1/4 alignment Start"        ).alignment(TextAlignment::Start        ).grid_pos(0,0),
@@ -72,7 +83,7 @@ fn app_logic(_d: &mut AppState) -> impl WidgetView<AppState> {
             lc("3/4 alignment End"          ).alignment(TextAlignment::End          ).grid_pos(0,2),
             lc("4/4 alignment Justified"    ).alignment(TextAlignment::Justified    ).grid_pos(0,3),
             ),1,4,).spacing(0.0)
-        ).width(200_f64).height(70_f64).padding(Padding::from(0.))
+        ).width(200_f64).height(170_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY) //.border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ,),
     (label("  • unboxed (constrained by root parent's flex in a portal)\n  (Start=Middle: parent Flex container ≝CrossAxisAlignment::Center,\n  so the alignment for a label starts at the center)").alignment(TextAlignment::Justified).brush(m_c),
