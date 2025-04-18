@@ -144,7 +144,6 @@ fn lc(text: impl Into<ArcStr>) -> Label {
     label(text).brush(LABEL_COLOR)
 }
 fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> {
-    // let cb = |D:&mut AppState|{}; // empty callback for empty buttons
     let m_c = Color::from_rgb8(0x11, 0x11, 0x11); //main text
     let l_c = LABEL_COLOR;
     let mut i = 0;
