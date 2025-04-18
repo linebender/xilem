@@ -216,7 +216,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> {
     txt_prose("  5 cross-alignment options: Start Center End Baseline Fill"),
     flex((
       button("Δ1/4", |d:&mut AppState|{d.realign("l4i1");}),
-      button("Δ1/4 cross", |d:&mut AppState|{d.realign("l4i1x");d.realign("l4i1x");}),
+      button("Δ1/4 cross", |d:&mut AppState|{d.realign("l4i1x")}),
       button("Δ2/4", |d:&mut AppState|{d.realign("l4i2");}),
       button("Δ3/4", |d:&mut AppState|{d.realign("l4i3");}),
       button("Δ4/4", |d:&mut AppState|{d.realign("l4i4");}),
