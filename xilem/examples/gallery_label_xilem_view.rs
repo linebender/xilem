@@ -29,40 +29,56 @@ struct AppState {
     l1i2: TextAlignment,
     l1i3: TextAlignment,
     l1i4: TextAlignment,
+    l1i5: TextAlignment,
+    l1i6: TextAlignment,
     l2i1: TextAlignment,
     l2i2: TextAlignment,
     l2i3: TextAlignment,
     l2i4: TextAlignment,
+    l2i5: TextAlignment,
+    l2i6: TextAlignment,
     l3i1: TextAlignment,
     l3i2: TextAlignment,
     l3i3: TextAlignment,
     l3i4: TextAlignment,
+    l3i5: TextAlignment,
+    l3i6: TextAlignment,
     l4i1: TextAlignment,
-    l4i1x: CrossAxisAlignment,
     l4i2: TextAlignment,
     l4i3: TextAlignment,
     l4i4: TextAlignment,
+    l4i5: TextAlignment,
+    l4i6: TextAlignment,
+    l4i1x: CrossAxisAlignment,
 }
 impl Default for AppState {
     fn default() -> AppState {
         AppState {
             l1i1: TextAlignment::Start,
-            l1i2: TextAlignment::Middle,
-            l1i3: TextAlignment::End,
-            l1i4: TextAlignment::Justified,
+            l1i2: TextAlignment::Left,
+            l1i3: TextAlignment::Middle,
+            l1i4: TextAlignment::End,
+            l1i5: TextAlignment::Right,
+            l1i6: TextAlignment::Justified,
             l2i1: TextAlignment::Start,
-            l2i2: TextAlignment::Middle,
-            l2i3: TextAlignment::End,
-            l2i4: TextAlignment::Justified,
+            l2i2: TextAlignment::Left,
+            l2i3: TextAlignment::Middle,
+            l2i4: TextAlignment::End,
+            l2i5: TextAlignment::Right,
+            l2i6: TextAlignment::Justified,
             l3i1: TextAlignment::Start,
-            l3i2: TextAlignment::Middle,
-            l3i3: TextAlignment::End,
-            l3i4: TextAlignment::Justified,
+            l3i2: TextAlignment::Left,
+            l3i3: TextAlignment::Middle,
+            l3i4: TextAlignment::End,
+            l3i5: TextAlignment::Right,
+            l3i6: TextAlignment::Justified,
             l4i1: TextAlignment::Start,
+            l4i2: TextAlignment::Left,
+            l4i3: TextAlignment::Middle,
+            l4i4: TextAlignment::End,
+            l4i5: TextAlignment::Right,
+            l4i6: TextAlignment::Justified,
             l4i1x: CrossAxisAlignment::Start,
-            l4i2: TextAlignment::Middle,
-            l4i3: TextAlignment::End,
-            l4i4: TextAlignment::Justified,
         }
     }
 }
@@ -97,6 +113,10 @@ impl AppState {
             self.l1i3 = text_align_cycle(&self.l1i3)
         } else if p == "l1i4" {
             self.l1i4 = text_align_cycle(&self.l1i4)
+        } else if p == "l1i5" {
+            self.l1i4 = text_align_cycle(&self.l1i5)
+        } else if p == "l1i5" {
+            self.l1i4 = text_align_cycle(&self.l1i6)
         } else if p == "l2i1" {
             self.l2i1 = text_align_cycle(&self.l2i1)
         } else if p == "l2i2" {
@@ -105,6 +125,10 @@ impl AppState {
             self.l2i3 = text_align_cycle(&self.l2i3)
         } else if p == "l2i4" {
             self.l2i4 = text_align_cycle(&self.l2i4)
+        } else if p == "l2i5" {
+            self.l2i4 = text_align_cycle(&self.l2i5)
+        } else if p == "l2i5" {
+            self.l2i4 = text_align_cycle(&self.l2i6)
         } else if p == "l3i1" {
             self.l3i1 = text_align_cycle(&self.l3i1)
         } else if p == "l3i2" {
@@ -113,6 +137,10 @@ impl AppState {
             self.l3i3 = text_align_cycle(&self.l3i3)
         } else if p == "l3i4" {
             self.l3i4 = text_align_cycle(&self.l3i4)
+        } else if p == "l3i5" {
+            self.l3i4 = text_align_cycle(&self.l3i5)
+        } else if p == "l3i5" {
+            self.l3i4 = text_align_cycle(&self.l3i6)
         } else if p == "l4i1" {
             self.l4i1 = text_align_cycle(&self.l4i1)
         } else if p == "l4i2" {
@@ -121,10 +149,14 @@ impl AppState {
             self.l4i3 = text_align_cycle(&self.l4i3)
         } else if p == "l4i4" {
             self.l4i4 = text_align_cycle(&self.l4i4)
+        } else if p == "l4i5" {
+            self.l4i4 = text_align_cycle(&self.l4i5)
+        } else if p == "l4i5" {
+            self.l4i4 = text_align_cycle(&self.l4i6)
         } else if p == "l4i1x" {
             self.l4i1x = text_x_align_cycle(&self.l4i1x)
         } else {
-            warn!("expecting either of ‘l1–4i1–4’ or ‘l4i1x’, got {:?}", pos)
+            warn!("expecting either of ‘l1–4i1–6’ or ‘l4i1x’, got {:?}", pos)
         }
     }
 }
@@ -167,70 +199,86 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
     {i+=1;},title_prose(format!("§ {i} .alignment")),
     txt_prose("  6 options: ≝Start Middle End Justified Left Right\n  https://docs.rs/parley/latest/parley/layout/enum.Alignment.html")
     ),
-    (label("  • flex in a 200×170 sized_box to show the impact of constraints (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • flex in a 200×220 sized_box to show the impact of constraints (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
-      button("Δ1/4", |d:&mut AppState|{d.realign("l1i1");}),
-      button("Δ2/4", |d:&mut AppState|{d.realign("l1i2");}),
-      button("Δ3/4", |d:&mut AppState|{d.realign("l1i3");}),
-      button("Δ4/4", |d:&mut AppState|{d.realign("l1i4");}),
+      button("Δ1/6", |d:&mut AppState|{d.realign("l1i1");}),
+      button("Δ2/6", |d:&mut AppState|{d.realign("l1i2");}),
+      button("Δ3/6", |d:&mut AppState|{d.realign("l1i3");}),
+      button("Δ4/6", |d:&mut AppState|{d.realign("l1i4");}),
+      button("Δ5/6", |d:&mut AppState|{d.realign("l1i5");}),
+      button("Δ6/6", |d:&mut AppState|{d.realign("l1i6");}),
       )).direction(Axis::Horizontal),
     sized_box(
       flex((
-        lc(format!("1/4 alignment {:?}",d.l1i1)).alignment(d.l1i1),
-        lc(format!("2/4 alignment {:?}",d.l1i2)).alignment(d.l1i2),
-        lc(format!("3/4 alignment {:?}",d.l1i3)).alignment(d.l1i3),
-        lc(format!("4/4 alignment {:?}",d.l1i4)).alignment(d.l1i4),
+        lc(format!("1/6 alignment {:?}",d.l1i1)).alignment(d.l1i1),
+        lc(format!("2/6 alignment {:?}",d.l1i2)).alignment(d.l1i2),
+        lc(format!("3/6 alignment {:?}",d.l1i3)).alignment(d.l1i3),
+        lc(format!("4/6 alignment {:?}",d.l1i4)).alignment(d.l1i4),
+        lc(format!("5/6 alignment {:?}",d.l1i5)).alignment(d.l1i5),
+        lc(format!("6/6 alignment {:?}",d.l1i6)).alignment(d.l1i6),
       ))
-      ).width(200f64).height(170f64).padding(Padding::from(0.))
+      ).width(200f64).height(220f64).padding(Padding::from(0.))
        .background(css::LIGHT_GRAY) // .border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ,),
-    (label("  • grid in a 200×170 sized_box to make labels same-width (one per row in a 4×1 table; buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • grid in a 200×220 sized_box to make labels same-width (one per row in a 6×1 table; buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
-      button("Δ1/4", |d:&mut AppState|{d.realign("l2i1");}),
-      button("Δ2/4", |d:&mut AppState|{d.realign("l2i2");}),
-      button("Δ3/4", |d:&mut AppState|{d.realign("l2i3");}),
-      button("Δ4/4", |d:&mut AppState|{d.realign("l2i4");}),
+      button("Δ1/6", |d:&mut AppState|{d.realign("l2i1");}),
+      button("Δ2/6", |d:&mut AppState|{d.realign("l2i2");}),
+      button("Δ3/6", |d:&mut AppState|{d.realign("l2i3");}),
+      button("Δ4/6", |d:&mut AppState|{d.realign("l2i4");}),
+      button("Δ5/6", |d:&mut AppState|{d.realign("l2i5");}),
+      button("Δ6/6", |d:&mut AppState|{d.realign("l2i6");}),
       )).direction(Axis::Horizontal),
     sized_box(
         grid((
-            lc(format!("1/4 alignment {:?}",d.l2i1)).alignment(d.l2i1).grid_pos(0,0),
-            lc(format!("2/4 alignment {:?}",d.l2i2)).alignment(d.l2i2).grid_pos(0,1),
-            lc(format!("3/4 alignment {:?}",d.l2i3)).alignment(d.l2i3).grid_pos(0,2),
-            lc(format!("4/4 alignment {:?}",d.l2i4)).alignment(d.l2i4).grid_pos(0,3),
-            ),1,4,).spacing(0.0)
-        ).width(200_f64).height(170_f64).padding(Padding::from(0.))
+            lc(format!("1/6 alignment {:?}",d.l2i1)).alignment(d.l2i1).grid_pos(0,0),
+            lc(format!("2/6 alignment {:?}",d.l2i2)).alignment(d.l2i2).grid_pos(0,1),
+            lc(format!("3/6 alignment {:?}",d.l2i3)).alignment(d.l2i3).grid_pos(0,2),
+            lc(format!("4/6 alignment {:?}",d.l2i4)).alignment(d.l2i4).grid_pos(0,3),
+            lc(format!("5/6 alignment {:?}",d.l2i5)).alignment(d.l2i5).grid_pos(0,4),
+            lc(format!("6/6 alignment {:?}",d.l2i6)).alignment(d.l2i6).grid_pos(0,5),
+            ),1,6,).spacing(0.0)
+        ).width(200_f64).height(220_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY) //.border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ,),
     (label("  • unboxed (constrained by root parent's flex in a portal)\n  (Start=Middle: parent Flex container ≝CrossAxisAlignment::Center,\n  so the alignment for a label starts at the center)").alignment(TextAlignment::Justified).brush(m_c),
     label("  can be fixed with a custom per-element override .flex(FlexParams::new(1.0,CrossAxisAlignment::Start)) (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
-      button("Δ1/4", |d:&mut AppState|{d.realign("l3i1");}),
-      button("Δ2/4", |d:&mut AppState|{d.realign("l3i2");}),
-      button("Δ3/4", |d:&mut AppState|{d.realign("l3i3");}),
-      button("Δ4/4", |d:&mut AppState|{d.realign("l3i4");}),
+      button("Δ1/6", |d:&mut AppState|{d.realign("l3i1");}),
+      button("Δ2/6", |d:&mut AppState|{d.realign("l3i2");}),
+      button("Δ3/6", |d:&mut AppState|{d.realign("l3i3");}),
+      button("Δ4/6", |d:&mut AppState|{d.realign("l3i4");}),
+      button("Δ5/6", |d:&mut AppState|{d.realign("l3i5");}),
+      button("Δ6/6", |d:&mut AppState|{d.realign("l3i6");}),
       )).direction(Axis::Horizontal),
-    lc(format!("1/4 alignment {:?}",d.l3i1)).alignment(d.l3i1),
-    lc(format!("2/4 alignment {:?}",d.l3i2)).alignment(d.l3i2),
-    lc(format!("3/4 alignment {:?}",d.l3i3)).alignment(d.l3i3),
-    lc(format!("4/4 alignment {:?}",d.l3i4)).alignment(d.l3i4),
+    lc(format!("1/6 alignment {:?}",d.l3i1)).alignment(d.l3i1),
+    lc(format!("2/6 alignment {:?}",d.l3i2)).alignment(d.l3i2),
+    lc(format!("3/6 alignment {:?}",d.l3i3)).alignment(d.l3i3),
+    lc(format!("4/6 alignment {:?}",d.l3i4)).alignment(d.l3i4),
+    lc(format!("5/6 alignment {:?}",d.l3i5)).alignment(d.l3i5),
+    lc(format!("6/6 alignment {:?}",d.l3i6)).alignment(d.l3i6),
     ),
-    (label("  • flex in a 500×140 sized_box (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
+    (label("  • flex in a 500×200 sized_box (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     txt_prose("  5 cross-alignment options: Start Center End Baseline Fill https://docs.rs/masonry/latest/masonry/widget/enum.CrossAxisAlignment.html"),
     flex((
-      button("Δ1/4", |d:&mut AppState|{d.realign("l4i1");}),
-      button("Δ1/4 cross", |d:&mut AppState|{d.realign("l4i1x")}),
-      button("Δ2/4", |d:&mut AppState|{d.realign("l4i2");}),
-      button("Δ3/4", |d:&mut AppState|{d.realign("l4i3");}),
-      button("Δ4/4", |d:&mut AppState|{d.realign("l4i4");}),
+      button("Δ1/6", |d:&mut AppState|{d.realign("l4i1");}),
+      button("Δ1/6 cross", |d:&mut AppState|{d.realign("l4i1x")}),
+      button("Δ2/6", |d:&mut AppState|{d.realign("l4i2");}),
+      button("Δ3/6", |d:&mut AppState|{d.realign("l4i3");}),
+      button("Δ4/6", |d:&mut AppState|{d.realign("l4i4");}),
+      button("Δ5/6", |d:&mut AppState|{d.realign("l4i5");}),
+      button("Δ6/6", |d:&mut AppState|{d.realign("l4i6");}),
       )).direction(Axis::Horizontal),
     sized_box(flex((
-        lc(format!("1/4 alignment {:?}",d.l4i1)).alignment(d.l4i1),
-        lc(format!("1/4 alignment {:?} + CrossAxisAlignment {:?}",d.l4i1,d.l4i1x)).alignment(d.l4i1).flex(FlexParams::new(1.0,d.l4i1x)),
-        lc(format!("2/4 alignment {:?}",d.l4i2)).alignment(d.l4i2),
-        lc(format!("3/4 alignment {:?}",d.l4i3)).alignment(d.l4i3),
-        lc(format!("4/4 alignment {:?}",d.l4i4)).alignment(d.l4i4),
+        lc(format!("1/6 alignment {:?}",d.l4i1)).alignment(d.l4i1),
+        lc(format!("1/6 alignment {:?} + CrossAxisAlignment {:?}",d.l4i1,d.l4i1x)).alignment(d.l4i1).flex(FlexParams::new(1.0,d.l4i1x)),
+        lc(format!("2/6 alignment {:?}",d.l4i2)).alignment(d.l4i2),
+        lc(format!("3/6 alignment {:?}",d.l4i3)).alignment(d.l4i3),
+        lc(format!("4/6 alignment {:?}",d.l4i4)).alignment(d.l4i4),
+        lc(format!("5/6 alignment {:?}",d.l4i5)).alignment(d.l4i5),
+        lc(format!("6/6 alignment {:?}",d.l4i6)).alignment(d.l4i6),
         ))
-        ).width(500_f64).height(140_f64).padding(Padding::from(0.))
+        ).width(500_f64).height(200_f64).padding(Padding::from(0.))
          .background(css::LIGHT_GRAY) //.border(css::RED,0.).rounded(RoundedRectRadii::from_single_radius(0.))
     ),
     {i+=1;},(title_prose(format!("§ {i} .line_break_mode")),
