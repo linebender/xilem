@@ -106,55 +106,55 @@ impl AppState {
     fn realign(&mut self, pos: impl AsRef<str> + std::fmt::Debug) {
         let p = pos.as_ref();
         if p == "l1i1" {
-            self.l1i1 = text_align_cycle(&self.l1i1)
+            self.l1i1 = text_align_cycle(&self.l1i1);
         } else if p == "l1i2" {
-            self.l1i2 = text_align_cycle(&self.l1i2)
+            self.l1i2 = text_align_cycle(&self.l1i2);
         } else if p == "l1i3" {
-            self.l1i3 = text_align_cycle(&self.l1i3)
+            self.l1i3 = text_align_cycle(&self.l1i3);
         } else if p == "l1i4" {
-            self.l1i4 = text_align_cycle(&self.l1i4)
+            self.l1i4 = text_align_cycle(&self.l1i4);
         } else if p == "l1i5" {
-            self.l1i4 = text_align_cycle(&self.l1i5)
-        } else if p == "l1i5" {
-            self.l1i4 = text_align_cycle(&self.l1i6)
+            self.l1i5 = text_align_cycle(&self.l1i5);
+        } else if p == "l1i6" {
+            self.l1i6 = text_align_cycle(&self.l1i6);
         } else if p == "l2i1" {
-            self.l2i1 = text_align_cycle(&self.l2i1)
+            self.l2i1 = text_align_cycle(&self.l2i1);
         } else if p == "l2i2" {
-            self.l2i2 = text_align_cycle(&self.l2i2)
+            self.l2i2 = text_align_cycle(&self.l2i2);
         } else if p == "l2i3" {
-            self.l2i3 = text_align_cycle(&self.l2i3)
+            self.l2i3 = text_align_cycle(&self.l2i3);
         } else if p == "l2i4" {
-            self.l2i4 = text_align_cycle(&self.l2i4)
+            self.l2i4 = text_align_cycle(&self.l2i4);
         } else if p == "l2i5" {
-            self.l2i4 = text_align_cycle(&self.l2i5)
-        } else if p == "l2i5" {
-            self.l2i4 = text_align_cycle(&self.l2i6)
+            self.l2i5 = text_align_cycle(&self.l2i5);
+        } else if p == "l2i6" {
+            self.l2i6 = text_align_cycle(&self.l2i6);
         } else if p == "l3i1" {
-            self.l3i1 = text_align_cycle(&self.l3i1)
+            self.l3i1 = text_align_cycle(&self.l3i1);
         } else if p == "l3i2" {
-            self.l3i2 = text_align_cycle(&self.l3i2)
+            self.l3i2 = text_align_cycle(&self.l3i2);
         } else if p == "l3i3" {
-            self.l3i3 = text_align_cycle(&self.l3i3)
+            self.l3i3 = text_align_cycle(&self.l3i3);
         } else if p == "l3i4" {
-            self.l3i4 = text_align_cycle(&self.l3i4)
+            self.l3i4 = text_align_cycle(&self.l3i4);
         } else if p == "l3i5" {
-            self.l3i4 = text_align_cycle(&self.l3i5)
-        } else if p == "l3i5" {
-            self.l3i4 = text_align_cycle(&self.l3i6)
+            self.l3i5 = text_align_cycle(&self.l3i5);
+        } else if p == "l3i6" {
+            self.l3i6 = text_align_cycle(&self.l3i6);
         } else if p == "l4i1" {
-            self.l4i1 = text_align_cycle(&self.l4i1)
+            self.l4i1 = text_align_cycle(&self.l4i1);
         } else if p == "l4i2" {
-            self.l4i2 = text_align_cycle(&self.l4i2)
+            self.l4i2 = text_align_cycle(&self.l4i2);
         } else if p == "l4i3" {
-            self.l4i3 = text_align_cycle(&self.l4i3)
+            self.l4i3 = text_align_cycle(&self.l4i3);
         } else if p == "l4i4" {
-            self.l4i4 = text_align_cycle(&self.l4i4)
+            self.l4i4 = text_align_cycle(&self.l4i4);
         } else if p == "l4i5" {
-            self.l4i4 = text_align_cycle(&self.l4i5)
-        } else if p == "l4i5" {
-            self.l4i4 = text_align_cycle(&self.l4i6)
+            self.l4i5 = text_align_cycle(&self.l4i5);
+        } else if p == "l4i6" {
+            self.l4i6 = text_align_cycle(&self.l4i6);
         } else if p == "l4i1x" {
-            self.l4i1x = text_x_align_cycle(&self.l4i1x)
+            self.l4i1x = text_x_align_cycle(&self.l4i1x);
         } else {
             warn!("expecting either of ‘l1–4i1–6’ or ‘l4i1x’, got {:?}", pos)
         }
