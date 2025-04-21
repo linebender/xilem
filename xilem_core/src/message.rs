@@ -6,7 +6,6 @@
 use alloc::boxed::Box;
 use core::any::Any;
 use core::fmt::Debug;
-use core::ops::Deref;
 
 /// The possible outcomes from a [`View::message`]
 ///
@@ -70,6 +69,7 @@ impl DynMessage {
     pub fn new(x: impl AnyMessage) -> Self {
         Self(Box::new(x))
     }
+
     /// Access the actual type of this [`DynMessage`].
     ///
     /// ## Errors
@@ -82,6 +82,11 @@ impl DynMessage {
     /// view has routed things incorrectly, but it's reasonable to be robust.
     pub fn downcast<T: AnyMessage>(self) -> Result<Box<T>, Self> {
         self.0.downcast().map_err(Self)
+    }
+
+    /// Returns `true` if the inner type is the same as `T`.
+    pub fn is<T: AnyMessage>(&self) -> bool {
+        self.0.is::<T>()
     }
 }
 
@@ -102,13 +107,18 @@ impl dyn AnyMessage {
     ///
     /// If the message contained within `self` is not of type `T`, returns `self`
     /// (so that e.g. a different type can be used)
-    fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        let this: &dyn Any = self.deref();
-        if this.is::<T>() {
+    pub fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
+        if self.is::<T>() {
             Ok((self as Box<dyn Any>).downcast::<T>().unwrap())
         } else {
             Err(self)
         }
+    }
+
+    /// Returns `true` if the inner type is the same as `T`.
+    pub fn is<T: AnyMessage>(&self) -> bool {
+        let this: &dyn Any = self;
+        this.is::<T>()
     }
 }
 
