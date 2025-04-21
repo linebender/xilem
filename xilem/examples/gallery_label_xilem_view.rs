@@ -340,7 +340,7 @@ fn main() -> Result<(), EventLoopError> {
     let xapp = Xilem::new(app_state_init, app_logic).background_color(css::SEASHELL);
 
     let win_attr = Window::default_attributes()
-        .with_title("Label: Xilem View")
+        .with_title("label_gallery")
         .with_min_inner_size(LogicalSize::new(800., 600.));
 
     xapp.run_windowed_in(EventLoop::with_user_event(), win_attr)?;
