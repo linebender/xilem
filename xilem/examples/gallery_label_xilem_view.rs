@@ -9,7 +9,6 @@
 // add non-desktop platforms
 
 use masonry::dpi::LogicalSize;
-use tracing::warn;
 use winit::window::Window;
 use xilem::view::{CrossAxisAlignment, FlexExt, FlexParams};
 
@@ -102,64 +101,6 @@ fn text_x_align_cycle(cur: &CrossAxisAlignment) -> CrossAxisAlignment {
     }
 }
 
-impl AppState {
-    fn realign(&mut self, pos: impl AsRef<str> + std::fmt::Debug) {
-        let p = pos.as_ref();
-        if p == "l1i1" {
-            self.l1i1 = text_align_cycle(&self.l1i1);
-        } else if p == "l1i2" {
-            self.l1i2 = text_align_cycle(&self.l1i2);
-        } else if p == "l1i3" {
-            self.l1i3 = text_align_cycle(&self.l1i3);
-        } else if p == "l1i4" {
-            self.l1i4 = text_align_cycle(&self.l1i4);
-        } else if p == "l1i5" {
-            self.l1i5 = text_align_cycle(&self.l1i5);
-        } else if p == "l1i6" {
-            self.l1i6 = text_align_cycle(&self.l1i6);
-        } else if p == "l2i1" {
-            self.l2i1 = text_align_cycle(&self.l2i1);
-        } else if p == "l2i2" {
-            self.l2i2 = text_align_cycle(&self.l2i2);
-        } else if p == "l2i3" {
-            self.l2i3 = text_align_cycle(&self.l2i3);
-        } else if p == "l2i4" {
-            self.l2i4 = text_align_cycle(&self.l2i4);
-        } else if p == "l2i5" {
-            self.l2i5 = text_align_cycle(&self.l2i5);
-        } else if p == "l2i6" {
-            self.l2i6 = text_align_cycle(&self.l2i6);
-        } else if p == "l3i1" {
-            self.l3i1 = text_align_cycle(&self.l3i1);
-        } else if p == "l3i2" {
-            self.l3i2 = text_align_cycle(&self.l3i2);
-        } else if p == "l3i3" {
-            self.l3i3 = text_align_cycle(&self.l3i3);
-        } else if p == "l3i4" {
-            self.l3i4 = text_align_cycle(&self.l3i4);
-        } else if p == "l3i5" {
-            self.l3i5 = text_align_cycle(&self.l3i5);
-        } else if p == "l3i6" {
-            self.l3i6 = text_align_cycle(&self.l3i6);
-        } else if p == "l4i1" {
-            self.l4i1 = text_align_cycle(&self.l4i1);
-        } else if p == "l4i2" {
-            self.l4i2 = text_align_cycle(&self.l4i2);
-        } else if p == "l4i3" {
-            self.l4i3 = text_align_cycle(&self.l4i3);
-        } else if p == "l4i4" {
-            self.l4i4 = text_align_cycle(&self.l4i4);
-        } else if p == "l4i5" {
-            self.l4i5 = text_align_cycle(&self.l4i5);
-        } else if p == "l4i6" {
-            self.l4i6 = text_align_cycle(&self.l4i6);
-        } else if p == "l4i1x" {
-            self.l4i1x = text_x_align_cycle(&self.l4i1x);
-        } else {
-            warn!("expecting either of ‘l1–4i1–6’ or ‘l4i1x’, got {:?}", pos);
-        }
-    }
-}
 
 fn title_prose(text: impl Into<ArcStr>) -> Prose {
     prose(text)
@@ -201,12 +142,12 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
     ),
     (label("  • flex in a 200×220 sized_box to show the impact of constraints (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
-      button("Δ1/6", |da:&mut AppState|{da.realign("l1i1");}),
-      button("Δ2/6", |da:&mut AppState|{da.realign("l1i2");}),
-      button("Δ3/6", |da:&mut AppState|{da.realign("l1i3");}),
-      button("Δ4/6", |da:&mut AppState|{da.realign("l1i4");}),
-      button("Δ5/6", |da:&mut AppState|{da.realign("l1i5");}),
-      button("Δ6/6", |da:&mut AppState|{da.realign("l1i6");}),
+      button("Δ1/6", |da:&mut AppState|{da.l1i1 = text_align_cycle(&da.l1i1);}),
+      button("Δ2/6", |da:&mut AppState|{da.l1i2 = text_align_cycle(&da.l1i2);}),
+      button("Δ3/6", |da:&mut AppState|{da.l1i3 = text_align_cycle(&da.l1i3);}),
+      button("Δ4/6", |da:&mut AppState|{da.l1i4 = text_align_cycle(&da.l1i4);}),
+      button("Δ5/6", |da:&mut AppState|{da.l1i5 = text_align_cycle(&da.l1i5);}),
+      button("Δ6/6", |da:&mut AppState|{da.l1i6 = text_align_cycle(&da.l1i6);}),
       )).direction(Axis::Horizontal),
     sized_box(
       flex((
@@ -222,12 +163,12 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
     ,),
     (label("  • grid in a 200×220 sized_box to make labels same-width (one per row in a 6×1 table; buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
-      button("Δ1/6", |da:&mut AppState|{da.realign("l2i1");}),
-      button("Δ2/6", |da:&mut AppState|{da.realign("l2i2");}),
-      button("Δ3/6", |da:&mut AppState|{da.realign("l2i3");}),
-      button("Δ4/6", |da:&mut AppState|{da.realign("l2i4");}),
-      button("Δ5/6", |da:&mut AppState|{da.realign("l2i5");}),
-      button("Δ6/6", |da:&mut AppState|{da.realign("l2i6");}),
+      button("Δ1/6", |da:&mut AppState|{da.l2i1 = text_align_cycle(&da.l2i1);}),
+      button("Δ2/6", |da:&mut AppState|{da.l2i2 = text_align_cycle(&da.l2i2);}),
+      button("Δ3/6", |da:&mut AppState|{da.l2i3 = text_align_cycle(&da.l2i3);}),
+      button("Δ4/6", |da:&mut AppState|{da.l2i4 = text_align_cycle(&da.l2i4);}),
+      button("Δ5/6", |da:&mut AppState|{da.l2i5 = text_align_cycle(&da.l2i5);}),
+      button("Δ6/6", |da:&mut AppState|{da.l2i6 = text_align_cycle(&da.l2i6);}),
       )).direction(Axis::Horizontal),
     sized_box(
         grid((
@@ -244,12 +185,12 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
     (label("  • unboxed (constrained by root parent's flex in a portal)\n  (Start=Middle: parent Flex container ≝CrossAxisAlignment::Center,\n  so the alignment for a label starts at the center)").alignment(TextAlignment::Justified).brush(m_c),
     label("  can be fixed with a custom per-element override .flex(FlexParams::new(1.0,CrossAxisAlignment::Start)) (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     flex((
-      button("Δ1/6", |da:&mut AppState|{da.realign("l3i1");}),
-      button("Δ2/6", |da:&mut AppState|{da.realign("l3i2");}),
-      button("Δ3/6", |da:&mut AppState|{da.realign("l3i3");}),
-      button("Δ4/6", |da:&mut AppState|{da.realign("l3i4");}),
-      button("Δ5/6", |da:&mut AppState|{da.realign("l3i5");}),
-      button("Δ6/6", |da:&mut AppState|{da.realign("l3i6");}),
+      button("Δ1/6", |da:&mut AppState|{da.l3i1 = text_align_cycle(&da.l3i1);}),
+      button("Δ2/6", |da:&mut AppState|{da.l3i2 = text_align_cycle(&da.l3i2);}),
+      button("Δ3/6", |da:&mut AppState|{da.l3i3 = text_align_cycle(&da.l3i3);}),
+      button("Δ4/6", |da:&mut AppState|{da.l3i4 = text_align_cycle(&da.l3i4);}),
+      button("Δ5/6", |da:&mut AppState|{da.l3i5 = text_align_cycle(&da.l3i5);}),
+      button("Δ6/6", |da:&mut AppState|{da.l3i6 = text_align_cycle(&da.l3i6);}),
       )).direction(Axis::Horizontal),
     lc(format!("1/6 alignment {:?}",d.l3i1)).alignment(d.l3i1),
     lc(format!("2/6 alignment {:?}",d.l3i2)).alignment(d.l3i2),
@@ -261,13 +202,13 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
     (label("  • flex in a 500×200 sized_box (buttons to change alignment)").alignment(TextAlignment::Justified).brush(m_c),
     txt_prose("  5 cross-alignment options: Start Center End Baseline Fill https://docs.rs/masonry/latest/masonry/widget/enum.CrossAxisAlignment.html"),
     flex((
-      button("Δ1/6", |da:&mut AppState|{da.realign("l4i1");}),
-      button("Δ1/6 cross", |da:&mut AppState|{da.realign("l4i1x")}),
-      button("Δ2/6", |da:&mut AppState|{da.realign("l4i2");}),
-      button("Δ3/6", |da:&mut AppState|{da.realign("l4i3");}),
-      button("Δ4/6", |da:&mut AppState|{da.realign("l4i4");}),
-      button("Δ5/6", |da:&mut AppState|{da.realign("l4i5");}),
-      button("Δ6/6", |da:&mut AppState|{da.realign("l4i6");}),
+      button("Δ1/6", |da:&mut AppState|{da.l4i1 = text_align_cycle(&da.l4i1);}),
+      button("Δ1/6 cross", |da:&mut AppState|{da.l4i1x = text_x_align_cycle(&da.l4i1x)}),
+      button("Δ2/6", |da:&mut AppState|{da.l4i2 = text_align_cycle(&da.l4i2);}),
+      button("Δ3/6", |da:&mut AppState|{da.l4i3 = text_align_cycle(&da.l4i3);}),
+      button("Δ4/6", |da:&mut AppState|{da.l4i4 = text_align_cycle(&da.l4i4);}),
+      button("Δ5/6", |da:&mut AppState|{da.l4i5 = text_align_cycle(&da.l4i5);}),
+      button("Δ6/6", |da:&mut AppState|{da.l4i6 = text_align_cycle(&da.l4i6);}),
       )).direction(Axis::Horizontal),
     sized_box(flex((
         lc(format!("1/6 alignment {:?}",d.l4i1)).alignment(d.l4i1),
