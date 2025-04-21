@@ -161,6 +161,13 @@ where
         )
     }
 
+    // This implementation is ugly. This is needed because the `rebuild` function
+    // doesn't have access to the app's state. The way we handle this is:
+    // 1) If the app's state has changed since the last rebuild (i.e. the `app_logic` function has been rerun),
+    //    we send a message to ourselves to recreate all of our loaded children.
+    // 2) If there are new versions of our children, we rebuild/build those.
+    // 3) We make sure to rebuild all children which have requested a rebuild.
+
     fn rebuild(
         &self,
         prev: &Self,
@@ -177,8 +184,8 @@ where
                 .send_message(view_state.my_path.clone(), Box::new(UpdateVirtualChildren))
                 .unwrap();
             view_state.pending_children_update = true;
-            // Either rebuilding or not rebuilding would be fine here. We choose not to
-            // because we know another rebuild is coming once this message is handled.
+            // We think it would be fine to not actually rebuild here (and wait for the message to be handled)
+            // but rebuilding here does still work
         }
         let used_action = view_state.pending_action.is_some();
         if let Some(pending_action) = view_state.pending_action.take() {
@@ -186,37 +193,46 @@ where
             widgets::VirtualScroll::will_handle_action(&mut element, &pending_action);
         }
         if !view_state.current_updated {
-            // The set of children is the same, and our app state hasn't changed. Use a fast path for this.
+            // Our state hasn't changed, but we need to rebuild any children which have requested it.
             for (idx, view) in &view_state.previous_views {
-                let state = view_state
+                let child_state = view_state
                     .view_states
                     .get_mut(idx)
-                    .expect("All View states are accounted for");
-                if state.requested_rebuild {
+                    .expect("`view_states` is always in sync with `previous_views`");
+                if child_state.requested_rebuild {
                     ctx.with_id(view_id_for_index(*idx), |ctx| {
                         // Note that we rebuild the view with itself, because we're only actioning a requested rebuild.
-                        // This should be a no-op other than again the requested rebuild.
+                        // This should be a no-op other than whatever caused the requested rebuild.
                         view.rebuild(
                             view,
-                            &mut state.state,
+                            &mut child_state.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, *idx),
                         );
                     });
-                    state.requested_rebuild = false;
+                    child_state.requested_rebuild = false;
                 }
             }
         } else {
+            // Otherwise, our set of loaded children has changed, and/or our loaded children all have a new version.
             debug_assert!(view_state.cleanup_queue.is_empty());
+            // Remove any children which have been unloaded.
             for (&idx, child) in &view_state.previous_views {
                 if view_state.current_views.contains_key(&idx) {
-                    // We will handle this in the second loop
+                    // We will handle this in the second loop.
                     continue;
                 }
+                debug_assert!(
+                    used_action,
+                    "Xilem VirtualScroll: Would remove an item even though we weren't handling an action."
+                );
                 ctx.with_id(view_id_for_index(idx), |ctx| {
-                    let state = view_state.view_states.get_mut(&idx).unwrap();
+                    let child_state = view_state
+                        .view_states
+                        .get_mut(&idx)
+                        .expect("`view_states` is always in sync with `previous_views`");
                     child.teardown(
-                        &mut state.state,
+                        &mut child_state.state,
                         ctx,
                         widgets::VirtualScroll::child_mut(&mut element, idx),
                     );
@@ -225,23 +241,35 @@ where
                 });
             }
             for to_cleanup in view_state.cleanup_queue.drain(..) {
-                view_state.previous_views.remove(&to_cleanup).unwrap();
-                view_state.view_states.remove(&to_cleanup).unwrap();
+                view_state
+                    .previous_views
+                    .remove(&to_cleanup)
+                    .expect("Cleanup index is real item in list");
+                view_state
+                    .view_states
+                    .remove(&to_cleanup)
+                    .expect("`view_states` is always in sync with `previous_views`");
             }
             for (idx, child) in view_state.current_views.drain() {
                 ctx.with_id(view_id_for_index(idx), |ctx| {
                     if let Some(child_prev) = view_state.previous_views.get(&idx) {
-                        let state = view_state.view_states.get_mut(&idx).unwrap();
+                        // If there was previously a version of this view (i.e. we only updated it)
+                        // then perform only a rebuild.
+                        let child_state = view_state
+                            .view_states
+                            .get_mut(&idx)
+                            .expect("`view_states` is always in sync with `previous_views`");
                         child.rebuild(
                             child_prev,
-                            &mut state.state,
+                            &mut child_state.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, idx),
                         );
-                        state.requested_rebuild = false;
+                        child_state.requested_rebuild = false;
                         view_state.previous_views.insert(idx, child);
                     } else {
                         debug_assert!(used_action);
+                        // Otherwise, build the first version of this view.
                         let (new_child, child_state) = child.build(ctx);
                         widgets::VirtualScroll::add_child(
                             &mut element,
@@ -260,7 +288,7 @@ where
                     }
                 });
             }
-            // We have just "used" up the current states, so mark them as inactive
+            // We have just "used" up the current states, so mark them as inactive.
             view_state.current_updated = false;
         }
         debug_assert_eq!(

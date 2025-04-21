@@ -84,7 +84,7 @@ impl VirtualCats {
                     if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
                         status.image = ImageState::Available(image);
                     } else {
-                        // TODO: Error handling?
+                        unreachable!("We never remove items from `statuses`")
                     }
                 },
             ))
@@ -143,7 +143,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let min_window_size = LogicalSize::new(200., 200.);
 
     let window_attributes = Window::default_attributes()
-        .with_title("HTTP cats")
+        .with_title("Virtualised HTTP cats")
         .with_resizable(true)
         .with_min_inner_size(min_window_size);
 
