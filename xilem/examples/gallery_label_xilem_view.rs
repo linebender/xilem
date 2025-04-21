@@ -125,7 +125,7 @@ fn app_logic(d: &mut AppState) -> impl WidgetView<AppState> + use<> {
 
     portal(
     flex((
-    (txt_prose("label_gallery formats vGit@25-04 #8c25fea (in a ↕-scrollable area)").text_size(18.0),
+    (txt_prose("label_gallery formats (in a ↕-scrollable area)").text_size(18.0),
     if cfg!(debug_assertions) {txt_prose(
      "This is a debug build, so you can use github.com/linebender/xilem/tree/main/masonry#debugging-features:
         • F11 to toggle a rudimentary widget inspector
