@@ -181,7 +181,10 @@ where
         if ctx.state_changed() && !view_state.pending_children_update {
             let proxy = ctx.proxy();
             proxy
-                .send_message(view_state.my_path.clone(), Box::new(UpdateVirtualChildren))
+                .send_message(
+                    view_state.my_path.clone(),
+                    DynMessage::new(UpdateVirtualChildren),
+                )
                 .unwrap();
             view_state.pending_children_update = true;
             // We think it would be fine to not actually rebuild here (and wait for the message to be handled)
@@ -338,13 +341,15 @@ where
                 return MessageResult::Stale(message);
             }
         }
-        if message.as_any().is::<masonry::core::Action>() {
+        if message.is::<masonry::core::Action>() {
             let action = message.downcast::<masonry::core::Action>().unwrap();
             if let masonry::core::Action::Other(action) = *action {
                 if !action.is::<VirtualScrollAction>() {
                     tracing::error!("Wrong action type in VirtualScroll::message: {action:?}");
                     // Ideally we'd avoid this extra box, but it's not easy to write this kind of code in a clean way
-                    return MessageResult::Stale(Box::new(masonry::core::Action::Other(action)));
+                    return MessageResult::Stale(DynMessage::new(masonry::core::Action::Other(
+                        action,
+                    )));
                 }
                 // We check then unwrap to avoid unwrapping a box (also, it makes the check path an early-exit)
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
@@ -363,9 +368,9 @@ where
                 MessageResult::RequestRebuild
             } else {
                 tracing::error!("Wrong action type in VirtualScroll::message: {action:?}");
-                MessageResult::Stale(action)
+                MessageResult::Stale(DynMessage(action))
             }
-        } else if message.as_any().is::<UpdateVirtualChildren>() {
+        } else if message.is::<UpdateVirtualChildren>() {
             view_state.current_updated = true;
             view_state.current_views.clear();
             view_state.pending_children_update = false;
