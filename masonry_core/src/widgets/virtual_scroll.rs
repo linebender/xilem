@@ -80,6 +80,9 @@ pub struct VirtualScrollAction {
 
 /// A (vertical) virtual scrolling widget.
 ///
+/// Virtual scrolling is a technique to improve performance when scrolling through long lists, by
+/// only loading (and therefore laying out, drawing, processing for event handling), the items visible to the user.
+///
 /// Each child of the virtual scroll widget has a signed 64 bit id (i.e. an `i64`), and items are laid out
 /// in order of these ids.
 /// The widget keeps track of which of these ids are loaded, and requests that more are loaded.
