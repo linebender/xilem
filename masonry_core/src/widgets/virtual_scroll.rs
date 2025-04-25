@@ -890,7 +890,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     }
 
     // TODO: Optimise using binary search?
-    // fn find_widget_at_pos(..);
+    // fn find_widget_under_pointer(..);
 
     fn get_debug_text(&self) -> Option<String> {
         Some(format!("{self:#?}"))

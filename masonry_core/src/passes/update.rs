@@ -682,7 +682,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         if let Some(pos) = pointer_pos {
             root.global_state.inspector_state.hovered_widget = root
                 .get_root_widget()
-                .find_widget_at_pos(pos)
+                .find_widget_under_pointer(pos)
                 .map(|widget| widget.id());
         }
         root.root_state_mut().needs_paint = true;
@@ -701,7 +701,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
-            .find_widget_at_pos(pos)
+            .find_widget_under_pointer(pos)
             .map(|widget| widget.id())
     } else {
         None
