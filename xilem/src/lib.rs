@@ -148,7 +148,7 @@ pub use masonry::app::{EventLoop, EventLoopBuilder};
 pub use masonry::kurbo::{Affine, Vec2};
 pub use masonry::parley::Alignment as TextAlignment;
 pub use masonry::parley::style::FontWeight;
-pub use masonry::peniko::Color;
+pub use masonry::peniko::{Blob, Color};
 pub use masonry::widgets::{InsertNewline, LineBreaking};
 pub use masonry::{dpi, palette};
 pub use xilem_core as core;
@@ -174,7 +174,7 @@ pub struct Xilem<State, Logic> {
     runtime: tokio::runtime::Runtime,
     background_color: Color,
     // Font data to include in loading.
-    fonts: Vec<Vec<u8>>,
+    fonts: Vec<Blob<u8>>,
 }
 
 #[expect(missing_docs, reason = "TODO - Document these items")]
@@ -198,7 +198,7 @@ where
     /// Load a font when this `Xilem` is run.
     ///
     /// This is an interim API whilst font lifecycles are determined.
-    pub fn with_font(mut self, data: impl Into<Vec<u8>>) -> Self {
+    pub fn with_font(mut self, data: impl Into<Blob<u8>>) -> Self {
         self.fonts.push(data.into());
         self
     }

@@ -7,6 +7,7 @@ use std::collections::VecDeque;
 use std::io::Cursor;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
@@ -31,7 +32,7 @@ use crate::core::{
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::{Point, Size, Vec2};
 use crate::passes::anim::run_update_anim_pass;
-use crate::peniko::Color;
+use crate::peniko::{Blob, Color};
 use crate::testing::screenshots::get_image_diff;
 use crate::testing::snapshot_utils::get_cargo_workspace;
 
@@ -242,7 +243,7 @@ impl TestHarness {
             env!("CARGO_MANIFEST_DIR"),
             "/resources/fonts/roboto/Roboto-Regular.ttf"
         ));
-        let data = ROBOTO.to_vec();
+        let data = Blob::new(Arc::new(ROBOTO));
 
         let mut harness = Self {
             render_root: RenderRoot::new(

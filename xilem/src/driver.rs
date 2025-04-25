@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use masonry::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};
 use masonry::core::WidgetId;
+use masonry::peniko::Blob;
 use masonry::widgets::RootWidget;
 
 use crate::core::{DynMessage, MessageResult, ProxyError, RawProxy, ViewId};
@@ -19,7 +20,7 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
     pub(crate) ctx: ViewCtx,
     pub(crate) view_state: ViewState,
     // Fonts which will be registered on startup.
-    pub(crate) fonts: Vec<Vec<u8>>,
+    pub(crate) fonts: Vec<Blob<u8>>,
 }
 
 /// The `WidgetId` which async events should be sent to.

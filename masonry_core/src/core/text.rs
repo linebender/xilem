@@ -60,6 +60,10 @@ pub fn render_text(
             let PositionedLayoutItem::GlyphRun(glyph_run) = item else {
                 continue;
             };
+            // We need to round the baseline to pixels to avoid blurry text.
+            // https://github.com/linebender/parley/pull/297#issuecomment-2751450235
+            // TODO: Better handling of fractional DPI scaling?
+            let glyph_run_baseline = glyph_run.baseline().round();
             let style = glyph_run.style();
             // We draw underlines under the text, then the strikethrough on top, following:
             // https://drafts.csswg.org/css-text-decor/#painting-order
@@ -79,7 +83,7 @@ pub fn render_text(
                 // Remember that we are using a y-down coordinate system
                 // If there's a custom width, because this is an underline, we want the custom
                 // width to go down from the default expectation
-                let y = glyph_run.baseline() - offset + width / 2.;
+                let y = glyph_run_baseline - offset + width / 2.;
 
                 let line = Line::new(
                     (glyph_run.offset() as f64, y as f64),
@@ -94,7 +98,7 @@ pub fn render_text(
                 );
             }
             let mut x = glyph_run.offset();
-            let y = glyph_run.baseline();
+            let y = glyph_run_baseline;
             let run = glyph_run.run();
             let font = run.font();
             let font_size = run.font_size();
@@ -141,7 +145,7 @@ pub fn render_text(
                 // so we calculate the middle y-position of the strikethrough based on the font's
                 // standard strikethrough width.
                 // Remember that we are using a y-down coordinate system
-                let y = glyph_run.baseline() - offset + run_metrics.strikethrough_size / 2.;
+                let y = glyph_run_baseline - offset + run_metrics.strikethrough_size / 2.;
 
                 let line = Line::new(
                     (glyph_run.offset() as f64, y as f64),

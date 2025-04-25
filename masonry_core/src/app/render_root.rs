@@ -5,7 +5,7 @@ use std::collections::{HashMap, VecDeque};
 
 use accesskit::{ActionRequest, TreeUpdate};
 use anymap3::AnyMap;
-use parley::fontique::{self, Collection, CollectionOptions, SourceCache};
+use parley::fontique::{self, Blob, Collection, CollectionOptions, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
@@ -191,7 +191,7 @@ pub struct RenderRootOptions {
     ///
     /// We expect to develop a much more fully-featured font API in the future, but
     /// this is necessary for our testing of Masonry.
-    pub test_font: Option<Vec<u8>>,
+    pub test_font: Option<Blob<u8>>,
 }
 
 /// Objects emitted by the [`RenderRoot`] to signal that something has changed or require external actions.
@@ -428,12 +428,12 @@ impl RenderRoot {
     /// added to that family.
     pub fn register_fonts(
         &mut self,
-        data: Vec<u8>,
+        data: Blob<u8>,
     ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
         self.global_state
             .font_context
             .collection
-            .register_fonts(data)
+            .register_fonts(data, None)
     }
 
     /// Redraw the window.
