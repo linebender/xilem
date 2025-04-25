@@ -390,7 +390,7 @@ pub trait Widget: AsDynWidget + Any {
     }
 }
 
-/// See [`Widget::find_widget_at_pos`] for more details.
+/// See [`Widget::find_widget_under_pointer`] for more details.
 pub fn find_widget_under_pointer<'c>(
     widget: &WidgetRef<'c, dyn Widget>,
     pos: Point,

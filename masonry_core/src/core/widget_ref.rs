@@ -184,7 +184,7 @@ impl WidgetRef<'_, dyn Widget> {
     }
 
     /// Recursively find the innermost widget at the given position, using
-    /// [`Widget::find_widget_at_pos`] to descend the widget tree. If `self` does not contain the
+    /// [`Widget::find_widget_under_pointer`] to descend the widget tree. If `self` does not contain the
     /// given position in its layout rect or clip path, this returns `None`.
     ///
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
