@@ -1,6 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::Any;
 use std::ops::Deref;
 
 use smallvec::SmallVec;
@@ -101,7 +102,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         Some(WidgetRef {
             ctx: self.ctx,
             properties: self.properties,
-            widget: self.widget.as_any().downcast_ref()?,
+            widget: (self.widget.as_dyn() as &dyn Any).downcast_ref()?,
         })
     }
 

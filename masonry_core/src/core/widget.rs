@@ -13,7 +13,6 @@ use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
 use vello::Scene;
 
-use crate::AsAny;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
@@ -82,11 +81,11 @@ pub trait FromDynWidget {
 
 impl<T: Widget> FromDynWidget for T {
     fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
-        widget.as_any().downcast_ref()
+        (widget as &dyn Any).downcast_ref()
     }
 
     fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
-        widget.as_mut_any().downcast_mut()
+        (widget as &mut dyn Any).downcast_mut()
     }
 }
 
@@ -125,7 +124,7 @@ impl FromDynWidget for dyn Widget {
 /// through [`WidgetPod`](crate::core::WidgetPod)s. Widget methods are called by Masonry, and a
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
 #[allow(unused_variables)]
-pub trait Widget: AsAny + AsDynWidget {
+pub trait Widget: AsDynWidget + Any {
     /// Handle a pointer event.
     ///
     /// Pointer events will target the widget under the pointer, and then the
@@ -388,24 +387,6 @@ pub trait Widget: AsAny + AsDynWidget {
             .split("::")
             .last()
             .unwrap_or(name)
-    }
-
-    // FIXME
-    /// Cast as `Any`.
-    ///
-    /// Mainly intended to be overridden in `Box<dyn Widget>`.
-    #[doc(hidden)]
-    fn as_any(&self) -> &dyn Any {
-        self.as_dyn_any()
-    }
-
-    // FIXME
-    /// Cast as `Any`.
-    ///
-    /// Mainly intended to be overridden in `Box<dyn Widget>`.
-    #[doc(hidden)]
-    fn as_mut_any(&mut self) -> &mut dyn Any {
-        self.as_mut_dyn_any()
     }
 }
 
