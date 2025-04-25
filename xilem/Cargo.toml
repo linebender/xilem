@@ -91,10 +91,6 @@ path = "examples/emoji_picker.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
 
-[[example]]
-name = "gallery_label_xilem_view"
-path = "examples/gallery_label_xilem_view.rs"
-
 [lints]
 workspace = true
 
