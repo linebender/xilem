@@ -55,8 +55,10 @@ pub struct Label {
 
     line_break_mode: LineBreaking,
     alignment: Alignment,
-    /// Whether the alignment has changed since the last layout, which would force a re-alignment.
-    alignment_changed: bool,
+    /// Whether the alignment needs to be re-computed.
+    needs_alignment: bool,
+    /// How much width was available during last layout.
+    last_available_width: Option<f32>,
     /// The value of `max_advance` when this layout was last calculated.
     ///
     /// If it has changed, we need to re-perform line-breaking.
@@ -95,7 +97,8 @@ impl Label {
             styles_changed: true,
             line_break_mode: LineBreaking::Overflow,
             alignment: Alignment::Start,
-            alignment_changed: true,
+            needs_alignment: true,
+            last_available_width: None,
             last_max_advance: None,
             brush: theme::TEXT_COLOR.into(),
             disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
@@ -274,7 +277,7 @@ impl Label {
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
         this.widget.alignment = alignment;
 
-        this.widget.alignment_changed = true;
+        this.widget.needs_alignment = true;
         this.ctx.request_layout();
     }
 
@@ -357,10 +360,14 @@ impl Widget for Label {
         bc: &BoxConstraints,
     ) -> Size {
         let available_width = if bc.max().width.is_finite() {
-            Some(bc.max().width as f32 - 2. * LABEL_X_PADDING as f32)
+            Some((bc.max().width as f32 - 2. * LABEL_X_PADDING as f32).max(0.))
         } else {
             None
         };
+        if available_width != self.last_available_width {
+            self.last_available_width = available_width;
+            self.needs_alignment = true;
+        }
 
         let max_advance = if self.line_break_mode == LineBreaking::WordWrap {
             available_width
@@ -382,7 +389,7 @@ impl Widget for Label {
         if max_advance != self.last_max_advance || styles_changed {
             self.text_layout.break_all_lines(max_advance);
             self.last_max_advance = max_advance;
-            self.alignment_changed = true;
+            self.needs_alignment = true;
         }
 
         let alignment_width = if self.alignment == Alignment::Start {
@@ -405,12 +412,13 @@ impl Widget for Label {
             // TODO: Warn on the rising edge of entering this state for this widget?
             self.text_layout.width()
         };
-        if self.alignment_changed {
+        if self.needs_alignment {
             self.text_layout.align(
                 Some(alignment_width),
                 self.alignment,
                 AlignmentOptions::default(),
             );
+            self.needs_alignment = false;
         }
         let text_size = Size::new(alignment_width.into(), self.text_layout.height().into());
 
