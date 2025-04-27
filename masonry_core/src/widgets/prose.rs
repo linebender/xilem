@@ -213,7 +213,7 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(sized_box, Size::new(100.0, 40.0));
 
-        assert_render_snapshot!(harness, "prose_clipping");
+        assert_render_snapshot!(harness, "prose_prose_clipping");
     }
 
     #[test]
@@ -246,6 +246,6 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(flex, Size::new(200.0, 200.0));
 
-        assert_render_snapshot!(harness, "prose_alignment_flex");
+        assert_render_snapshot!(harness, "prose_prose_alignment_flex");
     }
 }

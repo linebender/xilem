@@ -394,20 +394,20 @@ mod tests {
         let window_size = Size::new(200.0, 200.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         // Snapshot with the single widget.
-        assert_render_snapshot!(harness, "initial_1x1");
+        assert_render_snapshot!(harness, "grid_initial_1x1");
 
         // Expand it to a 4x4 grid
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
             Grid::set_width(&mut grid, 4);
         });
-        assert_render_snapshot!(harness, "expanded_4x1");
+        assert_render_snapshot!(harness, "grid_expanded_4x1");
 
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
             Grid::set_height(&mut grid, 4);
         });
-        assert_render_snapshot!(harness, "expanded_4x4");
+        assert_render_snapshot!(harness, "grid_expanded_4x4");
 
         // Add a widget that takes up more than one horizontal cell
         harness.edit_root_widget(|mut grid| {
@@ -418,7 +418,7 @@ mod tests {
                 GridParams::new(1, 0, 3, 1),
             );
         });
-        assert_render_snapshot!(harness, "with_horizontal_widget");
+        assert_render_snapshot!(harness, "grid_with_horizontal_widget");
 
         // Add a widget that takes up more than one vertical cell
         harness.edit_root_widget(|mut grid| {
@@ -429,7 +429,7 @@ mod tests {
                 GridParams::new(0, 1, 1, 3),
             );
         });
-        assert_render_snapshot!(harness, "with_vertical_widget");
+        assert_render_snapshot!(harness, "grid_with_vertical_widget");
 
         // Add a widget that takes up more than one horizontal and vertical cell
         harness.edit_root_widget(|mut grid| {
@@ -440,21 +440,21 @@ mod tests {
                 GridParams::new(1, 1, 2, 2),
             );
         });
-        assert_render_snapshot!(harness, "with_2x2_widget");
+        assert_render_snapshot!(harness, "grid_with_2x2_widget");
 
         // Change the spacing
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
             Grid::set_spacing(&mut grid, 7.0);
         });
-        assert_render_snapshot!(harness, "with_changed_spacing");
+        assert_render_snapshot!(harness, "grid_with_changed_spacing");
 
         // Make the spacing negative
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
             Grid::set_spacing(&mut grid, -4.0);
         });
-        assert_render_snapshot!(harness, "with_negative_spacing");
+        assert_render_snapshot!(harness, "grid_with_negative_spacing");
     }
 
     #[test]
@@ -464,14 +464,14 @@ mod tests {
         let window_size = Size::new(200.0, 200.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         // Snapshot with the single widget.
-        assert_render_snapshot!(harness, "initial_2x2");
+        assert_render_snapshot!(harness, "grid_initial_2x2");
 
         // Now remove the widget
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
             Grid::remove_child(&mut grid, 0);
         });
-        assert_render_snapshot!(harness, "2x2_with_removed_widget");
+        assert_render_snapshot!(harness, "grid_2x2_with_removed_widget");
 
         // Add it back
         harness.edit_root_widget(|mut grid| {
@@ -482,21 +482,21 @@ mod tests {
                 GridParams::new(0, 0, 1, 1),
             );
         });
-        assert_render_snapshot!(harness, "initial_2x2"); // Should be back to the original state
+        assert_render_snapshot!(harness, "grid_initial_2x2"); // Should be back to the original state
 
         // Change the grid params to position it on the other corner
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
             Grid::update_child_grid_params(&mut grid, 0, GridParams::new(1, 1, 1, 1));
         });
-        assert_render_snapshot!(harness, "moved_2x2_1");
+        assert_render_snapshot!(harness, "grid_moved_2x2_1");
 
         // Now make it take up the entire grid
         harness.edit_root_widget(|mut grid| {
             let mut grid = grid.downcast::<Grid>();
             Grid::update_child_grid_params(&mut grid, 0, GridParams::new(0, 0, 2, 2));
         });
-        assert_render_snapshot!(harness, "moved_2x2_2");
+        assert_render_snapshot!(harness, "grid_moved_2x2_2");
     }
 
     #[test]
@@ -506,7 +506,7 @@ mod tests {
         let window_size = Size::new(200.0, 200.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         // Snapshot with the single widget.
-        assert_render_snapshot!(harness, "initial_2x2");
+        assert_render_snapshot!(harness, "grid_initial_2x2");
 
         // Order sets the draw order, so draw a widget over A by adding it after
         harness.edit_root_widget(|mut grid| {
@@ -517,7 +517,7 @@ mod tests {
                 GridParams::new(0, 0, 1, 1),
             );
         });
-        assert_render_snapshot!(harness, "2x2_with_overlapping_b");
+        assert_render_snapshot!(harness, "grid_2x2_with_overlapping_b");
 
         // Draw a widget under the others by putting it at index 0
         // Make it wide enough to see it stick out, with half of it under A and B.
@@ -530,6 +530,6 @@ mod tests {
                 GridParams::new(0, 0, 2, 1),
             );
         });
-        assert_render_snapshot!(harness, "2x2_with_overlapping_c");
+        assert_render_snapshot!(harness, "grid_2x2_with_overlapping_c");
     }
 }

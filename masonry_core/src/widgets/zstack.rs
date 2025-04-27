@@ -406,7 +406,7 @@ mod tests {
             );
 
         let mut harness = TestHarness::create(widget);
-        assert_render_snapshot!(harness, "zstack_alignment_default");
+        assert_render_snapshot!(harness, "zstack_zstack_alignment_default");
 
         let vertical_cases = [
             ("top", VerticalAlignment::Top),
@@ -431,7 +431,7 @@ mod tests {
             });
             assert_render_snapshot!(
                 harness,
-                &format!("zstack_alignment_{}_{}", vertical.0, horizontal.0)
+                &format!("zstack_zstack_alignment_{}_{}", vertical.0, horizontal.0)
             );
         }
     }
@@ -447,6 +447,6 @@ mod tests {
             .with_child(Label::new("BottomTrailing"), Alignment::BottomTrailing);
 
         let mut harness = TestHarness::create(widget);
-        assert_render_snapshot!(harness, "zstack_alignments_self_aligned");
+        assert_render_snapshot!(harness, "zstack_zstack_alignments_self_aligned");
     }
 }

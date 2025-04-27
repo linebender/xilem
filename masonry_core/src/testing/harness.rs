@@ -33,7 +33,6 @@ use crate::kurbo::{Point, Size, Vec2};
 use crate::passes::anim::run_update_anim_pass;
 use crate::peniko::Color;
 use crate::testing::screenshots::get_image_diff;
-use crate::testing::snapshot_utils::get_cargo_workspace;
 
 /// A safe headless environment to test widgets in.
 ///
@@ -139,24 +138,18 @@ pub struct TestHarnessParams {
 /// Assert a snapshot of a rendered frame of your app.
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
-/// and stores the render as a PNG next to the test, in a `./screenshots/` folder.
+/// and stores the render as a PNG next to the test, in a `<CRATE_ROOT>/screenshots/` folder.
 ///
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
 /// If the test is run again and the new rendered value matches the old screenshot, the diff file is deleted.
 ///
 /// If a screenshot doesn't exist, the assert will fail; the new screenshot is stored as
-/// `./screenshots/<test_name>.new.png`, and must be renamed before the assert will pass.
+/// `<CRATE_ROOT>/screenshots/<test_name>.new.png`, and must be renamed before the assert will pass.
 #[macro_export]
 macro_rules! assert_render_snapshot {
     ($test_harness:expr, $name:expr) => {
-        $test_harness.check_render_snapshot(
-            env!("CARGO_MANIFEST_DIR"),
-            file!(),
-            module_path!(),
-            $name,
-            false,
-        )
+        $test_harness.check_render_snapshot(env!("CARGO_MANIFEST_DIR"), $name, false)
     };
 }
 
@@ -175,13 +168,7 @@ macro_rules! assert_render_snapshot {
 #[macro_export]
 macro_rules! assert_failing_render_snapshot {
     ($test_harness:expr, $name:expr) => {
-        $test_harness.check_render_snapshot(
-            env!("CARGO_MANIFEST_DIR"),
-            file!(),
-            module_path!(),
-            $name,
-            true,
-        )
+        $test_harness.check_render_snapshot(env!("CARGO_MANIFEST_DIR"), $name, true)
     };
 }
 
@@ -687,11 +674,9 @@ impl TestHarness {
     /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
     ///
     /// Renders the current Widget tree to a pixmap, and compares the pixmap against the
-    /// snapshot stored in `./screenshots/module_path__test_name.png`.
+    /// snapshot stored in `<CRATE ROOT>/screenshots/<test_name>.png`.
     ///
     /// * `manifest_dir`: directory where `Cargo.toml` can be found.
-    /// * `test_file_path`: file path the current test is in.
-    /// * `test_module_path`: import path of the module the current test is in.
     /// * `test_name`: arbitrary name; second argument of [`assert_render_snapshot`].
     /// * `expect_failure`: whether the snapshot is expected to fail to match.
     #[doc(hidden)]
@@ -699,8 +684,6 @@ impl TestHarness {
     pub fn check_render_snapshot(
         &mut self,
         manifest_dir: &str,
-        test_file_path: &str,
-        test_module_path: &str,
         test_name: &str,
         expect_failure: bool,
     ) {
@@ -723,18 +706,12 @@ impl TestHarness {
 
         let new_image: DynamicImage = self.render().into();
 
-        let workspace_path = get_cargo_workspace(manifest_dir);
-        let test_file_path_abs = workspace_path.join(test_file_path);
-        let folder_path = test_file_path_abs.parent().unwrap();
-
-        let screenshots_folder = folder_path.join("screenshots");
+        let screenshots_folder = PathBuf::from(manifest_dir).join("screenshots");
         std::fs::create_dir_all(&screenshots_folder).unwrap();
 
-        let module_str = test_module_path.replace("::", "__");
-
-        let reference_path = screenshots_folder.join(format!("{module_str}__{test_name}.png"));
-        let new_path = screenshots_folder.join(format!("{module_str}__{test_name}.new.png"));
-        let diff_path = screenshots_folder.join(format!("{module_str}__{test_name}.diff.png"));
+        let reference_path = screenshots_folder.join(format!("{test_name}.png"));
+        let new_path = screenshots_folder.join(format!("{test_name}.new.png"));
+        let diff_path = screenshots_folder.join(format!("{test_name}.diff.png"));
 
         // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
         // Have a warning for that case (i.e. differentiation between not-found and invalid format)

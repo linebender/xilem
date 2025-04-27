@@ -213,7 +213,7 @@ mod tests {
         let image_widget = Image::new(image_data);
 
         let mut harness = TestHarness::create_with_size(image_widget, Size::new(40., 60.));
-        assert_render_snapshot!(harness, "tall_paint");
+        assert_render_snapshot!(harness, "image_tall_paint");
     }
 
     #[test]
@@ -256,36 +256,36 @@ mod tests {
         // Contain.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Contain);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
-        assert_render_snapshot!(harness, "layout_contain");
+        assert_render_snapshot!(harness, "image_layout_contain");
 
         // Cover.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Cover);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
-        assert_render_snapshot!(harness, "layout_cover");
+        assert_render_snapshot!(harness, "image_layout_cover");
 
         // Fill.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Fill);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
-        assert_render_snapshot!(harness, "layout_fill");
+        assert_render_snapshot!(harness, "image_layout_fill");
 
         // FitHeight.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::FitHeight);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
-        assert_render_snapshot!(harness, "layout_fitheight");
+        assert_render_snapshot!(harness, "image_layout_fitheight");
 
         // FitWidth.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::FitWidth);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
-        assert_render_snapshot!(harness, "layout_fitwidth");
+        assert_render_snapshot!(harness, "image_layout_fitwidth");
 
         // None.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::None);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
-        assert_render_snapshot!(harness, "layout_none");
+        assert_render_snapshot!(harness, "image_layout_none");
 
         // ScaleDown.
         let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::ScaleDown);
         let mut harness = TestHarness::create_with_size(image_widget, harness_size);
-        assert_render_snapshot!(harness, "layout_scaledown");
+        assert_render_snapshot!(harness, "image_layout_scaledown");
     }
 }

@@ -218,6 +218,6 @@ mod tests {
 
         let mut harness = TestHarness::create(CustomWidget(my_string));
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
+        assert_render_snapshot!(harness, "example_custom_widget_initial");
     }
 }

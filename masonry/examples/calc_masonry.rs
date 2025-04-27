@@ -437,7 +437,7 @@ mod tests {
     fn screenshot_test() {
         let mut harness = TestHarness::create(build_calc());
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
+        assert_render_snapshot!(harness, "example_calc_masonry_initial");
 
         // TODO - Test clicking buttons
     }

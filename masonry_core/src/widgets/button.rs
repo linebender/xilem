@@ -295,7 +295,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "hello");
+        assert_render_snapshot!(harness, "button_hello");
 
         assert_eq!(harness.pop_action(), None);
 
@@ -360,6 +360,6 @@ mod tests {
             Label::set_brush(&mut label, red);
         });
 
-        assert_render_snapshot!(harness, "set_properties");
+        assert_render_snapshot!(harness, "button_set_properties");
     }
 }

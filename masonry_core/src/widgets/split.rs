@@ -628,7 +628,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "columns");
+        assert_render_snapshot!(harness, "split_columns");
     }
 
     #[test]
@@ -643,7 +643,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "rows");
+        assert_render_snapshot!(harness, "split_rows");
     }
 
     // FIXME - test moving the split point by mouse
