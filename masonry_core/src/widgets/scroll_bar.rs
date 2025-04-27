@@ -272,7 +272,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, Size::new(50.0, 200.0));
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "scroll_bar_scrollbar_default");
+        assert_render_snapshot!(harness, "scrollbar_default");
 
         assert_eq!(harness.pop_action(), None);
 
@@ -280,15 +280,15 @@ mod tests {
         // TODO - Scroll action?
         assert_eq!(harness.pop_action(), None);
 
-        assert_render_snapshot!(harness, "scroll_bar_scrollbar_middle");
+        assert_render_snapshot!(harness, "scrollbar_middle");
 
         harness.mouse_button_press(PointerButton::Primary);
         harness.mouse_move(Point::new(30.0, 150.0));
 
-        assert_render_snapshot!(harness, "scroll_bar_scrollbar_down");
+        assert_render_snapshot!(harness, "scrollbar_down");
 
         harness.mouse_move(Point::new(30.0, 300.0));
-        assert_render_snapshot!(harness, "scroll_bar_scrollbar_bottom");
+        assert_render_snapshot!(harness, "scrollbar_bottom");
     }
 
     #[test]
@@ -299,7 +299,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, Size::new(200.0, 50.0));
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "scroll_bar_scrollbar_horizontal");
+        assert_render_snapshot!(harness, "scrollbar_horizontal");
 
         assert_eq!(harness.pop_action(), None);
 
@@ -307,7 +307,7 @@ mod tests {
         // TODO - Scroll action?
         assert_eq!(harness.pop_action(), None);
 
-        assert_render_snapshot!(harness, "scroll_bar_scrollbar_horizontal_middle");
+        assert_render_snapshot!(harness, "scrollbar_horizontal_middle");
     }
 
     // TODO - Add "portal larger than content" test

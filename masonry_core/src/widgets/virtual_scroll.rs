@@ -1001,20 +1001,20 @@ mod tests {
         }
 
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
-        assert_render_snapshot!(harness, "virtual_scroll_virtual_scroll_basic");
+        assert_render_snapshot!(harness, "virtual_scroll_basic");
         harness.edit_widget(virtual_scroll_id, |mut portal| {
             let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
             VirtualScroll::overwrite_anchor(&mut scroll, 100);
         });
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
-        assert_render_snapshot!(harness, "virtual_scroll_virtual_scroll_moved");
+        assert_render_snapshot!(harness, "virtual_scroll_moved");
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::MouseWheel(
             LogicalPosition::new(0., 25.),
             PointerState::empty(),
         ));
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
-        assert_render_snapshot!(harness, "virtual_scroll_virtual_scroll_scrolled");
+        assert_render_snapshot!(harness, "virtual_scroll_scrolled");
     }
 
     #[test]
@@ -1280,7 +1280,7 @@ mod tests {
             // so validate it with code.
             original_scroll = widget.scroll_offset_from_anchor;
             original_range = widget.active_range.clone();
-            assert_render_snapshot!(harness, "virtual_scroll_virtual_scroll_limited_up_bottom");
+            assert_render_snapshot!(harness, "virtual_scroll_limited_up_bottom");
         }
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::MouseWheel(

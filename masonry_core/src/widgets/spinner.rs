@@ -200,13 +200,13 @@ mod tests {
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(spinner, window_size);
-        assert_render_snapshot!(harness, "spinner_spinner_init");
+        assert_render_snapshot!(harness, "spinner_init");
 
         harness.animate_ms(700);
-        assert_render_snapshot!(harness, "spinner_spinner_700ms");
+        assert_render_snapshot!(harness, "spinner_700ms");
 
         harness.animate_ms(400);
-        assert_render_snapshot!(harness, "spinner_spinner_1100ms");
+        assert_render_snapshot!(harness, "spinner_1100ms");
     }
 
     #[test]
