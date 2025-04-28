@@ -29,8 +29,8 @@ impl Background {
 
     pub fn get_peniko_brush_for_rect(&self, rect: Rect) -> crate::peniko::Brush {
         match self {
-            Background::Color(color) => (*color).into(),
-            Background::Gradient(gradient) => gradient.get_peniko_gradient_for_rect(rect).into(),
+            Self::Color(color) => (*color).into(),
+            Self::Gradient(gradient) => gradient.get_peniko_gradient_for_rect(rect).into(),
         }
     }
 }
