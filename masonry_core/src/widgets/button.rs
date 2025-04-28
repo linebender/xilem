@@ -16,6 +16,7 @@ use crate::core::{
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
+use crate::properties::types::Gradient;
 use crate::properties::*;
 use crate::theme;
 use crate::util::{fill, stroke};
@@ -220,26 +221,24 @@ impl Widget for Button {
         let border_radius = props.get::<CornerRadius>().unwrap_or(&DEFAULT_BORDER_RADII);
 
         // TODO - Add DEFAULT_BACKGROUND_GRADIENT constant.
-        let bg_gradient = BackgroundGradient {
-            gradient: Gradient::new_linear(0.0)
-                .with_stops([theme::BUTTON_LIGHT, theme::BUTTON_DARK]),
-        };
-        let bg_gradient = props.get::<BackgroundGradient>().unwrap_or(&bg_gradient);
+        let bg_gradient =
+            Gradient::new_linear(0.0).with_stops([theme::BUTTON_LIGHT, theme::BUTTON_DARK]);
+        let bg_gradient = Background::Gradient(bg_gradient);
+        let bg_gradient = props.get::<Background>().unwrap_or(&bg_gradient);
 
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
         // TODO - Handle disabled and pressed bg with properties.
         let bg_gradient = if ctx.is_disabled() {
-            &BackgroundGradient {
-                gradient: Gradient::new_linear(0.0)
+            &Background::Gradient(
+                Gradient::new_linear(0.0)
                     .with_stops([theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]),
-            }
+            )
         } else if is_pressed {
-            &BackgroundGradient {
-                gradient: Gradient::new_linear(0.0)
-                    .with_stops([theme::BUTTON_DARK, theme::BUTTON_LIGHT]),
-            }
+            &Background::Gradient(
+                Gradient::new_linear(0.0).with_stops([theme::BUTTON_DARK, theme::BUTTON_LIGHT]),
+            )
         } else {
             bg_gradient
         };
@@ -253,9 +252,7 @@ impl Widget for Button {
             *border_color
         };
 
-        let brush = bg_gradient
-            .gradient
-            .get_peniko_gradient_for_rect(bg_rect.rect());
+        let brush = bg_gradient.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
     }
