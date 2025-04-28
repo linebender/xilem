@@ -73,7 +73,7 @@ impl Image {
 // --- MARK: IMPL WIDGET ---
 impl Widget for Image {
     type Action = DefaultAction;
-    
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

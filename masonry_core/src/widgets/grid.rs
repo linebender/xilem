@@ -284,7 +284,7 @@ impl Grid {
 // --- MARK: IMPL WIDGET---
 impl Widget for Grid {
     type Action = DefaultAction;
-    
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

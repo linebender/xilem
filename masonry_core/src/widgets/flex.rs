@@ -962,7 +962,7 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
 // --- MARK: IMPL WIDGET---
 impl Widget for Flex {
     type Action = DefaultAction;
-    
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

@@ -98,7 +98,7 @@ fn clamp_progress(progress: Option<f64>) -> Option<f64> {
 // --- MARK: IMPL WIDGET ---
 impl Widget for ProgressBar {
     type Action = DefaultAction;
-    
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

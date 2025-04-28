@@ -111,7 +111,7 @@ impl Prose {
 // --- MARK: IMPL WIDGET ---
 impl Widget for Prose {
     type Action = DefaultAction;
-    
+
     fn on_pointer_event(
         &mut self,
         _: &mut EventCtx,

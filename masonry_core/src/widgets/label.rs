@@ -314,7 +314,7 @@ impl Label {
 // --- MARK: IMPL WIDGET ---
 impl Widget for Label {
     type Action = DefaultAction;
-    
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,
