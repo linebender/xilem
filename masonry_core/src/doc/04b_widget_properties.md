@@ -38,7 +38,7 @@ if let Some(ducky) = props.get::<RubberDuck>() {
 ### Properties are only data
 
 Properties are a way for Widgets to store arbitrary state; they do not encode *behavior*.
-For those familiar, properties are similar the "Component" part of ECS.
+For those familiar, properties are similar to the "Component" part of ECS.
 
 In other words, adding a property to a widget will not change anything about how that widget is rendered *unless that widget has code specifically reading that property*.
 
