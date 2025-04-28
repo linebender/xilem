@@ -845,8 +845,7 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 [[package]]
 name = "dpi"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
+source = "git+https://github.com/mwcampbell/winit?branch=android-kb-backport#8c484cb81d60eece14e6c81f1da94a44addb95c8"
 
 [[package]]
 name = "elm"
@@ -4539,8 +4538,7 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 [[package]]
 name = "winit"
 version = "0.30.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a809eacf18c8eca8b6635091543f02a5a06ddf3dad846398795460e6e0ae3cc0"
+source = "git+https://github.com/mwcampbell/winit?branch=android-kb-backport#8c484cb81d60eece14e6c81f1da94a44addb95c8"
 dependencies = [
  "ahash",
  "android-activity",
@@ -4555,6 +4553,7 @@ dependencies = [
  "core-graphics",
  "cursor-icon",
  "dpi",
+ "jni",
  "js-sys",
  "libc",
  "memmap2",
