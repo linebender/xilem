@@ -25,19 +25,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "becf0eb5215b6ecb0a739c31c21bd83c4f326524c9b46b7e882d77559b60a529"
 
 [[package]]
-name = "accesskit_android"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0af881ef4f4996d3cfc7333622e4f2f059c6b5a6749e286b6d7dae7b1e00ad72"
-dependencies = [
- "accesskit",
- "accesskit_consumer",
- "jni",
- "log",
- "once_cell",
-]
-
-[[package]]
 name = "accesskit_atspi_common"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -96,14 +83,13 @@ dependencies = [
 
 [[package]]
 name = "accesskit_windows"
-version = "0.25.0"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65178f3df98a51e4238e584fcb255cb1a4f9111820848eeddd37663be40a625f"
+checksum = "be08cadc069eaf5565fe82bbd6388e3bd66253e0b4f396311027660372d3d777"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
  "hashbrown",
- "paste",
  "static_assertions",
  "windows",
  "windows-core",
@@ -111,12 +97,11 @@ dependencies = [
 
 [[package]]
 name = "accesskit_winit"
-version = "0.24.0"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c28531b0a1612b46d057a724a1e3de42a4bb101ff9f18c96c32f605b6e5ef06"
+checksum = "7c52889a9866302aae71be5b004291dd1e12cb0a7ea9899371f91205ff277dac"
 dependencies = [
  "accesskit",
- "accesskit_android",
  "accesskit_macos",
  "accesskit_unix",
  "accesskit_windows",
