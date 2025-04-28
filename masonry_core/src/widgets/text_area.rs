@@ -779,6 +779,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
                         return;
                     }
+                    Key::Character(c)
+                        if EDITABLE
+                            && !modifiers_state.ctrl()
+                            && !modifiers_state.alt()
+                            && !modifiers_state.meta() =>
+                    {
+                        self.editor
+                            .driver(fctx, lctx)
+                            .insert_or_replace_selection(key_text.as_ref().unwrap_or(c));
+                        edited = true;
+                    }
                     _ if EDITABLE => match &key_text {
                         Some(text) => {
                             self.editor
