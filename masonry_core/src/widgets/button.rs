@@ -11,7 +11,7 @@ use tracing::{Span, trace, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
@@ -100,6 +100,8 @@ impl Button {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Button {
+    type Action = DefaultAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,
@@ -117,7 +119,7 @@ impl Widget for Button {
             }
             PointerEvent::PointerUp(button, _) => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
-                    ctx.submit_action(Action::ButtonPressed(*button));
+                    ctx.submit_action(DefaultAction::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 // Changes in pointer capture impact appearance, but not accessibility node
@@ -144,7 +146,7 @@ impl Widget for Button {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
+                    ctx.submit_action(DefaultAction::ButtonPressed(PointerButton::Primary));
                 }
                 _ => {}
             }
@@ -297,12 +299,15 @@ mod tests {
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.action_queue_empty());
 
         harness.mouse_click_on(button_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::ButtonPressed(PointerButton::Primary), button_id))
+            Some((
+                DefaultAction::ButtonPressed(PointerButton::Primary),
+                button_id
+            ))
         );
     }
 

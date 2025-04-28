@@ -152,9 +152,9 @@ where
     ) -> MessageResult<Action> {
         match id_path.split_first() {
             Some((&LABEL_VIEW_ID, rest)) => self.label.message(&mut (), rest, message, app_state),
-            None => match message.downcast::<masonry::core::Action>() {
+            None => match message.downcast::<masonry::core::DefaultAction>() {
                 Ok(action) => {
-                    if let masonry::core::Action::ButtonPressed(button) = *action {
+                    if let masonry::core::DefaultAction::ButtonPressed(button) = *action {
                         (self.callback)(app_state, button)
                     } else {
                         tracing::error!("Wrong action type in Button::message: {action:?}");

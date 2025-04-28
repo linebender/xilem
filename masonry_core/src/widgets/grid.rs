@@ -8,8 +8,9 @@ use vello::Scene;
 use vello::kurbo::{Affine, Line, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 
@@ -282,6 +283,8 @@ impl Grid {
 
 // --- MARK: IMPL WIDGET---
 impl Widget for Grid {
+    type Action = DefaultAction;
+    
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

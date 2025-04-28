@@ -94,9 +94,9 @@ where
             id_path.is_empty(),
             "id path should be empty in Checkbox::message"
         );
-        match message.downcast::<masonry::core::Action>() {
+        match message.downcast::<masonry::core::DefaultAction>() {
             Ok(action) => {
-                if let masonry::core::Action::CheckboxToggled(checked) = *action {
+                if let masonry::core::DefaultAction::CheckboxToggled(checked) = *action {
                     MessageResult::Action((self.callback)(app_state, checked))
                 } else {
                     tracing::error!("Wrong action type in Checkbox::message: {action:?}");

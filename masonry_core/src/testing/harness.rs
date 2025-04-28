@@ -4,6 +4,7 @@
 //! Tools and infrastructure for testing widgets.
 
 use std::collections::VecDeque;
+use std::fmt::Debug;
 use std::io::Cursor;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
@@ -96,7 +97,7 @@ use crate::testing::snapshot_utils::get_cargo_workspace;
 ///     assert_render_snapshot!(harness, "hello");
 ///     # }
 ///
-///     assert_eq!(harness.pop_action(), None);
+///     assert!(harness.action_queue_empty());
 ///
 ///     harness.mouse_click_on(button_id);
 ///     assert_eq!(
@@ -115,7 +116,7 @@ pub struct TestHarness {
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
-    action_queue: VecDeque<(Action, WidgetId)>,
+    action_queue: VecDeque<Action>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
     title: String,
@@ -301,8 +302,8 @@ impl TestHarness {
     fn process_signals(&mut self) {
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
-                RenderRootSignal::Action(action, widget_id) => {
-                    self.action_queue.push_back((action, widget_id));
+                RenderRootSignal::Action(action) => {
+                    self.action_queue.push_back(action);
                 }
                 RenderRootSignal::StartIme => {
                     self.has_ime_session = true;
@@ -645,9 +646,23 @@ impl TestHarness {
         ret
     }
 
+    /// Returns true if no action was emitted by the widget tree or all actions were processed.
+    pub fn action_queue_empty(&self) -> bool {
+        self.action_queue.is_empty()
+    }
+
     /// Pop the oldest [`Action`] emitted by the widget tree.
-    pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
-        self.action_queue.pop_front()
+    ///
+    /// ### Panics
+    ///
+    /// Panics if the oldest action isn't of type `A`.
+    pub fn pop_action<A: Debug + Send + 'static>(&mut self) -> Option<(A, WidgetId)> {
+        let action = self.action_queue.pop_front()?;
+        let id = action.1;
+        let Ok(payload) = action.downcast_payload() else {
+            panic!("Oldest action isn't of type {}", std::any::type_name::<A>());
+        };
+        Some((payload, id))
     }
 
     /// Return the app's current cursor icon.

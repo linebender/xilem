@@ -12,9 +12,9 @@ use vello::kurbo::Affine;
 use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, ObjectFit,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::Size;
 
@@ -72,6 +72,8 @@ impl Image {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Image {
+    type Action = DefaultAction;
+    
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

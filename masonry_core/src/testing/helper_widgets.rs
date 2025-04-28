@@ -19,7 +19,7 @@ use tracing::trace_span;
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, NoAction, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef, find_widget_under_pointer,
 };
@@ -325,6 +325,8 @@ impl<S> ModularWidget<S> {
 
 #[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,
@@ -491,6 +493,8 @@ impl ReplaceChild {
 }
 
 impl Widget for ReplaceChild {
+    type Action = NoAction;
+
     #[cfg(FALSE)]
     fn on_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &Event) {
         #[cfg(FALSE)]
@@ -601,6 +605,8 @@ impl Recording {
 
 #[warn(clippy::missing_trait_methods)]
 impl<W: Widget> Widget for Recorder<W> {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,

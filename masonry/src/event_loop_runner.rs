@@ -7,7 +7,7 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::{debug, error, info, info_span, warn};
+use tracing::{error, info, info_span, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -27,16 +27,15 @@ use crate::app::{
     winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers, winit_mouse_button_to_masonry,
 };
 use crate::core::{
-    PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
+    Action, PointerButton, PointerEvent, PointerState, TextEvent, Widget, WindowEvent,
 };
 use crate::dpi::LogicalPosition;
 use crate::peniko::Color;
 
-#[derive(Debug)]
 pub enum MasonryUserEvent {
     AccessKit(accesskit_winit::Event),
     // TODO: A more considered design here
-    Action(crate::core::Action, WidgetId),
+    Action(Action),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {
@@ -661,9 +660,9 @@ impl MasonryState<'_> {
                 }
             }
             // TODO - Not sure what the use-case for this is.
-            MasonryUserEvent::Action(action, widget) => self
+            MasonryUserEvent::Action(action) => self
                 .render_root
-                .emit_signal(RenderRootSignal::Action(action, widget)),
+                .emit_signal(RenderRootSignal::Action(action)),
         }
 
         self.handle_signals(event_loop, app_driver);
@@ -688,12 +687,11 @@ impl MasonryState<'_> {
         let mut needs_redraw = false;
         while let Some(signal) = self.render_root.pop_signal() {
             match signal {
-                RenderRootSignal::Action(action, widget_id) => {
+                RenderRootSignal::Action(action) => {
                     let mut driver_ctx = DriverCtx {
                         render_root: &mut self.render_root,
                     };
-                    debug!("Action {:?} on widget {:?}", action, widget_id);
-                    app_driver.on_action(&mut driver_ctx, widget_id, action);
+                    app_driver.on_action(&mut driver_ctx, action);
                 }
                 RenderRootSignal::StartIme => {
                     window.set_ime_allowed(true);

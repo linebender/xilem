@@ -16,8 +16,8 @@ use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, DefaultAction, EventCtx, Ime, LayoutCtx,
+    PaintCtx, PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles,
     render_text,
 };
@@ -524,6 +524,8 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 
 // --- MARK: IMPL WIDGET ---
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
+    type Action = DefaultAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,
@@ -768,9 +770,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                                 .insert_or_replace_selection("\n");
                             edited = true;
                         } else {
-                            ctx.submit_action(crate::core::Action::TextEntered(
-                                self.text().to_string(),
-                            ));
+                            ctx.submit_action(DefaultAction::TextEntered(self.text().to_string()));
                         }
                     }
 
@@ -800,7 +800,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     if edited {
-                        ctx.submit_action(crate::core::Action::TextChanged(
+                        ctx.submit_action(DefaultAction::TextChanged(
                             self.text().into_iter().collect(),
                         ));
                         ctx.request_layout();
@@ -844,7 +844,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.set_handled();
                 if edited {
                     let text = self.text().into_iter().collect();
-                    ctx.submit_action(crate::core::Action::TextChanged(text));
+                    ctx.submit_action(DefaultAction::TextChanged(text));
                 }
 
                 let new_generation = self.editor.generation();
@@ -1065,7 +1065,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        core::Action,
+        core::DefaultAction,
         testing::{TestHarness, TestWidgetExt, widget_ids},
     };
     // Tests of alignment happen in Prose.
@@ -1222,18 +1222,24 @@ mod tests {
             let widget = harness.try_get_widget(text_id).unwrap();
             let area = widget.downcast::<TextArea<true>>().unwrap();
             let text = area.widget.text().to_string();
-            let (action, widget_id) = harness.pop_action().unwrap();
+            let (action, widget_id) = harness.pop_action::<DefaultAction>().unwrap();
             assert_eq!(widget_id, text_id);
 
             // Check that only the one action was emitted so we don't miss an error case
             // where TextEntered _and_ TextChanged actions are emitted
-            assert!(harness.pop_action().is_none());
+            assert!(harness.action_queue_empty());
 
             if scenario.expect_text_entered_event {
-                assert_eq!(action, Action::TextEntered("hello world".to_string()));
+                assert_eq!(
+                    action,
+                    DefaultAction::TextEntered("hello world".to_string())
+                );
                 assert_eq!(text, "hello world");
             } else {
-                assert_eq!(action, Action::TextChanged("\nhello world".to_string()));
+                assert_eq!(
+                    action,
+                    DefaultAction::TextChanged("\nhello world".to_string())
+                );
                 assert_eq!(text, "\nhello world");
             }
         }

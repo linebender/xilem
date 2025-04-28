@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, Widget, WidgetId};
+use masonry::core::{Action, DefaultAction, Widget};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use winit::window::Window;
@@ -20,9 +20,13 @@ struct Driver {
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, action: Action) {
+        let Ok(action) = action.downcast_payload() else {
+            return;
+        };
+
         match action {
-            Action::ButtonPressed(_) => {
+            DefaultAction::ButtonPressed(_) => {
                 ctx.render_root().edit_root_widget(|mut root| {
                     let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
 
@@ -38,7 +42,7 @@ impl AppDriver for Driver {
                     TextArea::reset_text(&mut text_area, "");
                 });
             }
-            Action::TextChanged(new_text) => {
+            DefaultAction::TextChanged(new_text) => {
                 self.next_task = new_text.clone();
             }
             _ => {}

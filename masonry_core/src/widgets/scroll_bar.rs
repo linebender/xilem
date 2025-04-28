@@ -8,8 +8,8 @@ use vello::Scene;
 use vello::kurbo::Rect;
 
 use crate::core::{
-    AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, DefaultAction, EventCtx, LayoutCtx,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Point, Size};
@@ -123,6 +123,8 @@ impl ScrollBar {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for ScrollBar {
+    type Action = DefaultAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,
@@ -274,11 +276,11 @@ mod tests {
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "scrollbar_default");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.action_queue_empty());
 
         harness.mouse_click_on(scrollbar_id);
         // TODO - Scroll action?
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.action_queue_empty());
 
         assert_render_snapshot!(harness, "scrollbar_middle");
 
@@ -301,11 +303,11 @@ mod tests {
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "scrollbar_horizontal");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.action_queue_empty());
 
         harness.mouse_click_on(scrollbar_id);
         // TODO - Scroll action?
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.action_queue_empty());
 
         assert_render_snapshot!(harness, "scrollbar_horizontal_middle");
     }

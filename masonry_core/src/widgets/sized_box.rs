@@ -13,9 +13,9 @@ use vello::kurbo::{Affine, RoundedRectRadii};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 use crate::properties::BackgroundColor;
@@ -463,6 +463,8 @@ impl SizedBox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for SizedBox {
+    type Action = DefaultAction;
+    
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

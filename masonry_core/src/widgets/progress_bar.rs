@@ -9,9 +9,9 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 use crate::theme;
@@ -97,6 +97,8 @@ fn clamp_progress(progress: Option<f64>) -> Option<f64> {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for ProgressBar {
+    type Action = DefaultAction;
+    
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

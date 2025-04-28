@@ -12,9 +12,9 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::parley::style::FontWeight;
 use crate::widgets::Label;
@@ -179,6 +179,8 @@ impl VariableLabel {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for VariableLabel {
+    type Action = DefaultAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

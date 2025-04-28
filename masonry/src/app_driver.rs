@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::app::{MasonryState, RenderRoot};
-use crate::core::{Action, WidgetId};
+use crate::core::Action;
 
 /// Context for the [`AppDriver`] trait.
 ///
@@ -23,7 +23,7 @@ pub struct DriverCtx<'a> {
 /// a type that implements this trait.
 pub trait AppDriver {
     /// A hook which will be executed when a widget emits an [`Action`].
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
+    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, action: Action);
 
     #[expect(unused_variables, reason = "Default impl doesn't use arguments")]
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.

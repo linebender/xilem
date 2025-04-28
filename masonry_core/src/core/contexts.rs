@@ -3,7 +3,8 @@
 
 //! The context types that are passed into various widget methods.
 
-use std::any::Any;
+use std::any::{Any, TypeId};
+use std::fmt::Debug;
 
 use accesskit::TreeUpdate;
 use anymap3::AnyMap;
@@ -1150,10 +1151,21 @@ impl_context_method!(
         /// Submit an [`Action`].
         ///
         /// Note: Actions are still a WIP feature.
-        pub fn submit_action(&mut self, action: Action) {
+        pub fn submit_action<A: Debug + Send + 'static>(&mut self, payload: A) {
             trace!("submit_action");
+            if TypeId::of::<A>() != self.widget_state.action_type {
+                debug_panic!(
+                    "Error in {}: trying to call submit_action with type '{}' which is not the action type of this widget.",
+                    self.widget_id(),
+                    std::any::type_name::<A>(),
+                );
+                return;
+            }
             self.global_state
-                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
+                .emit_signal(RenderRootSignal::Action(Action(
+                    Box::new(payload),
+                    self.widget_state.id,
+                )));
         }
 
         /// Set the IME cursor area.
@@ -1252,7 +1264,12 @@ impl RegisterCtx<'_> {
         }
 
         let id = child.id();
-        let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
+        let state = WidgetState::new(
+            child.id(),
+            widget.short_type_name(),
+            widget.action_type(),
+            transform,
+        );
 
         self.widget_children.insert(id, widget.as_box_dyn());
         self.widget_state_children.insert(id, state);

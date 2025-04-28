@@ -138,15 +138,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             id_path.is_empty(),
             "id path should be empty in Textbox::message"
         );
-        match message.downcast::<masonry::core::Action>() {
+        match message.downcast::<masonry::core::DefaultAction>() {
             Ok(action) => match *action {
-                masonry::core::Action::TextChanged(text) => {
+                masonry::core::DefaultAction::TextChanged(text) => {
                     MessageResult::Action((self.on_changed)(app_state, text))
                 }
-                masonry::core::Action::TextEntered(text) if self.on_enter.is_some() => {
+                masonry::core::DefaultAction::TextEntered(text) if self.on_enter.is_some() => {
                     MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
                 }
-                masonry::core::Action::TextEntered(_) => {
+                masonry::core::DefaultAction::TextEntered(_) => {
                     tracing::error!("Textbox::message: on_enter is not set");
                     MessageResult::Stale(DynMessage(action))
                 }

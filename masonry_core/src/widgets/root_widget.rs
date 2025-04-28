@@ -8,7 +8,7 @@ use vello::Scene;
 use vello::kurbo::Point;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, NoAction, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
@@ -45,6 +45,8 @@ impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Widget for RootWidget<W> {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

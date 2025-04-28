@@ -9,7 +9,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, ObjectFit, WidgetId};
+use masonry::core::{Action, ObjectFit};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::{Image, RootWidget};
 use vello::peniko::{Image as ImageBuf, ImageFormat};
@@ -18,7 +18,7 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _action: Action) {}
 }
 
 fn make_image() -> Image {

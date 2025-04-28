@@ -3,7 +3,7 @@
 
 use accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, NoAction, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
@@ -69,6 +69,8 @@ impl DynWidget {
 
 /// Forward all events to the child widget.
 impl Widget for DynWidget {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

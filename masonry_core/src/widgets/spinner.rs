@@ -12,9 +12,9 @@ use vello::Scene;
 use vello::kurbo::{Affine, Cap, Line, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::kurbo::{Point, Size, Vec2};
 use crate::peniko::Color;
@@ -74,6 +74,8 @@ impl Spinner {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Spinner {
+    type Action = DefaultAction;
+    
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

@@ -8,9 +8,9 @@ use vello::Scene;
 use vello::kurbo::{Insets, Point, Rect, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
 use crate::util::stroke;
@@ -110,6 +110,7 @@ impl Textbox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Textbox {
+    type Action = DefaultAction;
     fn on_pointer_event(
         &mut self,
         _: &mut EventCtx,

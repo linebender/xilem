@@ -14,8 +14,9 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    WidgetPod,
 };
 use crate::kurbo::{Rect, Size};
 use crate::util::UnitPoint;
@@ -86,6 +87,8 @@ impl Align {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Align {
+    type Action = DefaultAction;
+    
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

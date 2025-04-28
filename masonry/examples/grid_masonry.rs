@@ -7,7 +7,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, PointerButton, StyleProperty, WidgetId};
+use masonry::core::{Action, DefaultAction, PointerButton, StyleProperty};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
 use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
@@ -19,8 +19,8 @@ struct Driver {
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
-        if let Action::ButtonPressed(button) = action {
+    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, action: Action) {
+        if let Ok(DefaultAction::ButtonPressed(button)) = action.downcast_payload() {
             if button == PointerButton::Primary {
                 self.grid_spacing += 1.0;
             } else if button == PointerButton::Secondary {

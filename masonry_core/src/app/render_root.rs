@@ -197,7 +197,9 @@ pub struct RenderRootOptions {
 /// Objects emitted by the [`RenderRoot`] to signal that something has changed or require external actions.
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
-    Action(Action, WidgetId),
+    ///
+    /// The type of the action will match that widget's action [`Action`](Widget::Action) type.
+    Action(Action),
     /// An IME session has been started.
     StartIme,
     /// The IME session has ended.

@@ -10,7 +10,7 @@ use vello::Scene;
 use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, DefaultAction, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
@@ -68,6 +68,8 @@ impl Checkbox {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Checkbox {
+    type Action = DefaultAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,
@@ -86,7 +88,7 @@ impl Widget for Checkbox {
             PointerEvent::PointerUp(_, _) => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    ctx.submit_action(DefaultAction::CheckboxToggled(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 // Checked state impacts appearance and accessibility node
@@ -114,7 +116,7 @@ impl Widget for Checkbox {
             match event.action {
                 accesskit::Action::Click => {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    ctx.submit_action(DefaultAction::CheckboxToggled(self.checked));
                     // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                 }
@@ -272,12 +274,12 @@ mod tests {
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello_unchecked");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.action_queue_empty());
 
         harness.mouse_click_on(checkbox_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::CheckboxToggled(true), checkbox_id))
+            Some((DefaultAction::CheckboxToggled(true), checkbox_id))
         );
 
         assert_debug_snapshot!(harness.root_widget());
@@ -286,7 +288,7 @@ mod tests {
         harness.mouse_click_on(checkbox_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::CheckboxToggled(false), checkbox_id))
+            Some((DefaultAction::CheckboxToggled(false), checkbox_id))
         );
     }
 

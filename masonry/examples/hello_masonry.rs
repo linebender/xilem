@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, StyleProperty, WidgetId};
+use masonry::core::{Action, DefaultAction, StyleProperty};
 use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
 use masonry::widgets::{Button, Flex, Label, RootWidget};
@@ -19,9 +19,9 @@ const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
-        match action {
-            Action::ButtonPressed(_) => {
+    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, action: Action) {
+        match action.downcast_payload() {
+            Ok(DefaultAction::ButtonPressed(_)) => {
                 println!("Hello");
             }
             action => {

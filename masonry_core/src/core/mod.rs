@@ -17,7 +17,7 @@ mod widget_pod;
 mod widget_ref;
 mod widget_state;
 
-pub use action::Action;
+pub use action::{Action, DefaultAction, NoAction};
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
