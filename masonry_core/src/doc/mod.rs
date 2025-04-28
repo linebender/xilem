@@ -39,6 +39,7 @@ pub mod doc_04b_widget_properties {}
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_05_pass_system {}
 
+#[doc(alias = "glossary")]
 #[doc = include_str!("./06_masonry_concepts.md")]
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_06_masonry_concepts {}

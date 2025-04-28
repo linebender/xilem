@@ -3,7 +3,7 @@
 
 use std::any::TypeId;
 
-use crate::core::UpdateCtx;
+use crate::core::{Property, UpdateCtx};
 use crate::kurbo::Rect;
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::Gradient;
@@ -17,6 +17,15 @@ use crate::properties::types::Gradient;
 pub enum Background {
     Color(AlphaColor<Srgb>),
     Gradient(Gradient),
+}
+
+impl Property for Background {}
+
+// This matches the CSS default.
+impl Default for Background {
+    fn default() -> Self {
+        Self::Color(AlphaColor::from_rgba8(0, 0, 0, 0))
+    }
 }
 
 impl Background {

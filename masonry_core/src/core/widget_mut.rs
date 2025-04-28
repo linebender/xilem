@@ -5,7 +5,7 @@ use std::any::TypeId;
 
 use anymap3::Entry;
 
-use crate::core::{FromDynWidget, MutateCtx, Widget};
+use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
 use crate::kurbo::Affine;
 
 /// A rich mutable reference to a [`Widget`].
@@ -54,38 +54,38 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     }
 
     /// Returns `true` if the widget has a property of type `T`.
-    pub fn get_prop<T: 'static>(&self) -> Option<&T> {
+    pub fn get_prop<T: Property>(&self) -> Option<&T> {
         self.ctx.properties.get::<T>()
     }
 
     /// Get value of property `T`, or `None` if the widget has no `T` property.
-    pub fn contains_prop<T: 'static>(&self) -> bool {
+    pub fn contains_prop<T: Property>(&self) -> bool {
         self.ctx.properties.contains::<T>()
     }
 
     /// Get value of property `T`, or `None` if the widget has no `T` property.
-    pub fn get_prop_mut<T: 'static>(&mut self) -> Option<&mut T> {
+    pub fn get_prop_mut<T: Property>(&mut self) -> Option<&mut T> {
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
         self.ctx.properties.get_mut::<T>()
     }
 
     /// Set property `T` to given value. Returns the previous value if `T` was already set.
-    pub fn insert_prop<T: 'static>(&mut self, value: T) -> Option<T> {
+    pub fn insert_prop<T: Property>(&mut self, value: T) -> Option<T> {
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
         self.ctx.properties.insert(value)
     }
 
     /// Remove property `T`. Returns the previous value if `T` was set.
-    pub fn remove_prop<T: 'static>(&mut self) -> Option<T> {
+    pub fn remove_prop<T: Property>(&mut self) -> Option<T> {
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
         self.ctx.properties.remove::<T>()
     }
 
     /// Returns an entry that can be used to add, update, or remove a property.
-    pub fn prop_entry<T: 'static>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
+    pub fn prop_entry<T: Property>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
         self.ctx.properties.entry::<T>()

@@ -24,7 +24,7 @@ We haven't used these arguments so far, and you can build a robust widget set wi
 
 In Masonry, **Properties** (often abbreviated to **props**) are values of arbitrary static types stored alongside each widget.
 
-In simpler terms, that means you can take any non-ref type (e.g. `struct RubberDuck(Color, String, Buoyancy);`) and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `Textbox`, etc) or your own custom widget (`ColorRectangle`).
+In simpler terms, that means you can take any non-reference type (e.g. `struct RubberDuck(Color, String, Buoyancy);`) and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `Textbox`, etc) or your own custom widget (`ColorRectangle`).
 
 Code accessing the property will look like:
 
@@ -34,6 +34,20 @@ if let Some(ducky) = props.get::<RubberDuck>() {
     // ...
 }
 ```
+
+### Properties are only data
+
+Properties are a way for Widgets to store arbitrary state; they do not encode *behavior*.
+For those familiar, properties are similar the "Component" part of ECS.
+
+In other words, adding a property to a widget will not change anything about how that widget is rendered *unless that widget has code specifically reading that property*.
+
+Because arbitrary properties can be set on arbitrary widgets, that means it's perfectly possible to add a `BorderColor` property to a `MyBorderlessBox` widget.
+This will not do anything, **not even log a warning message**.
+
+We acknowledge that this may be a footgun in some cases, though we consider it an acceptable trade-off to keep the design simple.
+We may reconsider this in the future.
+
 
 ### When to use Properties?
 

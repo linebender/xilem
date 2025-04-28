@@ -3,7 +3,7 @@
 
 use std::any::TypeId;
 
-use crate::core::UpdateCtx;
+use crate::core::{Property, UpdateCtx};
 use crate::peniko::color::{AlphaColor, Srgb};
 
 /// The color of a widget's border.
@@ -11,6 +11,20 @@ use crate::peniko::color::{AlphaColor, Srgb};
 #[derive(Clone, Copy, Debug)]
 pub struct BorderColor {
     pub color: AlphaColor<Srgb>,
+}
+
+impl Property for BorderColor {}
+
+// TODO - The default border color in CSS is `currentcolor`,
+// the color text is displayed in.
+// Do we want to implement that?
+
+impl Default for BorderColor {
+    fn default() -> Self {
+        Self {
+            color: AlphaColor::from_rgba8(0, 0, 0, 0),
+        }
+    }
 }
 
 impl BorderColor {
