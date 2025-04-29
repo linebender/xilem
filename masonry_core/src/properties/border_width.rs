@@ -7,7 +7,8 @@ use crate::core::{BoxConstraints, UpdateCtx};
 use crate::kurbo::{Point, RoundedRect, Size, Vec2};
 use crate::properties::CornerRadius;
 
-/// The width of a widget's border.
+/// The width of a widget's border, in logical pixels.
+#[expect(missing_docs, reason = "obvious")]
 #[derive(Clone, Copy, Debug)]
 pub struct BorderWidth {
     pub width: f64,

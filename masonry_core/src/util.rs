@@ -128,6 +128,15 @@ impl UnitPoint {
     }
 }
 
+#[expect(
+    single_use_lifetimes,
+    reason = "Anonymous lifetimes in `impl Trait` are unstable, see https://github.com/rust-lang/rust/issues/129255"
+)]
+/// Helper function for [`Scene::fill`].
+pub fn fill<'b>(scene: &mut Scene, path: &impl Shape, brush: impl Into<BrushRef<'b>>) {
+    scene.fill(Fill::NonZero, Affine::IDENTITY, brush, None, path);
+}
+
 /// Helper function for [`Scene::fill`] with a linear gradient as the brush.
 pub fn fill_lin_gradient(
     scene: &mut Scene,

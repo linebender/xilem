@@ -7,6 +7,7 @@ use crate::core::{BoxConstraints, UpdateCtx};
 use crate::kurbo::{Point, Size, Vec2};
 
 /// The width of padding between a widget's border and its contents.
+#[expect(missing_docs, reason = "obvious")]
 #[derive(Clone, Copy, Debug)]
 pub struct Padding {
     pub x: f64,

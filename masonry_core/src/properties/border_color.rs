@@ -6,7 +6,8 @@ use std::any::TypeId;
 use crate::core::UpdateCtx;
 use crate::peniko::color::{AlphaColor, Srgb};
 
-/// The background color of a widget.
+/// The color of a widget's border.
+#[expect(missing_docs, reason = "obvious")]
 #[derive(Clone, Copy, Debug)]
 pub struct BorderColor {
     pub color: AlphaColor<Srgb>,

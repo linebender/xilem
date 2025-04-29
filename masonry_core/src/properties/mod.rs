@@ -5,18 +5,15 @@
 //!
 //! See [properties documentation](crate::doc::doc_03_implementing_container_widget) for details.
 
-#![allow(
-    missing_docs,
-    reason = "A lot of properties and especially their fields are self-explanatory."
-)]
-
-mod background_color;
+mod background;
 mod border_color;
 mod border_width;
 mod corner_radius;
 mod padding;
 
-pub use background_color::BackgroundColor;
+pub mod types;
+
+pub use background::Background;
 pub use border_color::BorderColor;
 pub use border_width::BorderWidth;
 pub use corner_radius::CornerRadius;
