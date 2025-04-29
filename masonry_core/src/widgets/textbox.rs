@@ -215,7 +215,7 @@ mod tests {
         );
         let mut harness = TestHarness::create_with_size(textbox, Size::new(150.0, 40.0));
 
-        assert_render_snapshot!(harness, "textbox_textbox_outline");
+        assert_render_snapshot!(harness, "textbox_outline");
 
         let mut text_area_id = None;
         harness.edit_root_widget(|mut textbox| {
@@ -227,6 +227,6 @@ mod tests {
         });
         harness.focus_on(text_area_id);
 
-        assert_render_snapshot!(harness, "textbox_textbox_selection");
+        assert_render_snapshot!(harness, "textbox_selection");
     }
 }
