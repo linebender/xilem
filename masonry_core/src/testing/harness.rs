@@ -138,14 +138,14 @@ pub struct TestHarnessParams {
 /// Assert a snapshot of a rendered frame of your app.
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
-/// and stores the render as a PNG next to the test, in a `<CRATE_ROOT>/screenshots/` folder.
+/// and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
 ///
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
 /// If the test is run again and the new rendered value matches the old screenshot, the diff file is deleted.
 ///
 /// If a screenshot doesn't exist, the assert will fail; the new screenshot is stored as
-/// `<CRATE_ROOT>/screenshots/<test_name>.new.png`, and must be renamed before the assert will pass.
+/// `<CRATE-ROOT>/screenshots/<TEST-NAME>.new.png`, and must be renamed before the assert will pass.
 #[macro_export]
 macro_rules! assert_render_snapshot {
     ($test_harness:expr, $name:expr) => {
