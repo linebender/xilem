@@ -16,6 +16,7 @@ use crate::peniko::Color;
 use crate::util::stroke;
 use crate::widgets::{Padding, TextArea};
 
+// TODO - Replace with Padding property.
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
 ///
@@ -54,7 +55,6 @@ impl Textbox {
 
     /// Create a new `Textbox` from a styled text area.
     pub fn from_text_area(text: TextArea<true>) -> Self {
-        let text = text.with_padding_if_default(TEXTBOX_PADDING);
         Self {
             text: WidgetPod::new(text),
             clip: false,
@@ -147,17 +147,26 @@ impl Widget for Textbox {
         bc: &BoxConstraints,
     ) -> Size {
         let margin = TEXTBOX_MARGIN;
+        let padding = TEXTBOX_PADDING;
         // Shrink constraints by padding inset
         let margin_size = Size::new(margin.leading + margin.trailing, margin.top + margin.bottom);
+        let padding_size = Size::new(
+            padding.leading + padding.trailing,
+            padding.top + padding.bottom,
+        );
         let child_bc = bc.shrink(margin_size);
+        let child_bc = child_bc.shrink(padding_size);
         // TODO: Set minimum to deal with alignment
         let size = ctx.run_layout(&mut self.text, &child_bc);
         // TODO: How do we handle RTL here?
-        ctx.place_child(&mut self.text, Point::new(margin.leading, margin.top));
+        ctx.place_child(
+            &mut self.text,
+            Point::new(margin.leading + padding.leading, margin.top + padding.top),
+        );
         if self.clip {
             ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
         }
-        size + margin_size
+        size + margin_size + padding_size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {

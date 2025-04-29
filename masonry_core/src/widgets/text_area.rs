@@ -97,10 +97,7 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     hint: bool,
     /// The amount of Padding inside this text area.
     ///
-    /// This is generally expected to be set by the parent, but
-    /// can also be overridden.
     /// Can be set using [`set_padding`](Self::set_padding).
-    /// Immediate parent widgets should use [`with_padding_if_default`](Self::with_padding_if_default).
     padding: Padding,
 
     /// What key combination should trigger a newline insertion.
@@ -150,9 +147,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             brush: theme::TEXT_COLOR.into(),
             disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
             hint: true,
-            // We use -0.0 to mark the default padding.
-            // This allows parent views to overwrite it only if another source didn't configure it.
-            padding: Padding::UNSET,
+            padding: Padding::ZERO,
             insert_newline: InsertNewline::default(),
         }
     }
@@ -272,16 +267,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// To modify this on an active text area, use [`set_padding`](Self::set_padding).
     pub fn with_padding(mut self, padding: impl Into<Padding>) -> Self {
         self.padding = padding.into();
-        self
-    }
-
-    /// Adds `padding` unless [`with_padding`](Self::with_padding) was previously called.
-    ///
-    /// This is expected to be called when creating parent widgets.
-    pub fn with_padding_if_default(mut self, padding: Padding) -> Self {
-        if self.padding.is_unset() {
-            self.padding = padding;
-        }
         self
     }
 

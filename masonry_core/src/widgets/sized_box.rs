@@ -88,22 +88,6 @@ impl Padding {
     /// A padding of zero for all edges.
     pub const ZERO: Self = Self::all(0.);
 
-    /// An empty padding which can be used as a sentinel value.
-    ///
-    /// If parent widgets wish to override a padding only if it has not been modified by the user,
-    /// they should use [`is_unset`](Self::is_unset) to determine that there were no modifications.
-    ///
-    /// Otherwise, this padding will behave as [`Padding::ZERO`].
-    pub const UNSET: Self = Self::all(-0.0);
-
-    /// Determine if self is [`Padding::UNSET`].
-    pub fn is_unset(self) -> bool {
-        is_negative_zero(self.top)
-            && is_negative_zero(self.leading)
-            && is_negative_zero(self.trailing)
-            && is_negative_zero(self.bottom)
-    }
-
     /// Constructs a new `Padding` with equal amount of padding for all edges.
     pub const fn all(padding: f64) -> Self {
         Self::new(padding, padding, padding, padding)
@@ -150,10 +134,6 @@ impl Padding {
     pub const fn get_right(self, is_rtl: bool) -> f64 {
         if is_rtl { self.leading } else { self.trailing }
     }
-}
-
-fn is_negative_zero(val: f64) -> bool {
-    val == 0.0 && val.is_sign_negative()
 }
 
 impl From<f64> for Padding {
