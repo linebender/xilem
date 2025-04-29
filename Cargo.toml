@@ -92,9 +92,11 @@ tree_arena = { version = "0.1.0", path = "tree_arena" }
 vello = "0.4.0"
 wgpu = "23.0.1"
 kurbo = "0.11.1"
-parley = { version = "0.3.0", features = ["accesskit"] }
+parley = { git = "https://github.com/linebender/parley", rev = "eabfb8175848183dde2516d562c6b7eab7f0df84", features = [
+    "accesskit",
+] }
 peniko = "0.3.1"
-winit = "0.30.4"
+winit = "0.30.9"
 tracing = { version = "0.1.40", default-features = false }
 smallvec = "1.13.2"
 hashbrown = "0.15.2"
@@ -102,8 +104,8 @@ dpi = "0.1.1"
 image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.6.0"
-accesskit = "0.17.0"
-accesskit_winit = "0.23.0"
+accesskit = "0.18.0"
+accesskit_winit = "0.24.0"
 time = "0.3.36"
 
 [profile.ci]

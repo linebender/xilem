@@ -152,7 +152,6 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         nodes: vec![],
         tree: Some(Tree {
             root: root.root.id().into(),
-            app_name: None,
             toolkit_name: Some("Masonry".to_string()),
             toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
         }),
