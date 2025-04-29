@@ -221,6 +221,7 @@ impl Widget for Button {
         let border_radius = props.get::<CornerRadius>().unwrap_or(&DEFAULT_BORDER_RADII);
 
         // TODO - Add DEFAULT_BACKGROUND_GRADIENT constant.
+        // Right now we can't because `.with_stops` isn't const-compatible.
         let bg_gradient =
             Gradient::new_linear(0.0).with_stops([theme::BUTTON_LIGHT, theme::BUTTON_DARK]);
         let bg_gradient = Background::Gradient(bg_gradient);
