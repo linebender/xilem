@@ -24,7 +24,7 @@ We haven't used these arguments so far, and you can build a robust widget set wi
 
 In Masonry, **Properties** (often abbreviated to **props**) are values of arbitrary static types stored alongside each widget.
 
-In simpler terms, that means you can take any non-reference type (e.g. `struct RubberDuck(Color, String, Buoyancy);`) and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `Textbox`, etc) or your own custom widget (`ColorRectangle`).
+In simpler terms, that means you can create any non-reference type (e.g. `struct RubberDuck(Color, String, Buoyancy);`), give it the [`Property`] marker trait, and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `Textbox`, etc) or your own custom widget (`ColorRectangle`).
 
 Code accessing the property will look like:
 
@@ -124,3 +124,5 @@ Properties are an associative map, where types are the keys.
 But setting a property to a given value doesn't change anything by default, unless your widget code specifically reads that value and does something with it.
 
 <!-- TODO - Mention "transform" property. -->
+
+[`Property`]: crate::core::Property
