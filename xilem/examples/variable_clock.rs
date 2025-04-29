@@ -4,6 +4,7 @@
 //! This example uses variable fonts in a touch sensitive digital clock.
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
+use std::sync::Arc;
 use std::time::Duration;
 
 use time::error::IndeterminateOffset;
@@ -15,7 +16,7 @@ use xilem::view::{
     Axis, FlexExt, FlexSpacer, button, flex, inline_prose, label, portal, prose, sized_box, task,
     variable_label,
 };
-use xilem::{EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem, palette};
+use xilem::{Blob, EventLoop, EventLoopBuilder, FontWeight, WidgetView, Xilem, palette};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
@@ -191,7 +192,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
 
     // Load Roboto Flex so that it can be used at runtime.
-    let app = Xilem::new(data, app_logic).with_font(ROBOTO_FLEX);
+    let app = Xilem::new(data, app_logic).with_font(Blob::new(Arc::new(ROBOTO_FLEX)));
 
     app.run_windowed(event_loop, "Clocks".into())?;
     Ok(())
