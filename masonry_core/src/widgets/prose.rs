@@ -5,22 +5,14 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Point, Rect, Size};
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use crate::widgets::{Padding, TextArea};
-
-/// Added padding between each horizontal edge of the widget
-/// and the text in logical pixels.
-///
-/// This gives the text the some slight breathing room.
-const PROSE_PADDING: Padding = Padding::horizontal(2.0);
-// The bottom padding is to workaround https://github.com/linebender/parley/issues/165
-// const PROSE_PADDING: Padding = Padding::new(0.0, 2.0, 5.0, 2.0);
+use crate::widgets::TextArea;
 
 /// The prose widget displays immutable text which can be
 /// selected within.
@@ -54,7 +46,6 @@ impl Prose {
 
     /// Create a new `Prose` from a styled text area.
     pub fn from_text_area(text: TextArea<false>) -> Self {
-        let text = text.with_padding_if_default(PROSE_PADDING);
         Self {
             text: WidgetPod::new(text),
             clip: false,
@@ -150,9 +141,9 @@ impl Widget for Prose {
         let size = ctx.run_layout(&mut self.text, bc);
         ctx.place_child(&mut self.text, Point::ORIGIN);
         if self.clip {
-            // Workaround for https://github.com/linebender/parley/issues/165
-            let clip_size = Size::new(size.width, size.height + 20.);
-            ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, clip_size));
+            ctx.set_clip_path(size.to_rect());
+        } else {
+            ctx.clear_clip_path();
         }
         size
     }
@@ -209,9 +200,9 @@ mod tests {
         )
         .with_clip(true);
 
-        let sized_box = Flex::row().with_child(SizedBox::new(prose).width(60.));
+        let root_widget = SizedBox::new(prose).width(60.).padding((10., 0.));
 
-        let mut harness = TestHarness::create_with_size(sized_box, Size::new(100.0, 40.0));
+        let mut harness = TestHarness::create_with_size(root_widget, Size::new(100.0, 40.0));
 
         assert_render_snapshot!(harness, "prose_clipping");
     }
@@ -243,8 +234,9 @@ mod tests {
             .with_flex_child(prose5, CrossAxisAlignment::Center)
             .with_flex_child(prose6, CrossAxisAlignment::Center)
             .gap(0.0);
+        let root_widget = SizedBox::new(flex).padding(30.0);
 
-        let mut harness = TestHarness::create_with_size(flex, Size::new(200.0, 200.0));
+        let mut harness = TestHarness::create_with_size(root_widget, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "prose_alignment_flex");
     }

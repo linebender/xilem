@@ -18,7 +18,7 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::fork;
 use xilem::view::{
-    ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
+    ObjectFit, Padding, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, LineBreaking, TextAlignment, WidgetView, Xilem, palette};
 use xilem_core::one_of::Either;
@@ -114,7 +114,11 @@ impl VirtualCats {
     }
 
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
-        virtual_scroll(0..self.statuses.len() as i64, Self::virtual_item)
+        sized_box(virtual_scroll(
+            0..self.statuses.len() as i64,
+            Self::virtual_item,
+        ))
+        .padding(Padding::horizontal(10.0))
     }
 }
 

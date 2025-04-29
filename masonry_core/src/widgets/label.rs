@@ -21,6 +21,7 @@ use crate::core::{
 };
 use crate::theme;
 
+// TODO - Replace with Padding property.
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
 const LABEL_X_PADDING: f64 = 2.0;
