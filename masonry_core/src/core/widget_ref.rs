@@ -7,7 +7,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::core::{PropertiesRef, QueryCtx, Widget, WidgetId};
+use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -88,12 +88,12 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 
     /// Returns `true` if the widget has a property of type `T`.
-    pub fn get_prop<T: 'static>(&self) -> Option<&T> {
+    pub fn get_prop<T: Property>(&self) -> Option<&T> {
         self.properties.get::<T>()
     }
 
     /// Get value of property `T`, or `None` if the widget has no `T` property.
-    pub fn contains_prop<T: 'static>(&self) -> bool {
+    pub fn contains_prop<T: Property>(&self) -> bool {
         self.properties.contains::<T>()
     }
 

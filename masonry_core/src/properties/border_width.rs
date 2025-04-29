@@ -3,16 +3,21 @@
 
 use std::any::TypeId;
 
-use crate::core::{BoxConstraints, UpdateCtx};
+use crate::core::{BoxConstraints, Property, UpdateCtx};
 use crate::kurbo::{Point, RoundedRect, Size, Vec2};
 use crate::properties::CornerRadius;
 
 /// The width of a widget's border, in logical pixels.
 #[expect(missing_docs, reason = "obvious")]
-#[derive(Clone, Copy, Debug)]
+#[derive(Default, Clone, Copy, Debug)]
 pub struct BorderWidth {
     pub width: f64,
 }
+
+// TODO - To match CSS, we should use a non-zero default width
+// and a "border style" of "None".
+
+impl Property for BorderWidth {}
 
 impl BorderWidth {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
