@@ -5,7 +5,7 @@
 
 use std::{collections::HashMap, ops::Range};
 
-use keyboard_types::{Key, KeyState};
+use keyboard_types::{Key, KeyState, NamedKey};
 use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::{
@@ -499,11 +499,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     // scrolling "jumps" the area is handled correctly.
                     // In future, this manual testing would be achieved through use of a scrollbar.
                     let delta = 20000.;
-                    if matches!(key_event.key, Key::PageDown) {
+                    if matches!(key_event.key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
                         self.post_scroll(ctx);
                     }
-                    if matches!(key_event.key, Key::PageUp) {
+                    if matches!(key_event.key, Key::Named(NamedKey::PageUp)) {
                         self.scroll_offset_from_anchor -= delta;
                         self.post_scroll(ctx);
                     }
