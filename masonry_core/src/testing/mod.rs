@@ -6,7 +6,6 @@
 mod harness;
 mod helper_widgets;
 mod screenshots;
-mod snapshot_utils;
 
 pub use harness::{TestHarness, TestHarnessParams};
 pub use helper_widgets::{ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt};

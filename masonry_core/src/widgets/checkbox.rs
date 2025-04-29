@@ -270,7 +270,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "hello_unchecked");
+        assert_render_snapshot!(harness, "checkbox_hello_unchecked");
 
         assert_eq!(harness.pop_action(), None);
 
@@ -281,7 +281,7 @@ mod tests {
         );
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "hello_checked");
+        assert_render_snapshot!(harness, "checkbox_hello_checked");
 
         harness.mouse_click_on(checkbox_id);
         assert_eq!(

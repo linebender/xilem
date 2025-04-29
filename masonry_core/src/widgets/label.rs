@@ -500,7 +500,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(label, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "hello");
+        assert_render_snapshot!(harness, "label_hello");
     }
 
     #[test]
@@ -514,7 +514,7 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(label, Size::new(200.0, 200.0));
 
-        assert_render_snapshot!(harness, "styled_label");
+        assert_render_snapshot!(harness, "label_styled_label");
     }
 
     #[test]
@@ -526,7 +526,7 @@ mod tests {
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(label, window_size);
 
-        assert_render_snapshot!(harness, "underline_label");
+        assert_render_snapshot!(harness, "label_underline_label");
     }
     #[test]
     fn strikethrough_label() {
@@ -538,7 +538,7 @@ mod tests {
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(label, window_size);
 
-        assert_render_snapshot!(harness, "strikethrough_label");
+        assert_render_snapshot!(harness, "label_strikethrough_label");
     }
 
     #[test]
@@ -568,7 +568,7 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(flex, Size::new(200.0, 200.0));
 
-        assert_render_snapshot!(harness, "label_alignment_flex");
+        assert_render_snapshot!(harness, "label_label_alignment_flex");
     }
 
     #[test]
@@ -602,7 +602,7 @@ mod tests {
 
         let mut harness = TestHarness::create_with_size(widget, Size::new(200.0, 200.0));
 
-        assert_render_snapshot!(harness, "line_break_modes");
+        assert_render_snapshot!(harness, "label_line_break_modes");
     }
 
     #[test]

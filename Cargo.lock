@@ -1971,8 +1971,6 @@ dependencies = [
  "parley",
  "pollster",
  "profiling",
- "serde",
- "serde_json",
  "smallvec",
  "time",
  "tracing",

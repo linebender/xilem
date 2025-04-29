@@ -64,6 +64,6 @@ mod tests {
     fn screenshot_test() {
         let mut harness = TestHarness::create(make_image());
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
+        assert_render_snapshot!(harness, "example_simple_image_initial");
     }
 }

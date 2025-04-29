@@ -83,17 +83,19 @@ Let's add a visual test:
     fn simple_rect() {
         // ...
 
-        assert_render_snapshot!(harness, "blue_rectangle");
+        assert_render_snapshot!(harness, "rect_blue_rectangle");
     }
 ```
 
-The [`assert_render_snapshot!`] macro takes a snapshot name, renders the current state of the app, and stores the render as a PNG next to the test, in a `./screenshots/` folder.
+The [`assert_render_snapshot!`] macro takes a snapshot name, renders the current state of the app, and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
 
 The rendered screenshot is compared against an existing file checked in your project, and panics if the reference file is meaningfully different (with some tolerance for small pixel-by-pixel differences) or if there isn't one.
 
 Adding screenshot tests lets you both check that your widget's `paint()` method runs correctly and explicitly track and check in your widget's visual changes into version control.
 
 That way, if an internal change happens to affect how a widget is displayed, failing screenshot tests will force you to consider whether the visual change is deliberate or an error.
+
+Note that, because all your unit tests and integration tests will send files to the same folder, you may want to use some kind of per-module namespacing scheme to avoid unwanted filename collisions.
 
 <!-- TODO - Include screenshot. -->
 
@@ -118,7 +120,7 @@ Let's create another snapshot test to check that our widget correctly changes co
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
         harness.mouse_move_to(rect_id);
-        assert_render_snapshot!(harness, "hovered_rectangle");
+        assert_render_snapshot!(harness, "rect_hovered_rectangle");
     }
 ```
 
@@ -146,7 +148,7 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
         harness.mouse_move_to(rect_id);
-        assert_render_snapshot!(harness, "hovered_rectangle");
+        assert_render_snapshot!(harness, "rect_hovered_rectangle");
     }
 
     #[test]
@@ -162,7 +164,7 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
             ColorRectangle::set_size(&mut rect, Color::RED);
         });
 
-        assert_render_snapshot!(harness, "big_red_rectangle");
+        assert_render_snapshot!(harness, "rect_big_red_rectangle");
     }
 ```
 

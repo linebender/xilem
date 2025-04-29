@@ -141,7 +141,7 @@ mod tests {
     fn screenshot_test() {
         let mut harness = TestHarness::create(make_grid(1.0));
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "initial_screenshot");
+        assert_render_snapshot!(harness, "example_grid_masonry_initial");
 
         // TODO - Test clicking buttons
     }

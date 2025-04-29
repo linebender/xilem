@@ -233,7 +233,7 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "indeterminate_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_indeterminate_progressbar");
     }
 
     #[test]
@@ -244,7 +244,7 @@ mod tests {
         let window_size = Size::new(150.0, 60.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "0_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_0_percent_progressbar");
     }
 
     #[test]
@@ -255,7 +255,7 @@ mod tests {
         let window_size = Size::new(150.0, 60.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "25_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_25_percent_progressbar");
     }
 
     #[test]
@@ -266,7 +266,7 @@ mod tests {
         let window_size = Size::new(150.0, 60.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "50_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_50_percent_progressbar");
     }
 
     #[test]
@@ -277,7 +277,7 @@ mod tests {
         let window_size = Size::new(150.0, 60.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "75_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_75_percent_progressbar");
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         let window_size = Size::new(150.0, 60.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "100_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_100_percent_progressbar");
     }
 
     #[test]

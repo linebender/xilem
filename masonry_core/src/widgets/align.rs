@@ -212,7 +212,7 @@ mod tests {
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "centered");
+        assert_render_snapshot!(harness, "align_centered");
     }
 
     #[test]
@@ -222,7 +222,7 @@ mod tests {
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "right");
+        assert_render_snapshot!(harness, "align_right");
     }
 
     #[test]
@@ -232,6 +232,6 @@ mod tests {
         let mut harness = TestHarness::create(widget);
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "left");
+        assert_render_snapshot!(harness, "align_left");
     }
 }

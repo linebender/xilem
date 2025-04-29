@@ -566,14 +566,14 @@ mod tests {
         let mut harness = TestHarness::create_with_size(widget, Size::new(400., 400.));
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "button_list_no_scroll");
+        assert_render_snapshot!(harness, "portal_button_list_no_scroll");
 
         harness.edit_root_widget(|mut portal| {
             let mut portal = portal.downcast::<Portal<Flex>>();
             Portal::set_viewport_pos(&mut portal, Point::new(0.0, 130.0))
         });
 
-        assert_render_snapshot!(harness, "button_list_scrolled");
+        assert_render_snapshot!(harness, "portal_button_list_scrolled");
 
         let item_3_rect = harness.get_widget(item_3_id).ctx().local_layout_rect();
         harness.edit_root_widget(|mut portal| {
@@ -581,7 +581,7 @@ mod tests {
             Portal::pan_viewport_to(&mut portal, item_3_rect);
         });
 
-        assert_render_snapshot!(harness, "button_list_scroll_to_item_3");
+        assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_3");
 
         let item_13_rect = harness.get_widget(item_13_id).ctx().local_layout_rect();
         harness.edit_root_widget(|mut portal| {
@@ -589,7 +589,7 @@ mod tests {
             Portal::pan_viewport_to(&mut portal, item_13_rect);
         });
 
-        assert_render_snapshot!(harness, "button_list_scroll_to_item_13");
+        assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_13");
     }
 
     // Helper function for panning tests
