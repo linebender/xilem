@@ -10,7 +10,7 @@ use crate::peniko::{ColorStops, ColorStopsSource, Extend};
 /// This mirrors [`peniko::GradientKind`](crate::peniko::GradientKind),
 /// but uses a layout-invariant representation: instead of saying
 /// "The gradient goes from point A to point B", we declare things like
-/// "The gradient has angle X", and A and B and computed dynamically from widget layout.
+/// "The gradient has angle X", and A and B are computed dynamically from widget layout.
 #[derive(Clone, Debug)]
 pub enum GradientShape {
     /// Gradient that transitions between two or more colors along a line.
@@ -56,7 +56,12 @@ pub struct Gradient {
 impl Gradient {
     /// Creates a [`Linear`](GradientShape::Linear) gradient.
     ///
-    /// `angle` is in radians, with zero pointing upwards.
+    /// `angle` is in radians, with zero pointing upwards, and higher values rotating the gradient clockwise.
+    /// This matches how [CSS gradients are defined](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/linear-gradient#angle).
+    ///
+    /// That is, for an `angle` of 0, the first stop will be at the bottom, and
+    /// for an `angle` of [`π/2`](core::f32::consts::FRAC_PI_2) (90°), the first
+    /// stop will be aligned with the left edge.
     pub fn new_linear(angle: f64) -> Self {
         Self {
             shape: GradientShape::Linear { angle },
