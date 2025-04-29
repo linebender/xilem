@@ -3,7 +3,7 @@
 
 use anymap3::{AnyMap, Entry};
 
-/// A marker trait that indicates that a type is intended to used as a widget's property.
+/// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
 /// See [properties documentation](crate::doc::doc_04b_widget_properties) for
 /// a full explanation of the general concept.
@@ -13,7 +13,7 @@ use anymap3::{AnyMap, Entry};
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Default + 'static {}
+pub trait Property: 'static {}
 
 /// A collection of properties that a widget can be created with.
 ///
