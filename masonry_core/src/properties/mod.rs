@@ -5,11 +5,6 @@
 //!
 //! See [properties documentation](crate::doc::doc_03_implementing_container_widget) for details.
 
-#![allow(
-    missing_docs,
-    reason = "A lot of properties and especially their fields are self-explanatory."
-)]
-
 mod background;
 mod border_color;
 mod border_width;

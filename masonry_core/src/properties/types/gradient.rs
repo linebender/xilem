@@ -5,16 +5,32 @@ use crate::kurbo::{Point, Rect};
 use crate::peniko::color::{ColorSpaceTag, HueDirection};
 use crate::peniko::{ColorStops, ColorStopsSource, Extend};
 
+/// Properties for the supported [`Gradient`] types.
+///
+/// This mirrors [`peniko::GradientKind`](crate::peniko::GradientKind),
+/// but uses a layout-invariant representation: instead of saying
+/// "The gradient goes from point A to point B", we declare things like
+/// "The gradient has angle X", and A and B and computed dynamically from widget layout.
 #[derive(Clone, Debug)]
 pub enum GradientShape {
     /// Gradient that transitions between two or more colors along a line.
+    ///
+    /// This is interpreted like [`linear-gradient()`] in CSS.
+    ///
+    /// [`linear-gradient()`]: https://drafts.csswg.org/css-images-3/#linear-gradient-syntax
     Linear {
-        /// The angle defining the gradient line's direction.
-        /// Zero degrees points upwards and positive angles represent clockwise rotation.
+        /// The angle defining the gradient line's direction, in radians.
+        /// Zero points upwards and positive angles represent clockwise rotation.
         angle: f64,
     },
 }
 
+/// Definition of a gradient that transitions between two or more colors.
+///
+/// This mirrors [`peniko::Gradient`](crate::peniko::Gradient),
+/// but uses a layout-invariant representation: instead of saying
+/// "The gradient goes from point A to point B", we declare things like
+/// "The gradient has angle X", and A and B and computed dynamically from widget layout.
 #[derive(Clone, Debug)]
 pub struct Gradient {
     /// Shape and coordinates of the gradient.
@@ -38,6 +54,9 @@ pub struct Gradient {
 }
 
 impl Gradient {
+    /// Creates a [`Linear`](GradientShape::Linear) gradient.
+    ///
+    /// `angle` is in radians, with zero pointing upwards.
     pub fn new_linear(angle: f64) -> Self {
         Self {
             shape: GradientShape::Linear { angle },
@@ -48,12 +67,16 @@ impl Gradient {
         }
     }
 
+    /// Builder method to set color stops on the gradient.
     pub fn with_stops(mut self, stops: impl ColorStopsSource) -> Self {
         self.stops.clear();
         stops.collect_stops(&mut self.stops);
         self
     }
 
+    /// Returns gradient brush covering the given Rect.
+    ///
+    /// This matches the CSS spec for [`linear-gradient()`](https://drafts.csswg.org/css-images-3/#linear-gradient-syntax).
     pub fn get_peniko_gradient_for_rect(&self, rect: Rect) -> crate::peniko::Gradient {
         crate::peniko::Gradient {
             kind: self.shape.get_peniko_kind_for_rect(rect),
@@ -66,6 +89,9 @@ impl Gradient {
 }
 
 impl GradientShape {
+    /// Returns gradient coordinates for a gradient covering the given Rect.
+    ///
+    /// This matches the CSS spec for [`linear-gradient()`](https://drafts.csswg.org/css-images-3/#linear-gradient-syntax).
     pub fn get_peniko_kind_for_rect(&self, rect: Rect) -> crate::peniko::GradientKind {
         match self {
             Self::Linear { angle } => Self::get_peniko_linear_for_rect(*angle, rect),

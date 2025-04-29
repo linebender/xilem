@@ -12,6 +12,7 @@ use crate::properties::types::Gradient;
 // to BackgroundImage to match CSS spec.
 
 /// The background color/gradient of a widget.
+#[expect(missing_docs, reason = "obvious")]
 #[derive(Clone, Debug)]
 pub enum Background {
     Color(AlphaColor<Srgb>),
@@ -27,6 +28,13 @@ impl Background {
         ctx.request_paint_only();
     }
 
+    /// Returns a brush that can be used for a `fill` operation.
+    ///
+    /// If `Self` is a `Color`, this returns a solid color brush.
+    /// If `Self` is a `Gradient` this returns a gradient filling the given rect according to
+    /// CSS spec.
+    ///
+    /// (See [`Gradient::get_peniko_gradient_for_rect`])
     pub fn get_peniko_brush_for_rect(&self, rect: Rect) -> crate::peniko::Brush {
         match self {
             Self::Color(color) => (*color).into(),
