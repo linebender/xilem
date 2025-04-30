@@ -106,9 +106,9 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
     }
 
-    if event.position() != root.last_mouse_pos {
+    if event.position() != root.global_state.last_mouse_pos {
         root.global_state.needs_pointer_pass = true;
-        root.last_mouse_pos = event.position();
+        root.global_state.last_mouse_pos = event.position();
     }
 
     if root.global_state.inspector_state.is_picking_widget

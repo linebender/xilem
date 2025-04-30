@@ -182,7 +182,8 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         (widget, state, properties)
     };
 
-    if root.rebuild_access_tree {
+    let rebuild_all = root.global_state.rebuild_access_tree;
+    if rebuild_all {
         debug!("Running ACCESSIBILITY pass with rebuild_all");
     }
     build_accessibility_tree(
@@ -191,10 +192,10 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         root_widget,
         root_state,
         root_properties,
-        root.rebuild_access_tree,
+        rebuild_all,
         Some(scale_factor),
     );
-    root.rebuild_access_tree = false;
+    root.global_state.rebuild_access_tree = false;
 
     tree_update
 }

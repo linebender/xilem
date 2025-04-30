@@ -203,7 +203,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     root.global_state.needs_pointer_pass = true;
 
     let window_size = root.get_kurbo_size();
-    let bc = match root.size_policy {
+    let bc = match root.global_state.size_policy {
         WindowSizePolicy::User => BoxConstraints::tight(window_size),
         WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
     };
@@ -224,11 +224,11 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let size = run_layout_on(&mut ctx, &mut root.root, &bc);
     ctx.place_child(&mut root.root, Point::ORIGIN);
 
-    if let WindowSizePolicy::Content = root.size_policy {
+    if let WindowSizePolicy::Content = root.global_state.size_policy {
         let new_size =
             LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);
-        if root.size != new_size {
-            root.size = new_size;
+        if root.global_state.size != new_size {
+            root.global_state.size = new_size;
             root.global_state
                 .emit_signal(RenderRootSignal::SetSize(new_size));
         }

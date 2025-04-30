@@ -676,7 +676,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     root.global_state.needs_pointer_pass = false;
 
-    let pointer_pos = root.last_mouse_pos.map(|pos| (pos.x, pos.y).into());
+    let pointer_pos = root
+        .global_state
+        .last_mouse_pos
+        .map(|pos| (pos.x, pos.y).into());
 
     if root.global_state.inspector_state.is_picking_widget {
         if let Some(pos) = pointer_pos {

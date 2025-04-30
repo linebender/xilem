@@ -59,6 +59,18 @@ pub struct RenderRoot {
     /// Root of the widget tree.
     pub(crate) root: WidgetPod<dyn Widget>,
 
+    /// State passed to context types.
+    pub(crate) global_state: RenderRootState,
+
+    /// The widget tree; stores widgets and their states.
+    pub(crate) widget_arena: WidgetArena,
+
+    /// Toggled with F12. If true, widget's layout rects will be painted.
+    pub(crate) debug_paint: bool,
+}
+
+/// Per-virtual-window state shared between passes.
+pub(crate) struct RenderRootState {
     /// Whether the window size should be determined by the content or the user.
     pub(crate) size_policy: WindowSizePolicy,
 
@@ -71,22 +83,11 @@ pub struct RenderRoot {
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
-    /// State passed to context types.
-    pub(crate) global_state: RenderRootState,
-
     /// Whether the next accessibility pass should rebuild the entire access tree.
-    ///
-    /// TODO - Add `access_tree_active` to detect when you don't need to update the
+    // TODO - Add `access_tree_active` to detect when you don't need to update the
     // access tree
     pub(crate) rebuild_access_tree: bool,
 
-    /// The widget tree; stores widgets and their states.
-    pub(crate) widget_arena: WidgetArena,
-    pub(crate) debug_paint: bool,
-}
-
-/// State shared between passes.
-pub(crate) struct RenderRootState {
     /// Queue of signals to be processed by the event loop.
     pub(crate) signal_queue: VecDeque<RenderRootSignal>,
 
@@ -194,6 +195,7 @@ pub struct RenderRootOptions {
     pub test_font: Option<Blob<u8>>,
 }
 
+// TODO - Change some of these variant documentations to take active voice.
 /// Objects emitted by the [`RenderRoot`] to signal that something has changed or require external actions.
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
@@ -257,11 +259,12 @@ impl RenderRoot {
 
         let mut root = Self {
             root: WidgetPod::new(root_widget).erased(),
-            size_policy,
-            size: PhysicalSize::new(0, 0),
-            last_anim: None,
-            last_mouse_pos: None,
             global_state: RenderRootState {
+                last_anim: None,
+                last_mouse_pos: None,
+                rebuild_access_tree: true,
+                size_policy,
+                size: PhysicalSize::new(0, 0),
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
                 focused_path: Vec::new(),
@@ -297,7 +300,6 @@ impl RenderRoot {
                 states: TreeArena::new(),
                 properties: TreeArena::new(),
             },
-            rebuild_access_tree: true,
             debug_paint,
         };
 
@@ -345,7 +347,7 @@ impl RenderRoot {
                 Handled::Yes
             }
             WindowEvent::Resize(size) => {
-                self.size = size;
+                self.global_state.size = size;
                 self.root_state_mut().request_layout = true;
                 self.root_state_mut().needs_layout = true;
                 self.run_rewrite_passes();
@@ -357,7 +359,7 @@ impl RenderRoot {
                 // potentially has jitter.
                 //
                 // See https://github.com/linebender/druid/issues/85 for discussion.
-                let last = self.last_anim.take();
+                let last = self.global_state.last_anim.take();
                 let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
 
                 run_update_anim_pass(self, elapsed_ns);
@@ -366,12 +368,12 @@ impl RenderRoot {
                 // If this animation will continue, store the time.
                 // If a new animation starts, then it will have zero reported elapsed time.
                 let animation_continues = self.root_state().needs_anim;
-                self.last_anim = animation_continues.then_some(now);
+                self.global_state.last_anim = animation_continues.then_some(now);
 
                 Handled::Yes
             }
             WindowEvent::RebuildAccessTree => {
-                self.rebuild_access_tree = true;
+                self.global_state.rebuild_access_tree = true;
                 self.global_state
                     .emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
@@ -565,7 +567,10 @@ impl RenderRoot {
     }
 
     pub(crate) fn get_kurbo_size(&self) -> kurbo::Size {
-        let size = self.size.to_logical(self.global_state.scale_factor);
+        let size = self
+            .global_state
+            .size
+            .to_logical(self.global_state.scale_factor);
         kurbo::Size::new(size.width, size.height)
     }
 
