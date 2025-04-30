@@ -3,7 +3,7 @@
 
 //! This module imports widget code from most of the examples.
 //!
-//! When running unit tests, it will compare the rendered snapshots of the widgets
+//! When running integration tests, it will compare the rendered snapshots of the widgets
 //! with the expected snapshots.
 
 #[cfg(test)]
