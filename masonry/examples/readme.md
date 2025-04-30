@@ -2,7 +2,7 @@
 
 ## `hello_masonry`
 
-Simples possible Masonry app.
+Simplest possible Masonry app.
 
 ## `two_textboxes`
 
