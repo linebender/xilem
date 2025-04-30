@@ -154,7 +154,7 @@ pub(crate) fn run_paint_pass(root: &mut WindowMut<'_>) -> Scene {
     let mut scenes = std::mem::take(&mut root.global_state.scenes);
 
     paint_widget(
-        &mut root.global_state,
+        root.global_state,
         &mut complete_scene,
         &mut scenes,
         root_widget,

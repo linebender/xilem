@@ -187,7 +187,7 @@ pub(crate) fn run_accessibility_pass(root: &mut WindowMut<'_>, scale_factor: f64
         debug!("Running ACCESSIBILITY pass with rebuild_all");
     }
     build_accessibility_tree(
-        &mut root.global_state,
+        root.global_state,
         &mut tree_update,
         root_widget,
         root_state,

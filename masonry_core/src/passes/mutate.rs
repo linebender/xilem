@@ -19,7 +19,7 @@ pub(crate) fn mutate_widget<R>(
     // states up to the root.
     let root_widget = WidgetMut {
         ctx: MutateCtx {
-            global_state: &mut root.global_state,
+            global_state: root.global_state,
             parent_widget_state: None,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
@@ -38,7 +38,7 @@ pub(crate) fn mutate_widget<R>(
     let mut current_id = Some(id);
     while let Some(id) = current_id {
         let parent_id = root.widget_arena.parent_of(id);
-        merge_state_up(&mut root.widget_arena, id);
+        merge_state_up(root.widget_arena, id);
         current_id = parent_id;
     }
 

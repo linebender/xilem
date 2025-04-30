@@ -44,7 +44,7 @@ fn run_targeted_update_pass(
         let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(widget_id);
 
         let mut ctx = UpdateCtx {
-            global_state: &mut root.global_state,
+            global_state: root.global_state,
             widget_state: state_mut.item,
             widget_state_children: state_mut.children,
             widget_children: widget_mut.children,
@@ -55,7 +55,7 @@ fn run_targeted_update_pass(
         };
         pass_fn(&mut **widget_mut.item, &mut ctx, &mut props);
 
-        merge_state_up(&mut root.widget_arena, widget_id);
+        merge_state_up(root.widget_arena, widget_id);
         current_id = parent_id;
     }
 }
@@ -75,7 +75,7 @@ fn run_single_update_pass(
     let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(target);
 
     let mut ctx = UpdateCtx {
-        global_state: &mut root.global_state,
+        global_state: root.global_state,
         widget_state: state_mut.item,
         widget_state_children: state_mut.children,
         widget_children: widget_mut.children,
@@ -88,7 +88,7 @@ fn run_single_update_pass(
 
     let mut current_id = Some(target);
     while let Some(widget_id) = current_id {
-        merge_state_up(&mut root.widget_arena, widget_id);
+        merge_state_up(root.widget_arena, widget_id);
         current_id = root.widget_arena.parent_of(widget_id);
     }
 }
@@ -211,13 +211,13 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut WindowMut<'_>) {
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };
-        ctx.register_child(&mut root.root);
+        ctx.register_child(root.root);
     }
 
     let (root_widget, mut root_state, root_properties) =
         root.widget_arena.get_all_mut(root.root.id());
     update_widget_tree(
-        &mut root.global_state,
+        root.global_state,
         root_widget,
         root_state.reborrow_mut(),
         root_properties,
@@ -300,7 +300,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut WindowMut<'_>) {
 
     let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     update_disabled_for_widget(
-        &mut root.global_state,
+        root.global_state,
         root_widget,
         root_state,
         root_properties,
@@ -391,7 +391,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut WindowMut<'_>) {
 
     let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     update_stashed_for_widget(
-        &mut root.global_state,
+        root.global_state,
         root_widget,
         root_state,
         root_properties,
@@ -477,7 +477,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut WindowMut<'_>) {
 
     let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     update_focus_chain_for_widget(
-        &mut root.global_state,
+        root.global_state,
         root_widget,
         root_state,
         root_properties,
@@ -798,7 +798,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut WindowMut<'_>) {
         let (widget, state, properties) = root.widget_arena.get_all(icon_source);
 
         let ctx = QueryCtx {
-            global_state: &root.global_state,
+            global_state: root.global_state,
             widget_state_children: state.children,
             widget_children: widget.children,
             widget_state: state.item,

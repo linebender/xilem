@@ -80,7 +80,7 @@ pub(crate) fn run_update_anim_pass(root: &mut WindowMut<'_>, elapsed_ns: u64) {
     let (root_widget, mut root_state, root_properties) =
         root.widget_arena.get_all_mut(root.root.id());
     update_anim_for_widget(
-        &mut root.global_state,
+        root.global_state,
         root_widget,
         root_state.reborrow_mut(),
         root_properties,

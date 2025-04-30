@@ -451,7 +451,7 @@ impl<'a> WindowRef<'a> {
     }
 }
 
-impl<'a> WindowMut<'a> {
+impl WindowMut<'_> {
     /// Returns a shared reference to the same window.
     ///
     /// This is sometimes useful to work with the borrow checker.

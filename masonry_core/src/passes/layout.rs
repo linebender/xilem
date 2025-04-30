@@ -214,15 +214,15 @@ pub(crate) fn run_layout_pass(root: &mut WindowMut<'_>) {
     let root_properties_token = root.widget_arena.properties.roots_mut();
 
     let mut ctx = LayoutCtx {
-        global_state: &mut root.global_state,
+        global_state: root.global_state,
         widget_state: &mut dummy_state,
         widget_state_children: root_state_token,
         widget_children: root_widget_token,
         properties_children: root_properties_token,
     };
 
-    let size = run_layout_on(&mut ctx, &mut root.root, &bc);
-    ctx.place_child(&mut root.root, Point::ORIGIN);
+    let size = run_layout_on(&mut ctx, root.root, &bc);
+    ctx.place_child(root.root, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.global_state.size_policy {
         let new_size =

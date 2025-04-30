@@ -54,13 +54,13 @@ fn run_event_pass<E>(
 
         if !is_handled {
             let _span = enter_span(
-                &root.global_state,
+                root.global_state,
                 widget_mut.reborrow(),
                 state_mut.reborrow(),
                 properties_mut.reborrow(),
             );
             let mut ctx = EventCtx {
-                global_state: &mut root.global_state,
+                global_state: root.global_state,
                 widget_state: state_mut.item,
                 widget_state_children: state_mut.children,
                 widget_children: widget_mut.children,
@@ -85,7 +85,7 @@ fn run_event_pass<E>(
             is_handled = ctx.is_handled;
         }
 
-        merge_state_up(&mut root.widget_arena, widget_id);
+        merge_state_up(root.widget_arena, widget_id);
         target_widget_id = parent_id;
     }
 

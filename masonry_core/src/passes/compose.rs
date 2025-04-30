@@ -102,7 +102,7 @@ pub(crate) fn run_compose_pass(root: &mut WindowMut<'_>) {
 
     let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     compose_widget(
-        &mut root.global_state,
+        root.global_state,
         root_widget,
         root_state,
         root_properties,
