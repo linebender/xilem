@@ -381,7 +381,7 @@ As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to
 Most Widgets will implement methods that let their users "project" a WidgetMut from a parent to its child.
 For example, `WidgetMut<Portal<MyWidget>>` has a `get_child_mut()` method that returns a `WidgetMut<MyWidget>`.
 
-So far, we've seen one way to get a WidgetMut: the [`RenderRoot::edit_root_widget()`] method.
+So far, we've seen one way to get a WidgetMut: the [`WindowMut::edit_root_widget()`] method.
 This methods returns a WidgetMut to the root widget, which you can then project into a WidgetMut reference to its descendants.
 
 ### Using WidgetMut in your custom Widget code
@@ -443,5 +443,5 @@ The next one is about creating a container widgets, and the complications it add
 [`ButtonPressed`]: crate::core::Action::ButtonPressed
 [`vello::Scene`]: crate::vello::Scene
 [`Role::Button`]: accesskit::Role::Button
-[`RenderRoot::edit_root_widget()`]: crate::app::RenderRoot::edit_root_widget
+[`WindowMut::edit_root_widget()`]: crate::app::WindowMut::edit_root_widget
 [`Label::set_text()`]: crate::widgets::Label::set_text
