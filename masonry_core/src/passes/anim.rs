@@ -5,7 +5,7 @@ use anymap3::AnyMap;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootState};
+use crate::app::{RenderRootState, WindowMut};
 use crate::core::{PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -74,7 +74,7 @@ fn update_anim_for_widget(
 /// Run the animation pass.
 ///
 /// See the [passes documentation](../doc/05_pass_system.md#animation-pass).
-pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
+pub(crate) fn run_update_anim_pass(root: &mut WindowMut<'_>, elapsed_ns: u64) {
     let _span = info_span!("update_anim").entered();
 
     let (root_widget, mut root_state, root_properties) =

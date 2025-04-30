@@ -10,7 +10,7 @@ use vello::Scene;
 use vello::kurbo::Affine;
 use vello::peniko::{Color, Fill, Mix};
 
-use crate::app::{RenderRoot, RenderRootState};
+use crate::app::{RenderRootState, WindowMut};
 use crate::core::{PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
 use crate::kurbo::Rect;
 use crate::passes::{enter_span_if, recurse_on_children};
@@ -122,7 +122,7 @@ fn paint_widget(
 
 // --- MARK: ROOT ---
 /// See the [passes documentation](../doc/05_pass_system.md#render-passes).
-pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
+pub(crate) fn run_paint_pass(root: &mut WindowMut<'_>) -> Scene {
     let _span = info_span!("paint").entered();
 
     // TODO - Reserve scene
@@ -160,7 +160,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         root_widget,
         root_state,
         root_properties,
-        root.debug_paint,
+        *root.debug_paint,
     );
     root.global_state.scenes = scenes;
 

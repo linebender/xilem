@@ -8,7 +8,7 @@ use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 
-use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
+use crate::app::{RenderRootSignal, RenderRootState, WindowMut};
 use crate::core::{
     Ime, PointerEvent, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetState,
@@ -20,7 +20,7 @@ use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_childr
 /// Returns the id path starting from the given widget id and ending at the root.
 ///
 /// If `widget_id` is `None`, returns an empty `Vec`.
-fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
+fn get_id_path(root: &WindowMut<'_>, widget_id: Option<WidgetId>) -> Vec<WidgetId> {
     let Some(widget_id) = widget_id else {
         return Vec::new();
     };
@@ -34,7 +34,7 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
 }
 
 fn run_targeted_update_pass(
-    root: &mut RenderRoot,
+    root: &mut WindowMut<'_>,
     target: Option<WidgetId>,
     mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx, &mut PropertiesMut<'_>),
 ) {
@@ -61,7 +61,7 @@ fn run_targeted_update_pass(
 }
 
 fn run_single_update_pass(
-    root: &mut RenderRoot,
+    root: &mut WindowMut<'_>,
     target: Option<WidgetId>,
     mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx, &mut PropertiesMut<'_>),
 ) {
@@ -200,7 +200,7 @@ fn update_widget_tree(
 }
 
 /// See the [passes documentation](../doc/05_pass_system.md#update-tree-pass).
-pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_widget_tree_pass(root: &mut WindowMut<'_>) {
     let _span = info_span!("update_new_widgets").entered();
 
     if root.root.incomplete() {
@@ -290,7 +290,7 @@ fn update_disabled_for_widget(
     );
 }
 
-pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_disabled_pass(root: &mut WindowMut<'_>) {
     let _span = info_span!("update_disabled").entered();
 
     // If a widget was enabled or disabled, the pointer icon may need to change.
@@ -386,7 +386,7 @@ fn update_stashed_for_widget(
     );
 }
 
-pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_stashed_pass(root: &mut WindowMut<'_>) {
     let _span = info_span!("update_stashed").entered();
 
     let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
@@ -471,7 +471,7 @@ fn update_focus_chain_for_widget(
     state.item.has_focus_target = had_focus;
 }
 
-pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_focus_chain_pass(root: &mut WindowMut<'_>) {
     let _span = info_span!("update_focus_chain").entered();
     let mut dummy_focus_chain = Vec::new();
 
@@ -490,7 +490,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 // --- MARK: UPDATE FOCUS ---
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 /// See the [focus status documentation](../doc/06_masonry_concepts.md#text-focus).
-pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_focus_pass(root: &mut WindowMut<'_>) {
     let _span = info_span!("update_focus").entered();
     // If the next-focused widget is disabled, stashed or removed, we set
     // the focused id to None
@@ -561,7 +561,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // See comment in that function.
 
         fn update_focused_status_of(
-            root: &mut RenderRoot,
+            root: &mut WindowMut<'_>,
             widget_id: WidgetId,
             focused_set: &HashSet<WidgetId>,
         ) {
@@ -642,7 +642,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 // child is visible. (If the target area is larger than the parent, the parent will try
 // to show the top left of that area.)
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
-pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_scroll_pass(root: &mut WindowMut<'_>) {
     let _span = info_span!("update_scroll").entered();
 
     let scroll_request_targets = std::mem::take(&mut root.global_state.scroll_request_targets);
@@ -668,7 +668,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // --- MARK: UPDATE POINTER ---
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
-pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
+pub(crate) fn run_update_pointer_pass(root: &mut WindowMut<'_>) {
     if !root.global_state.needs_pointer_pass {
         return;
     }
@@ -741,7 +741,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         // The above assumes that accessing the widget tree is O(1) for simplicity.
 
         fn update_hovered_status_of(
-            root: &mut RenderRoot,
+            root: &mut WindowMut<'_>,
             widget_id: WidgetId,
             hovered_set: &HashSet<WidgetId>,
         ) {

@@ -29,7 +29,7 @@ impl AppDriver for Driver {
                 self.grid_spacing += 0.5;
             }
 
-            ctx.render_root().edit_root_widget(|mut root| {
+            ctx.render_root().window_mut().edit_root_widget(|mut root| {
                 let mut root = root.downcast::<RootWidget<Grid>>();
                 let mut grid = RootWidget::child_mut(&mut root);
                 Grid::set_spacing(&mut grid, self.grid_spacing);

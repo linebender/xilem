@@ -6,7 +6,7 @@ use keyboard_types::{Key, KeyState};
 use tracing::{debug, info_span, trace};
 
 use crate::Handled;
-use crate::app::{RenderRoot, RenderRootSignal};
+use crate::app::{RenderRootSignal, WindowMut};
 use crate::core::{
     AccessEvent, EventCtx, PointerEvent, PropertiesMut, TextEvent, Widget, WidgetId,
 };
@@ -14,7 +14,7 @@ use crate::passes::{enter_span, merge_state_up};
 
 // --- MARK: HELPERS ---
 fn get_pointer_target(
-    root: &RenderRoot,
+    root: &WindowMut<'_>,
     pointer_pos: Option<LogicalPosition<f64>>,
 ) -> Option<WidgetId> {
     // See the [pointer capture documentation](../doc/06_masonry_concepts.md#pointer-capture).
@@ -35,7 +35,7 @@ fn get_pointer_target(
 }
 
 fn run_event_pass<E>(
-    root: &mut RenderRoot,
+    root: &mut WindowMut<'_>,
     target: Option<WidgetId>,
     event: &E,
     allow_pointer_capture: bool,
@@ -94,7 +94,7 @@ fn run_event_pass<E>(
 
 // --- MARK: POINTER_EVENT ---
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
-pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
+pub(crate) fn run_on_pointer_event_pass(root: &mut WindowMut<'_>, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
     if event.is_high_density() {
@@ -193,7 +193,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
 // --- MARK: TEXT EVENT ---
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
-pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
+pub(crate) fn run_on_text_event_pass(root: &mut WindowMut<'_>, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::WindowFocusChange(false)) {
         run_on_pointer_event_pass(root, &PointerEvent::new_pointer_lost());
     }
@@ -245,7 +245,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         }
 
         if key.key == Key::F12 && key.state == KeyState::Down && handled == Handled::No {
-            root.debug_paint = !root.debug_paint;
+            *root.debug_paint = !*root.debug_paint;
             root.root_state_mut().needs_paint = true;
             handled = Handled::Yes;
         }
@@ -265,7 +265,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 // --- MARK: ACCESS EVENT ---
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_access_event_pass(
-    root: &mut RenderRoot,
+    root: &mut WindowMut<'_>,
     event: &AccessEvent,
     target: WidgetId,
 ) -> Handled {

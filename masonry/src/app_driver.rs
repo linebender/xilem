@@ -42,7 +42,7 @@ impl DriverCtx<'_> {
 
     /// Returns `true` if something happened that requires a rewrite pass or a re-render.
     pub fn content_changed(&self) -> bool {
-        self.render_root.needs_rewrite_passes()
+        self.render_root.window().needs_rewrite_passes()
     }
 }
 

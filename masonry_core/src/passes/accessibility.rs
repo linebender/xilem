@@ -7,7 +7,7 @@ use tracing::{debug, info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
-use crate::app::{RenderRoot, RenderRootState};
+use crate::app::{RenderRootState, WindowMut};
 use crate::core::{AccessCtx, PropertiesRef, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -145,7 +145,7 @@ fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
 
 // --- MARK: ROOT ---
 /// See the [passes documentation](../doc/05_pass_system.md#render-passes).
-pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -> TreeUpdate {
+pub(crate) fn run_accessibility_pass(root: &mut WindowMut<'_>, scale_factor: f64) -> TreeUpdate {
     let _span = info_span!("accessibility").entered();
 
     let mut tree_update = TreeUpdate {

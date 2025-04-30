@@ -55,6 +55,9 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 /// winit or similar event loop runners, as well as 2D scenes and accessibility information.
 ///
 /// This is also the type that owns the widget tree.
+///
+/// You'll probably want to use [`RenderRoot::window_mut()`] to get a [`WindowMut`] that you
+/// must use to do anything in you app.
 pub struct RenderRoot {
     /// Root of the widget tree.
     pub(crate) root: WidgetPod<dyn Widget>,
@@ -67,6 +70,29 @@ pub struct RenderRoot {
 
     /// Toggled with F12. If true, widget's layout rects will be painted.
     pub(crate) debug_paint: bool,
+}
+
+/// A shared handle to the window's state.
+///
+/// See also [`WindowMut`].
+#[derive(Clone, Copy)]
+pub struct WindowRef<'a> {
+    pub(crate) root: &'a WidgetPod<dyn Widget>,
+    pub(crate) global_state: &'a RenderRootState,
+    pub(crate) widget_arena: &'a WidgetArena,
+    #[expect(dead_code, reason = "TODO - remove?")]
+    pub(crate) debug_paint: &'a bool,
+}
+
+/// A mutable handle to the window's state.
+///
+/// Most things you might want to do with your app (send events, access widgets, paint stuff)
+/// go through this.
+pub struct WindowMut<'a> {
+    pub(crate) root: &'a mut WidgetPod<dyn Widget>,
+    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) widget_arena: &'a mut WidgetArena,
+    pub(crate) debug_paint: &'a mut bool,
 }
 
 /// Per-virtual-window state shared between passes.
@@ -304,7 +330,7 @@ impl RenderRoot {
         };
 
         if let Some(test_font_data) = test_font {
-            let families = root.register_fonts(test_font_data);
+            let families = root.window_mut().register_fonts(test_font_data);
             // Make sure that all of these fonts are in the fallback chain for the Latin script.
             // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
             root.global_state
@@ -314,9 +340,140 @@ impl RenderRoot {
         }
 
         // We run a set of passes to initialize the widget tree
-        root.run_rewrite_passes();
+        root.window_mut().run_rewrite_passes();
 
         root
+    }
+
+    /// Returns a reference to the app's window.
+    pub fn window(&self) -> WindowRef<'_> {
+        WindowRef {
+            root: &self.root,
+            global_state: &self.global_state,
+            widget_arena: &self.widget_arena,
+            debug_paint: &self.debug_paint,
+        }
+    }
+
+    /// Returns a mutable reference to the app's window.
+    pub fn window_mut(&mut self) -> WindowMut<'_> {
+        WindowMut {
+            root: &mut self.root,
+            global_state: &mut self.global_state,
+            widget_arena: &mut self.widget_arena,
+            debug_paint: &mut self.debug_paint,
+        }
+    }
+}
+
+impl<'a> WindowRef<'a> {
+    pub(crate) fn root_state(&self) -> &WidgetState {
+        self.widget_arena
+            .states
+            .roots()
+            .into_item(self.root.id())
+            .expect("root widget not in widget tree")
+            .item
+    }
+
+    /// Get the current icon that the mouse should display.
+    pub fn cursor_icon(&self) -> CursorIcon {
+        self.global_state.cursor_icon
+    }
+
+    /// Returns `true` if something requires a rewrite pass or a re-render.
+    pub fn needs_rewrite_passes(&self) -> bool {
+        self.root_state().needs_rewrite_passes() || self.global_state.focus_changed()
+    }
+
+    /// Get a [`WidgetRef`] to the root widget.
+    pub fn get_root_widget(self) -> WidgetRef<'a, dyn Widget> {
+        let root_state_token = self.widget_arena.states.roots();
+        let root_widget_token = self.widget_arena.widgets.roots();
+        let root_properties_token = self.widget_arena.properties.roots();
+        let state_ref = root_state_token
+            .into_item(self.root.id())
+            .expect("root widget not in widget tree");
+        let widget_ref = root_widget_token
+            .into_item(self.root.id())
+            .expect("root widget not in widget tree");
+        let properties_ref = root_properties_token
+            .into_item(self.root.id())
+            .expect("root widget not in widget tree");
+        let widget = &**widget_ref.item;
+        let ctx = QueryCtx {
+            global_state: self.global_state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
+            properties_children: properties_ref.children,
+        };
+        let properties = PropertiesRef {
+            map: properties_ref.item,
+        };
+        WidgetRef {
+            ctx,
+            properties,
+            widget,
+        }
+    }
+
+    /// Get a [`WidgetRef`] to a specific widget.
+    pub fn get_widget(self, id: WidgetId) -> Option<WidgetRef<'a, dyn Widget>> {
+        let state_ref = self.widget_arena.states.find(id)?;
+        let widget_ref = self
+            .widget_arena
+            .widgets
+            .find(id)
+            .expect("found state but not widget");
+        let properties_ref = self
+            .widget_arena
+            .properties
+            .find(id)
+            .expect("found state but not properties");
+
+        let widget = &**widget_ref.item;
+        let ctx = QueryCtx {
+            global_state: self.global_state,
+            widget_state_children: state_ref.children,
+            widget_children: widget_ref.children,
+            widget_state: state_ref.item,
+            properties_children: properties_ref.children,
+        };
+        let properties = PropertiesRef {
+            map: properties_ref.item,
+        };
+        Some(WidgetRef {
+            ctx,
+            properties,
+            widget,
+        })
+    }
+}
+
+impl<'a> WindowMut<'a> {
+    /// Returns a shared reference to the same window.
+    ///
+    /// This is sometimes useful to work with the borrow checker.
+    pub fn reborrow(&self) -> WindowRef<'_> {
+        WindowRef {
+            root: &*self.root,
+            global_state: &*self.global_state,
+            widget_arena: &*self.widget_arena,
+            debug_paint: &*self.debug_paint,
+        }
+    }
+
+    /// Returns a mutable reference to the same window.
+    ///
+    /// This is sometimes useful to work with the borrow checker.
+    pub fn reborrow_mut(&mut self) -> WindowMut<'_> {
+        WindowMut {
+            root: &mut *self.root,
+            global_state: &mut *self.global_state,
+            widget_arena: &mut *self.widget_arena,
+            debug_paint: &mut *self.debug_paint,
+        }
     }
 
     pub(crate) fn root_state(&self) -> &WidgetState {
@@ -477,67 +634,13 @@ impl RenderRoot {
 
     // --- MARK: ACCESS WIDGETS---
     /// Get a [`WidgetRef`] to the root widget.
-    pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
-        let root_state_token = self.widget_arena.states.roots();
-        let root_widget_token = self.widget_arena.widgets.roots();
-        let root_properties_token = self.widget_arena.properties.roots();
-        let state_ref = root_state_token
-            .into_item(self.root.id())
-            .expect("root widget not in widget tree");
-        let widget_ref = root_widget_token
-            .into_item(self.root.id())
-            .expect("root widget not in widget tree");
-        let properties_ref = root_properties_token
-            .into_item(self.root.id())
-            .expect("root widget not in widget tree");
-        let widget = &**widget_ref.item;
-        let ctx = QueryCtx {
-            global_state: &self.global_state,
-            widget_state_children: state_ref.children,
-            widget_children: widget_ref.children,
-            widget_state: state_ref.item,
-            properties_children: properties_ref.children,
-        };
-        let properties = PropertiesRef {
-            map: properties_ref.item,
-        };
-        WidgetRef {
-            ctx,
-            properties,
-            widget,
-        }
+    pub fn get_root_widget(&self) -> WidgetRef<'_, dyn Widget> {
+        self.reborrow().get_root_widget()
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
-    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
-        let state_ref = self.widget_arena.states.find(id)?;
-        let widget_ref = self
-            .widget_arena
-            .widgets
-            .find(id)
-            .expect("found state but not widget");
-        let properties_ref = self
-            .widget_arena
-            .properties
-            .find(id)
-            .expect("found state but not properties");
-
-        let widget = &**widget_ref.item;
-        let ctx = QueryCtx {
-            global_state: &self.global_state,
-            widget_state_children: state_ref.children,
-            widget_children: widget_ref.children,
-            widget_state: state_ref.item,
-            properties_children: properties_ref.children,
-        };
-        let properties = PropertiesRef {
-            map: properties_ref.item,
-        };
-        Some(WidgetRef {
-            ctx,
-            properties,
-            widget,
-        })
+    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
+        self.reborrow().get_widget(id)
     }
 
     /// Get a [`WidgetMut`] to the root widget.
@@ -730,7 +833,7 @@ impl RenderRoot {
 
     /// Returns `true` if something requires a rewrite pass or a re-render.
     pub fn needs_rewrite_passes(&self) -> bool {
-        self.root_state().needs_rewrite_passes() || self.global_state.focus_changed()
+        self.reborrow().needs_rewrite_passes()
     }
 
     // TODO - Remove?

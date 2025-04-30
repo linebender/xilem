@@ -261,7 +261,7 @@ impl TestHarness {
     ///
     /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
-        let handled = self.render_root.handle_window_event(event);
+        let handled = self.render_root.window_mut().handle_window_event(event);
         self.process_signals();
         handled
     }
@@ -270,7 +270,7 @@ impl TestHarness {
     ///
     /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
-        let handled = self.render_root.handle_pointer_event(event);
+        let handled = self.render_root.window_mut().handle_pointer_event(event);
         self.process_signals();
         handled
     }
@@ -279,7 +279,7 @@ impl TestHarness {
     ///
     /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
-        let handled = self.render_root.handle_text_event(event);
+        let handled = self.render_root.window_mut().handle_text_event(event);
         self.process_signals();
         handled
     }
@@ -287,7 +287,7 @@ impl TestHarness {
     // This should be ran after any operation which runs the rewrite passes
     // (i.e. processing an event, etc.)
     fn process_signals(&mut self) {
-        while let Some(signal) = self.render_root.pop_signal() {
+        while let Some(signal) = self.render_root.window_mut().pop_signal() {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
                     self.action_queue.push_back((action, widget_id));
@@ -328,7 +328,7 @@ impl TestHarness {
     // TODO - Should be async?
     /// Create a bitmap (an array of pixels), paint the window and return the bitmap as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
-        let (scene, _tree_update) = self.render_root.redraw();
+        let (scene, _tree_update) = self.render_root.window_mut().redraw();
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
@@ -501,6 +501,7 @@ impl TestHarness {
         }
         if self
             .render_root
+            .window_mut()
             .get_root_widget()
             .find_widget_under_pointer(widget_center)
             .map(|w| w.id())
@@ -519,7 +520,7 @@ impl TestHarness {
         // For each character
         for c in text.split("").filter(|s| !s.is_empty()) {
             let event = TextEvent::Ime(Ime::Commit(c.to_string()));
-            self.render_root.handle_text_event(event);
+            self.render_root.window_mut().handle_text_event(event);
         }
     }
 
@@ -543,14 +544,14 @@ impl TestHarness {
             }
         }
         self.render_root.global_state.next_focused_widget = id;
-        self.render_root.run_rewrite_passes();
+        self.render_root.window_mut().run_rewrite_passes();
         self.process_signals();
     }
 
     /// Run an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
-        run_update_anim_pass(&mut self.render_root, ms * 1_000_000);
-        self.render_root.run_rewrite_passes();
+        run_update_anim_pass(&mut self.render_root.window_mut(), ms * 1_000_000);
+        self.render_root.window_mut().run_rewrite_passes();
         self.process_signals();
     }
 
@@ -558,7 +559,7 @@ impl TestHarness {
 
     /// Return a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
-        self.render_root.get_root_widget()
+        self.render_root.window().get_root_widget()
     }
 
     /// Return a [`WidgetRef`] to the widget with the given id.
@@ -569,13 +570,14 @@ impl TestHarness {
     #[track_caller]
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
+            .window()
             .get_widget(id)
             .unwrap_or_else(|| panic!("could not find widget {}", id))
     }
 
     /// Try to return a [`WidgetRef`] to the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
-        self.render_root.get_widget(id)
+        self.render_root.window().get_widget(id)
     }
 
     /// Return a [`WidgetRef`] to the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
@@ -587,6 +589,7 @@ impl TestHarness {
     /// Return a [`WidgetRef`] to the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
+            .window()
             .get_widget(self.render_root.global_state.pointer_capture_target?)
     }
 
@@ -615,7 +618,7 @@ impl TestHarness {
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
-        let ret = self.render_root.edit_root_widget(f);
+        let ret = self.render_root.window_mut().edit_root_widget(f);
         self.process_signals();
         ret
     }
@@ -628,7 +631,7 @@ impl TestHarness {
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
-        let ret = self.render_root.edit_widget(id, f);
+        let ret = self.render_root.window_mut().edit_widget(id, f);
         self.process_signals();
         ret
     }
@@ -643,7 +646,7 @@ impl TestHarness {
     /// The cursor icon is the icon that would be displayed to indicate the mouse
     /// position in a visual environment.
     pub fn cursor_icon(&self) -> CursorIcon {
-        self.render_root.cursor_icon()
+        self.render_root.global_state.cursor_icon
     }
 
     /// Return whether the app has an IME session in progress.
@@ -690,7 +693,7 @@ impl TestHarness {
     ) {
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             // We still redraw to get some coverage in the paint code.
-            let _ = self.render_root.redraw();
+            let _ = self.render_root.window_mut().redraw();
 
             return;
         }

@@ -10,7 +10,7 @@ use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
-use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
+use crate::app::{RenderRootSignal, WindowMut, WindowSizePolicy};
 use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -194,7 +194,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
 
 // --- MARK: ROOT ---
 /// See the [passes documentation](../doc/05_pass_system.md#layout-pass).
-pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
+pub(crate) fn run_layout_pass(root: &mut WindowMut<'_>) {
     if !root.root_state().needs_layout {
         return;
     }

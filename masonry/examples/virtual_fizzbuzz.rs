@@ -43,7 +43,7 @@ impl AppDriver for Driver {
                 // The VirtualScroll widget will send us a VirtualScrollAction every time it wants different
                 // items to be loaded or unloaded.
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
-                ctx.render_root().edit_root_widget(|mut root| {
+                ctx.render_root().window_mut().edit_root_widget(|mut root| {
                     let mut root = root.downcast::<RootWidget<VirtualScroll<ScrollContents>>>();
                     let mut scroll = RootWidget::child_mut(&mut root);
                     // We need to tell the `VirtualScroll` which request this is associated with

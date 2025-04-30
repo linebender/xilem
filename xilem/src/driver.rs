@@ -124,15 +124,18 @@ where
             }
         };
         if let Some(prior_view) = rebuild_from {
-            masonry_ctx.render_root().edit_root_widget(|mut root| {
-                let mut root = root.downcast::<RootWidget<View::Widget>>();
-                self.current_view.rebuild(
-                    prior_view,
-                    &mut self.view_state,
-                    &mut self.ctx,
-                    RootWidget::child_mut(&mut root),
-                );
-            });
+            masonry_ctx
+                .render_root()
+                .window_mut()
+                .edit_root_widget(|mut root| {
+                    let mut root = root.downcast::<RootWidget<View::Widget>>();
+                    self.current_view.rebuild(
+                        prior_view,
+                        &mut self.view_state,
+                        &mut self.ctx,
+                        RootWidget::child_mut(&mut root),
+                    );
+                });
         }
         if cfg!(debug_assertions) && rebuild_from.is_some() && !masonry_ctx.content_changed() {
             tracing::debug!("Nothing changed as result of action");
@@ -145,7 +148,7 @@ where
         for font in std::mem::take(&mut self.fonts).drain(..) {
             // We currently don't do anything with the resulting family information,
             // because we don't have an easy way to return this to the application.
-            drop(root.register_fonts(font));
+            drop(root.window_mut().register_fonts(font));
         }
     }
 }

@@ -6,7 +6,7 @@ use tracing::info_span;
 use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
-use crate::app::{RenderRoot, RenderRootState};
+use crate::app::{RenderRootState, WindowMut};
 use crate::core::{ComposeCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -91,7 +91,7 @@ fn compose_widget(
 
 // --- MARK: ROOT ---
 /// See the [passes documentation](../doc/05_pass_system.md#compose-pass).
-pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
+pub(crate) fn run_compose_pass(root: &mut WindowMut<'_>) {
     let _span = info_span!("compose").entered();
 
     // If widgets have moved, pointer-related info may be stale.

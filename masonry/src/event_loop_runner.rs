@@ -279,12 +279,13 @@ impl MasonryState<'_> {
                     accesskit_adapter: adapter,
                 };
                 self.render_root
+                    .window_mut()
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
                 // Handle any signals caused by the initial layout or by the rescale
                 self.handle_signals(event_loop, app_driver);
                 // Render one frame before showing the window to avoid flashing
                 if visible {
-                    let (scene, tree_update) = self.render_root.redraw();
+                    let (scene, tree_update) = self.render_root.window_mut().redraw();
                     self.render(scene);
                     if let WindowState::Rendering {
                         window,
@@ -464,12 +465,15 @@ impl MasonryState<'_> {
         match event {
             WinitWindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 self.render_root
+                    .window_mut()
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
                 let _span = info_span!("redraw");
-                self.render_root.handle_window_event(WindowEvent::AnimFrame);
-                let (scene, tree_update) = self.render_root.redraw();
+                self.render_root
+                    .window_mut()
+                    .handle_window_event(WindowEvent::AnimFrame);
+                let (scene, tree_update) = self.render_root.window_mut().redraw();
                 self.render(scene);
                 let WindowState::Rendering {
                     accesskit_adapter, ..
@@ -489,12 +493,14 @@ impl MasonryState<'_> {
             }
             WinitWindowEvent::Resized(size) => {
                 self.render_root
+                    .window_mut()
                     .handle_window_event(WindowEvent::Resize(size));
             }
             WinitWindowEvent::ModifiersChanged(modifiers) => {
                 self.pointer_state.mods = winit_modifiers_to_kbt_modifiers(modifiers.state());
                 self.winit_mods = modifiers;
                 self.render_root
+                    .window_mut()
                     .handle_text_event(TextEvent::ModifierChange(self.pointer_state.mods));
             }
             WinitWindowEvent::KeyboardInput {
@@ -504,32 +510,40 @@ impl MasonryState<'_> {
             } => {
                 let text = event.text.as_ref().map(|text| text.to_string());
                 let event = winit_key_event_to_kbt(&event, self.winit_mods.state());
-                self.render_root.handle_text_event(TextEvent::KeyboardKey(
-                    event,
-                    self.pointer_state.mods,
-                    text,
-                ));
+                self.render_root
+                    .window_mut()
+                    .handle_text_event(TextEvent::KeyboardKey(
+                        event,
+                        self.pointer_state.mods,
+                        text,
+                    ));
             }
             WinitWindowEvent::Ime(ime) => {
                 let ime = winit_ime_to_masonry(ime);
-                self.render_root.handle_text_event(TextEvent::Ime(ime));
+                self.render_root
+                    .window_mut()
+                    .handle_text_event(TextEvent::Ime(ime));
             }
             WinitWindowEvent::Focused(new_focus) => {
                 self.render_root
+                    .window_mut()
                     .handle_text_event(TextEvent::WindowFocusChange(new_focus));
             }
             WinitWindowEvent::CursorEntered { .. } => {
                 self.render_root
+                    .window_mut()
                     .handle_pointer_event(PointerEvent::PointerEnter(self.pointer_state.clone()));
             }
             WinitWindowEvent::CursorMoved { position, .. } => {
                 self.pointer_state.physical_position = position;
                 self.pointer_state.position = position.to_logical(window.scale_factor());
                 self.render_root
+                    .window_mut()
                     .handle_pointer_event(PointerEvent::PointerMove(self.pointer_state.clone()));
             }
             WinitWindowEvent::CursorLeft { .. } => {
                 self.render_root
+                    .window_mut()
                     .handle_pointer_event(PointerEvent::PointerLeave(self.pointer_state.clone()));
             }
             WinitWindowEvent::MouseInput { state, button, .. } => {
@@ -542,18 +556,14 @@ impl MasonryState<'_> {
 
                 match state {
                     winit::event::ElementState::Pressed => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerDown(
-                                button,
-                                self.pointer_state.clone(),
-                            ));
+                        self.render_root.window_mut().handle_pointer_event(
+                            PointerEvent::PointerDown(button, self.pointer_state.clone()),
+                        );
                     }
                     winit::event::ElementState::Released => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerUp(
-                                button,
-                                self.pointer_state.clone(),
-                            ));
+                        self.render_root.window_mut().handle_pointer_event(
+                            PointerEvent::PointerUp(button, self.pointer_state.clone()),
+                        );
                     }
                 }
             }
@@ -570,6 +580,7 @@ impl MasonryState<'_> {
                     }
                 };
                 self.render_root
+                    .window_mut()
                     .handle_pointer_event(PointerEvent::MouseWheel(
                         delta,
                         self.pointer_state.clone(),
@@ -588,39 +599,39 @@ impl MasonryState<'_> {
                 self.pointer_state.force = force.map(winit_force_to_masonry);
                 match phase {
                     winit::event::TouchPhase::Started => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerMove(
-                                self.pointer_state.clone(),
-                            ));
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerDown(
+                        self.render_root.window_mut().handle_pointer_event(
+                            PointerEvent::PointerMove(self.pointer_state.clone()),
+                        );
+                        self.render_root.window_mut().handle_pointer_event(
+                            PointerEvent::PointerDown(
                                 PointerButton::Primary,
                                 self.pointer_state.clone(),
-                            ));
+                            ),
+                        );
                     }
                     winit::event::TouchPhase::Ended => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerUp(
+                        self.render_root.window_mut().handle_pointer_event(
+                            PointerEvent::PointerUp(
                                 PointerButton::Primary,
                                 self.pointer_state.clone(),
-                            ));
+                            ),
+                        );
                     }
                     winit::event::TouchPhase::Moved => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerMove(
-                                self.pointer_state.clone(),
-                            ));
+                        self.render_root.window_mut().handle_pointer_event(
+                            PointerEvent::PointerMove(self.pointer_state.clone()),
+                        );
                     }
                     winit::event::TouchPhase::Cancelled => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerLost(
-                                self.pointer_state.clone(),
-                            ));
+                        self.render_root.window_mut().handle_pointer_event(
+                            PointerEvent::PointerLost(self.pointer_state.clone()),
+                        );
                     }
                 }
             }
             WinitWindowEvent::PinchGesture { delta, .. } => {
                 self.render_root
+                    .window_mut()
                     .handle_pointer_event(PointerEvent::Pinch(delta, self.pointer_state.clone()));
             }
             _ => (),
@@ -653,10 +664,13 @@ impl MasonryState<'_> {
                     // the user restarts their screen reader.
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
                         self.render_root
+                            .window_mut()
                             .handle_window_event(WindowEvent::RebuildAccessTree);
                     }
                     accesskit_winit::WindowEvent::ActionRequested(action_request) => {
-                        self.render_root.handle_access_event(action_request);
+                        self.render_root
+                            .window_mut()
+                            .handle_access_event(action_request);
                     }
                     accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
                 }
@@ -664,6 +678,7 @@ impl MasonryState<'_> {
             // TODO - Not sure what the use-case for this is.
             MasonryUserEvent::Action(action, widget) => self
                 .render_root
+                .window_mut()
                 .emit_signal(RenderRootSignal::Action(action, widget)),
         }
 
@@ -687,7 +702,7 @@ impl MasonryState<'_> {
         };
 
         let mut needs_redraw = false;
-        while let Some(signal) = self.render_root.pop_signal() {
+        while let Some(signal) = self.render_root.window_mut().pop_signal() {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
                     let mut driver_ctx = DriverCtx {
@@ -747,7 +762,7 @@ impl MasonryState<'_> {
                     window.show_window_menu(position);
                 }
                 RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
-                    let Some(widget) = self.render_root.get_widget(widget_id) else {
+                    let Some(widget) = self.render_root.window().get_widget(widget_id) else {
                         return;
                     };
                     let widget_name = widget.short_type_name();
