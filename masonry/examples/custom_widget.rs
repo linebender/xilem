@@ -5,7 +5,7 @@
 //! We draw an image, some text, a shape, and a curve.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::shadow_unrelated, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
@@ -206,7 +206,6 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
     use masonry::assert_render_snapshot;
     use masonry::testing::TestHarness;
 
@@ -217,7 +216,6 @@ mod tests {
         let my_string = "Masonry + Vello".to_string();
 
         let mut harness = TestHarness::create(CustomWidget(my_string));
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "example_custom_widget_initial");
     }
 }

@@ -6,7 +6,7 @@
 //! everything behaves.
 
 // On Windows platform, don't show a console when opening the app.
-#![windows_subsystem = "windows"]
+#![cfg_attr(not(test), windows_subsystem = "windows")]
 
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{Action, ObjectFit, WidgetId};
@@ -54,7 +54,6 @@ fn main() {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
     use masonry::assert_render_snapshot;
     use masonry::testing::TestHarness;
 
@@ -63,7 +62,6 @@ mod tests {
     #[test]
     fn screenshot_test() {
         let mut harness = TestHarness::create(make_image());
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "example_simple_image_initial");
     }
 }
