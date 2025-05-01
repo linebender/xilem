@@ -225,6 +225,9 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     warned_not_dense: bool,
     /// We don't want to spam warnings about missing an action, but we want the user to be aware of it.
     missed_actions_count: u32,
+
+    /// The amount to scroll by in each frame, intended for loose benchmarking.
+    scroll_per_frame: Option<f64>,
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
@@ -240,6 +243,7 @@ impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
             .field("mean_item_height", &self.mean_item_height)
             .field("anchor_height", &self.anchor_height)
             .field("warned_not_dense", &self.warned_not_dense)
+            .field("scroll_per_frame", &self.scroll_per_frame)
             .finish()
     }
 }
@@ -266,6 +270,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
             mean_item_height: DEFAULT_MEAN_ITEM_HEIGHT,
             anchor_height: DEFAULT_MEAN_ITEM_HEIGHT,
             warned_not_dense: false,
+            scroll_per_frame: None,
         }
     }
 
@@ -281,6 +286,15 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     pub fn with_valid_range(mut self, valid_range: Range<i64>) -> Self {
         self.valid_range = valid_range;
         self.validate_valid_range();
+        self
+    }
+
+    /// Set the number of pixels to scroll in each frame.
+    ///
+    /// This is intended to be used only for benchmarking, as a more
+    /// comprehensive animation system is not yet in place.
+    pub fn with_scroll_per_frame(mut self, amount: Option<f64>) -> Self {
+        self.scroll_per_frame = amount;
         self
     }
 
@@ -412,6 +426,16 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
+    /// Set the number of pixels to scroll in each frame.
+    ///
+    /// This is intended to be used only for benchmarking, as a more
+    /// comprehensive animation system is not yet in place.
+    /// Runtime equivalent of [`with_scroll_per_frame`](Self::with_scroll_per_frame).
+    pub fn set_scroll_per_frame(this: &mut WidgetMut<'_, Self>, amount: Option<f64>) {
+        this.widget.scroll_per_frame = amount;
+        this.ctx.request_anim_frame();
+    }
+
     /// Forcefully align the top of the item at `idx` with the top of the
     /// virtual scroll area.
     ///
@@ -535,12 +559,16 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn update(
         &mut self,
-        _ctx: &mut crate::core::UpdateCtx,
+        ctx: &mut crate::core::UpdateCtx,
         _props: &mut PropertiesMut<'_>,
         event: &crate::core::Update,
     ) {
         match event {
-            crate::core::Update::WidgetAdded => {}
+            crate::core::Update::WidgetAdded => {
+                if self.scroll_per_frame.is_some() {
+                    ctx.request_anim_frame();
+                }
+            }
             crate::core::Update::DisabledChanged(_) => {}
             crate::core::Update::StashedChanged(_) => {}
             crate::core::Update::RequestPanToChild(_rect) => {} // TODO,
@@ -554,12 +582,44 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         }
     }
 
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut crate::core::UpdateCtx,
+        _props: &mut PropertiesMut<'_>,
+        _interval: u64,
+    ) {
+        if let Some(scroll_per_frame) = self.scroll_per_frame {
+            self.scroll_offset_from_anchor += scroll_per_frame;
+            // TODO: This is self.post_scroll, but with this `UpdateCtx` instead of
+            // with `EventCtx`. This is a really poor thing for abstraction
+            {
+                let this = &mut *self;
+                // We only lock scrolling if we're *exactly* at the end of the range, because
+                // if the valid range has changed "during" an active scroll, we still want to handle
+                // that scroll (specifically, in case it happens to scroll us back into the active
+                // range "naturally")
+                if this.anchor_index + 1 == this.valid_range.end {
+                    this.cap_scroll_range_down(this.anchor_height, ctx.size().height);
+                }
+                if this.anchor_index == this.valid_range.start {
+                    this.cap_scroll_range_up();
+                }
+                if this.scroll_offset_from_anchor < 0.
+                    || this.scroll_offset_from_anchor >= this.anchor_height
+                {
+                    ctx.request_layout();
+                }
+                ctx.request_compose();
+            }
+        }
+    }
+
     fn layout(
         &mut self,
         ctx: &mut crate::core::LayoutCtx,
         _props: &mut PropertiesMut<'_>,
-        bc: &crate::core::BoxConstraints,
-    ) -> vello::kurbo::Size {
+        bc: &BoxConstraints,
+    ) -> Size {
         let viewport_size = bc.max();
         ctx.set_clip_path(viewport_size.to_rect());
         let child_bc = BoxConstraints::new(
@@ -912,9 +972,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 /// }
 /// ```
 /// as an iterator
-#[allow(
-    dead_code,
-    reason = "Plan to expose this publicly in `VirtualScrollAction`, keep its tests around"
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "Plan to expose this publicly in `VirtualScrollAction`, keep its tests around"
+    )
 )]
 fn opt_iter_difference(
     old_range: &Range<i64>,
