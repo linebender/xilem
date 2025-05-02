@@ -13,8 +13,9 @@ use crate::core::{
     WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
+use crate::properties::Padding;
 use crate::util::stroke;
-use crate::widgets::{Padding, TextArea};
+use crate::widgets::TextArea;
 
 // TODO - Replace with Padding property.
 /// Added padding between each horizontal edge of the widget
@@ -149,19 +150,15 @@ impl Widget for Textbox {
         let margin = TEXTBOX_MARGIN;
         let padding = TEXTBOX_PADDING;
         // Shrink constraints by padding inset
-        let margin_size = Size::new(margin.leading + margin.trailing, margin.top + margin.bottom);
-        let padding_size = Size::new(
-            padding.leading + padding.trailing,
-            padding.top + padding.bottom,
-        );
+        let margin_size = Size::new(margin.left + margin.left, margin.top + margin.bottom);
+        let padding_size = Size::new(padding.left + padding.left, padding.top + padding.bottom);
         let child_bc = bc.shrink(margin_size);
         let child_bc = child_bc.shrink(padding_size);
         // TODO: Set minimum to deal with alignment
         let size = ctx.run_layout(&mut self.text, &child_bc);
-        // TODO: How do we handle RTL here?
         ctx.place_child(
             &mut self.text,
-            Point::new(margin.leading + padding.leading, margin.top + padding.top),
+            Point::new(margin.left + padding.left, margin.top + padding.top),
         );
         if self.clip {
             ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
@@ -173,9 +170,9 @@ impl Widget for Textbox {
         let size = ctx.size();
         let border_width = 1.0;
         let outline_rect = size.to_rect().inset(Insets::new(
-            -TEXTBOX_MARGIN.leading - border_width / 2.,
+            -TEXTBOX_MARGIN.left - border_width / 2.,
             -TEXTBOX_MARGIN.top - border_width / 2.,
-            -TEXTBOX_MARGIN.trailing - border_width / 2.,
+            -TEXTBOX_MARGIN.left - border_width / 2.,
             -TEXTBOX_MARGIN.bottom - border_width / 2.,
         ));
         stroke(scene, &outline_rect, Color::WHITE, border_width);
