@@ -15,5 +15,5 @@
 mod alignment;
 mod gradient;
 
-pub use alignment::*;
+pub use alignment::{Alignment, HorizontalAlignment, VerticalAlignment};
 pub use gradient::{Gradient, GradientShape};

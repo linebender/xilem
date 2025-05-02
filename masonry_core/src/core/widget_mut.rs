@@ -114,6 +114,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     ///
     /// Panics if the downcast fails, with an error message that shows the
     /// discrepancy between the expected and actual types.
+    // TODO - Take self by value instead.
     pub fn downcast<W2: Widget + FromDynWidget + ?Sized>(&mut self) -> WidgetMut<'_, W2> {
         let w1_name = self.widget.type_name();
         match W2::from_dyn_mut(self.widget.as_mut_dyn()) {
