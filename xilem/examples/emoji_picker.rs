@@ -81,12 +81,15 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
         }
     }
 
-    grid(
-        grid_items,
-        data.size.try_into().unwrap(),
-        data.size.try_into().unwrap(),
+    sized_box(
+        grid(
+            grid_items,
+            data.size.try_into().unwrap(),
+            data.size.try_into().unwrap(),
+        )
+        .spacing(10.0),
     )
-    .spacing(10.0)
+    .padding(20.0)
 }
 
 fn paginate(

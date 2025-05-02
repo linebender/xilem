@@ -14,7 +14,7 @@ use xilem::core::{fork, run_once};
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
-    label, prose, task, textbox,
+    label, prose, sized_box, task, textbox,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
@@ -66,7 +66,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     });
 
     fork(
-        flex((
+        sized_box(flex((
             flex((
                 label("Label").brush(palette::css::REBECCA_PURPLE),
                 label("Bold Label").weight(FontWeight::BOLD),
@@ -101,7 +101,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
             button("Decrement", |data: &mut AppData| data.count -= 1),
             button("Reset", |data: &mut AppData| data.count = 0),
             flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
-        )),
+        )))
+        .padding(8.0),
         // The following `task` view only exists whilst the example is in the "active" state, so
         // the updates it performs will only be running whilst we are in that state.
         data.active.then(|| {
