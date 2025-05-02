@@ -1890,6 +1890,7 @@ dependencies = [
  "vello",
  "web-time",
  "wgpu",
+ "winit",
 ]
 
 [[package]]

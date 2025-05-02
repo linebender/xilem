@@ -15,6 +15,25 @@ all-features = true
 default-target = "x86_64-unknown-linux-gnu"
 targets = []
 
+# This makes the examples discoverable to (e.g.) Android GPU inspector without needing to provide the full name manually.
+# Do not use when releasing a production app.
+[package.metadata.android.application]
+debuggable = true
+
+[[example]]
+name = "virtual_stresstest"
+# This actually enables scraping for all examples, not just this one.
+# However it is possible to set doc-scrape-examples to false for other specific examples.
+doc-scrape-examples = true
+
+# Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
+[[example]]
+# A custom example target which uses the same `mason.rs` file but for android
+name = "virtual_stresstest_android"
+path = "examples/virtual_stresstest.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
+
 [features]
 default = []
 # Enables tracing using tracy if the default Masonry tracing is used.
@@ -43,6 +62,9 @@ oxipng = { version = "9.1.5", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
+
+[target.'cfg(target_os = "android")'.dev-dependencies]
+winit = { features = ["android-native-activity"], workspace = true }
 
 [dev-dependencies]
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }

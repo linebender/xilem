@@ -3,7 +3,7 @@
 
 #![warn(missing_docs)]
 
-use std::{collections::HashMap, ops::Range};
+use std::{collections::HashMap, ops::Range, time::Duration};
 
 use vello::kurbo::{Point, Size, Vec2};
 
@@ -209,6 +209,7 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     anchor_index: i64,
     /// The amount the user has scrolled from the anchor point, in logical pixels.
     scroll_offset_from_anchor: f64,
+    pending_scroll: f64,
 
     /// The average height of items, determined experimentally.
     /// This is used if there are no items to determine the mean item height otherwise. This approach means:
@@ -267,6 +268,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
             items: HashMap::default(),
             anchor_index: initial_anchor,
             scroll_offset_from_anchor: 0.0,
+            pending_scroll: 0.0,
             mean_item_height: DEFAULT_MEAN_ITEM_HEIGHT,
             anchor_height: DEFAULT_MEAN_ITEM_HEIGHT,
             warned_not_dense: false,
@@ -589,27 +591,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _interval: u64,
     ) {
         if let Some(scroll_per_frame) = self.scroll_per_frame {
-            self.scroll_offset_from_anchor += scroll_per_frame;
+            eprintln!("{:.1?}", Duration::from_nanos(_interval));
+            ctx.request_anim_frame();
             // TODO: This is self.post_scroll, but with this `UpdateCtx` instead of
             // with `EventCtx`. This is a really poor thing for abstraction
             {
-                let this = &mut *self;
-                // We only lock scrolling if we're *exactly* at the end of the range, because
-                // if the valid range has changed "during" an active scroll, we still want to handle
-                // that scroll (specifically, in case it happens to scroll us back into the active
-                // range "naturally")
-                if this.anchor_index + 1 == this.valid_range.end {
-                    this.cap_scroll_range_down(this.anchor_height, ctx.size().height);
-                }
-                if this.anchor_index == this.valid_range.start {
-                    this.cap_scroll_range_up();
-                }
-                if this.scroll_offset_from_anchor < 0.
-                    || this.scroll_offset_from_anchor >= this.anchor_height
-                {
+                let new_offset_from_anchor = self.scroll_offset_from_anchor + scroll_per_frame;
+                if new_offset_from_anchor < 0. || new_offset_from_anchor >= self.anchor_height {
+                    self.pending_scroll += scroll_per_frame;
                     ctx.request_layout();
+                } else {
+                    self.scroll_offset_from_anchor += scroll_per_frame;
+                    ctx.request_compose();
                 }
-                ctx.request_compose();
             }
         }
     }
@@ -620,6 +614,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
+        self.scroll_offset_from_anchor += self.pending_scroll;
+        self.pending_scroll = 0.;
         let viewport_size = bc.max();
         ctx.set_clip_path(viewport_size.to_rect());
         let child_bc = BoxConstraints::new(
@@ -765,11 +761,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         }
 
         // Load a page and a half above the screen
-        let cutoff_up = viewport_size.height * 1.5;
+        let cutoff_up = viewport_size.height * 0.1;
         // Load a page and a half below the screen (note that this cutoff "includes" the screen)
         // We also need to allow scrolling *at least* to the top of the current anchor; therefore, we load items sufficiently
         // that scrolling the bottom of the anchor to the top of the screen, we still have the desired margin
-        let cutoff_down = viewport_size.height * 2.5 + self.anchor_height;
+        let cutoff_down = viewport_size.height * 1.1 + self.anchor_height;
 
         let mut item_crossing_top = None;
         let mut item_crossing_bottom = self.active_range.start;
@@ -883,7 +879,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     fn compose(&mut self, ctx: &mut crate::core::ComposeCtx) {
         let translation = Vec2 {
             x: 0.,
-            y: -self.scroll_offset_from_anchor,
+            y: self.scroll_offset_from_anchor,
         };
         for idx in self.active_range.clone() {
             if let Some(child) = self.items.get_mut(&idx) {
