@@ -8,8 +8,8 @@ use std::{collections::HashMap, ops::Range, time::Duration};
 use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::{
-    BoxConstraints, FromDynWidget, PointerEvent, PropertiesMut, PropertiesRef, ScrollDelta,
-    TextEvent, Widget, WidgetMut, WidgetPod,
+    BoxConstraints, EventCtx, FromDynWidget, PointerEvent, PropertiesMut, PropertiesRef,
+    ScrollDelta, TextEvent, Widget, WidgetMut, WidgetPod,
     keyboard::{Key, KeyState, NamedKey},
 };
 
@@ -209,7 +209,6 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     anchor_index: i64,
     /// The amount the user has scrolled from the anchor point, in logical pixels.
     scroll_offset_from_anchor: f64,
-    pending_scroll: f64,
 
     /// The average height of items, determined experimentally.
     /// This is used if there are no items to determine the mean item height otherwise. This approach means:
@@ -268,7 +267,6 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
             items: HashMap::default(),
             anchor_index: initial_anchor,
             scroll_offset_from_anchor: 0.0,
-            pending_scroll: 0.0,
             mean_item_height: DEFAULT_MEAN_ITEM_HEIGHT,
             anchor_height: DEFAULT_MEAN_ITEM_HEIGHT,
             warned_not_dense: false,
@@ -451,23 +449,31 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
-    fn post_scroll(&mut self, ctx: &mut crate::core::EventCtx<'_>) {
+    /// Operations to be ran after scrolling in response to an event.
+    fn post_scroll_in_event(&mut self, ctx: &mut EventCtx) {
+        if self.post_scroll(ctx.size().height) {
+            ctx.request_layout();
+        } else {
+            ctx.request_compose();
+        }
+    }
+
+    /// Operations to be ran after a scrolling.
+    ///
+    /// If this returns true, a layout is required; otherwise, a compose must be requested.
+    #[must_use]
+    fn post_scroll(&mut self, viewport_height: f64) -> bool {
         // We only lock scrolling if we're *exactly* at the end of the range, because
         // if the valid range has changed "during" an active scroll, we still want to handle
         // that scroll (specifically, in case it happens to scroll us back into the active
         // range "naturally")
         if self.anchor_index + 1 == self.valid_range.end {
-            self.cap_scroll_range_down(self.anchor_height, ctx.size().height);
+            self.cap_scroll_range_down(self.anchor_height, viewport_height);
         }
         if self.anchor_index == self.valid_range.start {
             self.cap_scroll_range_up();
         }
-        if self.scroll_offset_from_anchor < 0.
-            || self.scroll_offset_from_anchor >= self.anchor_height
-        {
-            ctx.request_layout();
-        }
-        ctx.request_compose();
+        self.scroll_offset_from_anchor < 0. || self.scroll_offset_from_anchor >= self.anchor_height
     }
 
     /// Lock scrolling so that:
@@ -497,7 +503,7 @@ const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut crate::core::EventCtx,
+        ctx: &mut EventCtx,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -509,7 +515,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     _ => 0.0,
                 };
                 self.scroll_offset_from_anchor += delta;
-                self.post_scroll(ctx);
+                self.post_scroll_in_event(ctx);
             }
             _ => (),
         }
@@ -517,7 +523,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_text_event(
         &mut self,
-        ctx: &mut crate::core::EventCtx,
+        ctx: &mut EventCtx,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
@@ -531,11 +537,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     let delta = 20000.;
                     if matches!(key_event.key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
-                        self.post_scroll(ctx);
+                        self.post_scroll_in_event(ctx);
                     }
                     if matches!(key_event.key, Key::Named(NamedKey::PageUp)) {
                         self.scroll_offset_from_anchor -= delta;
-                        self.post_scroll(ctx);
+                        self.post_scroll_in_event(ctx);
                     }
                 }
             }
@@ -545,7 +551,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut crate::core::EventCtx,
+        _ctx: &mut EventCtx,
         _props: &mut PropertiesMut<'_>,
         _event: &crate::core::AccessEvent,
     ) {
@@ -591,19 +597,20 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _interval: u64,
     ) {
         if let Some(scroll_per_frame) = self.scroll_per_frame {
-            eprintln!("{:.1?}", Duration::from_nanos(_interval));
+            tracing::info!(
+                "Virtual Scroll Frame time: {:.1?}",
+                Duration::from_nanos(_interval)
+            );
             ctx.request_anim_frame();
+            // Note: This is the reason that `post_scroll` doesn't just accept an `UpdateCtx`.
+            // Ideally, there'd be some shared, standard way to request updates.
+            self.scroll_offset_from_anchor += scroll_per_frame;
             // TODO: This is self.post_scroll, but with this `UpdateCtx` instead of
             // with `EventCtx`. This is a really poor thing for abstraction
-            {
-                let new_offset_from_anchor = self.scroll_offset_from_anchor + scroll_per_frame;
-                if new_offset_from_anchor < 0. || new_offset_from_anchor >= self.anchor_height {
-                    self.pending_scroll += scroll_per_frame;
-                    ctx.request_layout();
-                } else {
-                    self.scroll_offset_from_anchor += scroll_per_frame;
-                    ctx.request_compose();
-                }
+            if self.post_scroll(ctx.size().height) {
+                ctx.request_layout();
+            } else {
+                ctx.request_compose();
             }
         }
     }
@@ -614,8 +621,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        self.scroll_offset_from_anchor += self.pending_scroll;
-        self.pending_scroll = 0.;
         let viewport_size = bc.max();
         ctx.set_clip_path(viewport_size.to_rect());
         let child_bc = BoxConstraints::new(

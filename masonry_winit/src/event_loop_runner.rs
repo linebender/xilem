@@ -476,6 +476,8 @@ impl MasonryState<'_> {
             WinitWindowEvent::RedrawRequested => {
                 let _span = info_span!("redraw");
                 self.render_root.handle_window_event(WindowEvent::AnimFrame);
+                // Handle any signals caused by the animation frame
+                self.handle_signals(event_loop, app_driver);
                 let (scene, _tree_update) = self.render_root.redraw();
                 self.render(scene);
                 let WindowState::Rendering { .. } = &mut self.window else {
