@@ -53,7 +53,7 @@ impl HttpCats {
                 .map(Status::list_view)
                 .collect::<Vec<_>>(),
         ))))
-        .padding(Padding::leading(5.));
+        .padding(Padding::left(5.));
 
         let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =
@@ -201,7 +201,7 @@ impl Status {
                 });
                 OneOf3::C(zstack((
                     image(image_data),
-                    attribution.alignment(Alignment::TopTrailing),
+                    attribution.alignment(Alignment::TopRight),
                 )))
             }
         };

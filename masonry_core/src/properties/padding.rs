@@ -87,16 +87,6 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with padding only at the trailing edge and zero padding for all other edges.
-    pub const fn trailing(padding: f64) -> Self {
-        Self {
-            top: 0.,
-            bottom: 0.,
-            left: 0.,
-            right: padding,
-        }
-    }
-
     /// Constructs a new `Padding` with padding only at the bottom edge and zero padding for all other edges.
     pub const fn bottom(padding: f64) -> Self {
         Self {
@@ -107,13 +97,23 @@ impl Padding {
         }
     }
 
-    /// Constructs a new `Padding` with padding only at the leading edge and zero padding for all other edges.
-    pub const fn leading(padding: f64) -> Self {
+    /// Constructs a new `Padding` with padding only at the leleftading edge and zero padding for all other edges.
+    pub const fn left(padding: f64) -> Self {
         Self {
             top: 0.,
             bottom: 0.,
             left: padding,
             right: 0.,
+        }
+    }
+
+    /// Constructs a new `Padding` with padding only at the right edge and zero padding for all other edges.
+    pub const fn right(padding: f64) -> Self {
+        Self {
+            top: 0.,
+            bottom: 0.,
+            left: 0.,
+            right: padding,
         }
     }
 }
