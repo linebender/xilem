@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
+pub use masonry::properties::Padding;
 use masonry::widgets;
-pub use masonry::widgets::Padding;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
@@ -23,7 +23,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use xilem::view::{sized_box, button};
 /// use xilem::palette;
 /// use vello::kurbo::RoundedRectRadii;
-/// use masonry::widgets::Padding;
+/// use masonry::properties::Padding;
 ///
 /// sized_box(button("Button", |data: &mut i32| *data+=1))
 ///     .expand()
