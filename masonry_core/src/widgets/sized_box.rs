@@ -18,7 +18,7 @@ use crate::core::{
     WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
-use crate::properties::Background;
+use crate::properties::{Background, Padding};
 use crate::util::stroke;
 
 // FIXME - Improve all doc in this module ASAP.
@@ -27,26 +27,6 @@ use crate::util::stroke;
 struct BorderStyle {
     width: f64,
     brush: Brush,
-}
-
-/// Padding specifies the spacing between the edges of the box and the child view.
-///
-/// A Padding can also be constructed using [`from(value: f64)`][Self::from]
-/// as well as from a `(f64, f64)` tuple, or `(f64, f64, f64, f64)` tuple, following the CSS padding conventions.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Padding {
-    /// The amount of padding in logical pixels for the top edge.
-    pub top: f64,
-    /// The amount of padding in logical pixels for the trailing edge.
-    ///
-    /// For LTR contexts this is the right edge, for RTL it is the left edge.
-    pub trailing: f64,
-    /// The amount of padding in logical pixels for the bottom edge.
-    pub bottom: f64,
-    /// The amount of padding in logical pixels for the leading edge.
-    ///
-    /// For LTR contexts this is the left edge, for RTL it is the right edge.
-    pub leading: f64,
 }
 
 // TODO - Have Widget type as generic argument
@@ -70,93 +50,6 @@ pub struct SizedBox {
     border: Option<BorderStyle>,
     corner_radius: RoundedRectRadii,
     padding: Padding,
-}
-
-// --- MARK: IMPL PADDING ---
-
-impl Padding {
-    /// Constructs a new `Padding` by specifying the amount of padding for each edge.
-    pub const fn new(top: f64, trailing: f64, bottom: f64, leading: f64) -> Self {
-        Self {
-            top,
-            trailing,
-            bottom,
-            leading,
-        }
-    }
-
-    /// A padding of zero for all edges.
-    pub const ZERO: Self = Self::all(0.);
-
-    /// Constructs a new `Padding` with equal amount of padding for all edges.
-    pub const fn all(padding: f64) -> Self {
-        Self::new(padding, padding, padding, padding)
-    }
-
-    /// Constructs a new `Padding` with the same amount of padding for the horizontal edges,
-    /// and zero padding for the vertical edges.
-    pub const fn horizontal(padding: f64) -> Self {
-        Self::new(0., padding, 0., padding)
-    }
-
-    /// Constructs a new `Padding` with the same amount of padding for the vertical edges,
-    /// and zero padding for the horizontal edges.
-    pub const fn vertical(padding: f64) -> Self {
-        Self::new(padding, 0., padding, 0.)
-    }
-
-    /// Constructs a new `Padding` with padding only at the top edge and zero padding for all other edges.
-    pub const fn top(padding: f64) -> Self {
-        Self::new(padding, 0., 0., 0.)
-    }
-
-    /// Constructs a new `Padding` with padding only at the trailing edge and zero padding for all other edges.
-    pub const fn trailing(padding: f64) -> Self {
-        Self::new(0., padding, 0., 0.)
-    }
-
-    /// Constructs a new `Padding` with padding only at the bottom edge and zero padding for all other edges.
-    pub const fn bottom(padding: f64) -> Self {
-        Self::new(0., 0., padding, 0.)
-    }
-
-    /// Constructs a new `Padding` with padding only at the leading edge and zero padding for all other edges.
-    pub const fn leading(padding: f64) -> Self {
-        Self::new(0., 0., 0., padding)
-    }
-
-    /// Get the padding to the left, given whether we're in a right-to-left context.
-    pub const fn get_left(self, is_rtl: bool) -> f64 {
-        if is_rtl { self.trailing } else { self.leading }
-    }
-
-    /// Get the padding to the right, given whether we're in a right-to-left context.
-    pub const fn get_right(self, is_rtl: bool) -> f64 {
-        if is_rtl { self.leading } else { self.trailing }
-    }
-}
-
-impl From<f64> for Padding {
-    /// Converts the value to a `Padding` object with that amount of padding on all edges.
-    fn from(value: f64) -> Self {
-        Self::all(value)
-    }
-}
-
-impl From<(f64, f64, f64, f64)> for Padding {
-    /// Converts the tuple to a `Padding` object,
-    /// following CSS padding order for 4 values (top, trailing, bottom, leading).
-    fn from(value: (f64, f64, f64, f64)) -> Self {
-        Self::new(value.0, value.1, value.2, value.3)
-    }
-}
-
-impl From<(f64, f64)> for Padding {
-    /// Converts the tuple to a `Padding` object,
-    /// following CSS padding order for 2 values (vertical, horizontal)
-    fn from(value: (f64, f64)) -> Self {
-        Self::new(value.0, value.1, value.0, value.1)
-    }
 }
 
 // --- MARK: BUILDERS ---
@@ -495,11 +388,11 @@ impl Widget for SizedBox {
 
         // Shrink constraints by padding inset
         let padding_size = Size::new(
-            self.padding.leading + self.padding.trailing,
+            self.padding.left + self.padding.right,
             self.padding.top + self.padding.bottom,
         );
         let child_bc = child_bc.shrink(padding_size);
-        let origin = origin + (self.padding.leading, self.padding.top);
+        let origin = origin + (self.padding.left, self.padding.top);
 
         let mut size;
         match self.child.as_mut() {
@@ -668,7 +561,7 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello"))
             .border(palette::css::BLUE, 5.0)
             .rounded(5.0)
-            .padding((15., 10.));
+            .padding(Padding::from_vh(15., 10.));
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness = TestHarness::create_with_size(widget, window_size);

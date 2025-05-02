@@ -12,7 +12,7 @@ use parley::layout::Alignment;
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
+use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{
@@ -21,7 +21,6 @@ use crate::core::{
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles,
     render_text,
 };
-use crate::widgets::Padding;
 use crate::{palette, theme};
 use cursor_icon::CursorIcon;
 
@@ -95,10 +94,6 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// Can be set using [`set_hint`](Self::set_hint).
     // TODO: What classes of animations? I.e does scrolling count?
     hint: bool,
-    /// The amount of Padding inside this text area.
-    ///
-    /// Can be set using [`set_padding`](Self::set_padding).
-    padding: Padding,
 
     /// What key combination should trigger a newline insertion.
     /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a `TextEntered` event.
@@ -147,7 +142,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             brush: theme::TEXT_COLOR.into(),
             disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
             hint: true,
-            padding: Padding::ZERO,
             insert_newline: InsertNewline::default(),
         }
     }
@@ -260,16 +254,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self
     }
 
-    /// Set the padding around the text.
-    ///
-    /// This is the area outside the tight bound on the text where pointer events will be detected.
-    ///
-    /// To modify this on an active text area, use [`set_padding`](Self::set_padding).
-    pub fn with_padding(mut self, padding: impl Into<Padding>) -> Self {
-        self.padding = padding.into();
-        self
-    }
-
     /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
     pub fn with_insert_newline(mut self, insert_newline: InsertNewline) -> Self {
         self.insert_newline = insert_newline;
@@ -304,12 +288,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             self.editor.try_layout().is_some(),
             "TextArea::ime_area should only be called when the editor layout is available"
         );
-        let is_rtl = self
-            .editor
-            .try_layout()
-            .map(|layout| layout.is_rtl())
-            .unwrap_or(false);
-        self.editor.ime_cursor_area() + Vec2::new(self.padding.get_left(is_rtl), self.padding.top)
+        self.editor.ime_cursor_area()
     }
 }
 
@@ -469,18 +448,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_paint_only();
     }
 
-    /// Set the padding around the text.
-    ///
-    /// This is the area outside the tight bound on the text where pointer events will be detected.
-    ///
-    /// The runtime equivalent of [`with_padding`](Self::with_padding).
-    pub fn set_padding(this: &mut WidgetMut<'_, Self>, padding: impl Into<Padding>) {
-        this.widget.padding = padding.into();
-        // TODO: We could reset the width available to the editor here directly.
-        // Determine whether there's any advantage to that
-        this.ctx.request_layout();
-    }
-
     /// Set the selection to the given byte range.
     ///
     /// No-op if either index is not a char boundary.
@@ -519,9 +486,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             return;
         }
 
-        let (fctx, lctx) = ctx.text_contexts();
-        let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
-        let padding = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
         match event {
             PointerEvent::PointerDown(button, _) => {
                 if !ctx.is_disabled() && *button == PointerButton::Primary {
@@ -537,7 +501,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     }
                     self.last_click_time = Some(now);
                     let click_count = self.click_count;
-                    let cursor_pos = event.local_position(ctx) - padding;
+                    let cursor_pos = event.local_position(ctx);
                     let (fctx, lctx) = ctx.text_contexts();
                     let mut drv = self.editor.driver(fctx, lctx);
                     match click_count {
@@ -557,7 +521,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             }
             PointerEvent::PointerMove(_) => {
                 if !ctx.is_disabled() && ctx.is_pointer_capture_target() {
-                    let cursor_pos = event.local_position(ctx) - padding;
+                    let cursor_pos = event.local_position(ctx);
                     let (fctx, lctx) = ctx.text_contexts();
                     self.editor
                         .driver(fctx, lctx)
@@ -897,15 +861,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        // Shrink constraints by padding inset
-        let padding_size = Size::new(
-            self.padding.leading + self.padding.trailing,
-            self.padding.top + self.padding.bottom,
-        );
-        let sub_bc = bc.shrink(padding_size);
-
         let available_width = if bc.max().width.is_finite() {
-            Some((sub_bc.max().width) as f32)
+            Some((bc.max().width) as f32)
         } else {
             None
         };
@@ -932,8 +889,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         ctx.set_ime_area(self.ime_area());
 
         let area_size = Size {
-            height: text_size.height + padding_size.height,
-            width: text_size.width + padding_size.width,
+            height: text_size.height,
+            width: text_size.width,
         };
         bc.constrain(area_size)
     }
@@ -948,16 +905,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.refresh_layout(fctx, lctx);
             self.editor.try_layout().unwrap()
         };
-        let is_rtl = layout.is_rtl();
-        let origin = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
-        let transform = Affine::translate(origin);
         if ctx.is_focus_target() {
             for (rect, _) in self.editor.selection_geometry().iter() {
                 // TODO: If window not focused, use a different color
                 // TODO: Make configurable
                 scene.fill(
                     Fill::NonZero,
-                    transform,
+                    Affine::IDENTITY,
                     palette::css::STEEL_BLUE,
                     None,
                     &rect,
@@ -965,7 +919,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5) {
                 // TODO: Make configurable
-                scene.fill(Fill::NonZero, transform, palette::css::WHITE, None, &cursor);
+                scene.fill(
+                    Fill::NonZero,
+                    Affine::IDENTITY,
+                    palette::css::WHITE,
+                    None,
+                    &cursor,
+                );
             };
         }
 
@@ -976,7 +936,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         } else {
             self.brush.clone()
         };
-        render_text(scene, transform, layout, &[brush], self.hint);
+        render_text(scene, Affine::IDENTITY, layout, &[brush], self.hint);
     }
 
     fn get_cursor(&self, _ctx: &QueryCtx, _pos: Point) -> CursorIcon {
@@ -998,16 +958,13 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         if !EDITABLE {
             node.set_read_only();
         }
-        let (fctx, lctx) = ctx.text_contexts();
-        let layout = self.editor.layout(fctx, lctx);
-        let is_rtl = layout.is_rtl();
         self.editor
             .try_accessibility(
                 ctx.tree_update,
                 node,
                 || NodeId::from(WidgetId::next()),
-                self.padding.get_left(is_rtl),
-                self.padding.top,
+                0.,
+                0.,
             )
             .expect("We just performed a layout");
     }

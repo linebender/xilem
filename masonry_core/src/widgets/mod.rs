@@ -39,7 +39,7 @@ pub use self::progress_bar::ProgressBar;
 pub use self::prose::Prose;
 pub use self::root_widget::RootWidget;
 pub use self::scroll_bar::ScrollBar;
-pub use self::sized_box::{Padding, SizedBox};
+pub use self::sized_box::SizedBox;
 pub use self::spinner::Spinner;
 pub use self::split::Split;
 pub use self::text_area::{InsertNewline, TextArea};
