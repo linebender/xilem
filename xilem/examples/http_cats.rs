@@ -8,7 +8,8 @@
 
 use std::sync::Arc;
 
-use masonry::widgets::{Alignment, LineBreaking};
+use masonry::properties::types::Alignment;
+use masonry::widgets::LineBreaking;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;

@@ -12,6 +12,8 @@
 //! [`Background`]: crate::properties::Background
 //! [`Background::Gradient`]: crate::properties::Background::Gradient
 
+mod alignment;
 mod gradient;
 
+pub use alignment::*;
 pub use gradient::{Gradient, GradientShape};

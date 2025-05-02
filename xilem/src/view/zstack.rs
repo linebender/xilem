@@ -13,7 +13,8 @@ use crate::core::{
 };
 use crate::{Pod, ViewCtx, WidgetView};
 
-pub use masonry::widgets::{Alignment, ChildAlignment};
+pub use masonry::properties::types::Alignment;
+pub use masonry::widgets::ChildAlignment;
 
 /// A widget that lays out its children on top of each other.
 /// The children are laid out back to front.

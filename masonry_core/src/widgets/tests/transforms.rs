@@ -10,8 +10,9 @@ use vello::peniko::color::palette;
 
 use crate::assert_render_snapshot;
 use crate::core::{PointerButton, Widget, WidgetPod};
+use crate::properties::types::Alignment;
 use crate::testing::TestHarness;
-use crate::widgets::{Alignment, Button, ChildAlignment, Label, SizedBox, ZStack};
+use crate::widgets::{Button, ChildAlignment, Label, SizedBox, ZStack};
 
 fn blue_box(inner: impl Widget) -> Box<SizedBox> {
     Box::new(
