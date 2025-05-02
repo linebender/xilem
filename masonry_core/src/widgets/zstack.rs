@@ -9,7 +9,7 @@ use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::kurbo::Size;
 use crate::properties::types::Alignment;
 use crate::vello::Scene;
 
@@ -196,28 +196,11 @@ impl Widget for ZStack {
         // Second pass: place the children given the calculated max_size bounds.
         for child in &mut self.children {
             let child_size = ctx.child_size(&child.widget);
-
-            let end = max_size - child_size;
-            let end = Point::new(end.width, end.height);
-
-            let center = Point::new(end.x / 2., end.y / 2.);
-
             let child_alignment = match child.alignment {
                 ChildAlignment::SelfAligned(alignment) => alignment,
                 ChildAlignment::ParentAligned => self.alignment,
             };
-
-            let origin = match child_alignment {
-                Alignment::TopLeft => Point::ZERO,
-                Alignment::Top => Point::new(center.x, 0.),
-                Alignment::TopRight => Point::new(end.x, 0.),
-                Alignment::Left => Point::new(0., center.y),
-                Alignment::Center => center,
-                Alignment::Right => Point::new(end.x, center.y),
-                Alignment::BottomLeft => Point::new(0., end.y),
-                Alignment::Bottom => Point::new(center.x, end.y),
-                Alignment::BottomRight => end,
-            };
+            let origin = child_alignment.resolve_pos(child_size, max_size);
 
             ctx.place_child(&mut child.widget, origin);
         }

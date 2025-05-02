@@ -1,6 +1,8 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use vello::kurbo::{Point, Size};
+
 /// Alignment describes the position of a view laid on top of another view.
 ///
 /// See also [`VerticalAlignment`] and [`HorizontalAlignment`] for describing only a single axis.
@@ -86,6 +88,29 @@ impl Alignment {
             Self::Center | Self::Top | Self::Bottom => HorizontalAlignment::Center,
             Self::Left | Self::TopLeft | Self::BottomLeft => HorizontalAlignment::Left,
             Self::Right | Self::TopRight | Self::BottomRight => HorizontalAlignment::Right,
+        }
+    }
+
+    /// Returns the position that would result in the `self` alignment.
+    ///
+    /// This gives the position a box of size `child_size` needs to have to be aligned
+    /// within a box of size `parent_size`.
+    pub fn resolve_pos(self, child_size: Size, parent_size: Size) -> Point {
+        let diff_size = parent_size - child_size;
+        let end_pos = Point::new(diff_size.width, diff_size.height);
+
+        let center = Point::new(end_pos.x / 2., end_pos.y / 2.);
+
+        match self {
+            Self::TopLeft => Point::ZERO,
+            Self::Top => Point::new(center.x, 0.),
+            Self::TopRight => Point::new(end_pos.x, 0.),
+            Self::Left => Point::new(0., center.y),
+            Self::Center => center,
+            Self::Right => Point::new(end_pos.x, center.y),
+            Self::BottomLeft => Point::new(0., end_pos.y),
+            Self::Bottom => Point::new(center.x, end_pos.y),
+            Self::BottomRight => end_pos,
         }
     }
 }

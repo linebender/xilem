@@ -17,8 +17,8 @@ use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
 };
-use crate::kurbo::{Rect, Size};
-use crate::util::UnitPoint;
+use crate::kurbo::Size;
+use crate::properties::types::Alignment;
 
 // TODO - Have child widget type as generic argument
 
@@ -26,7 +26,7 @@ use crate::util::UnitPoint;
 ///
 #[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__align__tests__right.png", "Right-aligned label.")]
 pub struct Align {
-    align: UnitPoint,
+    alignment: Alignment,
     child: WidgetPod<dyn Widget>,
     width_factor: Option<f64>,
     height_factor: Option<f64>,
@@ -35,13 +35,9 @@ pub struct Align {
 // --- MARK: BUILDERS ---
 impl Align {
     /// Create widget with alignment.
-    ///
-    /// Note that the `align` parameter is specified as a `UnitPoint` in
-    /// terms of left and right. This is inadequate for bidi-aware layout
-    /// and thus the API will change when Masonry gains bidi capability.
-    pub fn new(align: UnitPoint, child: impl Widget + 'static) -> Self {
+    pub fn new(alignment: Alignment, child: impl Widget + 'static) -> Self {
         Self {
-            align,
+            alignment,
             child: WidgetPod::new(child).erased(),
             width_factor: None,
             height_factor: None,
@@ -50,37 +46,17 @@ impl Align {
 
     /// Create centered widget.
     pub fn centered(child: impl Widget + 'static) -> Self {
-        Self::new(UnitPoint::CENTER, child)
+        Self::new(Alignment::Center, child)
     }
 
     /// Create right-aligned widget.
     pub fn right(child: impl Widget + 'static) -> Self {
-        Self::new(UnitPoint::RIGHT, child)
+        Self::new(Alignment::Right, child)
     }
 
     /// Create left-aligned widget.
     pub fn left(child: impl Widget + 'static) -> Self {
-        Self::new(UnitPoint::LEFT, child)
-    }
-
-    /// Align only in the horizontal axis, keeping the child's size in the vertical.
-    pub fn horizontal(align: UnitPoint, child: impl Widget + 'static) -> Self {
-        Self {
-            align,
-            child: WidgetPod::new(child).erased(),
-            width_factor: None,
-            height_factor: Some(1.0),
-        }
-    }
-
-    /// Align only in the vertical axis, keeping the child's size in the horizontal.
-    pub fn vertical(align: UnitPoint, child: impl Widget + 'static) -> Self {
-        Self {
-            align,
-            child: WidgetPod::new(child).erased(),
-            width_factor: Some(1.0),
-            height_factor: None,
-        }
+        Self::new(Alignment::Left, child)
     }
 }
 
@@ -140,12 +116,8 @@ impl Widget for Align {
         }
 
         my_size = bc.constrain(my_size);
-        let extra_width = (my_size.width - size.width).max(0.);
         let extra_height = (my_size.height - size.height).max(0.);
-        let origin = self
-            .align
-            .resolve(Rect::new(0., 0., extra_width, extra_height))
-            .expand();
+        let origin = self.alignment.resolve_pos(size, my_size).expand();
         ctx.place_child(&mut self.child, origin);
 
         let my_insets = ctx.compute_insets_from_child(&self.child, my_size);
