@@ -53,8 +53,6 @@ impl Prose {
     }
 
     /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
-    ///
-    /// Note that the default padding used for prose will not be applied.
     pub fn from_text_area_pod(text: WidgetPod<TextArea<false>>) -> Self {
         Self { text, clip: false }
     }
@@ -200,9 +198,9 @@ mod tests {
         )
         .with_clip(true);
 
-        let root_widget = SizedBox::new(prose).width(60.).padding((10., 0.));
+        let root_widget = Flex::row().with_child(SizedBox::new(prose).width(60.));
 
-        let mut harness = TestHarness::create_with_size(root_widget, Size::new(100.0, 40.0));
+        let mut harness = TestHarness::create_with_size(root_widget, Size::new(200.0, 40.0));
 
         assert_render_snapshot!(harness, "prose_clipping");
     }
@@ -234,9 +232,8 @@ mod tests {
             .with_flex_child(prose5, CrossAxisAlignment::Center)
             .with_flex_child(prose6, CrossAxisAlignment::Center)
             .gap(0.0);
-        let root_widget = SizedBox::new(flex).padding(30.0);
 
-        let mut harness = TestHarness::create_with_size(root_widget, Size::new(200.0, 200.0));
+        let mut harness = TestHarness::create_with_size(flex, Size::new(200.0, 120.0));
 
         assert_render_snapshot!(harness, "prose_alignment_flex");
     }
