@@ -39,7 +39,9 @@ pub struct Portal<W: Widget + ?Sized> {
     scrollbar_vertical_visible: bool,
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl<W: Widget> Portal<W> {
     #[expect(missing_docs, reason = "TODO")]
     pub fn new(child: W) -> Self {
@@ -171,7 +173,9 @@ impl<W: Widget + ?Sized> Portal<W> {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     #[expect(missing_docs, reason = "TODO")]
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
@@ -266,7 +270,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn on_pointer_event(
         &mut self,
@@ -511,7 +517,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

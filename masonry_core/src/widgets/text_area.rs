@@ -108,7 +108,9 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     insert_newline: InsertNewline,
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl TextArea<true> {
     /// Create a new `TextArea` which can be edited.
     ///
@@ -309,7 +311,9 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     }
 }
 
-// --- MARK: HELPERS ---
+// ---
+// MARK: HELPERS
+// ---
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Get the IME area from the editor, accounting for padding.
     ///
@@ -328,7 +332,9 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Set font styling for an active text area.
     ///
@@ -522,7 +528,9 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn on_pointer_event(
         &mut self,

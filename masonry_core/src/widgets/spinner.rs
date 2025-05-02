@@ -33,7 +33,9 @@ pub struct Spinner {
     color: Color,
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl Spinner {
     /// Create a spinner widget
     pub fn new() -> Self {
@@ -58,7 +60,9 @@ impl Default for Spinner {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl Spinner {
     /// Set the spinner's color.
     pub fn set_color(this: &mut WidgetMut<'_, Self>, color: impl Into<Color>) {
@@ -72,7 +76,9 @@ impl Spinner {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for Spinner {
     fn on_pointer_event(
         &mut self,
@@ -187,7 +193,9 @@ impl Widget for Spinner {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use super::*;

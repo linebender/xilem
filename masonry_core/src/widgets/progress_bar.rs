@@ -63,7 +63,9 @@ impl ProgressBar {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl ProgressBar {
     /// Set the progress displayed by the bar.
     ///
@@ -95,7 +97,9 @@ fn clamp_progress(progress: Option<f64>) -> Option<f64> {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for ProgressBar {
     fn on_pointer_event(
         &mut self,
@@ -215,7 +219,9 @@ impl Widget for ProgressBar {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

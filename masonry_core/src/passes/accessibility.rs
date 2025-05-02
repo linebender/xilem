@@ -11,7 +11,9 @@ use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{AccessCtx, PropertiesRef, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
-// --- MARK: BUILD TREE ---
+// ---
+// MARK: BUILD TREE
+// ---
 fn build_accessibility_tree(
     global_state: &mut RenderRootState,
     tree_update: &mut TreeUpdate,
@@ -92,7 +94,9 @@ fn build_accessibility_tree(
     );
 }
 
-// --- MARK: BUILD NODE ---
+// ---
+// MARK: BUILD NODE
+// ---
 fn build_access_node(
     widget: &mut dyn Widget,
     ctx: &mut AccessCtx,
@@ -143,7 +147,9 @@ fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
     accesskit::Rect::new(r.x0, r.y0, r.x1, r.y1)
 }
 
-// --- MARK: ROOT ---
+// ---
+// MARK: ROOT
+// ---
 /// See the [passes documentation](../doc/05_pass_system.md#render-passes).
 pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -> TreeUpdate {
     let _span = info_span!("accessibility").entered();

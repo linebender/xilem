@@ -255,7 +255,9 @@ impl TestHarness {
         harness
     }
 
-    // --- MARK: PROCESS EVENTS ---
+    // ---
+    // MARK: PROCESS EVENTS
+    // ---
 
     /// Send a [`WindowEvent`] to the simulated window.
     ///
@@ -323,7 +325,9 @@ impl TestHarness {
         }
     }
 
-    // --- MARK: RENDER ---
+    // ---
+    // MARK: RENDER
+    // ---
     // TODO - We add way too many dependencies in this code
     // TODO - Should be async?
     /// Create a bitmap (an array of pixels), paint the window and return the bitmap as an 8-bits-per-channel RGB image.
@@ -423,7 +427,9 @@ impl TestHarness {
         RgbaImage::from_vec(width, height, result_unpadded).expect("failed to create image")
     }
 
-    // --- MARK: EVENT HELPERS ---
+    // ---
+    // MARK: EVENT HELPERS
+    // ---
 
     /// Move an internal mouse state, and send a [`PointerMove`](PointerEvent::PointerMove) event to the window.
     pub fn mouse_move(&mut self, pos: impl Into<Point>) {
@@ -554,7 +560,9 @@ impl TestHarness {
         self.process_signals();
     }
 
-    // --- MARK: GETTERS ---
+    // ---
+    // MARK: GETTERS
+    // ---
 
     /// Return a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
@@ -670,7 +678,9 @@ impl TestHarness {
         self.title.clone()
     }
 
-    // --- MARK: SNAPSHOT ---
+    // ---
+    // MARK: SNAPSHOT
+    // ---
 
     /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
     ///

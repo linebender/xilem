@@ -44,7 +44,9 @@ pub struct GridParams {
     pub height: i32,
 }
 
-// --- MARK: IMPL GRID ---
+// ---
+// MARK: IMPL GRID
+// ---
 impl Grid {
     /// Create a new grid with the given number of columns and rows.
     pub fn with_dimensions(width: i32, height: i32) -> Self {
@@ -86,7 +88,9 @@ impl Grid {
     }
 }
 
-// --- MARK: IMPL CHILD ---
+// ---
+// MARK: IMPL CHILD
+// ---
 impl Child {
     fn update_params(&mut self, params: GridParams) {
         self.x = params.x;
@@ -106,7 +110,9 @@ fn new_grid_child(params: GridParams, widget: WidgetPod<dyn Widget>) -> Child {
     }
 }
 
-// --- MARK: IMPL GRIDPARAMS ---
+// ---
+// MARK: IMPL GRIDPARAMS
+// ---
 impl GridParams {
     /// Create grid parameters with the given values.
     ///
@@ -146,7 +152,9 @@ impl GridParams {
     }
 }
 
-// --- MARK: WIDGETMUT---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl Grid {
     /// Add a child widget.
     ///
@@ -280,7 +288,9 @@ impl Grid {
     }
 }
 
-// --- MARK: IMPL WIDGET---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for Grid {
     fn on_pointer_event(
         &mut self,
@@ -378,7 +388,9 @@ impl Widget for Grid {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use super::*;

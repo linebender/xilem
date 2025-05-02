@@ -119,7 +119,9 @@ where
     }
 }
 
-// --- MARK: ZStackExt ---
+// ---
+// MARK: ZStackExt
+// ---
 
 /// A trait that extends a [`WidgetView`] with methods to provide parameters for a parent [`ZStack`].
 pub trait ZStackExt<State, Action>: WidgetView<State, Action> {
@@ -225,7 +227,9 @@ where
     }
 }
 
-// --- MARK: ZStackElement ---
+// ---
+// MARK: ZStackElement
+// ---
 
 /// A struct implementing [`ViewElement`] for a `ZStack`.
 pub struct ZStackElement {

@@ -27,7 +27,9 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
     pub(crate) widget: &'w W,
 }
 
-// --- MARK: TRAIT IMPLS ---
+// ---
+// MARK: TRAIT IMPLS
+// ---
 
 #[allow(clippy::non_canonical_clone_impl)]
 impl<W: Widget + ?Sized> Clone for WidgetRef<'_, W> {
@@ -69,7 +71,9 @@ impl<W: Widget + ?Sized> Deref for WidgetRef<'_, W> {
     }
 }
 
-// --- MARK: IMPLS ---
+// ---
+// MARK: IMPLS
+// ---
 
 impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     /// Get a [`QueryCtx`] with information about the current widget.
@@ -195,7 +199,9 @@ impl WidgetRef<'_, dyn Widget> {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use assert_matches::assert_matches;

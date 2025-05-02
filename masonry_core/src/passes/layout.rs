@@ -14,7 +14,9 @@ use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
-// --- MARK: RUN LAYOUT ---
+// ---
+// MARK: RUN LAYOUT
+// ---
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
 pub(crate) fn run_layout_on<W: Widget + ?Sized>(
@@ -192,7 +194,9 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     new_size
 }
 
-// --- MARK: ROOT ---
+// ---
+// MARK: ROOT
+// ---
 /// See the [passes documentation](../doc/05_pass_system.md#layout-pass).
 pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     if !root.root_state().needs_layout {

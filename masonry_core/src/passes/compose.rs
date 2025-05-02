@@ -10,7 +10,9 @@ use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{ComposeCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
-// --- MARK: RECURSE ---
+// ---
+// MARK: RECURSE
+// ---
 fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -89,7 +91,9 @@ fn compose_widget(
     );
 }
 
-// --- MARK: ROOT ---
+// ---
+// MARK: ROOT
+// ---
 /// See the [passes documentation](../doc/05_pass_system.md#compose-pass).
 pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let _span = info_span!("compose").entered();

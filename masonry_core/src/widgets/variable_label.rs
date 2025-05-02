@@ -126,7 +126,9 @@ pub struct VariableLabel {
     weight: AnimatedF32,
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl VariableLabel {
     /// Create a new variable label from the given text.
     pub fn new(text: impl Into<ArcStr>) -> Self {
@@ -157,7 +159,9 @@ impl VariableLabel {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl VariableLabel {
     /// Get the underlying label for this widget.
     pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
@@ -177,7 +181,9 @@ impl VariableLabel {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for VariableLabel {
     fn on_pointer_event(
         &mut self,
@@ -275,7 +281,9 @@ impl Widget for VariableLabel {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     // TODO - Add tests

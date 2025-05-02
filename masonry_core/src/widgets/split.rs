@@ -44,7 +44,9 @@ where
     child2: WidgetPod<ChildB>,
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl<ChildA: Widget, ChildB: Widget> Split<ChildA, ChildB> {
     /// Create a new split panel.
     pub fn new(child1: ChildA, child2: ChildB) -> Self {
@@ -149,7 +151,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     }
 }
 
-// --- MARK: INTERNALS ---
+// ---
+// MARK: INTERNALS
+// ---
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the size of the splitter bar area.
     #[inline]
@@ -298,7 +302,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 
 // FIXME - Add unit tests for WidgetMut<Split>
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl<ChildA, ChildB> Split<ChildA, ChildB>
 where
     ChildA: Widget + FromDynWidget + ?Sized,
@@ -391,7 +397,9 @@ where
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl<ChildA, ChildB> Widget for Split<ChildA, ChildB>
 where
     ChildA: Widget + ?Sized,
@@ -606,7 +614,9 @@ where
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

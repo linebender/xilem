@@ -47,7 +47,9 @@ use cursor_icon::CursorIcon;
 /// IME area as the `last_sent_ime_area`.
 const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN);
 
-// --- MARK: STRUCTS ---
+// ---
+// MARK: STRUCTS
+// ---
 
 /// The composition root of Masonry.
 ///
@@ -335,7 +337,9 @@ impl RenderRoot {
             .item
     }
 
-    // --- MARK: WINDOW_EVENT ---
+    // ---
+    // MARK: WINDOW_EVENT
+    // ---
     /// Handle a window event.
     pub fn handle_window_event(&mut self, event: WindowEvent) -> Handled {
         match event {
@@ -379,7 +383,9 @@ impl RenderRoot {
         }
     }
 
-    // --- MARK: PUB FUNCTIONS ---
+    // ---
+    // MARK: PUB FUNCTIONS
+    // ---
     /// Handle a pointer event.
     pub fn handle_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let _span = info_span!("pointer_event");
@@ -473,7 +479,9 @@ impl RenderRoot {
         self.global_state.cursor_icon
     }
 
-    // --- MARK: ACCESS WIDGETS---
+    // ---
+    // MARK: ACCESS WIDGETS
+    // ---
     /// Get a [`WidgetRef`] to the root widget.
     pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
         let root_state_token = self.widget_arena.states.roots();
@@ -569,7 +577,9 @@ impl RenderRoot {
         kurbo::Size::new(size.width, size.height)
     }
 
-    // --- MARK: REWRITE PASSES ---
+    // ---
+    // MARK: REWRITE PASSES
+    // ---
     /// Run all rewrite passes on widget tree.
     ///
     /// Rewrite passes are passes which occur after external events, and

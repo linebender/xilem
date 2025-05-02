@@ -17,7 +17,9 @@ use crate::passes::{enter_span_if, recurse_on_children};
 use crate::theme::get_debug_color;
 use crate::util::stroke;
 
-// --- MARK: PAINT WIDGET ---
+// ---
+// MARK: PAINT WIDGET
+// ---
 fn paint_widget(
     global_state: &mut RenderRootState,
     complete_scene: &mut Scene,
@@ -120,7 +122,9 @@ fn paint_widget(
     }
 }
 
-// --- MARK: ROOT ---
+// ---
+// MARK: ROOT
+// ---
 /// See the [passes documentation](../doc/05_pass_system.md#render-passes).
 pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();

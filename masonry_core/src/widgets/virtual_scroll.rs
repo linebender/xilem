@@ -297,7 +297,9 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Indicates that `action` is about to be handled by the driver (which is calling this method).
     ///

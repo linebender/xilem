@@ -22,7 +22,9 @@ use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::Label;
 
-// --- MARK: CONSTANTS ---
+// ---
+// MARK: CONSTANTS
+// ---
 const DEFAULT_BORDER_COLOR: BorderColor = BorderColor {
     color: theme::BORDER_DARK,
 };
@@ -46,7 +48,9 @@ pub struct Button {
     label: WidgetPod<Label>,
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl Button {
     /// Create a new button with a text label.
     ///
@@ -86,7 +90,9 @@ impl Button {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl Button {
     /// Set the text.
     pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
@@ -99,7 +105,9 @@ impl Button {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for Button {
     fn on_pointer_event(
         &mut self,
@@ -283,7 +291,9 @@ impl Widget for Button {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

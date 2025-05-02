@@ -12,7 +12,9 @@ use crate::core::{
 };
 use crate::passes::{enter_span, merge_state_up};
 
-// --- MARK: HELPERS ---
+// ---
+// MARK: HELPERS
+// ---
 fn get_pointer_target(
     root: &RenderRoot,
     pointer_pos: Option<LogicalPosition<f64>>,
@@ -92,7 +94,9 @@ fn run_event_pass<E>(
     Handled::from(is_handled)
 }
 
-// --- MARK: POINTER_EVENT ---
+// ---
+// MARK: POINTER_EVENT
+// ---
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
@@ -191,7 +195,9 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     handled
 }
 
-// --- MARK: TEXT EVENT ---
+// ---
+// MARK: TEXT EVENT
+// ---
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::WindowFocusChange(false)) {
@@ -262,7 +268,9 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
     handled
 }
 
-// --- MARK: ACCESS EVENT ---
+// ---
+// MARK: ACCESS EVENT
+// ---
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_access_event_pass(
     root: &mut RenderRoot,

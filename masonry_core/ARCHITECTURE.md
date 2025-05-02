@@ -163,9 +163,19 @@ https://code.visualstudio.com/docs/getstarted/userinterface#_minimap
 These markers look like this:
 
 ```rust
-// --- MARK: MARKER NAME ---
+// MARK: marker name
 ```
 
-By convention, we write them in all caps with three dashes. Markers don't need to follow strict naming conventions, but their names should be a shorthand for the area of the code they're in. Names should be short enough not to overflow the VS Code minimap.
+By convention, we write them in all caps, with three dashes before and after:
 
-Small files shouldn't have markers, except for files following a general template (widget implementations, view implementations). Generally files should have between 50 and 200 lines between markers. If a file has any markers, it should have enough split the file into distinct regions.
+```rust
+// ---
+// MARK: MARKER NAME
+// ---
+```
+
+Markers don't need to follow strict naming conventions, but their names should be a shorthand for the area of the code they're in. Names should be short enough not to overflow the VS Code minimap.
+
+Small files shouldn't have markers, except for files following a general template (widget implementations, view implementations). Generally files should have between 50 and 200 lines between markers
+
+If a file has any markers, it should have enough to split the file into distinct regions (e.g. there usually shouldn't be a file with a single marker).
