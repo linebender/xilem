@@ -110,7 +110,7 @@ impl VirtualCats {
             });
             Either::A(zstack((
                 image(img).fit(ObjectFit::FitWidth),
-                attribution.alignment(Alignment::TopTrailing),
+                attribution.alignment(Alignment::TopRight),
             )))
         } else {
             Either::B(sized_box(spinner()).width(80.).height(80.))

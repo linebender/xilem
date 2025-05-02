@@ -45,7 +45,7 @@ fn transforms_translation_rotation() {
 fn transforms_pointer_events() {
     let transformed_widget = WidgetPod::new_with_transform(
         blue_box(
-            ZStack::new().with_child(Button::new("Should be pressed"), Alignment::BottomTrailing),
+            ZStack::new().with_child(Button::new("Should be pressed"), Alignment::BottomRight),
         ),
         Affine::rotate(PI * 0.125).then_translate(Vec2::new(100.0, 50.0)),
     )

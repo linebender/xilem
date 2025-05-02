@@ -62,11 +62,11 @@ pub enum Axis {
 /// where it is positioned.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CrossAxisAlignment {
-    /// Top or leading.
+    /// Top or left.
     Start,
     /// Widgets are centered in the container.
     Center,
-    /// Bottom or trailing.
+    /// Bottom or right.
     End,
     /// Align on the baseline.
     Baseline,
@@ -80,11 +80,11 @@ pub enum CrossAxisAlignment {
 /// enum represents how children are laid out in this space.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MainAxisAlignment {
-    /// Top or leading.
+    /// Top or left.
     Start,
     /// Children are centered, without padding.
     Center,
-    /// Bottom or trailing.
+    /// Bottom or right.
     End,
     /// Extra space is divided evenly between each child.
     SpaceBetween,
