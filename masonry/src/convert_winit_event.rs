@@ -335,11 +335,11 @@ pub(crate) fn winit_key_to_kbt_key(winit_key: &WinitKey) -> Key {
             WinitNamedKey::Shift => Key::Named(NamedKey::Shift),
             WinitNamedKey::Symbol => Key::Named(NamedKey::Symbol),
             WinitNamedKey::SymbolLock => Key::Named(NamedKey::SymbolLock),
-            WinitNamedKey::Meta => Key::Named(NamedKey::Meta),
+            #[expect(deprecated, reason = "Map even the deprecated keys.")]
+            WinitNamedKey::Meta => Key::Named(NamedKey::Super),
             #[expect(deprecated, reason = "Map even the deprecated keys.")]
             WinitNamedKey::Hyper => Key::Named(NamedKey::Hyper),
-            #[expect(deprecated, reason = "Map even the deprecated keys.")]
-            WinitNamedKey::Super => Key::Named(NamedKey::Super),
+            WinitNamedKey::Super => Key::Named(NamedKey::Meta),
             WinitNamedKey::Enter => Key::Named(NamedKey::Enter),
             WinitNamedKey::Tab => Key::Named(NamedKey::Tab),
             WinitNamedKey::Space => Key::Character(" ".to_string()),
