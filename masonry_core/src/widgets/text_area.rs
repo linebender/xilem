@@ -5,7 +5,7 @@ use std::mem::Discriminant;
 use std::time::Instant;
 
 use accesskit::{Node, NodeId, Role};
-use keyboard_types::{Key, KeyState};
+use keyboard_types::{Key, KeyState, NamedKey};
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use parley::layout::Alignment;
@@ -642,7 +642,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.select_all();
                         }
                     }
-                    Key::ArrowLeft => {
+                    Key::Named(NamedKey::ArrowLeft) => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -656,7 +656,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_left();
                         }
                     }
-                    Key::ArrowRight => {
+                    Key::Named(NamedKey::ArrowRight) => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -670,7 +670,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_right();
                         }
                     }
-                    Key::ArrowUp => {
+                    Key::Named(NamedKey::ArrowUp) => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if shift {
                             drv.select_up();
@@ -678,7 +678,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_up();
                         }
                     }
-                    Key::ArrowDown => {
+                    Key::Named(NamedKey::ArrowDown) => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if shift {
                             drv.select_down();
@@ -686,7 +686,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_down();
                         }
                     }
-                    Key::Home => {
+                    Key::Named(NamedKey::Home) => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -700,7 +700,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_to_line_start();
                         }
                     }
-                    Key::End => {
+                    Key::Named(NamedKey::End) => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             if shift {
@@ -714,7 +714,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             drv.move_to_line_end();
                         }
                     }
-                    Key::Delete if EDITABLE => {
+                    Key::Named(NamedKey::Delete) if EDITABLE => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             drv.delete_word();
@@ -724,7 +724,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
                         edited = true;
                     }
-                    Key::Backspace if EDITABLE => {
+                    Key::Named(NamedKey::Backspace) if EDITABLE => {
                         let mut drv = self.editor.driver(fctx, lctx);
                         if action_mod {
                             drv.backdelete_word();
@@ -740,7 +740,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                             .insert_or_replace_selection(" ");
                         edited = true;
                     }
-                    Key::Enter => {
+                    Key::Named(NamedKey::Enter) => {
                         let insert_newline = match self.insert_newline {
                             InsertNewline::OnEnter => true,
                             InsertNewline::OnShiftEnter => shift,
@@ -759,7 +759,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         }
                     }
 
-                    Key::Tab => {
+                    Key::Named(NamedKey::Tab) => {
                         // Intentionally do nothing so that tabbing from a textbox/Prose works.
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
                         return;
@@ -1157,31 +1157,31 @@ mod tests {
         let scenarios = vec![
             Scenario {
                 insert_newline: InsertNewline::OnEnter,
-                key: Key::Enter,
+                key: Key::Named(NamedKey::Enter),
                 modifiers: Modifiers::default(),
                 expect_text_entered_event: false,
             },
             Scenario {
                 insert_newline: InsertNewline::OnShiftEnter,
-                key: Key::Enter,
+                key: Key::Named(NamedKey::Enter),
                 modifiers: Modifiers::default(),
                 expect_text_entered_event: true,
             },
             Scenario {
                 insert_newline: InsertNewline::OnShiftEnter,
-                key: Key::Enter,
+                key: Key::Named(NamedKey::Enter),
                 modifiers: Modifiers::SHIFT,
                 expect_text_entered_event: false,
             },
             Scenario {
                 insert_newline: InsertNewline::Never,
-                key: Key::Enter,
+                key: Key::Named(NamedKey::Enter),
                 modifiers: Modifiers::default(),
                 expect_text_entered_event: true,
             },
             Scenario {
                 insert_newline: InsertNewline::Never,
-                key: Key::Enter,
+                key: Key::Named(NamedKey::Enter),
                 modifiers: Modifiers::SHIFT,
                 expect_text_entered_event: true,
             },

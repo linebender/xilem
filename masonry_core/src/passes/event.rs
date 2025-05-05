@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use dpi::LogicalPosition;
-use keyboard_types::{Key, KeyState};
+use keyboard_types::{Key, KeyState, NamedKey};
 use tracing::{debug, info_span, trace};
 
 use crate::Handled;
@@ -228,14 +228,20 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
     if let TextEvent::KeyboardKey(key, mods, _) = event {
         // Handle Tab focus
-        if key.key == Key::Tab && key.state == KeyState::Down && handled == Handled::No {
+        if key.key == Key::Named(NamedKey::Tab)
+            && key.state == KeyState::Down
+            && handled == Handled::No
+        {
             let forward = !mods.shift();
             let next_focused_widget = root.widget_from_focus_chain(forward);
             root.global_state.next_focused_widget = next_focused_widget;
             handled = Handled::Yes;
         }
 
-        if key.key == Key::F11 && key.state == KeyState::Down && handled == Handled::No {
+        if key.key == Key::Named(NamedKey::F11)
+            && key.state == KeyState::Down
+            && handled == Handled::No
+        {
             root.global_state.inspector_state.is_picking_widget =
                 !root.global_state.inspector_state.is_picking_widget;
             root.global_state.inspector_state.hovered_widget = None;
@@ -244,7 +250,10 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             handled = Handled::Yes;
         }
 
-        if key.key == Key::F12 && key.state == KeyState::Down && handled == Handled::No {
+        if key.key == Key::Named(NamedKey::F12)
+            && key.state == KeyState::Down
+            && handled == Handled::No
+        {
             root.debug_paint = !root.debug_paint;
             root.root_state_mut().needs_paint = true;
             handled = Handled::Yes;
