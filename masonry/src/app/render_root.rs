@@ -40,6 +40,7 @@ use crate::passes::update::{
     run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
+use crate::theme::default_property_set;
 use crate::util::AnyMap;
 use cursor_icon::CursorIcon;
 
@@ -264,7 +265,7 @@ impl RenderRoot {
             size: PhysicalSize::new(0, 0),
             last_anim: None,
             last_mouse_pos: None,
-            default_properties: DefaultProperties::new(),
+            default_properties: default_property_set(),
             global_state: RenderRootState {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,

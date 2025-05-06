@@ -13,7 +13,11 @@ pub struct BorderColor {
     pub color: AlphaColor<Srgb>,
 }
 
-impl Property for BorderColor {}
+impl Property for BorderColor {
+    const DEFAULT: Self = Self {
+        color: AlphaColor::TRANSPARENT,
+    };
+}
 
 // TODO - The default border color in CSS is `currentcolor`,
 // the color text is displayed in.
@@ -21,9 +25,7 @@ impl Property for BorderColor {}
 
 impl Default for BorderColor {
     fn default() -> Self {
-        Self {
-            color: AlphaColor::from_rgba8(0, 0, 0, 0),
-        }
+        Self::DEFAULT
     }
 }
 
