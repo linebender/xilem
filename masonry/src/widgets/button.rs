@@ -13,8 +13,8 @@ use vello::kurbo::Affine;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, Property, QueryCtx, TextEvent, Update, UpdateCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
 use crate::properties::types::Gradient;
@@ -22,21 +22,6 @@ use crate::properties::*;
 use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::Label;
-
-// --- MARK: CONSTANTS ---
-const DEFAULT_BORDER_COLOR: BorderColor = BorderColor {
-    color: theme::BORDER_DARK,
-};
-const DEFAULT_BORDER_WIDTH: BorderWidth = BorderWidth {
-    width: theme::BUTTON_BORDER_WIDTH,
-};
-const DEFAULT_BORDER_RADII: CornerRadius = CornerRadius {
-    radius: theme::BUTTON_BORDER_RADIUS,
-};
-
-// NOTE: these values are chosen to match the existing look of TextBox; these
-// should be reevaluated at some point.
-const DEFAULT_PADDING: Padding = Padding::from_vh(2., 8.);
 
 /// A button with a text label.
 ///
@@ -167,6 +152,7 @@ impl Widget for Button {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
@@ -180,8 +166,8 @@ impl Widget for Button {
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let border = props.get::<BorderWidth>().unwrap_or(&DEFAULT_BORDER_WIDTH);
-        let padding = props.get::<Padding>().unwrap_or(&DEFAULT_PADDING);
+        let border = props.get::<BorderWidth>().unwrap_or(&Property::DEFAULT);
+        let padding = props.get::<Padding>().unwrap_or(&Property::DEFAULT);
         let shadow = props.get::<BoxShadow>();
 
         let initial_bc = bc;
@@ -223,9 +209,9 @@ impl Widget for Button {
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
 
-        let border_color = props.get::<BorderColor>().unwrap_or(&DEFAULT_BORDER_COLOR);
-        let border_width = props.get::<BorderWidth>().unwrap_or(&DEFAULT_BORDER_WIDTH);
-        let border_radius = props.get::<CornerRadius>().unwrap_or(&DEFAULT_BORDER_RADII);
+        let border_color = props.get::<BorderColor>().unwrap_or(&Property::DEFAULT);
+        let border_width = props.get::<BorderWidth>().unwrap_or(&Property::DEFAULT);
+        let border_radius = props.get::<CornerRadius>().unwrap_or(&Property::DEFAULT);
         let shadow = props.get::<BoxShadow>();
 
         // TODO - Add DEFAULT_BACKGROUND_GRADIENT constant.
