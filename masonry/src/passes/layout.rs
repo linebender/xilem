@@ -31,6 +31,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     let _span = enter_span_if(
         trace,
         parent_ctx.global_state,
+        parent_ctx.default_properties,
         widget.reborrow(),
         state.reborrow(),
         properties.reborrow(),
@@ -103,6 +104,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children,
             properties_children: properties.children.reborrow_mut(),
+            default_properties: parent_ctx.default_properties,
             global_state: parent_ctx.global_state,
         };
 
@@ -111,6 +113,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         inner_ctx.widget_state.request_layout = false;
         let mut props = PropertiesMut {
             map: properties.item,
+            default_map: parent_ctx.default_properties,
         };
         widget.item.layout(&mut inner_ctx, &mut props, bc)
     };
@@ -219,6 +222,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         widget_state_children: root_state_token,
         widget_children: root_widget_token,
         properties_children: root_properties_token,
+        default_properties: &root.default_properties,
     };
 
     let size = run_layout_on(&mut ctx, &mut root.root, &bc);

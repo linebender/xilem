@@ -34,6 +34,7 @@ pub struct Properties {
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
     pub(crate) map: &'a AnyMap,
+    pub(crate) default_map: &'a AnyMap,
 }
 
 /// Mutable reference to a collection of properties that a widget has access to.
@@ -46,22 +47,13 @@ pub struct PropertiesRef<'a> {
 /// [`Widget`]: crate::core::Widget
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
+    pub(crate) default_map: &'a AnyMap,
 }
 
 impl Properties {
     /// Create an empty collection of properties.
     pub fn new() -> Self {
         Self { map: AnyMap::new() }
-    }
-
-    /// Get a reference to the properties.
-    pub fn ref_(&self) -> PropertiesRef<'_> {
-        PropertiesRef { map: &self.map }
-    }
-
-    /// Get a mutable reference to the properties.
-    pub fn mut_(&mut self) -> PropertiesMut<'_> {
-        PropertiesMut { map: &mut self.map }
     }
 }
 
@@ -70,37 +62,40 @@ impl Properties {
 
 impl PropertiesRef<'_> {
     /// Returns `true` if the widget has a property of type `P`.
+    ///
+    /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
         self.map.contains::<P>()
     }
 
-    /// Get value of property `P`, or `None` if the widget has no `P` property.
+    /// Get value of property `P`.
+    ///
+    /// Returns Some if either the widget or the default property set has an entry for `P`.
+    /// Returns `None` otherwise.
     pub fn get<P: Property>(&self) -> Option<&P> {
-        self.map.get::<P>()
+        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
     }
 }
 
 impl PropertiesMut<'_> {
     /// Returns `true` if the widget has a property of type `P`.
+    ///
+    /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
         self.map.contains::<P>()
     }
 
-    /// Get value of property `P`, or `None` if the widget has no `P` property.
+    /// Get value of property `P`.
+    ///
+    /// Returns Some if either the widget or the default property set has an entry for `P`.
+    /// Returns `None` otherwise.
     pub fn get<P: Property>(&self) -> Option<&P> {
-        self.map.get::<P>()
-    }
-
-    /// Get value of property `P`, or `None` if the widget has no `P` property.
-    ///
-    /// If you're using a `WidgetMut`, call [`WidgetMut::get_prop_mut`] instead.
-    ///
-    /// [`WidgetMut::get_prop_mut`]: crate::core::WidgetMut::get_prop_mut
-    pub fn get_mut<P: Property>(&mut self) -> Option<&mut P> {
-        self.map.get_mut::<P>()
+        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
     }
 
     /// Set property `P` to given value. Returns the previous value if `P` was already set.
+    ///
+    /// Does not affect default properties.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::insert_prop`] instead.
     ///
@@ -110,6 +105,8 @@ impl PropertiesMut<'_> {
     }
 
     /// Remove property `P`. Returns the previous value if `P` was set.
+    ///
+    /// Does not affect default properties.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::remove_prop`] instead.
     ///
@@ -122,6 +119,7 @@ impl PropertiesMut<'_> {
     pub fn reborrow_mut(&mut self) -> PropertiesMut<'_> {
         PropertiesMut {
             map: &mut *self.map,
+            default_map: &*self.default_map,
         }
     }
 }

@@ -65,6 +65,7 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaRefList<'a, WidgetState>,
     pub(crate) widget_children: ArenaRefList<'a, Box<dyn Widget>>,
+    pub(crate) properties: PropertiesRef<'a>,
     pub(crate) properties_children: ArenaRefList<'a, AnyMap>,
 }
 
@@ -106,6 +107,7 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) default_properties: &'a AnyMap,
 }
 
 /// A context provided to the [`Widget::compose`] method.
@@ -245,6 +247,7 @@ impl MutateCtx<'_> {
             widget_children: child_mut.children,
             properties: PropertiesMut {
                 map: child_properties.item,
+                default_map: self.properties.default_map,
             },
             properties_children: child_properties.children,
         };
@@ -312,15 +315,14 @@ impl<'w> QueryCtx<'w> {
             widget_state_children: child_state.children,
             widget_children: child_widget.children,
             widget_state: child_state.item,
+            properties: PropertiesRef {
+                map: child_properties.item,
+                default_map: self.properties.default_map,
+            },
             properties_children: child_properties.children,
         };
-        let properties = PropertiesRef {
-            map: child_properties.item,
-        };
-
         WidgetRef {
             ctx,
-            properties,
             widget: &**child_widget.item,
         }
     }
