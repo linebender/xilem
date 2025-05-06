@@ -1,7 +1,12 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+use std::collections::HashMap;
+
 use anymap3::AnyMap;
+
+use super::Widget;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -48,6 +53,20 @@ pub struct PropertiesRef<'a> {
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
     pub(crate) default_map: &'a AnyMap,
+}
+
+// TODO - Document default properties.
+/// A collection of default properties for all widgets.
+///
+/// Default property values can be added to this collection for
+/// every `(widget type, property type)` pair.
+///
+/// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
+#[derive(Default)]
+pub struct DefaultProperties {
+    /// Maps widget types to the default property set for that widget.
+    pub(crate) map: HashMap<TypeId, AnyMap>,
+    pub(crate) dummy_map: AnyMap,
 }
 
 impl Properties {
@@ -138,7 +157,33 @@ impl PropertiesMut<'_> {
     pub fn reborrow_mut(&mut self) -> PropertiesMut<'_> {
         PropertiesMut {
             map: &mut *self.map,
-            default_map: &*self.default_map,
+            default_map: self.default_map,
         }
+    }
+}
+
+impl DefaultProperties {
+    /// Create an empty set with no default values.
+    ///
+    /// A completely empty set is probably not what you want.
+    /// It means buttons will be displayed without borders or backgrounds, textboxes won't
+    /// have default padding, etc.
+    /// You should either add a thorough set of values to this, or start from an existing set.
+    pub fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+            dummy_map: AnyMap::new(),
+        }
+    }
+
+    /// Set the default value of property `P` for widget `W`.
+    ///
+    /// Widgets for which the property `P` isn't set will get `value` instead.
+    pub fn insert<W: Widget, P: Property>(&mut self, value: P) -> Option<P> {
+        self.map.entry(TypeId::of::<W>()).or_default().insert(value)
+    }
+
+    pub(crate) fn for_widget(&self, id: TypeId) -> &AnyMap {
+        self.map.get(&id).unwrap_or(&self.dummy_map)
     }
 }

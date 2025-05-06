@@ -11,7 +11,7 @@ use vello::kurbo::Affine;
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
+use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
 use crate::kurbo::Rect;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::theme::get_debug_color;
@@ -20,7 +20,7 @@ use crate::util::stroke;
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(
     global_state: &mut RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -60,7 +60,7 @@ fn paint_widget(
         scene.reset();
         let props = PropertiesRef {
             map: properties.item,
-            default_map: default_properties,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         };
         widget.item.paint(&mut ctx, &props, scene);
     }
