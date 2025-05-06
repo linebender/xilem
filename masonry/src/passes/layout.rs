@@ -113,7 +113,9 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         inner_ctx.widget_state.request_layout = false;
         let mut props = PropertiesMut {
             map: properties.item,
-            default_map: parent_ctx.default_properties,
+            default_map: parent_ctx
+                .default_properties
+                .for_widget(widget.item.type_id()),
         };
         widget.item.layout(&mut inner_ctx, &mut props, bc)
     };

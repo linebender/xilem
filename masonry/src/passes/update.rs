@@ -9,8 +9,8 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
-    Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetState,
+    DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -52,6 +52,7 @@ fn run_targeted_update_pass(
         let parent_id = root.widget_arena.parent_of(widget_id);
         let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(widget_id);
 
+        let widget = &mut **widget_mut.item;
         let mut ctx = UpdateCtx {
             global_state: &mut root.global_state,
             widget_state: state_mut.item,
@@ -61,9 +62,9 @@ fn run_targeted_update_pass(
         };
         let mut props = PropertiesMut {
             map: properties_mut.item,
-            default_map: &root.default_properties,
+            default_map: root.default_properties.for_widget(widget.type_id()),
         };
-        pass_fn(&mut **widget_mut.item, &mut ctx, &mut props);
+        pass_fn(widget, &mut ctx, &mut props);
 
         merge_state_up(&mut root.widget_arena, widget_id);
         current_id = parent_id;
@@ -93,7 +94,9 @@ fn run_single_update_pass(
     };
     let mut props = PropertiesMut {
         map: properties_mut.item,
-        default_map: &root.default_properties,
+        default_map: root
+            .default_properties
+            .for_widget(widget_mut.item.type_id()),
     };
     pass_fn(&mut **widget_mut.item, &mut ctx, &mut props);
 
@@ -107,7 +110,7 @@ fn run_single_update_pass(
 // --- MARK: TREE ---
 fn update_widget_tree(
     global_state: &mut RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
@@ -181,7 +184,7 @@ fn update_widget_tree(
         };
         let mut props = PropertiesMut {
             map: properties.item,
-            default_map: default_properties,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         };
         widget
             .item
@@ -252,7 +255,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 /// See the [disabled status documentation](../doc/06_masonry_concepts.md#disabled).
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
@@ -282,7 +285,7 @@ fn update_disabled_for_widget(
         };
         let mut props = PropertiesMut {
             map: properties.item,
-            default_map: default_properties,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         };
         widget
             .item
@@ -344,7 +347,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 /// See the [stashed status documentation](../doc/06_masonry_concepts.md#stashed).
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
@@ -374,7 +377,7 @@ fn update_stashed_for_widget(
         };
         let mut props = PropertiesMut {
             map: properties.item,
-            default_map: default_properties,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         };
         widget
             .item
@@ -443,7 +446,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
@@ -836,7 +839,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             widget_state: state.item,
             properties: PropertiesRef {
                 map: properties.item,
-                default_map: &root.default_properties,
+                default_map: root.default_properties.for_widget(widget.item.type_id()),
             },
             properties_children: properties.children,
         };

@@ -11,7 +11,9 @@ use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
 use crate::app::RenderRootState;
-use crate::core::{PropertiesRef, QueryCtx, Widget, WidgetArena, WidgetId, WidgetState};
+use crate::core::{
+    DefaultProperties, PropertiesRef, QueryCtx, Widget, WidgetArena, WidgetId, WidgetState,
+};
 use crate::util::AnyMap;
 
 pub(crate) mod accessibility;
@@ -27,7 +29,7 @@ pub(crate) mod update;
 pub(crate) fn enter_span_if(
     enabled: bool,
     global_state: &RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
     properties: ArenaRef<'_, AnyMap>,
@@ -48,7 +50,7 @@ pub(crate) fn enter_span_if(
 #[must_use = "Span will be immediately closed if dropped"]
 pub(crate) fn enter_span(
     global_state: &RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
     properties: ArenaRef<'_, AnyMap>,
@@ -60,7 +62,7 @@ pub(crate) fn enter_span(
         widget_children: widget.children,
         properties: PropertiesRef {
             map: properties.item,
-            default_map: default_properties,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         },
         properties_children: properties.children,
     };
