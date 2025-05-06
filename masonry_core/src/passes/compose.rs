@@ -13,6 +13,7 @@ use crate::passes::{enter_span_if, recurse_on_children};
 // --- MARK: RECURSE ---
 fn compose_widget(
     global_state: &mut RenderRootState,
+    default_properties: &AnyMap,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
@@ -22,6 +23,7 @@ fn compose_widget(
     let _span = enter_span_if(
         global_state.trace.compose,
         global_state,
+        default_properties,
         widget.reborrow(),
         state.reborrow(),
         properties.reborrow(),
@@ -72,6 +74,7 @@ fn compose_widget(
         |widget, mut state, properties| {
             compose_widget(
                 global_state,
+                default_properties,
                 widget,
                 state.reborrow_mut(),
                 properties,
@@ -103,6 +106,7 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
     let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     compose_widget(
         &mut root.global_state,
+        &root.default_properties,
         root_widget,
         root_state,
         root_properties,

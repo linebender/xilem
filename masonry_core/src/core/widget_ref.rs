@@ -23,7 +23,6 @@ use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetId};
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::core::WidgetMut).
 pub struct WidgetRef<'w, W: Widget + ?Sized> {
     pub(crate) ctx: QueryCtx<'w>,
-    pub(crate) properties: PropertiesRef<'w>,
     pub(crate) widget: &'w W,
 }
 
@@ -89,19 +88,18 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
 
     /// Returns `true` if the widget has a property of type `T`.
     pub fn get_prop<T: Property>(&self) -> Option<&T> {
-        self.properties.get::<T>()
+        self.ctx.properties.get::<T>()
     }
 
     /// Get value of property `T`, or `None` if the widget has no `T` property.
     pub fn contains_prop<T: Property>(&self) -> bool {
-        self.properties.contains::<T>()
+        self.ctx.properties.contains::<T>()
     }
 
     /// Attempt to downcast to `WidgetRef` of concrete Widget type.
     pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
             ctx: self.ctx,
-            properties: self.properties,
             widget: (self.widget.as_dyn() as &dyn Any).downcast_ref()?,
         })
     }
@@ -144,17 +142,14 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                     widget_state_children: state_ref.children,
                     widget_children: widget_ref.children,
                     widget_state: state_ref.item,
+                    properties: PropertiesRef {
+                        map: properties_ref.item,
+                        default_map: self.ctx.properties.default_map,
+                    },
                     properties_children: properties_ref.children,
                 };
-                let properties = PropertiesRef {
-                    map: properties_ref.item,
-                };
 
-                WidgetRef {
-                    ctx,
-                    properties,
-                    widget,
-                }
+                WidgetRef { ctx, widget }
             })
             .collect()
     }
@@ -165,7 +160,6 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
         WidgetRef {
             ctx: self.ctx,
-            properties: self.properties,
             widget: self.widget,
         }
     }
@@ -190,8 +184,7 @@ impl WidgetRef<'_, dyn Widget> {
     /// **pos** - the position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
     pub fn find_widget_under_pointer(&self, pos: Point) -> Option<Self> {
-        self.widget
-            .find_widget_under_pointer(self.ctx, self.properties, pos)
+        self.widget.find_widget_under_pointer(self.ctx, pos)
     }
 }
 
