@@ -3,6 +3,7 @@
 
 use std::any::TypeId;
 use std::collections::HashMap;
+use std::default::Default;
 
 use anymap3::AnyMap;
 
@@ -18,7 +19,15 @@ use super::Widget;
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: 'static {}
+pub trait Property: Default + 'static {
+    /// A default value that can be stored in statics.
+    ///
+    /// Should be the same as [`Default::default()`].
+    ///
+    /// **Note:** This is a hacky workaround until we find a better way to store default
+    /// values for properties.
+    const DEFAULT: Self;
+}
 
 /// A collection of properties that a widget can be created with.
 ///
