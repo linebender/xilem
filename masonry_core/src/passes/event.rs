@@ -55,6 +55,7 @@ fn run_event_pass<E>(
         if !is_handled {
             let _span = enter_span(
                 &root.global_state,
+                &root.default_properties,
                 widget_mut.reborrow(),
                 state_mut.reborrow(),
                 properties_mut.reborrow(),
@@ -80,6 +81,7 @@ fn run_event_pass<E>(
 
             let mut props = PropertiesMut {
                 map: properties_mut.item,
+                default_map: &root.default_properties,
             };
             pass_fn(&mut **widget, &mut ctx, &mut props, event);
             is_handled = ctx.is_handled;

@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymap3::{AnyMap, Entry};
+use anymap3::AnyMap;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -34,6 +34,7 @@ pub struct Properties {
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
     pub(crate) map: &'a AnyMap,
+    pub(crate) default_map: &'a AnyMap,
 }
 
 /// Mutable reference to a collection of properties that a widget has access to.
@@ -46,6 +47,7 @@ pub struct PropertiesRef<'a> {
 /// [`Widget`]: crate::core::Widget
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
+    pub(crate) default_map: &'a AnyMap,
 }
 
 impl Properties {
@@ -54,14 +56,22 @@ impl Properties {
         Self { map: AnyMap::new() }
     }
 
+    #[cfg(FALSE)]
     /// Get a reference to the properties.
-    pub fn ref_(&self) -> PropertiesRef<'_> {
-        PropertiesRef { map: &self.map }
+    pub fn ref_<'a>(&'a self, default_map: &'a AnyMap) -> PropertiesRef<'a> {
+        PropertiesRef {
+            map: &self.map,
+            default_map,
+        }
     }
 
+    #[cfg(FALSE)]
     /// Get a mutable reference to the properties.
-    pub fn mut_(&mut self) -> PropertiesMut<'_> {
-        PropertiesMut { map: &mut self.map }
+    pub fn mut_<'a>(&'a mut self, default_map: &'a AnyMap) -> PropertiesMut<'a> {
+        PropertiesMut {
+            map: &mut self.map,
+            default_map,
+        }
     }
 }
 
@@ -71,37 +81,40 @@ impl Properties {
 
 impl PropertiesRef<'_> {
     /// Returns `true` if the widget has a property of type `T`.
+    ///
+    /// Does not check default properties.
     pub fn contains<T: Property>(&self) -> bool {
         self.map.contains::<T>()
     }
 
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
+    /// Get value of property `T`.
+    ///
+    /// Returns Some if either the widget or the default property set has an entry for `T`.
+    /// Returns `None` otherwise.
     pub fn get<T: Property>(&self) -> Option<&T> {
-        self.map.get::<T>()
+        self.map.get::<T>().or_else(|| self.default_map.get::<T>())
     }
 }
 
 impl PropertiesMut<'_> {
     /// Returns `true` if the widget has a property of type `T`.
+    ///
+    /// Does not check default properties.
     pub fn contains<T: Property>(&self) -> bool {
         self.map.contains::<T>()
     }
 
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
+    /// Get value of property `T`.
+    ///
+    /// Returns Some if either the widget or the default property set has an entry for `T`.
+    /// Returns `None` otherwise.
     pub fn get<T: Property>(&self) -> Option<&T> {
-        self.map.get::<T>()
-    }
-
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
-    ///
-    /// If you're using a `WidgetMut`, call [`WidgetMut::get_prop_mut`] instead.
-    ///
-    /// [`WidgetMut::get_prop_mut`]: crate::core::WidgetMut::get_prop_mut
-    pub fn get_mut<T: Property>(&mut self) -> Option<&mut T> {
-        self.map.get_mut::<T>()
+        self.map.get::<T>().or_else(|| self.default_map.get::<T>())
     }
 
     /// Set property `T` to given value. Returns the previous value if `T` was already set.
+    ///
+    /// Does not affect default properties.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::insert_prop`] instead.
     ///
@@ -112,6 +125,8 @@ impl PropertiesMut<'_> {
 
     /// Remove property `T`. Returns the previous value if `T` was set.
     ///
+    /// Does not affect default properties.
+    ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::remove_prop`] instead.
     ///
     /// [`WidgetMut::remove_prop`]: crate::core::WidgetMut::remove_prop
@@ -119,19 +134,11 @@ impl PropertiesMut<'_> {
         self.map.remove::<T>()
     }
 
-    /// Returns an entry that can be used to add, update, or remove a property.
-    ///
-    /// If you're using a `WidgetMut`, call [`WidgetMut::prop_entry`] instead.
-    ///
-    /// [`WidgetMut::prop_entry`]: crate::core::WidgetMut::prop_entry
-    pub fn entry<T: Property>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
-        self.map.entry::<T>()
-    }
-
     /// Get a `PropertiesMut` for the same underlying properties with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> PropertiesMut<'_> {
         PropertiesMut {
             map: &mut *self.map,
+            default_map: &*self.default_map,
         }
     }
 }
