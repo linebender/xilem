@@ -7,14 +7,14 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{AccessCtx, PropertiesRef, Widget, WidgetState};
+use crate::core::{AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
 // --- MARK: BUILD TREE ---
 fn build_accessibility_tree(
     global_state: &mut RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     tree_update: &mut TreeUpdate,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
@@ -57,7 +57,7 @@ fn build_accessibility_tree(
         let mut node = build_access_node(&mut **widget.item, &mut ctx, scale_factor);
         let props = PropertiesRef {
             map: properties.item,
-            default_map: default_properties,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         };
         widget.item.accessibility(&mut ctx, &props, &mut node);
 
