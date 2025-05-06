@@ -22,6 +22,8 @@ use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
 use crate::theme::get_debug_color;
 
+use super::DefaultProperties;
+
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
 // before editing context method code.
@@ -107,7 +109,7 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
-    pub(crate) default_properties: &'a AnyMap,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 /// A context provided to the [`Widget::compose`] method.

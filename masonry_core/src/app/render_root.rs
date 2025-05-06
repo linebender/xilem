@@ -21,9 +21,9 @@ use web_time::Instant;
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, Ime, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection,
-    TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
-    WindowEvent,
+    AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
+    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -72,7 +72,7 @@ pub struct RenderRoot {
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
     /// Default values that Properties will have if not defined per-widget.
-    pub(crate) default_properties: AnyMap,
+    pub(crate) default_properties: DefaultProperties,
 
     /// State passed to context types.
     pub(crate) global_state: RenderRootState,
@@ -264,7 +264,7 @@ impl RenderRoot {
             size: PhysicalSize::new(0, 0),
             last_anim: None,
             last_mouse_pos: None,
-            default_properties: AnyMap::new(),
+            default_properties: DefaultProperties::new(),
             global_state: RenderRootState {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
@@ -500,7 +500,7 @@ impl RenderRoot {
             widget_state: state_ref.item,
             properties: PropertiesRef {
                 map: properties_ref.item,
-                default_map: &self.default_properties,
+                default_map: self.default_properties.for_widget(widget.type_id()),
             },
             properties_children: properties_ref.children,
         };
@@ -529,7 +529,7 @@ impl RenderRoot {
             widget_state: state_ref.item,
             properties: PropertiesRef {
                 map: properties_ref.item,
-                default_map: &self.default_properties,
+                default_map: self.default_properties.for_widget(widget.type_id()),
             },
             properties_children: properties_ref.children,
         };

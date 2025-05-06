@@ -6,13 +6,13 @@ use tracing::info_span;
 use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{PropertiesMut, UpdateCtx, Widget, WidgetState};
+use crate::core::{DefaultProperties, PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
-    default_properties: &AnyMap,
+    default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
@@ -45,7 +45,7 @@ fn update_anim_for_widget(
         };
         let mut props = PropertiesMut {
             map: properties.item,
-            default_map: default_properties,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         };
         widget.item.on_anim_frame(&mut ctx, &mut props, elapsed_ns);
     }
