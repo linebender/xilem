@@ -11,7 +11,7 @@ use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
 use crate::app::RenderRootState;
-use crate::core::{QueryCtx, Widget, WidgetArena, WidgetId, WidgetState};
+use crate::core::{PropertiesRef, QueryCtx, Widget, WidgetArena, WidgetId, WidgetState};
 use crate::util::AnyMap;
 
 pub(crate) mod accessibility;
@@ -27,12 +27,19 @@ pub(crate) mod update;
 pub(crate) fn enter_span_if(
     enabled: bool,
     global_state: &RenderRootState,
+    default_properties: &AnyMap,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
     properties: ArenaRef<'_, AnyMap>,
 ) -> Option<EnteredSpan> {
     if enabled {
-        Some(enter_span(global_state, widget, state, properties))
+        Some(enter_span(
+            global_state,
+            default_properties,
+            widget,
+            state,
+            properties,
+        ))
     } else {
         None
     }
@@ -41,6 +48,7 @@ pub(crate) fn enter_span_if(
 #[must_use = "Span will be immediately closed if dropped"]
 pub(crate) fn enter_span(
     global_state: &RenderRootState,
+    default_properties: &AnyMap,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
     properties: ArenaRef<'_, AnyMap>,
@@ -50,8 +58,14 @@ pub(crate) fn enter_span(
         widget_state: state.item,
         widget_state_children: state.children,
         widget_children: widget.children,
+        properties: PropertiesRef {
+            map: properties.item,
+            default_map: default_properties,
+        },
         properties_children: properties.children,
     };
+    // TODO - Should `make_trace_span` take QueryCtx?
+    // Building it adds a lot of boilerplate to this function.
     widget.item.make_trace_span(&ctx).entered()
 }
 

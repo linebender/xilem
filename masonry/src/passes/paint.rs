@@ -19,6 +19,7 @@ use crate::util::{AnyMap, stroke};
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(
     global_state: &mut RenderRootState,
+    default_properties: &AnyMap,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
@@ -30,6 +31,7 @@ fn paint_widget(
     let _span = enter_span_if(
         trace,
         global_state,
+        default_properties,
         widget.reborrow(),
         state.reborrow(),
         properties.reborrow(),
@@ -57,6 +59,7 @@ fn paint_widget(
         scene.reset();
         let props = PropertiesRef {
             map: properties.item,
+            default_map: default_properties,
         };
         widget.item.paint(&mut ctx, &props, scene);
     }
@@ -95,6 +98,7 @@ fn paint_widget(
             // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
             paint_widget(
                 global_state,
+                default_properties,
                 complete_scene,
                 scenes,
                 widget,
@@ -154,6 +158,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
 
     paint_widget(
         &mut root.global_state,
+        &root.default_properties,
         &mut complete_scene,
         &mut scenes,
         root_widget,

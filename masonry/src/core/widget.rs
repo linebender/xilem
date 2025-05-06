@@ -356,13 +356,11 @@ pub trait Widget: AsDynWidget + Any {
     fn find_widget_under_pointer<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
-        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
         find_widget_under_pointer(
             &WidgetRef {
                 widget: self.as_dyn(),
-                properties: props,
                 ctx,
             },
             pos,
@@ -416,10 +414,9 @@ pub fn find_widget_under_pointer<'c>(
     // of overlapping children.
     for child_id in widget.children_ids().iter().rev() {
         let child_ref = ctx.get(*child_id);
-        if let Some(child) =
-            child_ref
-                .widget
-                .find_widget_under_pointer(child_ref.ctx, child_ref.properties, pos)
+        if let Some(child) = child_ref
+            .widget
+            .find_widget_under_pointer(child_ref.ctx, pos)
         {
             return Some(child);
         }
