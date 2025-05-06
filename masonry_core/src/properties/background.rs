@@ -19,12 +19,14 @@ pub enum Background {
     Gradient(Gradient),
 }
 
-impl Property for Background {}
+impl Property for Background {
+    // This matches the CSS default.
+    const DEFAULT: Self = Self::Color(AlphaColor::TRANSPARENT);
+}
 
-// This matches the CSS default.
 impl Default for Background {
     fn default() -> Self {
-        Self::Color(AlphaColor::from_rgba8(0, 0, 0, 0))
+        Self::DEFAULT
     }
 }
 

@@ -17,7 +17,9 @@ pub struct BorderWidth {
 // TODO - To match CSS, we should use a non-zero default width
 // and a "border style" of "None".
 
-impl Property for BorderWidth {}
+impl Property for BorderWidth {
+    const DEFAULT: Self = Self { width: 0. };
+}
 
 impl BorderWidth {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).

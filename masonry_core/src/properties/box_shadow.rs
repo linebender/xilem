@@ -37,15 +37,17 @@ pub struct BoxShadow {
     pub blur_radius: f64,
 }
 
-impl Property for BoxShadow {}
+impl Property for BoxShadow {
+    const DEFAULT: Self = Self {
+        color: AlphaColor::TRANSPARENT,
+        offset: Point::ZERO,
+        blur_radius: 0.,
+    };
+}
 
 impl Default for BoxShadow {
     fn default() -> Self {
-        Self {
-            color: AlphaColor::TRANSPARENT,
-            offset: Point::ZERO,
-            blur_radius: 0.,
-        }
+        Self::DEFAULT
     }
 }
 
