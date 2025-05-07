@@ -7,6 +7,8 @@ use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
+use masonry_core::core::DefaultProperties;
+use masonry_core::theme::default_property_set;
 use tracing::{debug, error, info, info_span, warn};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
@@ -114,6 +116,7 @@ pub fn run(
         window_attributes,
         root_widget,
         app_driver,
+        default_property_set(),
         Color::BLACK,
     )
 }
@@ -123,6 +126,7 @@ pub fn run_with(
     window: WindowAttributes,
     root_widget: impl Widget,
     app_driver: impl AppDriver + 'static,
+    default_properties: DefaultProperties,
     background_color: Color,
 ) -> Result<(), EventLoopError> {
     // If there is no default tracing subscriber, we set our own. If one has
@@ -132,7 +136,13 @@ pub fn run_with(
     let _ = crate::app::try_init_tracing();
 
     let mut main_state = MainState {
-        masonry_state: MasonryState::new(window, &event_loop, root_widget, background_color),
+        masonry_state: MasonryState::new(
+            window,
+            &event_loop,
+            root_widget,
+            default_properties,
+            background_color,
+        ),
         app_driver: Box::new(app_driver),
     };
     main_state
@@ -215,6 +225,7 @@ impl MasonryState<'_> {
         window: WindowAttributes,
         event_loop: &EventLoop,
         root_widget: impl Widget,
+        default_properties: DefaultProperties,
         background_color: Color,
     ) -> Self {
         let render_cx = RenderContext::new();
@@ -226,6 +237,7 @@ impl MasonryState<'_> {
             render_root: RenderRoot::new(
                 root_widget,
                 RenderRootOptions {
+                    default_properties,
                     use_system_fonts: true,
                     size_policy: WindowSizePolicy::User,
                     scale_factor,

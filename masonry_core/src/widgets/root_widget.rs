@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
@@ -9,10 +11,12 @@ use vello::kurbo::Point;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, Property, QueryCtx, RegisterCtx, TextEvent,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
+use crate::properties::{Background, Padding};
+use crate::util::fill;
 
 // TODO: This should eventually be removed once accesskit does that for us.
 // See https://github.com/AccessKit/accesskit/issues/531
@@ -26,6 +30,15 @@ impl<W: Widget> RootWidget<W> {
     pub fn new(widget: W) -> Self {
         Self {
             pod: WidgetPod::new(widget),
+        }
+    }
+}
+
+impl RootWidget<dyn Widget + 'static> {
+    /// Create a new root widget.
+    pub fn new_dyn(widget: impl Widget) -> Self {
+        Self {
+            pod: WidgetPod::new(widget).erased(),
         }
     }
 }
@@ -71,18 +84,36 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for RootWidget<W> {
         ctx.register_child(&mut self.pod);
     }
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        Background::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
+    }
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let size = ctx.run_layout(&mut self.pod, bc);
-        ctx.place_child(&mut self.pod, Point::ORIGIN);
+        let padding = props.get::<Padding>().unwrap_or(&Property::DEFAULT);
+
+        let bc = padding.layout_down(*bc);
+        let size = ctx.run_layout(&mut self.pod, &bc);
+        let (size, _) = padding.layout_up(size, 0.);
+
+        let pos = padding.place_down(Point::ORIGIN);
+        ctx.place_child(&mut self.pod, pos);
         size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        if let Some(bg) = props.get::<Background>() {
+            let bg_rect = ctx.size().to_rect();
+            let bg_brush = bg.get_peniko_brush_for_rect(bg_rect);
+
+            fill(scene, &bg_rect, &bg_brush);
+        }
+    }
 
     fn accessibility_role(&self) -> Role {
         Role::Window
