@@ -23,7 +23,7 @@ use crate::core::{Property, UpdateCtx};
 /// The drop shadow of a Widget.
 ///
 /// Will be invisible if default values are kept.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BoxShadow {
     /// The shadow's color.
     pub color: AlphaColor<Srgb>,

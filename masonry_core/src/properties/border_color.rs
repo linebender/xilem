@@ -8,7 +8,7 @@ use crate::peniko::color::{AlphaColor, Srgb};
 
 /// The color of a widget's border.
 #[expect(missing_docs, reason = "obvious")]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BorderColor {
     pub color: AlphaColor<Srgb>,
 }
