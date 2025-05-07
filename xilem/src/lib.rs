@@ -133,7 +133,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry::core::{DefaultProperties, FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
+use masonry::core::{
+    DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetPod,
+};
 use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
 use masonry::widgets::RootWidget;
@@ -162,10 +164,13 @@ pub use winit;
 mod any_view;
 mod driver;
 mod one_of;
+mod property_tuple;
 
+pub mod style;
 pub mod view;
 pub use any_view::AnyWidgetView;
 pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, MasonryProxy, async_action};
+pub use property_tuple::PropertyTuple;
 
 /// Runtime builder.
 #[must_use = "A Xilem app does nothing unless ran."]
@@ -321,6 +326,7 @@ pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
     /// This has a protocol to ensure that multiple views changing the
     /// transform interoperate successfully.
     pub transform: Affine,
+    pub properties: Properties,
 }
 
 impl<W: Widget + FromDynWidget> Pod<W> {
@@ -333,11 +339,17 @@ impl<W: Widget + FromDynWidget> Pod<W> {
             widget: Box::new(widget),
             id: WidgetId::next(),
             transform: Affine::default(),
+            properties: Properties::new(),
         }
     }
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
+    /// Builder-style method to set [`Properties`] on a new widget.
+    pub fn with_props(self, properties: Properties) -> Self {
+        Self { properties, ..self }
+    }
+
     /// Type-erase the contained widget.
     ///
     /// Convert a `Pod` pointing to a widget of a specific concrete type
@@ -347,6 +359,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
             widget: self.widget.as_box_dyn(),
             id: self.id,
             transform: self.transform,
+            properties: self.properties,
         }
     }
     /// Finalise this `Pod`, converting into a [`WidgetPod`].
@@ -359,7 +372,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// which can contain heterogenous widgets, you will probably
     /// prefer to use [`Self::erased_widget_pod`].
     pub fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
+        WidgetPod::new_with(self.widget, self.id, self.transform, self.properties)
     }
     /// Finalise this `Pod` into a type-erased [`WidgetPod`].
     ///
@@ -367,7 +380,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// widget which supports heterogenous widgets.
     /// For example, [`Flex`](masonry::widgets::Flex) accepts type-erased widget pods.
     pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
+        WidgetPod::new_with(self.widget, self.id, self.transform, self.properties).erased()
     }
 }
 
