@@ -11,7 +11,7 @@ use crate::peniko::Color;
 use crate::properties::types::Gradient;
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
-    Padding,
+    HoveredBorderColor, Padding,
 };
 use crate::widgets::Button;
 
@@ -98,6 +98,9 @@ pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
 
     properties.insert::<Button, _>(BorderColor { color: BORDER_DARK });
+    properties.insert::<Button, _>(HoveredBorderColor(BorderColor {
+        color: BORDER_LIGHT,
+    }));
     properties.insert::<Button, _>(BorderWidth {
         width: BUTTON_BORDER_WIDTH,
     });

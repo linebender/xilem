@@ -83,6 +83,21 @@ impl Properties {
     pub fn new() -> Self {
         Self { map: AnyMap::new() }
     }
+
+    /// Get value of property `P`.
+    pub fn get<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>()
+    }
+
+    /// Set property `P` to given value. Returns the previous value if `P` was already set.
+    pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
+        self.map.insert(value)
+    }
+
+    /// Remove property `P`. Returns the previous value if `P` was set.
+    pub fn remove<P: Property>(&mut self) -> Option<P> {
+        self.map.remove::<P>()
+    }
 }
 
 // TODO - Implement some kind of cascading with at least a Masonry-wide theme,
