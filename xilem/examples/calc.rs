@@ -291,7 +291,8 @@ fn expanded_button(
             .background_color(default_color)
             .active_background_color(active_color)
             .corner_radius(10.)
-            .border_color(Color::TRANSPARENT),
+            .border_color(Color::TRANSPARENT)
+            .hovered_border_color(Color::WHITE),
     )
     .expand()
 }

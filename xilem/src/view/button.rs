@@ -4,7 +4,7 @@
 pub use masonry::core::PointerButton;
 use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, Padding,
+    DisabledBackground, HoveredBorderColor, Padding,
 };
 use masonry::widgets;
 use xilem_core::ViewPathTracker;
@@ -101,6 +101,7 @@ pub struct Button<F> {
         Option<ActiveBackground>,
         Option<DisabledBackground>,
         Option<BorderColor>,
+        Option<HoveredBorderColor>,
         Option<BorderWidth>,
         Option<BoxShadow>,
         Option<CornerRadius>,
@@ -116,6 +117,7 @@ impl<F> Style for Button<F> {
         Option<ActiveBackground>,
         Option<DisabledBackground>,
         Option<BorderColor>,
+        Option<HoveredBorderColor>,
         Option<BorderWidth>,
         Option<BoxShadow>,
         Option<CornerRadius>,
@@ -131,6 +133,7 @@ impl<F> HasProperty<Background> for Button<F> {}
 impl<F> HasProperty<ActiveBackground> for Button<F> {}
 impl<F> HasProperty<DisabledBackground> for Button<F> {}
 impl<F> HasProperty<BorderColor> for Button<F> {}
+impl<F> HasProperty<HoveredBorderColor> for Button<F> {}
 impl<F> HasProperty<BorderWidth> for Button<F> {}
 impl<F> HasProperty<BoxShadow> for Button<F> {}
 impl<F> HasProperty<CornerRadius> for Button<F> {}
