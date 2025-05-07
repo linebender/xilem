@@ -6,8 +6,10 @@ use std::any::TypeId;
 use crate::core::{BoxConstraints, Property, UpdateCtx};
 use crate::kurbo::{Point, Size, Vec2};
 
-/// The width of padding between a widget's border and its contents.
-#[derive(Default, Clone, Copy, Debug, PartialEq)]
+/// The amount of space between a widget's border and its contents.
+///
+/// Padding can be constructed using [`from(value: f64)`][Self::from].
+#[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub struct Padding {
     /// The amount of padding in logical pixels for the left edge.
     pub left: f64,
