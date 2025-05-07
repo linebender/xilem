@@ -14,9 +14,13 @@ use crate::core::{
 };
 use crate::kurbo::Size;
 
-// TODO: This should eventually be removed once accesskit does that for us.
-// See https://github.com/AccessKit/accesskit/issues/531
-/// A widget wrapper that reports a [`Role::Window`] to the accessibility API.
+/// A wrapper Widget which app drivers can wrap around the rest of the widget tree.
+///
+/// This is useful for a few things:
+/// - Reporting a [`Role::Window`] to the accessibility API.
+/// - Setting a default [`Background`] and [`Padding`] for the entire app using [`DefaultProperties`].
+///
+/// [`DefaultProperties`]: crate::core::DefaultProperties
 pub struct RootWidget {
     pub(crate) pod: WidgetPod<dyn Widget>,
 }
