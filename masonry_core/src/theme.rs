@@ -13,7 +13,7 @@ use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
     HoveredBorderColor, Padding,
 };
-use crate::widgets::Button;
+use crate::widgets::{Button, Textbox};
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -119,6 +119,13 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Button, _>(DisabledBackground(Background::Gradient(
         Gradient::new_linear(0.0).with_stops([DISABLED_BUTTON_LIGHT, DISABLED_BUTTON_DARK]),
     )));
+
+    properties.insert::<Textbox, _>(BorderColor {
+        color: Color::WHITE,
+    });
+    properties.insert::<Textbox, _>(BorderWidth { width: 1.0 });
+    properties.insert::<Textbox, _>(Padding::all(5.));
+    properties.insert::<Textbox, _>(Background::Color(Color::from_rgb8(0x1A, 0x1A, 0x1A)));
 
     // TODO - Add default Padding to RootWidget?
 

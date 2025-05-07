@@ -10,7 +10,10 @@
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{Action, Widget, WidgetId};
 use masonry::dpi::LogicalSize;
+use masonry::properties::Padding;
+use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
+use vello::peniko::Color;
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -66,13 +69,19 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    let mut default_properties = default_property_set();
+    default_properties.insert::<RootWidget, _>(Padding::all(5.0));
+
+    let event_loop = masonry::app::EventLoop::with_user_event().build().unwrap();
+    masonry::app::run_with(
+        event_loop,
         window_attributes,
         RootWidget::new(make_widget_tree()),
         Driver {
             next_task: String::new(),
         },
+        default_properties,
+        Color::BLACK,
     )
     .unwrap();
 }
