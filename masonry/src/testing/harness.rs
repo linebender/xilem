@@ -34,6 +34,7 @@ use crate::kurbo::{Point, Size, Vec2};
 use crate::passes::anim::run_update_anim_pass;
 use crate::peniko::{Blob, Color};
 use crate::testing::screenshots::get_image_diff;
+use crate::theme::default_property_set;
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
@@ -243,6 +244,7 @@ impl TestHarness {
             render_root: RenderRoot::new(
                 root_widget,
                 RenderRootOptions {
+                    default_properties: default_property_set(),
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
                     scale_factor: params.scale_factor,

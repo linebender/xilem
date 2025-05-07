@@ -71,7 +71,7 @@ pub struct PropertiesMut<'a> {
 /// every `(widget type, property type)` pair.
 ///
 /// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct DefaultProperties {
     /// Maps widget types to the default property set for that widget.
     pub(crate) map: HashMap<TypeId, AnyMap>,

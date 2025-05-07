@@ -40,7 +40,6 @@ use crate::passes::update::{
     run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
-use crate::theme::default_property_set;
 use crate::util::AnyMap;
 use cursor_icon::CursorIcon;
 
@@ -174,6 +173,9 @@ pub enum WindowSizePolicy {
 
 /// Options for creating a [`RenderRoot`].
 pub struct RenderRootOptions {
+    /// Default values that Properties will have if not defined per-widget.
+    pub default_properties: DefaultProperties,
+
     /// If true, `fontique` will provide access to system fonts
     /// using platform-specific APIs.
     pub use_system_fonts: bool,
@@ -252,6 +254,7 @@ impl RenderRoot {
     /// look for `masonry_winit::app::run` instead.
     pub fn new(root_widget: impl Widget, options: RenderRootOptions) -> Self {
         let RenderRootOptions {
+            default_properties,
             use_system_fonts,
             size_policy,
             scale_factor,
@@ -265,7 +268,7 @@ impl RenderRoot {
             size: PhysicalSize::new(0, 0),
             last_anim: None,
             last_mouse_pos: None,
-            default_properties: default_property_set(),
+            default_properties,
             global_state: RenderRootState {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
