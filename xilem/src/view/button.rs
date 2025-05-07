@@ -2,10 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub use masonry_winit::core::PointerButton;
+use masonry_winit::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding,
+};
 use masonry_winit::widgets;
 use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::property_tuple::PropertyTuple;
+use crate::style::{HasProperty, Style};
 use crate::view::Label;
 use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
@@ -65,6 +70,7 @@ pub fn button<State, Action>(
             _ => MessageResult::Nop,
         },
         disabled: false,
+        properties: Default::default(),
     }
 }
 
@@ -79,6 +85,7 @@ pub fn button_any_pointer<State, Action>(
         label: label.into(),
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
         disabled: false,
+        properties: Default::default(),
     }
 }
 
@@ -92,6 +99,14 @@ pub struct Button<F> {
     label: Label,
     callback: F,
     disabled: bool,
+    properties: (
+        Option<Background>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<BoxShadow>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    ),
 }
 
 impl<F> Button<F> {
@@ -103,6 +118,28 @@ impl<F> Button<F> {
 }
 
 const LABEL_VIEW_ID: ViewId = ViewId::new(0);
+
+impl<F> Style for Button<F> {
+    type Props = (
+        Option<Background>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<BoxShadow>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    );
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+impl<F> HasProperty<Background> for Button<F> {}
+impl<F> HasProperty<BorderColor> for Button<F> {}
+impl<F> HasProperty<BorderWidth> for Button<F> {}
+impl<F> HasProperty<BoxShadow> for Button<F> {}
+impl<F> HasProperty<CornerRadius> for Button<F> {}
+impl<F> HasProperty<Padding> for Button<F> {}
 
 impl<F> ViewMarker for Button<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
@@ -117,7 +154,9 @@ where
             View::<State, Action, _>::build(&self.label, ctx)
         });
         ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx.new_pod(widgets::Button::from_label_pod(child.into_widget_pod()));
+            let mut pod = ctx
+                .new_pod(widgets::Button::from_label_pod(child.into_widget_pod()))
+                .with_props(self.properties.build_properties());
             pod.options.disabled = self.disabled;
             pod
         })
@@ -130,6 +169,8 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if element.ctx.is_disabled() != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }

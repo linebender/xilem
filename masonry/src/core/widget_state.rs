@@ -180,6 +180,7 @@ pub(crate) struct WidgetState {
     pub(crate) widget_name: &'static str,
 }
 
+// TODO - Add Properties
 /// The options the widget will be created with.
 #[derive(Default, Debug)]
 pub struct WidgetOptions {

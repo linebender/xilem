@@ -35,6 +35,7 @@ pub trait Property: Default + Send + Sync + 'static {
     fn static_default() -> &'static Self;
 }
 
+// TODO - Implement Debug.
 /// A collection of properties that a widget can be created with.
 ///
 /// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
