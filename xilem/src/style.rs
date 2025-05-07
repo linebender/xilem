@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Traits used to set custom syles on elements.
+//! Traits used to set custom styles on elements.
 
 use masonry::core::Property;
 use masonry::properties::types::Gradient;
