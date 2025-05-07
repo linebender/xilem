@@ -16,7 +16,7 @@ pub trait HasProperty<P: Property> {}
 /// Trait implemented by most elements that lets you set some styling properties.
 ///
 /// Which methods you can use will depend on which marker traits the element implements,
-/// which matches which [`Properties`] the underlying widget handles.
+/// which matches which [`Properties`](masonry::core::Properties) the underlying widget handles.
 pub trait Style: Sized {
     /// The tuple type used by the element to store properties.
     type Props: PropertyTuple;
