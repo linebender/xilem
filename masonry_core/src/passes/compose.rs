@@ -1,7 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymap3::AnyMap;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
@@ -9,6 +8,7 @@ use vello::kurbo::Affine;
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{ComposeCtx, DefaultProperties, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
+use crate::util::AnySendMap;
 
 // --- MARK: RECURSE ---
 fn compose_widget(
@@ -16,7 +16,7 @@ fn compose_widget(
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnySendMap>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {

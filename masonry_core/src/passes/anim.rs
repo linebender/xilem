@@ -1,13 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymap3::AnyMap;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
+use crate::util::AnySendMap;
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
@@ -15,7 +15,7 @@ fn update_anim_for_widget(
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnySendMap>,
     elapsed_ns: u64,
 ) {
     let _span = enter_span_if(

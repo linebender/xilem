@@ -3,7 +3,6 @@
 
 use std::collections::HashSet;
 
-use anymap3::AnyMap;
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
@@ -15,6 +14,7 @@ use crate::core::{
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
+use crate::util::AnySendMap;
 
 // --- MARK: HELPERS ---
 /// Returns the id path starting from the given widget id and ending at the root.
@@ -104,7 +104,7 @@ fn update_widget_tree(
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnySendMap>,
 ) {
     let trace = global_state.trace.update_tree;
     let _span = enter_span_if(
@@ -249,7 +249,7 @@ fn update_disabled_for_widget(
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnySendMap>,
     parent_disabled: bool,
 ) {
     let _span = enter_span(
@@ -341,7 +341,7 @@ fn update_stashed_for_widget(
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnySendMap>,
     parent_stashed: bool,
 ) {
     let _span = enter_span(
@@ -440,7 +440,7 @@ fn update_focus_chain_for_widget(
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnySendMap>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
     let _span = enter_span(

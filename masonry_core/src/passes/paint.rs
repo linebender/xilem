@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 
-use anymap3::AnyMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
@@ -15,7 +14,7 @@ use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetId, 
 use crate::kurbo::Rect;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::theme::get_debug_color;
-use crate::util::stroke;
+use crate::util::{AnySendMap, stroke};
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(
@@ -25,7 +24,7 @@ fn paint_widget(
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnySendMap>,
     debug_paint: bool,
 ) {
     let trace = global_state.trace.paint;

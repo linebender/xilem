@@ -7,7 +7,6 @@
 //!
 //! This file includes utility functions used by multiple passes.
 
-use anymap3::AnyMap;
 use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
@@ -15,6 +14,7 @@ use crate::app::RenderRootState;
 use crate::core::{
     DefaultProperties, PropertiesRef, QueryCtx, Widget, WidgetArena, WidgetId, WidgetState,
 };
+use crate::util::AnySendMap;
 
 pub(crate) mod accessibility;
 pub(crate) mod anim;
@@ -32,7 +32,7 @@ pub(crate) fn enter_span_if(
     default_properties: &DefaultProperties,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
-    properties: ArenaRef<'_, AnyMap>,
+    properties: ArenaRef<'_, AnySendMap>,
 ) -> Option<EnteredSpan> {
     if enabled {
         Some(enter_span(
@@ -53,7 +53,7 @@ pub(crate) fn enter_span(
     default_properties: &DefaultProperties,
     widget: ArenaRef<'_, Box<dyn Widget>>,
     state: ArenaRef<'_, WidgetState>,
-    properties: ArenaRef<'_, AnyMap>,
+    properties: ArenaRef<'_, AnySendMap>,
 ) -> EnteredSpan {
     let ctx = QueryCtx {
         global_state,
@@ -75,11 +75,11 @@ pub(crate) fn recurse_on_children(
     id: WidgetId,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMutList<'_, WidgetState>,
-    mut properties: ArenaMutList<'_, AnyMap>,
+    mut properties: ArenaMutList<'_, AnySendMap>,
     mut callback: impl FnMut(
         ArenaMut<'_, Box<dyn Widget>>,
         ArenaMut<'_, WidgetState>,
-        ArenaMut<'_, AnyMap>,
+        ArenaMut<'_, AnySendMap>,
     ),
 ) {
     let parent_name = widget.item.short_type_name();

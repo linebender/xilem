@@ -5,9 +5,8 @@ use std::any::TypeId;
 use std::collections::HashMap;
 use std::default::Default;
 
-use anymap3::AnyMap;
-
-use super::Widget;
+use crate::core::Widget;
+use crate::util::AnySendMap;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -19,7 +18,7 @@ use super::Widget;
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Default + 'static {
+pub trait Property: Default + Send + 'static {
     /// A default value that can be stored in statics.
     ///
     /// Should be the same as [`Default::default()`].
@@ -34,7 +33,7 @@ pub trait Property: Default + 'static {
 /// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
 #[derive(Default)]
 pub struct Properties {
-    pub(crate) map: AnyMap,
+    pub(crate) map: AnySendMap,
 }
 
 /// Reference to a collection of properties that a widget has access to.
@@ -47,8 +46,8 @@ pub struct Properties {
 /// [`Widget`]: crate::core::Widget
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
-    pub(crate) map: &'a AnyMap,
-    pub(crate) default_map: &'a AnyMap,
+    pub(crate) map: &'a AnySendMap,
+    pub(crate) default_map: &'a AnySendMap,
 }
 
 /// Mutable reference to a collection of properties that a widget has access to.
@@ -60,8 +59,8 @@ pub struct PropertiesRef<'a> {
 ///
 /// [`Widget`]: crate::core::Widget
 pub struct PropertiesMut<'a> {
-    pub(crate) map: &'a mut AnyMap,
-    pub(crate) default_map: &'a AnyMap,
+    pub(crate) map: &'a mut AnySendMap,
+    pub(crate) default_map: &'a AnySendMap,
 }
 
 // TODO - Document default properties.
@@ -74,37 +73,40 @@ pub struct PropertiesMut<'a> {
 #[derive(Default, Debug)]
 pub struct DefaultProperties {
     /// Maps widget types to the default property set for that widget.
-    pub(crate) map: HashMap<TypeId, AnyMap>,
-    pub(crate) dummy_map: AnyMap,
+    pub(crate) map: HashMap<TypeId, AnySendMap>,
+    pub(crate) dummy_map: AnySendMap,
 }
 
 impl Properties {
     /// Create an empty collection of properties.
     pub fn new() -> Self {
-        Self { map: AnyMap::new() }
-    }
-
-    #[cfg(FALSE)]
-    /// Get a reference to the properties.
-    pub fn ref_<'a>(&'a self, default_map: &'a AnyMap) -> PropertiesRef<'a> {
-        PropertiesRef {
-            map: &self.map,
-            default_map,
+        Self {
+            map: AnySendMap::new(),
         }
     }
 
-    #[cfg(FALSE)]
-    /// Get a mutable reference to the properties.
-    pub fn mut_<'a>(&'a mut self, default_map: &'a AnyMap) -> PropertiesMut<'a> {
-        PropertiesMut {
-            map: &mut self.map,
-            default_map,
-        }
+    /// Returns `true` if the set has a property of type `P`.
+    pub fn contains<P: Property>(&self) -> bool {
+        self.map.contains::<P>()
+    }
+
+    /// Get value of property `P`.
+    pub fn get<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>()
+    }
+
+    /// Set property `P` to given value. Returns the previous value if `P` was already set.
+    pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
+        self.map.insert(value)
+    }
+
+    /// Remove property `P`. Returns the previous value if `P` was set.
+    pub fn remove<P: Property>(&mut self) -> Option<P> {
+        self.map.remove::<P>()
     }
 }
 
-// TODO - Implement some kind of cascading with at least a Masonry-wide theme,
-// If a property is not in the widget *or* the type, return `Default::default()`.
+// TODO - If a property is not in the widget *or* the type, return `Default::default()`.
 // Don't return Option types anymore.
 
 impl PropertiesRef<'_> {
@@ -181,7 +183,7 @@ impl DefaultProperties {
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),
-            dummy_map: AnyMap::new(),
+            dummy_map: AnySendMap::new(),
         }
     }
 
@@ -192,7 +194,7 @@ impl DefaultProperties {
         self.map.entry(TypeId::of::<W>()).or_default().insert(value)
     }
 
-    pub(crate) fn for_widget(&self, id: TypeId) -> &AnyMap {
+    pub(crate) fn for_widget(&self, id: TypeId) -> &AnySendMap {
         self.map.get(&id).unwrap_or(&self.dummy_map)
     }
 }
