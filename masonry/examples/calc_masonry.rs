@@ -12,6 +12,8 @@
 )]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
+use std::str::FromStr;
+
 use accesskit::{Node, Role};
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{
@@ -22,10 +24,13 @@ use masonry::core::{
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
 use masonry::peniko::Color;
+use masonry::properties::{Background, Padding};
+use masonry::theme::default_property_set;
 use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
+use vello::peniko::color::AlphaColor;
 use winit::window::Window;
 
 #[derive(Clone)]
@@ -416,11 +421,20 @@ fn main() {
         in_num: false,
     };
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    let mut default_properties = default_property_set();
+    default_properties.insert::<RootWidget<dyn Widget>, _>(Background::Color(
+        AlphaColor::from_str("#794869").unwrap(),
+    ));
+    default_properties.insert::<RootWidget<dyn Widget>, _>(Padding::all(2.0));
+
+    let event_loop = masonry::app::EventLoop::with_user_event().build().unwrap();
+    masonry::app::run_with(
+        event_loop,
         window_attributes,
-        RootWidget::new(build_calc()),
+        RootWidget::new_dyn(build_calc()),
         calc_state,
+        default_properties,
+        Color::BLACK,
     )
     .unwrap();
 }

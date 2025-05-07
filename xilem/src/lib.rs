@@ -133,8 +133,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
+use masonry::core::{DefaultProperties, FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
 use masonry::dpi::LogicalSize;
+use masonry::theme::default_property_set;
 use masonry::widgets::RootWidget;
 use view::{Transformed, transformed};
 use winit::error::EventLoopError;
@@ -172,6 +173,7 @@ pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
     runtime: tokio::runtime::Runtime,
+    default_properties: Option<DefaultProperties>,
     background_color: Color,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
@@ -190,6 +192,7 @@ where
             state,
             logic,
             runtime,
+            default_properties: None,
             background_color: Color::BLACK,
             fonts: Vec::new(),
         }
@@ -206,6 +209,13 @@ where
     /// Sets main window background color.
     pub fn background_color(mut self, color: Color) -> Self {
         self.background_color = color;
+        self
+    }
+
+    // TODO: Find better ways to customize default property set.
+    /// Sets default properties of widget tree.
+    pub fn with_default_properties(mut self, default_properties: DefaultProperties) -> Self {
+        self.default_properties = Some(default_properties);
         self
     }
 
@@ -234,7 +244,7 @@ where
     // TODO: Make windows into a custom view
     /// Run app with custom window attributes.
     pub fn run_windowed_in(
-        self,
+        mut self,
         mut event_loop: EventLoopBuilder,
         window_attributes: WindowAttributes,
     ) -> Result<(), EventLoopError>
@@ -246,8 +256,19 @@ where
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
         let bg_color = self.background_color;
+        let default_properties = self
+            .default_properties
+            .take()
+            .unwrap_or_else(default_property_set);
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        masonry::app::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
+        masonry::app::run_with(
+            event_loop,
+            window_attributes,
+            root_widget,
+            driver,
+            default_properties,
+            bg_color,
+        )
     }
 
     pub fn into_driver(
