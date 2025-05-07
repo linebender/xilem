@@ -7,7 +7,7 @@ use crate::core::{Property, UpdateCtx};
 
 /// The radius of a widget's box corners, in logical pixels.
 #[expect(missing_docs, reason = "obvious")]
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct CornerRadius {
     pub radius: f64,
 }
