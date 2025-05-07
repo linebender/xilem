@@ -23,10 +23,7 @@ pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
     RawWrapper, RawWrapperMut, RegisterCtx, UpdateCtx,
 };
-pub use events::{
-    AccessEvent, Force, Ime, PointerButton, PointerEvent, PointerState, ResizeDirection, TextEvent,
-    Update, WindowEvent, WindowTheme,
-};
+pub use events::{AccessEvent, Ime, ResizeDirection, TextEvent, Update, WindowEvent, WindowTheme};
 pub use object_fit::ObjectFit;
 pub use properties::{Properties, PropertiesMut, PropertiesRef, Property};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
@@ -35,6 +32,13 @@ pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
+
+pub use ui_events::{ScrollDelta, keyboard, pointer};
+
+pub use keyboard::{KeyboardEvent, Modifiers};
+pub use pointer::{
+    PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,
+};
 
 pub(crate) use text::default_styles;
 pub(crate) use widget_arena::WidgetArena;

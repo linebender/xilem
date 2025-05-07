@@ -846,9 +846,9 @@ checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
 
 [[package]]
 name = "dpi"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f25c0e292a7ca6d6498557ff1df68f32c99850012b6ea401cf8daf771f22ff53"
+checksum = "d8b14ccef22fc6f5a8f4d7d768562a182c04ce9a3b3157b91390b52ddfdf1a76"
 
 [[package]]
 name = "elm"
@@ -1889,7 +1889,6 @@ dependencies = [
  "accesskit_winit",
  "image",
  "insta",
- "keyboard-types",
  "masonry_core",
  "parley",
  "pollster",
@@ -1897,6 +1896,8 @@ dependencies = [
  "smallvec",
  "tracing",
  "tracing-tracy",
+ "ui-events",
+ "ui-events-winit",
  "vello",
  "web-time",
  "wgpu",
@@ -1917,7 +1918,6 @@ dependencies = [
  "futures-intrusive",
  "image",
  "insta",
- "keyboard-types",
  "oxipng",
  "parley",
  "pollster",
@@ -1929,6 +1929,7 @@ dependencies = [
  "tracing-tracy",
  "tracing_android_trace",
  "tree_arena",
+ "ui-events",
  "vello",
  "web-time",
  "wgpu",
@@ -3800,6 +3801,26 @@ dependencies = [
  "memoffset",
  "tempfile",
  "winapi",
+]
+
+[[package]]
+name = "ui-events"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4c2cc34489c685d4e7a1a1f97b7b4416c5aa789892114ae77df6cd2a60f0ec4"
+dependencies = [
+ "dpi",
+ "keyboard-types",
+]
+
+[[package]]
+name = "ui-events-winit"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "61de84ebdb9c2e756d18fcd378802b5a0d359863fcee3ced54ac2d2fbb19cf74"
+dependencies = [
+ "ui-events",
+ "winit",
 ]
 
 [[package]]

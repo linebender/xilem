@@ -10,8 +10,8 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent,
-    Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Line, Point, Rect, Size};
 use crate::peniko::Color;
@@ -405,9 +405,8 @@ where
     ) {
         if self.draggable {
             match event {
-                PointerEvent::PointerDown(PointerButton::Primary, state) => {
-                    let mouse_pos = Point::new(state.position.x, state.position.y);
-                    let local_mouse_pos = mouse_pos - ctx.window_origin().to_vec2();
+                PointerEvent::Down { state, .. } => {
+                    let local_mouse_pos = ctx.local_position(state.position);
                     if self.bar_hit_test(ctx.size(), local_mouse_pos) {
                         ctx.set_handled();
                         ctx.capture_pointer();
@@ -418,16 +417,18 @@ where
                         } - self.bar_position(ctx.size());
                     }
                 }
-                PointerEvent::PointerMove(state) => {
+                PointerEvent::Move(u) => {
                     if ctx.is_pointer_capture_target() {
                         // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
-                            Axis::Horizontal => {
-                                Point::new(state.position.x - self.click_offset, state.position.y)
-                            }
-                            Axis::Vertical => {
-                                Point::new(state.position.x, state.position.y - self.click_offset)
-                            }
+                            Axis::Horizontal => Point {
+                                x: u.current.position.x - self.click_offset,
+                                y: u.current.position.y,
+                            },
+                            Axis::Vertical => Point {
+                                x: u.current.position.x,
+                                y: u.current.position.y - self.click_offset,
+                            },
                         };
                         self.update_split_point(ctx.size(), effective_pos);
                         ctx.request_layout();

@@ -7,7 +7,7 @@ mod harness;
 mod helper_widgets;
 mod screenshots;
 
-pub use harness::{TestHarness, TestHarnessParams};
+pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};
 pub use helper_widgets::{ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt};
 
 use crate::core::WidgetId;

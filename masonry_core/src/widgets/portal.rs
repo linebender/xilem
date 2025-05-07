@@ -4,6 +4,7 @@
 use std::ops::Range;
 
 use accesskit::{Node, Role};
+use dpi::PhysicalPosition;
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -11,8 +12,8 @@ use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, ScrollDelta,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Axis, ScrollBar};
 
@@ -281,9 +282,18 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             .local_layout_rect()
             .size();
 
-        match event {
-            PointerEvent::MouseWheel(delta, _) => {
-                let delta = -Vec2::new(delta.x, delta.y);
+        match *event {
+            PointerEvent::Scroll { delta, .. } => {
+                let delta = match delta {
+                    ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x, y }) => -Vec2 { x, y },
+                    ScrollDelta::LineDelta(x, y) => {
+                        -Vec2 {
+                            x: x as f64,
+                            y: y as f64,
+                        } * 120.0
+                    }
+                    _ => Vec2::ZERO,
+                } * ctx.global_state.scale_factor;
                 self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
                 ctx.request_compose();
 

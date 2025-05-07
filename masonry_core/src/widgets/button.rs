@@ -12,8 +12,8 @@ use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
 use crate::properties::types::Gradient;
@@ -108,7 +108,7 @@ impl Widget for Button {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::PointerDown(_, _) => {
+            PointerEvent::Down { .. } => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
                     // Changes in pointer capture impact appearance, but not accessibility node
@@ -116,7 +116,7 @@ impl Widget for Button {
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::PointerUp(button, _) => {
+            PointerEvent::Up { button, .. } => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
@@ -145,7 +145,7 @@ impl Widget for Button {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
+                    ctx.submit_action(Action::ButtonPressed(None));
                 }
                 _ => {}
             }
@@ -290,7 +290,7 @@ mod tests {
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::core::StyleProperty;
+    use crate::core::{PointerButton, StyleProperty};
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     use crate::theme::PRIMARY_LIGHT;
 
@@ -310,7 +310,10 @@ mod tests {
         harness.mouse_click_on(button_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::ButtonPressed(PointerButton::Primary), button_id))
+            Some((
+                Action::ButtonPressed(Some(PointerButton::Primary)),
+                button_id
+            ))
         );
     }
 

@@ -75,7 +75,7 @@ impl Widget for Checkbox {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::PointerDown(_, _) => {
+            PointerEvent::Down { .. } => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
                     // Checked state impacts appearance and accessibility node
@@ -83,7 +83,7 @@ impl Widget for Checkbox {
                     trace!("Checkbox {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::PointerUp(_, _) => {
+            PointerEvent::Up { .. } => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(Action::CheckboxToggled(self.checked));

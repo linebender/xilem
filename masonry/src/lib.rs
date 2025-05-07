@@ -144,7 +144,6 @@ pub mod app {
     };
 
     pub(crate) use super::convert_winit_event::{
-        masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
-        winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers, winit_mouse_button_to_masonry,
+        masonry_resize_direction_to_winit, winit_ime_to_masonry,
     };
 }

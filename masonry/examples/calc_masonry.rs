@@ -155,7 +155,7 @@ impl Widget for CalcButton {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::PointerDown(_, _) => {
+            PointerEvent::Down { .. } => {
                 if !ctx.is_disabled() {
                     let color = self.active_color;
                     // See `update` for why we use `mutate_later` here.
@@ -166,7 +166,7 @@ impl Widget for CalcButton {
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::PointerUp(_, _) => {
+            PointerEvent::Up { .. } => {
                 if ctx.is_pointer_capture_target() && !ctx.is_disabled() {
                     let color = self.base_color;
                     // See `update` for why we use `mutate_later` here.

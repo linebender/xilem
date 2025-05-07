@@ -5,7 +5,6 @@ use std::mem::Discriminant;
 use std::time::Instant;
 
 use accesskit::{Node, NodeId, Role};
-use keyboard_types::{Key, KeyState, NamedKey};
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use parley::layout::Alignment;
@@ -19,6 +18,7 @@ use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles,
+    keyboard::{Key, KeyState, NamedKey},
     render_text,
 };
 use crate::widgets::Padding;
@@ -523,8 +523,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let is_rtl = self.editor.layout(fctx, lctx).is_rtl();
         let padding = Vec2::new(self.padding.get_left(is_rtl), self.padding.top);
         match event {
-            PointerEvent::PointerDown(button, _) => {
-                if !ctx.is_disabled() && *button == PointerButton::Primary {
+            PointerEvent::Down { button, state, .. } => {
+                if !ctx.is_disabled() && matches!(button, None | Some(PointerButton::Primary)) {
                     let now = Instant::now();
                     if let Some(last) = self.last_click_time.take() {
                         if now.duration_since(last).as_secs_f64() < 0.25 {
@@ -537,7 +537,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     }
                     self.last_click_time = Some(now);
                     let click_count = self.click_count;
-                    let cursor_pos = event.local_position(ctx) - padding;
+                    let cursor_pos = ctx.local_position(state.position) - padding;
                     let (fctx, lctx) = ctx.text_contexts();
                     let mut drv = self.editor.driver(fctx, lctx);
                     match click_count {
@@ -555,9 +555,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     ctx.capture_pointer();
                 }
             }
-            PointerEvent::PointerMove(_) => {
+            PointerEvent::Move(u) => {
                 if !ctx.is_disabled() && ctx.is_pointer_capture_target() {
-                    let cursor_pos = event.local_position(ctx) - padding;
+                    let cursor_pos = ctx.local_position(u.current.position) - padding;
                     let (fctx, lctx) = ctx.text_contexts();
                     self.editor
                         .driver(fctx, lctx)
@@ -581,17 +581,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         event: &TextEvent,
     ) {
         match event {
-            TextEvent::KeyboardKey(key_event, modifiers_state, key_text) => {
+            TextEvent::Keyboard(key_event) => {
                 if key_event.state != KeyState::Down || self.editor.is_composing() {
                     return;
                 }
                 #[allow(unused)]
                 let (shift, action_mod) = (
-                    modifiers_state.shift(),
+                    key_event.modifiers.shift(),
                     if cfg!(target_os = "macos") {
-                        modifiers_state.meta()
+                        key_event.modifiers.meta()
                     } else {
-                        modifiers_state.ctrl()
+                        key_event.modifiers.ctrl()
                     },
                 );
                 let (fctx, lctx) = ctx.text_contexts();
@@ -764,18 +764,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
                         return;
                     }
-                    _ if EDITABLE => match &key_text {
-                        Some(text) => {
-                            self.editor
-                                .driver(fctx, lctx)
-                                .insert_or_replace_selection(text);
-                            edited = true;
-                        }
-                        None => {
-                            // Do nothing, don't set as handled.
-                            return;
-                        }
-                    },
+                    Key::Character(text) if EDITABLE => {
+                        self.editor
+                            .driver(fctx, lctx)
+                            .insert_or_replace_selection(text);
+                        edited = true;
+                    }
                     _ => {
                         // Do nothing, don't set as handled.
                         return;
@@ -838,7 +832,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     self.rendered_generation = new_generation;
                 }
             }
-            TextEvent::ModifierChange(_) => {}
         }
     }
 
@@ -1045,12 +1038,11 @@ pub enum InsertNewline {
 
 #[cfg(test)]
 mod tests {
-    use keyboard_types::{KeyboardEvent, Modifiers};
     use vello::kurbo::Size;
 
     use super::*;
     use crate::{
-        core::Action,
+        core::{Action, KeyboardEvent, Modifiers},
         testing::{TestHarness, TestWidgetExt, widget_ids},
     };
     // Tests of alignment happen in Prose.
@@ -1195,14 +1187,11 @@ mod tests {
             let mut harness = TestHarness::create(area);
 
             harness.focus_on(Some(text_id));
-            harness.process_text_event(TextEvent::KeyboardKey(
-                KeyboardEvent {
-                    key: scenario.key,
-                    ..Default::default()
-                },
-                scenario.modifiers,
-                None,
-            ));
+            harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
+                key: scenario.key,
+                modifiers: scenario.modifiers,
+                ..Default::default()
+            }));
 
             let widget = harness.try_get_widget(text_id).unwrap();
             let area = widget.downcast::<TextArea<true>>().unwrap();

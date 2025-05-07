@@ -15,7 +15,11 @@ use crate::core::PointerButton;
 /// Note: Actions are still a WIP feature.
 pub enum Action {
     /// A button was pressed.
-    ButtonPressed(PointerButton),
+    ///
+    /// Some presses are triggered without a pointer button;
+    /// for example, a touch screen does not exercise buttons.
+    /// In these cases, `None` will be the value here.
+    ButtonPressed(Option<PointerButton>),
     /// Text changed.
     TextChanged(String),
     /// Text entered.

@@ -10,8 +10,8 @@ use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
-    Ime, PointerEvent, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetState,
+    Ime, PointerEvent, PointerInfo, PropertiesMut, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -31,6 +31,15 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
         .iter()
         .map(|&id| WidgetId(id.try_into().unwrap()))
         .collect()
+}
+
+/// Make a dummy [`PointerEvent::Cancel`].
+fn dummy_pointer_cancel() -> PointerEvent {
+    PointerEvent::Cancel(PointerInfo {
+        pointer_id: None,
+        persistent_device_id: None,
+        pointer_type: Default::default(),
+    })
 }
 
 fn run_targeted_update_pass(
@@ -693,7 +702,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if let Some(id) = root.global_state.pointer_capture_target {
         if !root.is_still_interactive(id) {
             // The event pass will set pointer_capture_target to None.
-            run_on_pointer_event_pass(root, &PointerEvent::new_pointer_lost());
+            run_on_pointer_event_pass(root, &dummy_pointer_cancel());
         }
     }
 
