@@ -11,8 +11,8 @@ use vello::kurbo::Point;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, Property, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
 use crate::properties::{Background, Padding};
@@ -88,7 +88,7 @@ impl Widget for RootWidget {
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let padding = props.get::<Padding>().unwrap_or(&Property::DEFAULT);
+        let padding = props.get::<Padding>();
 
         let bc = padding.layout_down(*bc);
         let size = ctx.run_layout(&mut self.pod, &bc);
@@ -100,12 +100,11 @@ impl Widget for RootWidget {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        if let Some(bg) = props.get::<Background>() {
-            let bg_rect = ctx.size().to_rect();
-            let bg_brush = bg.get_peniko_brush_for_rect(bg_rect);
+        let bg = props.get::<Background>();
+        let bg_rect = ctx.size().to_rect();
+        let bg_brush = bg.get_peniko_brush_for_rect(bg_rect);
 
-            fill(scene, &bg_rect, &bg_brush);
-        }
+        fill(scene, &bg_rect, &bg_brush);
     }
 
     fn accessibility_role(&self) -> Role {

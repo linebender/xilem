@@ -14,9 +14,12 @@ pub struct BorderColor {
 }
 
 impl Property for BorderColor {
-    const DEFAULT: Self = Self {
-        color: AlphaColor::TRANSPARENT,
-    };
+    fn static_default() -> &'static Self {
+        static DEFAULT: BorderColor = BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        };
+        &DEFAULT
+    }
 }
 
 /// The color of a widget's border when hovered by a pointer.
@@ -24,7 +27,12 @@ impl Property for BorderColor {
 pub struct HoveredBorderColor(pub BorderColor);
 
 impl Property for HoveredBorderColor {
-    const DEFAULT: Self = Self(BorderColor::DEFAULT);
+    fn static_default() -> &'static Self {
+        static DEFAULT: HoveredBorderColor = HoveredBorderColor(BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        });
+        &DEFAULT
+    }
 }
 
 // ---
@@ -35,7 +43,7 @@ impl Property for HoveredBorderColor {
 
 impl Default for BorderColor {
     fn default() -> Self {
-        Self::DEFAULT
+        *Self::static_default()
     }
 }
 
@@ -53,7 +61,7 @@ impl BorderColor {
 
 impl Default for HoveredBorderColor {
     fn default() -> Self {
-        Self::DEFAULT
+        *Self::static_default()
     }
 }
 

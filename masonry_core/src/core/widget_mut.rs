@@ -60,9 +60,10 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
 
     /// Get value of property `T`.
     ///
-    /// Returns Some if either the widget or the default property set has an entry for `T`.
-    /// Returns `None` otherwise.
-    pub fn get_prop<T: Property>(&self) -> Option<&T> {
+    /// If the widget has an entry for `P`, returns that entry.
+    /// If the default property set has an entry for `P`, returns that entry.
+    /// Otherwise returns [`Property::static_default()`].
+    pub fn get_prop<T: Property>(&self) -> &T {
         self.ctx.properties.get::<T>()
     }
 

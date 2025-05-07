@@ -22,12 +22,15 @@ pub struct Padding {
 }
 
 impl Property for Padding {
-    const DEFAULT: Self = Self {
-        left: 0.0,
-        right: 0.0,
-        top: 0.0,
-        bottom: 0.0,
-    };
+    fn static_default() -> &'static Self {
+        static DEFAULT: Padding = Padding {
+            left: 0.0,
+            right: 0.0,
+            top: 0.0,
+            bottom: 0.0,
+        };
+        &DEFAULT
+    }
 }
 
 impl From<f64> for Padding {

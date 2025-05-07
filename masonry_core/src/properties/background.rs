@@ -30,13 +30,16 @@ pub struct DisabledBackground(pub Background);
 // ---
 
 impl Property for Background {
-    // This matches the CSS default.
-    const DEFAULT: Self = Self::Color(AlphaColor::TRANSPARENT);
+    fn static_default() -> &'static Self {
+        // This matches the CSS default.
+        const DEFAULT: Background = Background::Color(AlphaColor::TRANSPARENT);
+        &DEFAULT
+    }
 }
 
 impl Default for Background {
     fn default() -> Self {
-        Self::DEFAULT
+        Self::static_default().clone()
     }
 }
 
@@ -67,12 +70,16 @@ impl Background {
 // ---
 
 impl Property for ActiveBackground {
-    const DEFAULT: Self = Self(Background::DEFAULT);
+    fn static_default() -> &'static Self {
+        static DEFAULT: ActiveBackground =
+            ActiveBackground(Background::Color(AlphaColor::TRANSPARENT));
+        &DEFAULT
+    }
 }
 
 impl Default for ActiveBackground {
     fn default() -> Self {
-        Self::DEFAULT
+        Self::static_default().clone()
     }
 }
 
@@ -89,12 +96,16 @@ impl ActiveBackground {
 // ---
 
 impl Property for DisabledBackground {
-    const DEFAULT: Self = Self(Background::DEFAULT);
+    fn static_default() -> &'static Self {
+        static DEFAULT: DisabledBackground =
+            DisabledBackground(Background::Color(AlphaColor::TRANSPARENT));
+        &DEFAULT
+    }
 }
 
 impl Default for DisabledBackground {
     fn default() -> Self {
-        Self::DEFAULT
+        Self::static_default().clone()
     }
 }
 
