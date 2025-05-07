@@ -44,8 +44,9 @@ impl AppDriver for Driver {
                 // items to be loaded or unloaded.
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
                 ctx.render_root().edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget<VirtualScroll<ScrollContents>>>();
+                    let mut root = root.downcast::<RootWidget>();
                     let mut scroll = RootWidget::child_mut(&mut root);
+                    let mut scroll = scroll.downcast::<VirtualScroll<ScrollContents>>();
                     // We need to tell the `VirtualScroll` which request this is associated with
                     // This is so that the controller knows which actions have been handled.
                     VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -82,7 +83,7 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    let main_widget = WidgetPod::new(init());
+    let main_widget = WidgetPod::new(init()).erased();
     let driver = Driver {
         scroll_id: main_widget.id(),
         fizz: "Fizz".into(),
