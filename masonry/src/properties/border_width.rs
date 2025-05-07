@@ -18,7 +18,10 @@ pub struct BorderWidth {
 // and a "border style" of "None".
 
 impl Property for BorderWidth {
-    const DEFAULT: Self = Self { width: 0. };
+    fn static_default() -> &'static Self {
+        static DEFAULT: BorderWidth = BorderWidth { width: 0. };
+        &DEFAULT
+    }
 }
 
 impl BorderWidth {

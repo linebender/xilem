@@ -87,13 +87,17 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 
     /// Returns `true` if the widget has a property of type `T`.
-    pub fn get_prop<T: Property>(&self) -> Option<&T> {
-        self.ctx.properties.get::<T>()
-    }
-
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
     pub fn contains_prop<T: Property>(&self) -> bool {
         self.ctx.properties.contains::<T>()
+    }
+
+    /// Get value of property `P`.
+    ///
+    /// If the widget has an entry for `P`, returns that entry.
+    /// If the default property set has an entry for `P`, returns that entry.
+    /// Otherwise returns [`Property::static_default()`].
+    pub fn get_prop<T: Property>(&self) -> &T {
+        self.ctx.properties.get::<T>()
     }
 
     /// Attempt to downcast to `WidgetRef` of concrete Widget type.

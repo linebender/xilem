@@ -39,16 +39,19 @@ pub struct BoxShadow {
 }
 
 impl Property for BoxShadow {
-    const DEFAULT: Self = Self {
-        color: AlphaColor::TRANSPARENT,
-        offset: Point::ZERO,
-        blur_radius: 0.,
-    };
+    fn static_default() -> &'static Self {
+        static DEFAULT: BoxShadow = BoxShadow {
+            color: AlphaColor::TRANSPARENT,
+            offset: Point::ZERO,
+            blur_radius: 0.,
+        };
+        &DEFAULT
+    }
 }
 
 impl Default for BoxShadow {
     fn default() -> Self {
-        Self::DEFAULT
+        *Self::static_default()
     }
 }
 
@@ -79,8 +82,20 @@ impl BoxShadow {
         ctx.request_layout();
     }
 
+    /// Returns false if the shadow can be safely treated as non-existent.
+    ///
+    /// May have false positives.
+    pub fn is_visible(&self) -> bool {
+        let alpha = self.color.components[3];
+        alpha != 0.0
+    }
+
     /// Helper function to paint the shadow into a scene.
     pub fn paint(&self, scene: &mut Scene, transform: Affine, rect: RoundedRect) {
+        if !self.is_visible() {
+            return;
+        }
+
         let transform = transform.pre_translate(self.offset.to_vec2());
         let blur_radius = self.blur_radius.max(0.);
 

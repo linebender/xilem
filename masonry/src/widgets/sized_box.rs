@@ -428,9 +428,8 @@ impl Widget for SizedBox {
         let background = self.background.clone().or_else(|| {
             // TODO - bg_rect should account for border width
             let bg_rect = ctx.size().to_rect();
-            props
-                .get::<Background>()
-                .map(|background| background.get_peniko_brush_for_rect(bg_rect))
+            // TODO - Remove `Some()`
+            Some(props.get::<Background>().get_peniko_brush_for_rect(bg_rect))
         });
 
         if let Some(background) = background {

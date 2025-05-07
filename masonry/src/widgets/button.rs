@@ -13,8 +13,8 @@ use vello::kurbo::Affine;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, Property, QueryCtx, TextEvent, Update, UpdateCtx,
-    Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
 use crate::properties::types::Gradient;
@@ -166,8 +166,8 @@ impl Widget for Button {
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let border = props.get::<BorderWidth>().unwrap_or(&Property::DEFAULT);
-        let padding = props.get::<Padding>().unwrap_or(&Property::DEFAULT);
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
         let shadow = props.get::<BoxShadow>();
 
         let initial_bc = bc;
@@ -196,7 +196,7 @@ impl Widget for Button {
 
         // TODO - pos = (size - label_size) / 2
 
-        if let Some(shadow) = shadow {
+        if shadow.is_visible() {
             ctx.set_paint_insets(shadow.get_insets());
         }
 
@@ -209,17 +209,12 @@ impl Widget for Button {
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
 
-        let border_color = props.get::<BorderColor>().unwrap_or(&Property::DEFAULT);
-        let border_width = props.get::<BorderWidth>().unwrap_or(&Property::DEFAULT);
-        let border_radius = props.get::<CornerRadius>().unwrap_or(&Property::DEFAULT);
+        let border_color = props.get::<BorderColor>();
+        let border_width = props.get::<BorderWidth>();
+        let border_radius = props.get::<CornerRadius>();
         let shadow = props.get::<BoxShadow>();
 
-        // TODO - Add DEFAULT_BACKGROUND_GRADIENT constant.
-        // Right now we can't because `.with_stops` isn't const-compatible.
-        let bg_gradient =
-            Gradient::new_linear(0.0).with_stops([theme::BUTTON_LIGHT, theme::BUTTON_DARK]);
-        let bg_gradient = Background::Gradient(bg_gradient);
-        let bg_gradient = props.get::<Background>().unwrap_or(&bg_gradient);
+        let bg_gradient = props.get::<Background>();
 
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
@@ -247,9 +242,7 @@ impl Widget for Button {
             *border_color
         };
 
-        if let Some(shadow) = shadow {
-            shadow.paint(scene, Affine::IDENTITY, bg_rect);
-        }
+        shadow.paint(scene, Affine::IDENTITY, bg_rect);
 
         let brush = bg_gradient.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);

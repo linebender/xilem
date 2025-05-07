@@ -20,7 +20,10 @@ pub struct Padding {
 }
 
 impl Property for Padding {
-    const DEFAULT: Self = Self::ZERO;
+    fn static_default() -> &'static Self {
+        static DEFAULT: Padding = Padding::ZERO;
+        &DEFAULT
+    }
 }
 
 impl From<f64> for Padding {
