@@ -7,7 +7,7 @@ use masonry_winit::core::Property;
 use masonry_winit::properties::types::Gradient;
 use masonry_winit::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, Padding,
+    DisabledBackground, HoveredBorderColor, Padding,
 };
 use vello::peniko::Color;
 
@@ -129,6 +129,15 @@ pub trait Style: Sized {
         Self: HasProperty<BorderColor>,
     {
         *self.property() = Some(BorderColor { color });
+        self
+    }
+
+    /// Set the element's border color when hovered.
+    fn hovered_border_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<HoveredBorderColor>,
+    {
+        *self.property() = Some(HoveredBorderColor(BorderColor { color }));
         self
     }
 

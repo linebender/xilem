@@ -154,7 +154,7 @@ impl Widget for Button {
         DisabledBackground::prop_changed(ctx, property_type);
         ActiveBackground::prop_changed(ctx, property_type);
         Background::prop_changed(ctx, property_type);
-        //HoveredBorderColor::prop_changed(ctx, property_type);
+        HoveredBorderColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
@@ -211,7 +211,6 @@ impl Widget for Button {
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
 
-        let border_color = props.get::<BorderColor>();
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
         let shadow = props.get::<BoxShadow>();
@@ -227,13 +226,10 @@ impl Widget for Button {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        // TODO - Handle hovered color with properties.
         let border_color = if is_hovered && !ctx.is_disabled() {
-            BorderColor {
-                color: theme::BORDER_LIGHT,
-            }
+            &props.get::<HoveredBorderColor>().0
         } else {
-            *border_color
+            props.get::<BorderColor>()
         };
 
         shadow.paint(scene, Affine::IDENTITY, bg_rect);
