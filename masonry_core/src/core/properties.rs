@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::TypeId;
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use std::default::Default;
 
@@ -18,7 +18,7 @@ use crate::util::AnySendMap;
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Default + Send + 'static {
+pub trait Property: Default + Send + Sync + 'static {
     /// A default value that can be stored in statics.
     ///
     /// Should be the same as [`Default::default()`].
