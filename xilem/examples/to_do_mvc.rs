@@ -8,6 +8,7 @@
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use winit::error::EventLoopError;
+use xilem::style::Style as _;
 use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, textbox};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, Xilem};
 
@@ -76,6 +77,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         first_line,
         tasks,
     ))
+    .padding(50.)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
