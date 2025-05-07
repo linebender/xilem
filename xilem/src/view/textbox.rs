@@ -1,10 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
+};
 use masonry::widgets;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::style::{HasProperty, Style};
 use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
@@ -26,6 +30,7 @@ where
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         insert_newline: InsertNewline::default(),
+        properties: Default::default(),
         // TODO?: disabled: false,
     }
 }
@@ -39,8 +44,41 @@ pub struct Textbox<State, Action> {
     text_brush: Brush,
     alignment: TextAlignment,
     insert_newline: InsertNewline,
+    properties: (
+        Option<Background>,
+        Option<DisabledBackground>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<BoxShadow>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    ),
     // TODO: add more attributes of `masonry::widgets::TextBox`
 }
+
+impl<S, A> Style for Textbox<S, A> {
+    type Props = (
+        Option<Background>,
+        Option<DisabledBackground>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<BoxShadow>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    );
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+impl<S, A> HasProperty<Background> for Textbox<S, A> {}
+impl<S, A> HasProperty<DisabledBackground> for Textbox<S, A> {}
+impl<S, A> HasProperty<BorderColor> for Textbox<S, A> {}
+impl<S, A> HasProperty<BorderWidth> for Textbox<S, A> {}
+impl<S, A> HasProperty<BoxShadow> for Textbox<S, A> {}
+impl<S, A> HasProperty<CornerRadius> for Textbox<S, A> {}
+impl<S, A> HasProperty<Padding> for Textbox<S, A> {}
 
 impl<State, Action> Textbox<State, Action> {
     /// Set the brush used to paint the text.
