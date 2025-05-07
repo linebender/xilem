@@ -422,16 +422,15 @@ fn main() {
     };
 
     let mut default_properties = default_property_set();
-    default_properties.insert::<RootWidget<dyn Widget>, _>(Background::Color(
-        AlphaColor::from_str("#794869").unwrap(),
-    ));
-    default_properties.insert::<RootWidget<dyn Widget>, _>(Padding::all(2.0));
+    default_properties
+        .insert::<RootWidget, _>(Background::Color(AlphaColor::from_str("#794869").unwrap()));
+    default_properties.insert::<RootWidget, _>(Padding::all(2.0));
 
     let event_loop = masonry::app::EventLoop::with_user_event().build().unwrap();
     masonry::app::run_with(
         event_loop,
         window_attributes,
-        RootWidget::new_dyn(build_calc()),
+        RootWidget::new(build_calc()),
         calc_state,
         default_properties,
         Color::BLACK,

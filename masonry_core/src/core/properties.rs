@@ -20,13 +20,13 @@ use super::Widget;
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
 pub trait Property: Default + 'static {
-    /// A default value that can be stored in statics.
+    /// A static reference to a default value.
     ///
     /// Should be the same as [`Default::default()`].
     ///
     /// **Note:** This is a hacky workaround until we find a better way to store default
     /// values for properties.
-    const DEFAULT: Self;
+    fn static_default() -> &'static Self;
 }
 
 /// A collection of properties that a widget can be created with.
@@ -99,10 +99,17 @@ impl PropertiesRef<'_> {
 
     /// Get value of property `P`.
     ///
-    /// Returns Some if either the widget or the default property set has an entry for `P`.
-    /// Returns `None` otherwise.
-    pub fn get<P: Property>(&self) -> Option<&P> {
-        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
+    /// If the widget has an entry for `P`, returns that entry.
+    /// If the default property set has an entry for `P`, returns that entry.
+    /// Otherwise returns [`Property::static_default()`].
+    pub fn get<P: Property>(&self) -> &P {
+        if let Some(p) = self.map.get::<P>() {
+            p
+        } else if let Some(p) = self.default_map.get::<P>() {
+            p
+        } else {
+            P::static_default()
+        }
     }
 }
 
@@ -116,10 +123,17 @@ impl PropertiesMut<'_> {
 
     /// Get value of property `P`.
     ///
-    /// Returns Some if either the widget or the default property set has an entry for `P`.
-    /// Returns `None` otherwise.
-    pub fn get<P: Property>(&self) -> Option<&P> {
-        self.map.get::<P>().or_else(|| self.default_map.get::<P>())
+    /// If the widget has an entry for `P`, returns that entry.
+    /// If the default property set has an entry for `P`, returns that entry.
+    /// Otherwise returns [`Property::static_default()`].
+    pub fn get<P: Property>(&self) -> &P {
+        if let Some(p) = self.map.get::<P>() {
+            p
+        } else if let Some(p) = self.default_map.get::<P>() {
+            p
+        } else {
+            P::static_default()
+        }
     }
 
     /// Set property `P` to given value. Returns the previous value if `P` was already set.

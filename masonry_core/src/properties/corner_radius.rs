@@ -13,7 +13,10 @@ pub struct CornerRadius {
 }
 
 impl Property for CornerRadius {
-    const DEFAULT: Self = Self { radius: 0. };
+    fn static_default() -> &'static Self {
+        static DEFAULT: CornerRadius = CornerRadius { radius: 0. };
+        &DEFAULT
+    }
 }
 
 impl CornerRadius {
