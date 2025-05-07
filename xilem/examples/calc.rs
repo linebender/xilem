@@ -279,13 +279,17 @@ fn expanded_button(
     is_digit: bool,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Calculator> {
-    const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
+    const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
+    const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
+    const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
-    let color = if is_digit { GRAY } else { BLUE };
+    let default_color = if is_digit { GRAY } else { BLUE };
+    let active_color = if is_digit { LIGHT_GRAY } else { LIGHT_BLUE };
     sized_box(
         button(text, callback)
-            .background_color(color)
+            .background_color(default_color)
+            .active_background_color(active_color)
             .corner_radius(10.)
             .border_color(Color::TRANSPARENT),
     )

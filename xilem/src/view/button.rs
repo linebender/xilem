@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub use masonry::core::PointerButton;
-use masonry::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding};
+use masonry::properties::{
+    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
+    DisabledBackground, Padding,
+};
 use masonry::widgets;
 use xilem_core::ViewPathTracker;
 
@@ -89,6 +92,7 @@ pub fn button_any_pointer<State, Action>(
 ///
 /// See `button` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
+#[expect(clippy::type_complexity, reason = "properties")]
 pub struct Button<F> {
     // N.B. This widget is *implemented* to handle any kind of view with an element
     // type of `Label` even though it currently does not do so.
@@ -96,6 +100,8 @@ pub struct Button<F> {
     callback: F,
     properties: (
         Option<Background>,
+        Option<ActiveBackground>,
+        Option<DisabledBackground>,
         Option<BorderColor>,
         Option<BorderWidth>,
         Option<BoxShadow>,
@@ -109,6 +115,8 @@ const LABEL_VIEW_ID: ViewId = ViewId::new(0);
 impl<F> Style for Button<F> {
     type Props = (
         Option<Background>,
+        Option<ActiveBackground>,
+        Option<DisabledBackground>,
         Option<BorderColor>,
         Option<BorderWidth>,
         Option<BoxShadow>,
@@ -122,6 +130,8 @@ impl<F> Style for Button<F> {
 }
 
 impl<F> HasProperty<Background> for Button<F> {}
+impl<F> HasProperty<ActiveBackground> for Button<F> {}
+impl<F> HasProperty<DisabledBackground> for Button<F> {}
 impl<F> HasProperty<BorderColor> for Button<F> {}
 impl<F> HasProperty<BorderWidth> for Button<F> {}
 impl<F> HasProperty<BoxShadow> for Button<F> {}

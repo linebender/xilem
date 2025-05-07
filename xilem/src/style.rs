@@ -5,7 +5,10 @@
 
 use masonry::core::Property;
 use masonry::properties::types::Gradient;
-use masonry::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding};
+use masonry::properties::{
+    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
+    DisabledBackground, Padding,
+};
 use vello::peniko::Color;
 
 use crate::property_tuple::PropertyTuple;
@@ -48,6 +51,61 @@ pub trait Style: Sized {
         Self: HasProperty<Background>,
     {
         *self.properties().property_mut() = Some(Background::Gradient(gradient));
+        self
+    }
+
+    /// Set the element's background color/gradient when pressed.
+    fn active_background(mut self, background: Background) -> Self
+    where
+        Self: HasProperty<ActiveBackground>,
+    {
+        *self.properties().property_mut() = Some(ActiveBackground(background));
+        self
+    }
+
+    /// Set the element's background color when pressed.
+    fn active_background_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<ActiveBackground>,
+    {
+        *self.properties().property_mut() = Some(ActiveBackground(Background::Color(color)));
+        self
+    }
+
+    /// Set the element's background gradient when pressed.
+    fn active_background_gradient(mut self, gradient: Gradient) -> Self
+    where
+        Self: HasProperty<ActiveBackground>,
+    {
+        *self.properties().property_mut() = Some(ActiveBackground(Background::Gradient(gradient)));
+        self
+    }
+
+    /// Set the element's background color/gradient when disabled.
+    fn disabled_background(mut self, background: Background) -> Self
+    where
+        Self: HasProperty<DisabledBackground>,
+    {
+        *self.properties().property_mut() = Some(DisabledBackground(background));
+        self
+    }
+
+    /// Set the element's background color when disabled.
+    fn disabled_background_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<DisabledBackground>,
+    {
+        *self.properties().property_mut() = Some(DisabledBackground(Background::Color(color)));
+        self
+    }
+
+    /// Set the element's background gradient when disabled.
+    fn disabled_background_gradient(mut self, gradient: Gradient) -> Self
+    where
+        Self: HasProperty<DisabledBackground>,
+    {
+        *self.properties().property_mut() =
+            Some(DisabledBackground(Background::Gradient(gradient)));
         self
     }
 

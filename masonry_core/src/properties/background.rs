@@ -19,6 +19,16 @@ pub enum Background {
     Gradient(Gradient),
 }
 
+/// The background color/gradient a widget takes when the user is clicking or otherwise using it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ActiveBackground(pub Background);
+
+/// The background color/gradient a widget takes when disabled.
+#[derive(Clone, Debug, PartialEq)]
+pub struct DisabledBackground(pub Background);
+
+// ---
+
 impl Property for Background {
     fn static_default() -> &'static Self {
         // This matches the CSS default.
@@ -54,5 +64,59 @@ impl Background {
             Self::Color(color) => (*color).into(),
             Self::Gradient(gradient) => gradient.get_peniko_gradient_for_rect(rect).into(),
         }
+    }
+}
+
+// ---
+
+impl Property for ActiveBackground {
+    fn static_default() -> &'static Self {
+        // This matches the CSS default.
+        const DEFAULT: ActiveBackground =
+            ActiveBackground(Background::Color(AlphaColor::TRANSPARENT));
+        &DEFAULT
+    }
+}
+
+impl Default for ActiveBackground {
+    fn default() -> Self {
+        Self::static_default().clone()
+    }
+}
+
+impl ActiveBackground {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_paint_only();
+    }
+}
+
+// ---
+
+impl Property for DisabledBackground {
+    fn static_default() -> &'static Self {
+        // This matches the CSS default.
+        const DEFAULT: DisabledBackground =
+            DisabledBackground(Background::Color(AlphaColor::TRANSPARENT));
+        &DEFAULT
+    }
+}
+
+impl Default for DisabledBackground {
+    fn default() -> Self {
+        Self::static_default().clone()
+    }
+}
+
+impl DisabledBackground {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_paint_only();
     }
 }
