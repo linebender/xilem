@@ -12,6 +12,7 @@ use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::core::fork;
+use xilem::style::Style as _;
 use xilem::view::{
     Axis, FlexExt, FlexSpacer, button, flex, inline_prose, label, portal, prose, sized_box, task,
     variable_label,
@@ -37,7 +38,7 @@ struct TimeZone {
 }
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
-    let view = sized_box(flex((
+    let view = flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
         local_time(data),
@@ -47,7 +48,7 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
             TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
         ))
         .flex(1.),
-    )))
+    ))
     .padding(10.0);
     fork(
         view,

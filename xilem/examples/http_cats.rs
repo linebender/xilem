@@ -16,6 +16,7 @@ use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
+use xilem::style::Style;
 use xilem::view::{
     Axis, FlexSpacer, Padding, ZStackExt, button, flex, image, inline_prose, portal, prose,
     sized_box, spinner, split, worker, zstack,
@@ -47,14 +48,16 @@ enum ImageState {
 
 impl HttpCats {
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
-        let left_column = sized_box(portal(flex((
-            prose("Status"),
-            self.statuses
-                .iter_mut()
-                .map(Status::list_view)
-                .collect::<Vec<_>>(),
-        ))))
-        .padding(Padding::left(5.));
+        let left_column = portal(
+            flex((
+                prose("Status"),
+                self.statuses
+                    .iter_mut()
+                    .map(Status::list_view)
+                    .collect::<Vec<_>>(),
+            ))
+            .padding(Padding::left(5.)),
+        );
 
         let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =

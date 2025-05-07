@@ -3,6 +3,8 @@
 
 //! A widget that arranges its children in a one-dimensional array.
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
@@ -12,9 +14,12 @@ use vello::kurbo::{Affine, Line, Stroke, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Point, Rect, Size};
+use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::util::{fill, stroke};
 
 /// A container with either horizontal or vertical layout.
 ///
@@ -990,12 +995,32 @@ impl Widget for Flex {
         }
     }
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        Background::prop_changed(ctx, property_type);
+        BorderColor::prop_changed(ctx, property_type);
+        BorderWidth::prop_changed(ctx, property_type);
+        CornerRadius::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
+    }
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+
+        let bc = *bc;
+        let bc = border.layout_down(bc);
+        let bc = padding.layout_down(bc);
+
+        // Indicates that the box constrains for the following children have changed.
+        // Therefore they have to calculate layout again.
+        let bc_changed = self.old_bc != bc;
+        self.old_bc = bc;
+
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
 
@@ -1006,11 +1031,7 @@ impl Widget for Flex {
         let mut max_below_baseline = 0_f64;
         let mut any_use_baseline = false;
 
-        // indicates that the box constrains for the following children have changed. Therefore they
-        // have to calculate layout again.
-        let bc_changed = self.old_bc != *bc;
-        let mut any_changed = bc_changed;
-        self.old_bc = *bc;
+        let mut any_changed = bc_changed || ctx.needs_layout();
 
         let gap = self.gap.unwrap_or(axis_default_spacer(self.direction));
         // The gaps are only between the items, so 2 children means 1 gap.
@@ -1188,7 +1209,10 @@ impl Widget for Flex {
                     };
 
                     let child_pos: Point = self.direction.pack(major, child_minor_offset).into();
+                    let child_pos = border.place_down(child_pos);
+                    let child_pos = padding.place_down(child_pos);
                     ctx.place_child(widget, child_pos);
+
                     child_paint_rect = child_paint_rect.union(ctx.widget_state.paint_rect());
                     major += self.direction.major(child_size).expand();
                     major += spacing.next().unwrap_or(0.);
@@ -1226,7 +1250,7 @@ impl Widget for Flex {
         let insets = child_paint_rect - my_bounds;
         ctx.set_paint_insets(insets);
 
-        let baseline_offset = match self.direction {
+        let baseline = match self.direction {
             Axis::Horizontal => max_below_baseline,
             Axis::Vertical => self
                 .children
@@ -1245,11 +1269,25 @@ impl Widget for Flex {
                 .unwrap_or(0.0),
         };
 
-        ctx.set_baseline_offset(baseline_offset);
+        let (my_size, baseline) = padding.layout_up(my_size, baseline);
+        let (my_size, baseline) = border.layout_up(my_size, baseline);
+        ctx.set_baseline_offset(baseline);
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let border_width = props.get::<BorderWidth>();
+        let border_radius = props.get::<CornerRadius>();
+        let bg = props.get::<Background>();
+        let border_color = props.get::<BorderColor>();
+
+        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
+        let border_rect = border_width.border_rect(ctx.size(), border_radius);
+
+        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
+        fill(scene, &bg_rect, &brush);
+        stroke(scene, &border_rect, border_color.color, border_width.width);
+
         // paint the baseline if we're debugging layout
         if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
             let color = ctx.debug_color();
