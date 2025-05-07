@@ -17,7 +17,6 @@ use crate::core::{
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
-use crate::properties::types::Gradient;
 use crate::properties::*;
 use crate::theme;
 use crate::util::{fill, stroke};
@@ -152,6 +151,8 @@ impl Widget for Button {
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+        DisabledBackground::prop_changed(ctx, property_type);
+        ActiveBackground::prop_changed(ctx, property_type);
         Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
@@ -214,29 +215,20 @@ impl Widget for Button {
         let border_radius = props.get::<CornerRadius>().unwrap_or(&Property::DEFAULT);
         let shadow = props.get::<BoxShadow>();
 
-        // TODO - Add DEFAULT_BACKGROUND_GRADIENT constant.
-        // Right now we can't because `.with_stops` isn't const-compatible.
-        let bg_gradient =
-            Gradient::new_linear(0.0).with_stops([theme::BUTTON_LIGHT, theme::BUTTON_DARK]);
-        let bg_gradient = Background::Gradient(bg_gradient);
-        let bg_gradient = props.get::<Background>().unwrap_or(&bg_gradient);
+        // FIXME - Remove
+        static DEFAULT_BG: Background = Background::DEFAULT;
+
+        let bg = if ctx.is_disabled() {
+            props.get::<DisabledBackground>().map(|bg| &bg.0)
+        } else if is_pressed {
+            props.get::<ActiveBackground>().map(|bg| &bg.0)
+        } else {
+            props.get::<Background>()
+        };
+        let bg = bg.unwrap_or(&DEFAULT_BG);
 
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
-
-        // TODO - Handle disabled and pressed bg with properties.
-        let bg_gradient = if ctx.is_disabled() {
-            &Background::Gradient(
-                Gradient::new_linear(0.0)
-                    .with_stops([theme::DISABLED_BUTTON_LIGHT, theme::DISABLED_BUTTON_DARK]),
-            )
-        } else if is_pressed {
-            &Background::Gradient(
-                Gradient::new_linear(0.0).with_stops([theme::BUTTON_DARK, theme::BUTTON_LIGHT]),
-            )
-        } else {
-            bg_gradient
-        };
 
         // TODO - Handle hovered color with properties.
         let border_color = if is_hovered && !ctx.is_disabled() {
@@ -251,7 +243,7 @@ impl Widget for Button {
             shadow.paint(scene, Affine::IDENTITY, bg_rect);
         }
 
-        let brush = bg_gradient.get_peniko_brush_for_rect(bg_rect.rect());
+        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
     }
