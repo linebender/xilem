@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use masonry::app::{AppDriver, MasonryUserEvent};
 use masonry::peniko::Color;
+use masonry::theme::default_property_set;
 use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
@@ -138,8 +139,13 @@ fn main() -> Result<(), EventLoopError> {
     let event_loop = EventLoop::with_user_event().build().unwrap();
     let proxy = MasonryProxy::new(event_loop.create_proxy());
     let (widget, driver) = xilem.into_driver(Arc::new(proxy));
-    let masonry_state =
-        masonry::app::MasonryState::new(window_attributes, &event_loop, widget, Color::BLACK);
+    let masonry_state = masonry::app::MasonryState::new(
+        window_attributes,
+        &event_loop,
+        widget,
+        default_property_set(),
+        Color::BLACK,
+    );
 
     let mut app = ExternalApp {
         masonry_state,
