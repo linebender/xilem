@@ -3,6 +3,10 @@
 
 //! A simple calculator example
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Seems to prevent patterns we'd want to use."
+)]
 
 use masonry_winit::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
