@@ -20,13 +20,16 @@ pub enum Background {
 }
 
 impl Property for Background {
-    // This matches the CSS default.
-    const DEFAULT: Self = Self::Color(AlphaColor::TRANSPARENT);
+    fn static_default() -> &'static Self {
+        // This matches the CSS default.
+        const DEFAULT: Background = Background::Color(AlphaColor::TRANSPARENT);
+        &DEFAULT
+    }
 }
 
 impl Default for Background {
     fn default() -> Self {
-        Self::DEFAULT
+        Self::static_default().clone()
     }
 }
 
