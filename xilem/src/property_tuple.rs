@@ -21,7 +21,7 @@ pub trait PropertyTuple {
     ///
     /// ## Panic
     ///
-    /// Panics if `Self` does not have an item fo type `P`.
+    /// Panics if `Self` does not have an item of type `P`.
     fn property_mut<P: Property>(&mut self) -> &mut Option<P>;
 }
 
