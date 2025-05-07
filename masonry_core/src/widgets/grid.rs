@@ -151,36 +151,36 @@ impl Grid {
     /// Add a child widget.
     ///
     /// See also [`with_child`](Grid::with_child).
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
+    pub fn add_child(self: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
         let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
-        Self::add_child_pod(this, child_pod, params);
+        self.add_child_pod(child_pod, params);
     }
 
     /// Add a child widget with a pre-assigned id.
     ///
     /// See also [`with_child_id`](Grid::with_child_id).
     pub fn add_child_id(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         child: impl Widget,
         id: WidgetId,
         params: GridParams,
     ) {
         let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
-        Self::add_child_pod(this, child_pod, params);
+        self.add_child_pod(child_pod, params);
     }
 
     /// Add a child widget already wrapped in a [`WidgetPod`].
     ///
     /// See also [`with_child_pod`](Grid::with_child_pod).
     pub fn add_child_pod(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         widget: WidgetPod<dyn Widget>,
         params: GridParams,
     ) {
         let child = new_grid_child(params, widget);
-        this.widget.children.push(child);
-        this.ctx.children_changed();
-        this.ctx.request_layout();
+        self.widget.children.push(child);
+        self.ctx.children_changed();
+        self.ctx.request_layout();
     }
 
     /// Insert a child widget at the given index.
@@ -192,12 +192,12 @@ impl Grid {
     ///
     /// Panics if the index is larger than the number of children.
     pub fn insert_grid_child_at(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: impl Widget,
         params: impl Into<GridParams>,
     ) {
-        Self::insert_grid_child_pod(this, idx, WidgetPod::new(child).erased(), params);
+        self.insert_grid_child_pod(idx, WidgetPod::new(child).erased(), params);
     }
 
     /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.
@@ -209,35 +209,35 @@ impl Grid {
     ///
     /// Panics if the index is larger than the number of children.
     pub fn insert_grid_child_pod(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         idx: usize,
         child: WidgetPod<dyn Widget>,
         params: impl Into<GridParams>,
     ) {
         let child = new_grid_child(params.into(), child);
-        this.widget.children.insert(idx, child);
-        this.ctx.children_changed();
-        this.ctx.request_layout();
+        self.widget.children.insert(idx, child);
+        self.ctx.children_changed();
+        self.ctx.request_layout();
     }
 
     /// Set the spacing between grid items.
-    pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: f64) {
-        this.widget.grid_spacing = spacing;
-        this.ctx.request_layout();
+    pub fn set_spacing(self: &mut WidgetMut<'_, Self>, spacing: f64) {
+        self.widget.grid_spacing = spacing;
+        self.ctx.request_layout();
     }
 
     // TODO - Some of these method names should maybe be changed.
     // "height" and "width" are misleading, since they suggest a pixel size.
     /// Set the number of columns of the grid.
-    pub fn set_width(this: &mut WidgetMut<'_, Self>, width: i32) {
-        this.widget.grid_width = width;
-        this.ctx.request_layout();
+    pub fn set_width(self: &mut WidgetMut<'_, Self>, width: i32) {
+        self.widget.grid_width = width;
+        self.ctx.request_layout();
     }
 
     /// Set the number of rows of the grid.
-    pub fn set_height(this: &mut WidgetMut<'_, Self>, height: i32) {
-        this.widget.grid_height = height;
-        this.ctx.request_layout();
+    pub fn set_height(self: &mut WidgetMut<'_, Self>, height: i32) {
+        self.widget.grid_height = height;
+        self.ctx.request_layout();
     }
 
     /// Get a mutable reference to the child at `idx`.
@@ -246,11 +246,11 @@ impl Grid {
     ///
     /// Panics if `idx` is out of bounds.
     pub fn child_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
+        self: &'t mut WidgetMut<'_, Self>,
         idx: usize,
     ) -> WidgetMut<'t, dyn Widget> {
-        let child = &mut this.widget.children[idx].widget;
-        this.ctx.get_mut(child)
+        let child = &mut self.widget.children[idx].widget;
+        self.ctx.get_mut(child)
     }
 
     /// Updates the grid parameters for the child at `idx`,
@@ -259,13 +259,13 @@ impl Grid {
     ///
     /// Panics if the element at `idx` is not a widget.
     pub fn update_child_grid_params(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         idx: usize,
         params: GridParams,
     ) {
-        let child = &mut this.widget.children[idx];
+        let child = &mut self.widget.children[idx];
         child.update_params(params);
-        this.ctx.request_layout();
+        self.ctx.request_layout();
     }
 
     /// Removes a child widget at the given index.
@@ -273,10 +273,10 @@ impl Grid {
     /// # Panics
     ///
     /// Panics if the index is out of bounds.
-    pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        let child = this.widget.children.remove(idx);
-        this.ctx.remove_child(child.widget);
-        this.ctx.request_layout();
+    pub fn remove_child(self: &mut WidgetMut<'_, Self>, idx: usize) {
+        let child = self.widget.children.remove(idx);
+        self.ctx.remove_child(child.widget);
+        self.ctx.request_layout();
     }
 }
 

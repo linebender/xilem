@@ -331,12 +331,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// This is the runtime equivalent of [`with_style`](Self::with_style).
     #[track_caller]
     pub fn insert_style(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
     ) -> Option<StyleProperty> {
-        let old = this.widget.insert_style_inner(property.into());
+        let old = self.widget.insert_style_inner(property.into());
 
-        this.ctx.request_layout();
+        self.ctx.request_layout();
         old
     }
 
@@ -346,10 +346,10 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// In most cases, these are the defaults for this widget.
     ///
     /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
-    pub fn retain_styles(this: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
-        this.widget.editor.edit_styles().retain(f);
+    pub fn retain_styles(self: &mut WidgetMut<'_, Self>, f: impl FnMut(&StyleProperty) -> bool) {
+        self.widget.editor.edit_styles().retain(f);
 
-        this.ctx.request_layout();
+        self.ctx.request_layout();
     }
 
     /// Remove the style with the discriminant `property`.
@@ -363,12 +363,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ///
     /// Of note, behaviour is unspecified for unsetting the [`FontSize`](parley::StyleProperty::FontSize).
     pub fn remove_style(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         property: Discriminant<StyleProperty>,
     ) -> Option<StyleProperty> {
-        let old = this.widget.editor.edit_styles().remove(property);
+        let old = self.widget.editor.edit_styles().remove(property);
 
-        this.ctx.request_layout();
+        self.ctx.request_layout();
         old
     }
 
@@ -376,20 +376,20 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ///
     /// This is likely to be disruptive if the user is focused on this widget,
     /// as it does not retain selections, and may cause undesirable interactions with IME.
-    pub fn reset_text(this: &mut WidgetMut<'_, Self>, new_text: &str) {
+    pub fn reset_text(self: &mut WidgetMut<'_, Self>, new_text: &str) {
         // If the IME is currently composing, we need to clear the compose first. This is quite
         // disruptive, but we've warned about that. The platform's state is not reset, and the
         // preedit will show up again when the platform updates it.
-        if this.widget.editor.is_composing() {
-            let (fctx, lctx) = this.ctx.text_contexts();
-            this.widget.editor.driver(fctx, lctx).clear_compose();
+        if self.widget.editor.is_composing() {
+            let (fctx, lctx) = self.ctx.text_contexts();
+            self.widget.editor.driver(fctx, lctx).clear_compose();
         }
-        this.widget.editor.set_text(new_text);
+        self.widget.editor.set_text(new_text);
 
-        let (fctx, lctx) = this.ctx.text_contexts();
-        this.widget.editor.driver(fctx, lctx).move_to_text_end();
+        let (fctx, lctx) = self.ctx.text_contexts();
+        self.widget.editor.driver(fctx, lctx).move_to_text_end();
 
-        this.ctx.request_layout();
+        self.ctx.request_layout();
     }
 
     /// Control [word wrapping](https://en.wikipedia.org/wiki/Line_wrap_and_word_wrap) for the text area.
@@ -402,15 +402,15 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// so it is recommended to leave word wrapping enabled.
     ///
     /// The runtime equivalent of [`with_word_wrap`](Self::with_word_wrap).
-    pub fn set_word_wrap(this: &mut WidgetMut<'_, Self>, wrap_words: bool) {
-        this.widget.word_wrap = wrap_words;
+    pub fn set_word_wrap(self: &mut WidgetMut<'_, Self>, wrap_words: bool) {
+        self.widget.word_wrap = wrap_words;
         let width = if wrap_words {
-            this.widget.last_available_width
+            self.widget.last_available_width
         } else {
             None
         };
-        this.widget.editor.set_width(width);
-        this.ctx.request_layout();
+        self.widget.editor.set_width(width);
+        self.ctx.request_layout();
     }
 
     /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
@@ -418,10 +418,10 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// Text alignment might have unexpected results when the text area has no horizontal constraints.
     ///
     /// The runtime equivalent of [`with_alignment`](Self::with_alignment).
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
-        this.widget.editor.set_alignment(alignment);
+    pub fn set_alignment(self: &mut WidgetMut<'_, Self>, alignment: Alignment) {
+        self.widget.editor.set_alignment(alignment);
 
-        this.ctx.request_layout();
+        self.ctx.request_layout();
     }
 
     /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
@@ -436,13 +436,13 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// In most cases, this will be the text's color, but gradients and images are also supported.
     ///
     /// The runtime equivalent of [`with_brush`](Self::with_brush).
-    pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
+    pub fn set_brush(self: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         let brush = brush.into();
-        this.widget.brush = brush;
+        self.widget.brush = brush;
 
         // We need to repaint unless the disabled brush is currently being used.
-        if this.widget.disabled_brush.is_none() || !this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
+        if self.widget.disabled_brush.is_none() || !self.ctx.is_disabled() {
+            self.ctx.request_paint_only();
         }
     }
 
@@ -451,12 +451,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// If this is `None`, the [normal brush](Self::set_brush) will be used.
     ///
     /// The runtime equivalent of [`with_disabled_brush`](Self::with_disabled_brush).
-    pub fn set_disabled_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
+    pub fn set_disabled_brush(self: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
         let brush = brush.into();
-        this.widget.disabled_brush = brush;
+        self.widget.disabled_brush = brush;
 
-        if this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
+        if self.ctx.is_disabled() {
+            self.ctx.request_paint_only();
         }
     }
 
@@ -464,9 +464,9 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     ///
     /// The runtime equivalent of [`with_hint`](Self::with_hint).
     /// For full documentation, see that method.
-    pub fn set_hint(this: &mut WidgetMut<'_, Self>, hint: bool) {
-        this.widget.hint = hint;
-        this.ctx.request_paint_only();
+    pub fn set_hint(self: &mut WidgetMut<'_, Self>, hint: bool) {
+        self.widget.hint = hint;
+        self.ctx.request_paint_only();
     }
 
     /// Set the padding around the text.
@@ -474,23 +474,23 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// This is the area outside the tight bound on the text where pointer events will be detected.
     ///
     /// The runtime equivalent of [`with_padding`](Self::with_padding).
-    pub fn set_padding(this: &mut WidgetMut<'_, Self>, padding: impl Into<Padding>) {
-        this.widget.padding = padding.into();
+    pub fn set_padding(self: &mut WidgetMut<'_, Self>, padding: impl Into<Padding>) {
+        self.widget.padding = padding.into();
         // TODO: We could reset the width available to the editor here directly.
         // Determine whether there's any advantage to that
-        this.ctx.request_layout();
+        self.ctx.request_layout();
     }
 
     /// Set the selection to the given byte range.
     ///
     /// No-op if either index is not a char boundary.
-    pub fn select_byte_range(this: &mut WidgetMut<'_, Self>, start: usize, end: usize) {
-        let (fctx, lctx) = this.ctx.text_contexts();
-        this.widget
+    pub fn select_byte_range(self: &mut WidgetMut<'_, Self>, start: usize, end: usize) {
+        let (fctx, lctx) = self.ctx.text_contexts();
+        self.widget
             .editor
             .driver(fctx, lctx)
             .select_byte_range(start, end);
-        this.ctx.request_render();
+        self.ctx.request_render();
     }
 
     /// Set the selection to the first instance of the given text.
@@ -498,12 +498,12 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// This is mostly useful for testing.
     ///
     /// No-op if the text isn't found.
-    pub fn select_text(this: &mut WidgetMut<'_, Self>, text: &str) {
-        let Some(start) = this.widget.text().to_string().find(text) else {
+    pub fn select_text(self: &mut WidgetMut<'_, Self>, text: &str) {
+        let Some(start) = self.widget.text().to_string().find(text) else {
             return;
         };
         let end = start + text.len();
-        Self::select_byte_range(this, start, end);
+        self.select_byte_range(start, end);
     }
 }
 

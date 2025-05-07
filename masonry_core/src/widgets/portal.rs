@@ -174,35 +174,35 @@ impl<W: Widget + ?Sized> Portal<W> {
 // --- MARK: WIDGETMUT ---
 impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     #[expect(missing_docs, reason = "TODO")]
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
-        this.ctx.get_mut(&mut this.widget.child)
+    pub fn child_mut<'t>(self: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
+        self.ctx.get_mut(&mut self.widget.child)
     }
 
     #[expect(missing_docs, reason = "TODO")]
     pub fn horizontal_scrollbar_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
+        self: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
-        this.ctx.get_mut(&mut this.widget.scrollbar_horizontal)
+        self.ctx.get_mut(&mut self.widget.scrollbar_horizontal)
     }
 
     #[expect(missing_docs, reason = "TODO")]
     pub fn vertical_scrollbar_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
+        self: &'t mut WidgetMut<'_, Self>,
     ) -> WidgetMut<'t, ScrollBar> {
-        this.ctx.get_mut(&mut this.widget.scrollbar_vertical)
+        self.ctx.get_mut(&mut self.widget.scrollbar_vertical)
     }
 
     // TODO - rewrite doc
     /// Set whether to constrain the child horizontally.
-    pub fn set_constrain_horizontal(this: &mut WidgetMut<'_, Self>, constrain: bool) {
-        this.widget.constrain_horizontal = constrain;
-        this.ctx.request_layout();
+    pub fn set_constrain_horizontal(self: &mut WidgetMut<'_, Self>, constrain: bool) {
+        self.widget.constrain_horizontal = constrain;
+        self.ctx.request_layout();
     }
 
     /// Set whether to constrain the child vertically.
-    pub fn set_constrain_vertical(this: &mut WidgetMut<'_, Self>, constrain: bool) {
-        this.widget.constrain_vertical = constrain;
-        this.ctx.request_layout();
+    pub fn set_constrain_vertical(self: &mut WidgetMut<'_, Self>, constrain: bool) {
+        self.widget.constrain_vertical = constrain;
+        self.ctx.request_layout();
     }
 
     /// Set whether the child's size must be greater than or equal the size of
@@ -211,45 +211,45 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     /// See [`content_must_fill`] for more details.
     ///
     /// [`content_must_fill`]: Portal::content_must_fill
-    pub fn set_content_must_fill(this: &mut WidgetMut<'_, Self>, must_fill: bool) {
-        this.widget.must_fill = must_fill;
-        this.ctx.request_layout();
+    pub fn set_content_must_fill(self: &mut WidgetMut<'_, Self>, must_fill: bool) {
+        self.widget.must_fill = must_fill;
+        self.ctx.request_layout();
     }
 
     #[expect(missing_docs, reason = "TODO")]
-    pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
-        let portal_size = this.ctx.local_layout_rect().size();
-        let content_size = this
+    pub fn set_viewport_pos(self: &mut WidgetMut<'_, Self>, position: Point) -> bool {
+        let portal_size = self.ctx.local_layout_rect().size();
+        let content_size = self
             .ctx
-            .get_mut(&mut this.widget.child)
+            .get_mut(&mut self.widget.child)
             .ctx
             .local_layout_rect()
             .size();
 
-        let pos_changed = this
+        let pos_changed = self
             .widget
             .set_viewport_pos_raw(portal_size, content_size, position);
         if pos_changed {
-            let progress_x = this.widget.viewport_pos.x / (content_size - portal_size).width;
-            Self::horizontal_scrollbar_mut(this).widget.cursor_progress = progress_x;
-            Self::horizontal_scrollbar_mut(this).ctx.request_render();
-            let progress_y = this.widget.viewport_pos.y / (content_size - portal_size).height;
-            Self::vertical_scrollbar_mut(this).widget.cursor_progress = progress_y;
-            Self::vertical_scrollbar_mut(this).ctx.request_render();
-            this.ctx.request_layout();
+            let progress_x = self.widget.viewport_pos.x / (content_size - portal_size).width;
+            self.horizontal_scrollbar_mut().widget.cursor_progress = progress_x;
+            self.horizontal_scrollbar_mut().ctx.request_render();
+            let progress_y = self.widget.viewport_pos.y / (content_size - portal_size).height;
+            self.vertical_scrollbar_mut().widget.cursor_progress = progress_y;
+            self.vertical_scrollbar_mut().ctx.request_render();
+            self.ctx.request_layout();
         }
         pos_changed
     }
 
     #[expect(missing_docs, reason = "TODO")]
-    pub fn pan_viewport_by(this: &mut WidgetMut<'_, Self>, translation: Vec2) -> bool {
-        Self::set_viewport_pos(this, this.widget.viewport_pos + translation)
+    pub fn pan_viewport_by(self: &mut WidgetMut<'_, Self>, translation: Vec2) -> bool {
+        self.set_viewport_pos(self.widget.viewport_pos + translation)
     }
 
     #[expect(missing_docs, reason = "TODO")]
     // Note - Rect is in child coordinates
-    pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
-        let viewport = Rect::from_origin_size(this.widget.viewport_pos, this.ctx.widget_state.size);
+    pub fn pan_viewport_to(self: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
+        let viewport = Rect::from_origin_size(self.widget.viewport_pos, self.ctx.widget_state.size);
 
         let new_pos_x = compute_pan_range(
             viewport.min_x()..viewport.max_x(),
@@ -262,7 +262,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
         )
         .start;
 
-        Self::set_viewport_pos(this, Point::new(new_pos_x, new_pos_y))
+        self.set_viewport_pos(Point::new(new_pos_x, new_pos_y))
     }
 }
 

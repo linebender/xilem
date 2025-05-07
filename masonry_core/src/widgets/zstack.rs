@@ -225,72 +225,72 @@ impl ZStack {
     ///
     /// See also [`with_child`][Self::with_child].
     pub fn add_child(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         child: impl Widget,
         alignment: impl Into<ChildAlignment>,
     ) {
         let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
-        Self::insert_child_pod(this, child_pod, alignment);
+        self.insert_child_pod(child_pod, alignment);
     }
 
     /// Add a child widget with a given `id` to the `ZStack`.
     ///
     /// See [`Self::add_child`] for more details.
     pub fn add_child_id(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         child: impl Widget,
         id: WidgetId,
         alignment: impl Into<ChildAlignment>,
     ) {
         let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
-        Self::insert_child_pod(this, child_pod, alignment);
+        self.insert_child_pod(child_pod, alignment);
     }
 
     /// Add a child widget to the `ZStack`.
     pub fn insert_child_pod(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         widget: WidgetPod<dyn Widget>,
         alignment: impl Into<ChildAlignment>,
     ) {
         let child = Child::new(widget, alignment.into());
-        this.widget.children.push(child);
-        this.ctx.children_changed();
-        this.ctx.request_layout();
+        self.widget.children.push(child);
+        self.ctx.children_changed();
+        self.ctx.request_layout();
     }
 
     /// Remove a child from the `ZStack`.
-    pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        let child = this.widget.children.remove(idx);
-        this.ctx.remove_child(child.widget);
-        this.ctx.request_layout();
+    pub fn remove_child(self: &mut WidgetMut<'_, Self>, idx: usize) {
+        let child = self.widget.children.remove(idx);
+        self.ctx.remove_child(child.widget);
+        self.ctx.request_layout();
     }
 
     /// Get a mutable reference to a child of the `ZStack`.
     pub fn child_mut<'t>(
-        this: &'t mut WidgetMut<'_, Self>,
+        self: &'t mut WidgetMut<'_, Self>,
         idx: usize,
     ) -> Option<WidgetMut<'t, dyn Widget>> {
-        let child = &mut this.widget.children[idx].widget;
-        Some(this.ctx.get_mut(child))
+        let child = &mut self.widget.children[idx].widget;
+        Some(self.ctx.get_mut(child))
     }
 
     /// Change the alignment of the `ZStack`.
     ///
     /// See also [`with_alignment`][Self::with_alignment].
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: impl Into<Alignment>) {
-        this.widget.alignment = alignment.into();
-        this.ctx.request_layout();
+    pub fn set_alignment(self: &mut WidgetMut<'_, Self>, alignment: impl Into<Alignment>) {
+        self.widget.alignment = alignment.into();
+        self.ctx.request_layout();
     }
 
     /// Change the alignment of a child of the `ZStack`.
     pub fn update_child_alignment(
-        this: &mut WidgetMut<'_, Self>,
+        self: &mut WidgetMut<'_, Self>,
         idx: usize,
         alignment: impl Into<ChildAlignment>,
     ) {
-        let child = &mut this.widget.children[idx];
+        let child = &mut self.widget.children[idx];
         child.update_alignment(alignment.into());
-        this.ctx.request_layout();
+        self.ctx.request_layout();
     }
 }
 

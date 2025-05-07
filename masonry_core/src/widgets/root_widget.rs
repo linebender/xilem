@@ -39,8 +39,8 @@ impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
 
 impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
     /// Get a mutable reference to the child widget.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
-        this.ctx.get_mut(&mut this.widget.pod)
+    pub fn child_mut<'t>(self: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
+        self.ctx.get_mut(&mut self.widget.pod)
     }
 }
 
