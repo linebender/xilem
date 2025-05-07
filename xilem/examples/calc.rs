@@ -8,7 +8,11 @@
     reason = "Seems to prevent patterns we'd want to use."
 )]
 
-use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
+use std::str::FromStr;
+
+use masonry::properties::Background;
+use masonry::theme::default_property_set;
+use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment, RootWidget};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
@@ -325,7 +329,11 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         operation: None,
     };
 
-    let app = Xilem::new(data, app_logic);
+    let mut default_properties = default_property_set();
+    default_properties
+        .insert::<RootWidget, _>(Background::Color(Color::from_str("#794869").unwrap()));
+
+    let app = Xilem::new(data, app_logic).with_default_properties(default_properties);
     let min_window_size = LogicalSize::new(200., 200.);
     let window_size = LogicalSize::new(400., 500.);
     let window_attributes = Window::default_attributes()
