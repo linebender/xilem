@@ -13,7 +13,7 @@ use crate::util::AnySendMap;
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Send + 'static {}
+pub trait Property: Send + Sync + 'static {}
 
 /// A collection of properties that a widget can be created with.
 ///
