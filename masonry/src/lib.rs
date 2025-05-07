@@ -16,7 +16,7 @@
 //!
 //! The to-do-list example looks like this:
 //!
-//! ```
+//! ```rust
 //! use masonry::app::{AppDriver, DriverCtx};
 //! use masonry::core::{Action, Widget, WidgetId};
 //! use masonry::dpi::LogicalSize;
@@ -32,8 +32,9 @@
 //!         match action {
 //!             Action::ButtonPressed(_) => {
 //!                 ctx.render_root().edit_root_widget(|mut root| {
-//!                     let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
+//!                     let mut root = root.downcast::<RootWidget>();
 //!                     let mut portal = RootWidget::child_mut(&mut root);
+//!                     let mut portal = portal.downcast::<Portal<Flex>>();
 //!                     let mut flex = Portal::child_mut(&mut portal);
 //!                     Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
 //!                 });
