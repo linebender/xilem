@@ -1,15 +1,15 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymap3::AnyMap;
 use tree_arena::{ArenaMut, ArenaRef, TreeArena};
 
 use crate::core::{Widget, WidgetId, WidgetState};
+use crate::util::AnySendMap;
 
 pub(crate) struct WidgetArena {
     pub(crate) widgets: TreeArena<Box<dyn Widget>>,
     pub(crate) states: TreeArena<WidgetState>,
-    pub(crate) properties: TreeArena<AnyMap>,
+    pub(crate) properties: TreeArena<AnySendMap>,
 }
 
 impl WidgetArena {
@@ -35,7 +35,7 @@ impl WidgetArena {
     ) -> (
         ArenaRef<Box<dyn Widget>>,
         ArenaRef<WidgetState>,
-        ArenaRef<AnyMap>,
+        ArenaRef<AnySendMap>,
     ) {
         let widget = self
             .widgets
@@ -59,7 +59,7 @@ impl WidgetArena {
     ) -> (
         ArenaMut<Box<dyn Widget>>,
         ArenaMut<WidgetState>,
-        ArenaMut<AnyMap>,
+        ArenaMut<AnySendMap>,
     ) {
         let widget = self
             .widgets
