@@ -283,7 +283,7 @@ impl AppDriver for CalcState {
         }
 
         ctx.render_root().edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget<dyn Widget>>();
+            let mut root = root.downcast::<RootWidget>();
             let mut flex = RootWidget::child_mut(&mut root);
             let mut flex = flex.downcast::<Flex>();
             let mut label = Flex::child_mut(&mut flex, 1).unwrap();
@@ -422,16 +422,15 @@ fn main() {
     };
 
     let mut default_properties = default_property_set();
-    default_properties.insert::<RootWidget<dyn Widget>, _>(Background::Color(
-        AlphaColor::from_str("#794869").unwrap(),
-    ));
-    default_properties.insert::<RootWidget<dyn Widget>, _>(Padding::all(2.0));
+    default_properties
+        .insert::<RootWidget, _>(Background::Color(AlphaColor::from_str("#794869").unwrap()));
+    default_properties.insert::<RootWidget, _>(Padding::all(2.0));
 
     let event_loop = masonry::app::EventLoop::with_user_event().build().unwrap();
     masonry::app::run_with(
         event_loop,
         window_attributes,
-        RootWidget::new_dyn(build_calc()),
+        RootWidget::new(build_calc()),
         calc_state,
         default_properties,
         Color::BLACK,

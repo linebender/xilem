@@ -287,7 +287,7 @@ where
             state_changed: true,
         };
         let (pod, view_state) = first_view.build(&mut ctx);
-        let root_widget = RootWidget::from_pod(pod.into_widget_pod());
+        let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
         let driver = MasonryDriver {
             current_view: first_view,
             logic: self.logic,

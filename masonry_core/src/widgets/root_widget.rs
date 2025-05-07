@@ -10,9 +10,9 @@ use vello::Scene;
 use vello::kurbo::Point;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, Property, QueryCtx, RegisterCtx, TextEvent,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, Property, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
 use crate::properties::{Background, Padding};
@@ -21,43 +21,32 @@ use crate::util::fill;
 // TODO: This should eventually be removed once accesskit does that for us.
 // See https://github.com/AccessKit/accesskit/issues/531
 /// A widget wrapper that reports a [`Role::Window`] to the accessibility API.
-pub struct RootWidget<W: ?Sized> {
-    pub(crate) pod: WidgetPod<W>,
+pub struct RootWidget {
+    pub(crate) pod: WidgetPod<dyn Widget>,
 }
 
-impl<W: Widget> RootWidget<W> {
+impl RootWidget {
     /// Create a new root widget.
-    pub fn new(widget: W) -> Self {
-        Self {
-            pod: WidgetPod::new(widget),
-        }
-    }
-}
-
-impl RootWidget<dyn Widget + 'static> {
-    /// Create a new root widget.
-    pub fn new_dyn(widget: impl Widget) -> Self {
+    pub fn new(widget: impl Widget) -> Self {
         Self {
             pod: WidgetPod::new(widget).erased(),
         }
     }
-}
 
-impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
     /// Create a new root widget from a [`WidgetPod`].
-    pub fn from_pod(pod: WidgetPod<W>) -> Self {
+    pub fn from_pod(pod: WidgetPod<dyn Widget>) -> Self {
         Self { pod }
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> RootWidget<W> {
+impl RootWidget {
     /// Get a mutable reference to the child widget.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.pod)
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> Widget for RootWidget<W> {
+impl Widget for RootWidget {
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,
