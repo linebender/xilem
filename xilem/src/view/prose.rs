@@ -127,6 +127,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
                 StyleProperty::FontSize(self.text_size),
             );
         }
+        if prev.weight != self.weight {
+            widgets::TextArea::insert_style(&mut text_area, StyleProperty::FontWeight(self.weight));
+        }
         if prev.line_break_mode != self.line_break_mode {
             widgets::TextArea::set_word_wrap(
                 &mut text_area,
