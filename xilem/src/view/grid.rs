@@ -4,6 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets::{
     GridParams, {self},
 };
@@ -12,6 +13,7 @@ use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewSequence,
 };
+use crate::style::{HasProperty, Style};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A Grid layout divides a window into regions and defines the relationship
@@ -54,9 +56,10 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     Grid {
         sequence,
         spacing: 0.0,
-        phantom: PhantomData,
         height,
         width,
+        properties: Default::default(),
+        phantom: PhantomData,
     }
 }
 
@@ -72,8 +75,35 @@ pub struct Grid<Seq, State, Action = ()> {
     /// Used to associate the State and Action in the call to `.grid()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
     /// Action to be inferred properly
+    properties: (
+        Option<Background>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    ),
     phantom: PhantomData<fn() -> (State, Action)>,
 }
+
+impl<Seq, S, A> Style for Grid<Seq, S, A> {
+    type Props = (
+        Option<Background>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    );
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+impl<Seq, S, A> HasProperty<Background> for Grid<Seq, S, A> {}
+impl<Seq, S, A> HasProperty<BorderColor> for Grid<Seq, S, A> {}
+impl<Seq, S, A> HasProperty<BorderWidth> for Grid<Seq, S, A> {}
+impl<Seq, S, A> HasProperty<CornerRadius> for Grid<Seq, S, A> {}
+impl<Seq, S, A> HasProperty<Padding> for Grid<Seq, S, A> {}
 
 impl<Seq, State, Action> Grid<Seq, State, Action> {
     /// Set the spacing (both vertical and horizontal) between grid items.
