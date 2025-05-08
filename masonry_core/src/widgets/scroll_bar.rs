@@ -26,7 +26,7 @@ use crate::widgets::Axis;
 
 /// A scrollbar.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__scroll_bar__tests__scrollbar_default.png", "Vertical scrollbar.")]
+#[doc = crate::include_screenshot!("scrollbar_default.png", "Vertical scrollbar.")]
 pub struct ScrollBar {
     axis: Axis,
     pub(crate) cursor_progress: f64,

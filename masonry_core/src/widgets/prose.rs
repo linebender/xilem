@@ -28,7 +28,7 @@ use crate::widgets::TextArea;
 ///
 /// This widget has no actions.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__prose__tests__prose_alignment_flex.png", "Multiple lines with different alignments.")]
+#[doc = crate::include_screenshot!("prose_alignment_flex.png", "Multiple lines with different alignments.")]
 pub struct Prose {
     text: WidgetPod<TextArea<false>>,
 

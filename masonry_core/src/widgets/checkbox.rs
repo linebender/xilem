@@ -20,7 +20,7 @@ use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__checkbox__tests__hello_checked.png", "Checkbox with checked state.")]
+#[doc = crate::include_screenshot!("checkbox_hello_checked.png", "Checkbox with checked state.")]
 pub struct Checkbox {
     checked: bool,
     label: WidgetPod<Label>,

@@ -13,7 +13,7 @@ macro_rules! include_screenshot {
         concat!(
             "![", $($caption,)? "]",
             "(", "https://media.githubusercontent.com/media/linebender/xilem/",
-            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry_core/src/", $path,
+            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry_core/screenshots/", $path,
             ")",
         )
     };
@@ -29,7 +29,7 @@ macro_rules! include_screenshot {
         // when using this macro in a `doc` attribute
         concat!(
             " ![", $($caption,)? "]",
-            "(", env!("CARGO_MANIFEST_DIR"), "/src/", $path, ")",
+            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
         )
     };
 }

@@ -41,7 +41,7 @@ const DEFAULT_PADDING: Padding = Padding { x: 8., y: 2. };
 ///
 /// Emits [`Action::ButtonPressed`] when pressed.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__button__tests__hello.png", "Button with text label.")]
+#[doc = crate::include_screenshot!("button_hello.png", "Button with text label.")]
 pub struct Button {
     label: WidgetPod<Label>,
 }

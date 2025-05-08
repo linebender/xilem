@@ -24,7 +24,7 @@ use crate::util::UnitPoint;
 
 /// A widget that aligns its child.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__align__tests__right.png", "Right-aligned label.")]
+#[doc = crate::include_screenshot!("align_right.png", "Right-aligned label.")]
 pub struct Align {
     align: UnitPoint,
     child: WidgetPod<dyn Widget>,
