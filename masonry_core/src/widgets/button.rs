@@ -36,7 +36,7 @@ const DEFAULT_BORDER_RADII: CornerRadius = CornerRadius {
 
 // NOTE: these values are chosen to match the existing look of TextBox; these
 // should be reevaluated at some point.
-const DEFAULT_PADDING: Padding = Padding { x: 8., y: 2. };
+const DEFAULT_PADDING: Padding = Padding::from_vh(2., 8.);
 
 /// A button with a text label.
 ///
@@ -378,7 +378,7 @@ mod tests {
             button.insert_prop(BorderColor { color: red });
             button.insert_prop(BorderWidth { width: 5.0 });
             button.insert_prop(CornerRadius { radius: 20.0 });
-            button.insert_prop(Padding { x: 8.0, y: 3.0 });
+            button.insert_prop(Padding::from_vh(3., 8.));
 
             let mut label = Button::label_mut(&mut button);
             Label::set_brush(&mut label, red);

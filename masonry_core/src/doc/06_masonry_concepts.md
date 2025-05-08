@@ -137,6 +137,17 @@ These checks are sometimes referred to as "safety rails".
 Safety rails aren't guaranteed to run and may be disabled even in debug mode for performance reasons.
 They should not be relied upon to check code correctness, but are meant to help you catch implementation errors early on during development.
 
+
+## BiDi handling
+
+Masonry currently doesn't have any special-case behavior for RTL (right-to-left) and vertical writing modes.
+
+That means there is no easy way to set some "leading", "trailing", "inline", "block", etc, values and have them resolve to different directions depending on whether your audience uses European / Asian / other writing systems.
+
+Handling writing modes is in-scope for Masonry in the long term, but is deferred for now.
+We will probably need to implement other features before we can handle it properly, such as style cascading.
+
+
 [`Cancel`]: ui_events::pointer::PointerEvent::Cancel
 [`FocusChanged`]: crate::core::Update::FocusChanged
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus

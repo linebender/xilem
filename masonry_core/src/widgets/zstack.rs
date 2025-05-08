@@ -43,25 +43,25 @@ pub struct ZStack {
 /// See also [`VerticalAlignment`] and [`HorizontalAlignment`] for describing only a single axis.
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Alignment {
-    /// Align to the top leading corner.
-    TopLeading,
+    /// Align to the top left corner.
+    TopLeft,
     /// Align to the center of the top edge.
     Top,
-    /// Align to the top trailing corner.
-    TopTrailing,
-    /// Align to the center of the leading edge.
-    Leading,
+    /// Align to the top right corner.
+    TopRight,
+    /// Align to the center of the left edge.
+    Left,
     /// Align to the center.
     #[default]
     Center,
-    /// Align to the center of the trailing edge.
-    Trailing,
-    /// Align to the bottom leading corner.
-    BottomLeading,
+    /// Align to the center of the right edge.
+    Right,
+    /// Align to the bottom left corner.
+    BottomLeft,
     /// Align to the center of the bottom edge.
     Bottom,
-    /// Align to the bottom trailing corner.
-    BottomTrailing,
+    /// Align to the bottom right corner.
+    BottomRight,
 }
 
 /// Describes the vertical position of a view laid on top of another view.
@@ -81,13 +81,13 @@ pub enum VerticalAlignment {
 /// See also [Alignment].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HorizontalAlignment {
-    /// Align to the leading edge.
-    Leading,
+    /// Align to the left edge.
+    Left,
     #[default]
     /// Align to the center.
     Center,
-    /// Align to the trailing edge.
-    Trailing,
+    /// Align to the right edge.
+    Right,
 }
 
 // --- MARK: IMPL ALIGNMENTS ---
@@ -96,24 +96,24 @@ impl Alignment {
     /// Constructs a new Alignment from a [vertical][VerticalAlignment] and [horizontal][HorizontalAlignment] alignment.
     pub fn new(vertical: VerticalAlignment, horizontal: HorizontalAlignment) -> Self {
         match (vertical, horizontal) {
-            (VerticalAlignment::Top, HorizontalAlignment::Leading) => Self::TopLeading,
+            (VerticalAlignment::Top, HorizontalAlignment::Left) => Self::TopLeft,
             (VerticalAlignment::Top, HorizontalAlignment::Center) => Self::Top,
-            (VerticalAlignment::Top, HorizontalAlignment::Trailing) => Self::TopTrailing,
-            (VerticalAlignment::Center, HorizontalAlignment::Leading) => Self::Leading,
+            (VerticalAlignment::Top, HorizontalAlignment::Right) => Self::TopRight,
+            (VerticalAlignment::Center, HorizontalAlignment::Left) => Self::Left,
             (VerticalAlignment::Center, HorizontalAlignment::Center) => Self::Center,
-            (VerticalAlignment::Center, HorizontalAlignment::Trailing) => Self::Trailing,
-            (VerticalAlignment::Bottom, HorizontalAlignment::Leading) => Self::BottomLeading,
+            (VerticalAlignment::Center, HorizontalAlignment::Right) => Self::Right,
+            (VerticalAlignment::Bottom, HorizontalAlignment::Left) => Self::BottomLeft,
             (VerticalAlignment::Bottom, HorizontalAlignment::Center) => Self::Bottom,
-            (VerticalAlignment::Bottom, HorizontalAlignment::Trailing) => Self::BottomTrailing,
+            (VerticalAlignment::Bottom, HorizontalAlignment::Right) => Self::BottomRight,
         }
     }
 
     /// Gets the vertical component of the alignment.
     pub fn vertical(self) -> VerticalAlignment {
         match self {
-            Self::Center | Self::Leading | Self::Trailing => VerticalAlignment::Center,
-            Self::Top | Self::TopLeading | Self::TopTrailing => VerticalAlignment::Top,
-            Self::Bottom | Self::BottomLeading | Self::BottomTrailing => VerticalAlignment::Bottom,
+            Self::Center | Self::Left | Self::Right => VerticalAlignment::Center,
+            Self::Top | Self::TopLeft | Self::TopRight => VerticalAlignment::Top,
+            Self::Bottom | Self::BottomLeft | Self::BottomRight => VerticalAlignment::Bottom,
         }
     }
 
@@ -121,10 +121,8 @@ impl Alignment {
     pub fn horizontal(self) -> HorizontalAlignment {
         match self {
             Self::Center | Self::Top | Self::Bottom => HorizontalAlignment::Center,
-            Self::Leading | Self::TopLeading | Self::BottomLeading => HorizontalAlignment::Leading,
-            Self::Trailing | Self::TopTrailing | Self::BottomTrailing => {
-                HorizontalAlignment::Trailing
-            }
+            Self::Left | Self::TopLeft | Self::BottomLeft => HorizontalAlignment::Left,
+            Self::Right | Self::TopRight | Self::BottomRight => HorizontalAlignment::Right,
         }
     }
 }
@@ -327,15 +325,15 @@ impl Widget for ZStack {
             };
 
             let origin = match child_alignment {
-                Alignment::TopLeading => Point::ZERO,
+                Alignment::TopLeft => Point::ZERO,
                 Alignment::Top => Point::new(center.x, 0.),
-                Alignment::TopTrailing => Point::new(end.x, 0.),
-                Alignment::Leading => Point::new(0., center.y),
+                Alignment::TopRight => Point::new(end.x, 0.),
+                Alignment::Left => Point::new(0., center.y),
                 Alignment::Center => center,
-                Alignment::Trailing => Point::new(end.x, center.y),
-                Alignment::BottomLeading => Point::new(0., end.y),
+                Alignment::Right => Point::new(end.x, center.y),
+                Alignment::BottomLeft => Point::new(0., end.y),
                 Alignment::Bottom => Point::new(center.x, end.y),
-                Alignment::BottomTrailing => end,
+                Alignment::BottomRight => end,
             };
 
             ctx.place_child(&mut child.widget, origin);
@@ -415,9 +413,9 @@ mod tests {
         ];
 
         let horizontal_cases = [
-            ("leading", HorizontalAlignment::Leading),
+            ("left", HorizontalAlignment::Left),
             ("center", HorizontalAlignment::Center),
-            ("trailing", HorizontalAlignment::Trailing),
+            ("right", HorizontalAlignment::Right),
         ];
 
         let all_cases = vertical_cases
@@ -441,10 +439,10 @@ mod tests {
         let widget = ZStack::new()
             .with_alignment(Alignment::Center)
             .with_child(Label::new("ParentAligned"), ChildAlignment::ParentAligned)
-            .with_child(Label::new("TopLeading"), Alignment::TopLeading)
-            .with_child(Label::new("TopTrailing"), Alignment::TopTrailing)
-            .with_child(Label::new("BottomLeading"), Alignment::BottomLeading)
-            .with_child(Label::new("BottomTrailing"), Alignment::BottomTrailing);
+            .with_child(Label::new("TopLeft"), Alignment::TopLeft)
+            .with_child(Label::new("TopRight"), Alignment::TopRight)
+            .with_child(Label::new("BottomLeft"), Alignment::BottomLeft)
+            .with_child(Label::new("BottomRight"), Alignment::BottomRight);
 
         let mut harness = TestHarness::create(widget);
         assert_render_snapshot!(harness, "zstack_alignments_self_aligned");
