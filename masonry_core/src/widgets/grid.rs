@@ -363,6 +363,9 @@ impl Widget for Grid {
             let child_pos = Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit);
             ctx.place_child(&mut child.widget, child_pos + origin);
         }
+
+        let (total_size, _) = padding.layout_up(total_size, 0.);
+        let (total_size, _) = border.layout_up(total_size, 0.);
         total_size
     }
 

@@ -14,7 +14,7 @@ use crate::core::{
     ViewId, ViewMarker, ViewSequence,
 };
 use crate::style::{HasProperty, Style};
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::{Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
 /// A Grid layout divides a window into regions and defines the relationship
 /// between inner elements in terms of size and position.
@@ -138,7 +138,9 @@ where
         for element in elements.into_inner() {
             widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
         }
-        let pod = ctx.new_pod(widget);
+        let pod = ctx
+            .new_pod(widget)
+            .with_props(self.properties.build_properties());
         (pod, seq_state)
     }
 
@@ -149,6 +151,8 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if prev.height != self.height {
             widgets::Grid::set_height(&mut element, self.height);
         }
