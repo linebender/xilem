@@ -379,7 +379,7 @@ impl Widget for Label {
         if self.styles_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             // TODO: Should we use a different scale?
-            let mut builder = layout_ctx.ranged_builder(font_ctx, &self.text, 1.0);
+            let mut builder = layout_ctx.ranged_builder(font_ctx, &self.text, 1.0, true);
             for prop in self.styles.inner().values() {
                 builder.push_default(prop.to_owned());
             }
