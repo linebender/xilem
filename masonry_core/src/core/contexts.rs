@@ -136,7 +136,9 @@ pub struct AccessCtx<'a> {
     pub(crate) rebuild_all: bool,
 }
 
-// --- MARK: GETTERS ---
+// ---
+// MARK: GETTERS
+// ---
 // Methods for all context types
 impl_context_method!(
     MutateCtx<'_>,
@@ -217,7 +219,9 @@ impl_context_method!(
     }
 );
 
-// --- MARK: WIDGET_MUT ---
+// ---
+// MARK: WIDGET_MUT
+// ---
 // Methods to get a child WidgetMut from a parent.
 impl MutateCtx<'_> {
     /// Return a [`WidgetMut`] to a child widget.
@@ -289,7 +293,9 @@ impl MutateCtx<'_> {
     }
 }
 
-// --- MARK: WIDGET_REF ---
+// ---
+// MARK: WIDGET_REF
+// ---
 // Methods to get a child WidgetRef from a parent.
 impl<'w> QueryCtx<'w> {
     /// Return a [`WidgetRef`] to a child widget.
@@ -350,7 +356,9 @@ impl_context_method!(
     }
 );
 
-// --- MARK: EVENT HANDLING ---
+// ---
+// MARK: EVENT HANDLING
+// ---
 impl EventCtx<'_> {
     /// Capture the pointer in the current widget.
     ///
@@ -496,7 +504,9 @@ impl EventCtx<'_> {
     }
 }
 
-// --- MARK: UPDATE LAYOUT ---
+// ---
+// MARK: UPDATE LAYOUT
+// ---
 impl LayoutCtx<'_> {
     #[track_caller]
     fn assert_layout_done(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
@@ -761,7 +771,9 @@ impl ComposeCtx<'_> {
     }
 }
 
-// --- MARK: GET LAYOUT ---
+// ---
+// MARK: GET LAYOUT
+// ---
 // Methods on all context types except LayoutCtx
 // These methods access layout info calculated during the layout pass.
 impl_context_method!(
@@ -971,7 +983,9 @@ impl_context_method!(
     }
 );
 
-// --- MARK: UPDATE FLAGS ---
+// ---
+// MARK: UPDATE FLAGS
+// ---
 // Methods on MutateCtx, EventCtx, and UpdateCtx
 impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// Request a [`paint`](crate::core::Widget::paint) and an [`accessibility`](crate::core::Widget::accessibility) pass.
@@ -1097,7 +1111,9 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     }
 });
 
-// --- MARK: OTHER METHODS ---
+// ---
+// MARK: OTHER METHODS
+// ---
 // Methods on mutable context types
 impl_context_method!(
     MutateCtx<'_>,
@@ -1266,7 +1282,9 @@ impl RegisterCtx<'_> {
     }
 }
 
-// --- MARK: DEBUG PAINT ---
+// ---
+// MARK: DEBUG PAINT
+// ---
 impl PaintCtx<'_> {
     /// Whether debug paint is enabled.
     ///
@@ -1290,7 +1308,9 @@ impl PaintCtx<'_> {
     }
 }
 
-// --- MARK: RAW WRAPPERS ---
+// ---
+// MARK: RAW WRAPPERS
+// ---
 macro_rules! impl_get_raw {
     ($SomeCtx:tt) => {
         impl<'s> $SomeCtx<'s> {

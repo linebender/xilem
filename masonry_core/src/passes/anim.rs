@@ -9,7 +9,9 @@ use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 
-// --- MARK: UPDATE ANIM ---
+// ---
+// MARK: UPDATE ANIM
+// ---
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,

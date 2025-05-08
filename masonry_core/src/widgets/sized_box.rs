@@ -72,7 +72,9 @@ pub struct SizedBox {
     padding: Padding,
 }
 
-// --- MARK: IMPL PADDING ---
+// ---
+// MARK: IMPL PADDING
+// ---
 
 impl Padding {
     /// Constructs a new `Padding` by specifying the amount of padding for each edge.
@@ -159,7 +161,9 @@ impl From<(f64, f64)> for Padding {
     }
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl SizedBox {
     /// Construct container with child, and both width and height not set.
     pub fn new(child: impl Widget) -> Self {
@@ -305,7 +309,9 @@ impl SizedBox {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl SizedBox {
     /// Give this container a child widget.
     ///
@@ -413,7 +419,9 @@ impl SizedBox {
     }
 }
 
-// --- MARK: INTERNALS ---
+// ---
+// MARK: INTERNALS
+// ---
 impl SizedBox {
     fn child_constraints(&self, bc: &BoxConstraints) -> BoxConstraints {
         // if we don't have a width/height, we don't change that axis.
@@ -441,7 +449,9 @@ impl SizedBox {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for SizedBox {
     fn on_pointer_event(
         &mut self,
@@ -590,7 +600,9 @@ impl Widget for SizedBox {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
@@ -751,7 +763,9 @@ mod tests {
 
     // TODO - add screenshot tests for different brush types
 
-    // --- MARK: PROP TESTS ---
+    // ---
+    // MARK: PROP TESTS
+    // ---
 
     #[test]
     fn background_brush_property() {

@@ -90,7 +90,9 @@ pub enum HorizontalAlignment {
     Trailing,
 }
 
-// --- MARK: IMPL ALIGNMENTS ---
+// ---
+// MARK: IMPL ALIGNMENTS
+// ---
 
 impl Alignment {
     /// Constructs a new Alignment from a [vertical][VerticalAlignment] and [horizontal][HorizontalAlignment] alignment.
@@ -175,7 +177,9 @@ impl Child {
     }
 }
 
-// --- MARK: IMPL ZSTACK ---
+// ---
+// MARK: IMPL ZSTACK
+// ---
 impl ZStack {
     /// Constructs a new empty `ZStack` widget.
     pub fn new() -> Self {
@@ -218,7 +222,9 @@ impl ZStack {
     }
 }
 
-// --- MARK: WIDGETMUT---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl ZStack {
     /// Add a child widget to the `ZStack`.
     /// The child are placed back to front, in the order they are added.
@@ -294,7 +300,9 @@ impl ZStack {
     }
 }
 
-// --- MARK: IMPL WIDGET---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for ZStack {
     fn layout(
         &mut self,
@@ -377,7 +385,9 @@ impl Widget for ZStack {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use vello::peniko::color::palette;

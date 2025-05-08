@@ -76,7 +76,9 @@ impl Prose {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl Prose {
     /// Edit the underlying text area.
     ///
@@ -97,7 +99,9 @@ impl Prose {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for Prose {
     fn on_pointer_event(
         &mut self,

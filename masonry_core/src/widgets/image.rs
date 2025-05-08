@@ -32,7 +32,9 @@ pub struct Image {
     object_fit: ObjectFit,
 }
 
-// --- MARK: BUILDERS ---
+// ---
+// MARK: BUILDERS
+// ---
 impl Image {
     /// Create an image drawing widget from an image buffer.
     ///
@@ -53,7 +55,9 @@ impl Image {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl Image {
     /// Modify the widget's object fit.
     #[inline]
@@ -70,7 +74,9 @@ impl Image {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for Image {
     fn on_pointer_event(
         &mut self,
@@ -170,7 +176,9 @@ impl Widget for Image {
 
 // FIXME - remove cfg?
 #[cfg(not(target_arch = "wasm32"))]
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use vello::peniko::ImageFormat;

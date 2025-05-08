@@ -117,7 +117,9 @@ enum Child {
     FlexedSpacer(f64, f64),
 }
 
-// --- MARK: IMPL FLEX ---
+// ---
+// MARK: IMPL FLEX
+// ---
 impl Flex {
     /// Create a new Flex oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
@@ -305,7 +307,9 @@ impl Flex {
     }
 }
 
-// --- MARK: WIDGETMUT---
+// ---
+// MARK: WIDGETMUT
+// ---
 impl Flex {
     /// Set the flex direction (see [`Axis`]).
     pub fn set_direction(this: &mut WidgetMut<'_, Self>, direction: Axis) {
@@ -677,7 +681,9 @@ impl Flex {
     }
 }
 
-// --- MARK: OTHER IMPLS---
+// ---
+// MARK: OTHER IMPLS
+// ---
 impl Axis {
     /// Get the axis perpendicular to this one.
     pub fn cross(self) -> Self {
@@ -958,7 +964,9 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
     }
 }
 
-// --- MARK: IMPL WIDGET---
+// ---
+// MARK: IMPL WIDGET
+// ---
 impl Widget for Flex {
     fn on_pointer_event(
         &mut self,
@@ -1286,7 +1294,9 @@ impl Widget for Flex {
     }
 }
 
-// --- MARK: TESTS ---
+// ---
+// MARK: TESTS
+// ---
 #[cfg(test)]
 mod tests {
     use super::*;

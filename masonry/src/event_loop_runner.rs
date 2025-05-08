@@ -90,7 +90,9 @@ pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder<MasonryUserEvent
 /// A proxy used to send events to the event loop
 pub type EventLoopProxy = winit::event_loop::EventLoopProxy<MasonryUserEvent>;
 
-// --- MARK: RUN ---
+// ---
+// MARK: RUN
+// ---
 pub fn run(
     // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
     // This is passed in mostly to allow configuring the Android app
@@ -236,7 +238,9 @@ impl MasonryState<'_> {
         }
     }
 
-    // --- MARK: RESUMED ---
+    // ---
+    // MARK: RESUMED
+    // ---
     pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         match std::mem::replace(
             &mut self.window,
@@ -317,7 +321,9 @@ impl MasonryState<'_> {
         }
     }
 
-    // --- MARK: SUSPENDED ---
+    // ---
+    // MARK: SUSPENDED
+    // ---
     pub fn handle_suspended(&mut self, _event_loop: &ActiveEventLoop) {
         match std::mem::replace(
             &mut self.window,
@@ -341,7 +347,9 @@ impl MasonryState<'_> {
         }
     }
 
-    // --- MARK: RENDER ---
+    // ---
+    // MARK: RENDER
+    // ---
     fn render(&mut self, scene: Scene) {
         let WindowState::Rendering {
             window, surface, ..
@@ -427,7 +435,9 @@ impl MasonryState<'_> {
         drop(self.frame.take());
     }
 
-    // --- MARK: WINDOW_EVENT ---
+    // ---
+    // MARK: WINDOW_EVENT
+    // ---
     pub fn handle_window_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -516,7 +526,9 @@ impl MasonryState<'_> {
         self.handle_signals(event_loop, app_driver);
     }
 
-    // --- MARK: DEVICE_EVENT ---
+    // ---
+    // MARK: DEVICE_EVENT
+    // ---
     pub fn handle_device_event(
         &mut self,
         _: &ActiveEventLoop,
@@ -526,7 +538,9 @@ impl MasonryState<'_> {
     ) {
     }
 
-    // --- MARK: USER_EVENT ---
+    // ---
+    // MARK: USER_EVENT
+    // ---
     pub fn handle_user_event(
         &mut self,
         event_loop: &ActiveEventLoop,
@@ -557,7 +571,9 @@ impl MasonryState<'_> {
         self.handle_signals(event_loop, app_driver);
     }
 
-    // --- MARK: EMPTY WINIT HANDLERS ---
+    // ---
+    // MARK: EMPTY WINIT HANDLERS
+    // ---
     pub fn handle_about_to_wait(&mut self, _: &ActiveEventLoop) {}
 
     pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {}
@@ -566,7 +582,9 @@ impl MasonryState<'_> {
 
     pub fn handle_memory_warning(&mut self, _: &ActiveEventLoop) {}
 
-    // --- MARK: SIGNALS ---
+    // ---
+    // MARK: SIGNALS
+    // ---
     fn handle_signals(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         let WindowState::Rendering { window, .. } = &mut self.window else {
             tracing::warn!("Tried to handle a signal whilst suspended or before window created");
