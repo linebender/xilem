@@ -21,6 +21,8 @@ use crate::kurbo::Size;
 /// - Setting a default [`Background`] and [`Padding`] for the entire app using [`DefaultProperties`].
 ///
 /// [`DefaultProperties`]: crate::core::DefaultProperties
+/// [`Background`]: crate::properties::Background
+/// [`Padding`]: crate::properties::Padding
 pub struct RootWidget {
     pub(crate) pod: WidgetPod<dyn Widget>,
 }
