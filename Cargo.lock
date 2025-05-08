@@ -1026,8 +1026,9 @@ dependencies = [
 
 [[package]]
 name = "fontique"
-version = "0.3.0"
-source = "git+https://github.com/linebender/parley?rev=4977a349eb5e5ad276e850825ff87e7b7b709d52#4977a349eb5e5ad276e850825ff87e7b7b709d52"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64763d1f274c8383333851435b6cdf071c31cfcdb39fd5860d20943205a007a7"
 dependencies = [
  "bytemuck",
  "fontconfig-cache-parser",
@@ -2492,8 +2493,9 @@ dependencies = [
 
 [[package]]
 name = "parley"
-version = "0.3.0"
-source = "git+https://github.com/linebender/parley?rev=4977a349eb5e5ad276e850825ff87e7b7b709d52#4977a349eb5e5ad276e850825ff87e7b7b709d52"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e28dadbe655332fd7d996794ec8d0c376695f6ca47bc75aa01e0967c7f28e42a"
 dependencies = [
  "accesskit",
  "fontique",
@@ -3358,11 +3360,11 @@ dependencies = [
 
 [[package]]
 name = "swash"
-version = "0.2.2"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fae9a562c7b46107d9c78cd78b75bbe1e991c16734c0aee8ff0ee711fb8b620a"
+checksum = "5dce3f0af95643c855cdc449fbaa17d8c2cd08e0b00a49a6babcbe6e71667f3d"
 dependencies = [
- "skrifa 0.26.6",
+ "skrifa 0.31.0",
  "yazi",
  "zeno",
 ]
@@ -5032,9 +5034,9 @@ dependencies = [
 
 [[package]]
 name = "zeno"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc0de2315dc13d00e5df3cd6b8d2124a6eaec6a2d4b6a1c5f37b7efad17fcc17"
+checksum = "6df3dc4292935e51816d896edcd52aa30bc297907c26167fec31e2b0c6a32524"
 
 [[package]]
 name = "zerocopy"
