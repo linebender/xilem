@@ -8,14 +8,14 @@ use vello::kurbo::Affine;
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{ComposeCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::AnySendMap;
+use crate::util::AnyMap;
 
 // --- MARK: RECURSE ---
 fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnySendMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {

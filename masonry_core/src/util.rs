@@ -38,7 +38,7 @@ macro_rules! debug_panic {
 
 // ---
 
-pub(crate) type AnySendMap = anymap3::Map<dyn Any + Send + Sync>;
+pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
 
 // ---
 

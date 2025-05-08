@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::util::AnySendMap;
+use crate::util::AnyMap;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -20,7 +20,7 @@ pub trait Property: Send + Sync + 'static {}
 /// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
 #[derive(Default)]
 pub struct Properties {
-    pub(crate) map: AnySendMap,
+    pub(crate) map: AnyMap,
 }
 
 /// Reference to a collection of properties that a widget has access to.
@@ -33,7 +33,7 @@ pub struct Properties {
 /// [`Widget`]: crate::core::Widget
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
-    pub(crate) map: &'a AnySendMap,
+    pub(crate) map: &'a AnyMap,
 }
 
 /// Mutable reference to a collection of properties that a widget has access to.
@@ -45,15 +45,13 @@ pub struct PropertiesRef<'a> {
 ///
 /// [`Widget`]: crate::core::Widget
 pub struct PropertiesMut<'a> {
-    pub(crate) map: &'a mut AnySendMap,
+    pub(crate) map: &'a mut AnyMap,
 }
 
 impl Properties {
     /// Create an empty collection of properties.
     pub fn new() -> Self {
-        Self {
-            map: AnySendMap::new(),
-        }
+        Self { map: AnyMap::new() }
     }
 
     /// Get a reference to the properties.

@@ -20,7 +20,7 @@ use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
 use crate::theme::get_debug_color;
-use crate::util::AnySendMap;
+use crate::util::AnyMap;
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -53,7 +53,7 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
     pub(crate) properties: PropertiesMut<'a>,
-    pub(crate) properties_children: ArenaMutList<'a, AnySendMap>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
 /// A context provided inside of [`WidgetRef`].
@@ -65,7 +65,7 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaRefList<'a, WidgetState>,
     pub(crate) widget_children: ArenaRefList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaRefList<'a, AnySendMap>,
+    pub(crate) properties_children: ArenaRefList<'a, AnyMap>,
 }
 
 /// A context provided to Widget event-handling methods.
@@ -74,7 +74,7 @@ pub struct EventCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnySendMap>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
@@ -84,7 +84,7 @@ pub struct EventCtx<'a> {
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnySendMap>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     #[cfg(debug_assertions)]
     pub(crate) registered_ids: Vec<WidgetId>,
 }
@@ -95,7 +95,7 @@ pub struct UpdateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnySendMap>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
 // TODO - Change this once other layout methods are added.
@@ -105,7 +105,7 @@ pub struct LayoutCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnySendMap>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
 /// A context provided to the [`Widget::compose`] method.
@@ -131,7 +131,7 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnySendMap>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) rebuild_all: bool,
 }

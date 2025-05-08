@@ -4,12 +4,12 @@
 use tree_arena::{ArenaMut, ArenaRef, TreeArena};
 
 use crate::core::{Widget, WidgetId, WidgetState};
-use crate::util::AnySendMap;
+use crate::util::AnyMap;
 
 pub(crate) struct WidgetArena {
     pub(crate) widgets: TreeArena<Box<dyn Widget>>,
     pub(crate) states: TreeArena<WidgetState>,
-    pub(crate) properties: TreeArena<AnySendMap>,
+    pub(crate) properties: TreeArena<AnyMap>,
 }
 
 impl WidgetArena {
@@ -35,7 +35,7 @@ impl WidgetArena {
     ) -> (
         ArenaRef<Box<dyn Widget>>,
         ArenaRef<WidgetState>,
-        ArenaRef<AnySendMap>,
+        ArenaRef<AnyMap>,
     ) {
         let widget = self
             .widgets
@@ -59,7 +59,7 @@ impl WidgetArena {
     ) -> (
         ArenaMut<Box<dyn Widget>>,
         ArenaMut<WidgetState>,
-        ArenaMut<AnySendMap>,
+        ArenaMut<AnyMap>,
     ) {
         let widget = self
             .widgets

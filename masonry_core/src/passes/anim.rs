@@ -7,14 +7,14 @@ use tree_arena::ArenaMut;
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::AnySendMap;
+use crate::util::AnyMap;
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnySendMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     elapsed_ns: u64,
 ) {
     let _span = enter_span_if(
