@@ -7,7 +7,7 @@ use std::default::Default;
 
 use anymap3::AnyMap;
 
-use super::Widget;
+use crate::core::Widget;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
