@@ -3,7 +3,6 @@
 
 use std::collections::HashMap;
 
-use anymap3::AnyMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
@@ -15,7 +14,7 @@ use crate::core::{PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
 use crate::kurbo::Rect;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::theme::get_debug_color;
-use crate::util::stroke;
+use crate::util::{AnyMap, stroke};
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(

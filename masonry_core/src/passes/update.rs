@@ -3,7 +3,6 @@
 
 use std::collections::HashSet;
 
-use anymap3::AnyMap;
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
@@ -15,6 +14,7 @@ use crate::core::{
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
+use crate::util::AnyMap;
 
 // --- MARK: HELPERS ---
 /// Returns the id path starting from the given widget id and ending at the root.

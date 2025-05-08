@@ -3,8 +3,6 @@
 
 use std::any::TypeId;
 
-use anymap3::Entry;
-
 use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
 use crate::kurbo::Affine;
 
@@ -82,13 +80,6 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
         self.ctx.properties.remove::<T>()
-    }
-
-    /// Returns an entry that can be used to add, update, or remove a property.
-    pub fn prop_entry<T: Property>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
-        self.ctx.properties.entry::<T>()
     }
 
     /// Set the local transform of this widget.

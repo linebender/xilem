@@ -1,13 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymap3::AnyMap;
 use tracing::info_span;
 use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
+use crate::util::AnyMap;
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(

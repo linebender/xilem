@@ -7,12 +7,12 @@
 //!
 //! This file includes utility functions used by multiple passes.
 
-use anymap3::AnyMap;
 use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
 use crate::app::RenderRootState;
 use crate::core::{QueryCtx, Widget, WidgetArena, WidgetId, WidgetState};
+use crate::util::AnyMap;
 
 pub(crate) mod accessibility;
 pub(crate) mod anim;

@@ -6,7 +6,6 @@
 use std::any::Any;
 
 use accesskit::TreeUpdate;
-use anymap3::AnyMap;
 use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
@@ -21,6 +20,7 @@ use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
 use crate::theme::get_debug_color;
+use crate::util::AnyMap;
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)

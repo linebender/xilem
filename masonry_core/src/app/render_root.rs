@@ -4,7 +4,6 @@
 use std::collections::{HashMap, VecDeque};
 
 use accesskit::{ActionRequest, TreeUpdate};
-use anymap3::AnyMap;
 use parley::fontique::{self, Blob, Collection, CollectionOptions, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
@@ -41,6 +40,7 @@ use crate::passes::update::{
     run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
+use crate::util::AnyMap;
 use cursor_icon::CursorIcon;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial

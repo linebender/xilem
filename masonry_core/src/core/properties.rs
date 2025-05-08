@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymap3::{AnyMap, Entry};
+use crate::util::AnyMap;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -13,7 +13,7 @@ use anymap3::{AnyMap, Entry};
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: 'static {}
+pub trait Property: Send + Sync + 'static {}
 
 /// A collection of properties that a widget can be created with.
 ///
@@ -65,8 +65,7 @@ impl Properties {
     }
 }
 
-// TODO - Implement some kind of cascading with at least a Masonry-wide theme,
-// If a property is not in the widget *or* the type, return `Default::default()`.
+// TODO - If a property is not in the widget *or* the type, return `Default::default()`.
 // Don't return Option types anymore.
 
 impl PropertiesRef<'_> {
@@ -117,15 +116,6 @@ impl PropertiesMut<'_> {
     /// [`WidgetMut::remove_prop`]: crate::core::WidgetMut::remove_prop
     pub fn remove<P: Property>(&mut self) -> Option<P> {
         self.map.remove::<P>()
-    }
-
-    /// Returns an entry that can be used to add, update, or remove a property.
-    ///
-    /// If you're using a `WidgetMut`, call [`WidgetMut::prop_entry`] instead.
-    ///
-    /// [`WidgetMut::prop_entry`]: crate::core::WidgetMut::prop_entry
-    pub fn entry<P: Property>(&mut self) -> Entry<'_, dyn std::any::Any, P> {
-        self.map.entry::<P>()
     }
 
     /// Get a `PropertiesMut` for the same underlying properties with a shorter lifetime.

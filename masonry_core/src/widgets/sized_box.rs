@@ -661,15 +661,13 @@ mod tests {
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = Background::Color(palette::css::GREEN);
-            *sized_box.get_prop_mut().unwrap() = brush;
+            sized_box.insert_prop(brush);
         });
         assert_render_snapshot!(harness, "sized_box_background_brush_green");
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = Background::Color(palette::css::BLUE);
-            sized_box.prop_entry().and_modify(|entry| {
-                *entry = brush;
-            });
+            sized_box.insert_prop(brush);
         });
         assert_render_snapshot!(harness, "sized_box_background_brush_blue");
 

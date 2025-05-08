@@ -13,7 +13,7 @@ use crate::properties::types::Gradient;
 
 /// The background color/gradient of a widget.
 #[expect(missing_docs, reason = "obvious")]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Background {
     Color(AlphaColor<Srgb>),
     Gradient(Gradient),
