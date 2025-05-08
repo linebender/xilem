@@ -102,7 +102,7 @@ pub fn default_property_set() -> DefaultProperties {
     });
     // NOTE: these padding values are chosen to match the existing look of TextBox;
     // they should be reevaluated at some point.
-    properties.insert::<Button, _>(Padding::from_vh(2., 8.));
+    properties.insert::<Button, _>(Padding { x: 8., y: 2. });
 
     properties
 }
