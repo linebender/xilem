@@ -5,8 +5,15 @@
 
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
+use crate::core::DefaultProperties;
 use crate::kurbo::Insets;
 use crate::peniko::Color;
+use crate::properties::types::Gradient;
+use crate::properties::{
+    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkWidth,
+    CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
+};
+use crate::widgets::{Button, Checkbox, Textbox};
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -85,4 +92,63 @@ static DEBUG_COLOR: &[Color] = &[
 pub fn get_debug_color(id: u64) -> Color {
     let color_num = id as usize % DEBUG_COLOR.len();
     DEBUG_COLOR[color_num]
+}
+
+pub fn default_property_set() -> DefaultProperties {
+    let mut properties = DefaultProperties::new();
+
+    properties.insert::<Button, _>(BorderColor { color: BORDER_DARK });
+    properties.insert::<Button, _>(HoveredBorderColor(BorderColor {
+        color: BORDER_LIGHT,
+    }));
+    properties.insert::<Button, _>(BorderWidth {
+        width: BUTTON_BORDER_WIDTH,
+    });
+    properties.insert::<Button, _>(CornerRadius {
+        radius: BUTTON_BORDER_RADIUS,
+    });
+    // NOTE: these padding values are chosen to match the existing look of TextBox;
+    // they should be reevaluated at some point.
+    properties.insert::<Button, _>(Padding::from_vh(2., 8.));
+    properties.insert::<Button, _>(Background::Gradient(
+        Gradient::new_linear(0.0).with_stops([BUTTON_LIGHT, BUTTON_DARK]),
+    ));
+    properties.insert::<Button, _>(ActiveBackground(Background::Gradient(
+        Gradient::new_linear(0.0).with_stops([BUTTON_DARK, BUTTON_LIGHT]),
+    )));
+    properties.insert::<Button, _>(DisabledBackground(Background::Gradient(
+        Gradient::new_linear(0.0).with_stops([DISABLED_BUTTON_LIGHT, DISABLED_BUTTON_DARK]),
+    )));
+
+    properties.insert::<Textbox, _>(BorderColor {
+        color: Color::WHITE,
+    });
+    properties.insert::<Textbox, _>(BorderWidth { width: 1.0 });
+    properties.insert::<Textbox, _>(Padding::all(5.));
+    properties.insert::<Textbox, _>(Background::Color(Color::from_rgb8(0x1A, 0x1A, 0x1A)));
+
+    let checkbox_gradient =
+        Gradient::new_linear(0.0).with_stops([BACKGROUND_DARK, BACKGROUND_LIGHT]);
+    properties.insert::<Checkbox, _>(BorderWidth { width: 1.0 });
+    properties.insert::<Checkbox, _>(BorderColor { color: BORDER_DARK });
+    properties.insert::<Checkbox, _>(HoveredBorderColor(BorderColor {
+        color: BORDER_LIGHT,
+    }));
+    properties.insert::<Checkbox, _>(CornerRadius { radius: 2. });
+    properties.insert::<Checkbox, _>(Background::Gradient(checkbox_gradient.clone()));
+    properties.insert::<Checkbox, _>(ActiveBackground(Background::Gradient(
+        checkbox_gradient.clone(),
+    )));
+    properties.insert::<Checkbox, _>(DisabledBackground(Background::Gradient(
+        checkbox_gradient.clone(),
+    )));
+    properties.insert::<Checkbox, _>(CheckmarkWidth { width: 2.0 });
+    properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
+    properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
+
+    // TODO - Add default Padding to RootWidget?
+
+    properties
 }

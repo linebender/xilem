@@ -1,7 +1,13 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use anymap3::{AnyMap, Entry};
+use std::any::TypeId;
+use std::collections::HashMap;
+use std::default::Default;
+
+use anymap3::AnyMap;
+
+use crate::core::Widget;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -13,7 +19,15 @@ use anymap3::{AnyMap, Entry};
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: 'static {}
+pub trait Property: Default + 'static {
+    /// A static reference to a default value.
+    ///
+    /// Should be the same as [`Default::default()`].
+    ///
+    /// **Note:** This is a hacky workaround until we find a better way to store default
+    /// values for properties.
+    fn static_default() -> &'static Self;
+}
 
 /// A collection of properties that a widget can be created with.
 ///
@@ -34,6 +48,7 @@ pub struct Properties {
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
     pub(crate) map: &'a AnyMap,
+    pub(crate) default_map: &'a AnyMap,
 }
 
 /// Mutable reference to a collection of properties that a widget has access to.
@@ -46,6 +61,21 @@ pub struct PropertiesRef<'a> {
 /// [`Widget`]: crate::core::Widget
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
+    pub(crate) default_map: &'a AnyMap,
+}
+
+// TODO - Document default properties.
+/// A collection of default properties for all widgets.
+///
+/// Default property values can be added to this collection for
+/// every `(widget type, property type)` pair.
+///
+/// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
+#[derive(Default, Debug)]
+pub struct DefaultProperties {
+    /// Maps widget types to the default property set for that widget.
+    pub(crate) map: HashMap<TypeId, AnyMap>,
+    pub(crate) dummy_map: AnyMap,
 }
 
 impl Properties {
@@ -54,14 +84,19 @@ impl Properties {
         Self { map: AnyMap::new() }
     }
 
-    /// Get a reference to the properties.
-    pub fn ref_(&self) -> PropertiesRef<'_> {
-        PropertiesRef { map: &self.map }
+    /// Get value of property `P`.
+    pub fn get<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>()
     }
 
-    /// Get a mutable reference to the properties.
-    pub fn mut_(&mut self) -> PropertiesMut<'_> {
-        PropertiesMut { map: &mut self.map }
+    /// Set property `P` to given value. Returns the previous value if `P` was already set.
+    pub fn set<P: Property>(&mut self, value: P) -> Option<P> {
+        self.map.insert(value)
+    }
+
+    /// Remove property `P`. Returns the previous value if `P` was set.
+    pub fn remove<P: Property>(&mut self) -> Option<P> {
+        self.map.remove::<P>()
     }
 }
 
@@ -71,46 +106,65 @@ impl Properties {
 
 impl PropertiesRef<'_> {
     /// Returns `true` if the widget has a property of type `P`.
+    ///
+    /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
         self.map.contains::<P>()
     }
 
-    /// Get value of property `P`, or `None` if the widget has no `P` property.
-    pub fn get<P: Property>(&self) -> Option<&P> {
-        self.map.get::<P>()
+    /// Get value of property `P`.
+    ///
+    /// If the widget has an entry for `P`, returns that entry.
+    /// If the default property set has an entry for `P`, returns that entry.
+    /// Otherwise returns [`Property::static_default()`].
+    pub fn get<P: Property>(&self) -> &P {
+        if let Some(p) = self.map.get::<P>() {
+            p
+        } else if let Some(p) = self.default_map.get::<P>() {
+            p
+        } else {
+            P::static_default()
+        }
     }
 }
 
 impl PropertiesMut<'_> {
     /// Returns `true` if the widget has a property of type `P`.
+    ///
+    /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
         self.map.contains::<P>()
     }
 
-    /// Get value of property `P`, or `None` if the widget has no `P` property.
-    pub fn get<P: Property>(&self) -> Option<&P> {
-        self.map.get::<P>()
-    }
-
-    /// Get value of property `P`, or `None` if the widget has no `P` property.
+    /// Get value of property `P`.
     ///
-    /// If you're using a `WidgetMut`, call [`WidgetMut::get_prop_mut`] instead.
-    ///
-    /// [`WidgetMut::get_prop_mut`]: crate::core::WidgetMut::get_prop_mut
-    pub fn get_mut<P: Property>(&mut self) -> Option<&mut P> {
-        self.map.get_mut::<P>()
+    /// If the widget has an entry for `P`, returns that entry.
+    /// If the default property set has an entry for `P`, returns that entry.
+    /// Otherwise returns [`Property::static_default()`].
+    pub fn get<P: Property>(&self) -> &P {
+        if let Some(p) = self.map.get::<P>() {
+            p
+        } else if let Some(p) = self.default_map.get::<P>() {
+            p
+        } else {
+            P::static_default()
+        }
     }
 
     /// Set property `P` to given value. Returns the previous value if `P` was already set.
     ///
+    /// Does not affect default properties.
+    ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::insert_prop`] instead.
     ///
     /// [`WidgetMut::insert_prop`]: crate::core::WidgetMut::insert_prop
-    pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
+    pub fn set<P: Property>(&mut self, value: P) -> Option<P> {
         self.map.insert(value)
     }
 
     /// Remove property `P`. Returns the previous value if `P` was set.
+    ///
+    /// Does not affect default properties.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::remove_prop`] instead.
     ///
@@ -119,19 +173,37 @@ impl PropertiesMut<'_> {
         self.map.remove::<P>()
     }
 
-    /// Returns an entry that can be used to add, update, or remove a property.
-    ///
-    /// If you're using a `WidgetMut`, call [`WidgetMut::prop_entry`] instead.
-    ///
-    /// [`WidgetMut::prop_entry`]: crate::core::WidgetMut::prop_entry
-    pub fn entry<P: Property>(&mut self) -> Entry<'_, dyn std::any::Any, P> {
-        self.map.entry::<P>()
-    }
-
     /// Get a `PropertiesMut` for the same underlying properties with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> PropertiesMut<'_> {
         PropertiesMut {
             map: &mut *self.map,
+            default_map: self.default_map,
         }
+    }
+}
+
+impl DefaultProperties {
+    /// Create an empty set with no default values.
+    ///
+    /// A completely empty set is probably not what you want.
+    /// It means buttons will be displayed without borders or backgrounds, textboxes won't
+    /// have default padding, etc.
+    /// You should either add a thorough set of values to this, or start from an existing set.
+    pub fn new() -> Self {
+        Self {
+            map: HashMap::new(),
+            dummy_map: AnyMap::new(),
+        }
+    }
+
+    /// Set the default value of property `P` for widget `W`.
+    ///
+    /// Widgets for which the property `P` isn't set will get `value` instead.
+    pub fn insert<W: Widget, P: Property>(&mut self, value: P) -> Option<P> {
+        self.map.entry(TypeId::of::<W>()).or_default().insert(value)
+    }
+
+    pub(crate) fn for_widget(&self, id: TypeId) -> &AnyMap {
+        self.map.get(&id).unwrap_or(&self.dummy_map)
     }
 }

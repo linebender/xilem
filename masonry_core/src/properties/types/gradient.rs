@@ -11,7 +11,7 @@ use crate::peniko::{ColorStops, ColorStopsSource, Extend};
 /// but uses a layout-invariant representation: instead of saying
 /// "The gradient goes from point A to point B", we declare things like
 /// "The gradient has angle X", and A and B are computed dynamically from widget layout.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum GradientShape {
     /// Gradient that transitions between two or more colors along a line.
     ///
@@ -31,7 +31,7 @@ pub enum GradientShape {
 /// but uses a layout-invariant representation: instead of saying
 /// "The gradient goes from point A to point B", we declare things like
 /// "The gradient has angle X", and A and B and computed dynamically from widget layout.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Gradient {
     /// Shape and coordinates of the gradient.
     pub shape: GradientShape,

@@ -9,7 +9,7 @@ use crate::properties::CornerRadius;
 
 /// The width of a widget's border, in logical pixels.
 #[expect(missing_docs, reason = "obvious")]
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct BorderWidth {
     pub width: f64,
 }
@@ -17,7 +17,12 @@ pub struct BorderWidth {
 // TODO - To match CSS, we should use a non-zero default width
 // and a "border style" of "None".
 
-impl Property for BorderWidth {}
+impl Property for BorderWidth {
+    fn static_default() -> &'static Self {
+        static DEFAULT: BorderWidth = BorderWidth { width: 0. };
+        &DEFAULT
+    }
+}
 
 impl BorderWidth {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).

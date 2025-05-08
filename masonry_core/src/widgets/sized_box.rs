@@ -428,9 +428,8 @@ impl Widget for SizedBox {
         let background = self.background.clone().or_else(|| {
             // TODO - bg_rect should account for border width
             let bg_rect = ctx.size().to_rect();
-            props
-                .get::<Background>()
-                .map(|background| background.get_peniko_brush_for_rect(bg_rect))
+            // TODO - Remove `Some()`
+            Some(props.get::<Background>().get_peniko_brush_for_rect(bg_rect))
         });
 
         if let Some(background) = background {
@@ -661,15 +660,13 @@ mod tests {
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = Background::Color(palette::css::GREEN);
-            *sized_box.get_prop_mut().unwrap() = brush;
+            sized_box.insert_prop(brush);
         });
         assert_render_snapshot!(harness, "sized_box_background_brush_green");
 
         harness.edit_root_widget(|mut sized_box| {
             let brush = Background::Color(palette::css::BLUE);
-            sized_box.prop_entry().and_modify(|entry| {
-                *entry = brush;
-            });
+            sized_box.insert_prop(brush);
         });
         assert_render_snapshot!(harness, "sized_box_background_brush_blue");
 

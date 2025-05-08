@@ -1,11 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
+};
 use masonry::widgets;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
-use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::style::{HasProperty, Style};
+use crate::{
+    Color, InsertNewline, MessageResult, Pod, PropertyTuple as _, TextAlignment, ViewCtx, ViewId,
+};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -26,6 +32,7 @@ where
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         insert_newline: InsertNewline::default(),
+        properties: Default::default(),
         // TODO?: disabled: false,
     }
 }
@@ -39,8 +46,41 @@ pub struct Textbox<State, Action> {
     text_brush: Brush,
     alignment: TextAlignment,
     insert_newline: InsertNewline,
+    properties: (
+        Option<Background>,
+        Option<DisabledBackground>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<BoxShadow>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    ),
     // TODO: add more attributes of `masonry::widgets::TextBox`
 }
+
+impl<S, A> Style for Textbox<S, A> {
+    type Props = (
+        Option<Background>,
+        Option<DisabledBackground>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<BoxShadow>,
+        Option<CornerRadius>,
+        Option<Padding>,
+    );
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+impl<S, A> HasProperty<Background> for Textbox<S, A> {}
+impl<S, A> HasProperty<DisabledBackground> for Textbox<S, A> {}
+impl<S, A> HasProperty<BorderColor> for Textbox<S, A> {}
+impl<S, A> HasProperty<BorderWidth> for Textbox<S, A> {}
+impl<S, A> HasProperty<BoxShadow> for Textbox<S, A> {}
+impl<S, A> HasProperty<CornerRadius> for Textbox<S, A> {}
+impl<S, A> HasProperty<Padding> for Textbox<S, A> {}
 
 impl<State, Action> Textbox<State, Action> {
     /// Set the brush used to paint the text.
@@ -88,7 +128,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
         ctx.record_action(id);
-        let widget_pod = ctx.new_pod(textbox);
+        let widget_pod = ctx
+            .new_pod(textbox)
+            .with_props(self.properties.build_properties());
         (widget_pod, ())
     }
 
@@ -99,6 +141,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
+
         let mut text_area = widgets::Textbox::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;

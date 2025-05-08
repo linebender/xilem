@@ -8,12 +8,34 @@ use crate::peniko::color::{AlphaColor, Srgb};
 
 /// The color of a widget's border.
 #[expect(missing_docs, reason = "obvious")]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BorderColor {
     pub color: AlphaColor<Srgb>,
 }
 
-impl Property for BorderColor {}
+impl Property for BorderColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: BorderColor = BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        };
+        &DEFAULT
+    }
+}
+
+/// The color of a widget's border when hovered by a pointer.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct HoveredBorderColor(pub BorderColor);
+
+impl Property for HoveredBorderColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: HoveredBorderColor = HoveredBorderColor(BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        });
+        &DEFAULT
+    }
+}
+
+// ---
 
 // TODO - The default border color in CSS is `currentcolor`,
 // the color text is displayed in.
@@ -21,13 +43,29 @@ impl Property for BorderColor {}
 
 impl Default for BorderColor {
     fn default() -> Self {
-        Self {
-            color: AlphaColor::from_rgba8(0, 0, 0, 0),
-        }
+        *Self::static_default()
     }
 }
 
 impl BorderColor {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_paint_only();
+    }
+}
+
+// ---
+
+impl Default for HoveredBorderColor {
+    fn default() -> Self {
+        *Self::static_default()
+    }
+}
+
+impl HoveredBorderColor {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {

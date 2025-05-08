@@ -3,16 +3,25 @@
 
 //! A simple calculator example
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(
+    clippy::shadow_unrelated,
+    reason = "Seems to prevent patterns we'd want to use."
+)]
 
-use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
+use std::str::FromStr;
+
+use masonry::properties::Background;
+use masonry::theme::default_property_set;
+use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment, RootWidget};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
+use xilem::style::Style;
 use xilem::view::{
     Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, button, flex, grid, label,
     sized_box,
 };
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -224,11 +233,12 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
                 } else {
                     palette::css::WHITE
                 }),
+                false,
                 Calculator::clear_entry,
             )
             .grid_pos(0, 1),
-            expanded_button("C", Calculator::clear_all).grid_pos(1, 1),
-            expanded_button("DEL", Calculator::on_delete).grid_pos(2, 1),
+            expanded_button("C", false, Calculator::clear_all).grid_pos(1, 1),
+            expanded_button("DEL", false, Calculator::on_delete).grid_pos(2, 1),
             operator_button(MathOperator::Divide).grid_pos(3, 1),
             num_row(["7", "8", "9"], 2),
             operator_button(MathOperator::Multiply).grid_pos(3, 2),
@@ -237,10 +247,13 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
             num_row(["1", "2", "3"], 4),
             operator_button(MathOperator::Add).grid_pos(3, 4),
             // bottom row
-            expanded_button("±", Calculator::negate).grid_pos(0, 5),
+            expanded_button("±", false, Calculator::negate).grid_pos(0, 5),
             digit_button("0").grid_pos(1, 5),
-            digit_button(".").grid_pos(2, 5),
-            expanded_button("=", Calculator::on_equals).grid_pos(3, 5),
+            expanded_button(".", false, |data: &mut Calculator| {
+                data.on_entered_digit(".");
+            })
+            .grid_pos(2, 5),
+            expanded_button("=", false, Calculator::on_equals).grid_pos(3, 5),
         ),
         4,
         6,
@@ -267,22 +280,42 @@ fn display_label(text: &str) -> impl WidgetView<Calculator> + use<> {
 /// they take up all available space in flex containers.
 fn expanded_button(
     text: impl Into<Label>,
+    is_digit: bool,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Calculator> {
-    sized_box(button(text, callback)).expand()
+    const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
+    const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
+    const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
+    const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
+
+    let default_color = if is_digit { GRAY } else { BLUE };
+    let active_color = if is_digit { LIGHT_GRAY } else { LIGHT_BLUE };
+    sized_box(
+        button(text, callback)
+            .background_color(default_color)
+            .active_background_color(active_color)
+            .corner_radius(10.)
+            .border_color(Color::TRANSPARENT)
+            .hovered_border_color(Color::WHITE),
+    )
+    .expand()
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,
 /// `on_entered_operator()`.
 fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
-    expanded_button(math_operator.as_str(), move |data: &mut Calculator| {
-        data.on_entered_operator(math_operator);
-    })
+    expanded_button(
+        math_operator.as_str(),
+        false,
+        move |data: &mut Calculator| {
+            data.on_entered_operator(math_operator);
+        },
+    )
 }
 
 /// A button which adds `digit` to the current input when pressed
 fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
-    expanded_button(digit, |data: &mut Calculator| {
+    expanded_button(digit, true, |data: &mut Calculator| {
         data.on_entered_digit(digit);
     })
 }
@@ -296,7 +329,11 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         operation: None,
     };
 
-    let app = Xilem::new(data, app_logic);
+    let mut default_properties = default_property_set();
+    default_properties
+        .insert::<RootWidget, _>(Background::Color(Color::from_str("#794869").unwrap()));
+
+    let app = Xilem::new(data, app_logic).with_default_properties(default_properties);
     let min_window_size = LogicalSize::new(200., 200.);
     let window_size = LogicalSize::new(400., 500.);
     let window_attributes = Window::default_attributes()

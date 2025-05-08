@@ -7,6 +7,7 @@
 
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
+use xilem::style::Style as _;
 use xilem::view::{button, flex, label, prose, sized_box, spinner};
 use xilem::{EventLoop, WidgetView, Xilem};
 
@@ -60,7 +61,7 @@ fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView
 }
 
 fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
-    sized_box(flex((
+    flex((
         button("Reset", |app_data: &mut StateMachine| {
             app_data.history.clear();
             app_data.state = IsEven::Initial;
@@ -71,7 +72,7 @@ fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use
         sized_box(spinner()).height(40.).width(40.),
         state_machine(app_data),
         // TODO: When we have a canvas widget, visualise the entire state machine here.
-    )))
+    ))
     .padding(15.0)
 }
 
