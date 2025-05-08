@@ -140,6 +140,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
             ctx.new_pod(widgets::Checkbox::new(self.checked, self.label.clone()))
+                .with_props(self.properties.build_properties())
         })
     }
 
@@ -150,6 +151,8 @@ where
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if prev.label != self.label {
             widgets::Checkbox::set_text(&mut element, self.label.clone());
         }
