@@ -26,14 +26,21 @@ use crate::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use crate::core::{
-    Action, Ime, PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WidgetMut,
-    WidgetRef, WindowEvent,
+    Action, Ime, PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType,
+    PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::{Point, Size, Vec2};
 use crate::passes::anim::run_update_anim_pass;
 use crate::peniko::{Blob, Color};
 use crate::testing::screenshots::get_image_diff;
+
+/// A [`PointerInfo`] for a primary mouse, for testing.
+pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
+    pointer_id: Some(PointerId::PRIMARY),
+    persistent_device_id: None,
+    pointer_type: PointerType::Mouse,
+};
 
 /// A safe headless environment to test widgets in.
 ///
@@ -101,7 +108,7 @@ use crate::testing::screenshots::get_image_diff;
 ///     harness.mouse_click_on(button_id);
 ///     assert_eq!(
 ///         harness.pop_action(),
-///         Some((Action::ButtonPressed(PointerButton::Primary), button_id))
+///         Some((Action::ButtonPressed(Some(PointerButton::Primary)), button_id))
 ///     );
 /// }
 ///
@@ -213,7 +220,7 @@ impl TestHarness {
 
     /// Builds harness with given root widget and additional parameters.
     pub fn create_with(root_widget: impl Widget, params: TestHarnessParams) -> Self {
-        let mouse_state = PointerState::empty();
+        let mouse_state = PointerState::default();
         let window_size = PhysicalSize::new(
             params.window_size.width as _,
             params.window_size.height as _,
@@ -425,41 +432,50 @@ impl TestHarness {
 
     // --- MARK: EVENT HELPERS ---
 
-    /// Move an internal mouse state, and send a [`PointerMove`](PointerEvent::PointerMove) event to the window.
+    /// Move an internal mouse state, and send a [`Move`](PointerEvent::Move) event to the window.
     pub fn mouse_move(&mut self, pos: impl Into<Point>) {
         // FIXME - Account for scaling
-        let pos = pos.into();
-        let pos = PhysicalPosition::new(pos.x, pos.y);
-        self.mouse_state.physical_position = pos;
+        let Point { x, y } = pos.into();
+        let pos = PhysicalPosition { x, y };
+        self.mouse_state.position = pos;
 
-        debug!("Harness mouse moved to {}, {}", pos.x, pos.y);
+        debug!("Harness mouse moved to {x}, {y}");
 
-        // TODO: may want to support testing with non-unity scale factors.
-        let scale_factor = 1.0;
-        self.mouse_state.position = pos.to_logical(scale_factor);
-
-        self.process_pointer_event(PointerEvent::PointerMove(self.mouse_state.clone()));
+        self.process_pointer_event(PointerEvent::Move(PointerUpdate {
+            pointer: PRIMARY_MOUSE,
+            current: self.mouse_state.clone(),
+            coalesced: vec![],
+            predicted: vec![],
+        }));
     }
 
-    /// Send a [`PointerDown`](PointerEvent::PointerDown) event to the window.
+    /// Send a [`Down`](PointerEvent::Down) event to the window.
     pub fn mouse_button_press(&mut self, button: PointerButton) {
         self.mouse_state.buttons.insert(button);
-        self.process_pointer_event(PointerEvent::PointerDown(button, self.mouse_state.clone()));
+        self.process_pointer_event(PointerEvent::Down {
+            pointer: PRIMARY_MOUSE,
+            button: button.into(),
+            state: self.mouse_state.clone(),
+        });
     }
 
-    /// Send a [`PointerUp`](PointerEvent::PointerUp) event to the window.
+    /// Send an [`Up`](PointerEvent::Up) event to the window.
     pub fn mouse_button_release(&mut self, button: PointerButton) {
         self.mouse_state.buttons.remove(button);
-        self.process_pointer_event(PointerEvent::PointerUp(button, self.mouse_state.clone()));
+        self.process_pointer_event(PointerEvent::Up {
+            pointer: PRIMARY_MOUSE,
+            button: button.into(),
+            state: self.mouse_state.clone(),
+        });
     }
 
-    /// Send a [`MouseWheel`](PointerEvent::MouseWheel) event to the window.
-    pub fn mouse_wheel(&mut self, wheel_delta: Vec2) {
-        let pixel_delta = LogicalPosition::new(wheel_delta.x, wheel_delta.y);
-        self.process_pointer_event(PointerEvent::MouseWheel(
-            pixel_delta,
-            self.mouse_state.clone(),
-        ));
+    /// Send a [`Scroll`](PointerEvent::Scroll) event to the window.
+    pub fn mouse_wheel(&mut self, Vec2 { x, y }: Vec2) {
+        self.process_pointer_event(PointerEvent::Scroll {
+            pointer: PRIMARY_MOUSE,
+            delta: ScrollDelta::PixelDelta(PhysicalPosition { x, y }),
+            state: self.mouse_state.clone(),
+        });
     }
 
     /// Send events that lead to a given widget being clicked.

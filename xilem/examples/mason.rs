@@ -86,12 +86,12 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
             .direction(Axis::Horizontal),
             prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
             button_any_pointer(button_label, |data: &mut AppData, button| match button {
-                PointerButton::None => {
-                    tracing::warn!("Got unexpected None from button");
+                None => {
+                    // Usually this is a touch.
                 }
-                PointerButton::Primary => data.count += 1,
-                PointerButton::Secondary => data.count -= 1,
-                PointerButton::Auxiliary => data.count *= 2,
+                Some(PointerButton::Primary) => data.count += 1,
+                Some(PointerButton::Secondary) => data.count -= 1,
+                Some(PointerButton::Auxiliary) => data.count *= 2,
                 _ => (),
             }),
             checkbox("Check me", data.active, |data: &mut AppData, checked| {

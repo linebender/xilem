@@ -55,12 +55,13 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId};
 pub fn button<State, Action>(
     label: impl Into<Label>,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
-) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
-{
+) -> Button<
+    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+> {
     Button {
         label: label.into(),
         callback: move |state: &mut State, button| match button {
-            PointerButton::Primary => MessageResult::Action(callback(state)),
+            None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
     }
@@ -69,9 +70,10 @@ pub fn button<State, Action>(
 /// A button which calls `callback` when pressed.
 pub fn button_any_pointer<State, Action>(
     label: impl Into<Label>,
-    callback: impl Fn(&mut State, PointerButton) -> Action + Send + 'static,
-) -> Button<impl for<'a> Fn(&'a mut State, PointerButton) -> MessageResult<Action> + Send + 'static>
-{
+    callback: impl Fn(&mut State, Option<PointerButton>) -> Action + Send + 'static,
+) -> Button<
+    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+> {
     Button {
         label: label.into(),
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
@@ -94,7 +96,7 @@ const LABEL_VIEW_ID: ViewId = ViewId::new(0);
 impl<F> ViewMarker for Button<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
 where
-    F: Fn(&mut State, PointerButton) -> MessageResult<Action> + Send + Sync + 'static,
+    F: Fn(&mut State, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Button>;
     type ViewState = ();

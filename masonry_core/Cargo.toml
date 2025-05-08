@@ -34,6 +34,7 @@ vello.workspace = true
 wgpu.workspace = true
 parley.workspace = true
 tree_arena.workspace = true
+ui-events.workspace = true
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
 image.workspace = true
@@ -46,7 +47,6 @@ time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
 anymap3 = "1.0.1"
-keyboard-types = "0.8.0"
 oxipng = { version = "9.1.4", default-features = false }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

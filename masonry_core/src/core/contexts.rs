@@ -7,7 +7,7 @@ use std::any::Any;
 
 use accesskit::TreeUpdate;
 use anymap3::AnyMap;
-use dpi::LogicalPosition;
+use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMutList, ArenaRefList};
@@ -354,7 +354,7 @@ impl_context_method!(
 impl EventCtx<'_> {
     /// Capture the pointer in the current widget.
     ///
-    /// [Pointer capture] is only allowed during a [`PointerDown`] event. It is a logic error to
+    /// [Pointer capture] is only allowed during a [`Down`] event. It is a logic error to
     /// capture the pointer during any other event.
     ///
     /// A widget normally only receives pointer events when the pointer is inside the widget's
@@ -370,17 +370,17 @@ impl EventCtx<'_> {
     ///
     /// # Releasing the pointer
     ///
-    /// Any widget can [`release`] the pointer during any event. The pointer is automatically
-    /// released after handling of a [`PointerUp`] or [`PointerLost`] event completes. A widget
-    /// holding the pointer capture will be the target of these events.
+    /// Any widget can [`release`] the pointer during any event.
+    /// The pointer is automatically released after handling of a [`Up`] or [`Cancel`] event completes.
+    /// A widget holding the pointer capture will be the target of these events.
     ///
-    /// If pointer capture is lost for external reasons (the widget is disabled, the window
-    /// lost focus, etc), the widget will still get a [`PointerLost`] event.
+    /// If pointer capture is lost for external reasons (the widget is disabled, the window lost focus,
+    /// etc), the widget will still get a [`Cancel`] event.
     ///
     /// [Pointer capture]: crate::doc::doc_06_masonry_concepts#pointer-capture
-    /// [`PointerDown`]: crate::core::PointerEvent::PointerDown
-    /// [`PointerUp`]: crate::core::PointerEvent::PointerUp
-    /// [`PointerLost`]: crate::core::PointerEvent::PointerLost
+    /// [`Down`]: ui_events::pointer::PointerEvent::Down
+    /// [`Up`]: ui_events::pointer::PointerEvent::Up
+    /// [`Cancel`]: ui_events::pointer::PointerEvent::Cancel
     /// [`release`]: Self::release_pointer
     #[track_caller]
     pub fn capture_pointer(&mut self) {
@@ -487,6 +487,12 @@ impl EventCtx<'_> {
                 self.widget_id()
             );
         }
+    }
+
+    /// Translate window position to widget local position.
+    pub fn local_position(&self, p: PhysicalPosition<f64>) -> Point {
+        let LogicalPosition { x, y } = p.to_logical(self.global_state.scale_factor);
+        self.widget_state.window_transform.inverse() * Point { x, y }
     }
 }
 

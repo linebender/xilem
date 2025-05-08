@@ -14,23 +14,17 @@ use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
-use winit::event::{
-    DeviceEvent as WinitDeviceEvent, DeviceId, MouseButton as WinitMouseButton,
-    WindowEvent as WinitWindowEvent,
-};
+use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window, WindowAttributes, WindowId};
 
 use crate::app::{
     AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
-    masonry_resize_direction_to_winit, winit_force_to_masonry, winit_ime_to_masonry,
-    winit_key_event_to_kbt, winit_modifiers_to_kbt_modifiers, winit_mouse_button_to_masonry,
+    masonry_resize_direction_to_winit, winit_ime_to_masonry,
 };
-use crate::core::{
-    PointerButton, PointerEvent, PointerState, TextEvent, Widget, WidgetId, WindowEvent,
-};
-use crate::dpi::LogicalPosition;
+use crate::core::{TextEvent, Widget, WidgetId, WindowEvent};
 use crate::peniko::Color;
+use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
@@ -65,8 +59,6 @@ pub enum WindowState<'a> {
 pub struct MasonryState<'a> {
     render_cx: RenderContext,
     render_root: RenderRoot,
-    pointer_state: PointerState,
-    winit_mods: winit::event::Modifiers,
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
@@ -77,6 +69,7 @@ pub struct MasonryState<'a> {
     // Per-Window state
     // In future, this will support multiple windows
     window: WindowState<'a>,
+    event_reducer: WindowEventReducer,
     background_color: Color,
 }
 
@@ -235,11 +228,10 @@ impl MasonryState<'_> {
             renderer: None,
             #[cfg(feature = "tracy")]
             frame: None,
-            pointer_state: PointerState::empty(),
-            winit_mods: winit::event::Modifiers::default(),
             proxy: event_loop.create_proxy(),
 
             window: WindowState::Uninitialized(window),
+            event_reducer: WindowEventReducer::default(),
             background_color,
         }
     }
@@ -461,6 +453,25 @@ impl MasonryState<'_> {
         }
         accesskit_adapter.process_event(window, &event);
 
+        if !matches!(
+            event,
+            WinitWindowEvent::KeyboardInput {
+                is_synthetic: true,
+                ..
+            }
+        ) {
+            if let Some(wet) = self.event_reducer.reduce(&event) {
+                match wet {
+                    WindowEventTranslation::Keyboard(k) => {
+                        self.render_root.handle_text_event(TextEvent::Keyboard(k));
+                    }
+                    WindowEventTranslation::Pointer(p) => {
+                        self.render_root.handle_pointer_event(p);
+                    }
+                }
+            }
+        }
+
         match event {
             WinitWindowEvent::ScaleFactorChanged { scale_factor, .. } => {
                 self.render_root
@@ -491,25 +502,6 @@ impl MasonryState<'_> {
                 self.render_root
                     .handle_window_event(WindowEvent::Resize(size));
             }
-            WinitWindowEvent::ModifiersChanged(modifiers) => {
-                self.pointer_state.mods = winit_modifiers_to_kbt_modifiers(modifiers.state());
-                self.winit_mods = modifiers;
-                self.render_root
-                    .handle_text_event(TextEvent::ModifierChange(self.pointer_state.mods));
-            }
-            WinitWindowEvent::KeyboardInput {
-                device_id: _,
-                event,
-                is_synthetic: false, // TODO: Introduce an escape hatch for synthetic keys
-            } => {
-                let text = event.text.as_ref().map(|text| text.to_string());
-                let event = winit_key_event_to_kbt(&event, self.winit_mods.state());
-                self.render_root.handle_text_event(TextEvent::KeyboardKey(
-                    event,
-                    self.pointer_state.mods,
-                    text,
-                ));
-            }
             WinitWindowEvent::Ime(ime) => {
                 let ime = winit_ime_to_masonry(ime);
                 self.render_root.handle_text_event(TextEvent::Ime(ime));
@@ -517,111 +509,6 @@ impl MasonryState<'_> {
             WinitWindowEvent::Focused(new_focus) => {
                 self.render_root
                     .handle_text_event(TextEvent::WindowFocusChange(new_focus));
-            }
-            WinitWindowEvent::CursorEntered { .. } => {
-                self.render_root
-                    .handle_pointer_event(PointerEvent::PointerEnter(self.pointer_state.clone()));
-            }
-            WinitWindowEvent::CursorMoved { position, .. } => {
-                self.pointer_state.physical_position = position;
-                self.pointer_state.position = position.to_logical(window.scale_factor());
-                self.render_root
-                    .handle_pointer_event(PointerEvent::PointerMove(self.pointer_state.clone()));
-            }
-            WinitWindowEvent::CursorLeft { .. } => {
-                self.render_root
-                    .handle_pointer_event(PointerEvent::PointerLeave(self.pointer_state.clone()));
-            }
-            WinitWindowEvent::MouseInput { state, button, .. } => {
-                if let WinitMouseButton::Other(other) = button {
-                    warn!(
-                        "Got winit MouseButton::Other({other}) which is not yet fully supported."
-                    );
-                }
-                let button = winit_mouse_button_to_masonry(button);
-
-                match state {
-                    winit::event::ElementState::Pressed => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerDown(
-                                button,
-                                self.pointer_state.clone(),
-                            ));
-                    }
-                    winit::event::ElementState::Released => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerUp(
-                                button,
-                                self.pointer_state.clone(),
-                            ));
-                    }
-                }
-            }
-            WinitWindowEvent::MouseWheel { delta, .. } => {
-                let delta = match delta {
-                    // 120 pixels is the default in Chrome and various other software
-                    // (when not overridden by configuration).
-                    // This is arbitrary, but better than nothing.
-                    winit::event::MouseScrollDelta::LineDelta(x, y) => {
-                        LogicalPosition::new(120. * x as f64, 120. * y as f64)
-                    }
-                    winit::event::MouseScrollDelta::PixelDelta(delta) => {
-                        delta.to_logical(window.scale_factor())
-                    }
-                };
-                self.render_root
-                    .handle_pointer_event(PointerEvent::MouseWheel(
-                        delta,
-                        self.pointer_state.clone(),
-                    ));
-            }
-            WinitWindowEvent::Touch(winit::event::Touch {
-                location,
-                phase,
-                force,
-                ..
-            }) => {
-                // FIXME: This is naïve and should be refined for actual use.
-                //        It will also interact with gesture discrimination.
-                self.pointer_state.physical_position = location;
-                self.pointer_state.position = location.to_logical(window.scale_factor());
-                self.pointer_state.force = force.map(winit_force_to_masonry);
-                match phase {
-                    winit::event::TouchPhase::Started => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerMove(
-                                self.pointer_state.clone(),
-                            ));
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerDown(
-                                PointerButton::Primary,
-                                self.pointer_state.clone(),
-                            ));
-                    }
-                    winit::event::TouchPhase::Ended => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerUp(
-                                PointerButton::Primary,
-                                self.pointer_state.clone(),
-                            ));
-                    }
-                    winit::event::TouchPhase::Moved => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerMove(
-                                self.pointer_state.clone(),
-                            ));
-                    }
-                    winit::event::TouchPhase::Cancelled => {
-                        self.render_root
-                            .handle_pointer_event(PointerEvent::PointerLost(
-                                self.pointer_state.clone(),
-                            ));
-                    }
-                }
-            }
-            WinitWindowEvent::PinchGesture { delta, .. } => {
-                self.render_root
-                    .handle_pointer_event(PointerEvent::Pinch(delta, self.pointer_state.clone()));
             }
             _ => (),
         }

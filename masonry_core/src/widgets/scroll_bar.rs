@@ -130,12 +130,12 @@ impl Widget for ScrollBar {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::PointerDown(..) => {
+            PointerEvent::Down { state, .. } => {
                 ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                 let cursor_rect = self.get_cursor_rect(ctx.size(), cursor_min_length);
-                let mouse_pos = event.local_position(ctx);
+                let mouse_pos = ctx.local_position(state.position);
                 if cursor_rect.contains(mouse_pos) {
                     let (z0, z1) = self.axis.major_span(cursor_rect);
                     let mouse_major = self.axis.major_pos(mouse_pos);
@@ -148,20 +148,20 @@ impl Widget for ScrollBar {
                 };
                 ctx.request_render();
             }
-            PointerEvent::PointerMove(..) => {
+            PointerEvent::Move(u) => {
                 if let Some(grab_anchor) = self.grab_anchor {
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     self.cursor_progress = self.progress_from_mouse_pos(
                         ctx.size(),
                         cursor_min_length,
                         grab_anchor,
-                        event.local_position(ctx),
+                        ctx.local_position(u.current.position),
                     );
                     self.moved = true;
                 }
                 ctx.request_render();
             }
-            PointerEvent::PointerUp(..) | PointerEvent::PointerLost(..) => {
+            PointerEvent::Up { .. } | PointerEvent::Cancel(..) => {
                 self.grab_anchor = None;
                 ctx.request_render();
             }

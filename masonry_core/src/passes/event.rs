@@ -1,15 +1,16 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use dpi::LogicalPosition;
-use keyboard_types::{Key, KeyState, NamedKey};
 use tracing::{debug, info_span, trace};
 
 use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::{
-    AccessEvent, EventCtx, PointerEvent, PropertiesMut, TextEvent, Widget, WidgetId,
+    AccessEvent, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut, TextEvent,
+    Widget, WidgetId,
+    keyboard::{Key, KeyState, NamedKey},
 };
+use crate::dpi::{LogicalPosition, PhysicalPosition};
 use crate::passes::{enter_span, merge_state_up};
 
 // --- MARK: HELPERS ---
@@ -32,6 +33,35 @@ fn get_pointer_target(
     }
 
     None
+}
+
+/// `true` if this [`PointerEvent`] type is likely to occur every frame.
+fn is_very_frequent(e: &PointerEvent) -> bool {
+    matches!(e, PointerEvent::Move(..) | PointerEvent::Scroll { .. })
+}
+
+/// Short name for a [`PointerEvent`].
+fn pointer_event_short_name(e: &PointerEvent) -> &'static str {
+    match e {
+        PointerEvent::Down { .. } => "Down",
+        PointerEvent::Up { .. } => "Up",
+        PointerEvent::Move(..) => "Move",
+        PointerEvent::Enter(..) => "Enter",
+        PointerEvent::Leave(..) => "Leave",
+        PointerEvent::Cancel(..) => "Cancel",
+        PointerEvent::Scroll { .. } => "Scroll",
+    }
+}
+
+/// A position if the event has one.
+fn try_event_position(event: &PointerEvent) -> Option<PhysicalPosition<f64>> {
+    match event {
+        PointerEvent::Down { state, .. }
+        | PointerEvent::Up { state, .. }
+        | PointerEvent::Move(PointerUpdate { current: state, .. })
+        | PointerEvent::Scroll { state, .. } => Some(state.position),
+        _ => None,
+    }
 }
 
 fn run_event_pass<E>(
@@ -97,22 +127,30 @@ fn run_event_pass<E>(
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
-    if event.is_high_density() {
+    if is_very_frequent(event) {
         // We still want to record that this pass occurred in the debug file log.
         // However, we choose not to record any other tracing for this event,
         // as that would create a lot of noise.
-        trace!("Running ON_POINTER_EVENT pass with {}", event.short_name());
+        trace!(
+            "Running ON_POINTER_EVENT pass with {}",
+            pointer_event_short_name(event)
+        );
     } else {
-        debug!("Running ON_POINTER_EVENT pass with {}", event.short_name());
+        debug!(
+            "Running ON_POINTER_EVENT pass with {}",
+            pointer_event_short_name(event)
+        );
     }
 
-    if event.position() != root.last_mouse_pos {
+    let event_pos = try_event_position(event).map(|p| p.to_logical(root.global_state.scale_factor));
+
+    if event_pos != root.last_mouse_pos {
         root.global_state.needs_pointer_pass = true;
-        root.last_mouse_pos = event.position();
+        root.last_mouse_pos = event_pos;
     }
 
     if root.global_state.inspector_state.is_picking_widget
-        && matches!(event, PointerEvent::PointerMove(..))
+        && matches!(event, PointerEvent::Move(..))
     {
         root.global_state.needs_pointer_pass = true;
         return Handled::Yes;
@@ -121,9 +159,9 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     // If the widget picker is active and this is a click event,
     // we select the widget under the mouse and short-circuit the event pass.
     if root.global_state.inspector_state.is_picking_widget
-        && matches!(event, PointerEvent::PointerDown(..))
+        && matches!(event, PointerEvent::Down { .. })
     {
-        let target_widget_id = get_pointer_target(root, event.position());
+        let target_widget_id = get_pointer_target(root, event_pos);
         if let Some(target_widget_id) = target_widget_id {
             root.global_state
                 .emit_signal(RenderRootSignal::WidgetSelectedInInspector(
@@ -137,9 +175,9 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         return Handled::Yes;
     }
 
-    let target_widget_id = get_pointer_target(root, event.position());
+    let target_widget_id = get_pointer_target(root, event_pos);
 
-    if matches!(event, PointerEvent::PointerDown(..)) {
+    if matches!(event, PointerEvent::Down { .. }) {
         if let Some(target_widget_id) = target_widget_id {
             // The next tab event assign focus around this widget.
             root.global_state.most_recently_clicked_widget = Some(target_widget_id);
@@ -163,24 +201,21 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         root,
         target_widget_id,
         event,
-        matches!(event, PointerEvent::PointerDown(..)),
+        matches!(event, PointerEvent::Down { .. }),
         |widget, ctx, props, event| {
             widget.on_pointer_event(ctx, props, event);
         },
-        !event.is_high_density(),
+        !is_very_frequent(event),
     );
 
-    if matches!(
-        event,
-        PointerEvent::PointerUp(..) | PointerEvent::PointerLost(..)
-    ) {
+    if matches!(event, PointerEvent::Up { .. } | PointerEvent::Cancel(..)) {
         // Automatically release the pointer on pointer up or leave. If a widget holds the capture,
         // it is notified of the pointer event before the capture is released, so it knows it is
         // about to lose the pointer.
         root.global_state.pointer_capture_target = None;
     }
 
-    if !event.is_high_density() {
+    if !is_very_frequent(event) {
         debug!(
             focused_widget = root.global_state.focused_widget.map(|id| id.0),
             handled = handled.is_handled(),
@@ -195,7 +230,14 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 /// See the [passes documentation](../doc/05_pass_system.md#event-passes).
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::WindowFocusChange(false)) {
-        run_on_pointer_event_pass(root, &PointerEvent::new_pointer_lost());
+        run_on_pointer_event_pass(
+            root,
+            &PointerEvent::Cancel(PointerInfo {
+                pointer_id: None,
+                persistent_device_id: None,
+                pointer_type: Default::default(),
+            }),
+        );
     }
 
     let _span = info_span!("dispatch_text_event").entered();
@@ -226,13 +268,13 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         !event.is_high_density(),
     );
 
-    if let TextEvent::KeyboardKey(key, mods, _) = event {
+    if let TextEvent::Keyboard(key) = event {
         // Handle Tab focus
         if key.key == Key::Named(NamedKey::Tab)
             && key.state == KeyState::Down
             && handled == Handled::No
         {
-            let forward = !mods.shift();
+            let forward = !key.modifiers.shift();
             let next_focused_widget = root.widget_from_focus_chain(forward);
             root.global_state.next_focused_widget = next_focused_widget;
             handled = Handled::Yes;

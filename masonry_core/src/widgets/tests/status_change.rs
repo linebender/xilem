@@ -3,9 +3,11 @@
 
 use assert_matches::assert_matches;
 
-use crate::core::{PointerButton, PointerEvent, PointerState, Update, WidgetId};
+use crate::core::{PointerButton, PointerEvent, Update, WidgetId};
 use crate::kurbo::Vec2;
-use crate::testing::{Record, Recording, TestHarness, TestWidgetExt as _, widget_ids};
+use crate::testing::{
+    PRIMARY_MOUSE, Record, Recording, TestHarness, TestWidgetExt as _, widget_ids,
+};
 use crate::widgets::{Button, Flex, SizedBox};
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
@@ -161,7 +163,7 @@ fn update_hovered_on_mouse_leave() {
 
     button_rec.clear();
     println!("leaving");
-    harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
+    harness.process_pointer_event(PointerEvent::Leave(PRIMARY_MOUSE));
 
     assert!(!is_hovered(&harness, button_id));
     assert_eq!(next_hovered_changed(&button_rec), Some(false));
@@ -245,11 +247,11 @@ fn get_pointer_events_while_active() {
 
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerMove(_))
+        Some(PointerEvent::Move(..))
     );
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerDown(_, _))
+        Some(PointerEvent::Down { .. })
     );
     assert_matches!(next_pointer_event(&button_rec), None);
 
@@ -261,7 +263,7 @@ fn get_pointer_events_while_active() {
 
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerMove(_))
+        Some(PointerEvent::Move(..))
     );
     assert_matches!(next_pointer_event(&button_rec), None);
 
@@ -273,7 +275,7 @@ fn get_pointer_events_while_active() {
 
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::MouseWheel(_, _))
+        Some(PointerEvent::Scroll { .. })
     );
     assert_matches!(next_pointer_event(&button_rec), None);
 
@@ -283,7 +285,7 @@ fn get_pointer_events_while_active() {
 
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerUp(_, _))
+        Some(PointerEvent::Up { .. })
     );
     assert_matches!(next_pointer_event(&button_rec), None);
 
@@ -317,11 +319,11 @@ fn automatically_lose_pointer_on_pointer_lost() {
     // The button should be notified of the move and pointer down events
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerMove(_))
+        Some(PointerEvent::Move(..))
     );
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerDown(_, _))
+        Some(PointerEvent::Down { .. })
     );
 
     // and should now hold the capture.
@@ -331,24 +333,24 @@ fn automatically_lose_pointer_on_pointer_lost() {
     harness.mouse_move_to(empty);
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerMove(_))
+        Some(PointerEvent::Move(..))
     );
     assert_eq!(harness.pointer_capture_target_id(), Some(button));
 
     // The pointer is lost, without releasing the primary button first
-    harness.process_pointer_event(PointerEvent::PointerLost(PointerState::empty()));
+    harness.process_pointer_event(PointerEvent::Cancel(PRIMARY_MOUSE));
 
     // The button holds the capture during this event and should be notified the pointer is lost
     assert_matches!(
         next_pointer_event(&button_rec),
-        Some(PointerEvent::PointerLost(_))
+        Some(PointerEvent::Cancel(..))
     );
 
     // The button should have lost the pointer capture
     assert_eq!(harness.pointer_capture_target_id(), None);
 
     // If the pointer enters and leaves again, the button should not be notified
-    harness.process_pointer_event(PointerEvent::PointerEnter(PointerState::empty()));
-    harness.process_pointer_event(PointerEvent::PointerLeave(PointerState::empty()));
+    harness.process_pointer_event(PointerEvent::Enter(PRIMARY_MOUSE));
+    harness.process_pointer_event(PointerEvent::Leave(PRIMARY_MOUSE));
     assert_matches!(next_pointer_event(&button_rec), None);
 }

@@ -20,13 +20,11 @@ struct Driver {
 impl AppDriver for Driver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
         if let Action::ButtonPressed(button) = action {
-            if button == PointerButton::Primary {
-                self.grid_spacing += 1.0;
-            } else if button == PointerButton::Secondary {
-                self.grid_spacing -= 1.0;
-            } else {
-                self.grid_spacing += 0.5;
-            }
+            self.grid_spacing += match button {
+                Some(PointerButton::Primary) => 1.0,
+                Some(PointerButton::Secondary) => -1.0,
+                _ => 0.5,
+            };
 
             ctx.render_root().edit_root_widget(|mut root| {
                 let mut root = root.downcast::<RootWidget<Grid>>();

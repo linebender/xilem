@@ -98,9 +98,11 @@ parley = { git = "https://github.com/linebender/parley", rev = "4977a349eb5e5ad2
 peniko = "0.3.2"
 winit = "0.30.10"
 tracing = { version = "0.1.40", default-features = false }
+ui-events = "0.1.0"
+ui-events-winit = "0.1.0"
 smallvec = "1.13.2"
 hashbrown = "0.15.3"
-dpi = "0.1.1"
+dpi = "0.1.2"
 image = { version = "0.25.2", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.6.0"

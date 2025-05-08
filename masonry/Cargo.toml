@@ -35,10 +35,10 @@ wgpu.workspace = true
 winit.workspace = true
 tracing = { workspace = true, features = ["default"] }
 tracing-tracy = { version = "0.11.3", optional = true }
+ui-events-winit.workspace = true
 pollster = "0.4.0"
 accesskit_winit.workspace = true
 wgpu-profiler = { optional = true, version = "0.19.0", default-features = false }
-keyboard-types = "0.8.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
@@ -47,6 +47,7 @@ web-time.workspace = true
 parley.workspace = true
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
+ui-events.workspace = true
 image = { workspace = true, features = ["png"] }
 insta = { version = "1.39.0" }
 accesskit.workspace = true
