@@ -89,11 +89,11 @@ masonry_core = { version = "0.2.0", path = "masonry_core" }
 masonry = { version = "0.2.0", path = "masonry" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
-vello = "0.4.0"
-wgpu = "23.0.1"
+vello = "0.5.0"
+wgpu = "24.0.3"
 kurbo = "0.11.1"
 parley = { version = "0.4.0", features = ["accesskit"] }
-peniko = "0.3.2"
+peniko = "0.4.0"
 winit = "0.30.10"
 tracing = { version = "0.1.40", default-features = false }
 ui-events = "0.1.0"

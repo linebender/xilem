@@ -3,11 +3,10 @@
 
 #![expect(missing_docs, reason = "TODO - Document these items")]
 
-use std::num::NonZeroUsize;
 use std::sync::Arc;
 
 use accesskit_winit::Adapter;
-use tracing::{debug, error, info, info_span, warn};
+use tracing::{debug, error, info, info_span};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -372,22 +371,12 @@ impl MasonryState<'_> {
         };
         let scene_ref = transformed_scene.as_ref().unwrap_or(&scene);
 
-        let Ok(surface_texture) = surface.surface.get_current_texture() else {
-            warn!("failed to acquire next swapchain texture");
-            return;
-        };
         let dev_id = surface.dev_id;
         let device = &self.render_cx.devices[dev_id].device;
         let queue = &self.render_cx.devices[dev_id].queue;
         let renderer_options = RendererOptions {
-            surface_format: Some(surface.format),
-            use_cpu: false,
-            antialiasing_support: AaSupport {
-                area: true,
-                msaa8: false,
-                msaa16: false,
-            },
-            num_init_threads: NonZeroUsize::new(1),
+            antialiasing_support: AaSupport::area_only(),
+            ..Default::default()
         };
         let render_params = RenderParams {
             base_color: self.background_color,
@@ -395,34 +384,62 @@ impl MasonryState<'_> {
             height,
             antialiasing_method: vello::AaConfig::Area,
         };
-        // TODO: Run this in-between `submit` and `present`.
+
+        let _render_span = tracing::info_span!("Rendering using Vello").entered();
+        self.renderer
+            .get_or_insert_with(|| {
+                #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
+                let mut renderer = Renderer::new(device, renderer_options).unwrap();
+                #[cfg(feature = "tracy")]
+                {
+                    let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
+                        wgpu_profiler::GpuProfilerSettings::default(),
+                        // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
+                        // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
+                        wgpu::Backend::Vulkan,
+                        device,
+                        queue,
+                    )
+                    .unwrap_or(renderer.profiler);
+                    renderer.profiler = new_profiler;
+                }
+                renderer
+            })
+            .render_to_texture(
+                device,
+                queue,
+                scene_ref,
+                &surface.target_view,
+                &render_params,
+            )
+            .expect("failed to render to surface");
+
+        let Ok(surface_texture) = surface.surface.get_current_texture() else {
+            tracing::error!("failed to acquire next swapchain texture");
+            return;
+        };
+
+        // Copy the new surface content to the surface.
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("Surface Blit"),
+        });
+        surface.blitter.copy(
+            device,
+            &mut encoder,
+            &surface.target_view,
+            &surface_texture
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default()),
+        );
+        queue.submit([encoder.finish()]);
         window.pre_present_notify();
-        {
-            let _render_span = tracing::info_span!("Rendering using Vello").entered();
-            self.renderer
-                .get_or_insert_with(|| {
-                    #[cfg_attr(not(feature = "tracy"), expect(unused_mut, reason = "cfg"))]
-                    let mut renderer = Renderer::new(device, renderer_options).unwrap();
-                    #[cfg(feature = "tracy")]
-                    {
-                        let new_profiler = wgpu_profiler::GpuProfiler::new_with_tracy_client(
-                            wgpu_profiler::GpuProfilerSettings::default(),
-                            // We don't have access to the adapter until we get  https://github.com/linebender/vello/pull/634
-                            // Luckily, this `backend` is only used for visual display in the profiling, so we can just guess here
-                            wgpu::Backend::Vulkan,
-                            device,
-                            queue,
-                        )
-                        .unwrap_or(renderer.profiler);
-                        renderer.profiler = new_profiler;
-                    }
-                    renderer
-                })
-                .render_to_surface(device, queue, scene_ref, &surface_texture, &render_params)
-                .expect("failed to render to surface");
-        }
         surface_texture.present();
-        device.poll(wgpu::Maintain::Wait);
+        {
+            let _render_poll_span =
+                tracing::info_span!("Waiting for GPU to finish rendering").entered();
+            device.poll(wgpu::Maintain::Wait);
+        }
+
         #[cfg(feature = "tracy")]
         drop(self.frame.take());
     }
