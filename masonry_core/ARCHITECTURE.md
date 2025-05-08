@@ -154,6 +154,10 @@ The screenshots are stored using git LFS, which adds some minor complications bu
 
 We include some of the screenshots in the documentation; because `docs.rs` doesn't have access to LFS files, we use the `include_screenshot!` to instead link to `https://media.githubusercontent.com` when building doc for `docs.rs`.
 
+**Note:** The above may or may not be true at the time you read this document.
+We've had problems with the `docsrs` flag and Github's handling of LFS files.
+See also https://github.com/linebender/xilem/issues/851.
+
 ## VS Code markers
 
 Masonry uses VS Code markers to help users browse code with the minimap:

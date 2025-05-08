@@ -31,6 +31,11 @@ macro_rules! include_screenshot {
     };
 }
 
+// FIXME - We're essentially completely disabling screenshots, period.
+// Hopefully we'll be able to re-enable them soon.
+// See https://github.com/linebender/xilem/issues/851
+
+#[cfg(FALSE)]
 #[cfg(not(docsrs))]
 #[doc(hidden)]
 #[macro_export]
