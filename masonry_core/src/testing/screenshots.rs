@@ -5,7 +5,9 @@
 
 use image::{GenericImageView as _, Pixel as _, Rgb, RgbImage};
 
-#[cfg(docsrs)]
+// TODO - Re-enable this once we find a way to load screenshots that doesn't go against our
+// storage quotas.
+#[cfg(FALSE)]
 #[doc(hidden)]
 #[macro_export]
 macro_rules! include_screenshot {
@@ -16,6 +18,16 @@ macro_rules! include_screenshot {
             "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry_core/src/", $path,
             ")",
         )
+    };
+}
+
+#[cfg(docsrs)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        // On docsrs we just remove the screenshot links for now.
+        " "
     };
 }
 
