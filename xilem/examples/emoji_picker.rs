@@ -7,6 +7,7 @@
 
 use winit::error::EventLoopError;
 use xilem::core::map_state;
+use xilem::style::Style as _;
 use xilem::view::{
     Axis, FlexExt, FlexSpacer, GridExt, button, flex, grid, label, prose, sized_box,
 };
@@ -81,14 +82,12 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
         }
     }
 
-    sized_box(
-        grid(
-            grid_items,
-            data.size.try_into().unwrap(),
-            data.size.try_into().unwrap(),
-        )
-        .spacing(10.0),
+    grid(
+        grid_items,
+        data.size.try_into().unwrap(),
+        data.size.try_into().unwrap(),
     )
+    .spacing(10.0)
     .padding(20.0)
 }
 
