@@ -9,7 +9,9 @@ use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::style::{HasProperty, Style};
-use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::{
+    Color, InsertNewline, MessageResult, Pod, PropertyTuple as _, TextAlignment, ViewCtx, ViewId,
+};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -126,7 +128,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
         ctx.record_action(id);
-        let widget_pod = ctx.new_pod(textbox);
+        let widget_pod = ctx
+            .new_pod(textbox)
+            .with_props(self.properties.build_properties());
         (widget_pod, ())
     }
 
@@ -137,6 +141,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
+
         let mut text_area = widgets::Textbox::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;
