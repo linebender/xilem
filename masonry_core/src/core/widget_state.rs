@@ -1,9 +1,11 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::WidgetId;
+use crate::core::{NoAction, WidgetId};
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -150,6 +152,8 @@ pub(crate) struct WidgetState {
 
     pub(crate) children_changed: bool,
 
+    pub(crate) action_type: TypeId,
+
     // --- STATUS ---
     /// This widget has been disabled.
     pub(crate) is_explicitly_disabled: bool,
@@ -181,7 +185,12 @@ pub(crate) struct WidgetState {
 }
 
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, widget_name: &'static str, transform: Affine) -> Self {
+    pub(crate) fn new(
+        id: WidgetId,
+        widget_name: &'static str,
+        action_type: TypeId,
+        transform: Affine,
+    ) -> Self {
         Self {
             id,
             origin: Point::ORIGIN,
@@ -219,6 +228,7 @@ impl WidgetState {
             needs_update_stashed: true,
             focus_chain: Vec::new(),
             children_changed: true,
+            action_type,
             needs_update_focus_chain: true,
             #[cfg(debug_assertions)]
             widget_name,
@@ -248,7 +258,8 @@ impl WidgetState {
             needs_update_stashed: false,
             children_changed: false,
             needs_update_focus_chain: false,
-            ..Self::new(id, "<root>", Affine::IDENTITY)
+            // TODO - Use `TypeId::of::<!>()` instead
+            ..Self::new(id, "<root>", TypeId::of::<NoAction>(), Affine::IDENTITY)
         }
     }
 

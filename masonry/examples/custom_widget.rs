@@ -13,8 +13,9 @@
 use accesskit::{Node, Role};
 use masonry::app::{AppDriver, DriverCtx};
 use masonry::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, NoAction, ObjectFit,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget,
+    WidgetId,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
@@ -31,12 +32,14 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _action: Action) {}
 }
 
 struct CustomWidget(String);
 
 impl Widget for CustomWidget {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,

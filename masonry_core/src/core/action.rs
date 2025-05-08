@@ -2,18 +2,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::Any;
+use std::fmt::Debug;
 
-use crate::core::PointerButton;
+use crate::core::{PointerButton, WidgetId};
 
 // TODO - Replace actions with an associated type on the Widget trait
 // See https://github.com/linebender/xilem/issues/664
+
+// TODO - Document
+#[derive(Debug)]
+pub struct Action(pub Box<dyn DebugAndAny + Send>, pub WidgetId);
 
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
 #[non_exhaustive]
 /// Events from UI elements.
 ///
 /// Note: Actions are still a WIP feature.
-pub enum Action {
+pub enum DefaultAction {
     /// A button was pressed.
     ButtonPressed(PointerButton),
     /// Text changed.
@@ -24,10 +29,40 @@ pub enum Action {
     CheckboxToggled(bool),
     // FIXME - This is a huge hack
     /// Other.
-    Other(Box<dyn Any + Send>),
+    Other(Box<dyn DebugAndAny + Send>),
 }
 
-impl PartialEq for Action {
+/// Empty type.
+///
+/// Used by widgets which never emit actions.
+///
+/// Will be replaced with `!` once stable.
+pub enum NoAction {}
+
+/// Trait alias for traits [`Debug`] and [`Any`].
+///
+/// Used to be able to declare `Box<dyn DebugAndAny>`.
+pub trait DebugAndAny: Debug + Any {}
+
+impl<T: Debug + Any> DebugAndAny for T {}
+
+//pub fn is<T>(&self) -> bool;
+//pub fn downcast_ref<T>(&self) -> Option<&T>;
+//pub fn downcast_mut<T>(&mut self) -> Option<&mut T>
+
+impl Action {
+    /// Returns the value of the action's payload, downcast to the given type if possible.
+    pub fn downcast_payload<T: Any + Send>(self) -> Result<T, Box<dyn DebugAndAny + Send>> {
+        let Some(_) = (&self.0 as &dyn Any).downcast_ref::<T>() else {
+            return Err(self.0);
+        };
+        let boxed_value: Box<dyn Any> = self.0;
+        let boxed_value = boxed_value.downcast().unwrap_or_else(|_| unreachable!());
+        Ok(*boxed_value)
+    }
+}
+
+impl PartialEq for DefaultAction {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Self::ButtonPressed(l_button), Self::ButtonPressed(r_button)) => l_button == r_button,
@@ -41,7 +76,7 @@ impl PartialEq for Action {
     }
 }
 
-impl std::fmt::Debug for Action {
+impl std::fmt::Debug for DefaultAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ButtonPressed(button) => f.debug_tuple("ButtonPressed").field(button).finish(),

@@ -341,15 +341,15 @@ where
                 return MessageResult::Stale(message);
             }
         }
-        if message.is::<masonry::core::Action>() {
-            let action = message.downcast::<masonry::core::Action>().unwrap();
-            if let masonry::core::Action::Other(action) = *action {
+        if message.is::<masonry::core::DefaultAction>() {
+            let action = message.downcast::<masonry::core::DefaultAction>().unwrap();
+            if let masonry::core::DefaultAction::Other(action) = *action {
                 if !action.is::<VirtualScrollAction>() {
                     tracing::error!("Wrong action type in VirtualScroll::message: {action:?}");
                     // Ideally we'd avoid this extra box, but it's not easy to write this kind of code in a clean way
-                    return MessageResult::Stale(DynMessage::new(masonry::core::Action::Other(
-                        action,
-                    )));
+                    return MessageResult::Stale(DynMessage::new(
+                        masonry::core::DefaultAction::Other(action),
+                    ));
                 }
                 // We check then unwrap to avoid unwrapping a box (also, it makes the check path an early-exit)
                 let action = action.downcast::<VirtualScrollAction>().unwrap();

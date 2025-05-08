@@ -9,7 +9,7 @@ use tracing::{Span, trace_span, warn};
 use vello::Scene;
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, NoAction, PaintCtx,
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent,
     Widget, WidgetId, WidgetMut, WidgetPod,
 };
@@ -397,6 +397,8 @@ where
     ChildA: Widget + ?Sized,
     ChildB: Widget + ?Sized,
 {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,

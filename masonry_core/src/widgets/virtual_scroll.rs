@@ -469,6 +469,8 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 
 impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
+    type Action = VirtualScrollAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut crate::core::EventCtx,
@@ -799,10 +801,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             if self.active_range != target_range {
                 let previous_active = self.active_range.clone();
 
-                ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
+                ctx.submit_action(VirtualScrollAction {
                     old_active: previous_active,
                     target: target_range,
-                })));
+                });
                 self.action_handled = false;
             }
         }
@@ -930,7 +932,9 @@ mod tests {
 
     use crate::{
         assert_render_snapshot,
-        core::{Action, FromDynWidget, PointerEvent, PointerState, Widget, WidgetMut, WidgetPod},
+        core::{
+            DefaultAction, FromDynWidget, PointerEvent, PointerState, Widget, WidgetMut, WidgetPod,
+        },
         testing::TestHarness,
         widgets::{Label, VirtualScroll, VirtualScrollAction},
     };
@@ -1333,7 +1337,7 @@ mod tests {
                 id, virtual_scroll_id,
                 "Only widget in tree should give action"
             );
-            let Action::Other(action) = action else {
+            let DefaultAction::Other(action) = action else {
                 unreachable!()
             };
             let action = action.downcast::<VirtualScrollAction>().unwrap();

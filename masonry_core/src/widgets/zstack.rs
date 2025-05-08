@@ -6,8 +6,8 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, DefaultAction, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 use crate::vello::Scene;
@@ -296,6 +296,8 @@ impl ZStack {
 
 // --- MARK: IMPL WIDGET---
 impl Widget for ZStack {
+    type Action = DefaultAction;
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx,

@@ -37,7 +37,7 @@ struct CalcState {
     in_num: bool,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum CalcAction {
     Digit(u8),
     Op(char),
@@ -148,6 +148,8 @@ impl CalcButton {
 }
 
 impl Widget for CalcButton {
+    type Action = CalcAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx,
@@ -173,7 +175,7 @@ impl Widget for CalcButton {
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         SizedBox::set_background(&mut inner, color);
                     });
-                    ctx.submit_action(Action::Other(Box::new(self.action)));
+                    ctx.submit_action(self.action);
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
             }
@@ -198,7 +200,7 @@ impl Widget for CalcButton {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::Other(Box::new(self.action)));
+                    ctx.submit_action(self.action);
                 }
                 _ => {}
             }
@@ -268,13 +270,10 @@ impl Widget for CalcButton {
 }
 
 impl AppDriver for CalcState {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
-        match action {
-            Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {
-                CalcAction::Digit(digit) => self.digit(*digit),
-                CalcAction::Op(op) => self.op(*op),
-            },
-            _ => unreachable!(),
+    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, action: Action) {
+        match action.downcast_payload().unwrap() {
+            CalcAction::Digit(digit) => self.digit(digit),
+            CalcAction::Op(op) => self.op(op),
         }
 
         ctx.render_root().edit_root_widget(|mut root| {

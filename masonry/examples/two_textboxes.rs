@@ -8,7 +8,7 @@
 #![windows_subsystem = "windows"]
 
 use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, WidgetId};
+use masonry::core::Action;
 use masonry::dpi::LogicalSize;
 use masonry::widgets::{Flex, RootWidget, Textbox};
 use winit::window::Window;
@@ -18,7 +18,7 @@ const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _action: Action) {}
 }
 
 fn main() {

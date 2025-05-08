@@ -55,6 +55,8 @@ pub trait AsDynWidget {
     fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget>;
     fn as_dyn(&self) -> &dyn Widget;
     fn as_mut_dyn(&mut self) -> &mut dyn Widget;
+
+    fn action_type(&self) -> TypeId;
 }
 
 impl<T: Widget> AsDynWidget for T {
@@ -68,6 +70,10 @@ impl<T: Widget> AsDynWidget for T {
 
     fn as_mut_dyn(&mut self) -> &mut dyn Widget {
         self as &mut dyn Widget
+    }
+
+    fn action_type(&self) -> TypeId {
+        TypeId::of::<<Self as Widget>::Action>()
     }
 }
 
@@ -125,6 +131,11 @@ impl FromDynWidget for dyn Widget {
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsDynWidget + Any {
+    /// The type of [action](TODO) that this widget can emit.
+    type Action: Any
+    where
+        Self: Sized;
+
     /// Handle a pointer event.
     ///
     /// Pointer events will target the widget under the pointer, and then the
