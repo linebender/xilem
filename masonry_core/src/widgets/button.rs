@@ -9,6 +9,7 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
+use vello::kurbo::Affine;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -170,6 +171,7 @@ impl Widget for Button {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
+        BoxShadow::prop_changed(ctx, property_type);
     }
 
     fn layout(
@@ -180,6 +182,7 @@ impl Widget for Button {
     ) -> Size {
         let border = props.get::<BorderWidth>().unwrap_or(&DEFAULT_BORDER_WIDTH);
         let padding = props.get::<Padding>().unwrap_or(&DEFAULT_PADDING);
+        let shadow = props.get::<BoxShadow>();
 
         let initial_bc = bc;
 
@@ -207,6 +210,10 @@ impl Widget for Button {
 
         // TODO - pos = (size - label_size) / 2
 
+        if let Some(shadow) = shadow {
+            ctx.set_paint_insets(shadow.get_insets());
+        }
+
         ctx.set_baseline_offset(baseline);
         size
     }
@@ -219,6 +226,7 @@ impl Widget for Button {
         let border_color = props.get::<BorderColor>().unwrap_or(&DEFAULT_BORDER_COLOR);
         let border_width = props.get::<BorderWidth>().unwrap_or(&DEFAULT_BORDER_WIDTH);
         let border_radius = props.get::<CornerRadius>().unwrap_or(&DEFAULT_BORDER_RADII);
+        let shadow = props.get::<BoxShadow>();
 
         // TODO - Add DEFAULT_BACKGROUND_GRADIENT constant.
         // Right now we can't because `.with_stops` isn't const-compatible.
@@ -252,6 +260,10 @@ impl Widget for Button {
         } else {
             *border_color
         };
+
+        if let Some(shadow) = shadow {
+            shadow.paint(scene, Affine::IDENTITY, bg_rect);
+        }
 
         let brush = bg_gradient.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
@@ -293,6 +305,7 @@ mod tests {
     use crate::core::{PointerButton, StyleProperty};
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     use crate::theme::PRIMARY_LIGHT;
+    use crate::widgets::{Grid, GridParams, SizedBox};
 
     #[test]
     fn simple_button() {
@@ -372,5 +385,53 @@ mod tests {
         });
 
         assert_render_snapshot!(harness, "button_set_properties");
+    }
+
+    #[test]
+    fn with_shadows() {
+        use crate::palette::css::ORANGE;
+
+        let grid = Grid::with_dimensions(2, 2)
+            .with_spacing(40.0)
+            .with_child(Button::new("A"), GridParams::new(0, 0, 1, 1))
+            .with_child(Button::new("B"), GridParams::new(1, 0, 1, 1))
+            .with_child(Button::new("C"), GridParams::new(0, 1, 1, 1))
+            .with_child(Button::new("D"), GridParams::new(1, 1, 1, 1));
+        let root_widget = SizedBox::new(grid).padding(20.);
+
+        let window_size = Size::new(300.0, 300.0);
+        let mut harness = TestHarness::create_with_size(root_widget, window_size);
+
+        harness.edit_root_widget(|mut root| {
+            let mut root = root.downcast::<SizedBox>();
+            let mut grid = SizedBox::child_mut(&mut root).unwrap();
+            let mut grid = grid.downcast::<Grid>();
+
+            {
+                let mut button = Grid::child_mut(&mut grid, 0);
+                let mut button = button.downcast::<Button>();
+                button.insert_prop(BoxShadow::new(ORANGE, (10., 10.)));
+            }
+
+            {
+                let mut button = Grid::child_mut(&mut grid, 1);
+                let mut button = button.downcast::<Button>();
+                button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(5.0));
+            }
+
+            {
+                let mut button = Grid::child_mut(&mut grid, 2);
+                let mut button = button.downcast::<Button>();
+                button.insert_prop(BoxShadow::new(ORANGE, (-10., -10.)).blur(-5.0));
+            }
+
+            {
+                let mut button = Grid::child_mut(&mut grid, 3);
+                let mut button = button.downcast::<Button>();
+                button.insert_prop(BoxShadow::new(ORANGE, (0., 0.)).blur(5.0));
+            }
+        });
+
+        assert_render_snapshot!(harness, "button_shadows");
     }
 }

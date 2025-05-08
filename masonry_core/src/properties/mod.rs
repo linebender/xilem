@@ -8,6 +8,7 @@
 mod background;
 mod border_color;
 mod border_width;
+mod box_shadow;
 mod corner_radius;
 mod padding;
 
@@ -16,5 +17,6 @@ pub mod types;
 pub use background::Background;
 pub use border_color::BorderColor;
 pub use border_width::BorderWidth;
+pub use box_shadow::BoxShadow;
 pub use corner_radius::CornerRadius;
 pub use padding::Padding;
