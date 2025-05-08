@@ -278,8 +278,9 @@ impl AppDriver for CalcState {
         }
 
         ctx.render_root().edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget<Flex>>();
+            let mut root = root.downcast::<RootWidget>();
             let mut flex = RootWidget::child_mut(&mut root);
+            let mut flex = flex.downcast();
             let mut label = Flex::child_mut(&mut flex, 1).unwrap();
             let mut label = label.downcast::<Label>();
             Label::set_text(&mut label, &*self.value);

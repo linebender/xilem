@@ -125,12 +125,12 @@ where
         };
         if let Some(prior_view) = rebuild_from {
             masonry_ctx.render_root().edit_root_widget(|mut root| {
-                let mut root = root.downcast::<RootWidget<View::Widget>>();
+                let mut root = root.downcast::<RootWidget>();
                 self.current_view.rebuild(
                     prior_view,
                     &mut self.view_state,
                     &mut self.ctx,
-                    RootWidget::child_mut(&mut root),
+                    RootWidget::child_mut(&mut root).downcast(),
                 );
             });
         }

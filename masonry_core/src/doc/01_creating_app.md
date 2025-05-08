@@ -97,8 +97,9 @@ impl AppDriver for Driver {
         match action {
             Action::ButtonPressed(_) => {
                 ctx.render_root().edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
+                    let mut root = root.downcast::<RootWidget>();
                     let mut portal = RootWidget::child_mut(&mut root);
+                    let mut portal = portal.downcast::<Portal<Flex>>();
                     let mut flex = Portal::child_mut(&mut portal);
                     Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
                 });
@@ -123,8 +124,9 @@ When handling `ButtonPressed`:
 
 - `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
 - `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<dyn Widget>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
-- `root.downcast::<...>()` returns a `WidgetMut<RootWidget<...>>`.
-- `RootWidget::child_mut()` returns a `WidgetMut<Portal<...>>`.
+- `root.downcast::<...>()` returns a `WidgetMut<RootWidget>`.
+- `RootWidget::child_mut()` returns a `WidgetMut<>`.
+- `portal.downcast::<...>()` returns a `WidgetMut<Portal<Flex>>`.
 - `Portal::child_mut()` returns a `WidgetMut<Flex>`.
 
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
@@ -205,8 +207,9 @@ fn main() {
             match action {
                 Action::ButtonPressed(_) => {
                     ctx.render_root().edit_root_widget(|mut root| {
-                        let mut root = root.downcast::<RootWidget<Portal<Flex>>>();
+                        let mut root = root.downcast::<RootWidget>();
                         let mut portal = RootWidget::child_mut(&mut root);
+                        let mut portal = portal.downcast::<Portal<Flex>>();
                         let mut flex = Portal::child_mut(&mut portal);
                         Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
                     });
