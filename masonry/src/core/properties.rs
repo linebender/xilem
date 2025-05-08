@@ -7,7 +7,7 @@ use std::any::TypeId;
 use std::collections::HashMap;
 use std::default::Default;
 
-use super::Widget;
+use crate::core::Widget;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
