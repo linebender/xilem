@@ -5,6 +5,22 @@
 
 use image::{GenericImageView as _, Pixel as _, Rgb, RgbImage};
 
+// FIXME - We're essentially completely disabling screenshots, period.
+// Hopefully we'll be able to re-enable them soon.
+// See https://github.com/linebender/xilem/issues/851
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        // On docsrs we just remove the screenshot links for now.
+        " "
+    };
+}
+
+// TODO - Re-enable this once we find a way to load screenshots that doesn't go against our
+// storage quotas.
+#[cfg(FALSE)]
 #[cfg(docsrs)]
 #[doc(hidden)]
 #[macro_export]
@@ -19,6 +35,7 @@ macro_rules! include_screenshot {
     };
 }
 
+#[cfg(FALSE)]
 #[cfg(not(docsrs))]
 #[doc(hidden)]
 #[macro_export]
