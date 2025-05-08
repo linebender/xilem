@@ -22,7 +22,7 @@ use cursor_icon::CursorIcon;
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__split__tests__columns.png", "Split panel with two labels.")]
+#[doc = crate::include_screenshot!("split_columns.png", "Split panel with two labels.")]
 pub struct Split<ChildA, ChildB>
 where
     ChildA: Widget + ?Sized,

@@ -29,7 +29,7 @@ macro_rules! include_screenshot {
         // when using this macro in a `doc` attribute
         concat!(
             " ![", $($caption,)? "]",
-            "(", env!("CARGO_MANIFEST_DIR"), "/src/", $path, ")",
+            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
         )
     };
 }

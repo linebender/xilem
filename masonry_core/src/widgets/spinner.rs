@@ -27,7 +27,7 @@ use crate::theme;
 ///
 /// [`SizedBox`]: crate::widgets::SizedBox
 ///
-#[doc = crate::include_screenshot!("widget/screenshots/masonry__widget__spinner__tests__spinner_init.png", "Spinner frame.")]
+#[doc = crate::include_screenshot!("spinner_init.png", "Spinner frame.")]
 pub struct Spinner {
     t: f64,
     color: Color,
