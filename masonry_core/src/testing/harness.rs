@@ -17,7 +17,7 @@ use tracing::debug;
 use vello::RendererOptions;
 use vello::util::{RenderContext, block_on_wgpu};
 use wgpu::{
-    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, ImageCopyBuffer,
+    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, TexelCopyBufferInfo,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
 
@@ -349,12 +349,12 @@ impl TestHarness {
         let mut renderer = vello::Renderer::new(
             device,
             RendererOptions {
-                surface_format: None,
                 // TODO - Examine this value
                 use_cpu: true,
                 num_init_threads: NonZeroUsize::new(1),
                 // TODO - Examine this value
                 antialiasing_support: vello::AaSupport::area_only(),
+                ..Default::default()
             },
         )
         .expect("Got non-Send/Sync error from creating renderer");
@@ -400,9 +400,9 @@ impl TestHarness {
         });
         encoder.copy_texture_to_buffer(
             target.as_image_copy(),
-            ImageCopyBuffer {
+            TexelCopyBufferInfo {
                 buffer: &buffer,
-                layout: wgpu::ImageDataLayout {
+                layout: wgpu::TexelCopyBufferLayout {
                     offset: 0,
                     bytes_per_row: Some(padded_byte_width),
                     rows_per_image: None,
