@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, StyleProperty};
+use masonry::parley::FontWeight;
 use masonry::widgets::{
     LineBreaking, {self},
 };
@@ -18,6 +19,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
         alignment: TextAlignment::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
+        weight: FontWeight::NORMAL,
     }
 }
 
@@ -40,6 +42,7 @@ pub struct Prose {
     alignment: TextAlignment,
     text_size: f32,
     line_break_mode: LineBreaking,
+    weight: FontWeight,
     // TODO: disabled: bool,
     // TODO: add more attributes of `masonry::widgets::Prose`
 }
@@ -70,6 +73,12 @@ impl Prose {
         self.line_break_mode = line_break_mode;
         self
     }
+
+    /// Sets font weight.
+    pub fn weight(mut self, weight: FontWeight) -> Self {
+        self.weight = weight;
+        self
+    }
 }
 
 fn line_break_clips(linebreaking: LineBreaking) -> bool {
@@ -86,6 +95,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
+            .with_style(StyleProperty::FontWeight(self.weight))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
         let widget_pod = ctx.new_pod(
             widgets::Prose::from_text_area(text_area)
@@ -116,6 +126,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
                 &mut text_area,
                 StyleProperty::FontSize(self.text_size),
             );
+        }
+        if prev.weight != self.weight {
+            widgets::TextArea::insert_style(&mut text_area, StyleProperty::FontWeight(self.weight));
         }
         if prev.line_break_mode != self.line_break_mode {
             widgets::TextArea::set_word_wrap(
