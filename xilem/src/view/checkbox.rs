@@ -2,9 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::ArcStr;
+use masonry::properties::*;
 use masonry::widgets;
+use vello::peniko::Color;
 
+use crate::PropertyTuple as _;
 use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::style::HasProperty;
+use crate::style::Style;
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 /// An element which can be in checked and unchecked state.
@@ -37,6 +42,7 @@ where
         label: label.into(),
         callback,
         checked,
+        properties: Default::default(),
     }
 }
 
@@ -44,10 +50,83 @@ where
 ///
 /// See `checkbox` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
+#[expect(clippy::type_complexity, reason = "properties")]
 pub struct Checkbox<F> {
     label: ArcStr,
     checked: bool,
     callback: F,
+    properties: (
+        Option<DisabledBackground>,
+        Option<ActiveBackground>,
+        Option<Background>,
+        Option<HoveredBorderColor>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<CornerRadius>,
+        Option<Padding>,
+        Option<CheckmarkWidth>,
+        Option<DisabledCheckmarkColor>,
+        Option<CheckmarkColor>,
+    ),
+}
+
+impl<F> Style for Checkbox<F> {
+    type Props = (
+        Option<DisabledBackground>,
+        Option<ActiveBackground>,
+        Option<Background>,
+        Option<HoveredBorderColor>,
+        Option<BorderColor>,
+        Option<BorderWidth>,
+        Option<CornerRadius>,
+        Option<Padding>,
+        Option<CheckmarkWidth>,
+        Option<DisabledCheckmarkColor>,
+        Option<CheckmarkColor>,
+    );
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+impl<F> HasProperty<DisabledBackground> for Checkbox<F> {}
+impl<F> HasProperty<ActiveBackground> for Checkbox<F> {}
+impl<F> HasProperty<Background> for Checkbox<F> {}
+impl<F> HasProperty<HoveredBorderColor> for Checkbox<F> {}
+impl<F> HasProperty<BorderColor> for Checkbox<F> {}
+impl<F> HasProperty<BorderWidth> for Checkbox<F> {}
+impl<F> HasProperty<CornerRadius> for Checkbox<F> {}
+impl<F> HasProperty<Padding> for Checkbox<F> {}
+impl<F> HasProperty<CheckmarkWidth> for Checkbox<F> {}
+impl<F> HasProperty<DisabledCheckmarkColor> for Checkbox<F> {}
+impl<F> HasProperty<CheckmarkColor> for Checkbox<F> {}
+
+impl<F> Checkbox<F> {
+    /// Set the element's checkmark color and width.
+    pub fn checkmark(mut self, color: Color, width: f64) -> Self {
+        *self.properties().property_mut() = Some(CheckmarkColor { color });
+        *self.properties().property_mut() = Some(CheckmarkWidth { width });
+        self
+    }
+
+    /// Set the element's checkmark color.
+    pub fn checkmark_color(mut self, color: Color) -> Self {
+        *self.properties().property_mut() = Some(CheckmarkColor { color });
+        self
+    }
+
+    /// Set the element's checkmark color when hovered.
+    pub fn hovered_border_color(mut self, color: Color) -> Self {
+        *self.properties().property_mut() = Some(DisabledCheckmarkColor(CheckmarkColor { color }));
+        self
+    }
+
+    /// Set the element's checkmark width.
+    pub fn checkmark_width(mut self, width: f64) -> Self {
+        *self.properties().property_mut() = Some(CheckmarkWidth { width });
+        self
+    }
 }
 
 impl<F> ViewMarker for Checkbox<F> {}
