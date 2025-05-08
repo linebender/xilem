@@ -70,53 +70,53 @@ impl Properties {
 // Don't return Option types anymore.
 
 impl PropertiesRef<'_> {
-    /// Returns `true` if the widget has a property of type `T`.
-    pub fn contains<T: Property>(&self) -> bool {
-        self.map.contains::<T>()
+    /// Returns `true` if the widget has a property of type `P`.
+    pub fn contains<P: Property>(&self) -> bool {
+        self.map.contains::<P>()
     }
 
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
-    pub fn get<T: Property>(&self) -> Option<&T> {
-        self.map.get::<T>()
+    /// Get value of property `P`, or `None` if the widget has no `P` property.
+    pub fn get<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>()
     }
 }
 
 impl PropertiesMut<'_> {
-    /// Returns `true` if the widget has a property of type `T`.
-    pub fn contains<T: Property>(&self) -> bool {
-        self.map.contains::<T>()
+    /// Returns `true` if the widget has a property of type `P`.
+    pub fn contains<P: Property>(&self) -> bool {
+        self.map.contains::<P>()
     }
 
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
-    pub fn get<T: Property>(&self) -> Option<&T> {
-        self.map.get::<T>()
+    /// Get value of property `P`, or `None` if the widget has no `P` property.
+    pub fn get<P: Property>(&self) -> Option<&P> {
+        self.map.get::<P>()
     }
 
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
+    /// Get value of property `P`, or `None` if the widget has no `P` property.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::get_prop_mut`] instead.
     ///
     /// [`WidgetMut::get_prop_mut`]: crate::core::WidgetMut::get_prop_mut
-    pub fn get_mut<T: Property>(&mut self) -> Option<&mut T> {
-        self.map.get_mut::<T>()
+    pub fn get_mut<P: Property>(&mut self) -> Option<&mut P> {
+        self.map.get_mut::<P>()
     }
 
-    /// Set property `T` to given value. Returns the previous value if `T` was already set.
+    /// Set property `P` to given value. Returns the previous value if `P` was already set.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::insert_prop`] instead.
     ///
     /// [`WidgetMut::insert_prop`]: crate::core::WidgetMut::insert_prop
-    pub fn insert<T: Property>(&mut self, value: T) -> Option<T> {
+    pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
         self.map.insert(value)
     }
 
-    /// Remove property `T`. Returns the previous value if `T` was set.
+    /// Remove property `P`. Returns the previous value if `P` was set.
     ///
     /// If you're using a `WidgetMut`, call [`WidgetMut::remove_prop`] instead.
     ///
     /// [`WidgetMut::remove_prop`]: crate::core::WidgetMut::remove_prop
-    pub fn remove<T: Property>(&mut self) -> Option<T> {
-        self.map.remove::<T>()
+    pub fn remove<P: Property>(&mut self) -> Option<P> {
+        self.map.remove::<P>()
     }
 
     /// Returns an entry that can be used to add, update, or remove a property.
@@ -124,8 +124,8 @@ impl PropertiesMut<'_> {
     /// If you're using a `WidgetMut`, call [`WidgetMut::prop_entry`] instead.
     ///
     /// [`WidgetMut::prop_entry`]: crate::core::WidgetMut::prop_entry
-    pub fn entry<T: Property>(&mut self) -> Entry<'_, dyn std::any::Any, T> {
-        self.map.entry::<T>()
+    pub fn entry<P: Property>(&mut self) -> Entry<'_, dyn std::any::Any, P> {
+        self.map.entry::<P>()
     }
 
     /// Get a `PropertiesMut` for the same underlying properties with a shorter lifetime.
