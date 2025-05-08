@@ -75,7 +75,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     pub fn insert_prop<T: Property>(&mut self, value: T) -> Option<T> {
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
-        self.ctx.properties.insert(value)
+        self.ctx.properties.set(value)
     }
 
     /// Remove property `T`. Returns the previous value if `T` was set.

@@ -29,7 +29,7 @@ impl<P0: Property + Eq + Clone> PropertyTuple for (Option<P0>,) {
     fn build_properties(&self) -> Properties {
         let mut props = Properties::new();
         if let Some(prop) = self.0.clone() {
-            props.insert(prop);
+            props.set(prop);
         }
         props
     }
@@ -71,7 +71,7 @@ macro_rules! impl_property_tuple {
                 let mut props = Properties::new();
                 $(
                     if let Some(prop) = self.$idx.clone() {
-                        props.insert(prop);
+                        props.set(prop);
                     }
                 )+
                 props

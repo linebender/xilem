@@ -90,7 +90,7 @@ impl Properties {
     }
 
     /// Set property `P` to given value. Returns the previous value if `P` was already set.
-    pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
+    pub fn set<P: Property>(&mut self, value: P) -> Option<P> {
         self.map.insert(value)
     }
 
@@ -158,7 +158,7 @@ impl PropertiesMut<'_> {
     /// If you're using a `WidgetMut`, call [`WidgetMut::insert_prop`] instead.
     ///
     /// [`WidgetMut::insert_prop`]: crate::core::WidgetMut::insert_prop
-    pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
+    pub fn set<P: Property>(&mut self, value: P) -> Option<P> {
         self.map.insert(value)
     }
 
