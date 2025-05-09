@@ -1,8 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::{Any, TypeId, type_name};
-
 use masonry::core::{Properties, Property, Widget, WidgetMut};
 
 /// Helper trait implemented for all tuples of `Option<SomeProperty>` up to 12 items.
@@ -16,13 +14,6 @@ pub trait PropertyTuple {
     ///
     /// Check if any property has changed, and if so, applies it to the given widget.
     fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<impl Widget>);
-
-    /// Returns a mutable reference to the first tuple item of type `P`.
-    ///
-    /// ## Panic
-    ///
-    /// Panics if `Self` does not have an item of type `P`.
-    fn property_mut<P: Property>(&mut self) -> &mut Option<P>;
 }
 
 impl<P0: Property + Eq + Clone> PropertyTuple for (Option<P0>,) {
@@ -42,20 +33,6 @@ impl<P0: Property + Eq + Clone> PropertyTuple for (Option<P0>,) {
                 target.remove_prop::<P0>();
             }
         }
-    }
-
-    fn property_mut<P: Property>(&mut self) -> &mut Option<P> {
-        let mut prop = None;
-        for elem in [&mut self.0 as &mut dyn Any] {
-            if TypeId::of::<Option<P>>() == (*elem).type_id() {
-                prop = Some(elem);
-                break;
-            }
-        }
-        let Some(prop) = prop else {
-            panic!("Property '{}' not found.", type_name::<P>());
-        };
-        prop.downcast_mut().unwrap()
     }
 }
 
@@ -89,26 +66,14 @@ macro_rules! impl_property_tuple {
                 )+
             }
 
-            fn property_mut<P: Property>(&mut self) -> &mut Option<P> {
-                let mut prop = None;
-                for elem in [$( &mut self.$idx as &mut dyn Any, )+] {
-                    if TypeId::of::<Option<P>>() == (*elem).type_id() {
-                        prop = Some(elem);
-                        break;
-                    }
-                }
-                let Some(prop) = prop else {
-                    panic!("Property '{}' not found.", type_name::<P>());
-                };
-                prop.downcast_mut().unwrap()
-            }
-
         }
 
     };
 }
 
-// impl_property_tuple!(P0, 0);
+// The (P0,) one-element tuple case is covered outside the macro,
+// for easier code editing.
+
 impl_property_tuple!(P0, 0; P1, 1);
 impl_property_tuple!(P0, 0; P1, 1; P2, 2);
 impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3);
@@ -120,3 +85,99 @@ impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8,
 impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9);
 impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9; P10, 10);
 impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9; P10, 10; P11, 11);
+
+// ---
+
+// We expect to use the ${index} metavariable here once it's stable
+// https://veykril.github.io/tlborm/decl-macros/minutiae/metavar-expr.html
+
+/// Macro used to declare a list of properties for an element.
+///
+/// The expected way to invoke this macro is:
+///
+/// ```ignore
+/// declare_property_tuple!(
+///     MyWidgetProps;
+///     MyWidget;
+///
+///     SomeProp, 0;
+///     OtherProp, 1;
+///     AnotherProp, 2;
+///     YetOtherProp, 3;
+///     // ...
+/// );
+/// ```
+///
+/// This will declare a type `MyWidgetProp` as an alias to `(Option<SomeProp>, Option<OtherProp>, ...)`.
+///
+/// This will also implement [`HasProperty<Prop>`](crate::style::HasProperty) for `MyWidget` with each of the listed properties.
+///
+/// If `MyWidget` is a generic type with type params `T`, `U`, `V`, you should invoke the macro like this:
+///
+/// ```ignore
+/// declare_property_tuple!(
+///     MyWidgetProps;
+///     MyWidget<T, U, V>;
+///
+///     SomeProp, 0;
+///     OtherProp, 1;
+///     AnotherProp, 2;
+///     YetOtherProp, 3;
+///     // ...
+/// );
+/// ```
+
+#[macro_export]
+macro_rules! declare_property_tuple {
+    (
+        $Props: ident ;
+        $Self:ident $( < $($Args:ident),* > )? ;
+
+        $(
+            $Type: ident, $idx: tt;
+        )+
+    ) => {
+        $crate::__declare_property_tuple_loop!(
+            $Props; ( $Self $( <$($Args),*> )? ); $($Type, $idx;)+
+        );
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __declare_property_tuple_loop {
+    (
+        $Props: ident ;
+        $Self:tt;
+
+        $(
+            $Type: ident, $idx: tt;
+        )+
+    ) => {
+        type $Props = ($(Option<$Type>,)+);
+
+        $(
+            $crate::__declare_property_tuple_inner!($Self; $Type; $idx;);
+        )+
+
+    }
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __declare_property_tuple_inner {
+    (
+        (
+            $Self:ident $( < $($Args:ident),* > )?
+        );
+        $Type: ident; $idx: tt;
+    )
+    =>
+    {
+        impl $( <$($Args,)*> )? $crate::style::HasProperty<$Type> for $Self $( <$($Args),*> )? {
+            fn property(&mut self) -> &mut Option<$Type> {
+                    &mut self.properties().$idx
+            }
+        }
+    };
+}
