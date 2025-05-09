@@ -12,5 +12,5 @@ workspace = true
 [dependencies]
 console_error_panic_hook = "0.1.7"
 console_log = { version = "1.0.0", features = ["color"] }
-log = "0.4.22"
+log = "0.4.27"
 xilem_web = { path = "../.." }

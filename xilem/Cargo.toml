@@ -102,14 +102,14 @@ tracing.workspace = true
 vello.workspace = true
 smallvec.workspace = true
 accesskit.workspace = true
-tokio = { version = "1.39.1", features = ["rt", "rt-multi-thread", "time", "sync"] }
+tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
 [dev-dependencies]
 # Used for `variable_clock`
 time = { workspace = true, features = ["local-offset"] }
 
 # Used for http_cats
-reqwest = { version = "0.12.7", default-features = false, features = [
+reqwest = { version = "0.12.15", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl
     # and this is likely to be easiest to get working.
     "rustls-tls",
@@ -117,8 +117,8 @@ reqwest = { version = "0.12.7", default-features = false, features = [
 image = { workspace = true, features = ["jpeg"] }
 
 # Make wgpu use tracing for its spans.
-profiling = { version = "1.0.15", features = ["profile-with-tracing"] }
-anyhow = "1.0.86"
+profiling = { version = "1.0.16", features = ["profile-with-tracing"] }
+anyhow = "1.0.98"
 
 [target.'cfg(target_os = "android")'.dev-dependencies]
 winit = { features = ["android-native-activity"], workspace = true }
