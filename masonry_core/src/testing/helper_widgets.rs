@@ -84,10 +84,10 @@ pub struct ReplaceChild {
 /// Make one like this:
 ///
 /// ```
-/// # use masonry_core::widgets::Label;
-/// # use masonry_core::core::Update;
-/// use masonry_core::testing::{Recording, Record, TestWidgetExt};
-/// use masonry_core::testing::TestHarness;
+/// # use masonry::widgets::Label;
+/// # use masonry::core::Update;
+/// use masonry::testing::{Recording, Record, TestWidgetExt};
+/// use masonry::testing::TestHarness;
 /// use assert_matches::assert_matches;
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);

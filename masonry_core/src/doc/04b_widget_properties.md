@@ -8,7 +8,7 @@
 > 💡 Tip
 >
 > This file is intended to be read in rustdoc.
-> Use `cargo doc --open --package masonry --no-deps`.
+> Use `cargo doc --open --package masonry_winit --no-deps`.
 
 </div>
 
@@ -83,13 +83,13 @@ Properties should *not* be used to represent an individual widget's state. The f
 With that in mind, let's rewrite our `ColorRectangle` widget to use properties:
 
 ```rust,ignore
-use masonry::properties::BackgroundColor;
+use masonry_winit::properties::BackgroundColor;
 
 impl Widget for ColorRectangle {
     // ...
 
     fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let color = props.get::<BackgroundColor>().unwrap_or(masonry::palette::css::WHITE);
+        let color = props.get::<BackgroundColor>().unwrap_or(masonry_winit::palette::css::WHITE);
         let rect = ctx.size().to_rect();
         scene.fill(
             Fill::NonZero,
@@ -111,7 +111,7 @@ The most idiomatic way to set properties is through `WidgetMut`:
 ```rust,ignore
 let color_rectangle_mut: WidgetMut<ColorRectangle> = ...;
 
-let bg = BackgroundColor { color: masonry::palette::css::BLUE };
+let bg = BackgroundColor { color: masonry_winit::palette::css::BLUE };
 
 color_rectangle_mut.insert_prop(bg);
 ```

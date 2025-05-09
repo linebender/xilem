@@ -11,15 +11,15 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use accesskit::{Node, Role};
-use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{
+use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
 };
-use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
-use masonry::palette;
-use masonry::peniko::Color;
-use masonry::widgets::RootWidget;
+use masonry_winit::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
+use masonry_winit::palette;
+use masonry_winit::peniko::Color;
+use masonry_winit::widgets::RootWidget;
 use parley::layout::{Alignment, AlignmentOptions};
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use smallvec::SmallVec;
@@ -141,7 +141,7 @@ impl Widget for CustomWidget {
         text_layout.align(None, Alignment::Start, AlignmentOptions::default());
 
         // We can pass a transform matrix to rotate the text we render
-        masonry::core::render_text(
+        masonry_winit::core::render_text(
             scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
             &text_layout,
@@ -180,8 +180,8 @@ fn main() {
     let my_string = "Masonry + Vello".to_string();
     let window_attributes = Window::default_attributes().with_title("Fancy colors");
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    masonry_winit::app::run(
+        masonry_winit::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(CustomWidget(my_string)),
         Driver,
@@ -206,8 +206,8 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
+    use masonry_winit::assert_render_snapshot;
+    use masonry_winit::testing::TestHarness;
 
     use super::*;
 

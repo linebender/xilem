@@ -17,10 +17,10 @@
 //! The to-do-list example looks like this:
 //!
 //! ```rust
-//! use masonry::app::{AppDriver, DriverCtx};
-//! use masonry::core::{Action, Widget, WidgetId};
-//! use masonry::dpi::LogicalSize;
-//! use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
+//! use masonry_winit::app::{AppDriver, DriverCtx};
+//! use masonry_winit::core::{Action, Widget, WidgetId};
+//! use masonry_winit::dpi::LogicalSize;
+//! use masonry_winit::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
 //! use winit::window::Window;
 //!
 //! struct Driver {
@@ -67,8 +67,8 @@
 //!         .with_min_inner_size(window_size);
 //!
 //!     # return;
-//!     masonry::app::run(
-//!         masonry::app::EventLoop::with_user_event(),
+//!     masonry_winit::app::run(
+//!         masonry_winit::app::EventLoop::with_user_event(),
 //!         window_attributes,
 //!         RootWidget::new(main_widget),
 //!         Driver {
@@ -79,7 +79,7 @@
 //! }
 //! ```
 //!
-//! For more information, see [the documentation module](masonry_core::doc).
+//! For more information, see [the documentation module](masonry::doc).
 //!
 //! ### Crate feature flags
 //!
@@ -127,7 +127,7 @@
 
 // TODO - Add logo
 
-pub use masonry_core::*;
+pub use masonry::*;
 
 // TODO - Restructure re-exports.
 
@@ -137,7 +137,7 @@ mod event_loop_runner;
 
 /// Types needed for running a Masonry app.
 pub mod app {
-    pub use masonry_core::app::*;
+    pub use masonry::app::*;
 
     pub use super::app_driver::{AppDriver, DriverCtx};
     pub use super::event_loop_runner::{

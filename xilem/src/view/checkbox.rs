@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::ArcStr;
-use masonry::widgets;
+use masonry_winit::core::ArcStr;
+use masonry_winit::widgets;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -94,9 +94,9 @@ where
             id_path.is_empty(),
             "id path should be empty in Checkbox::message"
         );
-        match message.downcast::<masonry::core::Action>() {
+        match message.downcast::<masonry_winit::core::Action>() {
             Ok(action) => {
-                if let masonry::core::Action::CheckboxToggled(checked) = *action {
+                if let masonry_winit::core::Action::CheckboxToggled(checked) = *action {
                     MessageResult::Action((self.callback)(app_state, checked))
                 } else {
                     tracing::error!("Wrong action type in Checkbox::message: {action:?}");

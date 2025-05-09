@@ -18,7 +18,7 @@ use crate::core::{
 };
 use crate::kurbo::Size;
 
-// TODO - Resolve name collision between masonry::Image and peniko::Image
+// TODO - Resolve name collision between masonry_winit::Image and peniko::Image
 
 /// A widget that renders a bitmap Image.
 ///

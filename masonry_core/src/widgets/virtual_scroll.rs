@@ -22,8 +22,8 @@ use crate::core::{
 /// The recommended approach is just to use the two loops, as the ranges are expected to be relatively small:
 ///
 /// ```rust
-/// # use masonry_core::core::Action;
-/// # use masonry_core::widgets::{VirtualScrollAction, Label};
+/// # use masonry::core::Action;
+/// # use masonry::widgets::{VirtualScrollAction, Label};
 /// # use core::marker::PhantomData;
 /// # let action: Action = Action::Other(Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 }));
 /// # struct WidgetPod<W>(W);

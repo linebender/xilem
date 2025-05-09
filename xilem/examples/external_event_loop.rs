@@ -9,9 +9,9 @@
 
 use std::sync::Arc;
 
-use masonry::app::{AppDriver, MasonryUserEvent};
-use masonry::peniko::Color;
-use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
+use masonry_winit::app::{AppDriver, MasonryUserEvent};
+use masonry_winit::peniko::Color;
+use masonry_winit::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
@@ -44,7 +44,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
 
 /// An application not managed by Xilem, but which wishes to embed Xilem.
 struct ExternalApp {
-    masonry_state: masonry::app::MasonryState<'static>,
+    masonry_state: masonry_winit::app::MasonryState<'static>,
     app_driver: Box<dyn AppDriver>,
 }
 
@@ -139,7 +139,7 @@ fn main() -> Result<(), EventLoopError> {
     let proxy = MasonryProxy::new(event_loop.create_proxy());
     let (widget, driver) = xilem.into_driver(Arc::new(proxy));
     let masonry_state =
-        masonry::app::MasonryState::new(window_attributes, &event_loop, widget, Color::BLACK);
+        masonry_winit::app::MasonryState::new(window_attributes, &event_loop, widget, Color::BLACK);
 
     let mut app = ExternalApp {
         masonry_state,

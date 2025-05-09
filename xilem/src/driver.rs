@@ -5,10 +5,10 @@
 
 use std::sync::Arc;
 
-use masonry::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};
-use masonry::core::WidgetId;
-use masonry::peniko::Blob;
-use masonry::widgets::RootWidget;
+use masonry_winit::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};
+use masonry_winit::core::WidgetId;
+use masonry_winit::peniko::Blob;
+use masonry_winit::widgets::RootWidget;
 
 use crate::core::{DynMessage, MessageResult, ProxyError, RawProxy, ViewId};
 use crate::{ViewCtx, WidgetView};
@@ -27,8 +27,8 @@ pub struct MasonryDriver<State, Logic, View, ViewState> {
 pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
 
 /// The action which should be used for async events.
-pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> masonry::core::Action {
-    masonry::core::Action::Other(Box::<MessagePackage>::new((path, message)))
+pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> masonry_winit::core::Action {
+    masonry_winit::core::Action::Other(Box::<MessagePackage>::new((path, message)))
 }
 
 /// The type used to send a message for async events.
@@ -42,7 +42,8 @@ impl RawProxy for MasonryProxy {
         )) {
             Ok(()) => Ok(()),
             Err(err) => {
-                let MasonryUserEvent::Action(masonry::core::Action::Other(res), _) = err.0 else {
+                let MasonryUserEvent::Action(masonry_winit::core::Action::Other(res), _) = err.0
+                else {
                     unreachable!(
                         "We know this is the value we just created, which matches this pattern"
                     )
@@ -74,12 +75,12 @@ where
 {
     fn on_action(
         &mut self,
-        masonry_ctx: &mut masonry::app::DriverCtx<'_>,
+        masonry_ctx: &mut masonry_winit::app::DriverCtx<'_>,
         widget_id: WidgetId,
-        action: masonry::core::Action,
+        action: masonry_winit::core::Action,
     ) {
         let message_result = if widget_id == ASYNC_MARKER_WIDGET {
-            let masonry::core::Action::Other(action) = action else {
+            let masonry_winit::core::Action::Other(action) = action else {
                 panic!();
             };
             let (path, message) = *action.downcast::<MessagePackage>().unwrap();

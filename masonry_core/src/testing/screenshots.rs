@@ -29,7 +29,7 @@ macro_rules! include_screenshot {
         concat!(
             "![", $($caption,)? "]",
             "(", "https://media.githubusercontent.com/media/linebender/xilem/",
-            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry_core/screenshots/", $path,
+            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry/screenshots/", $path,
             ")",
         )
     };

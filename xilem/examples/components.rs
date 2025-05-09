@@ -5,7 +5,7 @@
 
 #![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
-use masonry::widgets::MainAxisAlignment;
+use masonry_winit::widgets::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;
 use xilem::view::{Axis, button, flex, label};
