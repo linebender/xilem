@@ -8,7 +8,7 @@
 
 use std::sync::Arc;
 
-use masonry::widgets::{Alignment, LineBreaking};
+use masonry_winit::widgets::{Alignment, LineBreaking};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -169,7 +169,7 @@ impl Status {
             button("Select", move |state: &mut HttpCats| {
                 state.selected_code = Some(code);
             }),
-            FlexSpacer::Fixed(masonry::theme::SCROLLBAR_WIDTH),
+            FlexSpacer::Fixed(masonry_winit::theme::SCROLLBAR_WIDTH),
         ))
         .direction(Axis::Horizontal)
     }

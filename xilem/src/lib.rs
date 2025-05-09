@@ -10,9 +10,9 @@
 //! Xilem is implemented as a reactive layer on top of [Masonry][masonry], a widget toolkit which is developed alongside Xilem.
 //! Masonry itself is built on top of a wide array of foundational Rust UI projects:
 //!
-//! * Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
-//! * GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
-//! * Text layout is provided by [Parley][masonry::parley].
+//! * Rendering is provided by [Vello][masonry_winit::vello], a high performance GPU compute-centric 2D renderer.
+//! * GPU compute infrastructure is provided by [wgpu][masonry_winit::vello::wgpu].
+//! * Text layout is provided by [Parley][masonry_winit::parley].
 //! * Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
 //! * Window handling is provided by [winit][].
 //!
@@ -133,9 +133,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
-use masonry::dpi::LogicalSize;
-use masonry::widgets::RootWidget;
+use masonry_winit::core::{FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::widgets::RootWidget;
 use view::{Transformed, transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
@@ -144,13 +144,13 @@ use crate::core::{
     AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
     ViewPathTracker, ViewSequence,
 };
-pub use masonry::app::{EventLoop, EventLoopBuilder};
-pub use masonry::kurbo::{Affine, Vec2};
-pub use masonry::parley::Alignment as TextAlignment;
-pub use masonry::parley::style::FontWeight;
-pub use masonry::peniko::{Blob, Color};
-pub use masonry::widgets::{InsertNewline, LineBreaking};
-pub use masonry::{dpi, palette};
+pub use masonry_winit::app::{EventLoop, EventLoopBuilder};
+pub use masonry_winit::kurbo::{Affine, Vec2};
+pub use masonry_winit::parley::Alignment as TextAlignment;
+pub use masonry_winit::parley::style::FontWeight;
+pub use masonry_winit::peniko::{Blob, Color};
+pub use masonry_winit::widgets::{InsertNewline, LineBreaking};
+pub use masonry_winit::{dpi, palette};
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.
@@ -247,7 +247,7 @@ where
         let proxy = event_loop.create_proxy();
         let bg_color = self.background_color;
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        masonry::app::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
+        masonry_winit::app::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
     }
 
     pub fn into_driver(
@@ -279,7 +279,7 @@ where
     }
 }
 
-/// A container for a yet to be inserted [Masonry](masonry) widget
+/// A container for a yet to be inserted [Masonry](masonry_winit) widget
 /// to be used with Xilem.
 ///
 /// This exists for two reasons:
@@ -344,7 +344,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     ///
     /// In most cases, you will use the return value for adding to a layout
     /// widget which supports heterogenous widgets.
-    /// For example, [`Flex`](masonry::widgets::Flex) accepts type-erased widget pods.
+    /// For example, [`Flex`](masonry_winit::widgets::Flex) accepts type-erased widget pods.
     pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
         WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
     }

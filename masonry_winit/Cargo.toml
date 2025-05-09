@@ -1,0 +1,56 @@
+[package]
+name = "masonry_winit"
+version = "0.2.0"
+description = "Data-oriented Rust UI design toolkit."
+keywords = ["gui", "ui", "toolkit"]
+categories = ["gui", "internationalization", "accessibility"]
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+exclude = ["/doc/", ".gitignore"]
+rust-version.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+# There are no platform specific docs.
+default-target = "x86_64-unknown-linux-gnu"
+targets = []
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[features]
+default = []
+# Enables tracing using tracy if the default Masonry tracing is used.
+# https://github.com/wolfpld/tracy can be connected to when this feature is enabled.
+tracy = ["dep:tracing-tracy", "dep:wgpu-profiler", "wgpu-profiler/tracy", "masonry/tracy"]
+
+[lints]
+workspace = true
+
+[dependencies]
+masonry.workspace = true
+vello.workspace = true
+wgpu.workspace = true
+winit.workspace = true
+tracing = { workspace = true, features = ["default"] }
+tracing-tracy = { version = "0.11.3", optional = true }
+ui-events-winit.workspace = true
+pollster = "0.4.0"
+accesskit_winit.workspace = true
+wgpu-profiler = { optional = true, version = "0.22.0", default-features = false }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+web-time.workspace = true
+
+[dev-dependencies]
+parley.workspace = true
+smallvec.workspace = true
+tracing = { workspace = true, features = ["default"] }
+ui-events.workspace = true
+image = { workspace = true, features = ["png"] }
+insta = { version = "1.39.0" }
+accesskit.workspace = true
+
+# Make wgpu use tracing for its spans.
+profiling = { version = "1.0.15", features = ["profile-with-tracing"] }

@@ -8,9 +8,9 @@
 use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 
-use masonry::app::{EventLoop, EventLoopBuilder};
-use masonry::dpi::LogicalSize;
-use masonry::widgets::{Axis, CrossAxisAlignment, MainAxisAlignment};
+use masonry_winit::app::{EventLoop, EventLoopBuilder};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::widgets::{Axis, CrossAxisAlignment, MainAxisAlignment};
 use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
