@@ -12,7 +12,12 @@ pub struct CornerRadius {
     pub radius: f64,
 }
 
-impl Property for CornerRadius {}
+impl Property for CornerRadius {
+    fn static_default() -> &'static Self {
+        static DEFAULT: CornerRadius = CornerRadius { radius: 0. };
+        &DEFAULT
+    }
+}
 
 impl CornerRadius {
     pub(crate) fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {

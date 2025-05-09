@@ -5,8 +5,12 @@
 
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
+use crate::core::DefaultProperties;
 use crate::kurbo::Insets;
 use crate::peniko::Color;
+use crate::properties::types::Gradient;
+use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::widgets::Button;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -85,4 +89,26 @@ static DEBUG_COLOR: &[Color] = &[
 pub fn get_debug_color(id: u64) -> Color {
     let color_num = id as usize % DEBUG_COLOR.len();
     DEBUG_COLOR[color_num]
+}
+
+pub fn default_property_set() -> DefaultProperties {
+    let mut properties = DefaultProperties::new();
+
+    properties.insert::<Button, _>(BorderColor { color: BORDER_DARK });
+    properties.insert::<Button, _>(BorderWidth {
+        width: BUTTON_BORDER_WIDTH,
+    });
+    properties.insert::<Button, _>(CornerRadius {
+        radius: BUTTON_BORDER_RADIUS,
+    });
+    // NOTE: these padding values are chosen to match the existing look of TextBox;
+    // they should be reevaluated at some point.
+    properties.insert::<Button, _>(Padding::from_vh(2., 8.));
+    properties.insert::<Button, _>(Background::Gradient(
+        Gradient::new_linear(0.0).with_stops([BUTTON_LIGHT, BUTTON_DARK]),
+    ));
+
+    // TODO - Add default Padding to RootWidget?
+
+    properties
 }

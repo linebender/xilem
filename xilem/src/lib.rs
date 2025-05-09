@@ -133,8 +133,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry_winit::core::{FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod};
+use masonry_winit::core::{
+    DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetPod,
+};
 use masonry_winit::dpi::LogicalSize;
+use masonry_winit::theme::default_property_set;
 use masonry_winit::widgets::RootWidget;
 use view::{Transformed, transformed};
 use winit::error::EventLoopError;
@@ -161,10 +164,13 @@ pub use winit;
 mod any_view;
 mod driver;
 mod one_of;
+mod property_tuple;
 
+pub mod style;
 pub mod view;
 pub use any_view::AnyWidgetView;
 pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, MasonryProxy, async_action};
+pub use property_tuple::PropertyTuple;
 
 /// Runtime builder.
 #[must_use = "A Xilem app does nothing unless ran."]
@@ -172,6 +178,7 @@ pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
     runtime: tokio::runtime::Runtime,
+    default_properties: Option<DefaultProperties>,
     background_color: Color,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
@@ -190,6 +197,7 @@ where
             state,
             logic,
             runtime,
+            default_properties: None,
             background_color: Color::BLACK,
             fonts: Vec::new(),
         }
@@ -206,6 +214,13 @@ where
     /// Sets main window background color.
     pub fn background_color(mut self, color: Color) -> Self {
         self.background_color = color;
+        self
+    }
+
+    // TODO: Find better ways to customize default property set.
+    /// Sets default properties of widget tree.
+    pub fn with_default_properties(mut self, default_properties: DefaultProperties) -> Self {
+        self.default_properties = Some(default_properties);
         self
     }
 
@@ -234,7 +249,7 @@ where
     // TODO: Make windows into a custom view
     /// Run app with custom window attributes.
     pub fn run_windowed_in(
-        self,
+        mut self,
         mut event_loop: EventLoopBuilder,
         window_attributes: WindowAttributes,
     ) -> Result<(), EventLoopError>
@@ -246,8 +261,19 @@ where
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
         let bg_color = self.background_color;
+        let default_properties = self
+            .default_properties
+            .take()
+            .unwrap_or_else(default_property_set);
         let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        masonry_winit::app::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
+        masonry_winit::app::run_with(
+            event_loop,
+            window_attributes,
+            root_widget,
+            driver,
+            default_properties,
+            bg_color,
+        )
     }
 
     pub fn into_driver(
@@ -300,6 +326,7 @@ pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
     /// This has a protocol to ensure that multiple views changing the
     /// transform interoperate successfully.
     pub transform: Affine,
+    pub properties: Properties,
 }
 
 impl<W: Widget + FromDynWidget> Pod<W> {
@@ -312,11 +339,17 @@ impl<W: Widget + FromDynWidget> Pod<W> {
             widget: Box::new(widget),
             id: WidgetId::next(),
             transform: Affine::default(),
+            properties: Properties::new(),
         }
     }
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
+    /// Builder-style method to set [`Properties`] on a new widget.
+    pub fn with_props(self, properties: Properties) -> Self {
+        Self { properties, ..self }
+    }
+
     /// Type-erase the contained widget.
     ///
     /// Convert a `Pod` pointing to a widget of a specific concrete type
@@ -326,6 +359,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
             widget: self.widget.as_box_dyn(),
             id: self.id,
             transform: self.transform,
+            properties: self.properties,
         }
     }
     /// Finalise this `Pod`, converting into a [`WidgetPod`].
@@ -338,7 +372,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// which can contain heterogenous widgets, you will probably
     /// prefer to use [`Self::erased_widget_pod`].
     pub fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
+        WidgetPod::new_with(self.widget, self.id, self.transform, self.properties)
     }
     /// Finalise this `Pod` into a type-erased [`WidgetPod`].
     ///
@@ -346,7 +380,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// widget which supports heterogenous widgets.
     /// For example, [`Flex`](masonry_winit::widgets::Flex) accepts type-erased widget pods.
     pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
+        WidgetPod::new_with(self.widget, self.id, self.transform, self.properties).erased()
     }
 }
 

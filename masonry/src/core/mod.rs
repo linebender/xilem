@@ -25,7 +25,7 @@ pub use contexts::{
 };
 pub use events::{AccessEvent, Ime, ResizeDirection, TextEvent, Update, WindowEvent, WindowTheme};
 pub use object_fit::ObjectFit;
-pub use properties::{Properties, PropertiesMut, PropertiesRef, Property};
+pub use properties::{DefaultProperties, Properties, PropertiesMut, PropertiesRef, Property};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;
 pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};

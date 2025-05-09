@@ -2,10 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 pub use masonry_winit::core::PointerButton;
+use masonry_winit::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding,
+};
 use masonry_winit::widgets;
 use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::property_tuple::PropertyTuple;
+use crate::style::Style;
 use crate::view::Label;
 use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
@@ -64,6 +69,7 @@ pub fn button<State, Action>(
             None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
+        properties: Default::default(),
     }
 }
 
@@ -77,6 +83,7 @@ pub fn button_any_pointer<State, Action>(
     Button {
         label: label.into(),
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
+        properties: Default::default(),
     }
 }
 
@@ -89,9 +96,30 @@ pub struct Button<F> {
     // type of `Label` even though it currently does not do so.
     label: Label,
     callback: F,
+    properties: ButtonProps,
 }
 
 const LABEL_VIEW_ID: ViewId = ViewId::new(0);
+
+impl<F> Style for Button<F> {
+    type Props = ButtonProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    ButtonProps;
+    Button<F>;
+
+    Background, 0;
+    BorderColor, 1;
+    BorderWidth, 2;
+    BoxShadow, 3;
+    CornerRadius, 4;
+    Padding, 5;
+);
 
 impl<F> ViewMarker for Button<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
@@ -107,6 +135,7 @@ where
         });
         ctx.with_leaf_action_widget(|ctx| {
             ctx.new_pod(widgets::Button::from_label_pod(child.into_widget_pod()))
+                .with_props(self.properties.build_properties())
         })
     }
 
@@ -117,6 +146,8 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         ctx.with_id(LABEL_VIEW_ID, |ctx| {
             View::<State, Action, _>::rebuild(
                 &self.label,
