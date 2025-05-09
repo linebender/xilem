@@ -73,7 +73,7 @@ pub struct PropertiesMut<'a> {
 /// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
 #[derive(Default, Debug)]
 pub struct DefaultProperties {
-    /// Maps widget types to the default property set for that widget.
+    /// Maps widget types to the default property map for that widget.
     pub(crate) map: HashMap<TypeId, AnyMap>,
     pub(crate) dummy_map: AnyMap,
 }
@@ -89,7 +89,7 @@ impl Properties {
 // Don't return Option types anymore.
 
 impl PropertiesRef<'_> {
-    /// Returns `true` if the widget has a property of type `P`.
+    /// Returns `true` if the widget has a local property of type `P`.
     ///
     /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
@@ -98,8 +98,8 @@ impl PropertiesRef<'_> {
 
     /// Get value of property `P`.
     ///
-    /// If the widget has an entry for `P`, returns that entry.
-    /// If the default property set has an entry for `P`, returns that entry.
+    /// If the widget has an entry for `P`, returns its value.
+    /// If the default property map has an entry for `P`, returns its value.
     /// Otherwise returns [`Property::static_default()`].
     pub fn get<P: Property>(&self) -> &P {
         if let Some(p) = self.map.get::<P>() {
@@ -113,7 +113,7 @@ impl PropertiesRef<'_> {
 }
 
 impl PropertiesMut<'_> {
-    /// Returns `true` if the widget has a property of type `P`.
+    /// Returns `true` if the widget has a local property of type `P`.
     ///
     /// Does not check default properties.
     pub fn contains<P: Property>(&self) -> bool {
@@ -122,8 +122,8 @@ impl PropertiesMut<'_> {
 
     /// Get value of property `P`.
     ///
-    /// If the widget has an entry for `P`, returns that entry.
-    /// If the default property set has an entry for `P`, returns that entry.
+    /// If the widget has an entry for `P`, returns its value.
+    /// If the default property map has an entry for `P`, returns its value.
     /// Otherwise returns [`Property::static_default()`].
     pub fn get<P: Property>(&self) -> &P {
         if let Some(p) = self.map.get::<P>() {
@@ -135,7 +135,7 @@ impl PropertiesMut<'_> {
         }
     }
 
-    /// Set property `P` to given value. Returns the previous value if `P` was already set.
+    /// Set local property `P` to given value. Returns the previous value if `P` was already set.
     ///
     /// Does not affect default properties.
     ///
@@ -146,7 +146,7 @@ impl PropertiesMut<'_> {
         self.map.insert(value)
     }
 
-    /// Remove property `P`. Returns the previous value if `P` was set.
+    /// Remove local property `P`. Returns the previous value if `P` was set.
     ///
     /// Does not affect default properties.
     ///
@@ -167,12 +167,12 @@ impl PropertiesMut<'_> {
 }
 
 impl DefaultProperties {
-    /// Create an empty set with no default values.
+    /// Create an empty property map with no default values.
     ///
-    /// A completely empty set is probably not what you want.
+    /// A completely empty property map is probably not what you want.
     /// It means buttons will be displayed without borders or backgrounds, textboxes won't
     /// have default padding, etc.
-    /// You should either add a thorough set of values to this, or start from an existing set.
+    /// You should either add a thorough set of values to this, or start from an existing map.
     pub fn new() -> Self {
         Self {
             map: HashMap::new(),

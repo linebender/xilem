@@ -86,7 +86,9 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         self.ctx.widget_state.id
     }
 
-    /// Returns `true` if the widget has a property of type `T`.
+    /// Returns `true` if the widget has a local property of type `T`.
+    ///
+    /// Does not check default properties.
     pub fn contains_prop<T: Property>(&self) -> bool {
         self.ctx.properties.contains::<T>()
     }

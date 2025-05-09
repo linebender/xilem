@@ -51,7 +51,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         }
     }
 
-    /// Returns `true` if the widget has a property of type `T`.
+    /// Returns `true` if the widget has a local property of type `T`.
     ///
     /// Does not check default properties.
     pub fn contains_prop<T: Property>(&self) -> bool {

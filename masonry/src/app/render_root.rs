@@ -71,7 +71,7 @@ pub struct RenderRoot {
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
-    /// Default values that Properties will have if not defined per-widget.
+    /// Default values that properties will have if not defined per-widget.
     pub(crate) default_properties: DefaultProperties,
 
     /// State passed to context types.
@@ -173,7 +173,7 @@ pub enum WindowSizePolicy {
 
 /// Options for creating a [`RenderRoot`].
 pub struct RenderRootOptions {
-    /// Default values that Properties will have if not defined per-widget.
+    /// Default values that properties will have if not defined per-widget.
     pub default_properties: DefaultProperties,
 
     /// If true, `fontique` will provide access to system fonts

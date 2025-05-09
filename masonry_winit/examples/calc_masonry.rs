@@ -24,13 +24,13 @@ use masonry_winit::core::{
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::kurbo::{Point, Size};
 use masonry_winit::peniko::Color;
+use masonry_winit::peniko::color::AlphaColor;
 use masonry_winit::properties::{Background, Padding};
 use masonry_winit::theme::default_property_set;
 use masonry_winit::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
-use vello::peniko::color::AlphaColor;
 use winit::window::Window;
 
 #[derive(Clone)]
