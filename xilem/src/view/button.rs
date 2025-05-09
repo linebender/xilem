@@ -10,7 +10,7 @@ use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::property_tuple::PropertyTuple;
-use crate::style::{HasProperty, Style};
+use crate::style::Style;
 use crate::view::Label;
 use crate::{MessageResult, Pod, ViewCtx, ViewId};
 
@@ -99,14 +99,7 @@ pub struct Button<F> {
     label: Label,
     callback: F,
     disabled: bool,
-    properties: (
-        Option<Background>,
-        Option<BorderColor>,
-        Option<BorderWidth>,
-        Option<BoxShadow>,
-        Option<CornerRadius>,
-        Option<Padding>,
-    ),
+    properties: ButtonProps,
 }
 
 impl<F> Button<F> {
@@ -120,26 +113,24 @@ impl<F> Button<F> {
 const LABEL_VIEW_ID: ViewId = ViewId::new(0);
 
 impl<F> Style for Button<F> {
-    type Props = (
-        Option<Background>,
-        Option<BorderColor>,
-        Option<BorderWidth>,
-        Option<BoxShadow>,
-        Option<CornerRadius>,
-        Option<Padding>,
-    );
+    type Props = ButtonProps;
 
     fn properties(&mut self) -> &mut Self::Props {
         &mut self.properties
     }
 }
 
-impl<F> HasProperty<Background> for Button<F> {}
-impl<F> HasProperty<BorderColor> for Button<F> {}
-impl<F> HasProperty<BorderWidth> for Button<F> {}
-impl<F> HasProperty<BoxShadow> for Button<F> {}
-impl<F> HasProperty<CornerRadius> for Button<F> {}
-impl<F> HasProperty<Padding> for Button<F> {}
+crate::declare_property_tuple!(
+    ButtonProps;
+    Button<F>;
+
+    Background, 0;
+    BorderColor, 1;
+    BorderWidth, 2;
+    BoxShadow, 3;
+    CornerRadius, 4;
+    Padding, 5;
+);
 
 impl<F> ViewMarker for Button<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>

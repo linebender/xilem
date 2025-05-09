@@ -11,7 +11,10 @@ use vello::peniko::Color;
 use crate::property_tuple::PropertyTuple;
 
 /// Marker trait implement by elements to signal that a given property can be set on them.
-pub trait HasProperty<P: Property> {}
+pub trait HasProperty<P: Property>: Style {
+    /// Return a mutable reference to the specific property.
+    fn property(&mut self) -> &mut Option<P>;
+}
 
 /// Trait implemented by most elements that lets you set some styling properties.
 ///
@@ -29,7 +32,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<Background>,
     {
-        *self.properties().property_mut() = Some(background);
+        *self.property() = Some(background);
         self
     }
 
@@ -38,7 +41,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<Background>,
     {
-        *self.properties().property_mut() = Some(Background::Color(color));
+        *self.property() = Some(Background::Color(color));
         self
     }
 
@@ -47,7 +50,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<Background>,
     {
-        *self.properties().property_mut() = Some(Background::Gradient(gradient));
+        *self.property() = Some(Background::Gradient(gradient));
         self
     }
 
@@ -57,8 +60,8 @@ pub trait Style: Sized {
         Self: HasProperty<BorderColor>,
         Self: HasProperty<BorderWidth>,
     {
-        *self.properties().property_mut() = Some(BorderColor { color });
-        *self.properties().property_mut() = Some(BorderWidth { width });
+        *self.property() = Some(BorderColor { color });
+        *self.property() = Some(BorderWidth { width });
         self
     }
 
@@ -67,7 +70,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<BorderColor>,
     {
-        *self.properties().property_mut() = Some(BorderColor { color });
+        *self.property() = Some(BorderColor { color });
         self
     }
 
@@ -76,7 +79,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<BorderWidth>,
     {
-        *self.properties().property_mut() = Some(BorderWidth { width });
+        *self.property() = Some(BorderWidth { width });
         self
     }
 
@@ -85,7 +88,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<BoxShadow>,
     {
-        *self.properties().property_mut() = Some(box_shadow);
+        *self.property() = Some(box_shadow);
         self
     }
 
@@ -94,7 +97,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<CornerRadius>,
     {
-        *self.properties().property_mut() = Some(CornerRadius { radius });
+        *self.property() = Some(CornerRadius { radius });
         self
     }
 
@@ -103,7 +106,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<Padding>,
     {
-        *self.properties().property_mut() = Some(padding.into());
+        *self.property() = Some(padding.into());
         self
     }
 }
