@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{Properties, Property, Widget, WidgetMut};
+use masonry_winit::core::{Properties, Property, Widget, WidgetMut};
 
 /// Helper trait implemented for all tuples of `Option<SomeProperty>` up to 12 items.
 pub trait PropertyTuple {
@@ -126,7 +126,6 @@ impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8,
 ///     // ...
 /// );
 /// ```
-
 #[macro_export]
 macro_rules! declare_property_tuple {
     (
