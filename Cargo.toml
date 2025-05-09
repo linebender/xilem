@@ -91,22 +91,22 @@ xilem_core = { version = "0.1.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
 vello = "0.5.0"
 wgpu = "24.0.3"
-kurbo = "0.11.1"
+kurbo = "0.11.2"
 parley = { version = "0.4.0", features = ["accesskit"] }
 peniko = "0.4.0"
 winit = "0.30.10"
-tracing = { version = "0.1.40", default-features = false }
+tracing = { version = "0.1.41", default-features = false }
 ui-events = "0.1.0"
 ui-events-winit = "0.1.0"
-smallvec = "1.13.2"
+smallvec = "1.15.0"
 hashbrown = "0.15.3"
 dpi = "0.1.2"
-image = { version = "0.25.2", default-features = false }
+image = { version = "0.25.6", default-features = false }
 web-time = "1.1.0"
-bitflags = "2.6.0"
+bitflags = "2.9.0"
 accesskit = "0.19.0"
 accesskit_winit = "0.27.0"
-time = "0.3.36"
+time = "0.3.41"
 
 [profile.ci]
 inherits = "dev"
