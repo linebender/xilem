@@ -10,8 +10,6 @@ use masonry_winit::properties::{
 };
 use vello::peniko::Color;
 
-use crate::property_tuple::PropertyTuple;
-
 /// Marker trait implement by elements to signal that a given property can be set on them.
 pub trait HasProperty<P: Property>: Style {
     /// Return a mutable reference to the specific property.
@@ -24,7 +22,7 @@ pub trait HasProperty<P: Property>: Style {
 /// which matches which [`Properties`](masonry_winit::core::Properties) the underlying widget handles.
 pub trait Style: Sized {
     /// The tuple type used by the element to store properties.
-    type Props: PropertyTuple;
+    type Props;
 
     /// Return a mutable reference to the element's property storage.
     fn properties(&mut self) -> &mut Self::Props;
