@@ -54,7 +54,7 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use masonry_core::widgets::Button;
+    /// use masonry::widgets::Button;
     ///
     /// let button = Button::new("Increment");
     /// ```
@@ -67,8 +67,8 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use masonry_core::peniko::Color;
-    /// use masonry_core::widgets::{Button, Label};
+    /// use masonry::peniko::Color;
+    /// use masonry::widgets::{Button, Label};
     ///
     /// let label = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
     /// let button = Button::from_label(label);

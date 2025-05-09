@@ -3,8 +3,8 @@
 
 //! A widget gallery for xilem/masonry
 
-use masonry::app::{EventLoop, EventLoopBuilder};
-use masonry::dpi::LogicalSize;
+use masonry_winit::app::{EventLoop, EventLoopBuilder};
+use masonry_winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
 use xilem::core::adapt;

@@ -1,9 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, StyleProperty};
-use masonry::parley::style::{FontStack, FontWeight};
-use masonry::widgets::{
+use masonry_winit::core::{ArcStr, StyleProperty};
+use masonry_winit::parley::style::{FontStack, FontWeight};
+use masonry_winit::widgets::{
     LineBreaking, {self},
 };
 use vello::peniko::Brush;
@@ -17,8 +17,8 @@ use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 /// ```ignore
 /// use xilem::palette;
 /// use xilem::view::label;
-/// use masonry::TextAlignment;
-/// use masonry::parley::fontique;
+/// use masonry_winit::TextAlignment;
+/// use masonry_winit::parley::fontique;
 ///
 /// label("Text example.")
 ///     .brush(palette::css::RED)
@@ -32,7 +32,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         label: label.into(),
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        text_size: masonry::theme::TEXT_SIZE_NORMAL,
+        text_size: masonry_winit::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         line_break_mode: LineBreaking::Overflow,
@@ -50,7 +50,7 @@ pub struct Label {
     text_size: f32,
     weight: FontWeight,
     font: FontStack<'static>,
-    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widgets::Label`
+    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry_winit::widgets::Label`
 }
 
 impl Label {

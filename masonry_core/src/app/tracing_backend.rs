@@ -11,7 +11,7 @@
 //!
 //! If a `tracing` backend is already configured, this will not overwrite that.
 
-// TODO - Move this code out of masonry_core.
+// TODO - Move this code out of masonry.
 
 use std::fs::File;
 use std::time::UNIX_EPOCH;

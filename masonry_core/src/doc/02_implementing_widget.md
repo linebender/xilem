@@ -8,7 +8,7 @@
 > 💡 Tip
 >
 > This file is intended to be read in rustdoc.
-> Use `cargo doc --open --package masonry --no-deps`.
+> Use `cargo doc --open --package masonry_winit --no-deps`.
 
 </div>
 
@@ -85,7 +85,7 @@ Note that we store a size, and not a position: our widget's position is managed 
 First we implement event methods:
 
 ```rust,ignore
-use masonry::core::{
+use masonry_winit::core::{
     Widget, EventCtx, PointerEvent, TextEvent, AccessEvent, Action
 };
 
@@ -129,7 +129,7 @@ We don't handle any text events.
 Since our widget isn't animated and doesn't react to changes in status, we can leave the `on_anim_frame` and `update` implementations empty:
 
 ```rust,ignore
-use masonry::core::{
+use masonry_winit::core::{
     UpdateCtx, Update,
 };
 
@@ -148,7 +148,7 @@ impl Widget for ColorRectangle {
 Next we implement layout:
 
 ```rust,ignore
-use masonry::core::{
+use masonry_winit::core::{
     LayoutCtx, BoxConstraints
 };
 
@@ -173,7 +173,7 @@ We return our stored size, clamped between the min and max constraints.
 Next we write our render methods:
 
 ```rust,ignore
-use masonry::core::{
+use masonry_winit::core::{
     PaintCtx, AccessCtx
 };
 use vello::Scene;
@@ -255,7 +255,7 @@ impl Widget for ColorRectangle {
 And last, we stub in some additional methods:
 
 ```rust,ignore
-use masonry::core::{
+use masonry_winit::core::{
     RegisterCtx, WidgetId
 };
 use smallvec::SmallVec;

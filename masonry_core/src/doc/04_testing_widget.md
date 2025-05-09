@@ -8,7 +8,7 @@
 > 💡 Tip
 >
 > This file is intended to be read in rustdoc.
-> Use `cargo doc --open --package masonry --no-deps`.
+> Use `cargo doc --open --package masonry_winit --no-deps`.
 
 </div>
 
@@ -31,7 +31,7 @@ First, let's write a test module with a first unit test:
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use masonry::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use masonry_winit::testing::{widget_ids, TestHarness, TestWidgetExt};
 
     use super::*;
 
@@ -77,7 +77,7 @@ Let's add a visual test:
 
 ```rust,ignore
     // ...
-    use masonry::assert_render_snapshot;
+    use masonry_winit::assert_render_snapshot;
 
     #[test]
     fn simple_rect() {

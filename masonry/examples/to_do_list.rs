@@ -7,10 +7,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, Widget, WidgetId};
-use masonry::dpi::LogicalSize;
-use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
+use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::core::{Action, Widget, WidgetId};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -66,8 +66,8 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    masonry_winit::app::run(
+        masonry_winit::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(make_widget_tree()),
         Driver {
@@ -80,8 +80,8 @@ fn main() {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
+    use masonry_winit::assert_render_snapshot;
+    use masonry_winit::testing::TestHarness;
 
     use super::*;
 

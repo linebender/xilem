@@ -36,9 +36,9 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 [crate::view::task]: https://docs.rs/xilem/latest/xilem/view/fn.task.html
 [crate::view::textbox]: https://docs.rs/xilem/latest/xilem/view/fn.textbox.html
 [crate::view::zstack]: https://docs.rs/xilem/latest/xilem/view/fn.zstack.html
-[masonry::parley]: https://docs.rs/parley/latest/parley
-[masonry::vello::wgpu]: https://docs.rs/wgpu/latest/wgpu
-[masonry::vello]: https://docs.rs/vello/latest/vello/
+[masonry_winit::parley]: https://docs.rs/parley/latest/parley
+[masonry_winit::vello::wgpu]: https://docs.rs/wgpu/latest/wgpu
+[masonry_winit::vello]: https://docs.rs/vello/latest/vello/
 [xilem_core]: https://docs.rs/parley_core/latest/xilem_core
 [xilem_examples]: ./examples/
 
@@ -54,9 +54,9 @@ was presented at the RustNL conference in 2024, and gives a video introduction t
 Xilem is implemented as a reactive layer on top of [Masonry][masonry], a widget toolkit which is developed alongside Xilem.
 Masonry itself is built on top of a wide array of foundational Rust UI projects:
 
-* Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
-* GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
-* Text layout is provided by [Parley][masonry::parley].
+* Rendering is provided by [Vello][masonry_winit::vello], a high performance GPU compute-centric 2D renderer.
+* GPU compute infrastructure is provided by [wgpu][masonry_winit::vello::wgpu].
+* Text layout is provided by [Parley][masonry_winit::parley].
 * Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
 * Window handling is provided by [winit][].
 

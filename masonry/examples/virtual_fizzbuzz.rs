@@ -9,15 +9,15 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
-use masonry::dpi::LogicalSize;
-use masonry::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
+use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
 
 use winit::window::Window;
 
 /// The widget kind contained in the scroll area. This is a type parameter (`W`) of [`VirtualScroll`],
-/// although note that [`dyn Widget`](masonry::core::Widget) can also be used for dynamic children kinds.
+/// although note that [`dyn Widget`](masonry_winit::core::Widget) can also be used for dynamic children kinds.
 ///
 /// We use a type alias for this, as when we downcast to the `VirtualScroll`, we need to be sure to
 /// always use the same type for `W`.
@@ -96,8 +96,8 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    masonry_winit::app::run(
+        masonry_winit::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::from_pod(main_widget),
         driver,

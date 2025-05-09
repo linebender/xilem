@@ -244,8 +244,8 @@ impl RenderRoot {
     /// Create a new `RenderRoot` with the given options.
     ///
     /// Note that this doesn't create a window or start an event loop.
-    /// The `masonry_core` crate doesn't provide a way to do that:
-    /// look for `masonry::app::run` instead.
+    /// The `masonry` crate doesn't provide a way to do that:
+    /// look for `masonry_winit::app::run` instead.
     pub fn new(root_widget: impl Widget, options: RenderRootOptions) -> Self {
         let RenderRootOptions {
             use_system_fonts,

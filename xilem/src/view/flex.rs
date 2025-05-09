@@ -3,9 +3,9 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
-use masonry::widgets::{self};
-pub use masonry::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
+use masonry_winit::core::{FromDynWidget, Widget, WidgetMut};
+use masonry_winit::widgets::{self};
+pub use masonry_winit::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -17,7 +17,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```rust,no_run
-/// use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
+/// use masonry_winit::widgets::{CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
 /// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WidgetView, Xilem};
@@ -119,8 +119,8 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     /// If `gap` is not a non-negative finite value.
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    /// [`WIDGET_PADDING_VERTICAL`]: masonry::theme::WIDGET_PADDING_VERTICAL
-    /// [`WIDGET_PADDING_HORIZONTAL`]: masonry::theme::WIDGET_PADDING_VERTICAL
+    /// [`WIDGET_PADDING_VERTICAL`]: masonry_winit::theme::WIDGET_PADDING_VERTICAL
+    /// [`WIDGET_PADDING_HORIZONTAL`]: masonry_winit::theme::WIDGET_PADDING_VERTICAL
     #[track_caller]
     pub fn gap(mut self, gap: f64) -> Self {
         if gap.is_finite() && gap >= 0.0 {

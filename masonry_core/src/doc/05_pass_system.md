@@ -8,7 +8,7 @@
 > 💡 Tip
 >
 > This file is intended to be read in rustdoc.
-> Use `cargo doc --open --package masonry --no-deps`.
+> Use `cargo doc --open --package masonry_winit --no-deps`.
 
 </div>
 

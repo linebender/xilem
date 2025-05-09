@@ -5,11 +5,11 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
-use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, PointerButton, StyleProperty, WidgetId};
-use masonry::dpi::LogicalSize;
-use masonry::peniko::Color;
-use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
+use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::core::{Action, PointerButton, StyleProperty, WidgetId};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::peniko::Color;
+use masonry_winit::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
 use parley::layout::Alignment;
 use winit::window::Window;
 
@@ -117,8 +117,8 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    masonry_winit::app::run(
+        masonry_winit::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(main_widget),
         driver,
@@ -129,8 +129,8 @@ fn main() {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
+    use masonry_winit::assert_render_snapshot;
+    use masonry_winit::testing::TestHarness;
 
     use super::*;
 

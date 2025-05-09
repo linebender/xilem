@@ -125,7 +125,7 @@ impl TimeZone {
                         // TODO: Consider accessibility here.
                         palette::css::ORANGE
                     } else {
-                        masonry::theme::TEXT_COLOR
+                        masonry_winit::theme::TEXT_COLOR
                     },
                 ),
             ))

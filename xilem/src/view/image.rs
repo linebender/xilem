@@ -3,12 +3,12 @@
 
 //! The bitmap image widget.
 
-use masonry::widgets::{self};
+use masonry_winit::widgets::{self};
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
-pub use masonry::core::ObjectFit;
+pub use masonry_winit::core::ObjectFit;
 /// Displays the bitmap `image`.
 ///
 /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).

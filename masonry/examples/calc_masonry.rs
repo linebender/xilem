@@ -13,16 +13,16 @@
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
 use accesskit::{Node, Role};
-use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{
+use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetPod,
 };
-use masonry::dpi::LogicalSize;
-use masonry::kurbo::{Point, Size};
-use masonry::peniko::Color;
-use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::kurbo::{Point, Size};
+use masonry_winit::peniko::Color;
+use masonry_winit::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
@@ -416,8 +416,8 @@ fn main() {
         in_num: false,
     };
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    masonry_winit::app::run(
+        masonry_winit::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(build_calc()),
         calc_state,
@@ -428,8 +428,8 @@ fn main() {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
+    use masonry_winit::assert_render_snapshot;
+    use masonry_winit::testing::TestHarness;
 
     use super::*;
 

@@ -4,13 +4,13 @@
 
 **A foundational framework for Rust GUI libraries.**
 
-[![Latest published version.](https://img.shields.io/crates/v/masonry.svg)](https://crates.io/crates/masonry)
-[![Documentation build status.](https://img.shields.io/docsrs/masonry.svg)](https://docs.rs/masonry)
+[![Latest published version.](https://img.shields.io/crates/v/masonry_winit.svg)](https://crates.io/crates/masonry_winit)
+[![Documentation build status.](https://img.shields.io/docsrs/masonry_winit.svg)](https://docs.rs/masonry_winit)
 [![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
 
 [![Linebender Zulip chat.](https://img.shields.io/badge/Linebender-%23masonry-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/317477-masonry)
 [![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
-[![Dependency staleness status.](https://deps.rs/crate/masonry/latest/status.svg)](https://deps.rs/crate/masonry)
+[![Dependency staleness status.](https://deps.rs/crate/masonry_winit/latest/status.svg)](https://deps.rs/crate/masonry_winit)
 
 </div>
 
@@ -40,10 +40,10 @@ Lots of things need improvements, e.g. text input is janky and snapshot testing 
 The to-do-list example looks like this:
 
 ```rust
-use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, Widget, WidgetId};
-use masonry::dpi::LogicalSize;
-use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
+use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::core::{Action, Widget, WidgetId};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
 use winit::window::Window;
 
 struct Driver {
@@ -89,8 +89,8 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    masonry_winit::app::run(
+        masonry_winit::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(main_widget),
         Driver {
@@ -101,7 +101,7 @@ fn main() {
 }
 ```
 
-For more information, see [the documentation module](masonry_core::doc).
+For more information, see [the documentation module](masonry::doc).
 
 ### Crate feature flags
 

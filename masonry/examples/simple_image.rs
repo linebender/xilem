@@ -8,10 +8,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::app::{AppDriver, DriverCtx};
-use masonry::core::{Action, ObjectFit, WidgetId};
-use masonry::dpi::LogicalSize;
-use masonry::widgets::{Image, RootWidget};
+use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::core::{Action, ObjectFit, WidgetId};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::widgets::{Image, RootWidget};
 use vello::peniko::{Image as ImageBuf, ImageFormat};
 use winit::window::Window;
 
@@ -42,8 +42,8 @@ fn main() {
         .with_min_inner_size(window_size)
         .with_max_inner_size(window_size);
 
-    masonry::app::run(
-        masonry::app::EventLoop::with_user_event(),
+    masonry_winit::app::run(
+        masonry_winit::app::EventLoop::with_user_event(),
         window_attributes,
         RootWidget::new(make_image()),
         Driver,
@@ -54,8 +54,8 @@ fn main() {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
+    use masonry_winit::assert_render_snapshot;
+    use masonry_winit::testing::TestHarness;
 
     use super::*;
 

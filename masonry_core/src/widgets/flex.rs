@@ -943,7 +943,7 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
             }
         } else {
             tracing::warn!(
-                "Flex value should be > 0.0 (was {flex}). See the docs for masonry::widgets::Flex for more information"
+                "Flex value should be > 0.0 (was {flex}). See the docs for masonry_winit::widgets::Flex for more information"
             );
             Child::Fixed {
                 widget,
