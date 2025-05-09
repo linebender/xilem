@@ -3,9 +3,11 @@
 
 //! Traits used to set custom styles on elements.
 
-use masonry::core::Property;
-use masonry::properties::types::Gradient;
-use masonry::properties::{Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding};
+use masonry_winit::core::Property;
+use masonry_winit::properties::types::Gradient;
+use masonry_winit::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding,
+};
 use vello::peniko::Color;
 
 use crate::property_tuple::PropertyTuple;
@@ -19,7 +21,7 @@ pub trait HasProperty<P: Property>: Style {
 /// Trait implemented by most elements that lets you set some styling properties.
 ///
 /// Which methods you can use will depend on which marker traits the element implements,
-/// which matches which [`Properties`](masonry::core::Properties) the underlying widget handles.
+/// which matches which [`Properties`](masonry_winit::core::Properties) the underlying widget handles.
 pub trait Style: Sized {
     /// The tuple type used by the element to store properties.
     type Props: PropertyTuple;
