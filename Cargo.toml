@@ -3,8 +3,8 @@ resolver = "2"
 members = [
     "xilem",
     "xilem_core",
-    "masonry",
     "masonry_core",
+    "masonry_winit",
 
     "xilem_web",
     "xilem_web/web_examples/counter",
@@ -86,7 +86,7 @@ clippy.wildcard_dependencies = "warn"
 
 [workspace.dependencies]
 masonry = { version = "0.2.0", path = "masonry_core" }
-masonry_winit = { version = "0.2.0", path = "masonry" }
+masonry_winit = { version = "0.2.0", path = "masonry_winit" }
 xilem_core = { version = "0.1.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
 vello = "0.5.0"
