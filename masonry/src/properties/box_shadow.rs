@@ -82,7 +82,7 @@ impl BoxShadow {
         ctx.request_layout();
     }
 
-    /// Returns false if the shadow can be safely treated as non-existent.
+    /// Returns `false` if the shadow can be safely treated as non-existent.
     ///
     /// May have false positives.
     pub fn is_visible(&self) -> bool {

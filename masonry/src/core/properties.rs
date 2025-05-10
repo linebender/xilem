@@ -24,8 +24,14 @@ pub trait Property: Default + Send + Sync + 'static {
     ///
     /// Should be the same as [`Default::default()`].
     ///
-    /// **Note:** This is a hacky workaround until we find a better way to store default
-    /// values for properties.
+    /// The reason we have this method is that we want e.g. [`PropertiesRef::get()`] to
+    /// return a `&T`, not an `Option<&T>`.
+    ///
+    /// Therefore `Property` must provide a method that will return a `&'static T` that we
+    /// can use anywhere.
+    /// We do that is by creating a static inside each impl, and returning a reference to that static.
+    ///
+    /// Ideally, when const generics are stable, we'll want to use `const Default` directly in the default impl.
     fn static_default() -> &'static Self;
 }
 
