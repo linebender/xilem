@@ -11,7 +11,7 @@
 
 </div>
 
-This repo contains an experimental architecture, implemented with a toy UI.
+This repo contains an experimental architecture, implemented with Masonry.
 At a very high level, it combines ideas from Flutter, SwiftUI, and Elm.
 Like all of these, it uses lightweight view objects, diffing them to provide minimal updates to a retained UI.
 Like SwiftUI, it is strongly typed.
