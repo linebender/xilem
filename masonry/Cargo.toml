@@ -1,6 +1,6 @@
 [package]
 name = "masonry"
-version = "0.2.0"
+version.workspace = true # We mimic Xilem's version
 description = "Traits and types of the Masonry toolkit."
 keywords = ["gui", "ui", "toolkit"]
 categories = ["gui", "internationalization", "accessibility"]
