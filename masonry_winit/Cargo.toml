@@ -1,6 +1,6 @@
 [package]
 name = "masonry_winit"
-version = "0.2.0"
+version.workspace = true # We mimic Xilem's version
 description = "Data-oriented Rust UI design toolkit."
 keywords = ["gui", "ui", "toolkit"]
 categories = ["gui", "internationalization", "accessibility"]

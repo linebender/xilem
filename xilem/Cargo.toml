@@ -1,6 +1,6 @@
 [package]
 name = "xilem"
-version = "0.1.0"
+version.workspace = true
 description = "A next-generation cross-platform Rust UI framework."
 keywords = ["gui", "ui", "native", "gpu", "performance"]
 categories = ["gui", "graphics", "internationalization", "accessibility"]
