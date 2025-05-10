@@ -82,10 +82,13 @@ The [Rust code of conduct] applies.
 
 ## License
 
-Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+Licensed under the Apache License, Version 2.0 ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
 
 </div>
 
 [Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
 [Trunk]: https://trunkrs.dev/
 [Xilem Core]: https://crates.io/crates/xilem_core
+
+<!-- Needs to be defined here for rustdoc's benefit -->
+[LICENSE]: LICENSE

@@ -76,7 +76,7 @@ The [Rust code of conduct] applies.
 
 ## License
 
-Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+Licensed under the Apache License, Version 2.0 ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
 
 </div>
 
@@ -87,3 +87,6 @@ Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE) or <http://ww
 [`alloc`]: https://doc.rust-lang.org/stable/alloc/
 [`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
 [`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html
+
+<!-- Needs to be defined here for rustdoc's benefit -->
+[LICENSE]: LICENSE
