@@ -64,7 +64,8 @@ pub struct PropertiesMut<'a> {
     pub(crate) default_map: &'a AnyMap,
 }
 
-// TODO - Document default properties.
+// TODO - Better document local vs default properties.
+
 /// A collection of default properties for all widgets.
 ///
 /// Default property values can be added to this collection for
@@ -84,9 +85,6 @@ impl Properties {
         Self { map: AnyMap::new() }
     }
 }
-
-// TODO - If a property is not in the widget *or* the type, return `Default::default()`.
-// Don't return Option types anymore.
 
 impl PropertiesRef<'_> {
     /// Returns `true` if the widget has a local property of type `P`.

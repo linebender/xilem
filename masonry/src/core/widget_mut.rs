@@ -67,26 +67,28 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         self.ctx.properties.get::<T>()
     }
 
-    /// Set property `T` to given value. Returns the previous value if `T` was already set.
+    /// Set property `T` to given value. Returns the previous value if `T` was already set locally.
     ///
     /// Does not affect default properties.
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn insert_prop<T: Property>(&mut self, value: T) -> Option<T> {
+        let value = self.ctx.properties.insert(value);
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
-        self.ctx.properties.insert(value)
+        value
     }
 
-    /// Remove property `T`. Returns the previous value if `T` was set.
+    /// Remove property `T`. Returns the previous value if `T` was set locally.
     ///
     /// Does not affect default properties.
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn remove_prop<T: Property>(&mut self) -> Option<T> {
+        let value = self.ctx.properties.remove::<T>();
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
-        self.ctx.properties.remove::<T>()
+        value
     }
 
     /// Set the local transform of this widget.
