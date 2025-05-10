@@ -152,7 +152,7 @@ sudo apt-get install clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 
 The Xilem repository includes a lot of projects and examples, most of them pulling a lot of dependencies.
 
-If you contribute to Xilem on Linux or MacOS, we recommend using [`split-debuginfo`](https://doc.rust-lang.org/cargo/reference/profiles.html#split-debuginfo) in your [`.cargo/config.toml`](https://doc.rust-lang.org/cargo/reference/config.html#hierarchical-structure) file to reduce the size of the `target/` folder:
+If you contribute to Xilem on Linux or macOS, we recommend using [`split-debuginfo`](https://doc.rust-lang.org/cargo/reference/profiles.html#split-debuginfo) in your [`.cargo/config.toml`](https://doc.rust-lang.org/cargo/reference/config.html#hierarchical-structure) file to reduce the size of the `target/` folder:
 
 ```toml
 [profile.dev]
