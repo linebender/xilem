@@ -24,7 +24,7 @@ An evolution of the ideas implemented in xilem can be found in the following res
 - **High Performance.** Lightweight state management, retained widget layer, massively parallel rendering backend (Vello), fast startup time, small binary size
 - **Productive.** Offer an ergonomic API, code is concise (low Rust tax), idiomatic and UI components compose well
 - **Rich 2D graphics model.**
-- **Wide platform support.** Windows, MacOS, Linux (Wayland/X11), Android (Google funded), iOS
+- **Wide platform support.** Windows, macOS, Linux (Wayland/X11), Android (Google funded), iOS
 - **Batteries-included.** Advanced text layout, IME, Accessibility, Animation, Styling
 
 ## Roadmap

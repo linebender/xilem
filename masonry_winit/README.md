@@ -1,13 +1,13 @@
 <div align="center">
 
-# Masonry
+# Masonry Winit
 
-**A foundational framework for Rust GUI libraries.**
+**A foundational framework for Rust GUI libraries**
 
 [![Latest published version.](https://img.shields.io/crates/v/masonry_winit.svg)](https://crates.io/crates/masonry_winit)
 [![Documentation build status.](https://img.shields.io/docsrs/masonry_winit.svg)](https://docs.rs/masonry_winit)
 [![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
-
+\
 [![Linebender Zulip chat.](https://img.shields.io/badge/Linebender-%23masonry-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/317477-masonry)
 [![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
 [![Dependency staleness status.](https://deps.rs/crate/masonry_winit/latest/status.svg)](https://deps.rs/crate/masonry_winit)
@@ -16,7 +16,7 @@
 
 <!-- We use cargo-rdme to update the README with the contents of lib.rs.
 To edit the following section, update it in lib.rs, then run:
-cargo rdme --workspace-project=color --heading-base-level=0
+cargo rdme --workspace-project=masonry_winit --heading-base-level=0
 Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
@@ -125,32 +125,30 @@ Masonry apps currently ship with two debugging features built in:
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Masonry has been verified to compile with **Rust 1.86** and later.
+This version of Masonry Winit has been verified to compile with **Rust 1.86** and later.
 
-Future versions of Masonry might increase the Rust version requirement.
+Future versions of Masonry Winit might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
 
 <details>
 <summary>Click here if compiling fails.</summary>
 
-As time has passed, some of Masonry's dependencies could have released versions with a higher Rust requirement.
+As time has passed, some of Masonry Winit's dependencies could have released versions with a higher Rust requirement.
 If you encounter a compilation issue due to a dependency and don't want to upgrade your Rust toolchain, then you could downgrade the dependency.
 
 ```sh
 # Use the problematic dependency's name and version
 cargo update -p package_name --precise 0.1.1
 ```
-
 </details>
 
 ## Community
 
-Discussion of Masonry development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#masonry channel](https://xi.zulipchat.com/#narrow/stream/317477-masonry).
+Discussion of Masonry Winit development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#masonry channel](https://xi.zulipchat.com/#narrow/stream/317477-masonry).
 All public content can be read without logging in.
 
-Contributions are welcome by pull request. The [Rust code of conduct] applies.
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache 2.0 license, shall be licensed as noted in the [License](#license) section, without any additional terms or conditions.
+Contributions are welcome by pull request.
+The [Rust code of conduct] applies.
 
 ## License
 

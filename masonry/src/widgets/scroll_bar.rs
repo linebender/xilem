@@ -18,7 +18,7 @@ use crate::util::{fill_color, stroke};
 use crate::widgets::Axis;
 
 // TODO
-// - Fade scrollbars? Find out how Linux/MacOS/Windows do it
+// - Fade scrollbars? Find out how Linux/macOS/Windows do it
 // - Rename cursor to oval/rect/bar/grabber/grabbybar
 // - Rename progress to something more descriptive
 // - Document names

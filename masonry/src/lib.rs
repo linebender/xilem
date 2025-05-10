@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Traits and types of the Masonry toolkit.
-//! See Masonry documentation for more details, examples and resources.
+//! See [Masonry Winit's documentation] for more details, examples and resources.
+//!
+//! [Masonry Winit's documentation]: https://docs.rs/masonry_winit/latest/
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
