@@ -456,17 +456,9 @@ impl<S: 'static> Widget for ModularWidget<S> {
     fn find_widget_under_pointer<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
-        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_under_pointer(
-            &WidgetRef {
-                widget: self,
-                properties: props,
-                ctx,
-            },
-            pos,
-        )
+        find_widget_under_pointer(&WidgetRef { widget: self, ctx }, pos)
     }
 
     fn type_name(&self) -> &'static str {
@@ -712,10 +704,9 @@ impl<W: Widget> Widget for Recorder<W> {
     fn find_widget_under_pointer<'c>(
         &'c self,
         ctx: QueryCtx<'c>,
-        props: PropertiesRef<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        self.child.find_widget_under_pointer(ctx, props, pos)
+        self.child.find_widget_under_pointer(ctx, pos)
     }
 
     fn type_name(&self) -> &'static str {

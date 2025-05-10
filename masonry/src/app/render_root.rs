@@ -20,9 +20,9 @@ use web_time::Instant;
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, Ime, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection,
-    TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
-    WindowEvent,
+    AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
+    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -70,6 +70,9 @@ pub struct RenderRoot {
 
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
+
+    /// Default values that properties will have if not defined per-widget.
+    pub(crate) default_properties: DefaultProperties,
 
     /// State passed to context types.
     pub(crate) global_state: RenderRootState,
@@ -170,6 +173,9 @@ pub enum WindowSizePolicy {
 
 /// Options for creating a [`RenderRoot`].
 pub struct RenderRootOptions {
+    /// Default values that properties will have if not defined per-widget.
+    pub default_properties: DefaultProperties,
+
     /// If true, `fontique` will provide access to system fonts
     /// using platform-specific APIs.
     pub use_system_fonts: bool,
@@ -248,6 +254,7 @@ impl RenderRoot {
     /// look for `masonry_winit::app::run` instead.
     pub fn new(root_widget: impl Widget, options: RenderRootOptions) -> Self {
         let RenderRootOptions {
+            default_properties,
             use_system_fonts,
             size_policy,
             scale_factor,
@@ -261,6 +268,7 @@ impl RenderRoot {
             size: PhysicalSize::new(0, 0),
             last_anim: None,
             last_mouse_pos: None,
+            default_properties,
             global_state: RenderRootState {
                 signal_queue: VecDeque::new(),
                 focused_widget: None,
@@ -494,16 +502,13 @@ impl RenderRoot {
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
+            properties: PropertiesRef {
+                map: properties_ref.item,
+                default_map: self.default_properties.for_widget(widget.type_id()),
+            },
             properties_children: properties_ref.children,
         };
-        let properties = PropertiesRef {
-            map: properties_ref.item,
-        };
-        WidgetRef {
-            ctx,
-            properties,
-            widget,
-        }
+        WidgetRef { ctx, widget }
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
@@ -526,16 +531,13 @@ impl RenderRoot {
             widget_state_children: state_ref.children,
             widget_children: widget_ref.children,
             widget_state: state_ref.item,
+            properties: PropertiesRef {
+                map: properties_ref.item,
+                default_map: self.default_properties.for_widget(widget.type_id()),
+            },
             properties_children: properties_ref.children,
         };
-        let properties = PropertiesRef {
-            map: properties_ref.item,
-        };
-        Some(WidgetRef {
-            ctx,
-            properties,
-            widget,
-        })
+        Some(WidgetRef { ctx, widget })
     }
 
     /// Get a [`WidgetMut`] to the root widget.

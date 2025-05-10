@@ -51,35 +51,44 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         }
     }
 
-    /// Returns `true` if the widget has a property of type `T`.
-    pub fn get_prop<T: Property>(&self) -> Option<&T> {
-        self.ctx.properties.get::<T>()
-    }
-
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
+    /// Returns `true` if the widget has a local property of type `T`.
+    ///
+    /// Does not check default properties.
     pub fn contains_prop<T: Property>(&self) -> bool {
         self.ctx.properties.contains::<T>()
     }
 
-    /// Get value of property `T`, or `None` if the widget has no `T` property.
-    pub fn get_prop_mut<T: Property>(&mut self) -> Option<&mut T> {
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
-        self.ctx.properties.get_mut::<T>()
+    /// Get value of property `T`.
+    ///
+    /// If the widget has an entry for `P`, returns that entry.
+    /// If the default property set has an entry for `P`, returns that entry.
+    /// Otherwise returns [`Property::static_default()`].
+    pub fn get_prop<T: Property>(&self) -> &T {
+        self.ctx.properties.get::<T>()
     }
 
-    /// Set property `T` to given value. Returns the previous value if `T` was already set.
+    /// Set property `T` to given value. Returns the previous value if `T` was already set locally.
+    ///
+    /// Does not affect default properties.
+    ///
+    /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn insert_prop<T: Property>(&mut self, value: T) -> Option<T> {
+        let value = self.ctx.properties.insert(value);
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
-        self.ctx.properties.insert(value)
+        value
     }
 
-    /// Remove property `T`. Returns the previous value if `T` was set.
+    /// Remove property `T`. Returns the previous value if `T` was set locally.
+    ///
+    /// Does not affect default properties.
+    ///
+    /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn remove_prop<T: Property>(&mut self) -> Option<T> {
+        let value = self.ctx.properties.remove::<T>();
         self.widget
             .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
-        self.ctx.properties.remove::<T>()
+        value
     }
 
     /// Set the local transform of this widget.

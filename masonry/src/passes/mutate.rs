@@ -26,6 +26,9 @@ pub(crate) fn mutate_widget<R>(
             widget_children: widget_mut.children,
             properties: PropertiesMut {
                 map: properties_mut.item,
+                default_map: root
+                    .default_properties
+                    .for_widget(widget_mut.item.type_id()),
             },
             properties_children: properties_mut.children,
         },

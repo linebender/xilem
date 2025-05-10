@@ -5,13 +5,14 @@ use tracing::info_span;
 use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{PropertiesMut, UpdateCtx, Widget, WidgetState};
+use crate::core::{DefaultProperties, PropertiesMut, UpdateCtx, Widget, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
 // --- MARK: UPDATE ANIM ---
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
+    default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
@@ -20,6 +21,7 @@ fn update_anim_for_widget(
     let _span = enter_span_if(
         global_state.trace.anim,
         global_state,
+        default_properties,
         widget.reborrow(),
         state.reborrow(),
         properties.reborrow(),
@@ -43,6 +45,7 @@ fn update_anim_for_widget(
         };
         let mut props = PropertiesMut {
             map: properties.item,
+            default_map: default_properties.for_widget(widget.item.type_id()),
         };
         widget.item.on_anim_frame(&mut ctx, &mut props, elapsed_ns);
     }
@@ -57,6 +60,7 @@ fn update_anim_for_widget(
         |widget, mut state, properties| {
             update_anim_for_widget(
                 global_state,
+                default_properties,
                 widget,
                 state.reborrow_mut(),
                 properties,
@@ -81,6 +85,7 @@ pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
         root.widget_arena.get_all_mut(root.root.id());
     update_anim_for_widget(
         &mut root.global_state,
+        &root.default_properties,
         root_widget,
         root_state.reborrow_mut(),
         root_properties,
