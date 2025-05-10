@@ -5,9 +5,10 @@ description = "Common core of the Xilem Rust UI framework."
 keywords = ["xilem", "ui", "reactive", "performance"]
 categories = ["gui"]
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-rust-version.workspace = true
+homepage.workspace = true
 
 publish = false # We'll publish this alongside Xilem 0.2
 

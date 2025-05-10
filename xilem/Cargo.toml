@@ -5,10 +5,10 @@ description = "A next-generation cross-platform Rust UI framework."
 keywords = ["gui", "ui", "native", "gpu", "performance"]
 categories = ["gui", "graphics", "internationalization", "accessibility"]
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 homepage.workspace = true
-rust-version.workspace = true
 exclude = [
     "/resources/fonts/roboto_flex/",
     "/resources/data/http_cats_status/",
@@ -22,6 +22,47 @@ default-target = "x86_64-unknown-linux-gnu"
 targets = []
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+# This makes the examples discoverable to (e.g.) Android GPU inspector without needing to provide the full name manually.
+# Do not use when releasing a production app.
+[package.metadata.android.application]
+debuggable = true
+
+[[package.metadata.android.uses_permission]]
+# Needed for http_cats
+name = "android.permission.INTERNET"
+
+[dependencies]
+xilem_core.workspace = true
+masonry_winit.workspace = true
+winit.workspace = true
+tracing.workspace = true
+vello.workspace = true
+smallvec.workspace = true
+accesskit.workspace = true
+tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+
+[dev-dependencies]
+# Used for `variable_clock`
+time = { workspace = true, features = ["local-offset"] }
+
+# Used for http_cats
+reqwest = { version = "0.12.15", default-features = false, features = [
+    # We use rustls as Android doesn't ship with openssl
+    # and this is likely to be easiest to get working.
+    "rustls-tls",
+] }
+image = { workspace = true, features = ["jpeg"] }
+
+# Make wgpu use tracing for its spans.
+profiling = { version = "1.0.16", features = ["profile-with-tracing"] }
+anyhow = "1.0.98"
+
+[target.'cfg(target_os = "android")'.dev-dependencies]
+winit = { features = ["android-native-activity"], workspace = true }
+
+[lints]
+workspace = true
 
 [[example]]
 name = "mason"
@@ -90,44 +131,3 @@ name = "emoji_picker_android"
 path = "examples/emoji_picker.rs"
 # cdylib is required for cargo-apk
 crate-type = ["cdylib"]
-
-[lints]
-workspace = true
-
-[dependencies]
-xilem_core.workspace = true
-masonry_winit.workspace = true
-winit.workspace = true
-tracing.workspace = true
-vello.workspace = true
-smallvec.workspace = true
-accesskit.workspace = true
-tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
-
-[dev-dependencies]
-# Used for `variable_clock`
-time = { workspace = true, features = ["local-offset"] }
-
-# Used for http_cats
-reqwest = { version = "0.12.15", default-features = false, features = [
-    # We use rustls as Android doesn't ship with openssl
-    # and this is likely to be easiest to get working.
-    "rustls-tls",
-] }
-image = { workspace = true, features = ["jpeg"] }
-
-# Make wgpu use tracing for its spans.
-profiling = { version = "1.0.16", features = ["profile-with-tracing"] }
-anyhow = "1.0.98"
-
-[target.'cfg(target_os = "android")'.dev-dependencies]
-winit = { features = ["android-native-activity"], workspace = true }
-
-# This makes the examples discoverable to (e.g.) Android GPU inspector without needing to provide the full name manually.
-# Do not use when releasing a production app.
-[package.metadata.android.application]
-debuggable = true
-
-[[package.metadata.android.uses_permission]]
-# Needed for http_cats
-name = "android.permission.INTERNET"
