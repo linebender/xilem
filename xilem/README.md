@@ -7,7 +7,7 @@
 [![Latest published version.](https://img.shields.io/crates/v/xilem.svg)](https://crates.io/crates/xilem)
 [![Documentation build status.](https://img.shields.io/docsrs/xilem.svg)](https://docs.rs/xilem)
 [![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
-
+\
 [![Linebender Zulip chat.](https://img.shields.io/badge/Linebender-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
 [![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
 [![Dependency staleness status.](https://deps.rs/crate/xilem/latest/status.svg)](https://deps.rs/crate/xilem)
@@ -16,7 +16,7 @@
 
 <!-- We use cargo-rdme to update the README with the contents of lib.rs.
 To edit the following section, update it in lib.rs, then run:
-cargo rdme --workspace-project=color --heading-base-level=0
+cargo rdme --workspace-project=xilem --heading-base-level=0
 Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
@@ -33,6 +33,7 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 [crate::view::progress_bar]: https://docs.rs/xilem/latest/xilem/view/fn.progress_bar.html
 [crate::view::prose]: https://docs.rs/xilem/latest/xilem/view/fn.prose.html
 [crate::view::sized_box]: https://docs.rs/xilem/latest/xilem/view/fn.sized_box.html
+[crate::view::split]: https://docs.rs/xilem/latest/xilem/view/fn.split.html
 [crate::view::task]: https://docs.rs/xilem/latest/xilem/view/fn.task.html
 [crate::view::textbox]: https://docs.rs/xilem/latest/xilem/view/fn.textbox.html
 [crate::view::zstack]: https://docs.rs/xilem/latest/xilem/view/fn.zstack.html
@@ -165,7 +166,6 @@ If you encounter a compilation issue due to a dependency and don't want to upgra
 # Use the problematic dependency's name and version
 cargo update -p package_name --precise 0.1.1
 ```
-
 </details>
 
 ## Community
@@ -173,9 +173,8 @@ cargo update -p package_name --precise 0.1.1
 Discussion of Xilem development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
 All public content can be read without logging in.
 
-Contributions are welcome by pull request. The [Rust code of conduct] applies.
-
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache 2.0 license, shall be licensed as noted in the [License](#license) section, without any additional terms or conditions.
+Contributions are welcome by pull request.
+The [Rust code of conduct] applies.
 
 ## License
 
