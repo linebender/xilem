@@ -9,8 +9,6 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
-publish = false # Remove just before publishing
-
 [package.metadata.docs.rs]
 all-features = true # all features are enabled - this means that the generated docs are for the safe version
 # There are no platform specific docs.

@@ -1863,7 +1863,7 @@ dependencies = [
 
 [[package]]
 name = "masonry"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "accesskit",
  "anymap3",
@@ -1893,7 +1893,7 @@ dependencies = [
 
 [[package]]
 name = "masonry_winit"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "accesskit",
  "accesskit_winit",
@@ -4918,7 +4918,7 @@ checksum = "0ef33da6b1660b4ddbfb3aef0ade110c8b8a781a3b6382fa5f2b5b040fd55f61"
 
 [[package]]
 name = "xilem"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "accesskit",
  "anyhow",
@@ -4937,7 +4937,7 @@ dependencies = [
 
 [[package]]
 name = "xilem_core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "kurbo",
  "tracing",
@@ -4945,7 +4945,7 @@ dependencies = [
 
 [[package]]
 name = "xilem_web"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "futures",
  "peniko",

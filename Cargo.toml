@@ -21,6 +21,13 @@ members = [
 ]
 
 [workspace.package]
+# Xilem version, also used by other packages which want to mimic Xilem's version.
+# Right now those packages include: xilem_core, xilem_web, masonry, masonry_winit.
+#
+# NOTE: When bumping this, remember to also bump the aforementioned other packages'
+#       version in the dependencies section of this file.
+version = "0.3.0"
+
 edition = "2024"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
 rust-version = "1.86"
@@ -29,9 +36,9 @@ repository = "https://github.com/linebender/xilem"
 homepage = "https://xilem.dev/"
 
 [workspace.dependencies]
-masonry = { version = "0.2.0", path = "masonry" }
-masonry_winit = { version = "0.2.0", path = "masonry_winit" }
-xilem_core = { version = "0.1.0", path = "xilem_core" }
+masonry = { version = "0.3.0", path = "masonry" }
+masonry_winit = { version = "0.3.0", path = "masonry_winit" }
+xilem_core = { version = "0.3.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
 vello = "0.5.0"
 wgpu = "24.0.3"

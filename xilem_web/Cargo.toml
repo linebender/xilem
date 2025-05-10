@@ -1,6 +1,6 @@
 [package]
 name = "xilem_web"
-version = "0.1.0"
+version.workspace = true # We mimic Xilem's version
 description = "HTML DOM frontend for the Xilem Rust UI framework."
 keywords = ["xilem", "html", "svg", "dom", "web", "ui"]
 categories = ["gui", "web-programming"]
