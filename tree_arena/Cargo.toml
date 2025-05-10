@@ -5,10 +5,9 @@ description = "An arena allocated tree."
 keywords = ["arena", "tree"]
 categories = ["algorithms", "data-structures"]
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-homepage.workspace = true
-rust-version.workspace = true
 
 publish = false # Remove just before publishing
 
@@ -26,8 +25,8 @@ targets = []
 default = ["safe_tree"]
 safe_tree = []
 
-[lints]
-workspace = true
-
 [dependencies]
 hashbrown.workspace = true
+
+[lints]
+workspace = true
