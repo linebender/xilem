@@ -2,7 +2,7 @@
 name = "xilem_web"
 version.workspace = true # We mimic Xilem's version
 description = "HTML DOM frontend for the Xilem Rust UI framework."
-keywords = ["xilem", "html", "svg", "dom", "web", "ui"]
+keywords = ["xilem", "html", "svg", "web", "ui"]
 categories = ["gui", "web-programming"]
 edition.workspace = true
 rust-version.workspace = true
