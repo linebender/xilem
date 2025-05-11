@@ -4,7 +4,6 @@ version.workspace = true # We mimic Xilem's version
 description = "HTML DOM frontend for the Xilem Rust UI framework."
 keywords = ["xilem", "html", "svg", "dom", "web", "ui"]
 categories = ["gui", "web-programming"]
-publish = false # Until it's ready
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
