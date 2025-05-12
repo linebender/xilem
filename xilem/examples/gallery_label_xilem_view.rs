@@ -8,13 +8,13 @@
 // add URL support for doc links
 // add non-desktop platforms
 
-use masonry::dpi::LogicalSize;
+use masonry_winit::dpi::LogicalSize;
 use winit::window::Window;
 use xilem::view::{CrossAxisAlignment, FlexExt, FlexParams};
 
-use masonry::core::ArcStr;
-use masonry::parley::fontique;
-use masonry::peniko::Color;
+use masonry_winit::core::ArcStr;
+use masonry_winit::parley::fontique;
+use masonry_winit::peniko::Color;
 use winit::error::EventLoopError;
 use xilem::view::{
     Axis, GridExt, Label, Padding, Prose, button, flex, grid, label, portal, prose, sized_box,
