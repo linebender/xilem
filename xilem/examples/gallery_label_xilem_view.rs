@@ -101,7 +101,6 @@ fn text_x_align_cycle(cur: &CrossAxisAlignment) -> CrossAxisAlignment {
     }
 }
 
-
 fn title_prose(text: impl Into<ArcStr>) -> Prose {
     prose(text)
         .text_size(18.0)
