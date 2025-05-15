@@ -7,7 +7,6 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-#![expect(clippy::shadow_unrelated, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use accesskit::{Node, Role};

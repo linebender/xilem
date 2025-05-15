@@ -5,7 +5,6 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use std::time::Duration;
 

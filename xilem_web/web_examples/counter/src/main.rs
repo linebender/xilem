@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! A simple counter
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::{Element, HtmlButtonElement};

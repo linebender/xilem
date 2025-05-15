@@ -3,11 +3,6 @@
 
 //! Tests for [`SequenceView`] with arrays.
 
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Deferred: Noisy. Fix is to use scopes"
-)]
-
 mod common;
 use common::*;
 use xilem_core::{DynMessage, View};

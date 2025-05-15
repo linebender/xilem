@@ -3,8 +3,6 @@
 
 //! A simple emoji picker.
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
 use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::view::{

@@ -3,8 +3,6 @@
 
 //! A stopwatch to display elapsed time.
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
 use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 

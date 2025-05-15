@@ -120,10 +120,6 @@
 )]
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Potentially controversial code style"
-)]
 
 // TODO - Add logo
 
