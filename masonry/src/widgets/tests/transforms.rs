@@ -34,6 +34,7 @@ fn transforms_translation_rotation() {
             transform: Affine::translate(-translation)
                 .then_rotate(PI * 0.25)
                 .then_translate(translation),
+            ..Default::default()
         },
     )
     .erased();
@@ -51,6 +52,7 @@ fn transforms_pointer_events() {
         ),
         WidgetOptions {
             transform: Affine::rotate(PI * 0.125).then_translate(Vec2::new(100.0, 50.0)),
+            ..Default::default()
         },
     )
     .erased();

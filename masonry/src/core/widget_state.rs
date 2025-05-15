@@ -185,6 +185,8 @@ pub(crate) struct WidgetState {
 pub struct WidgetOptions {
     /// The transform the widget will be created with.
     pub transform: Affine,
+    /// The disabled state the widget will be created with.
+    pub disabled: bool,
 }
 
 impl WidgetState {
@@ -203,7 +205,7 @@ impl WidgetState {
             clip_path: Option::default(),
             scroll_translation: Vec2::ZERO,
             transform_changed: false,
-            is_explicitly_disabled: false,
+            is_explicitly_disabled: options.disabled,
             is_explicitly_stashed: false,
             is_disabled: false,
             is_stashed: false,

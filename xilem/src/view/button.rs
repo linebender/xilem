@@ -64,6 +64,7 @@ pub fn button<State, Action>(
             None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
+        disabled: false,
     }
 }
 
@@ -77,6 +78,7 @@ pub fn button_any_pointer<State, Action>(
     Button {
         label: label.into(),
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
+        disabled: false,
     }
 }
 
@@ -89,6 +91,15 @@ pub struct Button<F> {
     // type of `Label` even though it currently does not do so.
     label: Label,
     callback: F,
+    disabled: bool,
+}
+
+impl<F> Button<F> {
+    /// Set the disabled state of the widget.
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
 }
 
 const LABEL_VIEW_ID: ViewId = ViewId::new(0);
@@ -106,7 +117,9 @@ where
             View::<State, Action, _>::build(&self.label, ctx)
         });
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(widgets::Button::from_label_pod(child.into_widget_pod()))
+            let mut pod = ctx.new_pod(widgets::Button::from_label_pod(child.into_widget_pod()));
+            pod.options.disabled = self.disabled;
+            pod
         })
     }
 
@@ -117,6 +130,9 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if element.ctx.is_disabled() != self.disabled {
+            element.ctx.set_disabled(self.disabled);
+        }
         ctx.with_id(LABEL_VIEW_ID, |ctx| {
             View::<State, Action, _>::rebuild(
                 &self.label,
