@@ -180,8 +180,15 @@ pub(crate) struct WidgetState {
     pub(crate) widget_name: &'static str,
 }
 
+/// The options the widget will be created with.
+#[derive(Default, Debug)]
+pub struct WidgetOptions {
+    /// The transform the widget will be created with.
+    pub transform: Affine,
+}
+
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, widget_name: &'static str, transform: Affine) -> Self {
+    pub(crate) fn new(id: WidgetId, widget_name: &'static str, options: WidgetOptions) -> Self {
         Self {
             id,
             origin: Point::ORIGIN,
@@ -224,7 +231,7 @@ impl WidgetState {
             widget_name,
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
-            transform,
+            transform: options.transform,
         }
     }
 
@@ -248,7 +255,7 @@ impl WidgetState {
             needs_update_stashed: false,
             children_changed: false,
             needs_update_focus_chain: false,
-            ..Self::new(id, "<root>", Affine::IDENTITY)
+            ..Self::new(id, "<root>", WidgetOptions::default())
         }
     }
 
