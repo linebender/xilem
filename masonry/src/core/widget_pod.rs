@@ -1,8 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{Properties, Widget, WidgetId};
-use crate::kurbo::Affine;
+use crate::core::{Properties, Widget, WidgetId, WidgetOptions};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -24,7 +23,7 @@ pub struct WidgetPod<W: ?Sized> {
 
 pub(crate) struct CreateWidget<W: ?Sized> {
     pub(crate) widget: Box<W>,
-    pub(crate) transform: Affine,
+    pub(crate) options: WidgetOptions,
     pub(crate) properties: Properties,
 }
 
@@ -45,36 +44,40 @@ impl<W: Widget> WidgetPod<W> {
 
     /// Create a new widget pod with fixed id.
     pub fn new_with_id(inner: W, id: WidgetId) -> Self {
-        Self::new_with_id_and_transform(Box::new(inner), id, Affine::IDENTITY)
+        Self::new_with_id_and_options(Box::new(inner), id, WidgetOptions::default())
     }
 }
 
 impl<W: Widget + ?Sized> WidgetPod<W> {
-    /// Create a new widget pod with a custom transform.
-    pub fn new_with_transform(inner: Box<W>, transform: Affine) -> Self {
-        Self::new_with_id_and_transform(inner, WidgetId::next(), transform)
+    /// Create a new widget pod with custom options.
+    pub fn new_with_options(inner: Box<W>, options: WidgetOptions) -> Self {
+        Self::new_with_id_and_options(inner, WidgetId::next(), options)
     }
 
-    /// Create a new widget pod with a custom transform and a pre-set [`WidgetId`].
-    pub fn new_with_id_and_transform(inner: Box<W>, id: WidgetId, transform: Affine) -> Self {
+    /// Create a new widget pod with custom options and a pre-set [`WidgetId`].
+    pub fn new_with_id_and_options(inner: Box<W>, id: WidgetId, options: WidgetOptions) -> Self {
         Self {
             id,
             inner: WidgetPodInner::Create(CreateWidget {
                 widget: inner,
-                transform,
+                options,
                 properties: Properties::new(),
             }),
         }
     }
 
-    // TODO - Remove transform, have it as a special-case property instead.
-    /// Create a new widget pod with a custom transform and custom [`Properties`].
-    pub fn new_with(inner: Box<W>, id: WidgetId, transform: Affine, props: Properties) -> Self {
+    /// Create a new widget pod with custom options and custom [`Properties`].
+    pub fn new_with(
+        inner: Box<W>,
+        id: WidgetId,
+        options: WidgetOptions,
+        props: Properties,
+    ) -> Self {
         Self {
             id,
             inner: WidgetPodInner::Create(CreateWidget {
                 widget: inner,
-                transform,
+                options,
                 properties: props,
             }),
         }
@@ -110,7 +113,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
             id: self.id,
             inner: WidgetPodInner::Create(CreateWidget {
                 widget: inner.widget.as_box_dyn(),
-                transform: inner.transform,
+                options: inner.options,
                 properties: inner.properties,
             }),
         }

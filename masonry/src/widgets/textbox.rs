@@ -10,7 +10,7 @@ use vello::kurbo::{Insets, Point, Rect, Size};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    WidgetId, WidgetMut, WidgetOptions, WidgetPod,
 };
 use crate::peniko::Color;
 use crate::properties::Padding;
@@ -58,6 +58,14 @@ impl Textbox {
     pub fn from_text_area(text: TextArea<true>) -> Self {
         Self {
             text: WidgetPod::new(text),
+            clip: false,
+        }
+    }
+
+    /// Create a new `Textbox` from a styled text area, also specifying widget options.
+    pub fn from_text_area_with_options(text: TextArea<true>, options: WidgetOptions) -> Self {
+        Self {
+            text: WidgetPod::new_with_options(Box::new(text), options),
             clip: false,
         }
     }

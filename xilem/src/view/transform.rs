@@ -100,9 +100,9 @@ where
         let (mut child_pod, child_state) = self.child.build(ctx);
         let state = private::TransformedState {
             child: child_state,
-            previous_transform: child_pod.transform,
+            previous_transform: child_pod.options.transform,
         };
-        child_pod.transform = self.transform * state.previous_transform;
+        child_pod.options.transform = self.transform * state.previous_transform;
         (child_pod, state)
     }
 

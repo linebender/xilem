@@ -1248,7 +1248,7 @@ impl RegisterCtx<'_> {
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
         let Some(CreateWidget {
             widget,
-            transform,
+            options,
             properties,
         }) = child.take_inner()
         else {
@@ -1261,7 +1261,7 @@ impl RegisterCtx<'_> {
         }
 
         let id = child.id();
-        let state = WidgetState::new(child.id(), widget.short_type_name(), transform);
+        let state = WidgetState::new(child.id(), widget.short_type_name(), options);
 
         self.widget_children.insert(id, widget.as_box_dyn());
         self.widget_state_children.insert(id, state);

@@ -32,6 +32,7 @@ pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
+pub use widget_state::WidgetOptions;
 
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
