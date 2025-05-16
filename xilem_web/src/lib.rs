@@ -34,10 +34,6 @@
     reason = "Requires lint_reasons rustc feature for exceptions"
 )]
 #![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
-#![expect(
-    clippy::shadow_unrelated,
-    reason = "Potentially controversial code style"
-)]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::any::Any;

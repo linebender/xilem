@@ -69,7 +69,7 @@ rust.unsafe_code = "deny"
 # Intentional break from the lint set. Intended to be temporary
 rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)'] }
 
-# LINEBENDER LINT SET - Cargo.toml - v5
+# LINEBENDER LINT SET - Cargo.toml - v6
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -80,7 +80,6 @@ rust.elided_lifetimes_in_paths = "warn"
 rust.missing_debug_implementations = "warn"
 rust.missing_docs = "warn"
 rust.trivial_numeric_casts = "warn"
-# rust.unexpected_cfgs = "warn"
 rust.unnameable_types = "warn"
 rust.unreachable_pub = "warn"
 rust.unused_import_braces = "warn"
@@ -103,7 +102,6 @@ clippy.missing_assert_message = "warn"
 clippy.missing_fields_in_debug = "warn"
 clippy.same_functions_in_if_condition = "warn"
 clippy.semicolon_if_nothing_returned = "warn"
-clippy.shadow_unrelated = "warn"
 clippy.should_panic_without_expect = "warn"
 clippy.todo = "warn"
 clippy.unseparated_literal_suffix = "warn"

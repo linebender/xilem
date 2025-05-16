@@ -3,8 +3,6 @@
 
 //! Shows creating a element by raw tag name. This can be useful for web components
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
 use xilem_web::elements::custom_element;
 use xilem_web::interfaces::{Element, HtmlElement};
 use xilem_web::{App, DomView, document_body};

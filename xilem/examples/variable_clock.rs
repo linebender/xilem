@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! This example uses variable fonts in a touch sensitive digital clock.
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use std::sync::Arc;
 use std::time::Duration;

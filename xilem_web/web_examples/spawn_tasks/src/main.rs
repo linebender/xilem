@@ -4,8 +4,6 @@
 //! This example shows how (external) tasks can send messages
 //! to be able to change the app state.
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
 use futures::{FutureExt, select};
 use gloo_timers::future::TimeoutFuture;
 use xilem_web::concurrent::{ShutdownSignal, TaskProxy, task};

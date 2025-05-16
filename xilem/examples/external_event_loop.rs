@@ -5,7 +5,6 @@
 //! Currently, this supports running as its own window alongside an existing application, or
 //! accessing raw events from winit.
 //! Support for more custom embeddings would be welcome, but needs more design work
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
 
 use std::sync::Arc;
 

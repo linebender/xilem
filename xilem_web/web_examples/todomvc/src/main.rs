@@ -4,8 +4,6 @@
 //! A recreation of todomvc in Xilem Web
 // TODO: Link
 
-#![expect(clippy::shadow_unrelated, reason = "Idiomatic for Xilem users")]
-
 mod state;
 
 use state::{AppState, Filter, Todo};
