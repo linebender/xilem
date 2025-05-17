@@ -111,7 +111,7 @@ impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8,
 /// This will declare a type `MyWidgetProp` as an alias to `(Option<SomeProp>, Option<OtherProp>, ...)`.
 ///
 /// This will also implement [`HasProperty<Prop>`](crate::style::HasProperty) for `MyWidget` with each of the listed properties.
-/// Doing so enables using the corresponding extension method for each of them in the [`Style`](crate::Style) trait.
+/// Doing so enables using the corresponding extension method for each of them in the [`Style`](crate::style::Style) trait.
 ///
 /// If `MyWidget` is a generic type with type params `T`, `U`, `V`, you should invoke the macro like this:
 ///
