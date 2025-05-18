@@ -42,7 +42,7 @@ pub trait HyperView<State> {
         // &mut self,
         self,
         // previous: Option<&mut Self>,
-        hyper_state: &mut Option<Self::HyperState>,
+        hyper_state: &mut Self::HyperState,
         app_state: &mut State,
     ) -> Self::View;
 }
@@ -59,55 +59,61 @@ struct Pod<T: ?Sized> {
 
 fn app_logic(state: &mut AppState) -> impl HyperView<AppState> {}
 
-struct Memoized<Data, NewData, AppState, ResultView, Component, InitData>
+struct Memoized<Data, NewData, AppState, Component, InitData, ResultHyper>
 where
     // TODO: Should these be FnOnce?
     InitData: Fn(&mut AppState) -> Data,
     NewData: Fn(&mut AppState, &mut Data) -> bool,
-    Component: Fn(&mut AppState, &Data) -> ResultView,
+    Component: Fn(&mut AppState, &Data) -> ResultHyper,
 {
     memoize: NewData,
     init_data: InitData,
     component: Component,
     phantom: PhantomData<(
         fn(&mut AppState, Data) -> Data,
-        fn(&mut AppState, &Data) -> ResultView,
+        fn(&mut AppState, &Data) -> ResultHyper,
     )>,
 }
 
-impl<Data, NewData, AppState, ResultView, Component, InitData> HyperView<AppState>
-    for Memoized<Data, NewData, AppState, ResultView, Component, InitData>
+impl<Data, NewData, AppState, Component, InitData, ResultHyper, ResultView> HyperView<AppState>
+    for Memoized<Data, NewData, AppState, Component, InitData, ResultHyper>
 where
     InitData: Fn(&mut AppState) -> Data,
     NewData: Fn(&mut AppState, &mut Data) -> bool,
-    Component: Fn(&mut AppState, &Data) -> ResultView,
+    Component: Fn(&mut AppState, &Data) -> ResultHyper,
+    ResultHyper: HyperView<AppState, View = ResultView>,
     ResultView: View<AppState, Action, ViewCtx>,
+    ResultHyper::HyperState: Default,
 {
     type Element = ResultView::Element;
     type View = Arc<ResultView>;
-    type HyperState = (Data, Arc<ResultView>);
+    type HyperState = Option<(Data, Arc<ResultView>, ResultHyper::HyperState)>;
 
     fn build(
-        // &mut self,
         self,
+        // &mut self,
         // previous: Option<&mut Self>,
-        hyper_state: &mut Option<Self::HyperState>,
+        hyper_state: &mut Self::HyperState,
         app_state: &mut AppState,
     ) -> Self::View {
         match hyper_state {
-            Some((data, stored_view)) => {
+            Some((data, stored_view, hyper_state)) => {
                 if (self.memoize)(app_state, data) {
                     // TODO: We could optimisitically store the old version of `stored_view`,
                     // so as to reuse this allocation if `Arc::get_mut` doesn't error.
-                    *stored_view = Arc::new((self.component)(app_state, &data));
+                    let hyper = (self.component)(app_state, &data);
+                    let view = hyper.build(hyper_state, app_state);
+                    *stored_view = Arc::new(view);
                 }
                 stored_view.clone()
             }
             None => {
                 let data = (self.init_data)(app_state);
-                let view = (self.component)(app_state, &data);
+                let hyper = (self.component)(app_state, &data);
+                let mut child_state = ResultHyper::HyperState::default();
+                let view = hyper.build(&mut child_state, app_state);
                 let view = Arc::new(view);
-                *hyper_state = Some((data, view.clone()));
+                *hyper_state = Some((data, view.clone(), child_state));
                 return view;
             }
         }
