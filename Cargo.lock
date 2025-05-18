@@ -4936,6 +4936,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "xilem_3"
+version = "0.3.0"
+dependencies = [
+ "xilem_core",
+]
+
+[[package]]
 name = "xilem_core"
 version = "0.3.0"
 dependencies = [

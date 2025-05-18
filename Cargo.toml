@@ -5,6 +5,8 @@ members = [
     "xilem_core",
     "masonry",
     "masonry_winit",
+    # An experiment in how Xilem should work.
+    "xilem_3",
 
     "xilem_web",
     "xilem_web/web_examples/counter",
