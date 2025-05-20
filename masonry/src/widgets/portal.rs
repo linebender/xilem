@@ -293,7 +293,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                         } * 120.0
                     }
                     _ => Vec2::ZERO,
-                } * ctx.global_state.scale_factor;
+                } * ctx.get_scale_factor();
                 self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
                 ctx.request_compose();
 
