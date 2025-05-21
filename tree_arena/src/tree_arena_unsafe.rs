@@ -286,6 +286,54 @@ impl<T> TreeArena<T> {
     pub fn get_id_path(&self, id: impl Into<NodeId>) -> Vec<NodeId> {
         self.data_map.get_id_path(id.into(), None)
     }
+
+    /// Moves the given child (along with all its children) to the new parent.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the parent is actually a child of the to-be-reparented node, or
+    /// if the to-be-reparented node is a root node, or
+    /// if either node id cannot be found, or
+    /// if both given ids are equal.
+    pub fn reparent(&mut self, child: impl Into<NodeId>, new_parent: impl Into<NodeId>) {
+        let child_id = child.into();
+        let new_parent_id = new_parent.into();
+
+        assert_ne!(
+            child_id, new_parent_id,
+            "expected child to be different from new_parent but both have id #{child_id}"
+        );
+        assert!(
+            !self.get_id_path(new_parent_id).contains(&child_id),
+            "cannot reparent because new_parent #{new_parent_id} is a child of the to-be-reparented node #{child_id}"
+        );
+        assert!(
+            !self.roots.contains(&child_id),
+            "reparenting of root nodes is currently not supported"
+        );
+
+        let old_parent_id = self
+            .data_map
+            .parents
+            .get(&child_id)
+            .unwrap_or_else(|| panic!("no node found for child id #{child_id}"))
+            .unwrap();
+
+        // Move child.
+        self.find_mut(old_parent_id)
+            .unwrap()
+            .children
+            .child_arr
+            .retain(|i| *i != child_id);
+        self.find_mut(new_parent_id)
+            .unwrap_or_else(|| panic!("no node found for new_parent id #{new_parent_id}"))
+            .children
+            .child_arr
+            .push(child_id);
+
+        // Update parent reference.
+        self.data_map.parents.insert(child_id, Some(new_parent_id));
+    }
 }
 
 impl<T> Default for TreeArena<T> {

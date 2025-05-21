@@ -182,6 +182,193 @@ fn child_ids() {
     assert_eq!(sorted(arena.find(3_u64).unwrap().child_ids()), vec![]);
 }
 
+#[test]
+fn reparent_node_simple() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(0, '0', vec![
+            Node(1, '1', vec![
+                Node(3, '3' ,vec![]),
+            ]),
+            Node(2, '2', vec![]),
+        ]),
+    );
+    // A simple scenario where the to-be-reparented node has
+    // no children and the new parent also has no children.
+    arena.reparent(3_u64, 2_u64);
+
+    #[rustfmt::skip]
+    assert_eq!(to_nodes(&arena), vec![
+        Node(0, '0', vec![
+            Node(1, '1', vec![]),
+            Node(2, '2', vec![
+                Node(3, '3' ,vec![]),
+            ]),
+        ]),
+    ]);
+}
+
+#[test]
+fn reparent_node_with_children() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(0, '0', vec![
+            Node(1, '1', vec![ // <-- to be reparented
+                Node(3, '3' ,vec![]),
+                Node(4, '4' ,vec![
+                    Node(7, '7' ,vec![]),
+                ]),
+                Node(5, '5' ,vec![]),
+            ]),
+            Node(2, '2', vec![
+                Node(6, '6' ,vec![]),
+            ]),
+        ]),
+    );
+    arena.reparent(1_u64, 2_u64);
+
+    #[rustfmt::skip]
+    assert_eq!(to_nodes(&arena), vec![
+        Node(0, '0', vec![
+            Node(2, '2', vec![
+                Node(1, '1', vec![
+                    Node(3, '3' ,vec![]),
+                    Node(4, '4' ,vec![
+                        Node(7, '7' ,vec![]),
+                    ]),
+                    Node(5, '5' ,vec![]),
+                ]),
+                Node(6, '6' ,vec![]),
+            ]),
+        ]),
+    ]);
+}
+
+#[test]
+fn reparent_node_to_great_grandparent() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(0, '0', vec![
+            Node(1, '1', vec![
+                Node(2, '2' ,vec![
+                    Node(3, '3' ,vec![]), // <-- to be reparented
+                ]),
+            ]),
+        ]),
+    );
+    arena.reparent(3_u64, 0_u64);
+
+    #[rustfmt::skip]
+    assert_eq!(to_nodes(&arena), vec![
+        Node(0, '0', vec![
+            Node(1, '1', vec![
+                Node(2, '2' ,vec![]),
+            ]),
+            Node(3, '3' ,vec![]),
+        ]),
+    ]);
+}
+
+#[test]
+fn reparent_node_to_parent() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(0, '0', vec![
+            Node(1, '1', vec![]),
+        ]),
+    );
+    arena.reparent(1_u64, 0_u64);
+
+    #[rustfmt::skip]
+    assert_eq!(to_nodes(&arena), vec![
+        // Nothing changed.
+        Node(0, '0', vec![
+            Node(1, '1', vec![]),
+        ]),
+    ]);
+}
+
+#[test]
+fn reparent_between_roots() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(0, '0', vec![
+            Node(2, '2', vec![]),
+        ]),
+    );
+    add_tree(&mut arena, Node(1, '1', vec![]));
+
+    arena.reparent(2_u64, 1_u64);
+
+    #[rustfmt::skip]
+    assert_eq!(to_nodes(&arena), vec![
+        Node(0, '0', vec![]),
+        Node(1, '1', vec![
+            Node(2, '2', vec![]),
+        ]),
+    ]);
+}
+
+#[test]
+#[should_panic(expected = "no node found for child id #1")]
+fn reparent_child_not_found() {
+    let mut arena = TreeArena::new();
+    add_tree(&mut arena, Node(0, '0', vec![]));
+    arena.reparent(1_u64, 0_u64);
+}
+
+#[test]
+#[should_panic(expected = "no node found for new_parent id #2")]
+fn reparent_new_parent_not_found() {
+    let mut arena = TreeArena::new();
+    add_tree(&mut arena, Node(0, '0', vec![Node(1, '1', vec![])]));
+    arena.reparent(1_u64, 2_u64);
+}
+
+#[test]
+#[should_panic(expected = "expected child to be different from new_parent but both have id #0")]
+fn reparent_child_equals_new_parent() {
+    let mut arena = TreeArena::<()>::new();
+    arena.reparent(0_u64, 0_u64);
+}
+
+#[test]
+#[should_panic(
+    expected = "cannot reparent because new_parent #2 is a child of the to-be-reparented node #0"
+)]
+fn reparent_cycle() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(0, '0', vec![
+            Node(1, '1', vec![
+                Node(2, '2', vec![]),
+            ]),
+        ]),
+    );
+    arena.reparent(0_u64, 2_u64);
+}
+
+#[test]
+#[should_panic(expected = "reparenting of root nodes is currently not supported")]
+fn reparent_root() {
+    let mut arena = TreeArena::new();
+    add_tree(&mut arena, Node(0, '0', vec![]));
+    add_tree(&mut arena, Node(1, '1', vec![]));
+    arena.reparent(0_u64, 1_u64);
+}
+
 #[derive(PartialEq, Debug)]
 struct Node<T>(u64, T, Vec<Node<T>>);
 
@@ -196,6 +383,24 @@ fn add_children<T>(children: Vec<Node<T>>, mut parent_mut: ArenaMut<'_, T>) {
         let child_mut = parent_mut.children.insert(child.0, child.1);
         add_children(child.2, child_mut);
     }
+}
+
+fn to_nodes<T: Copy>(arena: &TreeArena<T>) -> Vec<Node<T>> {
+    sorted(arena.root_ids())
+        .into_iter()
+        .map(|root_id| to_node(arena.find(root_id).unwrap()))
+        .collect()
+}
+
+fn to_node<T: Copy>(a: ArenaRef<'_, T>) -> Node<T> {
+    Node(
+        a.id(),
+        *a.item,
+        sorted(a.child_ids())
+            .iter()
+            .map(|id| to_node(a.children.find(*id).unwrap()))
+            .collect(),
+    )
 }
 
 fn sorted(iter: impl IntoIterator<Item = u64>) -> Vec<u64> {
