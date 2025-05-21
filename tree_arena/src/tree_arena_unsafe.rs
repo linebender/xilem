@@ -121,13 +121,7 @@ impl<T> DataMap<T> {
         }
     }
 
-    /// Find an item in the tree.
-    ///
-    /// Returns a shared reference to the item if present.
-    ///
-    /// Time Complexity O(1)
-    fn find_inner(&self, id: NodeId) -> Option<ArenaRef<'_, T>> {
-        let parent_id = *self.parents.get(&id)?;
+    fn find_node(&self, id: NodeId) -> Option<&TreeNode<T>> {
         let node_cell = self.items.get(&id)?;
 
         // SAFETY
@@ -136,7 +130,18 @@ impl<T> DataMap<T> {
         // As we are taking &self, there can be no mutable access to the node
         // Thus this is safe
 
-        let TreeNode { item, .. } = unsafe { node_cell.get().as_ref()? };
+        Some(unsafe { node_cell.get().as_ref()? })
+    }
+
+    /// Find an item in the tree.
+    ///
+    /// Returns a shared reference to the item if present.
+    ///
+    /// Time Complexity O(1)
+    fn find_inner(&self, id: NodeId) -> Option<ArenaRef<'_, T>> {
+        let parent_id = *self.parents.get(&id)?;
+
+        let TreeNode { item, .. } = self.find_node(id)?;
 
         let children = ArenaRefList {
             parent_arena: self,
@@ -234,6 +239,11 @@ impl<T> TreeArena<T> {
         }
     }
 
+    /// An iterator visiting all root ids in arbitrary order.
+    pub fn root_ids(&self) -> impl Iterator<Item = NodeId> {
+        self.roots.iter().copied()
+    }
+
     /// Returns a handle whose children are the roots, if any, of the tree.
     ///
     /// Using [`insert_child`](ArenaMutList::insert_child) on this handle
@@ -290,6 +300,19 @@ impl<T> ArenaRef<'_, T> {
         self.children
             .parent_id
             .expect("ArenaRefList always has a parent_id when it's a member of ArenaRef")
+    }
+
+    /// An iterator visiting all child ids in arbitrary order.
+    // NOTE: We're implementing child_ids for ArenaRef instead of ArenaRefList
+    // because in an ArenaRefList the implementation for the root ids would be quite inefficient
+    // (since the roots are stored in the TreeArena to which the ArenaRefList doesn't have access).
+    pub fn child_ids(&self) -> impl IntoIterator<Item = NodeId> {
+        self.children
+            .parent_arena
+            .find_node(self.id())
+            .into_iter()
+            .flat_map(|c: &TreeNode<T>| &c.children)
+            .copied()
     }
 }
 

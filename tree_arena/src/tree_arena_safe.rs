@@ -140,6 +140,11 @@ impl<T> TreeArena<T> {
         }
     }
 
+    /// An iterator visiting all root ids in arbitrary order.
+    pub fn root_ids(&self) -> impl Iterator<Item = NodeId> {
+        self.roots.keys().copied()
+    }
+
     /// Returns a handle giving access to the roots of the tree.
     ///
     /// Using [`insert`](ArenaMutList::insert) on this handle
@@ -230,6 +235,11 @@ impl<T> ArenaRef<'_, T> {
         self.children
             .parent_id
             .expect("ArenaRefList always has a parent_id when it's a member of ArenaRef")
+    }
+
+    /// An iterator visiting all child ids in arbitrary order.
+    pub fn child_ids(&self) -> impl IntoIterator<Item = NodeId> {
+        self.children.children.keys().copied()
     }
 }
 

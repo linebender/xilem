@@ -154,3 +154,52 @@ fn mem_swap() {
     assert_eq!(node_p1.item, &'a');
     assert_eq!(node_p1.children.item(2_u64).unwrap().item, &'g',);
 }
+
+#[test]
+fn root_ids() {
+    let mut arena = TreeArena::new();
+    arena.roots_mut().insert(3_u64, '0');
+    arena.roots_mut().insert(4_u64, '0');
+    arena.roots_mut().insert(5_u64, '0');
+    assert_eq!(sorted(arena.root_ids()), vec![3, 4, 5]);
+}
+
+#[test]
+fn child_ids() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(0, '0', vec![
+            Node(1, '1', vec![
+                Node(3, '3', vec![]),
+            ]),
+            Node(2, '2', vec![]),
+        ]),
+    );
+    assert_eq!(sorted(arena.find(0_u64).unwrap().child_ids()), vec![1, 2]);
+    assert_eq!(sorted(arena.find(2_u64).unwrap().child_ids()), vec![]);
+    assert_eq!(sorted(arena.find(3_u64).unwrap().child_ids()), vec![]);
+}
+
+#[derive(PartialEq, Debug)]
+struct Node<T>(u64, T, Vec<Node<T>>);
+
+fn add_tree<T>(arena: &mut TreeArena<T>, root: Node<T>) {
+    let mut roots = arena.roots_mut();
+    let root_mut = roots.insert(root.0, root.1);
+    add_children(root.2, root_mut);
+}
+
+fn add_children<T>(children: Vec<Node<T>>, mut parent_mut: ArenaMut<'_, T>) {
+    for child in children {
+        let child_mut = parent_mut.children.insert(child.0, child.1);
+        add_children(child.2, child_mut);
+    }
+}
+
+fn sorted(iter: impl IntoIterator<Item = u64>) -> Vec<u64> {
+    let mut ids = Vec::from_iter(iter);
+    ids.sort();
+    ids
+}
