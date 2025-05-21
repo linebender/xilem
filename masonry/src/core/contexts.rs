@@ -843,7 +843,7 @@ impl_context_method!(
     }
 );
 
-impl_context_method!(AccessCtx<'_>, EventCtx<'_>, LayoutCtx<'_>, PaintCtx<'_>, {
+impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
     /// Get DPI scaling factor.
     ///
     /// This is not required for most widgets, and should be used only for precise
