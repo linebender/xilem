@@ -406,28 +406,29 @@ where
         if self.draggable {
             match event {
                 PointerEvent::Down { state, .. } => {
-                    let local_mouse_pos = ctx.local_position(state.position);
-                    if self.bar_hit_test(ctx.size(), local_mouse_pos) {
+                    let pos = ctx.local_position(state.position);
+                    if self.bar_hit_test(ctx.size(), pos) {
                         ctx.set_handled();
                         ctx.capture_pointer();
                         // Save the delta between the mouse click position and the split point
                         self.click_offset = match self.split_axis {
-                            Axis::Horizontal => state.position.x,
-                            Axis::Vertical => state.position.y,
+                            Axis::Horizontal => pos.x,
+                            Axis::Vertical => pos.y,
                         } - self.bar_position(ctx.size());
                     }
                 }
                 PointerEvent::Move(u) => {
                     if ctx.is_pointer_capture_target() {
+                        let pos = ctx.local_position(u.current.position);
                         // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => Point {
-                                x: u.current.position.x - self.click_offset,
-                                y: u.current.position.y,
+                                x: pos.x - self.click_offset,
+                                y: pos.y,
                             },
                             Axis::Vertical => Point {
-                                x: u.current.position.x,
-                                y: u.current.position.y - self.click_offset,
+                                x: pos.x,
+                                y: pos.y - self.click_offset,
                             },
                         };
                         self.update_split_point(ctx.size(), effective_pos);
