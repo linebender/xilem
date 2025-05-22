@@ -478,12 +478,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         match event {
             PointerEvent::Scroll { delta, .. } => {
                 let delta = match delta {
-                    ScrollDelta::PixelDelta(p) => {
-                        -p.to_logical::<f64>(ctx.global_state.scale_factor).y
-                    }
-                    ScrollDelta::LineDelta(_, y) => {
-                        -y as f64 * ctx.global_state.scale_factor * 120.
-                    }
+                    ScrollDelta::PixelDelta(p) => -p.to_logical::<f64>(ctx.get_scale_factor()).y,
+                    ScrollDelta::LineDelta(_, y) => -y as f64 * ctx.get_scale_factor() * 120.,
                     _ => 0.0,
                 };
                 self.scroll_offset_from_anchor += delta;
