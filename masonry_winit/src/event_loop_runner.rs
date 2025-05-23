@@ -46,9 +46,11 @@ pub enum WindowState<'a> {
     Rendering {
         window: Arc<Window>,
         surface: RenderSurface<'a>,
+        accesskit_adapter: Adapter,
     },
     Suspended {
         window: Arc<Window>,
+        accesskit_adapter: Adapter,
     },
 }
 
@@ -258,6 +260,8 @@ impl MasonryState<'_> {
 
                 let window = event_loop.create_window(attributes).unwrap();
 
+                let adapter =
+                    Adapter::with_event_loop_proxy(event_loop, &window, self.proxy.clone());
                 let window = Arc::new(window);
                 // https://github.com/rust-windowing/winit/issues/2308
                 #[cfg(target_os = "ios")]
@@ -272,7 +276,11 @@ impl MasonryState<'_> {
                 ))
                 .unwrap();
                 let scale_factor = window.scale_factor();
-                self.window = WindowState::Rendering { window, surface };
+                self.window = WindowState::Rendering {
+                    window,
+                    surface,
+                    accesskit_adapter: adapter,
+                };
                 self.render_root
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
                 // Handle any signals caused by the initial layout or by the rescale
@@ -281,12 +289,21 @@ impl MasonryState<'_> {
                 if visible {
                     let (scene, tree_update) = self.render_root.redraw();
                     self.render(scene);
-                    if let WindowState::Rendering { window, .. } = &mut self.window {
+                    if let WindowState::Rendering {
+                        window,
+                        accesskit_adapter,
+                        ..
+                    } = &mut self.window
+                    {
+                        accesskit_adapter.update_if_active(|| tree_update);
                         window.set_visible(true);
                     };
                 }
             }
-            WindowState::Suspended { window } => {
+            WindowState::Suspended {
+                window,
+                accesskit_adapter,
+            } => {
                 // https://github.com/rust-windowing/winit/issues/2308
                 #[cfg(target_os = "ios")]
                 let size = window.outer_size();
@@ -299,7 +316,11 @@ impl MasonryState<'_> {
                     PresentMode::AutoVsync,
                 ))
                 .unwrap();
-                self.window = WindowState::Rendering { window, surface }
+                self.window = WindowState::Rendering {
+                    window,
+                    surface,
+                    accesskit_adapter,
+                }
             }
             _ => {
                 // We have received a redundant resumed event. That's allowed by winit
@@ -314,9 +335,16 @@ impl MasonryState<'_> {
             // TODO: Is there a better default value which could be used?
             WindowState::Uninitialized(WindowAttributes::default()),
         ) {
-            WindowState::Rendering { window, surface } => {
+            WindowState::Rendering {
+                window,
+                surface,
+                accesskit_adapter,
+            } => {
                 drop(surface);
-                self.window = WindowState::Suspended { window };
+                self.window = WindowState::Suspended {
+                    window,
+                    accesskit_adapter,
+                };
             }
             _ => {
                 // We have received a redundant resumed event. That's allowed by winit
@@ -436,7 +464,12 @@ impl MasonryState<'_> {
         event: WinitWindowEvent,
         app_driver: &mut dyn AppDriver,
     ) {
-        let WindowState::Rendering { window, .. } = &mut self.window else {
+        let WindowState::Rendering {
+            window,
+            accesskit_adapter,
+            ..
+        } = &mut self.window
+        else {
             tracing::warn!(
                 ?event,
                 "Got window event whilst suspended or before window created"
@@ -478,12 +511,16 @@ impl MasonryState<'_> {
                 self.render_root.handle_window_event(WindowEvent::AnimFrame);
                 // Handle any signals caused by the animation frame
                 self.handle_signals(event_loop, app_driver);
-                let (scene, _tree_update) = self.render_root.redraw();
+                let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
-                let WindowState::Rendering { .. } = &mut self.window else {
+                let WindowState::Rendering {
+                    accesskit_adapter, ..
+                } = &mut self.window
+                else {
                     error!("Suspended inside event");
                     return;
                 };
+                accesskit_adapter.update_if_active(|| tree_update);
             }
             WinitWindowEvent::CloseRequested => {
                 // HACK: When we exit, on some systems (known to happen with Wayland on KDE),
