@@ -3,7 +3,7 @@
 
 #![warn(missing_docs)]
 
-use std::{collections::HashMap, ops::Range, time::Duration};
+use std::{collections::HashMap, ops::Range};
 
 use vello::kurbo::{Point, Size, Vec2};
 
@@ -597,10 +597,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _interval: u64,
     ) {
         if let Some(scroll_per_frame) = self.scroll_per_frame {
-            tracing::info!(
-                "Virtual Scroll Frame time: {:.1?}",
-                Duration::from_nanos(_interval)
-            );
+            // tracing::info!(
+            //     "Virtual Scroll Frame time: {:.1?}",
+            //     Duration::from_nanos(_interval)
+            // );
             ctx.request_anim_frame();
             // Note: This is the reason that `post_scroll` doesn't just accept an `UpdateCtx`.
             // Ideally, there'd be some shared, standard way to request updates.

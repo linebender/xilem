@@ -6,11 +6,12 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::app::{AppDriver, DriverCtx, EventLoop, EventLoopBuilder};
-use masonry::core::{Action, StyleProperty, WidgetId, WidgetPod};
-use masonry::dpi::LogicalSize;
-use masonry::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
+use masonry_winit::app::{AppDriver, DriverCtx, EventLoop, EventLoopBuilder};
+use masonry_winit::core::{Action, StyleProperty, WidgetId, WidgetPod};
+use masonry_winit::dpi::LogicalSize;
+use masonry_winit::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
 
+use parley::FontFamily;
 use winit::error::EventLoopError;
 use winit::window::Window;
 
@@ -43,8 +44,9 @@ impl AppDriver for Driver {
                 // items to be loaded or unloaded.
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
                 ctx.render_root().edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget<VirtualScroll<ScrollContents>>>();
+                    let mut root = root.downcast::<RootWidget>();
                     let mut scroll = RootWidget::child_mut(&mut root);
+                    let mut scroll = scroll.downcast::<VirtualScroll<ScrollContents>>();
                     // We need to tell the `VirtualScroll` which request this is associated with
                     // This is so that the controller knows which actions have been handled.
                     VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -66,7 +68,10 @@ impl AppDriver for Driver {
                                     Label::new(label)
                                         .with_hint(true)
                                         .with_style(StyleProperty::FontSize(FONT_SIZE))
-                                        .with_style(StyleProperty::LineHeight(1.0)),
+                                        .with_style(StyleProperty::LineHeight(1.0))
+                                        .with_style(FontFamily::Named(std::borrow::Cow::Borrowed(
+                                            "Roboto",
+                                        ))),
                                 ),
                             );
                         }
@@ -81,7 +86,9 @@ impl AppDriver for Driver {
 
 // Works around rustfmt failing if this is inlined.
 fn calc_label(idx: i64) -> String {
-    format!("{idx}: Long lines with a varying font weight should be a worst case for scrolling.")
+    format!(
+        "{idx}: Rust UI and Jetpack Compose Virtual Scrolling Comparison - this text at 8pt just fits the width of my Google Pixel 6."
+    )
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
@@ -95,10 +102,10 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry::app::run(
+    masonry_winit::app::run(
         event_loop,
         window_attributes,
-        RootWidget::from_pod(main_widget),
+        RootWidget::from_pod(main_widget.erased()),
         driver,
     )
 }
