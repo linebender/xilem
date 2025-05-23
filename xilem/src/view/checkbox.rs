@@ -37,6 +37,7 @@ where
         label: label.into(),
         callback,
         checked,
+        disabled: false,
     }
 }
 
@@ -48,6 +49,15 @@ pub struct Checkbox<F> {
     label: ArcStr,
     checked: bool,
     callback: F,
+    disabled: bool,
+}
+
+impl<F> Checkbox<F> {
+    /// Set the disabled state of the widget.
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
 }
 
 impl<F> ViewMarker for Checkbox<F> {}
@@ -60,7 +70,9 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(widgets::Checkbox::new(self.checked, self.label.clone()))
+            let mut pod = ctx.new_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
+            pod.options.disabled = self.disabled;
+            pod
         })
     }
 
@@ -71,6 +83,9 @@ where
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if element.ctx.is_disabled() != self.disabled {
+            element.ctx.set_disabled(self.disabled);
+        }
         if prev.label != self.label {
             widgets::Checkbox::set_text(&mut element, self.label.clone());
         }

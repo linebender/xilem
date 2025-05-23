@@ -134,7 +134,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use masonry_winit::core::{
-    DefaultProperties, FromDynWidget, Widget, WidgetId, WidgetMut, WidgetPod,
+    DefaultProperties, FromDynWidget, Widget, WidgetId, WidgetMut, WidgetOptions, WidgetPod,
 };
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::theme::default_property_set;
@@ -316,13 +316,13 @@ where
 pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
     pub widget: Box<W>,
     pub id: WidgetId,
-    /// The transform the widget will be created with.
+    /// The options the widget will be created with.
     ///
     /// If changing transforms of widgets, prefer to use [`transformed`]
     /// (or [`WidgetView::transform`]).
     /// This has a protocol to ensure that multiple views changing the
     /// transform interoperate successfully.
-    pub transform: Affine,
+    pub options: WidgetOptions,
 }
 
 impl<W: Widget + FromDynWidget> Pod<W> {
@@ -334,7 +334,7 @@ impl<W: Widget + FromDynWidget> Pod<W> {
         Self {
             widget: Box::new(widget),
             id: WidgetId::next(),
-            transform: Affine::default(),
+            options: WidgetOptions::default(),
         }
     }
 }
@@ -348,7 +348,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
         Pod {
             widget: self.widget.as_box_dyn(),
             id: self.id,
-            transform: self.transform,
+            options: self.options,
         }
     }
     /// Finalise this `Pod`, converting into a [`WidgetPod`].
@@ -361,7 +361,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// which can contain heterogenous widgets, you will probably
     /// prefer to use [`Self::erased_widget_pod`].
     pub fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform)
+        WidgetPod::new_with_id_and_options(self.widget, self.id, self.options)
     }
     /// Finalise this `Pod` into a type-erased [`WidgetPod`].
     ///
@@ -369,7 +369,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// widget which supports heterogenous widgets.
     /// For example, [`Flex`](masonry_winit::widgets::Flex) accepts type-erased widget pods.
     pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
-        WidgetPod::new_with_id_and_transform(self.widget, self.id, self.transform).erased()
+        WidgetPod::new_with_id_and_options(self.widget, self.id, self.options).erased()
     }
 }
 

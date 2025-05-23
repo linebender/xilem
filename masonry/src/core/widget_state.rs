@@ -180,8 +180,17 @@ pub(crate) struct WidgetState {
     pub(crate) widget_name: &'static str,
 }
 
+/// The options the widget will be created with.
+#[derive(Default, Debug)]
+pub struct WidgetOptions {
+    /// The transform the widget will be created with.
+    pub transform: Affine,
+    /// The disabled state the widget will be created with.
+    pub disabled: bool,
+}
+
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, widget_name: &'static str, transform: Affine) -> Self {
+    pub(crate) fn new(id: WidgetId, widget_name: &'static str, options: WidgetOptions) -> Self {
         Self {
             id,
             origin: Point::ORIGIN,
@@ -196,7 +205,7 @@ impl WidgetState {
             clip_path: Option::default(),
             scroll_translation: Vec2::ZERO,
             transform_changed: false,
-            is_explicitly_disabled: false,
+            is_explicitly_disabled: options.disabled,
             is_explicitly_stashed: false,
             is_disabled: false,
             is_stashed: false,
@@ -224,7 +233,7 @@ impl WidgetState {
             widget_name,
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
-            transform,
+            transform: options.transform,
         }
     }
 
@@ -248,7 +257,7 @@ impl WidgetState {
             needs_update_stashed: false,
             children_changed: false,
             needs_update_focus_chain: false,
-            ..Self::new(id, "<root>", Affine::IDENTITY)
+            ..Self::new(id, "<root>", WidgetOptions::default())
         }
     }
 

@@ -1,7 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry_winit::core::{WidgetOptions, WidgetPod};
 use masonry_winit::widgets;
+use vello::kurbo::Affine;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
@@ -26,7 +28,7 @@ where
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
         insert_newline: InsertNewline::default(),
-        // TODO?: disabled: false,
+        disabled: false,
     }
 }
 
@@ -39,6 +41,7 @@ pub struct Textbox<State, Action> {
     text_brush: Brush,
     alignment: TextAlignment,
     insert_newline: InsertNewline,
+    disabled: bool,
     // TODO: add more attributes of `masonry_winit::widgets::TextBox`
 }
 
@@ -70,6 +73,12 @@ impl<State, Action> Textbox<State, Action> {
         self.on_enter = Some(Box::new(on_enter));
         self
     }
+
+    /// Set the disabled state of the widget.
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
 }
 
 impl<State, Action> ViewMarker for Textbox<State, Action> {}
@@ -83,7 +92,13 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment)
             .with_insert_newline(self.insert_newline);
-        let textbox = widgets::Textbox::from_text_area(text_area);
+        let textbox = widgets::Textbox::from_text_area_pod(WidgetPod::new_with_options(
+            text_area.into(),
+            WidgetOptions {
+                disabled: self.disabled,
+                transform: Affine::default(),
+            },
+        ));
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
@@ -99,6 +114,10 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
     ) {
+        if element.ctx.is_disabled() != self.disabled {
+            element.ctx.set_disabled(self.disabled);
+        }
+
         let mut text_area = widgets::Textbox::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;
