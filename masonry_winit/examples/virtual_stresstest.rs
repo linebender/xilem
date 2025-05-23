@@ -26,7 +26,7 @@ fn init() -> VirtualScroll<ScrollContents> {
     // We start our scrolling with the top of the screen at item 0
     VirtualScroll::new(0)
         .with_valid_range(0..i64::MAX)
-        .with_scroll_per_frame(Some(600.))
+        .with_scroll_per_frame(Some(599.0))
 }
 
 const FONT_SIZE: f32 = 8_f32;
@@ -64,6 +64,7 @@ impl AppDriver for Driver {
                                 idx,
                                 WidgetPod::new(
                                     Label::new(label)
+                                        .with_hint(true)
                                         .with_style(StyleProperty::FontSize(FONT_SIZE))
                                         .with_style(StyleProperty::LineHeight(1.0)),
                                 ),
