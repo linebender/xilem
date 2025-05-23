@@ -9,7 +9,8 @@
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use accesskit::{Node, Role};
+use masonry::accesskit::{Node, Role};
+use masonry::smallvec::SmallVec;
 use masonry_winit::app::{AppDriver, DriverCtx};
 use masonry_winit::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
@@ -21,7 +22,6 @@ use masonry_winit::peniko::Color;
 use masonry_winit::widgets::RootWidget;
 use parley::layout::{Alignment, AlignmentOptions};
 use parley::style::{FontFamily, FontStack, StyleProperty};
-use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::peniko::{Fill, Image, ImageFormat};
