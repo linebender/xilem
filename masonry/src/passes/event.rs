@@ -264,7 +264,22 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         root.global_state.window_focused = *focused;
     }
 
-    let target = root.global_state.focused_widget;
+    let target = root.global_state.focused_widget.or_else(|| {
+        // In case no widget is focused target the root widget only child.
+        // We're targeting the child instead of the root widget to enable
+        // the usage of generic event handling widgets with Role::GenericContainer
+        // (since the root widget should have Role::Window).
+        let root_widget_children = root.get_root_widget().children();
+        if root_widget_children.len() == 1 {
+            Some(root_widget_children[0].id())
+        } else {
+            tracing::warn!(
+                widget_id = root.root.id().trace(),
+                "text event without focused widget dropped because root widget doesn't have exactly one child"
+            );
+            None
+        }
+    });
 
     let mut handled = run_event_pass(
         root,
