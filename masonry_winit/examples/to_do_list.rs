@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, Widget, WidgetId};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
@@ -17,27 +17,50 @@ const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
 struct Driver {
     next_task: String,
+    window_id: WindowId,
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        let window_size = LogicalSize::new(400.0, 400.0);
+        let window_attributes = Window::default_attributes()
+            .with_title("To-do list")
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+
+        ctx.create_window(
+            self.window_id,
+            RootWidget::new(make_widget_tree()),
+            window_attributes,
+        );
+    }
+
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        action: Action,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
         match action {
             Action::ButtonPressed(_) => {
-                ctx.render_root().edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget>();
+                ctx.render_root(self.window_id)
+                    .edit_root_widget(|mut root| {
+                        let mut root = root.downcast::<RootWidget>();
 
-                    let mut portal = RootWidget::child_mut(&mut root);
-                    let mut portal = portal.downcast::<Portal<Flex>>();
-                    let mut flex = Portal::child_mut(&mut portal);
-                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                        let mut portal = RootWidget::child_mut(&mut root);
+                        let mut portal = portal.downcast::<Portal<Flex>>();
+                        let mut flex = Portal::child_mut(&mut portal);
+                        Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
 
-                    let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
-                    let mut first_row = first_row.downcast::<Flex>();
-                    let mut textbox = Flex::child_mut(&mut first_row, 0).unwrap();
-                    let mut textbox = textbox.downcast::<Textbox>();
-                    let mut text_area = Textbox::text_mut(&mut textbox);
-                    TextArea::reset_text(&mut text_area, "");
-                });
+                        let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
+                        let mut first_row = first_row.downcast::<Flex>();
+                        let mut textbox = Flex::child_mut(&mut first_row, 0).unwrap();
+                        let mut textbox = textbox.downcast::<Textbox>();
+                        let mut text_area = Textbox::text_mut(&mut textbox);
+                        TextArea::reset_text(&mut text_area, "");
+                    });
             }
             Action::TextChanged(new_text) => {
                 self.next_task = new_text.clone();
@@ -60,18 +83,11 @@ fn make_widget_tree() -> impl Widget {
 }
 
 fn main() {
-    let window_size = LogicalSize::new(400.0, 400.0);
-    let window_attributes = Window::default_attributes()
-        .with_title("To-do list")
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
-
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(make_widget_tree()),
         Driver {
             next_task: String::new(),
+            window_id: WindowId::next(),
         },
     )
     .unwrap();

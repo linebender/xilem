@@ -133,6 +133,8 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use driver::WindowProxy;
+use masonry_winit::app::WindowId;
 use masonry_winit::core::{
     DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions,
     WidgetPod,
@@ -183,6 +185,8 @@ pub struct Xilem<State, Logic> {
     background_color: Color,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
+    /// Window attributes. Only exposed temporarily will be removed again shortly once multi window support is implemented.
+    pub window_attributes: WindowAttributes,
 }
 
 #[expect(missing_docs, reason = "TODO - Document these items")]
@@ -201,6 +205,7 @@ where
             default_properties: None,
             background_color: Color::BLACK,
             fonts: Vec::new(),
+            window_attributes: WindowAttributes::default(),
         }
     }
 
@@ -261,48 +266,41 @@ where
     {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
-        let bg_color = self.background_color;
         let default_properties = self
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        masonry_winit::app::run_with(
-            event_loop,
-            window_attributes,
-            root_widget,
-            driver,
-            default_properties,
-            bg_color,
-        )
+        self.window_attributes = window_attributes;
+        let driver = self.into_driver(Arc::new(MasonryProxy(proxy)));
+        masonry_winit::app::run_with(event_loop, driver, default_properties)
     }
 
     pub fn into_driver(
         mut self,
-        proxy: Arc<dyn RawProxy>,
-    ) -> (
-        impl Widget,
-        MasonryDriver<State, Logic, View, View::ViewState>,
-    ) {
+        proxy: Arc<MasonryProxy>,
+    ) -> MasonryDriver<State, Logic, View, View::ViewState> {
         let first_view = (self.logic)(&mut self.state);
+        let window_id = WindowId::next();
         let mut ctx = ViewCtx {
             widget_map: WidgetMap::default(),
             id_path: Vec::new(),
-            proxy,
+            proxy: Arc::new(WindowProxy(window_id, proxy)),
             runtime: self.runtime,
             state_changed: true,
         };
         let (pod, view_state) = first_view.build(&mut ctx);
         let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
-        let driver = MasonryDriver {
+        MasonryDriver {
             current_view: first_view,
             logic: self.logic,
             state: self.state,
             ctx,
             view_state,
             fonts: self.fonts,
-        };
-        (root_widget, driver)
+            window_id,
+            window_attributes: Some(self.window_attributes),
+            root_widget: Some(root_widget),
+        }
     }
 }
 

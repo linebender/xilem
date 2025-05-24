@@ -9,7 +9,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
@@ -34,47 +34,75 @@ struct Driver {
     fizz: ArcStr,
     buzz: ArcStr,
     fizzbuzz: ArcStr,
+    window_id: WindowId,
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action) {
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        let main_widget = WidgetPod::new_with_id(init(), self.scroll_id).erased();
+        let window_size = LogicalSize::new(800.0, 500.0);
+        let window_attributes = Window::default_attributes()
+            .with_title("Infinite FizzBuzz")
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+
+        ctx.create_window(
+            self.window_id,
+            RootWidget::from_pod(main_widget),
+            window_attributes,
+        );
+    }
+
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        widget_id: WidgetId,
+        action: Action,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
         if widget_id == self.scroll_id {
             if let Action::Other(action) = action {
                 // The VirtualScroll widget will send us a VirtualScrollAction every time it wants different
                 // items to be loaded or unloaded.
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
-                ctx.render_root().edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget>();
-                    let mut scroll = RootWidget::child_mut(&mut root);
-                    let mut scroll = scroll.downcast::<VirtualScroll<ScrollContents>>();
-                    // We need to tell the `VirtualScroll` which request this is associated with
-                    // This is so that the controller knows which actions have been handled.
-                    VirtualScroll::will_handle_action(&mut scroll, &action);
-                    for idx in action.old_active.clone() {
-                        if !action.target.contains(&idx) {
-                            // If we had different work to do in response to the item being unloaded
-                            // (for example, saving some related data?), then we'd do it here
-                            VirtualScroll::remove_child(&mut scroll, idx);
+                ctx.render_root(self.window_id)
+                    .edit_root_widget(|mut root| {
+                        let mut root = root.downcast::<RootWidget>();
+                        let mut scroll = RootWidget::child_mut(&mut root);
+                        let mut scroll = scroll.downcast::<VirtualScroll<ScrollContents>>();
+                        // We need to tell the `VirtualScroll` which request this is associated with
+                        // This is so that the controller knows which actions have been handled.
+                        VirtualScroll::will_handle_action(&mut scroll, &action);
+                        for idx in action.old_active.clone() {
+                            if !action.target.contains(&idx) {
+                                // If we had different work to do in response to the item being unloaded
+                                // (for example, saving some related data?), then we'd do it here
+                                VirtualScroll::remove_child(&mut scroll, idx);
+                            }
                         }
-                    }
-                    for idx in action.target.clone() {
-                        if !action.old_active.contains(&idx) {
-                            let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
-                                (false, true) => self.buzz.clone(),
-                                (true, false) => self.fizz.clone(),
-                                (true, true) => self.fizzbuzz.clone(),
-                                (false, false) => format!("{idx}").into(),
-                            };
-                            VirtualScroll::add_child(
-                                &mut scroll,
-                                idx,
-                                WidgetPod::new(Label::new(label).with_style(
-                                    StyleProperty::FontSize(if idx % 100 == 0 { 40. } else { 20. }),
-                                )),
-                            );
+                        for idx in action.target.clone() {
+                            if !action.old_active.contains(&idx) {
+                                let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
+                                    (false, true) => self.buzz.clone(),
+                                    (true, false) => self.fizz.clone(),
+                                    (true, true) => self.fizzbuzz.clone(),
+                                    (false, false) => format!("{idx}").into(),
+                                };
+                                VirtualScroll::add_child(
+                                    &mut scroll,
+                                    idx,
+                                    WidgetPod::new(Label::new(label).with_style(
+                                        StyleProperty::FontSize(if idx % 100 == 0 {
+                                            40.
+                                        } else {
+                                            20.
+                                        }),
+                                    )),
+                                );
+                            }
                         }
-                    }
-                });
+                    });
             }
         } else {
             tracing::warn!("Got unexpected action {action:?}");
@@ -83,24 +111,13 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    let main_widget = WidgetPod::new(init()).erased();
     let driver = Driver {
-        scroll_id: main_widget.id(),
+        scroll_id: WidgetId::reserved(1),
         fizz: "Fizz".into(),
         buzz: "Buzz".into(),
         fizzbuzz: "FizzBuzz".into(),
+        window_id: WindowId::next(),
     };
-    let window_size = LogicalSize::new(800.0, 500.0);
-    let window_attributes = Window::default_attributes()
-        .with_title("Infinite FizzBuzz")
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
 
-    masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::from_pod(main_widget),
-        driver,
-    )
-    .unwrap();
+    masonry_winit::app::run(masonry_winit::app::EventLoop::with_user_event(), driver).unwrap();
 }
