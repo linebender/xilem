@@ -449,7 +449,7 @@ impl MasonryState<'_> {
         {
             let _render_poll_span =
                 tracing::info_span!("Waiting for GPU to finish rendering").entered();
-            device.poll(wgpu::Maintain::Wait);
+            device.poll(wgpu::Maintain::Poll);
         }
 
         #[cfg(feature = "tracy")]
@@ -509,6 +509,8 @@ impl MasonryState<'_> {
             WinitWindowEvent::RedrawRequested => {
                 let _span = info_span!("redraw");
                 self.render_root.handle_window_event(WindowEvent::AnimFrame);
+                // Handle any signals caused by the animation frame
+                self.handle_signals(event_loop, app_driver);
                 let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
                 let WindowState::Rendering {
