@@ -12,6 +12,7 @@ use crate::core::{
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition};
 use crate::passes::{enter_span, merge_state_up};
+use crate::widgets::RootWidget;
 
 // --- MARK: HELPERS ---
 fn get_pointer_target(
@@ -257,11 +258,17 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         root.global_state.window_focused = *focused;
     }
 
-    let target = root.global_state.focused_widget;
+    let target = root.global_state.focused_widget.unwrap_or_else(|| {
+        if let Some(root_widget) = root.get_root_widget().downcast::<RootWidget>() {
+            root_widget.pod.id()
+        } else {
+            root.root.id()
+        }
+    });
 
     let mut handled = run_event_pass(
         root,
-        target,
+        Some(target),
         event,
         false,
         |widget, ctx, props, event| {
