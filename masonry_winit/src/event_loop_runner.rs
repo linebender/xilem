@@ -41,7 +41,7 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
 }
 
 #[expect(unnameable_types, reason = "TODO")]
-pub enum WindowState<'a> {
+pub enum WindowStatus<'a> {
     Uninitialized(WindowAttributes),
     Rendering {
         window: Arc<Window>,
@@ -69,7 +69,7 @@ pub struct MasonryState<'a> {
 
     // Per-Window state
     // In future, this will support multiple windows
-    window: WindowState<'a>,
+    window: WindowStatus<'a>,
     event_reducer: WindowEventReducer,
     background_color: Color,
 }
@@ -241,7 +241,7 @@ impl MasonryState<'_> {
             frame: None,
             proxy: event_loop.create_proxy(),
 
-            window: WindowState::Uninitialized(window),
+            window: WindowStatus::Uninitialized(window),
             event_reducer: WindowEventReducer::default(),
             background_color,
         }
@@ -252,9 +252,9 @@ impl MasonryState<'_> {
         match std::mem::replace(
             &mut self.window,
             // TODO: Is there a better default value which could be used?
-            WindowState::Uninitialized(WindowAttributes::default()),
+            WindowStatus::Uninitialized(WindowAttributes::default()),
         ) {
-            WindowState::Uninitialized(attributes) => {
+            WindowStatus::Uninitialized(attributes) => {
                 let visible = attributes.visible;
                 let attributes = attributes.with_visible(false);
 
@@ -276,7 +276,7 @@ impl MasonryState<'_> {
                 ))
                 .unwrap();
                 let scale_factor = window.scale_factor();
-                self.window = WindowState::Rendering {
+                self.window = WindowStatus::Rendering {
                     window,
                     surface,
                     accesskit_adapter: adapter,
@@ -289,7 +289,7 @@ impl MasonryState<'_> {
                 if visible {
                     let (scene, tree_update) = self.render_root.redraw();
                     self.render(scene);
-                    if let WindowState::Rendering {
+                    if let WindowStatus::Rendering {
                         window,
                         accesskit_adapter,
                         ..
@@ -300,7 +300,7 @@ impl MasonryState<'_> {
                     };
                 }
             }
-            WindowState::Suspended {
+            WindowStatus::Suspended {
                 window,
                 accesskit_adapter,
             } => {
@@ -316,7 +316,7 @@ impl MasonryState<'_> {
                     PresentMode::AutoVsync,
                 ))
                 .unwrap();
-                self.window = WindowState::Rendering {
+                self.window = WindowStatus::Rendering {
                     window,
                     surface,
                     accesskit_adapter,
@@ -333,15 +333,15 @@ impl MasonryState<'_> {
         match std::mem::replace(
             &mut self.window,
             // TODO: Is there a better default value which could be used?
-            WindowState::Uninitialized(WindowAttributes::default()),
+            WindowStatus::Uninitialized(WindowAttributes::default()),
         ) {
-            WindowState::Rendering {
+            WindowStatus::Rendering {
                 window,
                 surface,
                 accesskit_adapter,
             } => {
                 drop(surface);
-                self.window = WindowState::Suspended {
+                self.window = WindowStatus::Suspended {
                     window,
                     accesskit_adapter,
                 };
@@ -354,7 +354,7 @@ impl MasonryState<'_> {
 
     // --- MARK: RENDER ---
     fn render(&mut self, scene: Scene) {
-        let WindowState::Rendering {
+        let WindowStatus::Rendering {
             window, surface, ..
         } = &mut self.window
         else {
@@ -464,7 +464,7 @@ impl MasonryState<'_> {
         event: WinitWindowEvent,
         app_driver: &mut dyn AppDriver,
     ) {
-        let WindowState::Rendering {
+        let WindowStatus::Rendering {
             window,
             accesskit_adapter,
             ..
@@ -511,7 +511,7 @@ impl MasonryState<'_> {
                 self.render_root.handle_window_event(WindowEvent::AnimFrame);
                 let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
-                let WindowState::Rendering {
+                let WindowStatus::Rendering {
                     accesskit_adapter, ..
                 } = &mut self.window
                 else {
@@ -597,7 +597,7 @@ impl MasonryState<'_> {
 
     // --- MARK: SIGNALS ---
     fn handle_signals(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
-        let WindowState::Rendering { window, .. } = &mut self.window else {
+        let WindowStatus::Rendering { window, .. } = &mut self.window else {
             tracing::warn!("Tried to handle a signal whilst suspended or before window created");
             return;
         };
@@ -684,7 +684,7 @@ impl MasonryState<'_> {
         }
     }
 
-    pub fn get_window_state(&self) -> &WindowState<'_> {
+    pub fn get_window_status(&self) -> &WindowStatus<'_> {
         &self.window
     }
 
@@ -693,7 +693,7 @@ impl MasonryState<'_> {
     }
 
     pub fn set_present_mode(&mut self, present_mode: wgpu::PresentMode) {
-        if let WindowState::Rendering { surface, .. } = &mut self.window {
+        if let WindowStatus::Rendering { surface, .. } = &mut self.window {
             self.render_cx.set_present_mode(surface, present_mode);
         }
     }
