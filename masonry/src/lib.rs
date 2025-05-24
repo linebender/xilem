@@ -56,6 +56,8 @@ pub mod testing;
 pub mod theme;
 pub mod widgets;
 
+pub use accesskit;
+pub use smallvec;
 pub use vello::peniko::color::palette;
 pub use vello::{kurbo, peniko};
 pub use {cursor_icon, dpi, parley, vello};
