@@ -145,9 +145,8 @@ where
             View::<State, Action, _>::build(&self.label, ctx)
         });
         ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx
-                .new_pod(widgets::Button::from_label_pod(child.into_widget_pod()))
-                .with_props(self.properties.build_properties());
+            let mut pod = ctx.new_pod(widgets::Button::from_label_pod(child.into_widget_pod()));
+            pod.properties = self.properties.build_properties();
             pod.options.disabled = self.disabled;
             pod
         })

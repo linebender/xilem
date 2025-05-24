@@ -346,11 +346,6 @@ impl<W: Widget + FromDynWidget> Pod<W> {
 }
 
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
-    /// Builder-style method to set [`Properties`] on a new widget.
-    pub fn with_props(self, properties: Properties) -> Self {
-        Self { properties, ..self }
-    }
-
     /// Type-erase the contained widget.
     ///
     /// Convert a `Pod` pointing to a widget of a specific concrete type
