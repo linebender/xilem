@@ -12,7 +12,7 @@ use vello::peniko::Color;
 
 /// Trait implemented by views to signal that a given property can be set on them.
 ///
-/// You should almost only implement this trait using [`declare_property_tuple!`](crate::declare_property_tuple)
+/// In most cases, you should implement this trait through [`declare_property_tuple!`](crate::declare_property_tuple)
 /// when authoring views.
 pub trait HasProperty<P: Property>: Style {
     /// Return a mutable reference to the specific property.

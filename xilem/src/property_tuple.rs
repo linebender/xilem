@@ -71,7 +71,7 @@ macro_rules! impl_property_tuple {
     };
 }
 
-// The (P0,) one-element tuple case is covered outside the macro,
+// The (P0,) one-view tuple case is covered outside the macro,
 // for easier code editing.
 
 impl_property_tuple!(P0, 0; P1, 1);
@@ -91,14 +91,14 @@ impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8,
 // We expect to use the ${index} metavariable here once it's stable
 // https://veykril.github.io/tlborm/decl-macros/minutiae/metavar-expr.html
 
-/// Macro used to declare a list of properties for an element.
+/// Macro used to declare a list of properties for a view.
 ///
 /// The expected way to invoke this macro is:
 ///
 /// ```ignore
 /// declare_property_tuple!(
 ///     MyWidgetProps;
-///     MyWidget;
+///     MyView;
 ///
 ///     SomeProp, 0;
 ///     OtherProp, 1;
@@ -110,15 +110,15 @@ impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8,
 ///
 /// This will declare a type `MyWidgetProp` as an alias to `(Option<SomeProp>, Option<OtherProp>, ...)`.
 ///
-/// This will also implement [`HasProperty<Prop>`](crate::style::HasProperty) for `MyWidget` with each of the listed properties.
+/// This will also implement [`HasProperty<Prop>`](crate::style::HasProperty) for `MyView` with each of the listed properties.
 /// Doing so enables using the corresponding extension method for each of them in the [`Style`](crate::style::Style) trait.
 ///
-/// If `MyWidget` is a generic type with type params `T`, `U`, `V`, you should invoke the macro like this:
+/// If `MyView` is a generic type with type params `T`, `U`, `V`, you should invoke the macro like this:
 ///
 /// ```ignore
 /// declare_property_tuple!(
 ///     MyWidgetProps;
-///     MyWidget<T, U, V>;
+///     MyView<T, U, V>;
 ///
 ///     SomeProp, 0;
 ///     OtherProp, 1;
