@@ -17,7 +17,7 @@ use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
 use winit::event_loop::ActiveEventLoop;
-use winit::window::{Window, WindowAttributes, WindowId};
+use winit::window::{Window as WindowHandle, WindowAttributes, WindowId};
 
 use crate::app::{
     AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
@@ -44,12 +44,12 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
 pub enum WindowStatus<'a> {
     Uninitialized(WindowAttributes),
     Rendering {
-        window: Arc<Window>,
+        window: Arc<WindowHandle>,
         surface: RenderSurface<'a>,
         accesskit_adapter: Adapter,
     },
     Suspended {
-        window: Arc<Window>,
+        window: Arc<WindowHandle>,
         accesskit_adapter: Adapter,
     },
 }
