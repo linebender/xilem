@@ -3,64 +3,50 @@
 
 #![expect(missing_docs, reason = "TODO - Document these items")]
 
+use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use masonry_winit::app::{AppDriver, MasonryState, MasonryUserEvent, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, MasonryState, MasonryUserEvent, WindowId};
 use masonry_winit::core::WidgetId;
 use masonry_winit::peniko::Blob;
-use masonry_winit::widgets::RootWidget;
-use winit::window::WindowAttributes;
+use xilem_core::{AnyViewState, RawProxy, View};
 
-use crate::core::{DynMessage, MessageResult, ProxyError, RawProxy, ViewId};
-use crate::{ViewCtx, WidgetMap, WidgetView};
+use crate::core::{DynMessage, MessageResult, ProxyError, ViewId};
+use crate::window_view::{CreateWindow, WindowView};
+use crate::{AnyWidgetView, AppState, ViewCtx, WidgetMap, WindowAttrs};
 
-pub struct MasonryDriver<State, Logic, View, ViewState> {
+pub struct MasonryDriver<State, Logic> {
     state: State,
     logic: Logic,
-    current_view: View,
-    ctx: ViewCtx,
-    view_state: ViewState,
+    windows: HashMap<WindowId, Window<State>>,
+    proxy: Arc<MasonryProxy>,
+    runtime: Arc<tokio::runtime::Runtime>,
     // Fonts which will be registered on startup.
     fonts: Vec<Blob<u8>>,
-    window_id: WindowId,
-    window_attributes: Option<WindowAttributes>,
-    root_widget: Option<RootWidget>,
 }
 
-impl<State, Logic, View, ViewState> MasonryDriver<State, Logic, View, ViewState>
-where
-    Logic: FnMut(&mut State) -> View,
-    View: WidgetView<State, ViewState = ViewState>,
-{
+struct Window<State> {
+    view: WindowView<State>,
+    view_ctx: ViewCtx,
+    view_state: AnyViewState,
+}
+
+impl<State: 'static, Logic> MasonryDriver<State, Logic> {
     pub(crate) fn new(
-        mut state: State,
-        mut logic: Logic,
+        state: State,
+        logic: Logic,
         event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
-        window_attributes: WindowAttributes,
         runtime: tokio::runtime::Runtime,
         fonts: Vec<Blob<u8>>,
     ) -> Self {
-        let window_id = WindowId::next();
-        let first_view = (logic)(&mut state);
-        let mut ctx = ViewCtx {
-            widget_map: WidgetMap::default(),
-            id_path: Vec::new(),
-            proxy: Arc::new(WindowProxy(window_id, MasonryProxy(Box::new(event_sink)))),
-            runtime,
-            state_changed: true,
-        };
-        let (pod, view_state) = first_view.build(&mut ctx);
         Self {
-            logic,
             state,
-            current_view: first_view,
-            ctx,
-            view_state,
+            logic,
+            windows: HashMap::new(),
+            proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
+            runtime: Arc::new(runtime),
             fonts,
-            window_id,
-            window_attributes: Some(window_attributes),
-            root_widget: Some(RootWidget::from_pod(pod.into_widget_pod().erased())),
         }
     }
 }
@@ -115,7 +101,7 @@ impl Debug for MasonryProxy {
 }
 
 #[derive(Debug)]
-struct WindowProxy(pub(crate) WindowId, pub(crate) MasonryProxy);
+struct WindowProxy(WindowId, Arc<MasonryProxy>);
 
 impl RawProxy for WindowProxy {
     fn send_message(
@@ -131,37 +117,129 @@ impl RawProxy for WindowProxy {
     }
 }
 
-impl<State, Logic, View> AppDriver for MasonryDriver<State, Logic, View, View::ViewState>
+impl<State, Logic, WindowIter> MasonryDriver<State, Logic>
 where
-    Logic: FnMut(&mut State) -> View,
-    View: WidgetView<State>,
+    State: 'static,
+    Logic: FnMut(&mut State) -> WindowIter,
+    WindowIter: Iterator<Item = (WindowId, WindowAttrs<State>, Box<AnyWidgetView<State>>)>,
 {
-    fn create_initial_windows(&mut self, ctx: &mut masonry_winit::app::DriverCtx<'_, '_>) {
-        ctx.create_window(
-            self.window_id,
-            self.root_widget.take().unwrap(),
-            self.window_attributes.take().unwrap(),
+    pub(crate) fn create_window(
+        &mut self,
+        driver_ctx: &mut DriverCtx<'_, '_>,
+        window_id: WindowId,
+        view: WindowView<State>,
+    ) {
+        let mut view_ctx = ViewCtx {
+            widget_map: WidgetMap::default(),
+            id_path: Vec::new(),
+            proxy: Arc::new(WindowProxy(window_id, self.proxy.clone())),
+            runtime: self.runtime.clone(),
+            state_changed: true,
+        };
+        let (CreateWindow(attrs, root_widget), view_state) = view.build(&mut view_ctx);
+        driver_ctx.create_window(window_id, root_widget, attrs);
+        self.windows.insert(
+            window_id,
+            Window {
+                view,
+                view_ctx,
+                view_state,
+            },
         );
+    }
+
+    fn close_window(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
+        let window = self.windows.get_mut(&window_id).unwrap();
+        window.view.teardown(
+            &mut window.view_state,
+            &mut window.view_ctx,
+            ctx.window_handle_and_render_root(window_id),
+        );
+        self.windows.remove(&window_id);
+        ctx.close_window(window_id);
+    }
+
+    fn run_logic(&mut self, driver_ctx: &mut DriverCtx<'_, '_>) {
+        let mut returned_ids = HashSet::new();
+        for (window_id, next_attrs, next_view) in (self.logic)(&mut self.state) {
+            if !returned_ids.insert(window_id) {
+                tracing::error!(
+                    id = ?window_id,
+                    "logic function returned two windows with the same id, ignoring the duplicate"
+                );
+                continue;
+            }
+            let next_view = WindowView::new(next_attrs, next_view);
+
+            match self.windows.get_mut(&window_id) {
+                Some(Window {
+                    view,
+                    view_ctx,
+                    view_state,
+                }) => {
+                    next_view.rebuild(
+                        view,
+                        view_state,
+                        view_ctx,
+                        driver_ctx.window_handle_and_render_root(window_id),
+                    );
+                    *view = next_view;
+                }
+                None => self.create_window(driver_ctx, window_id, next_view),
+            }
+        }
+
+        let to_be_closed: Vec<_> = self
+            .windows
+            .keys()
+            .copied()
+            .filter(|id| !returned_ids.contains(id))
+            .collect();
+        for window_id in to_be_closed {
+            self.close_window(window_id, driver_ctx);
+        }
+    }
+}
+
+impl<State, Logic, WindowIter> AppDriver for MasonryDriver<State, Logic>
+where
+    State: AppState + 'static,
+    Logic: FnMut(&mut State) -> WindowIter,
+    WindowIter: Iterator<Item = (WindowId, WindowAttrs<State>, Box<AnyWidgetView<State>>)>,
+{
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        for (window_id, attrs, root_widget_view) in (self.logic)(&mut self.state) {
+            self.create_window(ctx, window_id, WindowView::new(attrs, root_widget_view));
+        }
     }
 
     fn on_action(
         &mut self,
-        _window_id: WindowId,
+        window_id: WindowId,
         masonry_ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
         widget_id: WidgetId,
         action: masonry_winit::core::Action,
     ) {
+        let Some(window) = self.windows.get_mut(&window_id) else {
+            tracing::warn!(
+                id = ?window_id,
+                "call on_action call for unknown window"
+            );
+            return;
+        };
+
         let message_result = if widget_id == ASYNC_MARKER_WIDGET {
             let masonry_winit::core::Action::Other(action) = action else {
                 panic!();
             };
             let (path, message) = *action.downcast::<MessagePackage>().unwrap();
             // Handle an async path
-            self.current_view
-                .message(&mut self.view_state, &path, message, &mut self.state)
-        } else if let Some(id_path) = self.ctx.widget_map.get(&widget_id) {
-            self.current_view.message(
-                &mut self.view_state,
+            window
+                .view
+                .message(&mut window.view_state, &path, message, &mut self.state)
+        } else if let Some(id_path) = window.view_ctx.widget_map.get(&widget_id) {
+            window.view.message(
+                &mut window.view_state,
                 id_path.as_slice(),
                 DynMessage::new(action),
                 &mut self.state,
@@ -172,52 +250,31 @@ where
             );
             return;
         };
-        let stashed_view;
-        let rebuild_from = match message_result {
+        match message_result {
             // The semantics here haven't exactly been worked out.
             // This version of the implementation is based on the assumptions that:
             // 1) `MessageResult::Action` means that the app's state has changed (and so the logic needs to be reran)
             // 2) `MessageResult::RequestRebuild` requires that the app state is *not* rebuilt; this allows
             //     avoiding infinite loops.
             MessageResult::Action(()) => {
-                let next_view = (self.logic)(&mut self.state);
-                self.ctx.state_changed = true;
-                stashed_view = std::mem::replace(&mut self.current_view, next_view);
-
-                Some(&stashed_view)
+                self.run_logic(masonry_ctx);
             }
             MessageResult::RequestRebuild => {
-                self.ctx.state_changed = false;
-                Some(&self.current_view)
+                window.view_ctx.state_changed = false;
+                window.view.rebuild_root_widget(
+                    &window.view,
+                    &mut window.view_state,
+                    &mut window.view_ctx,
+                    masonry_ctx.render_root(window_id),
+                );
             }
-            MessageResult::Nop => None,
+            MessageResult::Nop => {}
             MessageResult::Stale(_) => {
                 tracing::info!("Discarding message");
-                None
             }
         };
-        if let Some(prior_view) = rebuild_from {
-            masonry_ctx
-                .render_root(self.window_id)
-                .edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget>();
-                    self.current_view.rebuild(
-                        prior_view,
-                        &mut self.view_state,
-                        &mut self.ctx,
-                        RootWidget::child_mut(&mut root).downcast(),
-                    );
-                });
-        }
-        if cfg!(debug_assertions)
-            && rebuild_from.is_some()
-            && !masonry_ctx
-                .render_root(self.window_id)
-                .needs_rewrite_passes()
-        {
-            tracing::debug!("Nothing changed as result of action");
-        }
     }
+
     fn on_start(&mut self, state: &mut MasonryState) {
         // self.fonts is never used again, so we may as well deallocate it.
         let fonts = std::mem::take(&mut self.fonts);
@@ -229,6 +286,24 @@ where
                 // because we don't have an easy way to return this to the application.
                 drop(root.register_fonts(font.clone()));
             }
+        }
+    }
+
+    fn on_close_requested(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
+    ) {
+        let view = &self.windows.get(&window_id).unwrap().view;
+
+        if let Some(on_close) = &view.attributes.callbacks.on_close {
+            on_close(&mut self.state);
+            self.run_logic(ctx);
+        }
+
+        if !self.state.keep_running() {
+            // TODO: should we call teardown for all windows before exiting?
+            ctx.exit();
         }
     }
 }
