@@ -12,14 +12,13 @@ use masonry_winit::widgets::{Alignment, LineBreaking};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
-use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::view::{
     Axis, FlexSpacer, Padding, ZStackExt, button, flex, image, inline_prose, portal, prose,
     sized_box, spinner, split, worker, zstack,
 };
-use xilem::{EventLoop, EventLoopBuilder, TextAlignment, WidgetView, Xilem, palette};
+use xilem::{EventLoop, EventLoopBuilder, TextAlignment, WidgetView, WindowAttrs, Xilem, palette};
 
 /// The main state of the application.
 struct HttpCats {
@@ -223,15 +222,13 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         selected_code: None,
     };
 
-    let app = Xilem::new(data, HttpCats::view);
-    let min_window_size = LogicalSize::new(200., 200.);
+    let app = Xilem::new_simple(
+        data,
+        HttpCats::view,
+        WindowAttrs::new("HTTP cats").with_min_inner_size(LogicalSize::new(200., 200.)),
+    );
 
-    let window_attributes = Window::default_attributes()
-        .with_title("HTTP cats")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size);
-
-    app.run_windowed_in(event_loop, window_attributes)
+    app.run_in(event_loop)
 }
 
 impl Status {
