@@ -133,14 +133,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry_winit::app::MasonryUserEvent;
+use masonry_winit::app::{MasonryUserEvent, WindowId};
 use masonry_winit::core::{
     DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions,
     WidgetPod,
 };
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::theme::default_property_set;
-use masonry_winit::widgets::RootWidget;
 use view::{Transformed, transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
@@ -261,38 +260,33 @@ where
     {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
-        let bg_color = self.background_color;
         let default_properties = self
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (root_widget, driver) =
-            self.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
+        let (driver, window_id, root_widget) =
+            self.into_driver_and_window(move |event| proxy.send_event(event).map_err(|err| err.0));
         masonry_winit::app::run_with(
             event_loop,
-            window_attributes,
-            root_widget,
+            vec![(window_id, window_attributes, root_widget)],
             driver,
             default_properties,
-            bg_color,
         )
     }
 
-    /// Builds the root widget and [`MasonryDriver`].
+    /// Builds the [`MasonryDriver`] and also returns the window id and the root widget.
     ///
     /// The given event sink function sends the given event to the event loop
     /// and returns the given event as an error in case the event loop is stopped.
-    pub fn into_driver(
+    pub fn into_driver_and_window(
         self,
         event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
     ) -> (
-        impl Widget,
         MasonryDriver<State, Logic, View, View::ViewState>,
+        WindowId,
+        Box<dyn Widget>,
     ) {
-        let (driver, pod) =
-            MasonryDriver::new(self.state, self.logic, event_sink, self.runtime, self.fonts);
-        let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
-        (root_widget, driver)
+        MasonryDriver::new(self.state, self.logic, event_sink, self.runtime, self.fonts)
     }
 }
 

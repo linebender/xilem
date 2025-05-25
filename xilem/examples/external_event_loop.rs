@@ -7,7 +7,6 @@
 //! Support for more custom embeddings would be welcome, but needs more design work
 
 use masonry_winit::app::{AppDriver, MasonryUserEvent};
-use masonry_winit::peniko::Color;
 use masonry_winit::theme::default_property_set;
 use masonry_winit::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::application::ApplicationHandler;
@@ -135,14 +134,12 @@ fn main() -> Result<(), EventLoopError> {
 
     let event_loop = EventLoop::with_user_event().build().unwrap();
     let proxy = event_loop.create_proxy();
-    let (widget, driver) =
-        xilem.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
+    let (driver, window_id, root_widget) =
+        xilem.into_driver_and_window(move |event| proxy.send_event(event).map_err(|err| err.0));
     let masonry_state = masonry_winit::app::MasonryState::new(
-        window_attributes,
         &event_loop,
-        widget,
+        vec![(window_id, window_attributes, root_widget)],
         default_property_set(),
-        Color::BLACK,
     );
 
     let mut app = ExternalApp {

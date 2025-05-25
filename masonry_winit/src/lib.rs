@@ -17,7 +17,7 @@
 //! The to-do-list example looks like this:
 //!
 //! ```rust
-//! use masonry_winit::app::{AppDriver, DriverCtx};
+//! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 //! use masonry_winit::core::{Action, Widget, WidgetId};
 //! use masonry_winit::dpi::LogicalSize;
 //! use masonry_winit::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
@@ -25,13 +25,22 @@
 //!
 //! struct Driver {
 //!     next_task: String,
+//!     window_id: WindowId,
 //! }
 //!
 //! impl AppDriver for Driver {
-//!     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+//!     fn on_action(
+//!         &mut self,
+//!         window_id: WindowId,
+//!         ctx: &mut DriverCtx<'_, '_>,
+//!         _widget_id: WidgetId,
+//!         action: Action,
+//!     ) {
+//!         debug_assert_eq!(window_id, self.window_id, "unknown window");
+//!
 //!         match action {
 //!             Action::ButtonPressed(_) => {
-//!                 ctx.render_root().edit_root_widget(|mut root| {
+//!                 ctx.render_root(window_id).edit_root_widget(|mut root| {
 //!                     let mut root = root.downcast::<RootWidget>();
 //!                     let mut portal = RootWidget::child_mut(&mut root);
 //!                     let mut portal = portal.downcast::<Portal<Flex>>();
@@ -66,14 +75,19 @@
 //!         .with_resizable(true)
 //!         .with_min_inner_size(window_size);
 //!
+//!     let driver = Driver {
+//!         next_task: String::new(),
+//!         window_id: WindowId::next(),
+//!     };
 //!     # return;
 //!     masonry_winit::app::run(
 //!         masonry_winit::app::EventLoop::with_user_event(),
-//!         window_attributes,
-//!         RootWidget::new(main_widget),
-//!         Driver {
-//!             next_task: String::new(),
-//!         },
+//!         vec![(
+//!             driver.window_id,
+//!             window_attributes,
+//!             Box::new(RootWidget::new(main_widget)),
+//!         )],
+//!         driver,
 //!     )
 //!     .unwrap();
 //! }
@@ -135,7 +149,7 @@ mod event_loop_runner;
 pub mod app {
     pub use masonry::app::*;
 
-    pub use super::app_driver::{AppDriver, DriverCtx};
+    pub use super::app_driver::{AppDriver, DriverCtx, WindowId};
     pub use super::event_loop_runner::{
         EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, run, run_with,
     };

@@ -5,7 +5,7 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, PointerButton, StyleProperty, WidgetId};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::peniko::Color;
@@ -15,10 +15,19 @@ use winit::window::Window;
 
 struct Driver {
     grid_spacing: f64,
+    window_id: WindowId,
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        action: Action,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
+
         if let Action::ButtonPressed(button) = action {
             self.grid_spacing += match button {
                 Some(PointerButton::Primary) => 1.0,
@@ -26,7 +35,7 @@ impl AppDriver for Driver {
                 _ => 0.5,
             };
 
-            ctx.render_root().edit_root_widget(|mut root| {
+            ctx.render_root(window_id).edit_root_widget(|mut root| {
                 let mut root = root.downcast::<RootWidget>();
                 let mut grid = RootWidget::child_mut(&mut root);
                 let mut grid = grid.downcast::<Grid>();
@@ -108,7 +117,10 @@ fn make_grid(grid_spacing: f64) -> Grid {
 }
 
 fn main() {
-    let driver = Driver { grid_spacing: 1.0 };
+    let driver = Driver {
+        grid_spacing: 1.0,
+        window_id: WindowId::next(),
+    };
     let main_widget = make_grid(driver.grid_spacing);
 
     let window_size = LogicalSize::new(800.0, 500.0);
@@ -119,8 +131,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(main_widget),
+        vec![(
+            driver.window_id,
+            window_attributes,
+            Box::new(RootWidget::new(main_widget)),
+        )],
         driver,
     )
     .unwrap();
