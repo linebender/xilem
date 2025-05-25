@@ -20,7 +20,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
 /// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
-/// use xilem::{EventLoop, WidgetView, Xilem};
+/// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 ///
 /// // A component to make a bigger than usual button
 /// fn big_button(
@@ -50,8 +50,8 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// }
 ///
 /// fn main() -> Result<(), EventLoopError> {
-///     let app = Xilem::new(0, app_logic);
-///     app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+///     let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
+///     app.run_in(EventLoop::with_user_event())?;
 ///     Ok(())
 /// }
 /// ```

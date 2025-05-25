@@ -7,7 +7,7 @@ use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
 use xilem::view::{GridExt as _, button, grid, label, sized_box, transformed};
-use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, Xilem};
+use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, WindowOptions, Xilem};
 
 struct TransformsGame {
     rotation: f64,
@@ -95,14 +95,15 @@ impl TransformsGame {
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new(
+    let app = Xilem::new_simple(
         TransformsGame {
             rotation: PI * 0.25,
             translation: Vec2::new(20.0, 30.0),
             scale: 2.0,
         },
         TransformsGame::view,
+        WindowOptions::new("Transforms"),
     );
-    app.run_windowed(EventLoop::with_user_event(), "Transforms".into())?;
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }

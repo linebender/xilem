@@ -7,13 +7,12 @@
 use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
-use winit::window::Window;
 use xilem::style::Style;
 use xilem::view::{
     Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, button, flex, grid, label,
     sized_box,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -317,23 +316,15 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         operation: None,
     };
 
-    let app = Xilem::new(data, app_logic);
     let min_window_size = LogicalSize::new(200., 200.);
     let window_size = LogicalSize::new(400., 500.);
-    let window_attributes = Window::default_attributes()
-        .with_title("Calculator")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size)
-        .with_inner_size(window_size);
+    let window_options = WindowOptions::new("Calculator").with_min_inner_size(min_window_size);
     // On iOS, winit has unsensible handling of `inner_size`
     // See https://github.com/rust-windowing/winit/issues/2308 for more details
-    #[cfg(target_os = "ios")]
-    let window_attributes = {
-        let mut window_attributes = window_attributes; // to avoid `unused_mut`
-        window_attributes.inner_size = None;
-        window_attributes
-    };
-    app.run_windowed_in(event_loop, window_attributes)?;
+    #[cfg(not(target_os = "ios"))]
+    let window_options = window_options.with_initial_inner_size(window_size);
+    let app = Xilem::new_simple(data, app_logic, window_options);
+    app.run_in(event_loop)?;
     Ok(())
 }
 

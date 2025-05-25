@@ -12,11 +12,10 @@ use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
-use winit::window::Window;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
 use xilem::view::{FlexSequence, FlexSpacer, button, flex, label, task};
-use xilem::{WidgetView, Xilem};
+use xilem::{WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
 ///
@@ -210,15 +209,11 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
     data.update_display();
 
-    let app = Xilem::new(data, app_logic);
-    let min_window_size = LogicalSize::new(300., 200.);
-    let window_size = LogicalSize::new(450., 300.);
-    let window_attributes = Window::default_attributes()
-        .with_title("Stopwatch")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size)
-        .with_inner_size(window_size);
-    app.run_windowed_in(event_loop, window_attributes)?;
+    let window_options = WindowOptions::new("Stopwatch")
+        .with_min_inner_size(LogicalSize::new(300., 200.))
+        .with_initial_inner_size(LogicalSize::new(450., 300.));
+    let app = Xilem::new_simple(data, app_logic, window_options);
+    app.run_in(event_loop)?;
     Ok(())
 }
 

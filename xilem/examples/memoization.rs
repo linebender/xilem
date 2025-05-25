@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use xilem::core::{frozen, memoize};
 use xilem::view::{button, flex};
-use xilem::{AnyWidgetView, EventLoop, WidgetView, Xilem};
+use xilem::{AnyWidgetView, EventLoop, WidgetView, WindowOptions, Xilem};
 
 // There are currently two ways to do memoization
 
@@ -71,7 +71,6 @@ fn main() {
         increase_button: MemoizedArcView::default(),
     };
 
-    let app = Xilem::new(data, app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Memoization".into())
-        .unwrap();
+    let app = Xilem::new_simple(data, app_logic, WindowOptions::new("Memoization"));
+    app.run_in(EventLoop::with_user_event()).unwrap();
 }

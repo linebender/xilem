@@ -7,7 +7,7 @@ use masonry::widgets::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;
 use xilem::view::{Axis, button, flex, label};
-use xilem::{EventLoop, WidgetView, Xilem};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 #[derive(Default)]
 struct AppState {
@@ -36,7 +36,11 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new(AppState::default(), app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Components".into())?;
+    let app = Xilem::new_simple(
+        AppState::default(),
+        app_logic,
+        WindowOptions::new("Components"),
+    );
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }

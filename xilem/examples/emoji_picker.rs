@@ -8,7 +8,7 @@ use xilem::core::map_state;
 use xilem::view::{
     Axis, FlexExt, FlexSpacer, GridExt, button, flex, grid, label, prose, sized_box,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     flex((
@@ -133,8 +133,8 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         emoji,
     };
 
-    let app = Xilem::new(data, app_logic);
-    app.run_windowed(event_loop, "First Example".into())
+    let app = Xilem::new_simple(data, app_logic, WindowOptions::new("Emoji picker"));
+    app.run_in(event_loop)
 }
 
 struct EmojiInfo {
