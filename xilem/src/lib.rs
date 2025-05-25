@@ -140,7 +140,6 @@ use masonry_winit::core::{
 };
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::theme::default_property_set;
-use masonry_winit::widgets::RootWidget;
 use view::{Transformed, transformed};
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
@@ -184,6 +183,8 @@ pub struct Xilem<State, Logic> {
     background_color: Color,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
+    /// Window attributes. Only exposed temporarily will be removed again shortly once multi window support is implemented.
+    pub window_attributes: WindowAttributes,
 }
 
 #[expect(missing_docs, reason = "TODO - Document these items")]
@@ -202,6 +203,7 @@ where
             default_properties: None,
             background_color: Color::BLACK,
             fonts: Vec::new(),
+            window_attributes: WindowAttributes::default(),
         }
     }
 
@@ -262,34 +264,27 @@ where
     {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
-        let bg_color = self.background_color;
         let default_properties = self
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (root_widget, driver) =
-            self.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
-        masonry_winit::app::run_with(
-            event_loop,
-            window_attributes,
-            root_widget,
-            driver,
-            default_properties,
-            bg_color,
-        )
+        self.window_attributes = window_attributes;
+        let driver = self.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
+        masonry_winit::app::run_with(event_loop, driver, default_properties)
     }
 
     pub fn into_driver(
         self,
         proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
-    ) -> (
-        impl Widget,
-        MasonryDriver<State, Logic, View, View::ViewState>,
-    ) {
-        let (driver, pod) =
-            MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts);
-        let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
-        (root_widget, driver)
+    ) -> MasonryDriver<State, Logic, View, View::ViewState> {
+        MasonryDriver::new(
+            self.state,
+            self.logic,
+            proxy,
+            self.window_attributes,
+            self.runtime,
+            self.fonts,
+        )
     }
 }
 

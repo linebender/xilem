@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, WidgetId};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::widgets::{Flex, RootWidget, Textbox};
@@ -18,28 +18,37 @@ const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        let main_widget = Flex::column()
+            .gap(0.0)
+            .with_spacer(VERTICAL_WIDGET_SPACING)
+            .with_child(Textbox::new(""))
+            .with_spacer(VERTICAL_WIDGET_SPACING)
+            .with_child(Textbox::new(""));
+
+        let window_size = LogicalSize::new(400.0, 400.0);
+        let window_attributes = Window::default_attributes()
+            .with_title("Two textboxes")
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+
+        ctx.create_window(
+            WindowId::next(),
+            RootWidget::new(main_widget),
+            window_attributes,
+        );
+    }
+
+    fn on_action(
+        &mut self,
+        _window_id: WindowId,
+        _ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        _action: Action,
+    ) {
+    }
 }
 
 fn main() {
-    let main_widget = Flex::column()
-        .gap(0.0)
-        .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(Textbox::new(""))
-        .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(Textbox::new(""));
-
-    let window_size = LogicalSize::new(400.0, 400.0);
-    let window_attributes = Window::default_attributes()
-        .with_title("Two textboxes")
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
-
-    masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(main_widget),
-        Driver,
-    )
-    .unwrap();
+    masonry_winit::app::run(masonry_winit::app::EventLoop::with_user_event(), Driver).unwrap();
 }

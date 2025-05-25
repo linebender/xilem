@@ -16,7 +16,7 @@ use std::str::FromStr;
 
 use masonry::accesskit::{Node, Role};
 use masonry::smallvec::{SmallVec, smallvec};
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
@@ -40,6 +40,8 @@ struct CalcState {
     operand: f64,
     operator: char,
     in_num: bool,
+
+    window_id: WindowId,
 }
 
 #[derive(Clone, Copy)]
@@ -273,7 +275,28 @@ impl Widget for CalcButton {
 }
 
 impl AppDriver for CalcState {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        let window_size = LogicalSize::new(223., 300.);
+
+        let window_attributes = Window::default_attributes()
+            .with_title("Simple Calculator")
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+        ctx.create_window(
+            self.window_id,
+            RootWidget::new(build_calc()),
+            window_attributes,
+        );
+    }
+
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        action: Action,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
         match action {
             Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {
                 CalcAction::Digit(digit) => self.digit(*digit),
@@ -282,14 +305,15 @@ impl AppDriver for CalcState {
             _ => unreachable!(),
         }
 
-        ctx.render_root().edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget>();
-            let mut flex = RootWidget::child_mut(&mut root);
-            let mut flex = flex.downcast();
-            let mut label = Flex::child_mut(&mut flex, 1).unwrap();
-            let mut label = label.downcast::<Label>();
-            Label::set_text(&mut label, &*self.value);
-        });
+        ctx.render_root(self.window_id)
+            .edit_root_widget(|mut root| {
+                let mut root = root.downcast::<RootWidget>();
+                let mut flex = RootWidget::child_mut(&mut root);
+                let mut flex = flex.downcast();
+                let mut label = Flex::child_mut(&mut flex, 1).unwrap();
+                let mut label = label.downcast::<Label>();
+                Label::set_text(&mut label, &*self.value);
+            });
     }
 }
 
@@ -407,18 +431,12 @@ fn build_calc() -> impl Widget {
 }
 
 fn main() {
-    let window_size = LogicalSize::new(223., 300.);
-
-    let window_attributes = Window::default_attributes()
-        .with_title("Simple Calculator")
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
-
     let calc_state = CalcState {
         value: "0".to_string(),
         operand: 0.0,
         operator: 'C',
         in_num: false,
+        window_id: WindowId::next(),
     };
 
     let mut default_properties = default_property_set();
@@ -429,15 +447,7 @@ fn main() {
     let event_loop = masonry_winit::app::EventLoop::with_user_event()
         .build()
         .unwrap();
-    masonry_winit::app::run_with(
-        event_loop,
-        window_attributes,
-        RootWidget::new(build_calc()),
-        calc_state,
-        default_properties,
-        Color::BLACK,
-    )
-    .unwrap();
+    masonry_winit::app::run_with(event_loop, calc_state, default_properties).unwrap();
 }
 
 // --- MARK: TESTS

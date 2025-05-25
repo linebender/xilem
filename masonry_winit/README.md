@@ -40,21 +40,49 @@ Lots of things need improvements, e.g. text input is janky and snapshot testing 
 The to-do-list example looks like this:
 
 ```rust
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, Widget, WidgetId};
+use masonry_winit::peniko::Color;
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
 use winit::window::Window;
 
 struct Driver {
     next_task: String,
+    window_id: WindowId,
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+
+        let main_widget = Portal::new(
+            Flex::column()
+                .with_child(
+                    Flex::row()
+                        .with_flex_child(Textbox::new(""), 1.0)
+                        .with_child(Button::new("Add task")),
+                )
+                .with_spacer(VERTICAL_WIDGET_SPACING),
+        );
+
+        let window_size = LogicalSize::new(400.0, 400.0);
+        let window_attributes = Window::default_attributes()
+            .with_title("To-do list")
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+
+        ctx.create_window(
+            self.window_id,
+            RootWidget::new(main_widget),
+            window_attributes,
+        );
+    }
+
+    fn on_action(&mut self, _window_id: WindowId, ctx: &mut DriverCtx<'_, '_>, _widget_id: WidgetId, action: Action) {
         match action {
             Action::ButtonPressed(_) => {
-                ctx.render_root().edit_root_widget(|mut root| {
+                ctx.render_root(self.window_id).edit_root_widget(|mut root| {
                     let mut root = root.downcast::<RootWidget>();
                     let mut portal = RootWidget::child_mut(&mut root);
                     let mut portal = portal.downcast::<Portal<Flex>>();
@@ -71,30 +99,11 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    const VERTICAL_WIDGET_SPACING: f64 = 20.0;
-
-    let main_widget = Portal::new(
-        Flex::column()
-            .with_child(
-                Flex::row()
-                    .with_flex_child(Textbox::new(""), 1.0)
-                    .with_child(Button::new("Add task")),
-            )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
-    );
-
-    let window_size = LogicalSize::new(400.0, 400.0);
-    let window_attributes = Window::default_attributes()
-        .with_title("To-do list")
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
-
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(main_widget),
         Driver {
             next_task: String::new(),
+            window_id: WindowId::next(),
         },
     )
     .unwrap();
