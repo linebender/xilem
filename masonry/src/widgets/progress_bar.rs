@@ -196,9 +196,10 @@ impl Widget for ProgressBar {
     }
 
     fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
-        node.set_value(self.value_accessibility());
+        node.set_min_numeric_value(0.0);
+        node.set_max_numeric_value(1.0);
         if let Some(value) = self.progress {
-            node.set_numeric_value(value * 100.0);
+            node.set_numeric_value(value);
         }
     }
 

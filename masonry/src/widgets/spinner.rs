@@ -165,9 +165,7 @@ impl Widget for Spinner {
     }
 
     fn accessibility_role(&self) -> Role {
-        // Don't like to use that role, but I'm not seeing
-        // anything that matches in accesskit::Role
-        Role::Unknown
+        Role::ProgressIndicator
     }
 
     fn accessibility(
