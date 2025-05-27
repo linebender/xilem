@@ -78,6 +78,10 @@ fn run_event_pass<E>(
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
+        if !root.widget_arena.has(widget_id) {
+            break;
+        }
+
         let parent_id = root.widget_arena.parent_of(widget_id);
         let (mut widget_mut, mut state_mut, mut properties_mut) =
             root.widget_arena.get_all_mut(widget_id);
