@@ -8,11 +8,12 @@ use masonry_winit::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use winit::window::Window;
+use xilem::style::Style;
 use xilem::view::{
     Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, button, flex, grid, label,
     sized_box,
 };
-use xilem::{EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, Xilem, palette};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -239,7 +240,10 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
             // bottom row
             expanded_button("±", Calculator::negate).grid_pos(0, 5),
             digit_button("0").grid_pos(1, 5),
-            digit_button(".").grid_pos(2, 5),
+            expanded_button(".", |data: &mut Calculator| {
+                data.on_entered_digit(".");
+            })
+            .grid_pos(2, 5),
             expanded_button("=", Calculator::on_equals).grid_pos(3, 5),
         ),
         4,
@@ -269,7 +273,15 @@ fn expanded_button(
     text: impl Into<Label>,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
 ) -> impl WidgetView<Calculator> {
-    sized_box(button(text, callback)).expand()
+    const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
+
+    sized_box(
+        button(text, callback)
+            .background_color(BLUE)
+            .corner_radius(10.)
+            .border_color(Color::TRANSPARENT),
+    )
+    .expand()
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,
@@ -282,9 +294,17 @@ fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
 
 /// A button which adds `digit` to the current input when pressed
 fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
-    expanded_button(digit, |data: &mut Calculator| {
-        data.on_entered_digit(digit);
-    })
+    const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
+
+    sized_box(
+        button(digit, |data: &mut Calculator| {
+            data.on_entered_digit(digit);
+        })
+        .background_color(GRAY)
+        .corner_radius(10.)
+        .border_color(Color::TRANSPARENT),
+    )
+    .expand()
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
