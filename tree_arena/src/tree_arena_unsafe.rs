@@ -337,13 +337,11 @@ impl<T> TreeArena<T> {
 
         // Add child to new parent's children.
         // Safe because we checked that the new parent exists and is not a child of the to-be-reparented node
-        unsafe {
-            self.find_mut(new_parent_id)
-                .unwrap_unchecked()
-                .children
-                .child_arr
-                .push(child_id);
-        }
+        self.find_mut(new_parent_id)
+            .unwrap_or_else(|| panic!("no node found for child id #{new_parent_id}"))
+            .children
+            .child_arr
+            .push(child_id);
     }
 }
 
