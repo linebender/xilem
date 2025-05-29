@@ -545,7 +545,14 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // IME was active, but the next focused widget is going to receive the Ime::Disabled event
         // sent by the platform. Synthesize an `Ime::Disabled` event here and send it to the widget
         // about to be unfocused.
-        run_on_text_event_pass(root, &TextEvent::Ime(Ime::Disabled));
+
+        // It's not valid to send an event to a non-existent widget, so we check that the "previously"
+        // focused widget hasn't just been deleted.
+        if let Some(prev_focused) = prev_focused {
+            if root.get_widget(prev_focused).is_some() {
+                run_on_text_event_pass(root, &TextEvent::Ime(Ime::Disabled));
+            }
+        }
 
         // Disable the IME, which was enabled specifically for this widget. Note that if the newly
         // focused widget also requires IME, we will request it again - this resets the platform's

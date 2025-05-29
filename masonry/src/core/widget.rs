@@ -141,6 +141,9 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// Text events will target the [focused widget], then bubble to each parent.
     ///
+    /// Note that [ime events](TextEvent::Ime) will not bubble, because
+    /// of how they interact with focus.
+    ///
     /// [focused widget]: crate::doc::doc_06_masonry_concepts#text-focus
     fn on_text_event(
         &mut self,

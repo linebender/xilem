@@ -273,6 +273,13 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         false,
         |widget, ctx, props, event| {
             widget.on_text_event(ctx, props, event);
+            if matches!(event, TextEvent::Ime(_)) {
+                // HACK: IME events are tightly coupled to the focus lifecycle, meaning that it isn't
+                // correct for these to bubble. In particular, if the focused widget is deleted,
+                // but its parents were handling IME events, they would need to still receive the
+                // `Ime::Disabled` event.
+                ctx.set_handled();
+            }
         },
         !event.is_high_density(),
     );

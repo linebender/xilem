@@ -40,6 +40,11 @@ The widget's event handling method (`on_pointer_event`, `on_text_event`, or `on_
 Then, the same method is called for each of the widget's parents, up to the root.
 This behavior is known in browsers as event bubbling.
 
+Note that IME-related text events do not bubble.
+These instead must be handled by the focused widget, which will only receive them if it returns true in its `accepts_text_input` method.
+This is because changing which widget is focused also disables the IME for the old focused widget.
+Therefore, if the focused widget is deleted, but its parent was handling IME events, the parent could never know that the IME is disabled, as bubbling from a removed widget cannot work.
+
 ### Animation pass
 
 The **update_anim** pass runs an animation frame, which occurs at set intervals if the widget tree includes animated widgets.

@@ -32,6 +32,8 @@ pub enum TextEvent {
     /// A keyboard event.
     Keyboard(KeyboardEvent),
     /// An IME event.
+    ///
+    /// These events do not bubble.
     Ime(Ime),
     /// The window took or lost focus.
     WindowFocusChange(bool),
