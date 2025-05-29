@@ -312,6 +312,12 @@ impl<T> TreeArena<T> {
             "reparenting of root nodes is currently not supported"
         );
 
+        // ensure new parent id exists
+        assert!(
+            self.data_map.items.contains_key(&new_parent_id),
+            "no node found for new_parent id #{new_parent_id}"
+        );
+
         let old_parent_id = self
             .data_map
             .parents
@@ -319,20 +325,23 @@ impl<T> TreeArena<T> {
             .unwrap_or_else(|| panic!("no node found for child id #{child_id}"))
             .unwrap();
 
-        // Move child.
+        // Remove child from old parent's children.
         self.find_mut(old_parent_id)
             .unwrap()
             .children
             .child_arr
             .retain(|i| *i != child_id);
-        self.find_mut(new_parent_id)
-            .unwrap_or_else(|| panic!("no node found for new_parent id #{new_parent_id}"))
-            .children
-            .child_arr
-            .push(child_id);
 
         // Update parent reference.
         self.data_map.parents.insert(child_id, Some(new_parent_id));
+
+        // Add child to new parent's children.
+        // Safe because we checked that the new parent exists and is not a child of the to-be-reparented node
+        self.find_mut(new_parent_id)
+            .unwrap_or_else(|| panic!("no node found for child id #{new_parent_id}"))
+            .children
+            .child_arr
+            .push(child_id);
     }
 }
 
@@ -539,11 +548,14 @@ impl<'arena, T> ArenaMutList<'arena, T> {
 
     // TODO - Remove the child_id argument once creation of Widgets is figured out.
     // Return the id instead.
+    // TODO - Add #[must_use]
     /// Insert a child into the tree under the common parent of this list's items.
     ///
     /// If this list was returned from [`TreeArena::roots_mut()`], create a new tree root.
     ///
     /// The new child will have the given id.
+    ///
+    /// Returns a handle to the new child.
     ///
     /// # Panics
     ///
