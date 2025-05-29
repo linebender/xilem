@@ -5,6 +5,7 @@
 
 #![allow(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
 
+mod ime_focused;
 mod layout;
 mod lifecycle_basic;
 mod lifecycle_disable;
