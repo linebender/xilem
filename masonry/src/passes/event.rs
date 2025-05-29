@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use tracing::{debug, info_span, trace};
+use tracing::{debug, error, info_span, trace};
 
 use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
@@ -78,6 +78,13 @@ fn run_event_pass<E>(
     let mut target_widget_id = target;
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
+        if !root.widget_arena.has(widget_id) {
+            error!(
+                "Tried to access {widget_id} whilst processing event, but it wasn't in the tree. Discarding event"
+            );
+            break;
+        }
+
         let parent_id = root.widget_arena.parent_of(widget_id);
         let (mut widget_mut, mut state_mut, mut properties_mut) =
             root.widget_arena.get_all_mut(widget_id);
