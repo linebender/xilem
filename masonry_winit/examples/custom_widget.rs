@@ -126,9 +126,9 @@ impl Widget for CustomWidget {
         let fill_color = Color::from_rgba8(0x00, 0x00, 0x00, 0x7F);
         scene.fill(Fill::NonZero, Affine::IDENTITY, fill_color, None, &rect);
 
-        // To render text, we first create a LayoutBuilder and set the text properties.
-        let mut lcx = parley::LayoutContext::new();
-        let mut text_layout_builder = lcx.ranged_builder(ctx.text_contexts().0, &self.0, 1.0, true);
+        // To render text, we first create a text layout builder and then set the text properties.
+        let (fcx, lcx) = ctx.text_contexts();
+        let mut text_layout_builder = lcx.ranged_builder(fcx, &self.0, 1.0, true);
 
         text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
             FontFamily::Generic(parley::style::GenericFamily::Serif),
