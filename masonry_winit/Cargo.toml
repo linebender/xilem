@@ -17,6 +17,11 @@ targets = []
 # rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
+# This makes the examples discoverable to (e.g.) Android GPU inspector without needing to provide the full name manually.
+# Do not use when releasing a production app.
+[package.metadata.android.application]
+debuggable = true
+
 [features]
 default = []
 # Enables tracing using tracy if the default Masonry tracing is used.
@@ -38,6 +43,9 @@ wgpu-profiler = { optional = true, version = "0.22.0", default-features = false 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
 
+[target.'cfg(target_os = "android")'.dev-dependencies]
+winit = { features = ["android-native-activity"], workspace = true }
+
 [dev-dependencies]
 parley.workspace = true
 smallvec.workspace = true
@@ -58,3 +66,14 @@ name = "calc_masonry"
 # This actually enables scraping for all examples, not just this one.
 # However it is possible to set doc-scrape-examples to false for other specific examples.
 doc-scrape-examples = true
+
+[[example]]
+name = "virtual_stresstest"
+
+# Also add to ANDROID_TARGETS in .github/ci.yml if adding a new Android example
+[[example]]
+# A custom example target which uses the same `mason.rs` file but for android
+name = "virtual_stresstest_android"
+path = "examples/virtual_stresstest.rs"
+# cdylib is required for cargo-apk
+crate-type = ["cdylib"]
