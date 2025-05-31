@@ -11,16 +11,49 @@ use masonry_winit::peniko::Blob;
 use masonry_winit::widgets::RootWidget;
 
 use crate::core::{DynMessage, MessageResult, ProxyError, RawProxy, ViewId};
-use crate::{ViewCtx, WidgetView};
+use crate::{Pod, ViewCtx, WidgetMap, WidgetView};
 
 pub struct MasonryDriver<State, Logic, View, ViewState> {
-    pub(crate) state: State,
-    pub(crate) logic: Logic,
-    pub(crate) current_view: View,
-    pub(crate) ctx: ViewCtx,
-    pub(crate) view_state: ViewState,
+    state: State,
+    logic: Logic,
+    current_view: View,
+    ctx: ViewCtx,
+    view_state: ViewState,
     // Fonts which will be registered on startup.
-    pub(crate) fonts: Vec<Blob<u8>>,
+    fonts: Vec<Blob<u8>>,
+}
+
+impl<State, Logic, View, ViewState> MasonryDriver<State, Logic, View, ViewState>
+where
+    Logic: FnMut(&mut State) -> View,
+    View: WidgetView<State, ViewState = ViewState>,
+{
+    pub(crate) fn new(
+        mut state: State,
+        mut logic: Logic,
+        proxy: Arc<dyn RawProxy>,
+        runtime: tokio::runtime::Runtime,
+        fonts: Vec<Blob<u8>>,
+    ) -> (Self, Pod<View::Widget>) {
+        let first_view = (logic)(&mut state);
+        let mut ctx = ViewCtx {
+            widget_map: WidgetMap::default(),
+            id_path: Vec::new(),
+            proxy,
+            runtime,
+            state_changed: true,
+        };
+        let (pod, view_state) = first_view.build(&mut ctx);
+        let driver = Self {
+            logic,
+            state,
+            current_view: first_view,
+            ctx,
+            view_state,
+            fonts,
+        };
+        (driver, pod)
+    }
 }
 
 /// The `WidgetId` which async events should be sent to.

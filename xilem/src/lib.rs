@@ -278,30 +278,15 @@ where
     }
 
     pub fn into_driver(
-        mut self,
+        self,
         proxy: Arc<dyn RawProxy>,
     ) -> (
         impl Widget,
         MasonryDriver<State, Logic, View, View::ViewState>,
     ) {
-        let first_view = (self.logic)(&mut self.state);
-        let mut ctx = ViewCtx {
-            widget_map: WidgetMap::default(),
-            id_path: Vec::new(),
-            proxy,
-            runtime: self.runtime,
-            state_changed: true,
-        };
-        let (pod, view_state) = first_view.build(&mut ctx);
+        let (driver, pod) =
+            MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts);
         let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
-        let driver = MasonryDriver {
-            current_view: first_view,
-            logic: self.logic,
-            state: self.state,
-            ctx,
-            view_state,
-            fonts: self.fonts,
-        };
         (root_widget, driver)
     }
 }
