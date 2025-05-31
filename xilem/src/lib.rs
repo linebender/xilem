@@ -133,6 +133,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use masonry_winit::app::MasonryUserEvent;
 use masonry_winit::core::{
     DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions,
     WidgetPod,
@@ -170,7 +171,7 @@ mod property_tuple;
 pub mod style;
 pub mod view;
 pub use any_view::AnyWidgetView;
-pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, MasonryProxy, async_action};
+pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
 pub use property_tuple::PropertyTuple;
 
 /// Runtime builder.
@@ -266,7 +267,8 @@ where
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
+        let (root_widget, driver) =
+            self.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
         masonry_winit::app::run_with(
             event_loop,
             window_attributes,
@@ -279,7 +281,7 @@ where
 
     pub fn into_driver(
         self,
-        proxy: Arc<dyn RawProxy>,
+        proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
     ) -> (
         impl Widget,
         MasonryDriver<State, Logic, View, View::ViewState>,
