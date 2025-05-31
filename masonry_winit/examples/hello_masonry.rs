@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, StyleProperty, WidgetId};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::parley::style::FontWeight;
@@ -16,10 +16,45 @@ use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-struct Driver;
+struct Driver {
+    window_id: WindowId,
+}
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        let label = Label::new("Hello")
+            .with_style(StyleProperty::FontSize(32.0))
+            // Ideally there's be an Into in Parley for this
+            .with_style(StyleProperty::FontWeight(FontWeight::BOLD));
+        let button = Button::new("Say hello");
+
+        // Arrange the two widgets vertically, with some padding
+        let main_widget = Flex::column()
+            .with_child(label)
+            .with_spacer(VERTICAL_WIDGET_SPACING)
+            .with_child(button);
+
+        let window_size = LogicalSize::new(400.0, 400.0);
+        let window_attributes = Window::default_attributes()
+            .with_title("Hello World!")
+            .with_resizable(true)
+            .with_min_inner_size(window_size);
+
+        ctx.create_window(
+            self.window_id,
+            RootWidget::new(main_widget),
+            window_attributes,
+        );
+    }
+
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        _ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        action: Action,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
         match action {
             Action::ButtonPressed(_) => {
                 println!("Hello");
@@ -32,29 +67,11 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    let label = Label::new("Hello")
-        .with_style(StyleProperty::FontSize(32.0))
-        // Ideally there's be an Into in Parley for this
-        .with_style(StyleProperty::FontWeight(FontWeight::BOLD));
-    let button = Button::new("Say hello");
-
-    // Arrange the two widgets vertically, with some padding
-    let main_widget = Flex::column()
-        .with_child(label)
-        .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(button);
-
-    let window_size = LogicalSize::new(400.0, 400.0);
-    let window_attributes = Window::default_attributes()
-        .with_title("Hello World!")
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
-
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(main_widget),
-        Driver,
+        Driver {
+            window_id: WindowId::next(),
+        },
     )
     .unwrap();
 }
