@@ -3,9 +3,10 @@
 
 #![expect(missing_docs, reason = "TODO - Document these items")]
 
+use std::fmt::Debug;
 use std::sync::Arc;
 
-use masonry_winit::app::{AppDriver, EventLoopProxy, MasonryState, MasonryUserEvent};
+use masonry_winit::app::{AppDriver, MasonryState, MasonryUserEvent};
 use masonry_winit::core::WidgetId;
 use masonry_winit::peniko::Blob;
 use masonry_winit::widgets::RootWidget;
@@ -31,7 +32,9 @@ where
     pub(crate) fn new(
         mut state: State,
         mut logic: Logic,
-        proxy: Arc<dyn RawProxy>,
+        // TODO: narrow down MasonryUserEvent in event_sink once masonry_winit supports custom event types
+        // (we only ever use it to send MasonryUserEvent::Action with ASYNC_MARKER_WIDGET)
+        event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
         runtime: tokio::runtime::Runtime,
         fonts: Vec<Blob<u8>>,
     ) -> (Self, Pod<View::Widget>) {
@@ -39,7 +42,7 @@ where
         let mut ctx = ViewCtx {
             widget_map: WidgetMap::default(),
             id_path: Vec::new(),
-            proxy,
+            proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
             runtime,
             state_changed: true,
         };
@@ -69,13 +72,13 @@ type MessagePackage = (Arc<[ViewId]>, DynMessage);
 
 impl RawProxy for MasonryProxy {
     fn send_message(&self, path: Arc<[ViewId]>, message: DynMessage) -> Result<(), ProxyError> {
-        match self.0.send_event(MasonryUserEvent::Action(
+        match (self.0)(MasonryUserEvent::Action(
             async_action(path, message),
             ASYNC_MARKER_WIDGET,
         )) {
             Ok(()) => Ok(()),
             Err(err) => {
-                let MasonryUserEvent::Action(masonry_winit::core::Action::Other(res), _) = err.0
+                let MasonryUserEvent::Action(masonry_winit::core::Action::Other(res), _) = err
                 else {
                     unreachable!(
                         "We know this is the value we just created, which matches this pattern"
@@ -92,12 +95,13 @@ impl RawProxy for MasonryProxy {
     }
 }
 
-#[derive(Debug)]
-pub struct MasonryProxy(pub(crate) EventLoopProxy);
+struct MasonryProxy(
+    pub(crate) Box<dyn Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync>,
+);
 
-impl MasonryProxy {
-    pub fn new(proxy: EventLoopProxy) -> Self {
-        Self(proxy)
+impl Debug for MasonryProxy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("MasonryProxy").finish_non_exhaustive()
     }
 }
 

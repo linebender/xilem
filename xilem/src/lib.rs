@@ -133,6 +133,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use masonry_winit::app::MasonryUserEvent;
 use masonry_winit::core::{
     DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions,
     WidgetPod,
@@ -170,7 +171,7 @@ mod property_tuple;
 pub mod style;
 pub mod view;
 pub use any_view::AnyWidgetView;
-pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, MasonryProxy, async_action};
+pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
 pub use property_tuple::PropertyTuple;
 
 /// Runtime builder.
@@ -185,7 +186,6 @@ pub struct Xilem<State, Logic> {
     fonts: Vec<Blob<u8>>,
 }
 
-#[expect(missing_docs, reason = "TODO - Document these items")]
 impl<State, Logic, View> Xilem<State, Logic>
 where
     Logic: FnMut(&mut State) -> View,
@@ -266,7 +266,8 @@ where
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
+        let (root_widget, driver) =
+            self.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
         masonry_winit::app::run_with(
             event_loop,
             window_attributes,
@@ -277,15 +278,19 @@ where
         )
     }
 
+    /// Builds the root widget and [`MasonryDriver`].
+    ///
+    /// The given event sink function sends the given event to the event loop
+    /// and returns the given event as an error in case the event loop is stopped.
     pub fn into_driver(
         self,
-        proxy: Arc<dyn RawProxy>,
+        event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
     ) -> (
         impl Widget,
         MasonryDriver<State, Logic, View, View::ViewState>,
     ) {
         let (driver, pod) =
-            MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts);
+            MasonryDriver::new(self.state, self.logic, event_sink, self.runtime, self.fonts);
         let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
         (root_widget, driver)
     }
