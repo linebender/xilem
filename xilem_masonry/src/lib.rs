@@ -495,7 +495,7 @@ impl ViewPathTracker for ViewCtx {
 #[expect(missing_docs, reason = "TODO - Document these items")]
 impl ViewCtx {
     pub fn new(proxy: Arc<dyn RawProxy>, runtime: tokio::runtime::Runtime) -> Self {
-        ViewCtx {
+        Self {
             widget_map: WidgetMap::default(),
             id_path: Vec::new(),
             proxy,

@@ -125,10 +125,7 @@
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-// https://github.com/rust-lang/rust/pull/130025
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::sync::Arc;
 
