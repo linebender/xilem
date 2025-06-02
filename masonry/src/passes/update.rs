@@ -149,8 +149,8 @@ fn update_widget_tree(
             for child_id in ctx.registered_ids {
                 if !children_ids.contains(&child_id) {
                     panic!(
-                        "Error in '{}' #{}: method register_children() called \
-                        RegisterCtx::register_child() on child #{}, which isn't \
+                        "Error in '{}' {}: method register_children() called \
+                        RegisterCtx::register_child() on child {}, which isn't \
                         in the list returned by children_ids()",
                         widget.item.short_type_name(),
                         id,
@@ -164,8 +164,8 @@ fn update_widget_tree(
         for child_id in widget.item.children_ids() {
             if widget.children.item(child_id).is_none() {
                 panic!(
-                    "Error in '{}' #{}: method register_children() did not call \
-                    RegisterCtx::register_child() on child #{} returned by children_ids()",
+                    "Error in '{}' {}: method register_children() did not call \
+                    RegisterCtx::register_child() on child {} returned by children_ids()",
                     widget.item.short_type_name(),
                     id,
                     child_id

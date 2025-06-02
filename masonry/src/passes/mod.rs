@@ -88,19 +88,19 @@ pub(crate) fn recurse_on_children(
     for child_id in widget.item.children_ids() {
         let widget = widget.children.item_mut(child_id).unwrap_or_else(|| {
             panic!(
-                "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
+                "Error in '{}' {}: cannot find child {} returned by children_ids()",
                 parent_name, parent_id, child_id
             )
         });
         let state = state.item_mut(child_id).unwrap_or_else(|| {
             panic!(
-                "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
+                "Error in '{}' {}: cannot find child {} returned by children_ids()",
                 parent_name, parent_id, child_id
             )
         });
         let properties = properties.item_mut(child_id).unwrap_or_else(|| {
             panic!(
-                "Error in '{}' #{}: cannot find child #{} returned by children_ids()",
+                "Error in '{}' {}: cannot find child {} returned by children_ids()",
                 parent_name, parent_id, child_id
             )
         });
