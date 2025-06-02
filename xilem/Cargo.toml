@@ -41,6 +41,9 @@ smallvec.workspace = true
 accesskit.workspace = true
 tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "*", features = ["rt-multi-thread"] }
+
 [dev-dependencies]
 # Used for `variable_clock`
 time = { workspace = true, features = ["local-offset"] }
