@@ -14,18 +14,17 @@ use std::collections::VecDeque;
 use std::rc::Rc;
 
 use accesskit::{Node, Role};
-use smallvec::SmallVec;
+use cursor_icon::CursorIcon;
+use smallvec::{SmallVec, smallvec};
 use tracing::trace_span;
 use vello::Scene;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetPod, WidgetRef, find_widget_under_pointer,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod, WidgetRef, find_widget_under_pointer,
 };
 use crate::kurbo::{Point, Size};
-use crate::widgets::SizedBox;
-use cursor_icon::CursorIcon;
 
 pub type PointerEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent);
@@ -69,12 +68,11 @@ pub struct ModularWidget<S> {
     children: Option<Box<ChildrenFn<S>>>,
 }
 
+// TODO - Rename to `WrapperWidget`
+
 /// A widget that can replace its child on command
 pub struct ReplaceChild {
     child: WidgetPod<dyn Widget>,
-    #[allow(dead_code)]
-    // reason: This is probably bit-rotted code. Next version will SizedBox with WidgetMut instead.
-    replacer: Box<dyn Fn() -> WidgetPod<dyn Widget>>,
 }
 
 /// A wrapper widget that records each time one of its methods is called.
@@ -148,9 +146,10 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
         }
     }
 
-    /// Wrap this widget in a [`SizedBox`] with the given id.
-    fn with_id(self, id: WidgetId) -> SizedBox {
-        SizedBox::new_with_id(self, id)
+    /// Wrap this widget in a [`ReplaceChild`] with the given id.
+    fn with_id(self, id: WidgetId) -> ReplaceChild {
+        let child = WidgetPod::new_with_id(self, id).erased();
+        ReplaceChild { child }
     }
 }
 
@@ -458,7 +457,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_under_pointer(&WidgetRef { widget: self, ctx }, pos)
+        find_widget_under_pointer(self, ctx, pos)
     }
 
     fn type_name(&self) -> &'static str {
@@ -473,29 +472,30 @@ impl<S: 'static> Widget for ModularWidget<S> {
 impl ReplaceChild {
     /// Create a new `ReplaceChild` widget.
     ///
-    /// The `child` is the initial child widget, and `f` is a function that
-    /// returns a new widget to replace it with.
-    pub fn new<W: Widget + 'static>(child: impl Widget, f: impl Fn() -> W + 'static) -> Self {
+    /// The `child` is the initial child widget.
+    pub fn new<W: Widget + 'static>(child: impl Widget) -> Self {
         let child = WidgetPod::new(child).erased();
-        let replacer = Box::new(move || WidgetPod::new(f()).erased());
-        Self { child, replacer }
+        Self { child }
+    }
+}
+
+impl ReplaceChild {
+    /// Replace the container's child widget.
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
+        Self::set_child_pod(this, WidgetPod::new(child).erased());
+    }
+
+    /// Replace the container's child widget with a `WidgetPod`.
+    pub fn set_child_pod(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn Widget>) {
+        let old_child = std::mem::replace(&mut this.widget.child, child);
+        this.ctx.remove_child(old_child);
+
+        this.ctx.children_changed();
+        this.ctx.request_layout();
     }
 }
 
 impl Widget for ReplaceChild {
-    #[cfg(FALSE)]
-    fn on_event(&mut self, ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, event: &Event) {
-        #[cfg(FALSE)]
-        if let Event::Command(cmd) = event {
-            if cmd.is(REPLACE_CHILD) {
-                self.child = (self.replacer)();
-                ctx.children_changed();
-                return;
-            }
-        }
-        self.child.on_event(ctx, event)
-    }
-
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx,
@@ -534,7 +534,9 @@ impl Widget for ReplaceChild {
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        ctx.run_layout(&mut self.child, bc)
+        let size = ctx.run_layout(&mut self.child, bc);
+        ctx.place_child(&mut self.child, Point::ORIGIN);
+        size
     }
 
     fn compose(&mut self, _ctx: &mut ComposeCtx) {}
@@ -554,7 +556,17 @@ impl Widget for ReplaceChild {
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        todo!()
+        smallvec![self.child.id()]
+    }
+
+    // FIXME - We pretend this widget is called SizedBox to avoid modifying every single
+    // snapshot test. We should remove this in a dedicated PR.
+    fn type_name(&self) -> &'static str {
+        "SizedBox"
+    }
+
+    fn short_type_name(&self) -> &'static str {
+        "SizedBox"
     }
 }
 

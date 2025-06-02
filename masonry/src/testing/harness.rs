@@ -31,10 +31,9 @@ use crate::core::{
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::{Point, Size, Vec2};
-use crate::passes::anim::run_update_anim_pass;
 use crate::peniko::{Blob, Color};
 use crate::testing::screenshots::get_image_diff;
-use crate::theme::default_property_set;
+use crate::util::Duration;
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
@@ -244,7 +243,8 @@ impl TestHarness {
             render_root: RenderRoot::new(
                 root_widget,
                 RenderRootOptions {
-                    default_properties: default_property_set(),
+                    // TODO - Pass the default property set as an input instead.
+                    default_properties: crate::theme::default_property_set(),
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
                     scale_factor: params.scale_factor,
@@ -509,7 +509,7 @@ impl TestHarness {
     pub fn mouse_move_to(&mut self, id: WidgetId) {
         let widget = self.get_widget(id);
         let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
-        let widget_center = widget.ctx().widget_state.window_transform * local_widget_center;
+        let widget_center = widget.ctx().window_transform() * local_widget_center;
 
         if !widget.ctx().accepts_pointer_interaction() {
             panic!("Widget {id} doesn't accept pointer events");
@@ -549,26 +549,25 @@ impl TestHarness {
     #[track_caller]
     pub fn focus_on(&mut self, id: Option<WidgetId>) {
         if let Some(id) = id {
-            let arena = &self.render_root.widget_arena;
-            let Some(state) = arena.states.find(id) else {
+            let Some(widget) = self.render_root.get_widget(id) else {
                 panic!("Cannot focus widget {id}: widget not found in tree");
             };
-            if state.item.is_stashed {
+            if widget.ctx().is_stashed() {
                 panic!("Cannot focus widget {id}: widget is stashed");
             }
-            if state.item.is_disabled {
+            if widget.ctx().is_disabled() {
                 panic!("Cannot focus widget {id}: widget is disabled");
             }
         }
-        self.render_root.global_state.next_focused_widget = id;
-        self.render_root.run_rewrite_passes();
+        let succeeded = self.render_root.focus_on(id);
+        assert!(succeeded);
         self.process_signals();
     }
 
     /// Run an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
-        run_update_anim_pass(&mut self.render_root, ms * 1_000_000);
-        self.render_root.run_rewrite_passes();
+        self.render_root
+            .handle_window_event(WindowEvent::AnimFrame(Duration::from_millis(ms)));
         self.process_signals();
     }
 
@@ -599,19 +598,19 @@ impl TestHarness {
     /// Return a [`WidgetRef`] to the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()
-            .find_widget_by_id(self.render_root.global_state.focused_widget?)
+            .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
     /// Return a [`WidgetRef`] to the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
-            .get_widget(self.render_root.global_state.pointer_capture_target?)
+            .get_widget(self.render_root.pointer_capture_target()?)
     }
 
     /// Return the id of the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
     // TODO - This is kinda redundant with the above
     pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
-        self.render_root.global_state.pointer_capture_target
+        self.render_root.pointer_capture_target()
     }
 
     /// Call the provided visitor on every widget in the widget tree.

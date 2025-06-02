@@ -189,8 +189,9 @@ impl Widget for Spinner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::TestHarness;
-    use crate::{assert_render_snapshot, palette};
+    use crate::palette;
+
+    use crate::testing::{TestHarness, assert_render_snapshot};
 
     #[test]
     fn simple_spinner() {

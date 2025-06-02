@@ -19,6 +19,7 @@ use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
 /// but it will log the provided message instead of ignoring it in release builds.
 ///
 /// It's useful when a backtrace would aid debugging but a crash can be avoided in release.
+#[macro_export]
 macro_rules! debug_panic {
     ($msg:expr$(,)?) => {
         if cfg!(debug_assertions) {
@@ -158,4 +159,96 @@ pub fn fill_lin_gradient(
 /// Helper function for [`Scene::fill`] with a uniform color as the brush.
 pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
     scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
+}
+
+// ---
+
+static DEBUG_COLOR: &[Color] = &[
+    Color::from_rgb8(230, 25, 75),
+    Color::from_rgb8(60, 180, 75),
+    Color::from_rgb8(255, 225, 25),
+    Color::from_rgb8(0, 130, 200),
+    Color::from_rgb8(245, 130, 48),
+    Color::from_rgb8(70, 240, 240),
+    Color::from_rgb8(240, 50, 230),
+    Color::from_rgb8(250, 190, 190),
+    Color::from_rgb8(0, 128, 128),
+    Color::from_rgb8(230, 190, 255),
+    Color::from_rgb8(170, 110, 40),
+    Color::from_rgb8(255, 250, 200),
+    Color::from_rgb8(128, 0, 0),
+    Color::from_rgb8(170, 255, 195),
+    Color::from_rgb8(0, 0, 128),
+    Color::from_rgb8(128, 128, 128),
+    Color::from_rgb8(255, 255, 255),
+    Color::from_rgb8(0, 0, 0),
+];
+
+/// A color used for debug painting.
+///
+/// The same color is always returned given the same id, usually the id of a widget.
+/// When painting a widget, [`PaintCtx::debug_color`][crate::core::PaintCtx::debug_color] is typically used instead.
+pub fn get_debug_color(id: u64) -> Color {
+    let color_num = id as usize % DEBUG_COLOR.len();
+    DEBUG_COLOR[color_num]
+}
+
+// ---
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+pub use web_time::Instant;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use std::time::Duration;
+#[cfg(target_arch = "wasm32")]
+pub use web_time::Duration;
+
+// ---
+
+// FIXME - We're essentially completely disabling screenshots, period.
+// Hopefully we'll be able to re-enable them soon.
+// See https://github.com/linebender/xilem/issues/851
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        // On docsrs we just remove the screenshot links for now.
+        " "
+    };
+}
+
+// TODO - Re-enable this once we find a way to load screenshots that doesn't go against our
+// storage quotas.
+#[cfg(FALSE)]
+#[cfg(docsrs)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        concat!(
+            "![", $($caption,)? "]",
+            "(", "https://media.githubusercontent.com/media/linebender/xilem/",
+            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry/screenshots/", $path,
+            ")",
+        )
+    };
+}
+
+#[cfg(FALSE)]
+#[cfg(not(docsrs))]
+#[doc(hidden)]
+#[macro_export]
+/// Macro used to create markdown img tag, with a different URL when uploading to docs.rs.
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        // This space at the start avoids triggering https://rust-lang.github.io/rust-clippy/master/index.html#suspicious_doc_comments
+        // when using this macro in a `doc` attribute
+        concat!(
+            " ![", $($caption,)? "]",
+            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
+        )
+    };
 }

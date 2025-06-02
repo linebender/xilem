@@ -7,15 +7,16 @@ use std::{collections::HashMap, ops::Range};
 
 use vello::kurbo::{Point, Size, Vec2};
 
+use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    BoxConstraints, FromDynWidget, PointerEvent, PropertiesMut, PropertiesRef, ScrollDelta,
-    TextEvent, Widget, WidgetMut, WidgetPod,
-    keyboard::{Key, KeyState, NamedKey},
+    AccessCtx, AccessEvent, Action, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 
 /// The action type sent by the [`VirtualScroll`] widget.
 ///
-/// This will be sent to the driver as an [`Action::Other`](crate::core::Action::Other).
+/// This will be sent to the driver as an [`Action::Other`].
 /// Before handling this action, you must call [`VirtualScroll::will_handle_action`] using it.
 ///
 /// Currently, this does not have utilities to produce the ranges which should be added and removed.
@@ -129,7 +130,7 @@ pub struct VirtualScrollAction {
 ///
 /// ### Transforms
 ///
-/// Widgets can be [transformed](crate::core::WidgetMut::set_transform) arbitrarily from where their parent lays them out.
+/// Widgets can be [transformed](WidgetMut::set_transform) arbitrarily from where their parent lays them out.
 /// This interacts poorly with virtual scrolling, because an item which would be visible.
 /// Currently, the virtual scrolling controller ignores this case.
 /// The long term plan is for each child to be clipped to a reasonable range around itself.
@@ -425,7 +426,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
-    fn post_scroll(&mut self, ctx: &mut crate::core::EventCtx<'_>) {
+    fn post_scroll(&mut self, ctx: &mut EventCtx<'_>) {
         // We only lock scrolling if we're *exactly* at the end of the range, because
         // if the valid range has changed "during" an active scroll, we still want to handle
         // that scroll (specifically, in case it happens to scroll us back into the active
@@ -471,7 +472,7 @@ const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut crate::core::EventCtx,
+        ctx: &mut EventCtx,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -491,7 +492,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_text_event(
         &mut self,
-        ctx: &mut crate::core::EventCtx,
+        ctx: &mut EventCtx,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
@@ -519,46 +520,27 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut crate::core::EventCtx,
+        _ctx: &mut EventCtx,
         _props: &mut PropertiesMut<'_>,
-        _event: &crate::core::AccessEvent,
+        _event: &AccessEvent,
     ) {
         // TODO: Handle scroll-etc. eventss
     }
 
-    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         // TODO: Register in id order
         for child in self.items.values_mut() {
             ctx.register_child(child);
         }
     }
 
-    fn update(
-        &mut self,
-        _ctx: &mut crate::core::UpdateCtx,
-        _props: &mut PropertiesMut<'_>,
-        event: &crate::core::Update,
-    ) {
-        match event {
-            crate::core::Update::WidgetAdded => {}
-            crate::core::Update::DisabledChanged(_) => {}
-            crate::core::Update::StashedChanged(_) => {}
-            crate::core::Update::RequestPanToChild(_rect) => {} // TODO,
-            crate::core::Update::HoveredChanged(_) => {}
-            crate::core::Update::ChildHoveredChanged(_) => {}
-            crate::core::Update::FocusChanged(_) => {}
-            crate::core::Update::ChildFocusChanged(_) => {
-                // TODO: We won't actually get this event if *which* child element is focused changes...
-                // In fact, there's *no* reliable way to detect that, which makes proper focus management impossible
-            }
-        }
-    }
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
     fn layout(
         &mut self,
-        ctx: &mut crate::core::LayoutCtx,
+        ctx: &mut LayoutCtx,
         _props: &mut PropertiesMut<'_>,
-        bc: &crate::core::BoxConstraints,
+        bc: &BoxConstraints,
     ) -> vello::kurbo::Size {
         let viewport_size = bc.max();
         ctx.set_clip_path(viewport_size.to_rect());
@@ -803,7 +785,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             if self.active_range != target_range {
                 let previous_active = self.active_range.clone();
 
-                ctx.submit_action(crate::core::Action::Other(Box::new(VirtualScrollAction {
+                ctx.submit_action(Action::Other(Box::new(VirtualScrollAction {
                     old_active: previous_active,
                     target: target_range,
                 })));
@@ -820,7 +802,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         viewport_size
     }
 
-    fn compose(&mut self, ctx: &mut crate::core::ComposeCtx) {
+    fn compose(&mut self, ctx: &mut ComposeCtx) {
         let translation = Vec2 {
             x: 0.,
             y: -self.scroll_offset_from_anchor,
@@ -834,7 +816,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn paint(
         &mut self,
-        _ctx: &mut crate::core::PaintCtx,
+        _ctx: &mut PaintCtx,
         _props: &PropertiesRef<'_>,
         _scene: &mut vello::Scene,
     ) {
@@ -866,7 +848,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn accessibility(
         &mut self,
-        _ctx: &mut crate::core::AccessCtx,
+        _ctx: &mut AccessCtx,
         _props: &PropertiesRef<'_>,
         node: &mut accesskit::Node,
     ) {
@@ -875,7 +857,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         node.set_clips_children();
     }
 
-    fn children_ids(&self) -> smallvec::SmallVec<[crate::core::WidgetId; 16]> {
+    fn children_ids(&self) -> smallvec::SmallVec<[WidgetId; 16]> {
         self.items.values().map(|pod| pod.id()).collect()
     }
 
@@ -928,19 +910,16 @@ fn opt_iter_difference(
 mod tests {
     use std::collections::HashSet;
 
+    use dpi::PhysicalPosition;
     use parley::StyleProperty;
     use vello::kurbo::Size;
 
-    use crate::{
-        assert_render_snapshot,
-        core::{
-            Action, FromDynWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetMut,
-            WidgetPod,
-        },
-        dpi::PhysicalPosition,
-        testing::{PRIMARY_MOUSE, TestHarness},
-        widgets::{Label, VirtualScroll, VirtualScrollAction},
+    use crate::core::{
+        Action, FromDynWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId,
+        WidgetMut, WidgetPod,
     };
+    use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
+    use crate::widgets::{Label, VirtualScroll, VirtualScrollAction};
 
     use super::opt_iter_difference;
 
@@ -1331,7 +1310,7 @@ mod tests {
 
     fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
         harness: &mut TestHarness,
-        virtual_scroll_id: crate::core::WidgetId,
+        virtual_scroll_id: WidgetId,
         mut f: impl FnMut(VirtualScrollAction, WidgetMut<'_, VirtualScroll<T>>),
     ) {
         let mut iteration = 0;

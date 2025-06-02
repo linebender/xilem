@@ -7,6 +7,9 @@ mod harness;
 mod helper_widgets;
 mod screenshots;
 
+pub use crate::assert_failing_render_snapshot;
+pub use crate::assert_render_snapshot;
+
 pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};
 pub use helper_widgets::{ModularWidget, Record, Recorder, Recording, ReplaceChild, TestWidgetExt};
 

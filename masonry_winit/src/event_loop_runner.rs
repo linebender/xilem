@@ -8,6 +8,7 @@ use std::sync::Arc;
 use accesskit_winit::Adapter;
 use masonry::core::DefaultProperties;
 use masonry::theme::default_property_set;
+use masonry::util::Instant;
 use tracing::{debug, error, info, info_span};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
@@ -72,6 +73,9 @@ pub struct MasonryState<'a> {
     window: WindowState<'a>,
     event_reducer: WindowEventReducer,
     background_color: Color,
+
+    // Is `Some` if the most recently displayed frame was an animation frame.
+    last_anim: Option<Instant>,
 }
 
 struct MainState<'a> {
@@ -244,6 +248,7 @@ impl MasonryState<'_> {
             window: WindowState::Uninitialized(window),
             event_reducer: WindowEventReducer::default(),
             background_color,
+            last_anim: None,
         }
     }
 
@@ -508,7 +513,23 @@ impl MasonryState<'_> {
             }
             WinitWindowEvent::RedrawRequested => {
                 let _span = info_span!("redraw");
-                self.render_root.handle_window_event(WindowEvent::AnimFrame);
+
+                let now = Instant::now();
+                // TODO: this calculation uses wall-clock time of the paint call, which
+                // potentially has jitter.
+                //
+                // See https://github.com/linebender/druid/issues/85 for discussion.
+                let last = self.last_anim.take();
+                let elapsed = last.map(|t| now.duration_since(t)).unwrap_or_default();
+
+                self.render_root
+                    .handle_window_event(WindowEvent::AnimFrame(elapsed));
+
+                // If this animation will continue, store the time.
+                // If a new animation starts, then it will have zero reported elapsed time.
+                let animation_continues = self.render_root.needs_anim();
+                self.last_anim = animation_continues.then_some(now);
+
                 let (scene, tree_update) = self.render_root.redraw();
                 self.render(scene);
                 let WindowState::Rendering {

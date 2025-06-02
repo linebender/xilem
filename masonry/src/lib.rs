@@ -1,4 +1,4 @@
-// Copyright 2018 the Xilem Authors and the Druid Authors
+// Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Traits and types of the Masonry toolkit.
@@ -36,7 +36,6 @@
     unnameable_types,
     reason = "Requires lint_reasons rustc feature for exceptions"
 )]
-#![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
 
 // TODO - Add logo

@@ -13,11 +13,6 @@ use vello::kurbo::{
     Rect, {self},
 };
 
-#[cfg(not(target_arch = "wasm32"))]
-use std::time::Instant;
-#[cfg(target_arch = "wasm32")]
-use web_time::Instant;
-
 use crate::Handled;
 use crate::core::{
     AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
@@ -64,9 +59,6 @@ pub struct RenderRoot {
 
     /// Current size of the window.
     pub(crate) size: PhysicalSize<u32>,
-
-    /// Is `Some` if the most recently displayed frame was an animation frame.
-    pub(crate) last_anim: Option<Instant>,
 
     /// Last mouse position. Updated by `on_pointer_event` pass, used by other passes.
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
@@ -266,7 +258,6 @@ impl RenderRoot {
             root: WidgetPod::new(root_widget).erased(),
             size_policy,
             size: PhysicalSize::new(0, 0),
-            last_anim: None,
             last_mouse_pos: None,
             default_properties,
             global_state: RenderRootState {
@@ -359,22 +350,9 @@ impl RenderRoot {
                 self.run_rewrite_passes();
                 Handled::Yes
             }
-            WindowEvent::AnimFrame => {
-                let now = Instant::now();
-                // TODO: this calculation uses wall-clock time of the paint call, which
-                // potentially has jitter.
-                //
-                // See https://github.com/linebender/druid/issues/85 for discussion.
-                let last = self.last_anim.take();
-                let elapsed_ns = last.map(|t| now.duration_since(t).as_nanos()).unwrap_or(0) as u64;
-
-                run_update_anim_pass(self, elapsed_ns);
+            WindowEvent::AnimFrame(duration) => {
+                run_update_anim_pass(self, duration.as_nanos() as u64);
                 self.run_rewrite_passes();
-
-                // If this animation will continue, store the time.
-                // If a new animation starts, then it will have zero reported elapsed time.
-                let animation_continues = self.root_state().needs_anim;
-                self.last_anim = animation_continues.then_some(now);
 
                 Handled::Yes
             }
@@ -723,6 +701,35 @@ impl RenderRoot {
     // TODO - Store in RenderRootState
     pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
         &self.root_state().focus_chain
+    }
+
+    /// Return the [`WidgetId`] of the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
+    pub fn focused_widget(&self) -> Option<WidgetId> {
+        self.global_state.focused_widget
+    }
+
+    /// Return the [`WidgetId`] of the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
+    pub fn pointer_capture_target(&self) -> Option<WidgetId> {
+        self.global_state.pointer_capture_target
+    }
+
+    /// Sets the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
+    ///
+    /// Returns false if the widget is not found in the tree or can't be focused.
+    pub fn focus_on(&mut self, id: Option<WidgetId>) -> bool {
+        if let Some(id) = id {
+            if !self.is_still_interactive(id) {
+                return false;
+            }
+        }
+        self.global_state.next_focused_widget = id;
+        self.run_rewrite_passes();
+        true
+    }
+
+    /// Returns true if the widget tree is waiting for an animation frame.
+    pub fn needs_anim(&self) -> bool {
+        self.root_state().needs_anim
     }
 
     /// Returns `true` if something requires a rewrite pass or a re-render.

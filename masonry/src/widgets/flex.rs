@@ -12,7 +12,8 @@ use vello::kurbo::{Affine, Line, Stroke, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Point, Rect, Size};
 
@@ -859,7 +860,7 @@ impl Iterator for Spacing {
             if self.n_children == 0 {
                 self.extra
             } else {
-                #[allow(clippy::match_bool)]
+                #[allow(clippy::match_bool, reason = "It makes this code more readable")]
                 match self.alignment {
                     MainAxisAlignment::Start => match self.index == self.n_children {
                         true => self.extra,
@@ -984,7 +985,7 @@ impl Widget for Flex {
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);
         }
@@ -1029,7 +1030,7 @@ impl Widget for Flex {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
-                        let old_size = ctx.widget_state.layout_rect().size();
+                        let old_size = ctx.old_size();
                         let child_size = ctx.run_layout(widget, &loosened_bc);
 
                         if child_size.width.is_infinite() {
@@ -1094,7 +1095,7 @@ impl Widget for Flex {
                         let actual_major = desired_major.round();
                         remainder = desired_major - actual_major;
 
-                        let old_size = ctx.widget_state.layout_rect().size();
+                        let old_size = ctx.old_size();
                         let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
                         let child_size = ctx.run_layout(widget, &child_bc);
 
@@ -1147,7 +1148,6 @@ impl Widget for Flex {
         let extra_height = minor - minor_dim.min(minor);
 
         let mut major = spacing.next().unwrap_or(0.);
-        let mut child_paint_rect = Rect::ZERO;
 
         for child in &mut self.children {
             match child {
@@ -1172,7 +1172,7 @@ impl Widget for Flex {
                                 .direction
                                 .pack(self.direction.major(child_size), minor_dim)
                                 .into();
-                            if ctx.widget_state.layout_rect().size() != fill_size {
+                            if ctx.old_size() != fill_size {
                                 let child_bc = BoxConstraints::tight(fill_size);
                                 //TODO: this is the second call of layout on the same child, which
                                 // is bad, because it can lead to exponential increase in layout calls
@@ -1189,7 +1189,6 @@ impl Widget for Flex {
 
                     let child_pos: Point = self.direction.pack(major, child_minor_offset).into();
                     ctx.place_child(widget, child_pos);
-                    child_paint_rect = child_paint_rect.union(ctx.widget_state.paint_rect());
                     major += self.direction.major(child_size).expand();
                     major += spacing.next().unwrap_or(0.);
                     major += gap;
@@ -1221,10 +1220,6 @@ impl Widget for Flex {
         // In which case, the Flex widget will either overflow its parent
         // or be clipped (e.g. if its parent is a Portal).
         let my_size: Size = self.direction.pack(major, minor_dim).into();
-
-        let my_bounds = my_size.to_rect();
-        let insets = child_paint_rect - my_bounds;
-        ctx.set_paint_insets(insets);
 
         let baseline_offset = match self.direction {
             Axis::Horizontal => max_below_baseline,

@@ -158,7 +158,7 @@ impl SizedBox {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    /// [`Color`]: crate::peniko::Color
+    /// [`Color`]: vello::peniko::Color
     pub fn background(mut self, brush: impl Into<Brush>) -> Self {
         self.background = Some(brush.into());
         self
@@ -251,7 +251,7 @@ impl SizedBox {
     /// notably, it can be any [`Color`], any gradient, or an [`Image`].
     ///
     /// [`Image`]: vello::peniko::Image
-    /// [`Color`]: crate::peniko::Color
+    /// [`Color`]: vello::peniko::Color
     pub fn set_background(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         this.widget.background = Some(brush.into());
         this.ctx.request_paint_only();
@@ -489,9 +489,9 @@ mod tests {
     use vello::peniko::Gradient;
 
     use super::*;
-    use crate::testing::TestHarness;
+    use crate::palette;
+    use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::widgets::Label;
-    use crate::{assert_failing_render_snapshot, assert_render_snapshot, palette};
 
     // TODO - Add WidgetMut tests
 

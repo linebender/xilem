@@ -219,13 +219,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
 
     #[expect(missing_docs, reason = "TODO")]
     pub fn set_viewport_pos(this: &mut WidgetMut<'_, Self>, position: Point) -> bool {
-        let portal_size = this.ctx.local_layout_rect().size();
-        let content_size = this
-            .ctx
-            .get_mut(&mut this.widget.child)
-            .ctx
-            .local_layout_rect()
-            .size();
+        let portal_size = this.ctx.size();
+        let content_size = this.ctx.get_mut(&mut this.widget.child).ctx.size();
 
         let pos_changed = this
             .widget
@@ -250,7 +245,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
     #[expect(missing_docs, reason = "TODO")]
     // Note - Rect is in child coordinates
     pub fn pan_viewport_to(this: &mut WidgetMut<'_, Self>, target: Rect) -> bool {
-        let viewport = Rect::from_origin_size(this.widget.viewport_pos, this.ctx.widget_state.size);
+        let viewport = Rect::from_origin_size(this.widget.viewport_pos, this.ctx.size());
 
         let new_pos_x = compute_pan_range(
             viewport.min_x()..viewport.max_x(),
@@ -276,11 +271,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         event: &PointerEvent,
     ) {
         let portal_size = ctx.size();
-        let content_size = ctx
-            .get_raw_ref(&mut self.child)
-            .ctx()
-            .local_layout_rect()
-            .size();
+        let content_size = ctx.get_raw_ref(&mut self.child).ctx().size();
 
         match *event {
             PointerEvent::Scroll { delta, .. } => {
@@ -373,11 +364,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         match event {
             Update::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
-                let content_size = ctx
-                    .get_raw_ref(&mut self.child)
-                    .ctx()
-                    .local_layout_rect()
-                    .size();
+                let content_size = ctx.get_raw_ref(&mut self.child).ctx().size();
 
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
                 ctx.request_compose();

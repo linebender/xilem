@@ -20,8 +20,7 @@ use crate::core::{
 use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
-use crate::theme::get_debug_color;
-use crate::util::AnyMap;
+use crate::util::{AnyMap, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -499,6 +498,18 @@ impl EventCtx<'_> {
     }
 }
 
+// --- MARK: ACCESSIBILITY ---
+
+impl AccessCtx<'_> {
+    // TODO - We need access to the TreeUpdate to create sub-nodes for text runs,
+    // but this seems too powerful. We should figure out another API.
+    /// A mutable reference to the global [`TreeUpdate`] object in which all modified/new
+    /// accessibility nodes are stored.
+    pub fn tree_update(&mut self) -> &mut TreeUpdate {
+        self.tree_update
+    }
+}
+
 // --- MARK: UPDATE LAYOUT ---
 impl LayoutCtx<'_> {
     #[track_caller]
@@ -726,6 +737,14 @@ impl LayoutCtx<'_> {
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
     }
+
+    #[doc(hidden)]
+    /// Return the widget's size at the beginning of the layout pass.
+    ///
+    /// **TODO** This method should be removed after the layout refactor.
+    pub fn old_size(&self) -> Size {
+        self.widget_state.size
+    }
 }
 
 impl ComposeCtx<'_> {
@@ -786,9 +805,9 @@ impl_context_method!(
             self.widget_state.size
         }
 
-        // TODO - Remove
-        #[allow(dead_code, reason = "Only used in tests")]
-        pub(crate) fn local_layout_rect(&self) -> Rect {
+        // TODO - Remove. Currently only used in tests.
+        #[doc(hidden)]
+        pub fn local_layout_rect(&self) -> Rect {
             self.widget_state.layout_rect()
         }
 

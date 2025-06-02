@@ -6,6 +6,7 @@ use std::any::TypeId;
 use crate::core::{Property, UpdateCtx};
 use crate::kurbo::Rect;
 use crate::peniko::color::{AlphaColor, Srgb};
+
 use crate::properties::types::Gradient;
 
 // TODO - Replace "Background" with "BackgroundColor" and move the gradient case
@@ -49,7 +50,7 @@ impl Background {
     /// CSS spec.
     ///
     /// (See [`Gradient::get_peniko_gradient_for_rect`])
-    pub fn get_peniko_brush_for_rect(&self, rect: Rect) -> crate::peniko::Brush {
+    pub fn get_peniko_brush_for_rect(&self, rect: Rect) -> vello::peniko::Brush {
         match self {
             Self::Color(color) => (*color).into(),
             Self::Gradient(gradient) => gradient.get_peniko_gradient_for_rect(rect).into(),

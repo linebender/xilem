@@ -5,12 +5,14 @@
 
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
-use crate::core::DefaultProperties;
+use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::kurbo::Insets;
 use crate::peniko::Color;
 use crate::properties::types::Gradient;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::widgets::Button;
+
+use parley::GenericFamily;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -61,36 +63,6 @@ pub const WIDGET_PADDING_VERTICAL: f64 = 10.0;
 pub const WIDGET_PADDING_HORIZONTAL: f64 = 8.0;
 pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
 
-static DEBUG_COLOR: &[Color] = &[
-    Color::from_rgb8(230, 25, 75),
-    Color::from_rgb8(60, 180, 75),
-    Color::from_rgb8(255, 225, 25),
-    Color::from_rgb8(0, 130, 200),
-    Color::from_rgb8(245, 130, 48),
-    Color::from_rgb8(70, 240, 240),
-    Color::from_rgb8(240, 50, 230),
-    Color::from_rgb8(250, 190, 190),
-    Color::from_rgb8(0, 128, 128),
-    Color::from_rgb8(230, 190, 255),
-    Color::from_rgb8(170, 110, 40),
-    Color::from_rgb8(255, 250, 200),
-    Color::from_rgb8(128, 0, 0),
-    Color::from_rgb8(170, 255, 195),
-    Color::from_rgb8(0, 0, 128),
-    Color::from_rgb8(128, 128, 128),
-    Color::from_rgb8(255, 255, 255),
-    Color::from_rgb8(0, 0, 0),
-];
-
-/// A color used for debug painting.
-///
-/// The same color is always returned given the same id, usually the id of a widget.
-/// When painting a widget, [`PaintCtx::debug_color`][crate::core::PaintCtx::debug_color] is typically used instead.
-pub fn get_debug_color(id: u64) -> Color {
-    let color_num = id as usize % DEBUG_COLOR.len();
-    DEBUG_COLOR[color_num]
-}
-
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
 
@@ -111,4 +83,10 @@ pub fn default_property_set() -> DefaultProperties {
     // TODO - Add default Padding to RootWidget?
 
     properties
+}
+
+/// Applies the default text styles for Masonry into `styles`.
+pub fn default_text_styles(styles: &mut StyleSet) {
+    styles.insert(StyleProperty::LineHeight(1.2));
+    styles.insert(GenericFamily::SystemUi.into());
 }

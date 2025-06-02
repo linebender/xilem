@@ -14,13 +14,13 @@ use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::{Brush, Fill};
 
+use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, Action, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles,
-    keyboard::{Key, KeyState, NamedKey},
-    render_text,
+    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::theme::default_text_styles;
 use crate::{palette, theme};
 use cursor_icon::CursorIcon;
 
@@ -130,7 +130,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: &str) -> Self {
         let mut editor = PlainEditor::new(theme::TEXT_SIZE_NORMAL);
-        default_styles(editor.edit_styles());
+        default_text_styles(editor.edit_styles());
         editor.set_text(text);
         Self {
             editor,
@@ -717,9 +717,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                                 .insert_or_replace_selection("\n");
                             edited = true;
                         } else {
-                            ctx.submit_action(crate::core::Action::TextEntered(
-                                self.text().to_string(),
-                            ));
+                            ctx.submit_action(Action::TextEntered(self.text().to_string()));
                         }
                     }
 
@@ -743,9 +741,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     if edited {
-                        ctx.submit_action(crate::core::Action::TextChanged(
-                            self.text().into_iter().collect(),
-                        ));
+                        ctx.submit_action(Action::TextChanged(self.text().into_iter().collect()));
                         ctx.request_layout();
                     } else {
                         ctx.request_render();
@@ -787,7 +783,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.set_handled();
                 if edited {
                     let text = self.text().into_iter().collect();
-                    ctx.submit_action(crate::core::Action::TextChanged(text));
+                    ctx.submit_action(Action::TextChanged(text));
                 }
 
                 let new_generation = self.editor.generation();
@@ -953,7 +949,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
         self.editor
             .try_accessibility(
-                ctx.tree_update,
+                ctx.tree_update(),
                 node,
                 || NodeId::from(WidgetId::next()),
                 0.,
@@ -998,10 +994,8 @@ mod tests {
     use vello::kurbo::Size;
 
     use super::*;
-    use crate::{
-        core::{Action, KeyboardEvent, Modifiers},
-        testing::{TestHarness, TestWidgetExt, widget_ids},
-    };
+    use crate::core::{Action, KeyboardEvent, Modifiers};
+    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     // Tests of alignment happen in Prose.
 
     #[test]
@@ -1152,7 +1146,7 @@ mod tests {
 
             let widget = harness.try_get_widget(text_id).unwrap();
             let area = widget.downcast::<TextArea<true>>().unwrap();
-            let text = area.widget.text().to_string();
+            let text = area.text().to_string();
             let (action, widget_id) = harness.pop_action().unwrap();
             assert_eq!(widget_id, text_id);
 

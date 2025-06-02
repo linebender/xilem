@@ -34,14 +34,12 @@ pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
 pub use widget_state::WidgetOptions;
 
-pub use ui_events::{ScrollDelta, keyboard, pointer};
-
-pub use keyboard::{KeyboardEvent, Modifiers};
 pub use pointer::{
     PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,
 };
+pub use ui_events::keyboard::{KeyboardEvent, Modifiers};
+pub use ui_events::{ScrollDelta, keyboard, pointer};
 
-pub(crate) use text::default_styles;
 pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;

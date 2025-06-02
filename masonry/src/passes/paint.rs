@@ -13,8 +13,7 @@ use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
 use crate::kurbo::Rect;
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::theme::get_debug_color;
-use crate::util::{AnyMap, stroke};
+use crate::util::{AnyMap, get_debug_color, stroke};
 
 // --- MARK: PAINT WIDGET ---
 fn paint_widget(
