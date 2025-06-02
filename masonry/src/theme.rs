@@ -9,7 +9,10 @@ use crate::core::DefaultProperties;
 use crate::kurbo::Insets;
 use crate::peniko::Color;
 use crate::properties::types::Gradient;
-use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::properties::{
+    ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
+    Padding,
+};
 use crate::widgets::Button;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
@@ -107,6 +110,12 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Button, _>(Background::Gradient(
         Gradient::new_linear(0.0).with_stops([BUTTON_LIGHT, BUTTON_DARK]),
     ));
+    properties.insert::<Button, _>(ActiveBackground(Background::Gradient(
+        Gradient::new_linear(0.0).with_stops([BUTTON_DARK, BUTTON_LIGHT]),
+    )));
+    properties.insert::<Button, _>(DisabledBackground(Background::Gradient(
+        Gradient::new_linear(0.0).with_stops([DISABLED_BUTTON_LIGHT, DISABLED_BUTTON_DARK]),
+    )));
 
     // TODO - Add default Padding to RootWidget?
 
