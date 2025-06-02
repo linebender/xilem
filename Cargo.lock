@@ -4931,19 +4931,19 @@ checksum = "0ef33da6b1660b4ddbfb3aef0ade110c8b8a781a3b6382fa5f2b5b040fd55f61"
 name = "xilem"
 version = "0.3.0"
 dependencies = [
- "accesskit",
  "anyhow",
  "image",
+ "masonry",
  "masonry_winit",
  "profiling",
  "reqwest",
- "smallvec",
  "time",
  "tokio",
  "tracing",
  "vello",
  "winit",
  "xilem_core",
+ "xilem_masonry",
 ]
 
 [[package]]
@@ -4952,6 +4952,19 @@ version = "0.3.0"
 dependencies = [
  "kurbo",
  "tracing",
+]
+
+[[package]]
+name = "xilem_masonry"
+version = "0.3.0"
+dependencies = [
+ "accesskit",
+ "masonry",
+ "smallvec",
+ "tokio",
+ "tracing",
+ "vello",
+ "xilem_core",
 ]
 
 [[package]]

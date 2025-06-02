@@ -3,14 +3,14 @@
 
 use std::marker::PhantomData;
 
-use masonry_winit::widgets;
+use masonry::widgets;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
 
 /// A view which puts `child` into a scrollable region.
 ///
-/// This corresponds to the Masonry [`Portal`](masonry_winit::widgets::Portal) widget.
+/// This corresponds to the Masonry [`Portal`](masonry::widgets::Portal) widget.
 pub fn portal<Child, State, Action>(child: Child) -> Portal<Child, State, Action>
 where
     Child: WidgetView<State, Action>,

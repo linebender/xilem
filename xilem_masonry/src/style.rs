@@ -3,9 +3,9 @@
 
 //! Traits used to set custom styles on views.
 
-use masonry_winit::core::Property;
-use masonry_winit::properties::types::Gradient;
-use masonry_winit::properties::{
+use masonry::core::Property;
+use masonry::properties::types::Gradient;
+use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
@@ -23,7 +23,7 @@ pub trait HasProperty<P: Property>: Style {
 /// Trait implemented by most views that lets you set some styling properties on them.
 ///
 /// Which methods you can use will depend on which parameter the element implements [`HasProperty`] with,
-/// which matches which [`Properties`](masonry_winit::core::Properties) the underlying widget handles.
+/// which matches which [`Properties`](masonry::core::Properties) the underlying widget handles.
 pub trait Style: Sized {
     /// The tuple type used by the element to store properties.
     type Props;

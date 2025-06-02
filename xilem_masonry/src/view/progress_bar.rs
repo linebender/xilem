@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry_winit::widgets;
+use masonry::widgets;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
