@@ -167,7 +167,7 @@ https://code.visualstudio.com/docs/getstarted/userinterface#_minimap
 These markers look like this:
 
 ```rust
-// --- MARK: MARKER NAME ---
+// --- MARK: MARKER NAME
 ```
 
 By convention, we write them in all caps with three dashes. Markers don't need to follow strict naming conventions, but their names should be a shorthand for the area of the code they're in. Names should be short enough not to overflow the VS Code minimap.

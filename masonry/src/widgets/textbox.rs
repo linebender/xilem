@@ -88,7 +88,7 @@ impl Textbox {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// --- MARK: WIDGETMUT
 impl Textbox {
     /// Edit the underlying text area.
     ///
@@ -109,7 +109,7 @@ impl Textbox {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// --- MARK: IMPL WIDGET
 impl Widget for Textbox {
     fn on_pointer_event(
         &mut self,

@@ -16,7 +16,7 @@ use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
 use crate::util::AnyMap;
 
-// --- MARK: HELPERS ---
+// --- MARK: HELPERS
 /// Returns the id path starting from the given widget id and ending at the root.
 ///
 /// If `widget_id` is `None`, returns an empty `Vec`.
@@ -107,7 +107,7 @@ fn run_single_update_pass(
     }
 }
 
-// --- MARK: TREE ---
+// --- MARK: TREE
 fn update_widget_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
@@ -250,7 +250,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE DISABLED ---
+// --- MARK: UPDATE DISABLED
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 /// See the [disabled status documentation](../doc/06_masonry_concepts.md#disabled).
 fn update_disabled_for_widget(
@@ -342,7 +342,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 // *Stashed* is for widgets that are no longer "part of the graph". So they can't get keyboard events, don't get painted, etc, but should keep some state.
 // Scrolled-out widgets are *not* stashed.
 
-// --- MARK: UPDATE STASHED ---
+// --- MARK: UPDATE STASHED
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 /// See the [stashed status documentation](../doc/06_masonry_concepts.md#stashed).
 fn update_stashed_for_widget(
@@ -435,7 +435,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: FOCUS CHAIN ---
+// --- MARK: FOCUS CHAIN
 
 // TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
 // - A widget only receives BuildFocusChain if none of its parents are hidden.
@@ -525,7 +525,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE FOCUS ---
+// --- MARK: UPDATE FOCUS
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 /// See the [focus status documentation](../doc/06_masonry_concepts.md#text-focus).
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
@@ -683,7 +683,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: SCROLL ---
+// --- MARK: SCROLL
 // This pass will update scroll positions in cases where a widget has requested to be
 // scrolled into view (usually a textbox getting text events).
 // Each parent that implements scrolling will update its scroll position to ensure the
@@ -714,7 +714,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE POINTER ---
+// --- MARK: UPDATE POINTER
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if !root.global_state.needs_pointer_pass {

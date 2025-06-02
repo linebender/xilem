@@ -81,7 +81,7 @@ pub struct Label {
     hint: bool,
 }
 
-// --- MARK: BUILDERS ---
+// --- MARK: BUILDERS
 impl Label {
     /// Create a new label with the given text.
     ///
@@ -207,7 +207,7 @@ impl Label {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// --- MARK: WIDGETMUT
 impl Label {
     // Note: These docs are lazy, but also have a decreased likelihood of going out of date.
     /// The runtime requivalent of [`with_style`](Self::with_style).
@@ -311,7 +311,7 @@ impl Label {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// --- MARK: IMPL WIDGET
 impl Widget for Label {
     fn on_pointer_event(
         &mut self,
@@ -480,7 +480,7 @@ impl Widget for Label {
     }
 }
 
-// --- MARK: TESTS ---
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

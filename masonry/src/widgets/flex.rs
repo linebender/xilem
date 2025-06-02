@@ -117,7 +117,7 @@ enum Child {
     FlexedSpacer(f64, f64),
 }
 
-// --- MARK: IMPL FLEX ---
+// --- MARK: IMPL FLEX
 impl Flex {
     /// Create a new Flex oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
@@ -1286,7 +1286,7 @@ impl Widget for Flex {
     }
 }
 
-// --- MARK: TESTS ---
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use super::*;

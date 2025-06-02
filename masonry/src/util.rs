@@ -65,7 +65,7 @@ impl From<bool> for Handled {
     }
 }
 
-// --- MARK: PAINT HELPERS ---
+// --- MARK: PAINT HELPERS
 
 #[derive(Debug, Clone, Copy)]
 /// A point with coordinates in the range [0.0, 1.0].
