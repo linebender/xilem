@@ -114,6 +114,9 @@ pub(crate) struct WidgetState {
     /// A flag used to track and debug missing calls to `place_child`.
     pub(crate) is_expecting_place_child_call: bool,
 
+    /// This widget or a descendant needs its flags to be propagated up.
+    pub(crate) needs_update_flags: bool,
+
     /// This widget explicitly requested layout
     pub(crate) request_layout: bool,
     /// This widget or a descendant explicitly requested layout
@@ -214,6 +217,7 @@ impl WidgetState {
             is_new: true,
             has_hovered: false,
             is_hovered: false,
+            needs_update_flags: false,
             request_layout: true,
             needs_layout: true,
             request_compose: true,
@@ -279,6 +283,8 @@ impl WidgetState {
         self.children_changed |= child_state.children_changed;
         self.needs_update_focus_chain |= child_state.needs_update_focus_chain;
         self.needs_update_stashed |= child_state.needs_update_stashed;
+
+        // needs_update_flags doesn't need to propagate up.
     }
 
     /// The paint region for this widget.

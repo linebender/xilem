@@ -31,16 +31,6 @@ pub struct WidgetMut<'a, W: Widget + ?Sized> {
     pub ctx: MutateCtx<'a>,
 }
 
-impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
-    fn drop(&mut self) {
-        // If this `WidgetMut` is a reborrow, a parent non-reborrow `WidgetMut`
-        // still exists which will do the merge-up in `Drop`.
-        if let Some(parent_widget_state) = self.ctx.parent_widget_state.take() {
-            parent_widget_state.merge_up(self.ctx.widget_state);
-        }
-    }
-}
-
 impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {

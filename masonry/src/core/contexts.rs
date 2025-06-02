@@ -49,7 +49,6 @@ macro_rules! impl_context_method {
 /// you will need to signal that change in the pass (eg [`request_render`](MutateCtx::request_render)).
 pub struct MutateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
     pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
@@ -242,7 +241,6 @@ impl MutateCtx<'_> {
             .expect("get_mut: child not found");
         let child_ctx = MutateCtx {
             global_state: self.global_state,
-            parent_widget_state: Some(&mut self.widget_state),
             widget_state: child_state_mut.item,
             widget_state_children: child_state_mut.children,
             widget_children: child_mut.children,
@@ -252,6 +250,7 @@ impl MutateCtx<'_> {
             },
             properties_children: child_properties.children,
         };
+        child_ctx.widget_state.needs_update_flags = true;
         WidgetMut {
             ctx: child_ctx,
             widget: Child::from_dyn_mut(&mut **child_mut.item).unwrap(),
@@ -261,10 +260,6 @@ impl MutateCtx<'_> {
     pub(crate) fn reborrow_mut(&mut self) -> MutateCtx<'_> {
         MutateCtx {
             global_state: self.global_state,
-            // We don't don't reborrow `parent_widget_state`. This avoids running
-            // `merge_up` in `WidgetMut::Drop` multiple times for the same state.
-            // It will still be called when the original borrow is dropped.
-            parent_widget_state: None,
             widget_state: self.widget_state,
             widget_state_children: self.widget_state_children.reborrow_mut(),
             widget_children: self.widget_children.reborrow_mut(),
