@@ -15,8 +15,8 @@ use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 /// # Example
 ///
 /// ```ignore
-/// use xilem::palette;
-/// use xilem::view::label;
+/// use xilem_masonry::palette;
+/// use xilem_masonry::view::label;
 /// use masonry::TextAlignment;
 /// use masonry::parley::fontique;
 ///

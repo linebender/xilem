@@ -20,7 +20,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId};
 /// # Examples
 /// To use button provide it with a button text and a closure.
 /// ```ignore
-/// use xilem::view::button;
+/// use xilem_masonry::view::button;
 ///
 /// struct State {
 ///     int: i32,
@@ -40,7 +40,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId};
 /// Create a `button` with a custom `label`.
 ///
 /// ```ignore
-/// use xilem::view::{button, label};
+/// use xilem_masonry::view::{button, label};
 ///
 /// struct State {
 ///     int: i32,

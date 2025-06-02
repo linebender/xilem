@@ -17,7 +17,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 /// # Examples
 ///
 /// ```rust,no_run
-/// # use xilem::{view::{spinner, flex}, WidgetView, core::one_of::Either};
+/// # use xilem_masonry::{view::{spinner, flex}, WidgetView, core::one_of::Either};
 /// # struct ApiClient;
 /// # struct RequestState { pending: bool }
 /// # impl RequestState {

@@ -11,7 +11,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 ///
 /// # Example
 /// ```ignore
-/// use xilem::view::checkbox;
+/// use xilem_masonry::view::checkbox;
 ///
 /// struct State {
 ///     value: bool,

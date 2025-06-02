@@ -18,9 +18,8 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// # Example
 /// ```rust,no_run
 /// use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
-/// use winit::error::EventLoopError;
-/// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
-/// use xilem::{EventLoop, WidgetView, Xilem};
+/// use xilem_masonry::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
+/// use xilem_masonry::WidgetView;
 ///
 /// // A component to make a bigger than usual button
 /// fn big_button(
@@ -47,12 +46,6 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///     .direction(Axis::Horizontal)
 ///     .cross_axis_alignment(CrossAxisAlignment::Center)
 ///     .main_axis_alignment(MainAxisAlignment::Center)
-/// }
-///
-/// fn main() -> Result<(), EventLoopError> {
-///     let app = Xilem::new(0, app_logic);
-///     app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
-///     Ok(())
 /// }
 /// ```
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
@@ -372,7 +365,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
 /// # Examples
 ///
 /// ```
-/// use xilem::view::{label, FlexSequence, FlexExt as _};
+/// use xilem_masonry::view::{label, FlexSequence, FlexExt as _};
 ///
 /// fn label_sequence<State: 'static>(
 ///     labels: impl Iterator<Item = &'static str>,
@@ -397,8 +390,8 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
-    /// use xilem::{view::{button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
-    /// # use xilem::{WidgetView};
+    /// use xilem_masonry::{view::{button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
+    /// # use xilem_masonry::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex((
@@ -424,8 +417,8 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
-    /// use xilem::{view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild}};
-    /// # use xilem::{WidgetView};
+    /// use xilem_masonry::{view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild}};
+    /// # use xilem_masonry::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex([label("a label").into_any_flex(), AnyFlexChild::Spacer(FlexSpacer::Fixed(1.0))])
@@ -455,8 +448,8 @@ pub struct FlexItem<V, State, Action> {
 ///
 /// # Examples
 /// ```
-/// use xilem::view::{button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
-/// # use xilem::{WidgetView};
+/// use xilem_masonry::view::{button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
+/// # use xilem_masonry::{WidgetView};
 ///
 /// # fn view<State: 'static>() -> impl WidgetView<State> {
 /// flex((
@@ -631,8 +624,8 @@ impl FlexSpacer {
     ///
     /// # Examples
     /// ```
-    /// use xilem::{view::{flex, FlexSpacer}};
-    /// # use xilem::{WidgetView};
+    /// use xilem_masonry::{view::{flex, FlexSpacer}};
+    /// # use xilem_masonry::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex(FlexSpacer::Fixed(2.0).into_any_flex())
@@ -654,8 +647,8 @@ where
     ///
     /// # Examples
     /// ```
-    /// use xilem::view::{flex, flex_item, label};
-    /// # use xilem::{WidgetView};
+    /// use xilem_masonry::view::{flex, flex_item, label};
+    /// # use xilem_masonry::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex(flex_item(label("Industry"), 4.0).into_any_flex())

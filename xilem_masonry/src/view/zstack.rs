@@ -23,8 +23,8 @@ pub use masonry::widgets::{Alignment, ChildAlignment};
 /// This example shows how to add two text labels on top of each other.
 ///
 /// ```
-/// use xilem::WidgetView;
-/// use xilem::view::{zstack, label, button};
+/// use xilem_masonry::WidgetView;
+/// use xilem_masonry::view::{zstack, label, button};
 ///
 /// fn view<State: 'static>() -> impl WidgetView<State> {
 ///     zstack((
