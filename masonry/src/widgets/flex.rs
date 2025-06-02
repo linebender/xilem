@@ -28,6 +28,7 @@ pub struct Flex {
     fill_major_axis: bool,
     children: Vec<Child>,
     old_bc: BoxConstraints,
+    child_removed: bool, // TODO: why can't we use WidgetState.children_changed instead?
     gap: Option<f64>,
 }
 
@@ -128,6 +129,7 @@ impl Flex {
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
             old_bc: BoxConstraints::tight(Size::ZERO),
+            child_removed: false,
             gap: None,
         }
     }
@@ -579,6 +581,7 @@ impl Flex {
         if let Child::Fixed { widget, .. } | Child::Flex { widget, .. } = child {
             this.ctx.remove_child(widget);
         }
+        this.widget.child_removed = true;
         this.ctx.request_layout();
     }
 
@@ -1009,7 +1012,8 @@ impl Widget for Flex {
         // indicates that the box constrains for the following children have changed. Therefore they
         // have to calculate layout again.
         let bc_changed = self.old_bc != *bc;
-        let mut any_changed = bc_changed;
+        let mut any_changed = bc_changed || self.child_removed;
+        self.child_removed = false;
         self.old_bc = *bc;
 
         let gap = self.gap.unwrap_or(axis_default_spacer(self.direction));
@@ -1289,10 +1293,12 @@ impl Widget for Flex {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
+    use vello::peniko::color::palette;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    use crate::widgets::Label;
+    use crate::widgets::{Label, SizedBox};
 
     #[test]
     #[allow(clippy::cognitive_complexity)]
@@ -1659,6 +1665,27 @@ mod tests {
 
         // We don't use assert_eq because we don't want rich assert
         assert!(image_1 == image_2);
+    }
+
+    #[test]
+    fn remove_child_after_expanded_child() {
+        let widget = Flex::column()
+            .with_flex_child(
+                SizedBox::new(Label::new("child 1"))
+                    .expand()
+                    .background(palette::css::PURPLE),
+                1.,
+            )
+            .with_flex_child(Label::new("child 2"), 1.0);
+
+        let window_size = Size::new(200.0, 150.0);
+        let mut harness = TestHarness::create_with_size(widget, window_size);
+
+        harness.edit_root_widget(|mut flex| {
+            let mut flex = flex.downcast::<Flex>();
+            Flex::remove_child(&mut flex, 1);
+        });
+        assert_render_snapshot!(harness, "flex_remove_child_after_expanded_child");
     }
 
     #[test]
