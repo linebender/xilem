@@ -1,7 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Xilem is a UI toolkit.
+//! `xilem_masonry` provides Xilem views for the Masonry backend.
+//!
+//! Xilem is a portable, native UI framework written in Rust.
+//! See [the Xilem documentation](https://docs.rs/xilem/latest/xilem/)
+//! for details.
+//!
+//! [Masonry](masonry) is a foundational library for writing native GUI frameworks.
+//!
+//! Xilem's architecture uses lightweight view objects, diffing them to provide minimal
+//! updates to a retained UI.
+//!
+//! `xilem_masonry` uses Masonry's widget tree as the retained UI.
 #![doc(html_logo_url = "https://avatars.githubusercontent.com/u/46134943?s=48&v=4")]
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
