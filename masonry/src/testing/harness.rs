@@ -12,7 +12,6 @@ use std::sync::Arc;
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
 use vello::util::{RenderContext, block_on_wgpu};
@@ -713,7 +712,10 @@ impl TestHarness {
             return;
         }
 
+        #[cfg(not(target_arch = "wasm32"))]
         fn save_image(image: &DynamicImage, path: &PathBuf) {
+            use oxipng::{Options, optimize_from_memory};
+
             let mut buffer = Cursor::new(Vec::new());
             image.write_to(&mut buffer, ImageFormat::Png).unwrap();
 
@@ -736,9 +738,13 @@ impl TestHarness {
         // Have a warning for that case (i.e. differentiation between not-found and invalid format)
         // and a environment variable to ignore the test in that case.
         let Ok(reference_file) = ImageReader::open(&reference_path) else {
-            // Remove '<test_name>.new.png' file if it exists
-            let _ = std::fs::remove_file(&new_path);
-            save_image(&new_image, &new_path);
+            #[cfg(not(target_arch = "wasm32"))]
+            {
+                // Remove '<test_name>.new.png' file if it exists
+                let _ = std::fs::remove_file(&new_path);
+                save_image(&new_image, &new_path);
+            }
+
             panic!("Snapshot test '{test_name}' failed: No reference file");
         };
 
