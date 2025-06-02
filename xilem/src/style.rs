@@ -6,7 +6,8 @@
 use masonry_winit::core::Property;
 use masonry_winit::properties::types::Gradient;
 use masonry_winit::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding,
+    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
+    DisabledBackground, HoveredBorderColor, Padding,
 };
 use vello::peniko::Color;
 
@@ -57,6 +58,60 @@ pub trait Style: Sized {
         self
     }
 
+    /// Set the element's background when pressed to a color/gradient.
+    fn active_background(mut self, background: Background) -> Self
+    where
+        Self: HasProperty<ActiveBackground>,
+    {
+        *self.property() = Some(ActiveBackground(background));
+        self
+    }
+
+    /// Set the element's background when pressed to a color.
+    fn active_background_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<ActiveBackground>,
+    {
+        *self.property() = Some(ActiveBackground(Background::Color(color)));
+        self
+    }
+
+    /// Set the element's background when pressed to a gradient.
+    fn active_background_gradient(mut self, gradient: Gradient) -> Self
+    where
+        Self: HasProperty<ActiveBackground>,
+    {
+        *self.property() = Some(ActiveBackground(Background::Gradient(gradient)));
+        self
+    }
+
+    /// Set the element's background when disabled to a color/gradient.
+    fn disabled_background(mut self, background: Background) -> Self
+    where
+        Self: HasProperty<DisabledBackground>,
+    {
+        *self.property() = Some(DisabledBackground(background));
+        self
+    }
+
+    /// Set the element's background when disabled to a color.
+    fn disabled_background_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<DisabledBackground>,
+    {
+        *self.property() = Some(DisabledBackground(Background::Color(color)));
+        self
+    }
+
+    /// Set the element's background when disabled to a gradient.
+    fn disabled_background_gradient(mut self, gradient: Gradient) -> Self
+    where
+        Self: HasProperty<DisabledBackground>,
+    {
+        *self.property() = Some(DisabledBackground(Background::Gradient(gradient)));
+        self
+    }
+
     /// Set the element's border color and width.
     fn border(mut self, color: Color, width: f64) -> Self
     where
@@ -74,6 +129,15 @@ pub trait Style: Sized {
         Self: HasProperty<BorderColor>,
     {
         *self.property() = Some(BorderColor { color });
+        self
+    }
+
+    /// Set the element's border color when hovered.
+    fn hovered_border_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<HoveredBorderColor>,
+    {
+        *self.property() = Some(HoveredBorderColor(BorderColor { color }));
         self
     }
 

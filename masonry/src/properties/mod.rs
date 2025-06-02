@@ -14,8 +14,8 @@ mod padding;
 
 pub mod types;
 
-pub use background::Background;
-pub use border_color::BorderColor;
+pub use background::{ActiveBackground, Background, DisabledBackground};
+pub use border_color::{BorderColor, HoveredBorderColor};
 pub use border_width::BorderWidth;
 pub use box_shadow::BoxShadow;
 pub use corner_radius::CornerRadius;

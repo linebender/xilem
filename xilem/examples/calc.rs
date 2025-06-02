@@ -279,7 +279,8 @@ fn expanded_button(
         button(text, callback)
             .background_color(BLUE)
             .corner_radius(10.)
-            .border_color(Color::TRANSPARENT),
+            .border_color(Color::TRANSPARENT)
+            .hovered_border_color(Color::WHITE),
     )
     .expand()
 }

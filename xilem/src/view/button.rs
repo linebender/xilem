@@ -3,7 +3,8 @@
 
 pub use masonry_winit::core::PointerButton;
 use masonry_winit::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, Padding,
+    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
+    DisabledBackground, HoveredBorderColor, Padding,
 };
 use masonry_winit::widgets;
 use xilem_core::ViewPathTracker;
@@ -130,6 +131,9 @@ crate::declare_property_tuple!(
     BoxShadow, 3;
     CornerRadius, 4;
     Padding, 5;
+    ActiveBackground, 6;
+    DisabledBackground, 7;
+    HoveredBorderColor, 8;
 );
 
 impl<F> ViewMarker for Button<F> {}
