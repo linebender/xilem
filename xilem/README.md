@@ -133,7 +133,7 @@ You should also expect to use the adapters from Xilem Core, including:
 * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 
-[accesskit_docs]: accesskit
+[accesskit_docs]: https://docs.rs/accesskit/latest/accesskit/
 [AccessKit]: https://accesskit.dev/
 [Druid]: https://crates.io/crates/druid
 [Fontique]: https://crates.io/crates/fontique
