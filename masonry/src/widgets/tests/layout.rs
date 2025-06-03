@@ -6,6 +6,7 @@
 use vello::kurbo::{Insets, Size};
 
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt, widget_ids};
+use crate::theme::default_property_set;
 use crate::widgets::{Flex, SizedBox};
 
 #[test]
@@ -23,7 +24,7 @@ fn layout_simple() {
         )
         .with_flex_spacer(1.0);
 
-    let harness = TestHarness::create(widget);
+    let harness = TestHarness::create(default_property_set(), widget);
 
     let first_box_rect = harness.get_widget(id_1).ctx().local_layout_rect();
     let first_box_paint_rect = harness.get_widget(id_1).ctx().paint_rect();
@@ -53,7 +54,7 @@ fn layout_insets() {
 
     let parent_widget = SizedBox::new_with_id(child_widget, child_id).with_id(parent_id);
 
-    let harness = TestHarness::create(parent_widget);
+    let harness = TestHarness::create(default_property_set(), parent_widget);
 
     let child_paint_rect = harness.get_widget(child_id).ctx().paint_rect();
     let parent_paint_rect = harness.get_widget(parent_id).ctx().paint_rect();

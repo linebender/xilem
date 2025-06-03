@@ -8,6 +8,7 @@ use crate::kurbo::Vec2;
 use crate::testing::{
     PRIMARY_MOUSE, Record, Recording, TestHarness, TestWidgetExt as _, widget_ids,
 };
+use crate::theme::default_property_set;
 use crate::widgets::{Button, Flex, SizedBox};
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
@@ -62,7 +63,7 @@ fn propagate_hovered() {
         .record(&root_rec)
         .with_id(root);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
 
     // we don't care about setup events, so discard them now.
     root_rec.clear();
@@ -156,7 +157,7 @@ fn update_hovered_on_mouse_leave() {
 
     let widget = Button::new("hello").record(&button_rec).with_id(button_id);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
 
     harness.mouse_move_to(button_id);
     assert!(is_hovered(&harness, button_id));
@@ -233,7 +234,7 @@ fn get_pointer_events_while_active() {
         .with_child_id(Button::new("hello").record(&button_rec), button)
         .with_id(root);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
 
     // First we check that the default state is clear: nothing active, no event recorded
     assert_eq!(harness.pointer_capture_target_id(), None);
@@ -307,7 +308,7 @@ fn automatically_lose_pointer_on_pointer_lost() {
         .with_child_id(Button::new("hello").record(&button_rec), button)
         .with_id(root);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
 
     // The default state is that nothing has captured the pointer.
     assert_eq!(harness.pointer_capture_target_id(), None);

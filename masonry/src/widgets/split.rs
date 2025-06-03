@@ -616,6 +616,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
+    use crate::theme::default_property_set;
     use crate::widgets::Label;
 
     #[test]
@@ -627,7 +628,8 @@ mod tests {
         ).split_axis(Axis::Horizontal).draggable(false);
 
         let window_size = Size::new(150.0, 150.0);
-        let mut harness = TestHarness::create_with_size(widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "split_columns");
@@ -642,7 +644,8 @@ mod tests {
         ).split_axis(Axis::Vertical).draggable(false);
 
         let window_size = Size::new(150.0, 150.0);
-        let mut harness = TestHarness::create_with_size(widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "split_rows");
@@ -661,7 +664,11 @@ mod tests {
                 .draggable(true)
                 .solid_bar(true);
 
-            let mut harness = TestHarness::create_with_size(widget, Size::new(100.0, 100.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                widget,
+                Size::new(100.0, 100.0),
+            );
 
             harness.render()
         };
@@ -669,7 +676,11 @@ mod tests {
         let image_2 = {
             let widget = Split::new(Label::new("Hello"), Label::new("World"));
 
-            let mut harness = TestHarness::create_with_size(widget, Size::new(100.0, 100.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                widget,
+                Size::new(100.0, 100.0),
+            );
 
             harness.edit_root_widget(|mut splitter| {
                 let mut splitter = splitter.downcast::<Split<Label, Label>>();

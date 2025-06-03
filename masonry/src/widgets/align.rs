@@ -201,6 +201,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
+    use crate::theme::default_property_set;
     use crate::widgets::Label;
 
     // TODO - Add more unit tests
@@ -209,7 +210,7 @@ mod tests {
     fn centered() {
         let widget = Align::centered(Label::new("hello"));
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "align_centered");
@@ -219,7 +220,7 @@ mod tests {
     fn right() {
         let widget = Align::right(Label::new("hello"));
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "align_right");
@@ -229,7 +230,7 @@ mod tests {
     fn left() {
         let widget = Align::left(Label::new("hello"));
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "align_left");

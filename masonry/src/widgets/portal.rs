@@ -516,6 +516,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::{TestHarness, widget_ids};
+    use crate::theme::default_property_set;
     use crate::widgets::{Button, Flex, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {
@@ -560,7 +561,8 @@ mod tests {
                 .with_spacer(10.0),
         );
 
-        let mut harness = TestHarness::create_with_size(widget, Size::new(400., 400.));
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, Size::new(400., 400.));
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "portal_button_list_no_scroll");

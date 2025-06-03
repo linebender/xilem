@@ -56,12 +56,13 @@ fn main() {
 mod tests {
     use masonry_winit::assert_render_snapshot;
     use masonry_winit::testing::TestHarness;
+    use masonry_winit::theme::default_property_set;
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(make_image());
+        let mut harness = TestHarness::create(default_property_set(), make_image());
         assert_render_snapshot!(harness, "example_simple_image_initial");
     }
 }

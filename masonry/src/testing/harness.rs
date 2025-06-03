@@ -26,8 +26,9 @@ use crate::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use crate::core::{
-    Action, Ime, PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType,
-    PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
+    Action, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
+    PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetRef, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::{Point, Size, Vec2};
@@ -88,7 +89,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// use masonry::testing::TestHarness;
 /// use masonry::testing::TestWidgetExt;
 /// use masonry::theme::PRIMARY_LIGHT;
-///
+/// use masonry::theme::default_property_set;
 /// # /*
 /// #[test]
 /// # */
@@ -96,7 +97,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///     let [button_id] = widget_ids();
 ///     let widget = Button::new("Hello").with_id(button_id);
 ///
-///     let mut harness = TestHarness::create(widget);
+///     let mut harness = TestHarness::create(default_property_set(), widget);
 ///
 ///     # if false {
 ///     assert_debug_snapshot!(harness.root_widget());
@@ -203,13 +204,18 @@ impl TestHarness {
     ///
     /// Window size will be [`TestHarnessParams::DEFAULT_SIZE`].
     /// Background color will be [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
-    pub fn create(root_widget: impl Widget) -> Self {
-        Self::create_with(root_widget, TestHarnessParams::default())
+    pub fn create(default_props: DefaultProperties, root_widget: impl Widget) -> Self {
+        Self::create_with(default_props, root_widget, TestHarnessParams::default())
     }
 
     /// Builds harness with given root widget and window size.
-    pub fn create_with_size(root_widget: impl Widget, window_size: Size) -> Self {
+    pub fn create_with_size(
+        default_props: DefaultProperties,
+        root_widget: impl Widget,
+        window_size: Size,
+    ) -> Self {
         Self::create_with(
+            default_props,
             root_widget,
             TestHarnessParams {
                 window_size,
@@ -219,7 +225,11 @@ impl TestHarness {
     }
 
     /// Builds harness with given root widget and additional parameters.
-    pub fn create_with(root_widget: impl Widget, params: TestHarnessParams) -> Self {
+    pub fn create_with(
+        default_props: DefaultProperties,
+        root_widget: impl Widget,
+        params: TestHarnessParams,
+    ) -> Self {
         let mouse_state = PointerState::default();
         let window_size = PhysicalSize::new(
             params.window_size.width as _,
@@ -244,7 +254,7 @@ impl TestHarness {
                 root_widget,
                 RenderRootOptions {
                     // TODO - Pass the default property set as an input instead.
-                    default_properties: crate::theme::default_property_set(),
+                    default_properties: default_props,
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
                     scale_factor: params.scale_factor,

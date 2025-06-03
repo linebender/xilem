@@ -185,6 +185,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
+    use crate::theme::default_property_set;
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox, TextArea};
 
     #[test]
@@ -200,7 +201,11 @@ mod tests {
 
         let root_widget = Flex::row().with_child(SizedBox::new(prose).width(60.));
 
-        let mut harness = TestHarness::create_with_size(root_widget, Size::new(200.0, 40.0));
+        let mut harness = TestHarness::create_with_size(
+            default_property_set(),
+            root_widget,
+            Size::new(200.0, 40.0),
+        );
 
         assert_render_snapshot!(harness, "prose_clipping");
     }
@@ -233,7 +238,8 @@ mod tests {
             .with_flex_child(prose6, CrossAxisAlignment::Center)
             .gap(0.0);
 
-        let mut harness = TestHarness::create_with_size(flex, Size::new(200.0, 120.0));
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 120.0));
 
         assert_render_snapshot!(harness, "prose_alignment_flex");
     }

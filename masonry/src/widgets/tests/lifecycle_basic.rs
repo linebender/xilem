@@ -8,6 +8,7 @@ use insta::assert_debug_snapshot;
 use crate::testing::{
     Record, Recording, TestHarness, TestWidgetExt as _, WrapperWidget, widget_ids,
 };
+use crate::theme::default_property_set;
 use crate::widgets::{Flex, Label, SizedBox};
 use crate::*;
 
@@ -16,7 +17,7 @@ fn app_creation() {
     let record = Recording::default();
     let widget = SizedBox::empty().record(&record);
 
-    let _harness = TestHarness::create(widget);
+    let _harness = TestHarness::create(default_property_set(), widget);
 
     let record = record.drain();
     assert_debug_snapshot!(record);
