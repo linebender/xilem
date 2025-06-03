@@ -162,6 +162,18 @@ pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
 
 // ---
 
+#[cfg(not(target_arch = "wasm32"))]
+pub use std::time::Instant;
+#[cfg(target_arch = "wasm32")]
+pub use web_time::Instant;
+
+#[cfg(not(target_arch = "wasm32"))]
+pub use std::time::Duration;
+#[cfg(target_arch = "wasm32")]
+pub use web_time::Duration;
+
+// ---
+
 static DEBUG_COLOR: &[Color] = &[
     Color::from_rgb8(230, 25, 75),
     Color::from_rgb8(60, 180, 75),

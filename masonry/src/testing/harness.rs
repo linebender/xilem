@@ -31,9 +31,9 @@ use crate::core::{
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::kurbo::{Point, Size, Vec2};
-use crate::passes::anim::run_update_anim_pass;
 use crate::peniko::{Blob, Color};
 use crate::testing::screenshots::get_image_diff;
+use crate::util::Duration;
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
@@ -569,8 +569,8 @@ impl TestHarness {
 
     /// Run an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
-        run_update_anim_pass(&mut self.render_root, ms * 1_000_000);
-        self.render_root.run_rewrite_passes();
+        self.render_root
+            .handle_window_event(WindowEvent::AnimFrame(Duration::from_millis(ms)));
         self.process_signals();
     }
 
