@@ -36,7 +36,7 @@ pub struct ScrollBar {
     grab_anchor: Option<f64>,
 }
 
-// --- MARK: BUILDERS ---
+// --- MARK: BUILDERS
 impl ScrollBar {
     #[expect(missing_docs, reason = "TODO")]
     pub fn new(axis: Axis, portal_size: f64, content_size: f64) -> Self {
@@ -102,7 +102,7 @@ impl ScrollBar {
     }
 }
 
-// --- MARK: WIDGETMUT ---
+// --- MARK: WIDGETMUT
 impl ScrollBar {
     // TODO - Remove?
     #[expect(missing_docs, reason = "TODO")]
@@ -121,7 +121,7 @@ impl ScrollBar {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// --- MARK: IMPL WIDGET
 impl Widget for ScrollBar {
     fn on_pointer_event(
         &mut self,
@@ -254,7 +254,7 @@ impl Widget for ScrollBar {
 
 impl AllowRawMut for ScrollBar {}
 
-// --- MARK: TESTS ---
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;

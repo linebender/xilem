@@ -9,7 +9,7 @@ use crate::core::{DefaultProperties, PropertiesMut, UpdateCtx, Widget, WidgetSta
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
-// --- MARK: UPDATE ANIM ---
+// --- MARK: UPDATE ANIM
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,

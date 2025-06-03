@@ -77,7 +77,7 @@ fn main() {
     .unwrap();
 }
 
-// --- MARK: TESTS ---
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use masonry_winit::assert_render_snapshot;

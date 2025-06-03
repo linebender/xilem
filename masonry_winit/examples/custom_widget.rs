@@ -202,7 +202,7 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
     result
 }
 
-// --- MARK: TESTS ---
+// --- MARK: TESTS
 #[cfg(test)]
 mod tests {
     use masonry_winit::assert_render_snapshot;
