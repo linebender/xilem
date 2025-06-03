@@ -119,8 +119,8 @@ impl Recording {
 
 impl<W: Widget> Recorder<W> {
     /// Wrap child widget in a Recorder that records all method calls.
-    pub fn new(child: W, recording: &Recording) -> Recorder<W> {
-        Recorder {
+    pub fn new(child: W, recording: &Recording) -> Self {
+        Self {
             child,
             recording: recording.clone(),
         }
