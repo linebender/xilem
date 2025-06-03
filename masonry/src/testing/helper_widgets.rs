@@ -458,7 +458,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_under_pointer(&WidgetRef { widget: self, ctx }, pos)
+        find_widget_under_pointer(self, ctx, pos)
     }
 
     fn type_name(&self) -> &'static str {

@@ -358,13 +358,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: QueryCtx<'c>,
         pos: Point,
     ) -> Option<WidgetRef<'c, dyn Widget>> {
-        find_widget_under_pointer(
-            &WidgetRef {
-                widget: self.as_dyn(),
-                ctx,
-            },
-            pos,
-        )
+        find_widget_under_pointer(self.as_dyn(), ctx, pos)
     }
 
     /// Get the (verbose) type name of the widget for debugging purposes.
@@ -390,11 +384,10 @@ pub trait Widget: AsDynWidget + Any {
 
 /// See [`Widget::find_widget_under_pointer`] for more details.
 pub fn find_widget_under_pointer<'c>(
-    widget: &WidgetRef<'c, dyn Widget>,
+    widget: &'c dyn Widget,
+    ctx: QueryCtx<'c>,
     pos: Point,
 ) -> Option<WidgetRef<'c, dyn Widget>> {
-    let ctx = widget.ctx();
-
     if !ctx.bounding_rect().contains(pos) {
         return None;
     }
@@ -424,7 +417,7 @@ pub fn find_widget_under_pointer<'c>(
 
     // If no child is under pointer, test the current widget.
     if ctx.accepts_pointer_interaction() && ctx.size().to_rect().contains(local_pos) {
-        Some(*widget)
+        Some(WidgetRef { widget, ctx })
     } else {
         None
     }
