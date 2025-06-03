@@ -996,6 +996,7 @@ mod tests {
     use super::*;
     use crate::core::{Action, KeyboardEvent, Modifiers};
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.
 
     #[test]
@@ -1003,7 +1004,8 @@ mod tests {
         let base_with_wrapping = {
             let area = TextArea::new_immutable("String which will wrap").with_word_wrap(true);
 
-            let mut harness = TestHarness::create_with_size(area, Size::new(60.0, 40.0));
+            let mut harness =
+                TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
 
             harness.render()
         };
@@ -1011,7 +1013,8 @@ mod tests {
         {
             let area = TextArea::new_immutable("String which will wrap").with_word_wrap(false);
 
-            let mut harness = TestHarness::create_with_size(area, Size::new(60.0, 40.0));
+            let mut harness =
+                TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
 
             let without_wrapping = harness.render();
 
@@ -1046,7 +1049,8 @@ mod tests {
         let base_target = {
             let area = TextArea::new_immutable("Test string").with_brush(palette::css::AZURE);
 
-            let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
+            let mut harness =
+                TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
 
             harness.render()
         };
@@ -1054,7 +1058,8 @@ mod tests {
         {
             let area = TextArea::new_immutable("Different string").with_brush(palette::css::AZURE);
 
-            let mut harness = TestHarness::create_with_size(area, Size::new(200.0, 20.0));
+            let mut harness =
+                TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
 
             harness.edit_root_widget(|mut root| {
                 let mut area = root.downcast::<TextArea<false>>();
@@ -1135,7 +1140,7 @@ mod tests {
                 .with_insert_newline(scenario.insert_newline)
                 .with_id(text_id);
 
-            let mut harness = TestHarness::create(area);
+            let mut harness = TestHarness::create(default_property_set(), area);
 
             harness.focus_on(Some(text_id));
             harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {

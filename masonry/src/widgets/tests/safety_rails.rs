@@ -6,6 +6,7 @@ use smallvec::smallvec;
 use crate::core::{PointerButton, Update, Widget, WidgetId, WidgetPod};
 use crate::kurbo::{Point, Size};
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
+use crate::theme::default_property_set;
 use crate::widgets::Flex;
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
@@ -76,7 +77,7 @@ fn check_forget_register_child() {
         // We forget to call ctx.register_child();
     });
 
-    let _harness = TestHarness::create(widget);
+    let _harness = TestHarness::create(default_property_set(), widget);
 }
 
 #[should_panic(expected = "in the list returned by children_ids")]
@@ -91,7 +92,7 @@ fn check_register_invalid_child() {
         ctx.register_child(&mut WidgetPod::new(Flex::row()));
     });
 
-    let _harness = TestHarness::create(widget);
+    let _harness = TestHarness::create(default_property_set(), widget);
 }
 
 #[should_panic(expected = "event does not allow pointer capture")]
@@ -105,7 +106,7 @@ fn check_pointer_capture_outside_pointer_down() {
         ctx.capture_pointer();
     });
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move((10.0, 10.0));
     harness.mouse_button_release(PointerButton::Primary);
 }
@@ -125,7 +126,7 @@ fn check_pointer_capture_text_event() {
         })
         .with_id(id);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
     harness.focus_on(Some(id));
     harness.keyboard_type_chars("a");
 }
@@ -142,7 +143,7 @@ fn check_forget_to_recurse_layout() {
         Size::ZERO
     });
 
-    let _harness = TestHarness::create(widget);
+    let _harness = TestHarness::create(default_property_set(), widget);
 }
 
 #[should_panic(expected = "LayoutCtx::place_child() was not called")]
@@ -157,7 +158,7 @@ fn check_forget_to_call_place_child() {
         ctx.run_layout(child, bc)
     });
 
-    let _harness = TestHarness::create(widget);
+    let _harness = TestHarness::create(default_property_set(), widget);
 }
 
 // ---
@@ -339,7 +340,7 @@ fn check_layout_stashed() {
             size
         });
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move(Point::ZERO);
 }
 

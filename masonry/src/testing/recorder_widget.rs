@@ -40,7 +40,7 @@ use crate::kurbo::{Point, Size};
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);
 ///
-/// TestHarness::create(widget);
+/// TestHarness::create(Default::default(), widget);
 /// assert_matches!(recording.next().unwrap(), Record::RC);
 /// assert_matches!(recording.next().unwrap(), Record::U(Update::WidgetAdded));
 /// ```

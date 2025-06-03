@@ -3,6 +3,7 @@
 
 use crate::core::{Ime, TextEvent, WidgetPod};
 use crate::testing::{TestHarness, widget_ids};
+use crate::theme::default_property_set;
 use crate::widgets::{Flex, TextArea, Textbox};
 
 /// Tests that IME's interactions with focus are sensible.
@@ -15,7 +16,7 @@ fn ime_on_remove() {
         text_area,
     )));
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
     harness.focus_on(Some(text_area));
     harness.process_text_event(TextEvent::Ime(Ime::Commit("New Text".to_string())));
     let text_area = harness

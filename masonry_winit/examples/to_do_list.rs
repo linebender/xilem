@@ -82,12 +82,13 @@ fn main() {
 mod tests {
     use masonry_winit::assert_render_snapshot;
     use masonry_winit::testing::TestHarness;
+    use masonry_winit::theme::default_property_set;
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(make_widget_tree());
+        let mut harness = TestHarness::create(default_property_set(), make_widget_tree());
         assert_render_snapshot!(harness, "example_to_do_list_initial");
 
         // TODO - Test clicking buttons

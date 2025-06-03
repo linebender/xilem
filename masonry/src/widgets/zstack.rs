@@ -383,6 +383,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
+    use crate::theme::default_property_set;
     use crate::widgets::{Label, SizedBox};
 
     #[test]
@@ -403,7 +404,7 @@ mod tests {
                 ChildAlignment::ParentAligned,
             );
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignment_default");
 
         let vertical_cases = [
@@ -444,7 +445,7 @@ mod tests {
             .with_child(Label::new("BottomLeft"), Alignment::BottomLeft)
             .with_child(Label::new("BottomRight"), Alignment::BottomRight);
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignments_self_aligned");
     }
 }

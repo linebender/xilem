@@ -11,6 +11,7 @@ use vello::peniko::color::palette;
 use crate::assert_render_snapshot;
 use crate::core::{PointerButton, Widget, WidgetOptions, WidgetPod};
 use crate::testing::TestHarness;
+use crate::theme::default_property_set;
 use crate::widgets::{Alignment, Button, ChildAlignment, Label, SizedBox, ZStack};
 
 fn blue_box(inner: impl Widget) -> Box<SizedBox> {
@@ -40,7 +41,7 @@ fn transforms_translation_rotation() {
     .erased();
     let widget = ZStack::new().with_child_pod(transformed_widget, ChildAlignment::ParentAligned);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
     assert_render_snapshot!(harness, "transforms_translation_rotation");
 }
 
@@ -58,7 +59,7 @@ fn transforms_pointer_events() {
     .erased();
     let widget = ZStack::new().with_child_pod(transformed_widget, ChildAlignment::ParentAligned);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move((335.0, 350.0)); // Should hit the last "d" of the button text
     harness.mouse_button_press(PointerButton::Primary);
     assert_render_snapshot!(harness, "transforms_pointer_events");

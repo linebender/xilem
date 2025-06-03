@@ -273,7 +273,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::core::{PointerButton, StyleProperty};
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
-    use crate::theme::PRIMARY_LIGHT;
+    use crate::theme::{PRIMARY_LIGHT, default_property_set};
     use crate::widgets::{Grid, GridParams, SizedBox};
 
     #[test]
@@ -282,7 +282,8 @@ mod tests {
         let widget = Button::new("Hello").with_id(button_id);
 
         let window_size = Size::new(100.0, 40.0);
-        let mut harness = TestHarness::create_with_size(widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "button_hello");
@@ -307,7 +308,11 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0));
             let button = Button::from_label(label);
 
-            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                button,
+                Size::new(50.0, 50.0),
+            );
 
             harness.render()
         };
@@ -315,7 +320,11 @@ mod tests {
         let image_2 = {
             let button = Button::new("Hello world");
 
-            let mut harness = TestHarness::create_with_size(button, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                button,
+                Size::new(50.0, 50.0),
+            );
 
             harness.edit_root_widget(|mut button| {
                 let mut button = button.downcast::<Button>();
@@ -339,7 +348,8 @@ mod tests {
         let button = Button::new("Some random text");
 
         let window_size = Size::new(200.0, 80.0);
-        let mut harness = TestHarness::create_with_size(button, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), button, window_size);
 
         harness.edit_root_widget(|mut button| {
             let mut button = button.downcast::<Button>();
@@ -369,7 +379,8 @@ mod tests {
         let root_widget = SizedBox::new(grid).padding(20.);
 
         let window_size = Size::new(300.0, 300.0);
-        let mut harness = TestHarness::create_with_size(root_widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), root_widget, window_size);
 
         harness.edit_root_widget(|mut root| {
             let mut root = root.downcast::<SizedBox>();

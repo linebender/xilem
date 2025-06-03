@@ -212,6 +212,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
     use crate::testing::TestHarness;
+    use crate::theme::default_property_set;
     use crate::widgets::TextArea;
 
     #[test]
@@ -219,7 +220,8 @@ mod tests {
         let textbox = Textbox::from_text_area(
             TextArea::new_editable("Textbox contents").with_style(StyleProperty::FontSize(14.0)),
         );
-        let mut harness = TestHarness::create_with_size(textbox, Size::new(150.0, 40.0));
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), textbox, Size::new(150.0, 40.0));
 
         assert_render_snapshot!(harness, "textbox_outline");
 

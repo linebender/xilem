@@ -131,12 +131,13 @@ fn main() {
 mod tests {
     use masonry_winit::assert_render_snapshot;
     use masonry_winit::testing::TestHarness;
+    use masonry_winit::theme::default_property_set;
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(make_grid(1.0));
+        let mut harness = TestHarness::create(default_property_set(), make_grid(1.0));
         assert_render_snapshot!(harness, "example_grid_masonry_initial");
 
         // TODO - Test clicking buttons

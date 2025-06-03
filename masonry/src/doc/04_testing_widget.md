@@ -32,6 +32,7 @@ First, let's write a test module with a first unit test:
 mod tests {
     use insta::assert_debug_snapshot;
     use masonry_winit::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use masonry_winit::theme::default_property_set;
 
     use super::*;
 
@@ -40,7 +41,7 @@ mod tests {
         let [rect_id] = widget_ids();
         let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
 
-        let harness = TestHarness::create(widget);
+        let harness = TestHarness::create(default_property_set(), widget);
 
         assert_debug_snapshot!(harness.root_widget());
 

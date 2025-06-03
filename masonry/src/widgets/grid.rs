@@ -385,6 +385,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
+    use crate::theme::default_property_set;
     use crate::widgets::button;
 
     #[test]
@@ -393,7 +394,8 @@ mod tests {
         let widget = Grid::with_dimensions(1, 1)
             .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness = TestHarness::create_with_size(widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_1x1");
 
@@ -463,7 +465,8 @@ mod tests {
         let widget = Grid::with_dimensions(2, 2)
             .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness = TestHarness::create_with_size(widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 
@@ -505,7 +508,8 @@ mod tests {
         let widget = Grid::with_dimensions(2, 2)
             .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness = TestHarness::create_with_size(widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 

@@ -191,13 +191,15 @@ mod tests {
     use super::*;
     use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::theme::default_property_set;
 
     #[test]
     fn simple_spinner() {
         let spinner = Spinner::new();
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness = TestHarness::create_with_size(spinner, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), spinner, window_size);
         assert_render_snapshot!(harness, "spinner_init");
 
         harness.animate_ms(700);
@@ -212,14 +214,22 @@ mod tests {
         let image_1 = {
             let spinner = Spinner::new().with_color(palette::css::PURPLE);
 
-            let mut harness = TestHarness::create_with_size(spinner, Size::new(30.0, 30.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                spinner,
+                Size::new(30.0, 30.0),
+            );
             harness.render()
         };
 
         let image_2 = {
             let spinner = Spinner::new();
 
-            let mut harness = TestHarness::create_with_size(spinner, Size::new(30.0, 30.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                spinner,
+                Size::new(30.0, 30.0),
+            );
 
             harness.edit_root_widget(|mut spinner| {
                 let mut spinner = spinner.downcast::<Spinner>();

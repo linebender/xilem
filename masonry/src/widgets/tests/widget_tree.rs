@@ -4,6 +4,7 @@
 use insta::assert_debug_snapshot;
 
 use crate::testing::{TestHarness, widget_ids};
+use crate::theme::default_property_set;
 use crate::widgets::{Flex, Label};
 
 #[test]
@@ -16,7 +17,7 @@ fn access_grandchild_widget() {
         )
         .with_flex_spacer(1.0);
 
-    let mut harness = TestHarness::create(widget);
+    let mut harness = TestHarness::create(default_property_set(), widget);
 
     dbg!(harness.root_widget());
     harness.edit_widget(id_label, |mut label| {

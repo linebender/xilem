@@ -259,7 +259,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
-    use crate::theme::PRIMARY_LIGHT;
+    use crate::theme::{PRIMARY_LIGHT, default_property_set};
 
     #[test]
     fn simple_checkbox() {
@@ -267,7 +267,8 @@ mod tests {
         let widget = Checkbox::new(false, "Hello").with_id(checkbox_id);
 
         let window_size = Size::new(100.0, 40.0);
-        let mut harness = TestHarness::create_with_size(widget, window_size);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "checkbox_hello_unchecked");
@@ -300,7 +301,11 @@ mod tests {
                     .with_style(StyleProperty::FontSize(20.0)),
             );
 
-            let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                checkbox,
+                Size::new(50.0, 50.0),
+            );
 
             harness.render()
         };
@@ -308,7 +313,11 @@ mod tests {
         let image_2 = {
             let checkbox = Checkbox::new(false, "Hello world");
 
-            let mut harness = TestHarness::create_with_size(checkbox, Size::new(50.0, 50.0));
+            let mut harness = TestHarness::create_with_size(
+                default_property_set(),
+                checkbox,
+                Size::new(50.0, 50.0),
+            );
 
             harness.edit_root_widget(|mut checkbox| {
                 let mut checkbox = checkbox.downcast::<Checkbox>();

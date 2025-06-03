@@ -207,6 +207,7 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
 mod tests {
     use masonry_winit::assert_render_snapshot;
     use masonry_winit::testing::TestHarness;
+    use masonry_winit::theme::default_property_set;
 
     use super::*;
 
@@ -214,7 +215,7 @@ mod tests {
     fn screenshot_test() {
         let my_string = "Masonry + Vello".to_string();
 
-        let mut harness = TestHarness::create(CustomWidget(my_string));
+        let mut harness = TestHarness::create(default_property_set(), CustomWidget(my_string));
         assert_render_snapshot!(harness, "example_custom_widget_initial");
     }
 }
