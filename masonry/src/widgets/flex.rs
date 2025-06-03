@@ -12,7 +12,8 @@ use vello::kurbo::{Affine, Line, Stroke, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Point, Rect, Size};
 
@@ -984,7 +985,7 @@ impl Widget for Flex {
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);
         }

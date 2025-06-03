@@ -489,9 +489,9 @@ mod tests {
     use vello::peniko::Gradient;
 
     use super::*;
-    use crate::testing::TestHarness;
+    use crate::palette;
+    use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::widgets::Label;
-    use crate::{assert_failing_render_snapshot, assert_render_snapshot, palette};
 
     // TODO - Add WidgetMut tests
 

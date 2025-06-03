@@ -9,7 +9,8 @@ use vello::kurbo::{Affine, Line, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::kurbo::{Point, Size};
 
@@ -306,7 +307,7 @@ impl Widget for Grid {
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         for child in self.children.iter_mut() {
             ctx.register_child(&mut child.widget);
         }
