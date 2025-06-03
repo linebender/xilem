@@ -28,7 +28,7 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
         Recorder::new(self, recording)
     }
 
-    /// Wrap this widget in a [`ReplaceChild`] with the given id.
+    /// Wrap this widget in a [`WrapperWidget`] with the given id.
     fn with_id(self, id: WidgetId) -> WrapperWidget {
         let child = WidgetPod::new_with_id(self, id).erased();
         WrapperWidget::new_pod(child)
