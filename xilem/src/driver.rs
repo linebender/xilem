@@ -87,7 +87,7 @@ where
             // Handle an async path
             self.current_view
                 .message(&mut self.view_state, &path, message, &mut self.state)
-        } else if let Some(id_path) = self.ctx.widget_map.get(&widget_id) {
+        } else if let Some(id_path) = self.ctx.get_id_path(widget_id) {
             self.current_view.message(
                 &mut self.view_state,
                 id_path.as_slice(),
@@ -109,13 +109,13 @@ where
             //     avoiding infinite loops.
             MessageResult::Action(()) => {
                 let next_view = (self.logic)(&mut self.state);
-                self.ctx.state_changed = true;
+                self.ctx.set_state_changed(true);
                 stashed_view = std::mem::replace(&mut self.current_view, next_view);
 
                 Some(&stashed_view)
             }
             MessageResult::RequestRebuild => {
-                self.ctx.state_changed = false;
+                self.ctx.set_state_changed(false);
                 Some(&self.current_view)
             }
             MessageResult::Nop => None,

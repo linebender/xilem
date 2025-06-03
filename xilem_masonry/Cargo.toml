@@ -1,0 +1,32 @@
+[package]
+name = "xilem_masonry"
+version.workspace = true
+description = "The Xilem views for the Masonry backend."
+keywords = ["gui", "ui", "native", "gpu", "performance"]
+categories = ["gui", "graphics", "internationalization", "accessibility"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+# There are no platform specific docs.
+default-target = "x86_64-unknown-linux-gnu"
+targets = []
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
+
+[dependencies]
+xilem_core.workspace = true
+masonry.workspace = true
+tracing.workspace = true
+vello.workspace = true
+smallvec.workspace = true
+accesskit.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+
+[lints]
+workspace = true

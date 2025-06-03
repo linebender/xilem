@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-pub use masonry_winit::core::PointerButton;
-use masonry_winit::properties::{
+pub use masonry::core::PointerButton;
+use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
-use masonry_winit::widgets;
+use masonry::widgets;
 use xilem_core::ViewPathTracker;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
@@ -20,7 +20,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId};
 /// # Examples
 /// To use button provide it with a button text and a closure.
 /// ```ignore
-/// use xilem::view::button;
+/// use xilem_masonry::view::button;
 ///
 /// struct State {
 ///     int: i32,
@@ -40,7 +40,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId};
 /// Create a `button` with a custom `label`.
 ///
 /// ```ignore
-/// use xilem::view::{button, label};
+/// use xilem_masonry::view::{button, label};
 ///
 /// struct State {
 ///     int: i32,
@@ -205,9 +205,9 @@ where
     ) -> MessageResult<Action> {
         match id_path.split_first() {
             Some((&LABEL_VIEW_ID, rest)) => self.label.message(&mut (), rest, message, app_state),
-            None => match message.downcast::<masonry_winit::core::Action>() {
+            None => match message.downcast::<masonry::core::Action>() {
                 Ok(action) => {
-                    if let masonry_winit::core::Action::ButtonPressed(button) = *action {
+                    if let masonry::core::Action::ButtonPressed(button) = *action {
                         (self.callback)(app_state, button)
                     } else {
                         tracing::error!("Wrong action type in Button::message: {action:?}");

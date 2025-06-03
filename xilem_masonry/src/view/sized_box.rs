@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-pub use masonry_winit::properties::Padding;
-use masonry_winit::widgets;
+pub use masonry::properties::Padding;
+use masonry::widgets;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
@@ -20,10 +20,10 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// # Example
 /// See more methods for `sized_box` on [`SizedBox`] page.
 /// ```ignore
-/// use xilem::view::{sized_box, button};
-/// use xilem::palette;
+/// use xilem_masonry::view::{sized_box, button};
+/// use xilem_masonry::palette;
 /// use vello::kurbo::RoundedRectRadii;
-/// use masonry_winit::properties::Padding;
+/// use masonry::properties::Padding;
 ///
 /// sized_box(button("Button", |data: &mut i32| *data+=1))
 ///     .expand()

@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-use masonry_winit::core::{FromDynWidget, Widget, WidgetMut};
-use masonry_winit::widgets::{
+use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::widgets::{
     GridParams, {self},
 };
 
@@ -19,8 +19,8 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```ignore
-/// use masonry_winit::widgets::GridParams;
-/// use xilem::view::{
+/// use masonry::widgets::GridParams;
+/// use xilem_masonry::view::{
 ///     button, grid, label, GridExt,
 /// };
 ///
@@ -284,9 +284,9 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
-    /// use masonry_winit::widgets::GridParams;
-    /// use xilem::{view::{button, prose, grid, GridExt}};
-    /// # use xilem::{WidgetView};
+    /// use masonry::widgets::GridParams;
+    /// use xilem_masonry::{view::{button, prose, grid, GridExt}};
+    /// # use xilem_masonry::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
@@ -311,9 +311,9 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
-    /// use masonry_winit::widgets::GridParams;
-    /// use xilem::{view::{button, prose, grid, GridExt}};
-    /// # use xilem::{WidgetView};
+    /// use masonry::widgets::GridParams;
+    /// use xilem_masonry::{view::{button, prose, grid, GridExt}};
+    /// # use xilem_masonry::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((

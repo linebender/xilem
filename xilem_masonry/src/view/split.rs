@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry_winit::widgets::{self, Axis};
+use masonry::widgets::{self, Axis};
 use xilem_core::{DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{Pod, ViewCtx, WidgetView};
@@ -17,7 +17,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// To create a split view, provide it with two child views.
 ///
 /// ```ignore
-/// use xilem::view::{split, label};
+/// use xilem_masonry::view::{split, label};
 ///
 /// split(
 ///     label("Left view"),
@@ -29,7 +29,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// For the full list of modifiers see the [`Split`] struct.
 ///
 /// ```ignore
-/// use xilem::view::{split, label};
+/// use xilem_masonry::view::{split, label};
 ///
 /// split(label("Left view"), label("Right view"))
 ///     .split_axis(Axis::Horizontal)

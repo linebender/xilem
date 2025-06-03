@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry_winit::core::{WidgetOptions, WidgetPod};
-use masonry_winit::widgets;
+use masonry::core::{WidgetOptions, WidgetPod};
+use masonry::widgets;
 use vello::kurbo::Affine;
 use vello::peniko::Brush;
 
@@ -42,7 +42,7 @@ pub struct Textbox<State, Action> {
     alignment: TextAlignment,
     insert_newline: InsertNewline,
     disabled: bool,
-    // TODO: add more attributes of `masonry_winit::widgets::TextBox`
+    // TODO: add more attributes of `masonry::widgets::TextBox`
 }
 
 impl<State, Action> Textbox<State, Action> {
@@ -157,15 +157,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             id_path.is_empty(),
             "id path should be empty in Textbox::message"
         );
-        match message.downcast::<masonry_winit::core::Action>() {
+        match message.downcast::<masonry::core::Action>() {
             Ok(action) => match *action {
-                masonry_winit::core::Action::TextChanged(text) => {
+                masonry::core::Action::TextChanged(text) => {
                     MessageResult::Action((self.on_changed)(app_state, text))
                 }
-                masonry_winit::core::Action::TextEntered(text) if self.on_enter.is_some() => {
+                masonry::core::Action::TextEntered(text) if self.on_enter.is_some() => {
                     MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
                 }
-                masonry_winit::core::Action::TextEntered(_) => {
+                masonry::core::Action::TextEntered(_) => {
                     tracing::error!("Textbox::message: on_enter is not set");
                     MessageResult::Stale(DynMessage(action))
                 }

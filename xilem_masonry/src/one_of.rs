@@ -4,12 +4,12 @@
 //! Statically typed alternatives to the type-erased [`AnyWidgetView`](`crate::any_view::AnyWidgetView`).
 
 use accesskit::{Node, Role};
-use masonry_winit::core::{
+use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
-use masonry_winit::kurbo::{Point, Size};
+use masonry::kurbo::{Point, Size};
 use smallvec::{SmallVec, smallvec};
 use vello::Scene;
 

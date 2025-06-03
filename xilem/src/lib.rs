@@ -88,7 +88,7 @@
 //! * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 //! * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 //!
-//! [accesskit_docs]: accesskit
+//! [accesskit_docs]: https://docs.rs/accesskit/latest/accesskit/
 //! [AccessKit]: https://accesskit.dev/
 //! [Druid]: https://crates.io/crates/druid
 //! [Fontique]: https://crates.io/crates/fontique
@@ -120,34 +120,22 @@
     )
 )]
 // TODO: Remove any items listed as "Deferred"
-#![cfg_attr(not(debug_assertions), allow(unused))]
 #![expect(
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
-// https://github.com/rust-lang/rust/pull/130025
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
-use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry_winit::core::{
-    DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions,
-    WidgetPod,
-};
-use masonry_winit::dpi::LogicalSize;
-use masonry_winit::theme::default_property_set;
-use masonry_winit::widgets::RootWidget;
-use view::{Transformed, transformed};
+use masonry::core::{DefaultProperties, Widget};
+use masonry::dpi::LogicalSize;
+use masonry::theme::default_property_set;
+use masonry::widgets::RootWidget;
 use winit::error::EventLoopError;
 use winit::window::{Window, WindowAttributes};
+use xilem_core::RawProxy;
 
-use crate::core::{
-    AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
-    ViewPathTracker, ViewSequence,
-};
 pub use masonry_winit::app::{EventLoop, EventLoopBuilder};
 pub use masonry_winit::kurbo::{Affine, Vec2};
 pub use masonry_winit::parley::Alignment as TextAlignment;
@@ -162,16 +150,15 @@ pub use tokio;
 
 pub use winit;
 
-mod any_view;
 mod driver;
-mod one_of;
-mod property_tuple;
 
-pub mod style;
-pub mod view;
-pub use any_view::AnyWidgetView;
+pub use xilem_masonry::AnyWidgetView;
+pub use xilem_masonry::PropertyTuple;
+pub use xilem_masonry::style;
+pub use xilem_masonry::view;
+pub use xilem_masonry::{Pod, ViewCtx, WidgetView, WidgetViewSequence};
+
 pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, MasonryProxy, async_action};
-pub use property_tuple::PropertyTuple;
 
 /// Runtime builder.
 #[must_use = "A Xilem app does nothing unless ran."]
@@ -285,13 +272,7 @@ where
         MasonryDriver<State, Logic, View, View::ViewState>,
     ) {
         let first_view = (self.logic)(&mut self.state);
-        let mut ctx = ViewCtx {
-            widget_map: WidgetMap::default(),
-            id_path: Vec::new(),
-            proxy,
-            runtime: self.runtime,
-            state_changed: true,
-        };
+        let mut ctx = ViewCtx::new(proxy, self.runtime);
         let (pod, view_state) = first_view.build(&mut ctx);
         let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
         let driver = MasonryDriver {
@@ -303,248 +284,5 @@ where
             fonts: self.fonts,
         };
         (root_widget, driver)
-    }
-}
-
-/// A container for a yet to be inserted [Masonry](masonry_winit) widget
-/// to be used with Xilem.
-///
-/// This exists for two reasons:
-/// 1) The nearest equivalent type in Masonry, [`WidgetPod`], can't have
-///    [Xilem Core](xilem_core) traits implemented on it due to Rust's orphan rules.
-/// 2) `WidgetPod` is also used during a Widget's lifetime to contain its children,
-///    and so might not actually own the underlying widget value.
-///    When creating widgets in Xilem, layered views all want access to the - using
-///    `WidgetPod` for this purpose would require fallible unwrapping.
-#[expect(missing_docs, reason = "TODO - Document these items")]
-pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
-    pub widget: Box<W>,
-    pub id: WidgetId,
-    /// The options the widget will be created with.
-    ///
-    /// If changing transforms of widgets, prefer to use [`transformed`]
-    /// (or [`WidgetView::transform`]).
-    /// This has a protocol to ensure that multiple views changing the
-    /// transform interoperate successfully.
-    pub options: WidgetOptions,
-    pub properties: Properties,
-}
-
-impl<W: Widget + FromDynWidget> Pod<W> {
-    /// Create a new `Pod` from a `widget`.
-    ///
-    /// This contains the widget value, and other metadata which will
-    /// be used when that widget is added to a Masonry tree.
-    pub fn new(widget: W) -> Self {
-        Self {
-            widget: Box::new(widget),
-            id: WidgetId::next(),
-            options: WidgetOptions::default(),
-            properties: Properties::new(),
-        }
-    }
-}
-
-impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
-    /// Type-erase the contained widget.
-    ///
-    /// Convert a `Pod` pointing to a widget of a specific concrete type
-    /// `Pod` pointing to a `dyn Widget`.
-    pub fn erased(self) -> Pod<dyn Widget> {
-        Pod {
-            widget: self.widget.as_box_dyn(),
-            id: self.id,
-            options: self.options,
-            properties: self.properties,
-        }
-    }
-    /// Finalise this `Pod`, converting into a [`WidgetPod`].
-    ///
-    /// In most cases, you will use the return value when creating a
-    /// widget with a single child.
-    /// For example, button widgets have a label child.
-    ///
-    /// If you're adding the widget to a layout container widget,
-    /// which can contain heterogenous widgets, you will probably
-    /// prefer to use [`Self::erased_widget_pod`].
-    pub fn into_widget_pod(self) -> WidgetPod<W> {
-        WidgetPod::new_with(self.widget, self.id, self.options, self.properties)
-    }
-    /// Finalise this `Pod` into a type-erased [`WidgetPod`].
-    ///
-    /// In most cases, you will use the return value for adding to a layout
-    /// widget which supports heterogenous widgets.
-    /// For example, [`Flex`](masonry_winit::widgets::Flex) accepts type-erased widget pods.
-    pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
-        WidgetPod::new_with(self.widget, self.id, self.options, self.properties).erased()
-    }
-}
-
-impl<W: Widget + FromDynWidget + ?Sized> ViewElement for Pod<W> {
-    type Mut<'a> = WidgetMut<'a, W>;
-}
-
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<dyn Widget> {
-    fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        child.erased()
-    }
-
-    fn with_downcast_val<R>(
-        mut this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<Pod<W>>) -> R,
-    ) -> (Self::Mut<'_>, R) {
-        let downcast = this.downcast();
-        let ret = f(downcast);
-        (this, ret)
-    }
-}
-
-#[expect(missing_docs, reason = "TODO - Document these items")]
-pub trait WidgetView<State, Action = ()>:
-    View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
-{
-    type Widget: Widget + FromDynWidget + ?Sized;
-
-    /// Returns a boxed type erased [`AnyWidgetView`]
-    ///
-    /// # Examples
-    /// ```
-    /// use xilem::{view::label, WidgetView};
-    ///
-    /// # fn view<State: 'static>() -> impl WidgetView<State> + use<State> {
-    /// label("a label").boxed()
-    /// # }
-    ///
-    /// ```
-    fn boxed(self) -> Box<AnyWidgetView<State, Action>>
-    where
-        State: 'static,
-        Action: 'static,
-        Self: Sized,
-    {
-        Box::new(self)
-    }
-
-    /// This widget with a 2d transform applied.
-    ///
-    /// See [`transformed`] for similar functionality with a builder-API using this.
-    /// The return type is the same as for `transformed`, and so also has these
-    /// builder methods.
-    fn transform(self, by: Affine) -> Transformed<Self, State, Action>
-    where
-        Self: Sized,
-    {
-        transformed(self).transform(by)
-    }
-}
-
-impl<V, State, Action, W> WidgetView<State, Action> for V
-where
-    V: View<State, Action, ViewCtx, Element = Pod<W>> + Send + Sync,
-    W: Widget + FromDynWidget + ?Sized,
-{
-    type Widget = W;
-}
-
-/// An ordered sequence of widget views, it's used for `0..N` views.
-/// See [`ViewSequence`] for more technical details.
-///
-/// # Examples
-///
-/// ```
-/// use xilem::{view::prose, WidgetViewSequence};
-///
-/// fn prose_sequence<State: 'static>(
-///     texts: impl Iterator<Item = &'static str>,
-/// ) -> impl WidgetViewSequence<State> {
-///     texts.map(prose).collect::<Vec<_>>()
-/// }
-/// ```
-pub trait WidgetViewSequence<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
-{
-}
-
-impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, Pod<any_view::DynWidget>>
-{
-}
-
-type WidgetMap = HashMap<WidgetId, Vec<ViewId>>;
-
-/// A context type passed to various methods of Xilem traits.
-pub struct ViewCtx {
-    /// The map from a widgets id to its position in the View tree.
-    ///
-    /// This includes only the widgets which might send actions
-    widget_map: WidgetMap,
-    id_path: Vec<ViewId>,
-    proxy: Arc<dyn RawProxy>,
-    runtime: tokio::runtime::Runtime,
-    state_changed: bool,
-}
-
-impl ViewPathTracker for ViewCtx {
-    fn push_id(&mut self, id: ViewId) {
-        self.id_path.push(id);
-    }
-
-    fn pop_id(&mut self) {
-        self.id_path.pop();
-    }
-
-    fn view_path(&mut self) -> &[ViewId] {
-        &self.id_path
-    }
-}
-
-#[expect(missing_docs, reason = "TODO - Document these items")]
-impl ViewCtx {
-    pub fn new_pod<W: Widget + FromDynWidget>(&mut self, widget: W) -> Pod<W> {
-        Pod::new(widget)
-    }
-
-    pub fn with_leaf_action_widget<W: Widget + FromDynWidget + ?Sized>(
-        &mut self,
-        f: impl FnOnce(&mut Self) -> Pod<W>,
-    ) -> (Pod<W>, ()) {
-        (self.with_action_widget(f), ())
-    }
-
-    pub fn with_action_widget<W: Widget + FromDynWidget + ?Sized>(
-        &mut self,
-        f: impl FnOnce(&mut Self) -> Pod<W>,
-    ) -> Pod<W> {
-        let value = f(self);
-        self.record_action(value.id);
-        value
-    }
-
-    /// Record that the actions from the widget `id` should be routed to this view.
-    pub fn record_action(&mut self, id: WidgetId) {
-        let path = self.id_path.clone();
-        self.widget_map.insert(id, path);
-    }
-
-    /// Whether the app's state changed since the last rebuild.
-    ///
-    /// This is useful for views whose current value depends on current app state.
-    /// (That is, currently only virtual scrolling)
-    pub fn state_changed(&self) -> bool {
-        self.state_changed
-    }
-
-    pub fn teardown_leaf<W: Widget + FromDynWidget + ?Sized>(&mut self, widget: WidgetMut<W>) {
-        self.widget_map.remove(&widget.ctx.widget_id());
-    }
-
-    pub fn runtime(&self) -> &tokio::runtime::Runtime {
-        &self.runtime
-    }
-}
-
-impl AsyncCtx for ViewCtx {
-    fn proxy(&mut self) -> Arc<dyn RawProxy> {
-        self.proxy.clone()
     }
 }
