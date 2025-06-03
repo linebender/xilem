@@ -287,7 +287,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 
     fn validate_valid_range(&mut self) {
         if self.valid_range.end < self.valid_range.start {
-            debug_panic!(
+            masonry::debug_panic!(
                 "Expected valid range to not have end less than its start, got {:?}",
                 self.valid_range
             );
@@ -311,7 +311,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     // TODO: This could instead take ownership of the action, and return some kind of `{to_remove, to_add}` iterator index pair.
     pub fn will_handle_action(this: &mut WidgetMut<Self>, action: &VirtualScrollAction) {
         if this.widget.active_range != action.old_active {
-            debug_panic!(
+            masonry::debug_panic!(
                 "Handling a VirtualScrollAction with the wrong range; got {:?}, expected {:?} for widget {}.\n\
                 Maybe this has been routed to the wrong `VirtualScroll`?",
                 action.old_active,
@@ -830,7 +830,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 );
             }
             if self.missed_actions_count > 10 {
-                debug_panic!(
+                masonry::debug_panic!(
                     "VirtualScroll's action is being missed repeatedly being handled.\n\
                     Note that to handle an action, you must call `VirtualScroll::will_handle_action` with the action."
                 );

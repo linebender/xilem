@@ -21,20 +21,21 @@ use wgpu::{
     TextureDescriptor, TextureFormat, TextureUsages,
 };
 
-use crate::Handled;
-use crate::app::{
+use masonry::Handled;
+use masonry::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
-use crate::core::{
+use masonry::core::{
     Action, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
     PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
-use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::kurbo::{Point, Size, Vec2};
-use crate::peniko::{Blob, Color};
-use crate::testing::screenshots::get_image_diff;
-use crate::util::Duration;
+use masonry::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
+use masonry::kurbo::{Point, Size, Vec2};
+use masonry::peniko::{Blob, Color};
+use masonry::util::Duration;
+
+use crate::screenshots::get_image_diff;
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {

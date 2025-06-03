@@ -3,21 +3,28 @@
 
 //! Helper tools for writing unit tests.
 
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
+// TODO: Remove any items listed as "Deferred"
+#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
+#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
+#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(unreachable_pub, reason = "Potentially controversial code style")]
+#![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
+
 mod harness;
 mod modular_widget;
 mod recorder_widget;
 mod screenshots;
 mod wrapper_widget;
 
-pub use crate::assert_failing_render_snapshot;
-pub use crate::assert_render_snapshot;
-
 pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};
 pub use modular_widget::ModularWidget;
 pub use recorder_widget::{Record, Recorder, Recording};
 pub use wrapper_widget::WrapperWidget;
 
-use crate::core::{Widget, WidgetId, WidgetPod};
+use masonry::core::{Widget, WidgetId, WidgetPod};
 
 /// External trait implemented for all widgets.
 ///

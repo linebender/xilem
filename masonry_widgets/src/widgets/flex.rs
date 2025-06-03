@@ -287,7 +287,7 @@ impl Flex {
         let flex = if flex >= 0.0 {
             flex
         } else {
-            debug_panic!("add_spacer called with negative length: {}", flex);
+            masonry::debug_panic!("add_spacer called with negative length: {}", flex);
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
@@ -450,7 +450,7 @@ impl Flex {
         let flex = if flex >= 0.0 {
             flex
         } else {
-            debug_panic!("add_spacer called with negative length: {}", flex);
+            masonry::debug_panic!("add_spacer called with negative length: {}", flex);
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
@@ -560,7 +560,7 @@ impl Flex {
         let flex = if flex >= 0.0 {
             flex
         } else {
-            debug_panic!("add_spacer called with negative length: {}", flex);
+            masonry::debug_panic!("add_spacer called with negative length: {}", flex);
             0.0
         };
         let new_child = Child::FlexedSpacer(flex, 0.0);
@@ -785,7 +785,7 @@ impl FlexParams {
     ) -> Self {
         let flex = match flex.into() {
             Some(flex) if flex <= 0.0 => {
-                debug_panic!("Flex value should be > 0.0. Flex given was: {}", flex);
+                masonry::debug_panic!("Flex value should be > 0.0. Flex given was: {}", flex);
                 Some(0.0)
             }
             other => other,

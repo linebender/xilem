@@ -9,12 +9,12 @@ use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 
-use crate::core::{
+use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
 };
-use crate::kurbo::{Point, Size};
+use masonry::kurbo::{Point, Size};
 
 pub type PointerEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent);

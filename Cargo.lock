@@ -1872,12 +1872,9 @@ dependencies = [
  "cursor-icon",
  "dpi",
  "float-cmp",
- "futures-intrusive",
  "image",
  "insta",
- "oxipng",
  "parley",
- "pollster",
  "profiling",
  "smallvec",
  "time",
@@ -1889,7 +1886,55 @@ dependencies = [
  "ui-events",
  "vello",
  "web-time",
+]
+
+[[package]]
+name = "masonry_testing"
+version = "0.3.0"
+dependencies = [
+ "accesskit",
+ "accesskit_winit",
+ "cursor-icon",
+ "dpi",
+ "futures-intrusive",
+ "image",
+ "insta",
+ "masonry",
+ "oxipng",
+ "parley",
+ "pollster",
+ "smallvec",
+ "tracing",
+ "tracing-tracy",
+ "ui-events",
+ "ui-events-winit",
+ "vello",
+ "web-time",
  "wgpu",
+ "wgpu-profiler",
+ "winit",
+]
+
+[[package]]
+name = "masonry_widgets"
+version = "0.3.0"
+dependencies = [
+ "accesskit",
+ "anymap3",
+ "assert_matches",
+ "cursor-icon",
+ "dpi",
+ "float-cmp",
+ "image",
+ "insta",
+ "masonry",
+ "masonry_testing",
+ "parley",
+ "profiling",
+ "smallvec",
+ "tracing",
+ "ui-events",
+ "vello",
 ]
 
 [[package]]
@@ -1901,6 +1946,8 @@ dependencies = [
  "image",
  "insta",
  "masonry",
+ "masonry_testing",
+ "masonry_widgets",
  "parley",
  "pollster",
  "profiling",

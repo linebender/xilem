@@ -1,7 +1,7 @@
 [package]
-name = "masonry"
+name = "masonry_widgets"
 version.workspace = true # We mimic Xilem's version
-description = "Traits and types of the Masonry toolkit."
+description = "Default widget and property set for the Masonry toolkit."
 keywords = ["gui", "ui", "toolkit"]
 categories = ["gui", "internationalization", "accessibility"]
 edition.workspace = true
@@ -14,42 +14,37 @@ all-features = true
 # There are no platform specific docs.
 default-target = "x86_64-unknown-linux-gnu"
 targets = []
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 default = []
-# Enables tracing using tracy if the default Masonry tracing is used.
-# https://github.com/wolfpld/tracy can be connected to when this feature is enabled.
-tracy = ["dep:tracing-tracy", "tracing-tracy/enable", "vello/wgpu-profiler"]
 
 [dependencies]
+masonry.workspace = true
 vello.workspace = true
+accesskit.workspace = true
 parley.workspace = true
-tree_arena.workspace = true
 ui-events.workspace = true
 smallvec.workspace = true
-tracing = { workspace = true, features = ["default"] }
-tracing-subscriber = { version = "0.3.19", features = ["env-filter", "time"] }
-tracing-tracy = { version = "0.11.4", optional = true }
-accesskit.workspace = true
-time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
 anymap3 = "1.0.1"
+tracing = { workspace = true, features = ["default"] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-web-time.workspace = true
+#[target.'cfg(test)'.dependencies]
+#masonry_testing.workspace = true
 
 [dev-dependencies]
-float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
+masonry_testing.workspace = true
+ui-events.workspace = true
 image = { workspace = true, features = ["png"] }
 insta = { version = "1.43.1" }
 assert_matches = "1.5.0"
+float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
 
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.16", features = ["profile-with-tracing"] }
-
-[target.'cfg(target_os = "android")'.dependencies]
-tracing_android_trace = "0.1.1"
 
 [lints]
 workspace = true

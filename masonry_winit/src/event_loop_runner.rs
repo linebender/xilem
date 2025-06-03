@@ -7,8 +7,8 @@ use std::sync::Arc;
 
 use accesskit_winit::Adapter;
 use masonry::core::DefaultProperties;
-use masonry::theme::default_property_set;
 use masonry::util::Instant;
+use masonry_widgets::theme::default_property_set;
 use tracing::{debug, error, info, info_span};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};

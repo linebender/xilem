@@ -4,6 +4,8 @@ members = [
     "xilem",
     "xilem_core",
     "masonry",
+    "masonry_widgets",
+    "masonry_testing",
     "masonry_winit",
 
     "xilem_web",
@@ -36,6 +38,8 @@ repository = "https://github.com/linebender/xilem"
 
 [workspace.dependencies]
 masonry = { version = "0.3.0", path = "masonry" }
+masonry_widgets = { version = "0.3.0", path = "masonry_widgets" }
+masonry_testing = { version = "0.3.0", path = "masonry_testing" }
 masonry_winit = { version = "0.3.0", path = "masonry_winit" }
 xilem_core = { version = "0.3.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }

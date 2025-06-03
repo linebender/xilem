@@ -18,12 +18,12 @@ use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use vello::Scene;
 
-use crate::core::{
+use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef,
 };
-use crate::kurbo::{Point, Size};
+use masonry::kurbo::{Point, Size};
 
 /// A wrapper widget that records each time one of its methods is called.
 ///
