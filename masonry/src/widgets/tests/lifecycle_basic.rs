@@ -6,7 +6,7 @@
 use insta::assert_debug_snapshot;
 
 use crate::testing::{
-    Record, Recording, ReplaceChild, TestHarness, TestWidgetExt as _, widget_ids,
+    Record, Recording, TestHarness, TestWidgetExt as _, WrapperWidget, widget_ids,
 };
 use crate::widgets::{Flex, Label, SizedBox};
 use crate::*;
@@ -33,7 +33,7 @@ fn adding_child() {
     let record_new_child = Recording::default();
     let record_new_child2 = record_new_child.clone();
 
-    let replacer = ReplaceChild::new(Label::new(""), move || {
+    let replacer = WrapperWidget::new(Label::new(""), move || {
         Flex::row()
             .with_child(Label::new("hello"))
             .with_child(Label::new("world"))
@@ -63,7 +63,7 @@ fn adding_child() {
 fn register_after_adding_child() {
     let [id_1, id_2, id_3, id_4, id_5, id_6, id_8] = widget_ids();
 
-    let replacer = ReplaceChild::new(Label::new("hello").with_id(id_1), move || {
+    let replacer = WrapperWidget::new(Label::new("hello").with_id(id_1), move || {
         SizedBox::new_with_id(
             Flex::row()
                 .with_child_id(SizedBox::empty(), id_2)

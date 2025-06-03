@@ -1,9 +1,8 @@
 ---
-source: masonry/src/widget/scroll_bar.rs
-assertion_line: 215
+source: masonry/src/widgets/scroll_bar.rs
+assertion_line: 274
 expression: harness.root_widget()
-
 ---
-SizedBox(
+WrapperWidget(
     ScrollBar,
 )

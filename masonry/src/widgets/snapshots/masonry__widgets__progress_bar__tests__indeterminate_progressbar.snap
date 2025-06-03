@@ -1,9 +1,9 @@
 ---
-source: masonry/src/widget/progress_bar.rs
+source: masonry/src/widgets/progress_bar.rs
+assertion_line: 236
 expression: harness.root_widget()
-snapshot_kind: text
 ---
-SizedBox(
+WrapperWidget(
     ProgressBar<progress unspecified>(
         Label<>,
     ),

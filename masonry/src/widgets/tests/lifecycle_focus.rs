@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use smallvec::smallvec;
 
-use crate::testing::{ModularWidget, ReplaceChild, TestHarness, TestWidgetExt as _, widget_ids};
+use crate::testing::{ModularWidget, TestHarness, TestWidgetExt as _, WrapperWidget, widget_ids};
 use crate::widgets::Flex;
 use crate::*;
 
@@ -129,7 +129,7 @@ fn focus_updated_by_children_change() {
 
     // this widget starts with a single child, and will replace them with a split
     // when we send it a command.
-    let replacer = ReplaceChild::new(FocusTaker::new().with_id(id_4), move || {
+    let replacer = WrapperWidget::new(FocusTaker::new().with_id(id_4), move || {
         Flex::row()
             .with_child_id(FocusTaker::new(), id_5)
             .with_child_id(FocusTaker::new(), id_6)

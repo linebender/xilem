@@ -1,0 +1,117 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
+use std::any::TypeId;
+
+use accesskit::{Node, Role};
+use smallvec::{SmallVec, smallvec};
+use vello::Scene;
+
+use crate::core::{
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
+};
+use crate::kurbo::{Point, Size};
+
+/// A basic wrapper widget that can replace its child.
+pub struct WrapperWidget {
+    child: WidgetPod<dyn Widget>,
+}
+
+impl WrapperWidget {
+    /// Create a new `WrapperWidget`.
+    ///
+    /// The `child` is the initial child widget.
+    pub fn new<W: Widget + 'static>(child: impl Widget) -> Self {
+        Self::new_pod(WidgetPod::new(child).erased())
+    }
+
+    /// Create a new `WrapperWidget` with a `WidgetPod`.
+    ///
+    /// The `child` is the initial child widget.
+    pub fn new_pod(child: WidgetPod<dyn Widget>) -> Self {
+        Self { child }
+    }
+}
+
+impl WrapperWidget {
+    /// Replace the container's child widget.
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
+        Self::set_child_pod(this, WidgetPod::new(child).erased());
+    }
+
+    /// Replace the container's child widget with a `WidgetPod`.
+    pub fn set_child_pod(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn Widget>) {
+        let old_child = std::mem::replace(&mut this.widget.child, child);
+        this.ctx.remove_child(old_child);
+
+        this.ctx.children_changed();
+        this.ctx.request_layout();
+    }
+}
+
+impl Widget for WrapperWidget {
+    fn on_pointer_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &PointerEvent,
+    ) {
+    }
+
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
+
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+        ctx.register_child(&mut self.child);
+    }
+
+    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+
+    fn property_changed(&mut self, _ctx: &mut UpdateCtx, _property_type: TypeId) {}
+
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
+        let size = ctx.run_layout(&mut self.child, bc);
+        ctx.place_child(&mut self.child, Point::ORIGIN);
+        size
+    }
+
+    fn compose(&mut self, _ctx: &mut ComposeCtx) {}
+
+    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+
+    fn accessibility_role(&self) -> Role {
+        Role::GenericContainer
+    }
+
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        smallvec![self.child.id()]
+    }
+}
