@@ -11,7 +11,6 @@
 //!
 //! [Masonry Winit's documentation]: https://docs.rs/masonry_winit/latest/
 
-#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
