@@ -10,7 +10,7 @@ env:
   # plus all the README.md files of the affected packages.
   RUST_MIN_VER: "1.86"
   # List of packages that can not target Wasm.
-  NO_WASM_PKGS: "--exclude masonry_testing --exclude masonry_winit --exclude xilem"
+  NO_WASM_PKGS: "--exclude masonry --exclude masonry_testing --exclude masonry_winit --exclude xilem"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
   # Whether the workspace contains Rust code using the debug_assertions configuration option.
