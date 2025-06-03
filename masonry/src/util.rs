@@ -159,3 +159,35 @@ pub fn fill_lin_gradient(
 pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
     scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
 }
+
+// ---
+
+static DEBUG_COLOR: &[Color] = &[
+    Color::from_rgb8(230, 25, 75),
+    Color::from_rgb8(60, 180, 75),
+    Color::from_rgb8(255, 225, 25),
+    Color::from_rgb8(0, 130, 200),
+    Color::from_rgb8(245, 130, 48),
+    Color::from_rgb8(70, 240, 240),
+    Color::from_rgb8(240, 50, 230),
+    Color::from_rgb8(250, 190, 190),
+    Color::from_rgb8(0, 128, 128),
+    Color::from_rgb8(230, 190, 255),
+    Color::from_rgb8(170, 110, 40),
+    Color::from_rgb8(255, 250, 200),
+    Color::from_rgb8(128, 0, 0),
+    Color::from_rgb8(170, 255, 195),
+    Color::from_rgb8(0, 0, 128),
+    Color::from_rgb8(128, 128, 128),
+    Color::from_rgb8(255, 255, 255),
+    Color::from_rgb8(0, 0, 0),
+];
+
+/// A color used for debug painting.
+///
+/// The same color is always returned given the same id, usually the id of a widget.
+/// When painting a widget, [`PaintCtx::debug_color`][crate::core::PaintCtx::debug_color] is typically used instead.
+pub fn get_debug_color(id: u64) -> Color {
+    let color_num = id as usize % DEBUG_COLOR.len();
+    DEBUG_COLOR[color_num]
+}
