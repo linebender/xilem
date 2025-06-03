@@ -10,8 +10,6 @@
 //!
 //! All of these have the same set of global styling options, and can contain rich text
 
-use parley::GenericFamily;
-
 /// A reference counted string slice.
 ///
 /// This is a data-friendly way to represent strings in Masonry. Unlike `String`
@@ -32,12 +30,6 @@ pub type StyleProperty = parley::StyleProperty<'static, BrushIndex>;
 
 /// A set of styles specialised for use within Masonry.
 pub type StyleSet = parley::StyleSet<BrushIndex>;
-
-/// Applies the default text styles for Masonry into `styles`.
-pub(crate) fn default_styles(styles: &mut StyleSet) {
-    styles.insert(StyleProperty::LineHeight(1.2));
-    styles.insert(GenericFamily::SystemUi.into());
-}
 
 use parley::{Layout, PositionedLayoutItem};
 use vello::Scene;

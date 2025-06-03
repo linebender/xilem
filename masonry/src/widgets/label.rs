@@ -17,9 +17,10 @@ use vello::peniko::{BlendMode, Brush};
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, default_styles, render_text,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
 use crate::theme;
+use crate::theme::default_text_styles;
 
 // TODO - Replace with Padding property.
 /// Added padding between each horizontal edge of the widget
@@ -89,7 +90,7 @@ impl Label {
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new(text: impl Into<ArcStr>) -> Self {
         let mut styles = StyleSet::new(theme::TEXT_SIZE_NORMAL);
-        default_styles(&mut styles);
+        default_text_styles(&mut styles);
         Self {
             text_layout: Layout::new(),
             accessibility: LayoutAccessibility::default(),
@@ -459,7 +460,7 @@ impl Widget for Label {
         self.accessibility.build_nodes(
             self.text.as_ref(),
             &self.text_layout,
-            ctx.tree_update,
+            ctx.tree_update(),
             node,
             || NodeId::from(WidgetId::next()),
             LABEL_X_PADDING,

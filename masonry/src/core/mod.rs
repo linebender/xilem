@@ -41,7 +41,6 @@ pub use pointer::{
     PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,
 };
 
-pub(crate) use text::default_styles;
 pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;

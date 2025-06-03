@@ -499,6 +499,17 @@ impl EventCtx<'_> {
     }
 }
 
+// --- MARK: ACCESSIBILITY
+impl AccessCtx<'_> {
+    // TODO - We need access to the TreeUpdate to create sub-nodes for text runs,
+    // but this seems too powerful. We should figure out another API.
+    /// A mutable reference to the global [`TreeUpdate`] object in which all modified/new
+    /// accessibility nodes are stored.
+    pub fn tree_update(&mut self) -> &mut TreeUpdate {
+        self.tree_update
+    }
+}
+
 // --- MARK: UPDATE LAYOUT
 impl LayoutCtx<'_> {
     #[track_caller]
