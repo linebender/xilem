@@ -5,7 +5,7 @@
 
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
-use crate::core::DefaultProperties;
+use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::kurbo::Insets;
 use crate::peniko::Color;
 use crate::properties::types::Gradient;
@@ -14,6 +14,8 @@ use crate::properties::{
     HoveredBorderColor, Padding,
 };
 use crate::widgets::Button;
+
+use parley::GenericFamily;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -123,4 +125,10 @@ pub fn default_property_set() -> DefaultProperties {
     // TODO - Add default Padding to RootWidget?
 
     properties
+}
+
+/// Applies the default text styles for Masonry into `styles`.
+pub fn default_text_styles(styles: &mut StyleSet) {
+    styles.insert(StyleProperty::LineHeight(1.2));
+    styles.insert(GenericFamily::SystemUi.into());
 }
