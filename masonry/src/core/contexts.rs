@@ -20,8 +20,7 @@ use crate::core::{
 use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
-use crate::theme::get_debug_color;
-use crate::util::AnyMap;
+use crate::util::{AnyMap, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
