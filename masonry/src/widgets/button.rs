@@ -13,8 +13,8 @@ use vello::kurbo::Affine;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::kurbo::Size;
 use crate::properties::*;
@@ -146,7 +146,7 @@ impl Widget for Button {
         }
     }
 
-    fn register_children(&mut self, ctx: &mut crate::core::RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx) {
         ctx.register_child(&mut self.label);
     }
 
