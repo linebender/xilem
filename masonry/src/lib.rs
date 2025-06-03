@@ -50,9 +50,13 @@ mod passes;
 
 pub mod app;
 pub mod core;
+#[path = "../../masonry_widgets/src/properties/mod.rs"]
 pub mod properties;
+#[path = "../../masonry_testing/src/mod.rs"]
 pub mod testing;
+#[path = "../../masonry_widgets/src/theme.rs"]
 pub mod theme;
+#[path = "../../masonry_widgets/src/widgets/mod.rs"]
 pub mod widgets;
 
 pub use accesskit;
