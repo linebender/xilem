@@ -491,8 +491,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    use crate::theme::default_property_set;
-    use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT};
+    use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT, default_property_set};
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox};
 
     #[test]

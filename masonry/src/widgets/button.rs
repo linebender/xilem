@@ -273,8 +273,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::core::{PointerButton, StyleProperty};
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
-    use crate::theme::PRIMARY_LIGHT;
-    use crate::theme::default_property_set;
+    use crate::theme::{PRIMARY_LIGHT, default_property_set};
     use crate::widgets::{Grid, GridParams, SizedBox};
 
     #[test]
