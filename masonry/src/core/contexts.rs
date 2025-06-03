@@ -736,6 +736,14 @@ impl LayoutCtx<'_> {
         self.widget_state.needs_accessibility = true;
         self.widget_state.needs_paint = true;
     }
+
+    #[doc(hidden)]
+    /// Return the widget's size at the beginning of the layout pass.
+    ///
+    /// **TODO** This method should be removed after the layout refactor.
+    pub fn old_size(&self) -> Size {
+        self.widget_state.size
+    }
 }
 
 impl ComposeCtx<'_> {
@@ -796,9 +804,9 @@ impl_context_method!(
             self.widget_state.size
         }
 
-        // TODO - Remove
-        #[allow(dead_code, reason = "Only used in tests")]
-        pub(crate) fn local_layout_rect(&self) -> Rect {
+        // TODO - Remove. Currently only used in tests.
+        #[doc(hidden)]
+        pub fn local_layout_rect(&self) -> Rect {
             self.widget_state.layout_rect()
         }
 
