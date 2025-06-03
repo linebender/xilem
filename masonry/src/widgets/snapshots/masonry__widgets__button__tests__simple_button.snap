@@ -1,9 +1,9 @@
 ---
-source: masonry/src/widget/button.rs
-assertion_line: 245
+source: masonry/src/widgets/button.rs
+assertion_line: 287
 expression: harness.root_widget()
 ---
-SizedBox(
+WrapperWidget(
     Button(
         Label<Hello>,
     ),

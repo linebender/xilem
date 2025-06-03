@@ -36,7 +36,6 @@
     unnameable_types,
     reason = "Requires lint_reasons rustc feature for exceptions"
 )]
-#![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
 
 // TODO - Add logo

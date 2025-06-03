@@ -1,9 +1,9 @@
 ---
-source: masonry/src/widget/checkbox.rs
-assertion_line: 252
+source: masonry/src/widgets/checkbox.rs
+assertion_line: 272
 expression: harness.root_widget()
 ---
-SizedBox(
+WrapperWidget(
     Checkbox<[ ]>(
         Label<Hello>,
     ),
