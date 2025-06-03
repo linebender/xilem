@@ -3,9 +3,11 @@
 
 //! Events.
 
-use super::KeyboardEvent;
 use crate::dpi::PhysicalSize;
 use crate::kurbo::Rect;
+use crate::util::Duration;
+
+use ui_events::keyboard::KeyboardEvent;
 
 // TODO - Occluded(bool) event
 // TODO - winit ActivationTokenDone thing
@@ -19,7 +21,7 @@ pub enum WindowEvent {
     /// The window was resized.
     Resize(PhysicalSize<u32>),
     /// The animation frame requested by this window must run.
-    AnimFrame,
+    AnimFrame(Duration),
     /// The accessibility tree must be rebuilt.
     RebuildAccessTree,
 }
