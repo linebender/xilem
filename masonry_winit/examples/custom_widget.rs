@@ -11,7 +11,7 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::smallvec::SmallVec;
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
@@ -30,7 +30,25 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+    fn create_initial_windows(&mut self, ctx: &mut DriverCtx<'_, '_>) {
+        let my_string = "Masonry + Vello".to_string();
+        let window_attributes = Window::default_attributes().with_title("Fancy colors");
+
+        ctx.create_window(
+            WindowId::next(),
+            RootWidget::new(CustomWidget(my_string)),
+            window_attributes,
+        );
+    }
+
+    fn on_action(
+        &mut self,
+        _window_id: WindowId,
+        _ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        _action: Action,
+    ) {
+    }
 }
 
 struct CustomWidget(String);
@@ -176,16 +194,7 @@ impl Widget for CustomWidget {
 }
 
 fn main() {
-    let my_string = "Masonry + Vello".to_string();
-    let window_attributes = Window::default_attributes().with_title("Fancy colors");
-
-    masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(CustomWidget(my_string)),
-        Driver,
-    )
-    .unwrap();
+    masonry_winit::app::run(masonry_winit::app::EventLoop::with_user_event(), Driver).unwrap();
 }
 
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {

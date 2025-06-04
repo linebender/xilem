@@ -27,7 +27,7 @@
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
 //! use xilem::view::{button, flex, label};
-//! use xilem::{EventLoop, WidgetView, Xilem};
+//! use xilem::{EventLoop, WidgetView, Xilem, WindowAttrs};
 //!
 //! #[derive(Default)]
 //! struct Counter {
@@ -42,8 +42,8 @@
 //! }
 //!
 //! fn main() -> Result<(), EventLoopError> {
-//!     let app = Xilem::new(Counter::default(), app_logic);
-//!     app.run_windowed(EventLoop::with_user_event(), "Counter app".into())?;
+//!     let app = Xilem::new_simple(Counter::default(), app_logic, WindowAttrs::new("Counter app"));
+//!     app.run_in(EventLoop::with_user_event())?;
 //!     Ok(())
 //! }
 //! ```
@@ -133,22 +133,23 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use masonry_winit::app::MasonryUserEvent;
 use masonry_winit::core::{
     DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions,
     WidgetPod,
 };
-use masonry_winit::dpi::LogicalSize;
 use masonry_winit::theme::default_property_set;
-use masonry_winit::widgets::RootWidget;
 use view::{Transformed, transformed};
+use winit::dpi::{Position, Size};
 use winit::error::EventLoopError;
-use winit::window::{Window, WindowAttributes};
+use winit::window::{Cursor, Icon, WindowAttributes};
+use xilem_core::map_state;
 
 use crate::core::{
     AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
     ViewPathTracker, ViewSequence,
 };
-pub use masonry_winit::app::{EventLoop, EventLoopBuilder};
+pub use masonry_winit::app::{EventLoop, EventLoopBuilder, WindowId};
 pub use masonry_winit::kurbo::{Affine, Vec2};
 pub use masonry_winit::parley::Alignment as TextAlignment;
 pub use masonry_winit::parley::style::FontWeight;
@@ -166,11 +167,12 @@ mod any_view;
 mod driver;
 mod one_of;
 mod property_tuple;
+mod window_view;
 
 pub mod style;
 pub mod view;
 pub use any_view::AnyWidgetView;
-pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, MasonryProxy, async_action};
+pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
 pub use property_tuple::PropertyTuple;
 
 /// Runtime builder.
@@ -180,26 +182,249 @@ pub struct Xilem<State, Logic> {
     logic: Logic,
     runtime: tokio::runtime::Runtime,
     default_properties: Option<DefaultProperties>,
-    background_color: Color,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
 }
 
-#[expect(missing_docs, reason = "TODO - Document these items")]
-impl<State, Logic, View> Xilem<State, Logic>
-where
-    Logic: FnMut(&mut State) -> View,
-    View: WidgetView<State>,
+/// State type used by [`Xilem::new_simple`].
+pub struct ExitOnClose<S> {
+    state: S,
+    running: bool,
+}
+
+impl<S> AppState for ExitOnClose<S> {
+    fn keep_running(&self) -> bool {
+        self.running
+    }
+}
+
+impl<State>
+    Xilem<
+        ExitOnClose<State>,
+        Box<
+            dyn FnMut(
+                &mut ExitOnClose<State>,
+            ) -> std::iter::Once<(
+                WindowId,
+                WindowAttrs<ExitOnClose<State>>,
+                Box<AnyWidgetView<ExitOnClose<State>>>,
+            )>,
+        >,
+    >
 {
-    /// Initialize the builder state for your app.
-    pub fn new(state: State, logic: Logic) -> Self {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+    /// Create an app builder for a single window app with fixed window attributes
+    /// that exits once the window is closed.
+    ///
+    /// If you want to have multiple windows or change e.g. the window title depending
+    /// on the state you should instead use [`Xilem::new`] (which this function wraps).
+    pub fn new_simple<View>(
+        state: State,
+        mut logic: impl FnMut(&mut State) -> View + 'static,
+        window_attributes: WindowAttrs<State>,
+    ) -> Self
+    where
+        View: WidgetView<State>,
+        State: 'static,
+    {
+        let window_id = WindowId::next();
+        let callbacks = Arc::new(window_attributes.callbacks);
+        Xilem::new_inner(
+            ExitOnClose {
+                state,
+                running: true,
+            },
+            Box::new(move |ExitOnClose { state, .. }| {
+                let callbacks = callbacks.clone();
+                let on_close = move |wrapper: &mut ExitOnClose<_>| {
+                    wrapper.running = false;
+                    if let Some(on_close) = &callbacks.on_close {
+                        on_close(&mut wrapper.state);
+                    }
+                };
+                std::iter::once((
+                    window_id,
+                    WindowAttrs {
+                        reactive: window_attributes.reactive.clone(),
+                        initial: window_attributes.initial.clone(),
+                        callbacks: WindowCallbacks {
+                            on_close: Some(Box::new(on_close)),
+                        },
+                    },
+                    map_state(logic(state), |wrapper: &mut ExitOnClose<_>| {
+                        &mut wrapper.state
+                    })
+                    .boxed(),
+                ))
+            }),
+        )
+    }
+}
+
+// TODO: make this a type-state builder to force Xilem::new apps to define on_close?
+/// Attributes of a window.
+///
+/// When passed to [`Xilem::new_simple`] these are used to create the window.
+/// When returned from the app logic function passed to [`Xilem::new`]
+/// they can also be used to update the attributes in the running application,
+/// except if the field name starts with `initial_`.
+pub struct WindowAttrs<State> {
+    pub(crate) reactive: ReactiveWindowAttrs,
+    pub(crate) initial: InitialAttrs,
+    pub(crate) callbacks: WindowCallbacks<State>,
+}
+
+/// These are attributes the user cannot change, so we can make them reactive.
+#[derive(Clone, Debug)]
+pub(crate) struct ReactiveWindowAttrs {
+    title: String,
+    resizable: bool,
+    cursor: Cursor,
+    min_inner_size: Option<Size>,
+    max_inner_size: Option<Size>,
+}
+
+/// These are attributes the user can change, so we cannot make them reactive.
+#[derive(Clone, Debug)]
+pub(crate) struct InitialAttrs {
+    inner_size: Option<Size>,
+    position: Option<Position>,
+    // TODO: move window_icon to ReactiveWindowAttrs once the winit type implements PartialEq
+    window_icon: Option<Icon>,
+}
+
+pub(crate) struct WindowCallbacks<State> {
+    on_close: Option<Box<dyn Fn(&mut State)>>,
+}
+impl<S> Default for WindowCallbacks<S> {
+    fn default() -> Self {
+        Self { on_close: None }
+    }
+}
+
+impl<State> WindowAttrs<State> {
+    /// Initializes a new window attributes builder with the given window title.
+    pub fn new(title: impl Into<String>) -> Self {
+        Self {
+            reactive: ReactiveWindowAttrs {
+                title: title.into(),
+                resizable: true,
+                cursor: Cursor::default(),
+                min_inner_size: None,
+                max_inner_size: None,
+            },
+            initial: InitialAttrs {
+                inner_size: None,
+                position: None,
+                window_icon: None,
+            },
+            callbacks: WindowCallbacks::default(),
+        }
+    }
+
+    /// Sets whether the window is resizable or not.
+    ///
+    /// The default is `true`.
+    pub fn with_resizable(mut self, resizable: bool) -> Self {
+        self.reactive.resizable = resizable;
+        self
+    }
+
+    /// Sets the cursor icon of the window.
+    pub fn with_cursor(mut self, cursor: impl Into<Cursor>) -> Self {
+        self.reactive.cursor = cursor.into();
+        self
+    }
+
+    /// Sets the minimum dimensions the window can have.
+    pub fn with_min_inner_size<S: Into<Size>>(mut self, min_size: S) -> Self {
+        self.reactive.min_inner_size = Some(min_size.into());
+        self
+    }
+
+    /// Sets the maximum dimensions the window can have.
+    pub fn with_max_inner_size<S: Into<Size>>(mut self, max_size: S) -> Self {
+        self.reactive.max_inner_size = Some(max_size.into());
+        self
+    }
+
+    /// Requests the window to be of specific dimensions.
+    pub fn with_initial_inner_size<S: Into<Size>>(mut self, size: S) -> Self {
+        self.initial.inner_size = Some(size.into());
+        self
+    }
+
+    /// Sets a desired initial position for the window.
+    pub fn with_initial_position<P: Into<Position>>(mut self, position: P) -> Self {
+        self.initial.position = Some(position.into());
+        self
+    }
+
+    /// Sets the window icon.
+    ///
+    /// The default is `None`.
+    pub fn with_initial_window_icon(mut self, window_icon: Option<Icon>) -> Self {
+        self.initial.window_icon = window_icon;
+        self
+    }
+
+    /// Sets a callback to execute when the user has requested to close the window.
+    pub fn on_close(mut self, callback: impl Fn(&mut State) + 'static) -> Self {
+        self.callbacks.on_close = Some(Box::new(callback));
+        self
+    }
+
+    pub(crate) fn build_initial_attrs(&self) -> WindowAttributes {
+        let mut attrs = WindowAttributes::default()
+            .with_title(self.reactive.title.clone())
+            .with_cursor(self.reactive.cursor.clone())
+            .with_resizable(self.reactive.resizable)
+            .with_window_icon(self.initial.window_icon.clone());
+
+        if let Some(min_inner_size) = self.reactive.min_inner_size {
+            attrs = attrs.with_min_inner_size(min_inner_size);
+        }
+        if let Some(max_inner_size) = self.reactive.max_inner_size {
+            attrs = attrs.with_max_inner_size(max_inner_size);
+        }
+        if let Some(inner_size) = self.initial.inner_size {
+            attrs = attrs.with_inner_size(inner_size);
+        }
+        attrs
+    }
+}
+
+/// The trait [`Xilem::new`] expects to be implemented for the state.
+///
+/// [`Xilem::new_simple`] does not use this trait implementation.
+pub trait AppState {
+    /// Returns whether the application should keep running or exit.
+    ///
+    /// Is currently only checked after a close request.
+    // TODO: check this after every state mutation
+    fn keep_running(&self) -> bool;
+}
+
+#[expect(missing_docs, reason = "TODO - Document these items")]
+impl<State, Logic, WindowIter> Xilem<State, Logic>
+where
+    State: AppState + 'static,
+    Logic: FnMut(&mut State) -> WindowIter + 'static,
+    WindowIter: Iterator<Item = (WindowId, WindowAttrs<State>, Box<AnyWidgetView<State>>)>,
+{
+    /// Initialize the builder state for your app with an app logic function that returns a window iterator.
+    pub fn new(state: State, logic: Logic) -> Self
+    where
+        State: AppState,
+    {
+        Self::new_inner(state, logic)
+    }
+
+    fn new_inner(state: State, logic: Logic) -> Self {
         Self {
             state,
             logic,
-            runtime,
+            runtime: tokio::runtime::Runtime::new().unwrap(),
             default_properties: None,
-            background_color: Color::BLACK,
             fonts: Vec::new(),
         }
     }
@@ -212,12 +437,6 @@ where
         self
     }
 
-    /// Sets main window background color.
-    pub fn background_color(mut self, color: Color) -> Self {
-        self.background_color = color;
-        self
-    }
-
     // TODO: Find better ways to customize default property set.
     /// Sets default properties of widget tree.
     pub fn with_default_properties(mut self, default_properties: DefaultProperties) -> Self {
@@ -225,69 +444,23 @@ where
         self
     }
 
-    // TODO: Make windows a specific view
-    /// Run app with default window attributes.
-    pub fn run_windowed(
-        self,
-        // We pass in the event loop builder to allow
-        // This might need to be generic over the event type?
-        event_loop: EventLoopBuilder,
-        window_title: String,
-    ) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
-        let window_size = LogicalSize::new(600., 800.);
-        let window_attributes = Window::default_attributes()
-            .with_title(window_title)
-            .with_resizable(true)
-            .with_min_inner_size(window_size);
-        self.run_windowed_in(event_loop, window_attributes)
-    }
-
-    // TODO: Make windows into a custom view
     /// Run app with custom window attributes.
-    pub fn run_windowed_in(
-        mut self,
-        mut event_loop: EventLoopBuilder,
-        window_attributes: WindowAttributes,
-    ) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
+    pub fn run_in(mut self, mut event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
-        let bg_color = self.background_color;
         let default_properties = self
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        masonry_winit::app::run_with(
-            event_loop,
-            window_attributes,
-            root_widget,
-            driver,
-            default_properties,
-            bg_color,
-        )
+        let driver = self.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
+        masonry_winit::app::run_with(event_loop, driver, default_properties)
     }
 
     pub fn into_driver(
         self,
-        proxy: Arc<dyn RawProxy>,
-    ) -> (
-        impl Widget,
-        MasonryDriver<State, Logic, View, View::ViewState>,
-    ) {
-        let (driver, pod) =
-            MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts);
-        let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
-        (root_widget, driver)
+        proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
+    ) -> MasonryDriver<State, Logic> {
+        MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts)
     }
 }
 
@@ -465,7 +638,7 @@ pub struct ViewCtx {
     widget_map: WidgetMap,
     id_path: Vec<ViewId>,
     proxy: Arc<dyn RawProxy>,
-    runtime: tokio::runtime::Runtime,
+    runtime: Arc<tokio::runtime::Runtime>,
     state_changed: bool,
 }
 

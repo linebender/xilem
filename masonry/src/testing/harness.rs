@@ -7,7 +7,7 @@ use std::collections::VecDeque;
 use std::io::Cursor;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, mpsc};
 
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
@@ -119,6 +119,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// [`assert_render_snapshot`]: crate::assert_render_snapshot
 /// [`insta`]: https://docs.rs/insta/latest/insta/
 pub struct TestHarness {
+    signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
@@ -249,12 +250,16 @@ impl TestHarness {
         ));
         let data = Blob::new(Arc::new(ROBOTO));
 
+        let (signal_sender, signal_receiver) = mpsc::channel::<RenderRootSignal>();
+
         let mut harness = Self {
+            signal_receiver,
             render_root: RenderRoot::new(
-                root_widget,
+                Box::new(root_widget),
+                move |signal| signal_sender.send(signal).unwrap(),
                 RenderRootOptions {
                     // TODO - Pass the default property set as an input instead.
-                    default_properties: default_props,
+                    default_properties: Arc::new(default_props),
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
                     scale_factor: params.scale_factor,
@@ -306,7 +311,7 @@ impl TestHarness {
     // This should be ran after any operation which runs the rewrite passes
     // (i.e. processing an event, etc.)
     fn process_signals(&mut self) {
-        while let Some(signal) = self.render_root.pop_signal() {
+        while let Some(signal) = self.signal_receiver.try_iter().next() {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
                     self.action_queue.push_back((action, widget_id));

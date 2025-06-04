@@ -6,10 +6,7 @@
 //! accessing raw events from winit.
 //! Support for more custom embeddings would be welcome, but needs more design work
 
-use std::sync::Arc;
-
 use masonry_winit::app::{AppDriver, MasonryUserEvent};
-use masonry_winit::peniko::Color;
 use masonry_winit::theme::default_property_set;
 use masonry_winit::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::application::ApplicationHandler;
@@ -17,7 +14,7 @@ use winit::error::EventLoopError;
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use xilem::view::{Axis, Label, button, flex, label, sized_box};
-use xilem::{EventLoop, MasonryProxy, WidgetView, Xilem};
+use xilem::{EventLoop, WidgetView, WindowAttrs, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
@@ -128,23 +125,15 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
 
 fn main() -> Result<(), EventLoopError> {
     let window_size = winit::dpi::LogicalSize::new(800.0, 800.0);
-    let window_attributes = winit::window::Window::default_attributes()
-        .with_title("External event loop".to_string())
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
+    let window_attributes =
+        WindowAttrs::new("External event loop").with_min_inner_size(window_size);
 
-    let xilem = Xilem::new(0, app_logic);
+    let xilem = Xilem::new_simple(0, app_logic, window_attributes);
 
     let event_loop = EventLoop::with_user_event().build().unwrap();
-    let proxy = MasonryProxy::new(event_loop.create_proxy());
-    let (widget, driver) = xilem.into_driver(Arc::new(proxy));
-    let masonry_state = masonry_winit::app::MasonryState::new(
-        window_attributes,
-        &event_loop,
-        widget,
-        default_property_set(),
-        Color::BLACK,
-    );
+    let proxy = event_loop.create_proxy();
+    let driver = xilem.into_driver(move |event| proxy.send_event(event).map_err(|err| err.0));
+    let masonry_state = masonry_winit::app::MasonryState::new(&event_loop, default_property_set());
 
     let mut app = ExternalApp {
         masonry_state,
