@@ -40,6 +40,7 @@ struct CalcState {
     operand: f64,
     operator: char,
     in_num: bool,
+    ids: WidgetIds,
 }
 
 #[derive(Clone, Copy)]
@@ -283,10 +284,7 @@ impl AppDriver for CalcState {
         }
 
         ctx.render_root().edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget>();
-            let mut flex = RootWidget::child_mut(&mut root);
-            let mut flex = flex.downcast();
-            let mut label = Flex::child_mut(&mut flex, 1).unwrap();
+            let mut label = root.ctx.find_mut(self.ids.display);
             let mut label = label.downcast::<Label>();
             Label::set_text(&mut label, &*self.value);
         });
@@ -347,12 +345,17 @@ fn flex_row(
         .with_flex_child(w4, 1.0)
 }
 
-fn build_calc() -> impl Widget {
+#[derive(Default, Clone)]
+struct WidgetIds {
+    display: WidgetId,
+}
+
+fn build_calc(ids: &WidgetIds) -> impl Widget {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
     Flex::column()
         .gap(0.0)
         .with_flex_spacer(0.2)
-        .with_child(display)
+        .with_child_id(display, ids.display)
         .with_flex_spacer(0.2)
         .cross_axis_alignment(CrossAxisAlignment::End)
         .with_flex_child(
@@ -414,11 +417,14 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
+    let ids = WidgetIds::default();
+    let calc_widget = build_calc(&ids);
     let calc_state = CalcState {
         value: "0".to_string(),
         operand: 0.0,
         operator: 'C',
         in_num: false,
+        ids,
     };
 
     let mut default_properties = default_property_set();
@@ -429,10 +435,11 @@ fn main() {
     let event_loop = masonry_winit::app::EventLoop::with_user_event()
         .build()
         .unwrap();
+
     masonry_winit::app::run_with(
         event_loop,
         window_attributes,
-        RootWidget::new(build_calc()),
+        RootWidget::new(calc_widget),
         calc_state,
         default_properties,
         Color::BLACK,
@@ -451,7 +458,8 @@ mod tests {
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(default_property_set(), build_calc());
+        let mut harness =
+            TestHarness::create(default_property_set(), build_calc(&WidgetIds::default()));
         assert_render_snapshot!(harness, "example_calc_masonry_initial");
 
         // TODO - Test clicking buttons

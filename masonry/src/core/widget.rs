@@ -50,6 +50,12 @@ impl WidgetId {
     }
 }
 
+impl Default for WidgetId {
+    fn default() -> Self {
+        Self::next()
+    }
+}
+
 /// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
 pub trait AsDynWidget {
     fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget>;

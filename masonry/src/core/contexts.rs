@@ -257,6 +257,41 @@ impl MutateCtx<'_> {
         }
     }
 
+    /// Return a [`WidgetMut`] to a child widget by its id.
+    pub fn find_mut(&mut self, child_id: WidgetId) -> WidgetMut<'_, dyn Widget> {
+        let child_state_mut = self
+            .widget_state_children
+            .reborrow_mut()
+            .find_mut(child_id)
+            .expect("find_mut: child not found");
+        let child_mut = self
+            .widget_children
+            .reborrow_mut()
+            .find_mut(child_id)
+            .expect("find_mut: child not found");
+        let child_properties = self
+            .properties_children
+            .reborrow_mut()
+            .find_mut(child_id)
+            .expect("find_mut: child not found");
+        let child_ctx = MutateCtx {
+            global_state: self.global_state,
+            parent_widget_state: Some(&mut self.widget_state),
+            widget_state: child_state_mut.item,
+            widget_state_children: child_state_mut.children,
+            widget_children: child_mut.children,
+            properties: PropertiesMut {
+                map: child_properties.item,
+                default_map: self.properties.default_map,
+            },
+            properties_children: child_properties.children,
+        };
+        WidgetMut {
+            ctx: child_ctx,
+            widget: child_mut.item.as_mut_dyn(),
+        }
+    }
+
     pub(crate) fn reborrow_mut(&mut self) -> MutateCtx<'_> {
         MutateCtx {
             global_state: self.global_state,
