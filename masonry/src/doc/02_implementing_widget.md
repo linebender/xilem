@@ -444,4 +444,4 @@ The next one is about creating a container widgets, and the complications it add
 [`vello::Scene`]: crate::vello::Scene
 [`Role::Button`]: accesskit::Role::Button
 [`RenderRoot::edit_root_widget()`]: crate::app::RenderRoot::edit_root_widget
-[`Label::set_text()`]: crate::widgets::Label::set_text
+[`Label::set_text()`]: https://docs.rs/masonry_widgets/latest/masonry_widgets/widgets/struct.Label.html#method.set_text

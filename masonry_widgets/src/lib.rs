@@ -27,6 +27,8 @@ pub mod widgets;
 
 // TODO - Remove these re-exports
 pub(crate) use masonry::core;
+#[allow(unused, reason = "Used only for doc")]
+pub(crate) use masonry::doc;
 pub(crate) use masonry::include_screenshot;
 pub(crate) use masonry::kurbo;
 pub(crate) use masonry::peniko;

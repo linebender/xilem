@@ -24,6 +24,19 @@ Though it isn't representative of how we expect Masonry to be used, it does cove
 
 The app we'll create is identical to the to-do-list example shown in the README.
 
+## Dependencies
+
+In this tutorial, we'll create a Masonry app, running in a Winit window, with some common widgets provided by Masonry.
+
+This means you should add some dependencies to your project:
+
+```sh
+cargo add masonry
+cargo add masonry_widgets
+cargo add masonry_winit
+cargo add winit
+```
+
 ## The Widget tree
 
 Let's start with the `main()` function.
@@ -265,13 +278,13 @@ Currently, the only public framework built with Masonry is Xilem, though we hope
 
 Most of this documentation is written to help developers trying to build such a framework.
 
-[`Portal`]: crate::widgets::Portal
-[`Flex`]: crate::widgets::Flex
-[`Textbox`]: crate::widgets::Textbox
-[`Button`]: crate::widgets::Button
-[`RootWidget`]: crate::widgets::RootWidget
+[`Portal`]: https://docs.rs/masonry_widgets/latest/masonry_widgets/widgets/struct.Portal.html
+[`Flex`]: https://docs.rs/masonry_widgets/latest/masonry_widgets/widgets/struct.Flex.html
+[`Textbox`]: https://docs.rs/masonry_widgets/latest/masonry_widgets/widgets/struct.Textbox.html
+[`Button`]: https://docs.rs/masonry_widgets/latest/masonry_widgets/widgets/struct.Button.html
+[`RootWidget`]: https://docs.rs/masonry_widgets/latest/masonry_widgets/widgets/struct.RootWidget.html
+[add_child]: https://docs.rs/masonry_widgets/latest/masonry_widgets/widgets/struct.Flex.html#method.add_child
 
 [`Action`]: crate::core::Action
 [`WidgetId`]: crate::core::WidgetId
 [`WidgetMut`]: crate::core::WidgetMut
-[add_child]: crate::widgets::Flex::add_child

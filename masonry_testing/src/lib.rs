@@ -44,3 +44,7 @@ impl<W: Widget + 'static> TestWidgetExt for W {}
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
     std::array::from_fn(|_| WidgetId::next())
 }
+
+// TODO - Remove
+#[allow(unused, reason = "Used only for doc")]
+pub(crate) use masonry::doc;
