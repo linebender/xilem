@@ -24,7 +24,7 @@ use crate::core::{
 ///
 /// ```rust
 /// # use masonry::core::Action;
-/// # use masonry::widgets::{VirtualScrollAction, Label};
+/// # use masonry_widgets::widgets::{VirtualScrollAction, Label};
 /// # use core::marker::PhantomData;
 /// # let action: Action = Action::Other(Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 }));
 /// # struct WidgetPod<W>(W);

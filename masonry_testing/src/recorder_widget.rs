@@ -32,10 +32,10 @@ use masonry::kurbo::{Point, Size};
 /// Make one like this:
 ///
 /// ```
-/// # use masonry::widgets::Label;
+/// # use masonry_widgets::widgets::Label;
 /// # use masonry::core::Update;
-/// use masonry::testing::{Recording, Record, TestWidgetExt};
-/// use masonry::testing::TestHarness;
+/// use masonry_testing::{Recording, Record, TestWidgetExt};
+/// use masonry_testing::TestHarness;
 /// use assert_matches::assert_matches;
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);

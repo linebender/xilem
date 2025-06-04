@@ -83,14 +83,14 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// use insta::assert_debug_snapshot;
 ///
 /// use masonry::core::PointerButton;
-/// use masonry::widgets::Button;
 /// use masonry::core::Action;
-/// use masonry::assert_render_snapshot;
-/// use masonry::testing::widget_ids;
-/// use masonry::testing::TestHarness;
-/// use masonry::testing::TestWidgetExt;
-/// use masonry::theme::PRIMARY_LIGHT;
-/// use masonry::theme::default_property_set;
+/// use masonry_testing::TestHarness;
+/// use masonry_testing::TestWidgetExt;
+/// use masonry_testing::assert_render_snapshot;
+/// use masonry_testing::widget_ids;
+/// use masonry_widgets::theme::PRIMARY_LIGHT;
+/// use masonry_widgets::theme::default_property_set;
+/// use masonry_widgets::widgets::Button;
 /// # /*
 /// #[test]
 /// # */

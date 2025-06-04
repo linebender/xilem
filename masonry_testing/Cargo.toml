@@ -40,6 +40,7 @@ futures-intrusive = "0.5.0"
 web-time.workspace = true
 
 [dev-dependencies]
+masonry_widgets.workspace = true
 parley.workspace = true
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
@@ -47,6 +48,7 @@ ui-events.workspace = true
 image = { workspace = true, features = ["png"] }
 insta = { version = "1.43.1" }
 accesskit.workspace = true
+assert_matches = "1.5.0"
 
 [lints]
 workspace = true
