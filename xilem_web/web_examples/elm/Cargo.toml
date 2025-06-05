@@ -6,6 +6,13 @@ license.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[[bin]]
+name = "elm"
+test = false
+doctest = false
+bench = false
+doc = false
+
 [lints]
 workspace = true
 
