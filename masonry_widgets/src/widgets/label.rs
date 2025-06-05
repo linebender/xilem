@@ -200,7 +200,7 @@ impl Label {
         | StyleProperty::UnderlineBrush(Some(idx @ BrushIndex(1..)))
         | StyleProperty::StrikethroughBrush(Some(idx @ BrushIndex(1..))) = &property
         {
-            debug_panic!(
+            masonry::debug_panic!(
                 "Can't set a non-zero brush index ({idx:?}) on a `Label`, as it only supports global styling."
             );
         }

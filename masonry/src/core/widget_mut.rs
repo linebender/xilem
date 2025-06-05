@@ -9,15 +9,13 @@ use crate::kurbo::Affine;
 /// A rich mutable reference to a [`Widget`].
 ///
 /// In Masonry, widgets can't be mutated directly. All mutations go through a `WidgetMut`
-/// wrapper. So, to change a label's text, you might call `WidgetMut<Label>::set_text()`.
+/// wrapper. So, to change a label's text, you might call `Label::set_text(WidgetMut<Label>)`.
 /// This helps Masonry make sure that internal metadata is propagated after every widget
 /// change.
 ///
-/// You can create a `WidgetMut` from [`TestHarness`](crate::testing::TestHarness),
+/// You can create a `WidgetMut` from [`RenderRoot`](crate::app::RenderRoot),
 /// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`](crate::core::UpdateCtx) or from a parent
 /// `WidgetMut` with [`MutateCtx`].
-///
-/// `WidgetMut` implements [`Deref`](std::ops::Deref) with `W::Mut` as target.
 ///
 /// ## `WidgetMut` as a Receiver
 ///

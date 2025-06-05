@@ -117,22 +117,22 @@ impl GridParams {
     pub fn new(mut x: i32, mut y: i32, mut width: i32, mut height: i32) -> Self {
         // TODO - Use u32 params instead?
         if x < 0 {
-            debug_panic!("Grid x value should be a non-negative number; got {}", x);
+            masonry::debug_panic!("Grid x value should be a non-negative number; got {}", x);
             x = 0;
         }
         if y < 0 {
-            debug_panic!("Grid y value should be a non-negative number; got {}", y);
+            masonry::debug_panic!("Grid y value should be a non-negative number; got {}", y);
             y = 0;
         }
         if width <= 0 {
-            debug_panic!(
+            masonry::debug_panic!(
                 "Grid width value should be a positive nonzero number; got {}",
                 width
             );
             width = 1;
         }
         if height <= 0 {
-            debug_panic!(
+            masonry::debug_panic!(
                 "Grid height value should be a positive nonzero number; got {}",
                 height
             );
@@ -321,7 +321,7 @@ impl Widget for Grid {
     ) -> Size {
         let total_size = bc.max();
         if !total_size.is_finite() {
-            debug_panic!(
+            masonry::debug_panic!(
                 "Error while computing layout for grid; infinite BoxConstraint max provided {}",
                 total_size
             );

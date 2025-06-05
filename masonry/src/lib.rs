@@ -36,7 +36,6 @@
     unnameable_types,
     reason = "Requires lint_reasons rustc feature for exceptions"
 )]
-#![expect(clippy::single_match, reason = "General policy not decided")]
 
 // TODO - Add logo
 
@@ -50,10 +49,6 @@ mod passes;
 
 pub mod app;
 pub mod core;
-pub mod properties;
-pub mod testing;
-pub mod theme;
-pub mod widgets;
 
 pub use accesskit;
 pub use smallvec;

@@ -123,14 +123,18 @@
 
 // TODO - Add logo
 
+// TODO - Remove these re-exports.
 pub use masonry::*;
-
-// TODO - Restructure re-exports.
+pub use masonry_testing as testing;
+pub use masonry_testing::assert_failing_render_snapshot;
+pub use masonry_testing::assert_render_snapshot;
+pub use masonry_widgets::*;
 
 mod app_driver;
 mod convert_winit_event;
 mod event_loop_runner;
 
+// TODO - Export these from top level.
 /// Types needed for running a Masonry app.
 pub mod app {
     pub use masonry::app::*;

@@ -267,7 +267,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         | StyleProperty::UnderlineBrush(Some(idx @ BrushIndex(1..)))
         | StyleProperty::StrikethroughBrush(Some(idx @ BrushIndex(1..))) = &property
         {
-            debug_panic!(
+            masonry::debug_panic!(
                 "Can't set a non-zero brush index ({idx:?}) on a `TextArea`, as it only supports global styling.\n\
                 To modify the active brush, use `set_brush` or `with_brush` instead"
             );
@@ -888,7 +888,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
-            debug_panic!("Widget `layout` should have happened before paint");
+            masonry::debug_panic!("Widget `layout` should have happened before paint");
             let (fctx, lctx) = ctx.text_contexts();
             // The `layout` method takes `&mut self`, so we get borrow-checker errors if we return it from this block.
             self.editor.refresh_layout(fctx, lctx);

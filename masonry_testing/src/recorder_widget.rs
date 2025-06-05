@@ -18,12 +18,12 @@ use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use vello::Scene;
 
-use crate::core::{
+use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef,
 };
-use crate::kurbo::{Point, Size};
+use masonry::kurbo::{Point, Size};
 
 /// A wrapper widget that records each time one of its methods is called.
 ///
@@ -32,10 +32,10 @@ use crate::kurbo::{Point, Size};
 /// Make one like this:
 ///
 /// ```
-/// # use masonry::widgets::Label;
+/// # use masonry_widgets::widgets::Label;
 /// # use masonry::core::Update;
-/// use masonry::testing::{Recording, Record, TestWidgetExt};
-/// use masonry::testing::TestHarness;
+/// use masonry_testing::{Recording, Record, TestWidgetExt};
+/// use masonry_testing::TestHarness;
 /// use assert_matches::assert_matches;
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);

@@ -6,6 +6,7 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
+use parley::style::FontWeight;
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -16,7 +17,6 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::parley::style::FontWeight;
 use crate::widgets::Label;
 
 /// An `f32` value which can move towards a target value at a linear rate over time.

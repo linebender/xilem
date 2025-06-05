@@ -7,12 +7,12 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use vello::Scene;
 
-use crate::core::{
+use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use masonry::kurbo::{Point, Size};
 
 /// A basic wrapper widget that can replace its child.
 pub struct WrapperWidget {

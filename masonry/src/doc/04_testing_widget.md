@@ -22,6 +22,14 @@ Enabling this kind of testing is a core design goal of Masonry.
 To demonstrate how testing works in Masonry, let's write a test suite for our `ColorRectangle` widget from two chapters ago.
 
 
+## New dependency: `masonry_testing`
+
+Masonry's testing features are implemented in a separate crate:
+
+```sh
+cargo add masonry_testing
+```
+
 ## Creating the harness
 
 First, let's write a test module with a first unit test:
@@ -54,7 +62,7 @@ mod tests {
 
 First, we create a `ColorRectangle` with an arbitrary size and color.
 We use `TestWidgetExt::with_id()` to assign it a pre-drawn id.
-(As a side-effect, this also wraps our `ColorRectangle` in a [`SizedBox`] widget.)
+(As a side-effect, this also wraps our `ColorRectangle` in a [`WrapperWidget`].)
 
 Then we instantiate the [`TestHarness`], with our (wrapped) `ColorRectangle` as the root.
 
@@ -78,17 +86,17 @@ Let's add a visual test:
 
 ```rust,ignore
     // ...
-    use masonry_winit::assert_render_snapshot;
+    use masonry_winit::assert_render_snapshot;!
 
     #[test]
     fn simple_rect() {
         // ...
 
-        assert_render_snapshot!(harness, "rect_blue_rectangle");
+        assert_render_snapshot!(!harness, "rect_blue_rectangle");
     }
 ```
 
-The [`assert_render_snapshot!`] macro takes a snapshot name, renders the current state of the app, and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
+The [`assert_render_snapshot!`]! macro takes a snapshot name, renders the current state of the app, and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
 
 The rendered screenshot is compared against an existing file checked in your project, and panics if the reference file is meaningfully different (with some tolerance for small pixel-by-pixel differences) or if there isn't one.
 
@@ -121,7 +129,7 @@ Let's create another snapshot test to check that our widget correctly changes co
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
         harness.mouse_move_to(rect_id);
-        assert_render_snapshot!(harness, "rect_hovered_rectangle");
+        assert_render_snapshot!(!harness, "rect_hovered_rectangle");
     }
 ```
 
@@ -149,7 +157,7 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
         harness.mouse_move_to(rect_id);
-        assert_render_snapshot!(harness, "rect_hovered_rectangle");
+        assert_render_snapshot!(!harness, "rect_hovered_rectangle");
     }
 
     #[test]
@@ -165,7 +173,7 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
             ColorRectangle::set_size(&mut rect, Color::RED);
         });
 
-        assert_render_snapshot!(harness, "rect_big_red_rectangle");
+        assert_render_snapshot!(!harness, "rect_big_red_rectangle");
     }
 ```
 
@@ -176,9 +184,9 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
 
 The `TestHarness` is also capable of reading actions emitted by our widget with the `pop_action()` method.
 
-Since our `WidgetRectangle` doesn't emit actions, let's look at a unit test for the [`Button`] widget instead:
+Since our `WidgetRectangle` doesn't emit actions, let's look at a unit test for the `Button` widget instead:
 
-```rust
+```rust,ignore
     #[test]
     fn simple_button() {
         let [button_id] = widget_ids();
@@ -202,8 +210,7 @@ In general, `TestHarness` tries to implement methods matching every kind of beha
 
 Read the [`TestHarness`] documentation for a full overview of its API.
 
-[`Button`]: crate::widgets::Button
-[`SizedBox`]: crate::widgets::SizedBox
-[`TestHarness`]: crate::testing::TestHarness
+[`WrapperWidget`]: https://docs.rs/masonry_testing/latest/masonry_testing/struct.WrapperWidget.html
+[`TestHarness`]: https://docs.rs/masonry_testing/latest/masonry_testing/struct.TestHarness.html
+[`assert_render_snapshot!`]: https://docs.rs/masonry_testing/latest/masonry_testing/macro.assert_render_snapshot.html
 [`WidgetRef`]: crate::core::WidgetRef
-[`assert_render_snapshot!`]: crate::assert_render_snapshot

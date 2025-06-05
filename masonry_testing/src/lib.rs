@@ -3,21 +3,24 @@
 
 //! Helper tools for writing unit tests.
 
+// TODO: Remove any items listed as "Deferred"
+#![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
+#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
+#![expect(unreachable_pub, reason = "Potentially controversial code style")]
+
 mod harness;
 mod modular_widget;
 mod recorder_widget;
 mod screenshots;
 mod wrapper_widget;
 
-pub use crate::assert_failing_render_snapshot;
-pub use crate::assert_render_snapshot;
-
 pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};
 pub use modular_widget::ModularWidget;
 pub use recorder_widget::{Record, Recorder, Recording};
 pub use wrapper_widget::WrapperWidget;
 
-use crate::core::{Widget, WidgetId, WidgetPod};
+use masonry::core::{Widget, WidgetId, WidgetPod};
 
 /// External trait implemented for all widgets.
 ///
@@ -41,3 +44,7 @@ impl<W: Widget + 'static> TestWidgetExt for W {}
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
     std::array::from_fn(|_| WidgetId::next())
 }
+
+// TODO - Remove
+#[allow(unused, reason = "Used only for doc")]
+pub(crate) use masonry::doc;
