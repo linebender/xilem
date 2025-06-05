@@ -120,7 +120,7 @@ enum Child {
 
 // --- MARK: IMPL FLEX
 impl Flex {
-    /// Create a new Flex oriented along the provided axis.
+    /// Create a new `Flex` oriented along the provided axis.
     pub fn for_axis(axis: Axis) -> Self {
         Self {
             direction: axis,
