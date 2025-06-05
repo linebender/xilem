@@ -65,7 +65,8 @@ pub enum Alignment {
 }
 
 /// Describes the vertical position of a view laid on top of another view.
-/// See also [Alignment].
+///
+/// See also [`Alignment`].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VerticalAlignment {
     /// Align to the top edge.
@@ -78,7 +79,8 @@ pub enum VerticalAlignment {
 }
 
 /// Describes the horizontal position of a view laid on top of another view.
-/// See also [Alignment].
+///
+/// See also [`Alignment`].
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HorizontalAlignment {
     /// Align to the left edge.
@@ -93,7 +95,7 @@ pub enum HorizontalAlignment {
 // --- MARK: IMPL ALIGNMENTS
 
 impl Alignment {
-    /// Constructs a new Alignment from a [vertical][VerticalAlignment] and [horizontal][HorizontalAlignment] alignment.
+    /// Constructs a new `Alignment` from a [vertical][`VerticalAlignment`] and [horizontal][`HorizontalAlignment`] alignment.
     pub fn new(vertical: VerticalAlignment, horizontal: HorizontalAlignment) -> Self {
         match (vertical, horizontal) {
             (VerticalAlignment::Top, HorizontalAlignment::Left) => Self::TopLeft,

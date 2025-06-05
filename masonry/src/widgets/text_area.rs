@@ -104,7 +104,7 @@ pub struct TextArea<const USER_EDITABLE: bool> {
 impl TextArea<true> {
     /// Create a new `TextArea` which can be edited.
     ///
-    /// Useful for creating a styled [Textbox](super::Textbox).
+    /// Useful for creating a styled [`Textbox`](super::Textbox).
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new_editable(text: &str) -> Self {
@@ -115,7 +115,7 @@ impl TextArea<true> {
 impl TextArea<false> {
     /// Create a new `TextArea` which cannot be edited by the user.
     ///
-    /// Useful for creating a styled [Prose](super::Prose).
+    /// Useful for creating a styled [`Prose`](super::Prose).
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new_immutable(text: &str) -> Self {
