@@ -52,6 +52,8 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
     /// Root of the widget tree.
+    // TODO: prescribe a specific widget type here? because the role should be Role::Window
+    // and we're also special-casing the root widget in run_on_text_event_pass.
     pub(crate) root: WidgetPod<dyn Widget>,
 
     /// Whether the window size should be determined by the content or the user.
