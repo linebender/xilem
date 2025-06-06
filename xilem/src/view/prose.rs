@@ -135,7 +135,6 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
                 &mut text_area,
                 self.line_break_mode == LineBreaking::WordWrap,
             );
-            drop(text_area);
             widgets::Prose::set_clip(&mut element, line_break_clips(self.line_break_mode));
         }
     }
