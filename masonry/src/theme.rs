@@ -5,7 +5,7 @@
 
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
-use parley::GenericFamily;
+use parley::{GenericFamily, LineHeight};
 use vello::kurbo::Insets;
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
@@ -99,6 +99,6 @@ pub fn default_property_set() -> DefaultProperties {
 
 /// Applies the default text styles for Masonry into `styles`.
 pub fn default_text_styles(styles: &mut StyleSet) {
-    styles.insert(StyleProperty::LineHeight(1.2));
+    styles.insert(StyleProperty::LineHeight(LineHeight::FontSizeRelative(1.2)));
     styles.insert(GenericFamily::SystemUi.into());
 }
