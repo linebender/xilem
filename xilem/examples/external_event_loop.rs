@@ -137,7 +137,7 @@ fn main() -> Result<(), EventLoopError> {
     let (driver, window_id, root_widget) =
         xilem.into_driver_and_window(move |event| proxy.send_event(event).map_err(|err| err.0));
     let masonry_state = masonry_winit::app::MasonryState::new(
-        &event_loop,
+        event_loop.create_proxy(),
         vec![(window_id, window_attributes, root_widget)],
         default_property_set(),
     );
