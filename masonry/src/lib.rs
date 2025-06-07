@@ -40,15 +40,19 @@
 
 // TODO - Add logo
 
+#[path = "../../masonry_core/src/util.rs"]
 #[macro_use]
 pub mod util;
 
 // TODO - re-add #[doc(hidden)]
 pub mod doc;
 
+#[path = "../../masonry_core/src/passes/mod.rs"]
 mod passes;
 
+#[path = "../../masonry_core/src/app/mod.rs"]
 pub mod app;
+#[path = "../../masonry_core/src/core/mod.rs"]
 pub mod core;
 pub mod properties;
 pub mod testing;
