@@ -6,8 +6,7 @@ use std::collections::HashMap;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
-use vello::kurbo::Affine;
-use vello::kurbo::Rect;
+use vello::kurbo::{Affine, Rect};
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};

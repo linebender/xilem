@@ -9,8 +9,7 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
-use vello::kurbo::{Affine, RoundedRectRadii};
-use vello::kurbo::{Point, Size};
+use vello::kurbo::{Affine, Point, RoundedRectRadii, Size};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{

@@ -3,10 +3,8 @@
 
 use std::{collections::HashMap, marker::PhantomData, ops::Range};
 
-use masonry_winit::{
-    core::{FromDynWidget, Widget, WidgetPod},
-    widgets::{self, VirtualScrollAction},
-};
+use masonry_winit::core::{FromDynWidget, Widget, WidgetPod};
+use masonry_winit::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
 use xilem_core::{AsyncCtx, DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
 

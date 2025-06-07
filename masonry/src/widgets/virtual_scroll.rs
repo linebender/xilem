@@ -3,7 +3,8 @@
 
 #![warn(missing_docs)]
 
-use std::{collections::HashMap, ops::Range};
+use std::collections::HashMap;
+use std::ops::Range;
 
 use vello::kurbo::{Point, Size, Vec2};
 

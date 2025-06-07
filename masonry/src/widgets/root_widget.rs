@@ -7,8 +7,7 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::Point;
-use vello::kurbo::Size;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,

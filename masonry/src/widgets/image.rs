@@ -8,8 +8,7 @@ use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::Affine;
-use vello::kurbo::Size;
+use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{

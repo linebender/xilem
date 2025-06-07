@@ -5,10 +5,10 @@ use tracing::{debug, info_span, trace};
 
 use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
+use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessEvent, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut, TextEvent,
     Widget, WidgetId,
-    keyboard::{Key, KeyState, NamedKey},
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition};
 use crate::passes::{enter_span, merge_state_up};
