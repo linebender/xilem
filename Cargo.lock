@@ -1882,7 +1882,6 @@ dependencies = [
  "smallvec",
  "tracing",
  "tracing-tracy",
- "tracing_android_trace",
  "ui-events",
  "vello",
  "web-time",
