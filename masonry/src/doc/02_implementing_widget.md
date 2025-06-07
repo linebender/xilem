@@ -441,7 +441,7 @@ The next one is about creating a container widgets, and the complications it add
 [`PaintCtx::size()`]: crate::core::PaintCtx::size
 [`UpdateCtx::request_paint_only()`]: crate::core::UpdateCtx::request_paint_only
 [`ButtonPressed`]: crate::core::Action::ButtonPressed
-[`vello::Scene`]: crate::vello::Scene
+[`vello::Scene`]: vello::Scene
 [`Role::Button`]: accesskit::Role::Button
 [`RenderRoot::edit_root_widget()`]: crate::app::RenderRoot::edit_root_widget
 [`Label::set_text()`]: crate::widgets::Label::set_text
