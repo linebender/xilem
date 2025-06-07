@@ -7,7 +7,7 @@ use crate::dpi::PhysicalSize;
 use crate::kurbo::Rect;
 use crate::util::Duration;
 
-use ui_events::keyboard::KeyboardEvent;
+use ui_events::keyboard::{Code, Key, KeyState, KeyboardEvent};
 
 // TODO - Occluded(bool) event
 // TODO - winit ActivationTokenDone thing
@@ -136,6 +136,30 @@ pub enum Update {
 }
 
 impl TextEvent {
+    /// Constructor for Keyboard events with [`KeyState::Down`].
+    ///
+    /// The key code will be marked as [`Code::Unidentified`].
+    pub fn key_down(key: Key) -> Self {
+        Self::Keyboard(KeyboardEvent {
+            state: KeyState::Down,
+            key,
+            code: Code::Unidentified,
+            ..Default::default()
+        })
+    }
+
+    /// Constructor for Keyboard events with [`KeyState::Up`].
+    ///
+    /// The key code will be marked as [`Code::Unidentified`].
+    pub fn key_up(key: Key) -> Self {
+        Self::Keyboard(KeyboardEvent {
+            state: KeyState::Up,
+            key,
+            code: Code::Unidentified,
+            ..Default::default()
+        })
+    }
+
     /// Constructor for IME Preedit events.
     ///
     /// This is mostly useful for testing.
