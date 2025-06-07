@@ -5,7 +5,7 @@
 
 use std::future::Future;
 use std::marker::PhantomData;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::JoinHandle;
@@ -28,27 +28,19 @@ use crate::core::{
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn worker<M, V, F, H, State, Action, Fut>(
+pub fn worker<M, V, H, State, Action, Fut>(
     value: V,
-    init_future: F,
+    init_future: fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     on_response: H,
-) -> Worker<F, H, M, V>
+) -> Worker<fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut, H, M, V>
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
-    const {
-        assert!(
-            size_of::<F>() == 0,
-            "`worker` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `worker_raw`."
-        );
-    };
     Worker {
         value,
-        init_future,
+        init_future: Mutex::new(Some(init_future)),
         on_response,
         message: PhantomData,
     }
@@ -64,21 +56,21 @@ pub fn worker_raw<M, V, F, H, State, Action, Fut>(
     on_response: H,
 ) -> Worker<F, H, M, V>
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    F: FnOnce(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
     Worker {
         value,
-        init_future,
+        init_future: Mutex::new(Some(init_future)),
         on_response,
         message: PhantomData,
     }
 }
 
 pub struct Worker<F, H, M, V> {
-    init_future: F,
+    init_future: Mutex<Option<F>>,
     value: V,
     on_response: H,
     message: PhantomData<fn() -> M>,
@@ -94,7 +86,7 @@ impl<F, H, M, V> ViewMarker for Worker<F, H, M, V> {}
 
 impl<State, Action, V, F, H, M, Fut> View<State, Action, ViewCtx> for Worker<F, H, M, V>
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
+    F: FnOnce(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
     V: Send + PartialEq + Clone + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
@@ -105,6 +97,8 @@ where
     type ViewState = WorkerState<V>;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let init_future = self.init_future.lock().unwrap().take();
+        let init_future = init_future.unwrap();
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy.clone();
@@ -113,7 +107,7 @@ where
         tx.send(self.value.clone()).unwrap();
         let handle = ctx
             .runtime()
-            .spawn((self.init_future)(MessageProxy::new(proxy, path), rx));
+            .spawn(init_future(MessageProxy::new(proxy, path), rx));
         (NoElement, WorkerState { handle, sender: tx })
     }
 

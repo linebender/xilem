@@ -5,7 +5,7 @@
 
 use std::future::Future;
 use std::marker::PhantomData;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use tokio::task::JoinHandle;
 
@@ -26,22 +26,17 @@ use crate::core::{
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
+pub fn task<M, H, State, Action, Fut>(
+    init_future: fn(MessageProxy<M>) -> Fut,
+    on_event: H,
+) -> Task<fn(MessageProxy<M>) -> Fut, H, M>
 where
-    F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
-    const {
-        assert!(
-            size_of::<F>() == 0,
-            "`task` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `task_raw`."
-        );
-    };
     Task {
-        init_future,
+        init_future: Mutex::new(Some(init_future)),
         on_event,
         message: PhantomData,
     }
@@ -53,20 +48,20 @@ where
 /// See `task` for full documentation.
 pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
-    F: Fn(MessageProxy<M>) -> Fut,
+    F: FnOnce(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
     Task {
-        init_future,
+        init_future: Mutex::new(Some(init_future)),
         on_event,
         message: PhantomData,
     }
 }
 
 pub struct Task<F, H, M> {
-    init_future: F,
+    init_future: Mutex<Option<F>>,
     on_event: H,
     message: PhantomData<fn() -> M>,
 }
@@ -74,7 +69,7 @@ pub struct Task<F, H, M> {
 impl<F, H, M> ViewMarker for Task<F, H, M> {}
 impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<F, H, M>
 where
-    F: Fn(MessageProxy<M>) -> Fut + 'static,
+    F: FnOnce(MessageProxy<M>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
@@ -84,12 +79,14 @@ where
     type ViewState = JoinHandle<()>;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+        let init_future = self.init_future.lock().unwrap().take();
+        let init_future = init_future.unwrap();
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy.clone();
         let handle = ctx
             .runtime()
-            .spawn((self.init_future)(MessageProxy::new(proxy, path)));
+            .spawn(init_future(MessageProxy::new(proxy, path)));
         (NoElement, handle)
     }
 
