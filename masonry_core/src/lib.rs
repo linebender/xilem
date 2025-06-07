@@ -1,10 +1,10 @@
-// Copyright 2018 the Xilem Authors and the Druid Authors
+// Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 //! Traits and types of the Masonry toolkit.
-//! See [Masonry Winit's documentation] for more details, examples and resources.
+//! See [Masonry's documentation] for more details, examples and resources.
 //!
-//! [Masonry Winit's documentation]: https://docs.rs/masonry_winit/latest/
+//! [Masonry's documentation]: https://docs.rs/masonry_winit/latest/
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
@@ -25,31 +25,32 @@
 )]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 // TODO: Remove any items listed as "Deferred"
+#![expect(clippy::should_implement_trait, reason = "Deferred: Noisy")]
+#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 #![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
-#![expect(clippy::single_match, reason = "General policy not decided")]
+#![expect(
+    unnameable_types,
+    reason = "Requires lint_reasons rustc feature for exceptions"
+)]
+// TODO - Add logo
 
 // TODO - re-add #[doc(hidden)]
 pub mod doc;
 
-// TODO - Add logo
-pub mod properties;
-pub mod testing;
-pub mod theme;
-pub mod widgets;
+#[macro_use]
+pub mod util;
 
-pub use accesskit;
-pub use smallvec;
-pub use vello::peniko::color::palette;
-pub use vello::{kurbo, peniko};
-pub use {cursor_icon, dpi, parley, vello};
+mod passes;
 
-pub use masonry_core::{app, core, util};
-pub use ui_events;
+pub mod app;
+pub mod core;
 
-// TODO - Remove these re-exports.
-pub use masonry_core::util::{Handled, UnitPoint};
-pub use masonry_core::{debug_panic, include_screenshot};
+// TODO - Move to core?
+pub use util::{Handled, UnitPoint};
+
+// TODO - Remove re-exports
+pub(crate) use {::dpi, ::vello, vello::peniko};
