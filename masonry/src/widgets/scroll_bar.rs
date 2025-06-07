@@ -6,6 +6,7 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Rect;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -15,7 +16,6 @@ use crate::core::{
 use crate::theme;
 use crate::util::{fill_color, stroke};
 use crate::widgets::Axis;
-use vello::kurbo::{Point, Size};
 
 // TODO
 // - Fade scrollbars? Find out how Linux/macOS/Windows do it

@@ -8,6 +8,7 @@ use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Point;
+use vello::kurbo::Size;
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
@@ -16,7 +17,6 @@ use crate::core::{
 };
 use crate::properties::{Background, Padding};
 use crate::util::fill;
-use vello::kurbo::Size;
 
 /// A wrapper Widget which app drivers can wrap around the rest of the widget tree.
 ///

@@ -12,13 +12,13 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::{Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use crate::util::UnitPoint;
-use vello::kurbo::{Rect, Size};
 
 // TODO - Have child widget type as generic argument
 

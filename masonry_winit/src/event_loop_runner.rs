@@ -10,6 +10,7 @@ use masonry::core::DefaultProperties;
 use masonry::theme::default_property_set;
 use masonry::util::Instant;
 use tracing::{debug, error, info, info_span};
+use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use vello::kurbo::Affine;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -26,7 +27,6 @@ use crate::app::{
 };
 use crate::core::{TextEvent, Widget, WidgetId, WindowEvent};
 use crate::peniko::Color;
-use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {

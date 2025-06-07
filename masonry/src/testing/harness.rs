@@ -15,6 +15,7 @@ use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
+use vello::kurbo::{Point, Size, Vec2};
 use vello::util::{RenderContext, block_on_wgpu};
 use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, TexelCopyBufferInfo,
@@ -34,7 +35,6 @@ use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
 use crate::peniko::{Blob, Color};
 use crate::testing::screenshots::get_image_diff;
 use crate::util::Duration;
-use vello::kurbo::{Point, Size, Vec2};
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {

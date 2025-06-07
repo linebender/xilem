@@ -164,14 +164,10 @@ pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
 // ---
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use std::time::Instant;
-#[cfg(target_arch = "wasm32")]
-pub use web_time::Instant;
+pub use std::time::{Duration, Instant};
 
-#[cfg(not(target_arch = "wasm32"))]
-pub use std::time::Duration;
 #[cfg(target_arch = "wasm32")]
-pub use web_time::Duration;
+pub use web_time::{Duration, Instant};
 
 // ---
 

@@ -5,6 +5,9 @@
 
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
+use parley::GenericFamily;
+use vello::kurbo::Insets;
+
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::peniko::Color;
 use crate::properties::types::Gradient;
@@ -13,9 +16,6 @@ use crate::properties::{
     HoveredBorderColor, Padding,
 };
 use crate::widgets::Button;
-use vello::kurbo::Insets;
-
-use parley::GenericFamily;
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)

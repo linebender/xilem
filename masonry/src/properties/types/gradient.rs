@@ -1,9 +1,10 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use vello::kurbo::{Point, Rect};
+
 use crate::peniko::color::{ColorSpaceTag, HueDirection};
 use crate::peniko::{ColorStops, ColorStopsSource, Extend};
-use vello::kurbo::{Point, Rect};
 
 /// Properties for the supported [`Gradient`] types.
 ///

@@ -7,13 +7,13 @@ use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
 use vello::kurbo::Affine;
+use vello::kurbo::Rect;
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::{AnyMap, get_debug_color, stroke};
-use vello::kurbo::Rect;
 
 // --- MARK: PAINT WIDGET
 fn paint_widget(

@@ -10,6 +10,7 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Cap, Line, Stroke};
+use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
@@ -18,7 +19,6 @@ use crate::core::{
 };
 use crate::peniko::Color;
 use crate::theme;
-use vello::kurbo::{Point, Size, Vec2};
 
 /// An animated spinner widget for showing a loading state.
 ///

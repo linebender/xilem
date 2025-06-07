@@ -10,6 +10,7 @@ use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 use vello::kurbo::{Affine, RoundedRectRadii};
+use vello::kurbo::{Point, Size};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{
@@ -19,7 +20,6 @@ use crate::core::{
 };
 use crate::properties::{Background, Padding};
 use crate::util::stroke;
-use vello::kurbo::{Point, Size};
 
 // FIXME - Improve all doc in this module ASAP.
 

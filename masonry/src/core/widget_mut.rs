@@ -3,8 +3,9 @@
 
 use std::any::TypeId;
 
-use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
 use vello::kurbo::Affine;
+
+use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
 
 /// A rich mutable reference to a [`Widget`].
 ///

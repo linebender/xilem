@@ -3,9 +3,10 @@
 
 use std::any::TypeId;
 
+use vello::kurbo::{Point, RoundedRect, Size, Vec2};
+
 use crate::core::{BoxConstraints, Property, UpdateCtx};
 use crate::properties::CornerRadius;
-use vello::kurbo::{Point, RoundedRect, Size, Vec2};
 
 /// The width of a widget's border, in logical pixels.
 #[expect(missing_docs, reason = "obvious")]

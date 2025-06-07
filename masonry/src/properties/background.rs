@@ -3,10 +3,11 @@
 
 use std::any::TypeId;
 
+use vello::kurbo::Rect;
+
 use crate::core::{Property, UpdateCtx};
 use crate::peniko::color::{AlphaColor, Srgb};
 use crate::properties::types::Gradient;
-use vello::kurbo::Rect;
 
 // TODO - Replace "Background" with "BackgroundColor" and move the gradient case
 // to BackgroundImage to match CSS spec.

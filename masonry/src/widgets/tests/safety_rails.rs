@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use smallvec::smallvec;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{PointerButton, Update, Widget, WidgetId, WidgetPod};
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
 use crate::theme::default_property_set;
 use crate::widgets::Flex;
-use vello::kurbo::{Point, Size};
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
     let child = WidgetPod::new(child);

@@ -12,13 +12,13 @@ use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
 use vello::Scene;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, WidgetRef,
 };
-use vello::kurbo::{Point, Size};
 
 /// A unique identifier for a single [`Widget`].
 ///

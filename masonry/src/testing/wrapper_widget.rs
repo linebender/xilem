@@ -6,13 +6,13 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use vello::Scene;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use vello::kurbo::{Point, Size};
 
 /// A basic wrapper widget that can replace its child.
 pub struct WrapperWidget {

@@ -10,6 +10,7 @@ use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
 use vello::kurbo::Affine;
+use vello::kurbo::Size;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -20,7 +21,6 @@ use crate::properties::*;
 use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::Label;
-use vello::kurbo::Size;
 
 /// A button with a text label.
 ///

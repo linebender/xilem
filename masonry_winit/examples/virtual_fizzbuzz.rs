@@ -13,7 +13,6 @@ use masonry_winit::app::{AppDriver, DriverCtx};
 use masonry_winit::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
-
 use winit::window::Window;
 
 /// The widget kind contained in the scroll area. This is a type parameter (`W`) of [`VirtualScroll`],

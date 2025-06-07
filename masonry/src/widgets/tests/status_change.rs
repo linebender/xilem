@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
+use vello::kurbo::Vec2;
 
 use crate::core::{PointerButton, PointerEvent, Update, WidgetId};
 use crate::testing::{
@@ -9,7 +10,6 @@ use crate::testing::{
 };
 use crate::theme::default_property_set;
 use crate::widgets::{Button, Flex, SizedBox};
-use vello::kurbo::Vec2;
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     while let Some(event) = recording.next() {
