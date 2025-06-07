@@ -17,6 +17,7 @@ targets = []
 
 [features]
 default = []
+tracy = ["masonry_core/tracy"]
 
 [dependencies]
 masonry_core.workspace = true
