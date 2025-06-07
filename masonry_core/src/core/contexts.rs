@@ -341,8 +341,9 @@ impl_context_method!(
     {
         /// Get the Parley contexts needed to build and paint text sections.
         ///
-        /// Note that most users should embed the [`Label`](crate::widgets::Label) widget as a child
-        /// for non-interactive text.
+        /// Most users should embed a pre-built label widget
+        /// (such as `masonry::widgets::Label`)
+        /// as a child for non-interactive text.
         /// These contexts could however be useful for custom text editing, such as for rich text editing.
         pub fn text_contexts(&mut self) -> (&mut FontContext, &mut LayoutContext<BrushIndex>) {
             (

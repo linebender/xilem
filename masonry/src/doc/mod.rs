@@ -35,11 +35,5 @@ pub mod doc_04_testing_widget {}
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_04b_widget_properties {}
 
-#[doc = include_str!("./05_pass_system.md")]
-/// <style> .rustdoc-hidden { display: none; } </style>
-pub mod doc_05_pass_system {}
-
-#[doc(alias = "glossary")]
-#[doc = include_str!("./06_masonry_concepts.md")]
-/// <style> .rustdoc-hidden { display: none; } </style>
-pub mod doc_06_masonry_concepts {}
+pub use masonry_core::doc::doc_05_pass_system;
+pub use masonry_core::doc::doc_06_masonry_concepts;

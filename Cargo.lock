@@ -1867,7 +1867,6 @@ name = "masonry"
 version = "0.3.0"
 dependencies = [
  "accesskit",
- "anymap3",
  "assert_matches",
  "cursor-icon",
  "dpi",
@@ -1875,9 +1874,34 @@ dependencies = [
  "futures-intrusive",
  "image",
  "insta",
+ "masonry_core",
  "oxipng",
  "parley",
  "pollster",
+ "profiling",
+ "smallvec",
+ "tracing",
+ "tracing-tracy",
+ "tracing_android_trace",
+ "ui-events",
+ "vello",
+ "web-time",
+ "wgpu",
+]
+
+[[package]]
+name = "masonry_core"
+version = "0.3.0"
+dependencies = [
+ "accesskit",
+ "anymap3",
+ "assert_matches",
+ "cursor-icon",
+ "dpi",
+ "float-cmp",
+ "image",
+ "insta",
+ "parley",
  "profiling",
  "smallvec",
  "time",
@@ -1889,7 +1913,6 @@ dependencies = [
  "ui-events",
  "vello",
  "web-time",
- "wgpu",
 ]
 
 [[package]]
