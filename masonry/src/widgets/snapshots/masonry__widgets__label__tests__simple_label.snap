@@ -1,6 +1,0 @@
----
-source: masonry/src/widget/label.rs
-expression: harness.root_widget()
-
----
-Label<Hello>

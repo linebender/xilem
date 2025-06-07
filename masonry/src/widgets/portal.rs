@@ -511,7 +511,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -564,7 +563,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(400., 400.));
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "portal_button_list_no_scroll");
 
         harness.edit_root_widget(|mut portal| {

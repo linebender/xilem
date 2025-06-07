@@ -611,7 +611,6 @@ where
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -631,7 +630,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "split_columns");
     }
 
@@ -647,7 +645,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "split_rows");
     }
 

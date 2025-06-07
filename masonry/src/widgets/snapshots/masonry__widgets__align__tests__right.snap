@@ -1,7 +1,0 @@
----
-source: src/widget/align.rs
-expression: harness.root_widget()
----
-Align(
-    Label<hello>,
-)

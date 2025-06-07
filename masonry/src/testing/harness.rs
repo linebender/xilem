@@ -43,6 +43,12 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
     pointer_type: PointerType::Mouse,
 };
 
+// TODO - Add kittest support
+// - Being able to check that the tree has an access node
+// - Getting a WidgetRef/WidgetMut to a node from a kittest::Queryable
+// - Making a debug snapshot of the access tree
+// https://github.com/rerun-io/kittest
+
 /// A safe headless environment to test widgets in.
 ///
 /// `TestHarness` is a type that simulates a [`RenderRoot`] for testing.

@@ -66,7 +66,7 @@ We can use it to get a widget's origin, size, flags, etc.
 It also has a `Debug` impl, which prints the widget's name and the sub-tree of all its children.
 We use that debug impl with `insta::assert_debug_snapshot` to get an easy test checking the widget exists.
 
-<!-- TODO - Include snapshot result. -->
+<!-- TODO - Remove reference to snapshot testing, replace with accessibility testing. -->
 
 
 ## Screenshot testing
