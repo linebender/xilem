@@ -1881,7 +1881,6 @@ dependencies = [
  "profiling",
  "smallvec",
  "tracing",
- "tracing-tracy",
  "ui-events",
  "vello",
  "web-time",
