@@ -25,7 +25,6 @@
 )]
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 // TODO: Remove any items listed as "Deferred"
-#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
