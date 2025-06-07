@@ -54,7 +54,7 @@ mod tests {
 
 First, we create a `ColorRectangle` with an arbitrary size and color.
 We use `TestWidgetExt::with_id()` to assign it a pre-drawn id.
-(As a side-effect, this also wraps our `ColorRectangle` in a [`SizedBox`] widget.)
+(As a side-effect, this also wraps our `ColorRectangle` in a [`WrapperWidget`].)
 
 Then we instantiate the [`TestHarness`], with our (wrapped) `ColorRectangle` as the root.
 
@@ -205,5 +205,6 @@ Read the [`TestHarness`] documentation for a full overview of its API.
 [`Button`]: crate::widgets::Button
 [`SizedBox`]: crate::widgets::SizedBox
 [`TestHarness`]: crate::testing::TestHarness
+[`WrapperWidget`]: crate::testing::TestHarness
 [`WidgetRef`]: crate::core::WidgetRef
 [`assert_render_snapshot!`]: crate::assert_render_snapshot

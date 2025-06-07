@@ -24,6 +24,19 @@ Though it isn't representative of how we expect Masonry to be used, it does cove
 
 The app we'll create is identical to the to-do-list example shown in the README.
 
+## Dependencies
+
+In this tutorial, we'll create a Masonry app, running in a Winit window, with some common widgets provided by Masonry.
+
+This means you should add some dependencies to your project:
+
+```sh
+cargo add masonry
+cargo add masonry_winit
+cargo add winit
+```
+
+
 ## The Widget tree
 
 Let's start with the `main()` function.
