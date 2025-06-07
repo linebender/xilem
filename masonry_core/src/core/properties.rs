@@ -10,8 +10,7 @@ use crate::util::AnyMap;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
-/// See [properties documentation](crate::doc::doc_04b_widget_properties) for
-/// a full explanation of the general concept.
+/// Properties are arbitrary values that are stored alongside a widget.
 ///
 /// Note that if a type `Foobar` implements Property, that tells you that Foobar is meant
 /// to be a property of *some* widget, but it doesn't tell you *which* widget accepts Foobar
@@ -35,36 +34,24 @@ pub trait Property: Default + Send + Sync + 'static {
 }
 
 // TODO - Implement Debug.
-/// A collection of properties that a widget can be created with.
-///
-/// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
+/// A collection of [properties](Property) that a widget can be created with.
 #[derive(Default)]
 pub struct Properties {
     pub(crate) map: AnyMap,
 }
 
-/// Reference to a collection of properties that a widget has access to.
+/// Reference to a collection of [properties](Property) that a widget has access to.
 ///
 /// Used by the [`Widget`] trait during rendering passes and in some search methods.
-///
-/// See [properties documentation](crate::doc::doc_04b_widget_properties) for
-/// details.
-///
-/// [`Widget`]: crate::core::Widget
 #[derive(Clone, Copy)]
 pub struct PropertiesRef<'a> {
     pub(crate) map: &'a AnyMap,
     pub(crate) default_map: &'a AnyMap,
 }
 
-/// Mutable reference to a collection of properties that a widget has access to.
+/// Mutable reference to a collection of [properties](Property) that a widget has access to.
 ///
 /// Used by the [`Widget`] trait during most passes.
-///
-/// See [properties documentation](crate::doc::doc_04b_widget_properties) for
-/// details.
-///
-/// [`Widget`]: crate::core::Widget
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
     pub(crate) default_map: &'a AnyMap,
@@ -72,12 +59,10 @@ pub struct PropertiesMut<'a> {
 
 // TODO - Better document local vs default properties.
 
-/// A collection of default properties for all widgets.
+/// A collection of default [properties](Property) for all widgets.
 ///
 /// Default property values can be added to this collection for
 /// every `(widget type, property type)` pair.
-///
-/// See [properties documentation](crate::doc::doc_04b_widget_properties) for details.
 #[derive(Default, Debug)]
 pub struct DefaultProperties {
     /// Maps widget types to the default property map for that widget.

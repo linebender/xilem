@@ -1,5 +1,5 @@
 [package]
-name = "masonry"
+name = "masonry_core"
 version.workspace = true # We mimic Xilem's version
 description = "Traits and types of the Masonry toolkit."
 keywords = ["gui", "ui", "toolkit"]
@@ -22,21 +22,19 @@ default = []
 tracy = ["dep:tracing-tracy", "tracing-tracy/enable", "vello/wgpu-profiler"]
 
 [dependencies]
-masonry_core.workspace = true
 vello.workspace = true
-wgpu.workspace = true
 parley.workspace = true
+tree_arena.workspace = true
 ui-events.workspace = true
 smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
-image.workspace = true
-futures-intrusive = "0.5.0"
-pollster = "0.4.0"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "time"] }
 tracing-tracy = { version = "0.11.4", optional = true }
 accesskit.workspace = true
+time = { workspace = true, features = ["macros", "formatting"] }
 cursor-icon = "1.1.0"
 dpi.workspace = true
-oxipng = { version = "9.1.5", default-features = false }
+anymap3 = "1.0.1"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
