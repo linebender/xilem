@@ -15,6 +15,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
+use crate::debug_panic;
 
 /// A container with either horizontal or vertical layout.
 ///

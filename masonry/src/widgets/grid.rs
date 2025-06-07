@@ -12,6 +12,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
+use crate::debug_panic;
 
 /// A widget that arranges its children in a grid.
 ///

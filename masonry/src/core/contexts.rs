@@ -18,6 +18,7 @@ use crate::core::{
     FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState,
 };
+use crate::debug_panic;
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
 use crate::util::{AnyMap, get_debug_color};

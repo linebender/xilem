@@ -21,6 +21,7 @@ use crate::core::{
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::debug_panic;
 use crate::theme::default_text_styles;
 use crate::{palette, theme};
 

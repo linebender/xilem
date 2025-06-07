@@ -10,6 +10,7 @@ use crate::core::{
     AccessEvent, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut, TextEvent,
     Widget, WidgetId,
 };
+use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
 use crate::passes::{enter_span, merge_state_up};
 
