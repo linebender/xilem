@@ -1,9 +1,0 @@
----
-source: masonry/src/widget/sized_box.rs
-assertion_line: 317
-expression: harness.root_widget()
-
----
-SizedBox(
-    Label<hello>,
-)

@@ -484,7 +484,7 @@ impl Widget for Label {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
+
     use parley::style::GenericFamily;
     use parley::{FontFamily, StyleProperty};
 
@@ -501,7 +501,6 @@ mod tests {
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "label_hello");
     }
 

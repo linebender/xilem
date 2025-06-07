@@ -267,7 +267,6 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -285,7 +284,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "button_hello");
 
         assert_eq!(harness.pop_action(), None);

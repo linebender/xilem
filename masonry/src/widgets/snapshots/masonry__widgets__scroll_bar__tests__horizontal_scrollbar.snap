@@ -1,8 +1,0 @@
----
-source: masonry/src/widgets/scroll_bar.rs
-assertion_line: 301
-expression: harness.root_widget()
----
-WrapperWidget(
-    ScrollBar,
-)

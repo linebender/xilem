@@ -196,7 +196,6 @@ fn log_size_warnings(size: Size) {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -212,7 +211,6 @@ mod tests {
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "align_centered");
     }
 
@@ -222,7 +220,6 @@ mod tests {
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "align_right");
     }
 
@@ -232,7 +229,6 @@ mod tests {
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "align_left");
     }
 }

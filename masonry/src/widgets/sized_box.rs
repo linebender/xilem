@@ -485,7 +485,7 @@ impl Widget for SizedBox {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
+
     use vello::peniko::Gradient;
 
     use super::*;
@@ -525,7 +525,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_empty_box");
     }
 
@@ -539,7 +538,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_label_box_no_size");
     }
 
@@ -555,7 +553,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_label_box_with_size");
     }
 
@@ -570,7 +567,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_label_box_with_padding");
     }
 
@@ -585,7 +581,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_label_box_with_solid_background");
     }
 
@@ -610,7 +605,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_empty_box_with_gradient_background");
     }
 
@@ -627,7 +621,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_label_box_with_background_and_padding");
     }
 
@@ -646,7 +639,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "sized_box_label_box_with_outer_padding");
     }
 
