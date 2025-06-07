@@ -4,13 +4,13 @@
 use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::trace_span;
+use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::vello::Scene;
 
 struct Child {
     widget: WidgetPod<dyn Widget>,
