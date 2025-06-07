@@ -9,14 +9,13 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
-use vello::kurbo::Affine;
+use vello::kurbo::{Affine, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::Size;
 use crate::properties::*;
 use crate::theme;
 use crate::util::{fill, stroke};

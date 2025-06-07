@@ -8,7 +8,7 @@ use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::Affine;
+use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
@@ -16,7 +16,6 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
-use crate::kurbo::Size;
 
 // TODO - Resolve name collision between masonry_winit::Image and peniko::Image
 

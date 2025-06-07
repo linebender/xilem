@@ -10,6 +10,7 @@ use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
 use tree_arena::{ArenaMutList, ArenaRefList};
+use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
@@ -17,7 +18,7 @@ use crate::core::{
     FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState,
 };
-use crate::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+use crate::debug_panic;
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
 use crate::util::{AnyMap, get_debug_color};

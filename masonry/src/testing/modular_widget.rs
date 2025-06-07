@@ -8,13 +8,13 @@ use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
 };
-use crate::kurbo::{Point, Size};
 
 pub type PointerEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent);

@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use smallvec::smallvec;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{PointerButton, Update, Widget, WidgetId, WidgetPod};
-use crate::kurbo::{Point, Size};
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
 use crate::theme::default_property_set;
 use crate::widgets::Flex;

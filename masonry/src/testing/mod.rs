@@ -9,8 +9,7 @@ mod recorder_widget;
 mod screenshots;
 mod wrapper_widget;
 
-pub use crate::assert_failing_render_snapshot;
-pub use crate::assert_render_snapshot;
+pub use crate::{assert_failing_render_snapshot, assert_render_snapshot};
 
 pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};
 pub use modular_widget::ModularWidget;

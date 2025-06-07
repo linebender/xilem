@@ -7,14 +7,13 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::Point;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::Size;
 use crate::properties::{Background, Padding};
 use crate::util::fill;
 

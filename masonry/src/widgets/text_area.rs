@@ -5,6 +5,7 @@ use std::mem::Discriminant;
 use std::time::Instant;
 
 use accesskit::{Node, NodeId, Role};
+use cursor_icon::CursorIcon;
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use parley::layout::Alignment;
@@ -20,9 +21,9 @@ use crate::core::{
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::debug_panic;
 use crate::theme::default_text_styles;
 use crate::{palette, theme};
-use cursor_icon::CursorIcon;
 
 /// `TextArea` implements the core of interactive text.
 ///

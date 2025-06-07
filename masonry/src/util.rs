@@ -7,10 +7,7 @@ use std::any::Any;
 use std::hash::Hash;
 
 use vello::Scene;
-use vello::kurbo::Join;
-use vello::kurbo::{
-    Affine, Rect, Shape, Stroke, {self},
-};
+use vello::kurbo::{Affine, Join, Point, Rect, Shape, Stroke};
 use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
 
 /// Panic in debug and `tracing::error` in release mode.
@@ -126,8 +123,8 @@ impl UnitPoint {
     }
 
     /// Given a rectangle, resolve the point within the rectangle.
-    pub fn resolve(self, rect: Rect) -> kurbo::Point {
-        kurbo::Point::new(
+    pub fn resolve(self, rect: Rect) -> Point {
+        Point::new(
             rect.x0 + self.u * (rect.x1 - rect.x0),
             rect.y0 + self.v * (rect.y1 - rect.y0),
         )
@@ -164,14 +161,10 @@ pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
 // ---
 
 #[cfg(not(target_arch = "wasm32"))]
-pub use std::time::Instant;
-#[cfg(target_arch = "wasm32")]
-pub use web_time::Instant;
+pub use std::time::{Duration, Instant};
 
-#[cfg(not(target_arch = "wasm32"))]
-pub use std::time::Duration;
 #[cfg(target_arch = "wasm32")]
-pub use web_time::Duration;
+pub use web_time::{Duration, Instant};
 
 // ---
 

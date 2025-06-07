@@ -1,13 +1,12 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::util::AnyMap;
-
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::default::Default;
 
 use crate::core::Widget;
+use crate::util::AnyMap;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///

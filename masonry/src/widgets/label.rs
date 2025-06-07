@@ -19,6 +19,7 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
     TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
+use crate::debug_panic;
 use crate::theme;
 use crate::theme::default_text_styles;
 

@@ -3,7 +3,8 @@
 
 #![warn(missing_docs)]
 
-use std::{collections::HashMap, ops::Range};
+use std::collections::HashMap;
+use std::ops::Range;
 
 use vello::kurbo::{Point, Size, Vec2};
 
@@ -13,6 +14,7 @@ use crate::core::{
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::debug_panic;
 
 /// The action type sent by the [`VirtualScroll`] widget.
 ///

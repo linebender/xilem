@@ -3,11 +3,11 @@
 
 //! Events.
 
-use crate::dpi::PhysicalSize;
-use crate::kurbo::Rect;
-use crate::util::Duration;
-
 use ui_events::keyboard::KeyboardEvent;
+use vello::kurbo::Rect;
+
+use crate::dpi::PhysicalSize;
+use crate::util::Duration;
 
 // TODO - Occluded(bool) event
 // TODO - winit ActivationTokenDone thing

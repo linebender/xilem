@@ -17,13 +17,13 @@ use accesskit::{Node, Role};
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use vello::Scene;
+use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef,
 };
-use crate::kurbo::{Point, Size};
 
 /// A wrapper widget that records each time one of its methods is called.
 ///

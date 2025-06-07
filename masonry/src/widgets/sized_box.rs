@@ -9,7 +9,7 @@ use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
-use vello::kurbo::{Affine, RoundedRectRadii};
+use vello::kurbo::{Affine, Point, RoundedRectRadii, Size};
 use vello::peniko::{Brush, Fill};
 
 use crate::core::{
@@ -17,7 +17,6 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
 use crate::properties::{Background, Padding};
 use crate::util::stroke;
 

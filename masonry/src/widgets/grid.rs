@@ -5,14 +5,14 @@ use accesskit::{Node, Role};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Stroke};
+use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use crate::debug_panic;
 
 /// A widget that arranges its children in a grid.
 ///

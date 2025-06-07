@@ -8,14 +8,14 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::common::FloatExt;
-use vello::kurbo::{Affine, Line, Stroke, Vec2};
+use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
-use crate::kurbo::{Point, Rect, Size};
+use crate::debug_panic;
 
 /// A container with either horizontal or vertical layout.
 ///
