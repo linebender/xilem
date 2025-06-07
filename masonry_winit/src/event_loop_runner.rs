@@ -124,7 +124,7 @@ pub struct MasonryState<'a> {
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
     // The reasons for this are unclear
-    proxy: EventLoopProxy,
+    event_loop_proxy: EventLoopProxy,
     #[cfg(feature = "tracy")]
     frame: Option<tracing_tracy::client::Frame>,
 
@@ -186,7 +186,7 @@ pub fn run_with(
     let _ = crate::app::try_init_tracing();
 
     let mut main_state = MainState {
-        masonry_state: MasonryState::new(&event_loop, windows, default_properties),
+        masonry_state: MasonryState::new(event_loop.create_proxy(), windows, default_properties),
         app_driver: Box::new(app_driver),
     };
     main_state
@@ -266,7 +266,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 
 impl MasonryState<'_> {
     pub fn new(
-        event_loop: &EventLoop,
+        event_loop_proxy: EventLoopProxy,
         initial_windows: Vec<(WindowId, WindowAttributes, Box<dyn Widget>)>,
         default_properties: DefaultProperties,
     ) -> Self {
@@ -279,9 +279,9 @@ impl MasonryState<'_> {
         MasonryState {
             render_cx,
             renderer: None,
+            event_loop_proxy,
             #[cfg(feature = "tracy")]
             frame: None,
-            proxy: event_loop.create_proxy(),
             signal_receiver,
 
             last_anim: None,
@@ -374,7 +374,8 @@ impl MasonryState<'_> {
             self.need_first_frame.push(handle.id());
         }
 
-        let adapter = Adapter::with_event_loop_proxy(event_loop, &handle, self.proxy.clone());
+        let adapter =
+            Adapter::with_event_loop_proxy(event_loop, &handle, self.event_loop_proxy.clone());
         let handle = Arc::new(handle);
         // https://github.com/rust-windowing/winit/issues/2308
         #[cfg(target_os = "ios")]
