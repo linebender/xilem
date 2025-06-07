@@ -12,10 +12,10 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut,
 };
-use crate::kurbo::{Point, Size};
 use crate::theme;
 use crate::util::{fill_color, stroke};
 use crate::widgets::Axis;
+use vello::kurbo::{Point, Size};
 
 // TODO
 // - Fade scrollbars? Find out how Linux/macOS/Windows do it

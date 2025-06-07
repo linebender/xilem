@@ -16,11 +16,11 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::Size;
 use crate::properties::*;
 use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::Label;
+use vello::kurbo::Size;
 
 /// A button with a text label.
 ///

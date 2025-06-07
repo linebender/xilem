@@ -14,7 +14,7 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
 };
-use crate::kurbo::{Point, Size};
+use vello::kurbo::{Point, Size};
 
 pub type PointerEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent);

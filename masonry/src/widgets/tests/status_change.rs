@@ -4,12 +4,12 @@
 use assert_matches::assert_matches;
 
 use crate::core::{PointerButton, PointerEvent, Update, WidgetId};
-use crate::kurbo::Vec2;
 use crate::testing::{
     PRIMARY_MOUSE, Record, Recording, TestHarness, TestWidgetExt as _, widget_ids,
 };
 use crate::theme::default_property_set;
 use crate::widgets::{Button, Flex, SizedBox};
+use vello::kurbo::Vec2;
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     while let Some(event) = recording.next() {

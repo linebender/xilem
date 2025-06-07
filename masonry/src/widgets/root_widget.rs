@@ -14,9 +14,9 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::Size;
 use crate::properties::{Background, Padding};
 use crate::util::fill;
+use vello::kurbo::Size;
 
 /// A wrapper Widget which app drivers can wrap around the rest of the widget tree.
 ///

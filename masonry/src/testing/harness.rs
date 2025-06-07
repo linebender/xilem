@@ -31,10 +31,10 @@ use crate::core::{
     WidgetRef, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::kurbo::{Point, Size, Vec2};
 use crate::peniko::{Blob, Color};
 use crate::testing::screenshots::get_image_diff;
 use crate::util::Duration;
+use vello::kurbo::{Point, Size, Vec2};
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {

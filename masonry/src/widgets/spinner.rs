@@ -16,9 +16,9 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
-use crate::kurbo::{Point, Size, Vec2};
 use crate::peniko::Color;
 use crate::theme;
+use vello::kurbo::{Point, Size, Vec2};
 
 /// An animated spinner widget for showing a loading state.
 ///

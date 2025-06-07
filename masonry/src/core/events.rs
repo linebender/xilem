@@ -4,8 +4,8 @@
 //! Events.
 
 use crate::dpi::PhysicalSize;
-use crate::kurbo::Rect;
 use crate::util::Duration;
+use vello::kurbo::Rect;
 
 use ui_events::keyboard::KeyboardEvent;
 

@@ -13,10 +13,10 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
 use crate::theme;
 use crate::util::{UnitPoint, fill_lin_gradient, stroke};
 use crate::widgets::{Label, LineBreaking};
+use vello::kurbo::{Point, Size};
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
 

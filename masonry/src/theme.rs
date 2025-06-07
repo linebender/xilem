@@ -6,7 +6,6 @@
 #![allow(missing_docs, reason = "Names are self-explanatory.")]
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
-use crate::kurbo::Insets;
 use crate::peniko::Color;
 use crate::properties::types::Gradient;
 use crate::properties::{
@@ -14,6 +13,7 @@ use crate::properties::{
     HoveredBorderColor, Padding,
 };
 use crate::widgets::Button;
+use vello::kurbo::Insets;
 
 use parley::GenericFamily;
 

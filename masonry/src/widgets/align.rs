@@ -17,8 +17,8 @@ use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
 };
-use crate::kurbo::{Rect, Size};
 use crate::util::UnitPoint;
+use vello::kurbo::{Rect, Size};
 
 // TODO - Have child widget type as generic argument
 

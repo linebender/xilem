@@ -15,7 +15,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
-use crate::kurbo::{Point, Rect, Size};
+use vello::kurbo::{Point, Rect, Size};
 
 /// A container with either horizontal or vertical layout.
 ///

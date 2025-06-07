@@ -17,9 +17,9 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
 use crate::properties::{Background, Padding};
 use crate::util::stroke;
+use vello::kurbo::{Point, Size};
 
 // FIXME - Improve all doc in this module ASAP.
 

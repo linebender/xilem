@@ -9,8 +9,8 @@ use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
 use crate::vello::Scene;
+use vello::kurbo::{Point, Size};
 
 struct Child {
     widget: WidgetPod<dyn Widget>,

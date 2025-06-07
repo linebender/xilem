@@ -4,7 +4,7 @@
 use std::any::TypeId;
 
 use crate::core::{BoxConstraints, Property, UpdateCtx};
-use crate::kurbo::{Point, Size, Vec2};
+use vello::kurbo::{Point, Size, Vec2};
 
 /// The width of padding between a widget's border and its contents.
 #[derive(Default, Clone, Copy, Debug, PartialEq)]

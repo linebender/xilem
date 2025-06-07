@@ -12,7 +12,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use vello::kurbo::{Point, Size};
 
 /// A widget that arranges its children in a grid.
 ///

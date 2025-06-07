@@ -16,7 +16,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
-use crate::kurbo::Size;
+use vello::kurbo::Size;
 
 // TODO - Resolve name collision between masonry_winit::Image and peniko::Image
 

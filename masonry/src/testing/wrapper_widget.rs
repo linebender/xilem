@@ -12,7 +12,7 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Point, Size};
+use vello::kurbo::{Point, Size};
 
 /// A basic wrapper widget that can replace its child.
 pub struct WrapperWidget {

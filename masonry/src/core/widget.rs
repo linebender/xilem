@@ -18,7 +18,7 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, WidgetRef,
 };
-use crate::kurbo::{Point, Size};
+use vello::kurbo::{Point, Size};
 
 /// A unique identifier for a single [`Widget`].
 ///

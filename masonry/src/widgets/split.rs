@@ -13,12 +13,12 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
-use crate::kurbo::{Line, Point, Rect, Size};
 use crate::peniko::Color;
 use crate::theme;
 use crate::util::{fill_color, stroke};
 use crate::widgets::flex::Axis;
 use cursor_icon::CursorIcon;
+use vello::kurbo::{Line, Point, Rect, Size};
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
