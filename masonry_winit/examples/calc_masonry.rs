@@ -16,7 +16,7 @@ use std::str::FromStr;
 
 use masonry::accesskit::{Node, Role};
 use masonry::smallvec::{SmallVec, smallvec};
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
@@ -40,6 +40,7 @@ struct CalcState {
     operand: f64,
     operator: char,
     in_num: bool,
+    window_id: WindowId,
 }
 
 #[derive(Clone, Copy)]
@@ -273,7 +274,15 @@ impl Widget for CalcButton {
 }
 
 impl AppDriver for CalcState {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        action: Action,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
+
         match action {
             Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {
                 CalcAction::Digit(digit) => self.digit(*digit),
@@ -282,7 +291,7 @@ impl AppDriver for CalcState {
             _ => unreachable!(),
         }
 
-        ctx.render_root().edit_root_widget(|mut root| {
+        ctx.render_root(window_id).edit_root_widget(|mut root| {
             let mut root = root.downcast::<RootWidget>();
             let mut flex = RootWidget::child_mut(&mut root);
             let mut flex = flex.downcast();
@@ -419,6 +428,7 @@ fn main() {
         operand: 0.0,
         operator: 'C',
         in_num: false,
+        window_id: WindowId::next(),
     };
 
     let mut default_properties = default_property_set();
@@ -431,11 +441,13 @@ fn main() {
         .unwrap();
     masonry_winit::app::run_with(
         event_loop,
-        window_attributes,
-        RootWidget::new(build_calc()),
+        vec![(
+            calc_state.window_id,
+            window_attributes,
+            Box::new(RootWidget::new(build_calc())),
+        )],
         calc_state,
         default_properties,
-        Color::BLACK,
     )
     .unwrap();
 }

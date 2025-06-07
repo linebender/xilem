@@ -1,7 +1,8 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
+use std::sync::Arc;
 
 use accesskit::{ActionRequest, TreeUpdate};
 use parley::fontique::{self, Blob, Collection, CollectionOptions, SourceCache};
@@ -16,8 +17,8 @@ use vello::kurbo::{
 use crate::Handled;
 use crate::core::{
     AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
-    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState, WindowEvent,
+    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetOptions, WidgetPod,
+    WidgetRef, WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -66,7 +67,7 @@ pub struct RenderRoot {
     pub(crate) last_mouse_pos: Option<LogicalPosition<f64>>,
 
     /// Default values that properties will have if not defined per-widget.
-    pub(crate) default_properties: DefaultProperties,
+    pub(crate) default_properties: Arc<DefaultProperties>,
 
     /// State passed to context types.
     pub(crate) global_state: RenderRootState,
@@ -84,8 +85,8 @@ pub struct RenderRoot {
 
 /// State shared between passes.
 pub(crate) struct RenderRootState {
-    /// Queue of signals to be processed by the event loop.
-    pub(crate) signal_queue: VecDeque<RenderRootSignal>,
+    /// Sink for signals to be processed by the event loop.
+    signal_sink: Box<dyn FnMut(RenderRootSignal)>,
 
     /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
@@ -117,6 +118,7 @@ pub(crate) struct RenderRootState {
     pub(crate) cursor_icon: CursorIcon,
 
     /// Cache for Parley font data.
+    // TODO: move font context out of RenderRootState so that we only have it once per app
     pub(crate) font_context: FontContext,
 
     /// Cache for Parley text layout data.
@@ -168,7 +170,7 @@ pub enum WindowSizePolicy {
 /// Options for creating a [`RenderRoot`].
 pub struct RenderRootOptions {
     /// Default values that properties will have if not defined per-widget.
-    pub default_properties: DefaultProperties,
+    pub default_properties: Arc<DefaultProperties>,
 
     /// If true, `fontique` will provide access to system fonts
     /// using platform-specific APIs.
@@ -195,6 +197,7 @@ pub struct RenderRootOptions {
 }
 
 /// Objects emitted by the [`RenderRoot`] to signal that something has changed or require external actions.
+#[derive(Debug)]
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
     Action(Action, WidgetId),
@@ -246,7 +249,11 @@ impl RenderRoot {
     /// Note that this doesn't create a window or start an event loop.
     /// The `masonry` crate doesn't provide a way to do that:
     /// look for `masonry_winit::app::run` instead.
-    pub fn new(root_widget: impl Widget, options: RenderRootOptions) -> Self {
+    pub fn new(
+        root_widget: Box<dyn Widget>,
+        signal_sink: impl FnMut(RenderRootSignal) + 'static,
+        options: RenderRootOptions,
+    ) -> Self {
         let RenderRootOptions {
             default_properties,
             use_system_fonts,
@@ -257,13 +264,13 @@ impl RenderRoot {
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
         let mut root = Self {
-            root: WidgetPod::new(root_widget).erased(),
+            root: WidgetPod::new_with_options(root_widget, WidgetOptions::default()).erased(),
             size_policy,
             size: PhysicalSize::new(0, 0),
             last_mouse_pos: None,
             default_properties,
             global_state: RenderRootState {
-                signal_queue: VecDeque::new(),
+                signal_sink: Box::new(signal_sink),
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
@@ -435,25 +442,6 @@ impl RenderRoot {
         let scene = run_paint_pass(self);
         let tree_update = run_accessibility_pass(self, self.global_state.scale_factor);
         (scene, tree_update)
-    }
-
-    /// Pop the oldest signal from the queue.
-    pub fn pop_signal(&mut self) -> Option<RenderRootSignal> {
-        self.global_state.signal_queue.pop_front()
-    }
-
-    /// Pop the oldest signal from the queue that matches the predicate.
-    ///
-    /// Doesn't affect other signals.
-    ///
-    /// Note that you should still use [`Self::pop_signal`] to avoid letting the queue
-    /// grow indefinitely.
-    pub fn pop_signal_matching(
-        &mut self,
-        predicate: impl Fn(&RenderRootSignal) -> bool,
-    ) -> Option<RenderRootSignal> {
-        let idx = self.global_state.signal_queue.iter().position(predicate)?;
-        self.global_state.signal_queue.remove(idx)
     }
 
     /// Get the current icon that the mouse should display.
@@ -742,14 +730,14 @@ impl RenderRoot {
     // TODO - Remove?
     #[doc(hidden)]
     pub fn emit_signal(&mut self, signal: RenderRootSignal) {
-        self.global_state.signal_queue.push_back(signal);
+        self.global_state.emit_signal(signal);
     }
 }
 
 impl RenderRootState {
     /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
-        self.signal_queue.push_back(signal);
+        (self.signal_sink)(signal);
     }
 
     pub(crate) fn focus_changed(&self) -> bool {

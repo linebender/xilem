@@ -9,7 +9,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
@@ -34,16 +34,25 @@ struct Driver {
     fizz: ArcStr,
     buzz: ArcStr,
     fizzbuzz: ArcStr,
+    window_id: WindowId,
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action) {
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        widget_id: WidgetId,
+        action: Action,
+    ) {
+        debug_assert_eq!(window_id, self.window_id, "unknown window");
+
         if widget_id == self.scroll_id {
             if let Action::Other(action) = action {
                 // The VirtualScroll widget will send us a VirtualScrollAction every time it wants different
                 // items to be loaded or unloaded.
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
-                ctx.render_root().edit_root_widget(|mut root| {
+                ctx.render_root(window_id).edit_root_widget(|mut root| {
                     let mut root = root.downcast::<RootWidget>();
                     let mut scroll = RootWidget::child_mut(&mut root);
                     let mut scroll = scroll.downcast::<VirtualScroll<ScrollContents>>();
@@ -89,6 +98,7 @@ fn main() {
         fizz: "Fizz".into(),
         buzz: "Buzz".into(),
         fizzbuzz: "FizzBuzz".into(),
+        window_id: WindowId::next(),
     };
     let window_size = LogicalSize::new(800.0, 500.0);
     let window_attributes = Window::default_attributes()
@@ -98,8 +108,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::from_pod(main_widget),
+        vec![(
+            driver.window_id,
+            window_attributes,
+            Box::new(RootWidget::from_pod(main_widget)),
+        )],
         driver,
     )
     .unwrap();

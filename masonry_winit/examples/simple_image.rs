@@ -8,7 +8,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry_winit::app::{AppDriver, DriverCtx};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::core::{Action, ObjectFit, WidgetId};
 use masonry_winit::dpi::LogicalSize;
 use masonry_winit::widgets::{Image, RootWidget};
@@ -18,7 +18,14 @@ use winit::window::Window;
 struct Driver;
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, _ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, _action: Action) {}
+    fn on_action(
+        &mut self,
+        _window_id: WindowId,
+        _ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        _action: Action,
+    ) {
+    }
 }
 
 fn make_image() -> Image {
@@ -44,8 +51,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        window_attributes,
-        RootWidget::new(make_image()),
+        vec![(
+            WindowId::next(),
+            window_attributes,
+            Box::new(RootWidget::new(make_image())),
+        )],
         Driver,
     )
     .unwrap();
