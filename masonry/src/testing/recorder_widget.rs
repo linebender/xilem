@@ -131,7 +131,7 @@ impl<W: Widget> Recorder<W> {
 impl<W: Widget> Widget for Recorder<W> {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -141,7 +141,7 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn on_text_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
@@ -151,7 +151,7 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn on_access_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
@@ -159,29 +159,34 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.on_access_event(ctx, props, event);
     }
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, interval: u64) {
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
         self.recording.push(Record::AF(interval));
         self.child.on_anim_frame(ctx, props, interval);
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         self.recording.push(Record::RC);
         self.child.register_children(ctx);
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update) {
         self.recording.push(Record::U(event.clone()));
         self.child.update(ctx, props, event);
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         self.recording.push(Record::PC(property_type));
         self.child.property_changed(ctx, property_type);
     }
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -190,12 +195,12 @@ impl<W: Widget> Widget for Recorder<W> {
         size
     }
 
-    fn compose(&mut self, ctx: &mut ComposeCtx) {
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
         self.recording.push(Record::Compose);
         self.child.compose(ctx);
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         self.recording.push(Record::Paint);
         self.child.paint(ctx, props, scene);
     }
@@ -204,7 +209,12 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accessibility_role()
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         self.recording.push(Record::Access);
         self.child.accessibility(ctx, props, node);
     }
@@ -233,7 +243,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.get_debug_text()
     }
 
-    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
+    fn get_cursor(&self, ctx: &QueryCtx<'_>, pos: Point) -> CursorIcon {
         self.child.get_cursor(ctx, pos)
     }
 

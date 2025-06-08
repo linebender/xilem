@@ -99,7 +99,7 @@ fn clamp_progress(progress: Option<f64>) -> Option<f64> {
 impl Widget for ProgressBar {
     fn on_pointer_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
     ) {
@@ -107,7 +107,7 @@ impl Widget for ProgressBar {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -115,21 +115,27 @@ impl Widget for ProgressBar {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.label);
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+    }
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -151,7 +157,7 @@ impl Widget for ProgressBar {
         final_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let border_width = 1.;
         let size = ctx.size();
         let border_radius = 2.;
@@ -195,7 +201,12 @@ impl Widget for ProgressBar {
         Role::ProgressIndicator
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         node.set_min_numeric_value(0.0);
         node.set_max_numeric_value(1.0);
         if let Some(value) = self.progress {

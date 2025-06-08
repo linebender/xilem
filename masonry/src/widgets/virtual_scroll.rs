@@ -311,7 +311,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// - It makes writing drivers easier, as the safety rails in `VirtualScroll` can be more precise.
     // (It also simplifies writing tests)
     // TODO: This could instead take ownership of the action, and return some kind of `{to_remove, to_add}` iterator index pair.
-    pub fn will_handle_action(this: &mut WidgetMut<Self>, action: &VirtualScrollAction) {
+    pub fn will_handle_action(this: &mut WidgetMut<'_, Self>, action: &VirtualScrollAction) {
         if this.widget.active_range != action.old_active {
             debug_panic!(
                 "Handling a VirtualScrollAction with the wrong range; got {:?}, expected {:?} for widget {}.\n\
@@ -335,7 +335,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// This should be done only in the handling of a [`VirtualScrollAction`].
     /// This must be called after [`VirtualScroll::will_handle_action`].
     #[track_caller]
-    pub fn add_child(this: &mut WidgetMut<Self>, idx: i64, child: WidgetPod<W>) {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, idx: i64, child: WidgetPod<W>) {
         // TODO: Maybe just warn?
         debug_assert!(
             this.widget.action_handled,
@@ -361,7 +361,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Note that if you are changing the valid range, you should *not* remove any active children
     /// outside of that range; instead the controller will send an action removing those children.
     #[track_caller]
-    pub fn remove_child(this: &mut WidgetMut<Self>, idx: i64) {
+    pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: i64) {
         // TODO: Maybe just warn?
         debug_assert!(
             this.widget.action_handled,
@@ -422,7 +422,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     ///
     /// This method is mostly useful for tests, but can be used outside of tests
     /// (for example, in certain scrollbar schemes).
-    pub fn overwrite_anchor(this: &mut WidgetMut<Self>, idx: i64) {
+    pub fn overwrite_anchor(this: &mut WidgetMut<'_, Self>, idx: i64) {
         this.widget.anchor_index = idx;
         this.widget.scroll_offset_from_anchor = 0.;
         this.ctx.request_layout();
@@ -474,7 +474,7 @@ const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -494,7 +494,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_text_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
@@ -522,25 +522,31 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
         // TODO: Handle scroll-etc. eventss
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         // TODO: Register in id order
         for child in self.items.values_mut() {
             ctx.register_child(child);
         }
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+    }
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> vello::kurbo::Size {
@@ -804,7 +810,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         viewport_size
     }
 
-    fn compose(&mut self, ctx: &mut ComposeCtx) {
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
         let translation = Vec2 {
             x: 0.,
             y: -self.scroll_offset_from_anchor,
@@ -818,7 +824,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn paint(
         &mut self,
-        _ctx: &mut PaintCtx,
+        _ctx: &mut PaintCtx<'_>,
         _props: &PropertiesRef<'_>,
         _scene: &mut vello::Scene,
     ) {
@@ -850,7 +856,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         node: &mut accesskit::Node,
     ) {

@@ -181,7 +181,7 @@ impl VariableLabel {
 impl Widget for VariableLabel {
     fn on_pointer_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
     ) {
@@ -193,7 +193,7 @@ impl Widget for VariableLabel {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -201,21 +201,27 @@ impl Widget for VariableLabel {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+    }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.label);
     }
 
     fn on_anim_frame(
         &mut self,
-        ctx: &mut UpdateCtx,
+        ctx: &mut UpdateCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
@@ -243,7 +249,7 @@ impl Widget for VariableLabel {
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -252,7 +258,7 @@ impl Widget for VariableLabel {
         size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -260,7 +266,7 @@ impl Widget for VariableLabel {
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {

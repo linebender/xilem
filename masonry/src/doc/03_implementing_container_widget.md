@@ -50,10 +50,10 @@ A container widget needs to pay special attention to these methods:
 trait Widget {
     // ...
 
-    fn layout(&mut self, ctx: &mut LayoutCtx) -> Size;
-    fn compose(&mut self, ctx: &mut ComposeCtx);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>) -> Size;
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>);
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx);
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
 }
 ```
@@ -85,7 +85,7 @@ use masonry_winit::core::{
 impl Widget for VerticalStack {
     // ...
 
-    fn layout(&mut self, ctx: &mut LayoutCtx, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
         let total_width = bc.max().width;
         let total_height = bc.max().height;
         let total_child_height = total_height - self.gap * (self.children.len() - 1) as f64;
@@ -138,7 +138,7 @@ use masonry_winit::core::{
 impl Widget for VerticalStack {
     // ...
 
-    fn compose(&mut self, _ctx: &mut ComposeCtx) {}
+    fn compose(&mut self, _ctx: &mut ComposeCtx<'_>) {}
 }
 ```
 
@@ -154,7 +154,7 @@ use masonry_winit::{
 impl Widget for VerticalStack {
     // ...
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in &self.children {
             ctx.register_child(child);
         }
@@ -228,22 +228,22 @@ In the case of our `VerticalStack`, all of them can be left empty:
 
 ```rust,ignore
 impl Widget for VerticalStack {
-    fn on_pointer_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
-    fn on_text_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
-    fn on_access_event(&mut self, _ctx: &mut EventCtx, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
+    fn on_pointer_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &PointerEvent) {}
+    fn on_text_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
+    fn on_access_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
 
-    fn on_anim_frame(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _interval: u64) {}
-    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+    fn on_anim_frame(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, _interval: u64) {}
+    fn update(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &Update) {}
 
     // ...
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, _node: &mut Node) {}
+    fn accessibility(&mut self, _ctx: &mut AccessCtx<'_>, _props: &PropertiesRef<'_>, _node: &mut Node) {}
 
     // ...
 }

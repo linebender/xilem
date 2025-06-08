@@ -17,19 +17,20 @@ use crate::core::{
 };
 
 pub type PointerEventFn<S> =
-    dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent);
-pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &TextEvent);
-pub type AccessEventFn<S> = dyn FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &AccessEvent);
-pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, u64);
-pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx);
-pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, &Update);
-pub type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx, TypeId);
+    dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &PointerEvent);
+pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &TextEvent);
+pub type AccessEventFn<S> =
+    dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &AccessEvent);
+pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, u64);
+pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx<'_>);
+pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, &Update);
+pub type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, TypeId);
 pub type LayoutFn<S> =
-    dyn FnMut(&mut S, &mut LayoutCtx, &mut PropertiesMut<'_>, &BoxConstraints) -> Size;
-pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx);
-pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx, &PropertiesRef<'_>, &mut Scene);
+    dyn FnMut(&mut S, &mut LayoutCtx<'_>, &mut PropertiesMut<'_>, &BoxConstraints) -> Size;
+pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
+pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene);
 pub type RoleFn<S> = dyn Fn(&S) -> Role;
-pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx, &PropertiesRef<'_>, &mut Node);
+pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx<'_>, &PropertiesRef<'_>, &mut Node);
 pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
 
 /// A widget that can be constructed from individual functions, builder-style.
@@ -113,7 +114,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::on_pointer_event`]
     pub fn pointer_event_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &PointerEvent) + 'static,
+        f: impl FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &PointerEvent) + 'static,
     ) -> Self {
         self.on_pointer_event = Some(Box::new(f));
         self
@@ -122,7 +123,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::on_text_event`]
     pub fn text_event_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &TextEvent) + 'static,
+        f: impl FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &TextEvent) + 'static,
     ) -> Self {
         self.on_text_event = Some(Box::new(f));
         self
@@ -131,7 +132,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::on_access_event`]
     pub fn access_event_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut EventCtx, &mut PropertiesMut<'_>, &AccessEvent) + 'static,
+        f: impl FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &AccessEvent) + 'static,
     ) -> Self {
         self.on_access_event = Some(Box::new(f));
         self
@@ -140,7 +141,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::on_anim_frame`]
     pub fn anim_frame_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, u64) + 'static,
+        f: impl FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, u64) + 'static,
     ) -> Self {
         self.on_anim_frame = Some(Box::new(f));
         self
@@ -149,7 +150,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::register_children`]
     pub fn register_children_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut RegisterCtx) + 'static,
+        f: impl FnMut(&mut S, &mut RegisterCtx<'_>) + 'static,
     ) -> Self {
         self.register_children = Some(Box::new(f));
         self
@@ -158,7 +159,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::update`]
     pub fn update_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut UpdateCtx, &mut PropertiesMut<'_>, &Update) + 'static,
+        f: impl FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, &Update) + 'static,
     ) -> Self {
         self.update = Some(Box::new(f));
         self
@@ -167,7 +168,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::property_changed`]
     pub fn property_change_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut UpdateCtx, TypeId) + 'static,
+        f: impl FnMut(&mut S, &mut UpdateCtx<'_>, TypeId) + 'static,
     ) -> Self {
         self.property_change = Some(Box::new(f));
         self
@@ -176,14 +177,15 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::layout`]
     pub fn layout_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut LayoutCtx, &mut PropertiesMut<'_>, &BoxConstraints) -> Size + 'static,
+        f: impl FnMut(&mut S, &mut LayoutCtx<'_>, &mut PropertiesMut<'_>, &BoxConstraints) -> Size
+        + 'static,
     ) -> Self {
         self.layout = Some(Box::new(f));
         self
     }
 
     /// See [`Widget::compose`]
-    pub fn compose_fn(mut self, f: impl FnMut(&mut S, &mut ComposeCtx) + 'static) -> Self {
+    pub fn compose_fn(mut self, f: impl FnMut(&mut S, &mut ComposeCtx<'_>) + 'static) -> Self {
         self.compose = Some(Box::new(f));
         self
     }
@@ -191,7 +193,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::paint`]
     pub fn paint_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut PaintCtx, &PropertiesRef<'_>, &mut Scene) + 'static,
+        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene) + 'static,
     ) -> Self {
         self.paint = Some(Box::new(f));
         self
@@ -206,7 +208,7 @@ impl<S> ModularWidget<S> {
     /// See [`Widget::accessibility`]
     pub fn access_fn(
         mut self,
-        f: impl FnMut(&mut S, &mut AccessCtx, &PropertiesRef<'_>, &mut Node) + 'static,
+        f: impl FnMut(&mut S, &mut AccessCtx<'_>, &PropertiesRef<'_>, &mut Node) + 'static,
     ) -> Self {
         self.access = Some(Box::new(f));
         self
@@ -226,7 +228,7 @@ impl<S> ModularWidget<S> {
 impl<S: 'static> Widget for ModularWidget<S> {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -237,7 +239,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn on_text_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
@@ -248,7 +250,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn on_access_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
@@ -257,25 +259,30 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, interval: u64) {
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
         if let Some(f) = self.on_anim_frame.as_mut() {
             f(&mut self.state, ctx, props, interval);
         }
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         if let Some(f) = self.register_children.as_mut() {
             f(&mut self.state, ctx);
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update) {
         if let Some(f) = self.update.as_mut() {
             f(&mut self.state, ctx, props, event);
         }
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if let Some(f) = self.property_change.as_mut() {
             f(&mut self.state, ctx, property_type);
         }
@@ -283,7 +290,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -294,7 +301,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
             .unwrap_or_else(|| Size::new(100., 100.))
     }
 
-    fn compose(&mut self, ctx: &mut ComposeCtx) {
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
         if let Some(f) = self.compose.as_mut() {
             f(&mut self.state, ctx);
         }
@@ -308,13 +315,18 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         if let Some(f) = self.access.as_mut() {
             f(&mut self.state, ctx, props, node);
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         if let Some(f) = self.paint.as_mut() {
             f(&mut self.state, ctx, props, scene);
         }
@@ -348,7 +360,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         None
     }
 
-    fn get_cursor(&self, _ctx: &QueryCtx, _pos: Point) -> CursorIcon {
+    fn get_cursor(&self, _ctx: &QueryCtx<'_>, _pos: Point) -> CursorIcon {
         CursorIcon::Default
     }
 

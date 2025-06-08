@@ -33,9 +33,9 @@ impl WidgetArena {
         &self,
         widget_id: WidgetId,
     ) -> (
-        ArenaRef<Box<dyn Widget>>,
-        ArenaRef<WidgetState>,
-        ArenaRef<AnyMap>,
+        ArenaRef<'_, Box<dyn Widget>>,
+        ArenaRef<'_, WidgetState>,
+        ArenaRef<'_, AnyMap>,
     ) {
         let widget = self
             .widgets
@@ -57,9 +57,9 @@ impl WidgetArena {
         &mut self,
         widget_id: WidgetId,
     ) -> (
-        ArenaMut<Box<dyn Widget>>,
-        ArenaMut<WidgetState>,
-        ArenaMut<AnyMap>,
+        ArenaMut<'_, Box<dyn Widget>>,
+        ArenaMut<'_, WidgetState>,
+        ArenaMut<'_, AnyMap>,
     ) {
         let widget = self
             .widgets
@@ -78,7 +78,7 @@ impl WidgetArena {
 
     #[allow(dead_code)]
     #[track_caller]
-    pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<Box<dyn Widget>> {
+    pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<'_, Box<dyn Widget>> {
         self.widgets
             .find(widget_id)
             .expect("get_widget: widget not in widget tree")
@@ -86,21 +86,21 @@ impl WidgetArena {
 
     #[allow(dead_code)]
     #[track_caller]
-    pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> ArenaMut<Box<dyn Widget>> {
+    pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> ArenaMut<'_, Box<dyn Widget>> {
         self.widgets
             .find_mut(widget_id)
             .expect("get_widget_mut: widget not in widget tree")
     }
 
     #[track_caller]
-    pub(crate) fn get_state(&mut self, widget_id: WidgetId) -> ArenaRef<WidgetState> {
+    pub(crate) fn get_state(&mut self, widget_id: WidgetId) -> ArenaRef<'_, WidgetState> {
         self.states
             .find(widget_id)
             .expect("get_state: widget state not in widget tree")
     }
 
     #[track_caller]
-    pub(crate) fn get_state_mut(&mut self, widget_id: WidgetId) -> ArenaMut<WidgetState> {
+    pub(crate) fn get_state_mut(&mut self, widget_id: WidgetId) -> ArenaMut<'_, WidgetState> {
         self.states
             .find_mut(widget_id)
             .expect("get_state_mut: widget state not in widget tree")

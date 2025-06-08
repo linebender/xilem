@@ -479,7 +479,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -541,7 +541,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn on_text_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
@@ -806,7 +806,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn on_access_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
@@ -830,9 +830,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
     }
 
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+    fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::FocusChanged(_) => {
                 ctx.request_render();
@@ -847,7 +847,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -885,7 +885,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         bc.constrain(area_size)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
@@ -929,7 +929,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         render_text(scene, Affine::IDENTITY, layout, &[brush], self.hint);
     }
 
-    fn get_cursor(&self, _ctx: &QueryCtx, _pos: Point) -> CursorIcon {
+    fn get_cursor(&self, _ctx: &QueryCtx<'_>, _pos: Point) -> CursorIcon {
         CursorIcon::Text
     }
 
@@ -944,7 +944,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         if !EDITABLE {
             node.set_read_only();
         }

@@ -124,7 +124,7 @@ impl ScrollBar {
 impl Widget for ScrollBar {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -170,7 +170,7 @@ impl Widget for ScrollBar {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -178,20 +178,26 @@ impl Widget for ScrollBar {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
         // TODO - Handle scroll-related events?
     }
 
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+    fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+    }
 
     fn layout(
         &mut self,
-        _ctx: &mut LayoutCtx,
+        _ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -207,7 +213,7 @@ impl Widget for ScrollBar {
             .into()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let radius = theme::SCROLLBAR_RADIUS;
         let edge_width = theme::SCROLLBAR_EDGE_WIDTH;
         let cursor_padding = theme::SCROLLBAR_PAD;
@@ -234,7 +240,7 @@ impl Widget for ScrollBar {
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {

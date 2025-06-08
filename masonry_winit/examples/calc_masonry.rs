@@ -10,7 +10,6 @@
     clippy::single_match,
     reason = "Don't matter for example code"
 )]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 
 use std::str::FromStr;
 
@@ -156,7 +155,7 @@ impl CalcButton {
 impl Widget for CalcButton {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -189,7 +188,7 @@ impl Widget for CalcButton {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -197,7 +196,7 @@ impl Widget for CalcButton {
 
     fn on_access_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
@@ -211,7 +210,7 @@ impl Widget for CalcButton {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         // Masonry doesn't let us change a widget's attributes directly.
         // We use `mutate_later` to get a mutable reference to the inner widget
         // and change its border color. This is a simple way to implement a
@@ -232,13 +231,13 @@ impl Widget for CalcButton {
         }
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.inner);
     }
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -248,13 +247,18 @@ impl Widget for CalcButton {
         size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::Button
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
             CalcAction::Op(op) => op.to_string(),

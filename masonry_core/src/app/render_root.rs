@@ -451,7 +451,7 @@ impl RenderRoot {
 
     // --- MARK: ACCESS WIDGETS---
     /// Get a [`WidgetRef`] to the root widget.
-    pub fn get_root_widget(&self) -> WidgetRef<dyn Widget> {
+    pub fn get_root_widget(&self) -> WidgetRef<'_, dyn Widget> {
         let root_state_token = self.widget_arena.states.roots();
         let root_widget_token = self.widget_arena.widgets.roots();
         let root_properties_token = self.widget_arena.properties.roots();
@@ -480,7 +480,7 @@ impl RenderRoot {
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
-    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<dyn Widget>> {
+    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         let state_ref = self.widget_arena.states.find(id)?;
         let widget_ref = self
             .widget_arena
