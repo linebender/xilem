@@ -3,7 +3,10 @@
 
 use std::marker::PhantomData;
 
+use crate::style::Style;
+
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets::{self};
 pub use masonry::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
@@ -11,7 +14,7 @@ use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
-use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
+use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
 /// A layout which defines how items will be arranged in rows or columns.
 ///
@@ -65,6 +68,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
         gap: None,
+        properties: Default::default(),
         phantom: PhantomData,
     }
 }
@@ -80,6 +84,7 @@ pub struct Flex<Seq, State, Action = ()> {
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     gap: Option<f64>,
+    properties: FlexProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -133,6 +138,25 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     }
 }
 
+impl<Seq, S, A> Style for Flex<Seq, S, A> {
+    type Props = FlexProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    FlexProps;
+    Flex<Seq, S, A>;
+
+    Background, 0;
+    BorderColor, 1;
+    BorderWidth, 2;
+    CornerRadius, 3;
+    Padding, 4;
+);
+
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
@@ -161,7 +185,8 @@ where
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        let pod = ctx.create_pod(widget);
+        let mut pod = ctx.create_pod(widget);
+        pod.properties = self.properties.build_properties();
         (pod, seq_state)
     }
 
@@ -172,6 +197,8 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if prev.axis != self.axis {
             widgets::Flex::set_direction(&mut element, self.axis);
         }

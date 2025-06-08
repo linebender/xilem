@@ -80,14 +80,12 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
         }
     }
 
-    sized_box(
-        grid(
-            grid_items,
-            data.size.try_into().unwrap(),
-            data.size.try_into().unwrap(),
-        )
-        .spacing(10.0),
+    grid(
+        grid_items,
+        data.size.try_into().unwrap(),
+        data.size.try_into().unwrap(),
     )
+    .spacing(10.0)
     .padding(20.0)
 }
 

@@ -3,7 +3,10 @@
 
 use std::marker::PhantomData;
 
+use crate::style::Style;
+
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets::{
     GridParams, {self},
 };
@@ -12,7 +15,7 @@ use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewSequence,
 };
-use crate::{Pod, ViewCtx, WidgetView};
+use crate::{Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
 /// A Grid layout divides a window into regions and defines the relationship
 /// between inner elements in terms of size and position.
@@ -54,9 +57,10 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
     Grid {
         sequence,
         spacing: 0.0,
-        phantom: PhantomData,
         height,
         width,
+        properties: Default::default(),
+        phantom: PhantomData,
     }
 }
 
@@ -69,6 +73,8 @@ pub struct Grid<Seq, State, Action = ()> {
     spacing: f64,
     width: i32,
     height: i32,
+    properties: GridProps,
+
     /// Used to associate the State and Action in the call to `.grid()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
     /// Action to be inferred properly
@@ -87,6 +93,25 @@ impl<Seq, State, Action> Grid<Seq, State, Action> {
         self
     }
 }
+
+impl<Seq, S, A> Style for Grid<Seq, S, A> {
+    type Props = GridProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    GridProps;
+    Grid<Seq, S, A>;
+
+    Background, 0;
+    BorderColor, 1;
+    BorderWidth, 2;
+    CornerRadius, 3;
+    Padding, 4;
+);
 
 impl<Seq, State, Action> ViewMarker for Grid<Seq, State, Action> {}
 
@@ -108,7 +133,8 @@ where
         for element in elements.into_inner() {
             widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
         }
-        let pod = ctx.create_pod(widget);
+        let mut pod = ctx.create_pod(widget);
+        pod.properties = self.properties.build_properties();
         (pod, seq_state)
     }
 
@@ -119,6 +145,8 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if prev.height != self.height {
             widgets::Grid::set_height(&mut element, self.height);
         }
