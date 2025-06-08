@@ -161,7 +161,7 @@ where
         prev: &Self,
         state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
@@ -183,7 +183,7 @@ where
         &self,
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(LABEL_VIEW_ID, |ctx| {
             View::<State, Action, _>::teardown(

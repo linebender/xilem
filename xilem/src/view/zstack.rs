@@ -84,7 +84,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if self.alignment != prev.alignment {
             widgets::ZStack::set_alignment(&mut element, self.alignment);
@@ -100,7 +100,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         let mut splice = ZStackSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
@@ -186,7 +186,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         {
             if self.alignment != prev.alignment {
@@ -207,7 +207,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
             .expect("ZStackWrapper always has a widget child");
@@ -255,8 +255,8 @@ impl SuperElement<Self, ViewCtx> for ZStackElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<Self>,
-        f: impl FnOnce(Mut<Self>) -> R,
+        mut this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -276,8 +276,8 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStac
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<Self>,
-        f: impl FnOnce(Mut<Pod<W>>) -> R,
+        mut this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
             let mut child = widgets::ZStack::child_mut(&mut this.parent, this.idx)
@@ -345,7 +345,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
         self.idx += 1;
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<ZStackElement>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, ZStackElement>) -> R) -> R {
         let child = ZStackElementMut {
             parent: self.element.reborrow_mut(),
             idx: self.idx,
@@ -359,7 +359,7 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
         self.idx += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<ZStackElement>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, ZStackElement>) -> R) -> R {
         let ret = {
             let child = ZStackElementMut {
                 parent: self.element.reborrow_mut(),

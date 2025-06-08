@@ -126,7 +126,6 @@
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 // https://github.com/rust-lang/rust/pull/130025
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
@@ -420,7 +419,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<d
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<Pod<W>>) -> R,
+        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let downcast = this.downcast();
         let ret = f(downcast);
@@ -563,7 +562,7 @@ impl ViewCtx {
         self.state_changed
     }
 
-    pub fn teardown_leaf<W: Widget + FromDynWidget + ?Sized>(&mut self, widget: WidgetMut<W>) {
+    pub fn teardown_leaf<W: Widget + FromDynWidget + ?Sized>(&mut self, widget: WidgetMut<'_, W>) {
         self.widget_map.remove(&widget.ctx.widget_id());
     }
 

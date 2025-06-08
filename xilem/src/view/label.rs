@@ -128,7 +128,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if prev.label != self.label {
             widgets::Label::set_text(&mut element, self.label.clone());
@@ -153,7 +153,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,

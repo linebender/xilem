@@ -61,7 +61,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         prev: &Self,
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if prev.object_fit != self.object_fit {
             widgets::Image::set_fit_mode(&mut element, self.object_fit);
@@ -71,7 +71,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,

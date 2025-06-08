@@ -170,7 +170,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if prev.axis != self.axis {
             widgets::Flex::set_direction(&mut element, self.axis);
@@ -198,7 +198,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         let mut splice = FlexSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
@@ -259,8 +259,8 @@ impl SuperElement<Self, ViewCtx> for FlexElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<Self>,
-        f: impl FnOnce(Mut<Self>) -> R,
+        mut this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -280,9 +280,9 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexE
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<Self>,
-        f: impl FnOnce(Mut<Pod<W>>) -> R,
-    ) -> (Mut<Self>, R) {
+        mut this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
+    ) -> (Mut<'_, Self>, R) {
         let ret = {
             let mut child = widgets::Flex::child_mut(&mut this.parent, this.idx)
                 .expect("This is supposed to be a widget");
@@ -339,7 +339,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         ret
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<FlexElement>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
         let child = FlexElementMut {
             parent: self.element.reborrow_mut(),
             idx: self.idx,
@@ -349,7 +349,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         ret
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<FlexElement>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, FlexElement>) -> R) -> R {
         let ret = {
             let child = FlexElementMut {
                 parent: self.element.reborrow_mut(),
@@ -516,7 +516,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         {
             if self.params != prev.params {
@@ -537,7 +537,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
             .expect("FlexWrapper always has a widget child");
@@ -590,7 +590,7 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         prev: &Self,
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if self != prev {
             match self {
@@ -604,7 +604,7 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         }
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
+    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,
@@ -730,7 +730,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         match (prev, self) {
             (Self::Item(prev), Self::Item(this)) => {
@@ -810,7 +810,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         match self {
             Self::Item(flex_item) => {

@@ -33,14 +33,19 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if prev.progress != self.progress {
             widgets::ProgressBar::set_progress(&mut element, self.progress);
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
         ctx.teardown_leaf(element);
     }
 

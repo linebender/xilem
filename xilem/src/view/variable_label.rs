@@ -106,7 +106,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         prev: &Self,
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _, _>::rebuild(
@@ -131,7 +131,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         &self,
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _, _>::teardown(

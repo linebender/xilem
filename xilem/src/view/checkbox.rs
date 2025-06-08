@@ -81,7 +81,7 @@ where
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if element.ctx.is_disabled() != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -94,7 +94,12 @@ where
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, ctx: &mut ViewCtx, element: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        ctx: &mut ViewCtx,
+        element: Mut<'_, Self::Element>,
+    ) {
         ctx.teardown_leaf(element);
     }
 

@@ -117,7 +117,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if prev.height != self.height {
             widgets::Grid::set_height(&mut element, self.height);
@@ -139,7 +139,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
     ) {
         let mut splice = GridSplice::new(element);
         self.sequence.seq_teardown(view_state, ctx, &mut splice);
@@ -170,8 +170,8 @@ impl SuperElement<Self, ViewCtx> for GridElement {
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<Self>,
-        f: impl FnOnce(Mut<Self>) -> R,
+        mut this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -200,9 +200,9 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridE
     }
 
     fn with_downcast_val<R>(
-        mut this: Mut<Self>,
-        f: impl FnOnce(Mut<Pod<W>>) -> R,
-    ) -> (Mut<Self>, R) {
+        mut this: Mut<'_, Self>,
+        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
+    ) -> (Mut<'_, Self>, R) {
         let ret = {
             let mut child = widgets::Grid::child_mut(&mut this.parent, this.idx);
             let downcast = child.downcast();
@@ -239,7 +239,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
         self.idx += 1;
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<GridElement>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, GridElement>) -> R) -> R {
         let child = GridElementMut {
             parent: self.element.reborrow_mut(),
             idx: self.idx,
@@ -253,7 +253,7 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
         self.idx += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<GridElement>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, GridElement>) -> R) -> R {
         let ret = {
             let child = GridElementMut {
                 parent: self.element.reborrow_mut(),
@@ -417,7 +417,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         {
             if self.params != prev.params {
@@ -437,7 +437,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
         self.view.teardown(view_state, ctx, child.downcast());
