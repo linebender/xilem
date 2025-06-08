@@ -25,18 +25,21 @@ use masonry_core::core::{
     UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 
+// TODO - Re-enable doc test.
+// Doc test is currently disabled because it depends on a parent crate.
+
 /// A wrapper widget that records each time one of its methods is called.
 ///
 /// Its intent is to let you observe the methods called on a widget in a test.
 ///
 /// Make one like this:
 ///
-/// ```
+/// ```rust,ignore
 /// # use masonry::widgets::Label;
 /// # use masonry::core::Update;
-/// use masonry::testing::{Recording, Record, TestWidgetExt};
-/// use masonry::testing::TestHarness;
+/// use masonry::testing::{TestHarness, Recording, Record, TestWidgetExt};
 /// use assert_matches::assert_matches;
+///
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);
 ///
