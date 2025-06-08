@@ -29,6 +29,9 @@ pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
     /// (or [`WidgetView::transform`]).
     /// This has a protocol to ensure that multiple views changing the
     /// transform interoperate successfully.
+    ///
+    /// [`transformed`]: crate::view::transformed
+    /// [`WidgetView::transform`]: crate::widget_view::WidgetView::transform
     pub options: WidgetOptions,
     pub properties: Properties,
 }
