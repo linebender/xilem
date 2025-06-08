@@ -8,7 +8,7 @@
 
 use winit::error::EventLoopError;
 use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, textbox};
-use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, Xilem};
+use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
     description: String,
@@ -97,8 +97,8 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         ],
     };
 
-    let app = Xilem::new(data, app_logic);
-    app.run_windowed(event_loop, "First Example".into())
+    let app = Xilem::new_simple(data, app_logic, WindowOptions::new("To Do MVC"));
+    app.run_in(event_loop)
 }
 
 // Boilerplate code: Identical across all applications which support Android

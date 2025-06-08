@@ -16,8 +16,8 @@ use xilem::view::{
     label, prose, sized_box, task, textbox,
 };
 use xilem::{
-    Color, EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
-    Xilem, palette,
+    EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
+    WindowOptions, Xilem, palette,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -156,9 +156,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         active: false,
     };
 
-    Xilem::new(data, app_logic)
-        .background_color(Color::from_rgb8(0x20, 0x20, 0x20))
-        .run_windowed(event_loop, "First Example".into())
+    Xilem::new_simple(data, app_logic, WindowOptions::new("mason")).run_in(event_loop)
 }
 
 // Boilerplate code: Identical across all applications which support Android

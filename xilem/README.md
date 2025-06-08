@@ -72,7 +72,7 @@ A simple incrementing counter application looks like:
 ```rust
 use winit::error::EventLoopError;
 use xilem::view::{button, flex, label};
-use xilem::{EventLoop, WidgetView, Xilem};
+use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 
 #[derive(Default)]
 struct Counter {
@@ -87,8 +87,8 @@ fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new(Counter::default(), app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Counter app".into())?;
+    let app = Xilem::new_simple(Counter::default(), app_logic, WindowOptions::new("Counter app"));
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }
 ```

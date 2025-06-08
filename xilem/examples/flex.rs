@@ -6,7 +6,7 @@
 use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::view::{Axis, FlexExt as _, FlexSpacer, Label, button, flex, label, sized_box};
-use xilem::{EventLoop, WidgetView, Xilem};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
@@ -36,7 +36,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new(0, app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+    let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }

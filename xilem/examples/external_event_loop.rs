@@ -14,7 +14,7 @@ use winit::error::EventLoopError;
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
 use xilem::view::{Axis, Label, button, flex, label, sized_box};
-use xilem::{EventLoop, WidgetView, Xilem};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
@@ -125,20 +125,17 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
 
 fn main() -> Result<(), EventLoopError> {
     let window_size = winit::dpi::LogicalSize::new(800.0, 800.0);
-    let window_attributes = winit::window::Window::default_attributes()
-        .with_title("External event loop".to_string())
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
+    let window_options = WindowOptions::new("External event loop").with_min_inner_size(window_size);
 
-    let xilem = Xilem::new(0, app_logic);
+    let xilem = Xilem::new_simple(0, app_logic, window_options);
 
     let event_loop = EventLoop::with_user_event().build().unwrap();
     let proxy = event_loop.create_proxy();
-    let (driver, window_id, root_widget) =
-        xilem.into_driver_and_window(move |event| proxy.send_event(event).map_err(|err| err.0));
+    let (driver, windows) =
+        xilem.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
     let masonry_state = masonry_winit::app::MasonryState::new(
         event_loop.create_proxy(),
-        vec![(window_id, window_attributes, root_widget)],
+        windows,
         default_property_set(),
     );
 

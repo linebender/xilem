@@ -6,10 +6,9 @@
 use masonry::dpi::LogicalSize;
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
-use winit::window::Window;
 use xilem::core::adapt;
 use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, flex_item, progress_bar, sized_box};
-use xilem::{Color, WidgetView, Xilem};
+use xilem::{Color, WidgetView, WindowOptions, Xilem};
 
 const SPACER_WIDTH: f64 = 10.;
 
@@ -93,15 +92,16 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     };
 
     // Instantiate and run the UI using the passed event loop.
-    let app = Xilem::new(data, app_logic);
     let min_window_size = LogicalSize::new(300., 200.);
     let window_size = LogicalSize::new(650., 500.);
-    let window_attributes = Window::default_attributes()
-        .with_title("Xilem Widgets")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size)
-        .with_inner_size(window_size);
-    app.run_windowed_in(event_loop, window_attributes)?;
+    let app = Xilem::new_simple(
+        data,
+        app_logic,
+        WindowOptions::new("Xilem Widgets")
+            .with_min_inner_size(min_window_size)
+            .with_initial_inner_size(window_size),
+    );
+    app.run_in(event_loop)?;
     Ok(())
 }
 

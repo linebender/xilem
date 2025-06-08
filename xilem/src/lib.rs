@@ -27,7 +27,7 @@
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
 //! use xilem::view::{button, flex, label};
-//! use xilem::{EventLoop, WidgetView, Xilem};
+//! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 //!
 //! #[derive(Default)]
 //! struct Counter {
@@ -42,8 +42,8 @@
 //! }
 //!
 //! fn main() -> Result<(), EventLoopError> {
-//!     let app = Xilem::new(Counter::default(), app_logic);
-//!     app.run_windowed(EventLoop::with_user_event(), "Counter app".into())?;
+//!     let app = Xilem::new_simple(Counter::default(), app_logic, WindowOptions::new("Counter app"));
+//!     app.run_in(EventLoop::with_user_event())?;
 //!     Ok(())
 //! }
 //! ```
@@ -131,18 +131,20 @@
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::collections::HashMap;
+use std::iter::Once;
 use std::sync::Arc;
 
 use masonry::core::{
     DefaultProperties, FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions,
     WidgetPod,
 };
-use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
-use masonry_winit::app::{MasonryUserEvent, WindowId};
+use masonry_winit::app::MasonryUserEvent;
 use view::{Transformed, transformed};
+use window_options::WindowCallbacks;
 use winit::error::EventLoopError;
-use winit::window::{Window, WindowAttributes};
+use winit::window::WindowAttributes;
+use xilem_core::map_state;
 
 use crate::core::{
     AsyncCtx, MessageResult, Mut, RawProxy, SuperElement, View, ViewElement, ViewId,
@@ -154,7 +156,8 @@ pub use masonry::parley::style::FontWeight;
 pub use masonry::peniko::{Blob, Color};
 pub use masonry::widgets::{InsertNewline, LineBreaking};
 pub use masonry::{dpi, palette};
-pub use masonry_winit::app::{EventLoop, EventLoopBuilder};
+pub use masonry_winit::app::{EventLoop, EventLoopBuilder, WindowId};
+pub use window_options::WindowOptions;
 pub use xilem_core as core;
 
 /// Tokio is the async runner used with Xilem.
@@ -166,6 +169,8 @@ mod any_view;
 mod driver;
 mod one_of;
 mod property_tuple;
+mod window_options;
+mod window_view;
 
 pub mod style;
 pub mod view;
@@ -180,25 +185,109 @@ pub struct Xilem<State, Logic> {
     logic: Logic,
     runtime: tokio::runtime::Runtime,
     default_properties: Option<DefaultProperties>,
-    background_color: Color,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
 }
 
-impl<State, Logic, View> Xilem<State, Logic>
-where
-    Logic: FnMut(&mut State) -> View,
-    View: WidgetView<State>,
+/// State type used by [`Xilem::new_simple`].
+pub struct ExitOnClose<S> {
+    state: S,
+    running: bool,
+}
+
+impl<S> AppState for ExitOnClose<S> {
+    fn keep_running(&self) -> bool {
+        self.running
+    }
+}
+
+type WindowTuple<State> = (WindowId, WindowOptions<State>, Box<AnyWidgetView<State>>);
+
+impl<State>
+    Xilem<
+        ExitOnClose<State>,
+        Box<dyn FnMut(&mut ExitOnClose<State>) -> Once<WindowTuple<ExitOnClose<State>>>>,
+    >
 {
-    /// Initialize the builder state for your app.
-    pub fn new(state: State, logic: Logic) -> Self {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
+    /// Create an app builder for a single window app with fixed window attributes
+    /// that exits once the window is closed.
+    ///
+    /// If you want to have multiple windows or change e.g. the window title depending
+    /// on the state you should instead use [`Xilem::new`] (which this function wraps).
+    pub fn new_simple<View>(
+        state: State,
+        mut logic: impl FnMut(&mut State) -> View + 'static,
+        window_options: WindowOptions<State>,
+    ) -> Self
+    where
+        View: WidgetView<State>,
+        State: 'static,
+    {
+        let window_id = WindowId::next();
+        let callbacks = Arc::new(window_options.callbacks);
+        Xilem::new_inner(
+            ExitOnClose {
+                state,
+                running: true,
+            },
+            Box::new(move |ExitOnClose { state, .. }| {
+                let callbacks = callbacks.clone();
+                let on_close = move |wrapper: &mut ExitOnClose<_>| {
+                    wrapper.running = false;
+                    if let Some(on_close) = &callbacks.on_close {
+                        on_close(&mut wrapper.state);
+                    }
+                };
+                std::iter::once((
+                    window_id,
+                    WindowOptions {
+                        reactive: window_options.reactive.clone(),
+                        initial: window_options.initial.clone(),
+                        callbacks: WindowCallbacks {
+                            on_close: Some(Box::new(on_close)),
+                        },
+                    },
+                    map_state(logic(state), |wrapper: &mut ExitOnClose<_>| {
+                        &mut wrapper.state
+                    })
+                    .boxed(),
+                ))
+            }),
+        )
+    }
+}
+
+/// The trait [`Xilem::new`] expects to be implemented for the state.
+///
+/// [`Xilem::new_simple`] does not use this trait implementation.
+pub trait AppState {
+    /// Returns whether the application should keep running or exit.
+    ///
+    /// Is currently only checked after a close request.
+    // TODO: check this after every state mutation
+    fn keep_running(&self) -> bool;
+}
+
+impl<State, Logic, WindowIter> Xilem<State, Logic>
+where
+    State: AppState + 'static,
+    Logic: FnMut(&mut State) -> WindowIter + 'static,
+    WindowIter: Iterator<Item = (WindowId, WindowOptions<State>, Box<AnyWidgetView<State>>)>,
+{
+    /// Initialize the builder state for your app with an app logic function that returns a window iterator.
+    pub fn new(state: State, logic: Logic) -> Self
+    where
+        State: AppState,
+    {
+        Self::new_inner(state, logic)
+    }
+
+    fn new_inner(state: State, logic: Logic) -> Self {
         Self {
             state,
             logic,
-            runtime,
+            runtime: tokio::runtime::Runtime::new().unwrap(),
             default_properties: None,
-            background_color: Color::BLACK,
             fonts: Vec::new(),
         }
     }
@@ -211,12 +300,6 @@ where
         self
     }
 
-    /// Sets main window background color.
-    pub fn background_color(mut self, color: Color) -> Self {
-        self.background_color = color;
-        self
-    }
-
     // TODO: Find better ways to customize default property set.
     /// Sets default properties of widget tree.
     pub fn with_default_properties(mut self, default_properties: DefaultProperties) -> Self {
@@ -224,69 +307,31 @@ where
         self
     }
 
-    // TODO: Make windows a specific view
-    /// Run app with default window attributes.
-    pub fn run_windowed(
-        self,
-        // We pass in the event loop builder to allow
-        // This might need to be generic over the event type?
-        event_loop: EventLoopBuilder,
-        window_title: String,
-    ) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
-        let window_size = LogicalSize::new(600., 800.);
-        let window_attributes = Window::default_attributes()
-            .with_title(window_title)
-            .with_resizable(true)
-            .with_min_inner_size(window_size);
-        self.run_windowed_in(event_loop, window_attributes)
-    }
-
-    // TODO: Make windows into a custom view
     /// Run app with custom window attributes.
-    pub fn run_windowed_in(
-        mut self,
-        mut event_loop: EventLoopBuilder,
-        window_attributes: WindowAttributes,
-    ) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
+    pub fn run_in(mut self, mut event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         let event_loop = event_loop.build()?;
         let proxy = event_loop.create_proxy();
         let default_properties = self
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (driver, window_id, root_widget) =
-            self.into_driver_and_window(move |event| proxy.send_event(event).map_err(|err| err.0));
-        masonry_winit::app::run_with(
-            event_loop,
-            vec![(window_id, window_attributes, root_widget)],
-            driver,
-            default_properties,
-        )
+        let (driver, windows) =
+            self.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
+        masonry_winit::app::run_with(event_loop, windows, driver, default_properties)
     }
 
-    /// Builds the [`MasonryDriver`] and also returns the window id and the root widget.
+    /// Builds the [`MasonryDriver`] and the initial windows.
     ///
     /// The given event sink function sends the given event to the event loop
     /// and returns the given event as an error in case the event loop is stopped.
-    pub fn into_driver_and_window(
+    pub fn into_driver_and_windows(
         self,
-        event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
+        proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
     ) -> (
-        MasonryDriver<State, Logic, View, View::ViewState>,
-        WindowId,
-        Box<dyn Widget>,
+        MasonryDriver<State, Logic>,
+        Vec<(WindowId, WindowAttributes, Box<dyn Widget>)>,
     ) {
-        MasonryDriver::new(self.state, self.logic, event_sink, self.runtime, self.fonts)
+        MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts)
     }
 }
 
@@ -464,7 +509,7 @@ pub struct ViewCtx {
     widget_map: WidgetMap,
     id_path: Vec<ViewId>,
     proxy: Arc<dyn RawProxy>,
-    runtime: tokio::runtime::Runtime,
+    runtime: Arc<tokio::runtime::Runtime>,
     state_changed: bool,
 }
 

@@ -15,12 +15,14 @@ use masonry::widgets::Alignment;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
-use winit::window::Window;
 use xilem::core::fork;
 use xilem::view::{
     ObjectFit, Padding, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
 };
-use xilem::{EventLoop, EventLoopBuilder, LineBreaking, TextAlignment, WidgetView, Xilem, palette};
+use xilem::{
+    EventLoop, EventLoopBuilder, LineBreaking, TextAlignment, WidgetView, WindowOptions, Xilem,
+    palette,
+};
 use xilem_core::one_of::Either;
 
 /// The main state of the application.
@@ -148,15 +150,14 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         statuses: Status::parse_file(),
     };
 
-    let app = Xilem::new(data, VirtualCats::view);
-    let min_window_size = LogicalSize::new(200., 200.);
+    let app = Xilem::new_simple(
+        data,
+        VirtualCats::view,
+        WindowOptions::new("Virtualised HTTP cats")
+            .with_min_inner_size(LogicalSize::new(200., 200.)),
+    );
 
-    let window_attributes = Window::default_attributes()
-        .with_title("Virtualised HTTP cats")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size);
-
-    app.run_windowed_in(event_loop, window_attributes)
+    app.run_in(event_loop)
 }
 
 impl Status {

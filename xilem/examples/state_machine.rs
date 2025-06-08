@@ -6,7 +6,7 @@
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::view::{button, flex, label, prose, sized_box, spinner};
-use xilem::{EventLoop, WidgetView, Xilem};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
 ///
@@ -78,7 +78,7 @@ fn main() -> Result<(), EventLoopError> {
         state: IsEven::Initial,
         history: String::new(),
     };
-    let app = Xilem::new(app_data, app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+    let app = Xilem::new_simple(app_data, app_logic, WindowOptions::new("Centered Flex"));
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }

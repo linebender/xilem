@@ -52,7 +52,7 @@ mod element;
 pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
 
 mod any_view;
-pub use any_view::AnyView;
+pub use any_view::{AnyView, AnyViewState};
 
 mod sequence;
 pub use sequence::{AppendVec, ElementSplice, ViewSequence};
