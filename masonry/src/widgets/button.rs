@@ -16,7 +16,10 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::*;
+use crate::properties::{
+    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
+    DisabledBackground, HoveredBorderColor, Padding,
+};
 use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::Label;
