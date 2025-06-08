@@ -70,7 +70,7 @@ impl Checkbox {
 impl Widget for Checkbox {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -98,7 +98,7 @@ impl Widget for Checkbox {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -106,7 +106,7 @@ impl Widget for Checkbox {
 
     fn on_access_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
@@ -123,7 +123,7 @@ impl Widget for Checkbox {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
@@ -133,13 +133,13 @@ impl Widget for Checkbox {
         }
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.label);
     }
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -160,7 +160,7 @@ impl Widget for Checkbox {
         our_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let check_size = theme::BASIC_WIDGET_HEIGHT;
         let border_width = 1.;
 
@@ -216,7 +216,12 @@ impl Widget for Checkbox {
         Role::CheckBox
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.

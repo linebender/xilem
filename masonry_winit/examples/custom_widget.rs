@@ -6,7 +6,6 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use masonry::accesskit::{Node, Role};
@@ -45,7 +44,7 @@ struct CustomWidget(String);
 impl Widget for CustomWidget {
     fn on_pointer_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
     ) {
@@ -53,7 +52,7 @@ impl Widget for CustomWidget {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -61,17 +60,17 @@ impl Widget for CustomWidget {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+    fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn layout(
         &mut self,
-        _layout_ctx: &mut LayoutCtx,
+        _layout_ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -97,7 +96,7 @@ impl Widget for CustomWidget {
     // The paint method gets called last, after an event flow.
     // It goes event -> update -> layout -> paint, and each method can influence the next.
     // Basically, anything that changes the appearance of a widget causes a paint.
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // Clear the whole widget with the color of your choice
         // (ctx.size() returns the size of the layout rect we're painting in)
         // Note: ctx also has a `clear` method, but that clears the whole context,
@@ -166,7 +165,12 @@ impl Widget for CustomWidget {
         Role::Window
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         let text = &self.0;
         node.set_label(
             format!("This is a demo of the Masonry Widget trait. Masonry has accessibility tree support. The demo shows colored shapes with the text '{text}'."),

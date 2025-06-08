@@ -90,7 +90,7 @@ impl Button {
 impl Widget for Button {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -117,7 +117,7 @@ impl Widget for Button {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -125,7 +125,7 @@ impl Widget for Button {
 
     fn on_access_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
@@ -139,7 +139,7 @@ impl Widget for Button {
         }
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
@@ -148,11 +148,11 @@ impl Widget for Button {
         }
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.label);
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         DisabledBackground::prop_changed(ctx, property_type);
         ActiveBackground::prop_changed(ctx, property_type);
         Background::prop_changed(ctx, property_type);
@@ -166,7 +166,7 @@ impl Widget for Button {
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -208,7 +208,7 @@ impl Widget for Button {
         size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let is_pressed = ctx.is_pointer_capture_target() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
@@ -245,7 +245,12 @@ impl Widget for Button {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         // IMPORTANT: We don't want to merge this code in practice, because
         // the child label already has a 'name' property.
         // This is more of a proof of concept of `get_raw_ref()`.

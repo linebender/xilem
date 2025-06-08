@@ -88,7 +88,7 @@ use masonry_winit::properties::BackgroundColor;
 impl Widget for ColorRectangle {
     // ...
 
-    fn paint(&mut self, ctx: &mut PaintCtx, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let color = props.get::<BackgroundColor>().unwrap_or(masonry_winit::palette::css::WHITE);
         let rect = ctx.size().to_rect();
         scene.fill(

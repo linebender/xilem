@@ -75,7 +75,7 @@ impl Spinner {
 impl Widget for Spinner {
     fn on_pointer_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
     ) {
@@ -83,7 +83,7 @@ impl Widget for Spinner {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -91,7 +91,7 @@ impl Widget for Spinner {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
@@ -99,7 +99,7 @@ impl Widget for Spinner {
 
     fn on_anim_frame(
         &mut self,
-        ctx: &mut UpdateCtx,
+        ctx: &mut UpdateCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
@@ -111,9 +111,9 @@ impl Widget for Spinner {
         ctx.request_paint_only();
     }
 
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+    fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::WidgetAdded => {
                 ctx.request_anim_frame();
@@ -124,7 +124,7 @@ impl Widget for Spinner {
 
     fn layout(
         &mut self,
-        _ctx: &mut LayoutCtx,
+        _ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -138,7 +138,7 @@ impl Widget for Spinner {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
         let center = Point::new(width / 2.0, height / 2.0);
@@ -169,7 +169,7 @@ impl Widget for Spinner {
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {

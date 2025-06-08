@@ -45,7 +45,7 @@ fn dummy_pointer_cancel() -> PointerEvent {
 fn run_targeted_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
-    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx, &mut PropertiesMut<'_>),
+    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>),
 ) {
     let mut current_id = target;
     while let Some(widget_id) = current_id {
@@ -74,7 +74,7 @@ fn run_targeted_update_pass(
 fn run_single_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
-    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx, &mut PropertiesMut<'_>),
+    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>),
 ) {
     let Some(target) = target else {
         return;

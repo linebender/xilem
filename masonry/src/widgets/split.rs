@@ -242,7 +242,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         }
     }
 
-    fn paint_solid_bar(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint_solid_bar(&mut self, ctx: &mut PaintCtx<'_>, scene: &mut Scene) {
         let size = ctx.size();
         let (edge1, edge2) = self.bar_edges(size);
         let padding = self.bar_padding();
@@ -260,7 +260,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         fill_color(scene, &rect, splitter_color);
     }
 
-    fn paint_stroked_bar(&mut self, ctx: &mut PaintCtx, scene: &mut Scene) {
+    fn paint_stroked_bar(&mut self, ctx: &mut PaintCtx<'_>, scene: &mut Scene) {
         let size = ctx.size();
         // Set the line width to a third of the splitter bar size,
         // because we'll paint two equal lines at the edges.
@@ -399,7 +399,7 @@ where
 {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -442,7 +442,7 @@ where
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -450,20 +450,20 @@ where
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.child1);
         ctx.register_child(&mut self.child2);
     }
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -564,7 +564,7 @@ where
         my_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         // TODO - Paint differently if the bar is draggable and hovered.
         if self.solid {
             self.paint_solid_bar(ctx, scene);
@@ -573,7 +573,7 @@ where
         }
     }
 
-    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
+    fn get_cursor(&self, ctx: &QueryCtx<'_>, pos: Point) -> CursorIcon {
         let local_mouse_pos = pos - ctx.window_origin().to_vec2();
         let is_bar_hovered = self.bar_hit_test(ctx.size(), local_mouse_pos);
 
@@ -593,7 +593,7 @@ where
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {
@@ -603,7 +603,7 @@ where
         smallvec![self.child1.id(), self.child2.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx) -> Span {
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!("Split", id = ctx.widget_id().trace())
     }
 }

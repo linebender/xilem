@@ -266,7 +266,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
 impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -339,7 +339,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     // TODO - handle Home/End keys, etc
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
@@ -348,19 +348,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     // TODO - Handle scroll-related events?
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.child);
         ctx.register_child(&mut self.scrollbar_horizontal);
         ctx.register_child(&mut self.scrollbar_vertical);
     }
 
-    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
@@ -391,7 +391,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -461,17 +461,22 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         portal_size
     }
 
-    fn compose(&mut self, ctx: &mut ComposeCtx) {
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
         ctx.set_child_scroll_translation(&mut self.child, Vec2::new(0.0, -self.viewport_pos.y));
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         // TODO - Double check this code
         // Not sure about these values
         if false {

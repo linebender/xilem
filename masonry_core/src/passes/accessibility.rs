@@ -99,7 +99,7 @@ fn build_accessibility_tree(
 // --- MARK: BUILD NODE
 fn build_access_node(
     widget: &mut dyn Widget,
-    ctx: &mut AccessCtx,
+    ctx: &mut AccessCtx<'_>,
     scale_factor: Option<f64>,
 ) -> Node {
     let mut node = Node::new(widget.accessibility_role());

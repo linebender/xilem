@@ -38,7 +38,7 @@ impl<W: Widget + ?Sized> Clone for WidgetRef<'_, W> {
 impl<W: Widget + ?Sized> Copy for WidgetRef<'_, W> {}
 
 impl<W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'_, W> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let widget_name = self.widget.short_type_name();
         let display_name = if let Some(debug_text) = self.widget.get_debug_text() {
             format!("{widget_name}<{debug_text}>").into()

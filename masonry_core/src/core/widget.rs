@@ -131,7 +131,7 @@ pub trait Widget: AsDynWidget + Any {
     /// event will bubble to each of its parents.
     fn on_pointer_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
@@ -144,7 +144,7 @@ pub trait Widget: AsDynWidget + Any {
     /// [focused widget]: crate::doc::doc_06_masonry_concepts#text-focus
     fn on_text_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
@@ -155,7 +155,7 @@ pub trait Widget: AsDynWidget + Any {
     /// Accessibility events target a specific widget id, then bubble to each parent.
     fn on_access_event(
         &mut self,
-        ctx: &mut EventCtx,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
@@ -182,7 +182,7 @@ pub trait Widget: AsDynWidget + Any {
     /// the monitor's refresh, causing lag or jerky animations.
     fn on_anim_frame(
         &mut self,
-        ctx: &mut UpdateCtx,
+        ctx: &mut UpdateCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
@@ -197,18 +197,18 @@ pub trait Widget: AsDynWidget + Any {
     /// Container widgets need to call [`RegisterCtx::register_child`] for all
     /// their children. Forgetting to do so is a logic error and may lead to debug panics.
     /// All the children returned by `children_ids` should be visited.
-    fn register_children(&mut self, ctx: &mut RegisterCtx);
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
 
     /// Handle an update to the widget's state.
     ///
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`Update`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    fn update(&mut self, ctx: &mut UpdateCtx, _props: &mut PropertiesMut<'_>, event: &Update) {}
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {}
 
     // TODO - Remove default implementation
     /// Handle a property being added, changed, or removed.
-    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {}
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {}
 
     /// Compute layout and return the widget's size.
     ///
@@ -237,13 +237,13 @@ pub trait Widget: AsDynWidget + Any {
     /// widgets should handle those cases gracefully.
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size;
 
     /// Runs after the widget's final transform has been computed.
-    fn compose(&mut self, ctx: &mut ComposeCtx) {}
+    fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {}
 
     /// Paint the widget appearance.
     ///
@@ -251,7 +251,7 @@ pub trait Widget: AsDynWidget + Any {
     /// children, or annotations (for example, scrollbars) by painting
     /// afterwards. In addition, they can apply masks and transforms on
     /// the render context, which is especially useful for scrolling.
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, scene: &mut Scene);
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene);
 
     /// Return what kind of "thing" the widget fundamentally is.
     fn accessibility_role(&self) -> Role;
@@ -261,7 +261,12 @@ pub trait Widget: AsDynWidget + Any {
     /// This method takes a mutable reference to a node which is already initialized
     /// with some information about the current widget (coordinates, status flags), and
     /// and mutates that node to set widget-specific information.
-    fn accessibility(&mut self, ctx: &mut AccessCtx, _props: &PropertiesRef<'_>, node: &mut Node);
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    );
 
     /// Return ids of this widget's children.
     ///
@@ -337,7 +342,7 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// **pos** - the mouse position in global coordinates (e.g. `(0,0)` is the top-left corner of the
     /// window).
-    fn get_cursor(&self, ctx: &QueryCtx, pos: Point) -> CursorIcon {
+    fn get_cursor(&self, ctx: &QueryCtx<'_>, pos: Point) -> CursorIcon {
         CursorIcon::Default
     }
 
