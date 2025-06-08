@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{Action, Widget, WidgetId};
+use masonry::core::{Action, DefaultProperties, Widget, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
@@ -15,7 +15,7 @@ use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbo
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
-const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+const WIDGET_SPACING: f64 = 5.0;
 
 struct Driver {
     next_task: String,
@@ -66,8 +66,15 @@ fn make_widget_tree() -> impl Widget {
                     .with_flex_child(Textbox::new(""), 1.0)
                     .with_child(Button::new("Add task")),
             )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
+            .with_spacer(WIDGET_SPACING),
     )
+}
+
+fn default_props() -> DefaultProperties {
+    let mut default_properties = default_property_set();
+    default_properties.insert::<RootWidget, _>(Padding::all(WIDGET_SPACING));
+
+    default_properties
 }
 
 fn main() {
@@ -81,9 +88,6 @@ fn main() {
         window_id: WindowId::next(),
     };
 
-    let mut default_properties = default_property_set();
-    default_properties.insert::<RootWidget, _>(Padding::all(5.0));
-
     let event_loop = masonry_winit::app::EventLoop::with_user_event()
         .build()
         .unwrap();
@@ -95,7 +99,7 @@ fn main() {
             Box::new(RootWidget::new(make_widget_tree())),
         )],
         driver,
-        default_properties,
+        default_props(),
     )
     .unwrap();
 }
@@ -105,13 +109,13 @@ fn main() {
 mod tests {
     use masonry::assert_render_snapshot;
     use masonry::testing::TestHarness;
-    use masonry::theme::default_property_set;
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(default_property_set(), make_widget_tree());
+        let mut harness = TestHarness::create(default_props(), RootWidget::new(make_widget_tree()));
+
         assert_render_snapshot!(harness, "example_to_do_list_initial");
 
         // TODO - Test clicking buttons
