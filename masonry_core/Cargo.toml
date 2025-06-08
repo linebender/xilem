@@ -22,19 +22,19 @@ default = []
 tracy = ["dep:tracing-tracy", "tracing-tracy/enable", "vello/wgpu-profiler"]
 
 [dependencies]
-vello.workspace = true
+accesskit.workspace = true
+anymap3 = "1.0.1"
+cursor-icon = "1.1.0"
+dpi.workspace = true
 parley.workspace = true
-tree_arena.workspace = true
-ui-events.workspace = true
 smallvec.workspace = true
+time = { workspace = true, features = ["macros", "formatting"] }
 tracing = { workspace = true, features = ["default"] }
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "time"] }
 tracing-tracy = { version = "0.11.4", optional = true }
-accesskit.workspace = true
-time = { workspace = true, features = ["macros", "formatting"] }
-cursor-icon = "1.1.0"
-dpi.workspace = true
-anymap3 = "1.0.1"
+tree_arena.workspace = true
+ui-events.workspace = true
+vello.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
