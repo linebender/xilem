@@ -8,8 +8,8 @@ use masonry::widgets::{
 };
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Color, Pod, TextAlignment, ViewCtx};
 
 /// A non-interactive text element.
 /// # Example
@@ -111,7 +111,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.create_pod(
             widgets::Label::new(self.label.clone())
                 .with_brush(self.text_brush.clone())
                 .with_alignment(self.alignment)

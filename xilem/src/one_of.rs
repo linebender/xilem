@@ -101,15 +101,15 @@ impl<
         elem: OneOf<Pod<A>, Pod<B>, Pod<C>, Pod<D>, Pod<E>, Pod<F>, Pod<G>, Pod<H>, Pod<I>>,
     ) -> Self::OneOfElement {
         match elem {
-            OneOf::A(w) => self.new_pod(OneOfWidget::A(w.into_widget_pod())),
-            OneOf::B(w) => self.new_pod(OneOfWidget::B(w.into_widget_pod())),
-            OneOf::C(w) => self.new_pod(OneOfWidget::C(w.into_widget_pod())),
-            OneOf::D(w) => self.new_pod(OneOfWidget::D(w.into_widget_pod())),
-            OneOf::E(w) => self.new_pod(OneOfWidget::E(w.into_widget_pod())),
-            OneOf::F(w) => self.new_pod(OneOfWidget::F(w.into_widget_pod())),
-            OneOf::G(w) => self.new_pod(OneOfWidget::G(w.into_widget_pod())),
-            OneOf::H(w) => self.new_pod(OneOfWidget::H(w.into_widget_pod())),
-            OneOf::I(w) => self.new_pod(OneOfWidget::I(w.into_widget_pod())),
+            OneOf::A(w) => self.create_pod(OneOfWidget::A(w.into_widget_pod())),
+            OneOf::B(w) => self.create_pod(OneOfWidget::B(w.into_widget_pod())),
+            OneOf::C(w) => self.create_pod(OneOfWidget::C(w.into_widget_pod())),
+            OneOf::D(w) => self.create_pod(OneOfWidget::D(w.into_widget_pod())),
+            OneOf::E(w) => self.create_pod(OneOfWidget::E(w.into_widget_pod())),
+            OneOf::F(w) => self.create_pod(OneOfWidget::F(w.into_widget_pod())),
+            OneOf::G(w) => self.create_pod(OneOfWidget::G(w.into_widget_pod())),
+            OneOf::H(w) => self.create_pod(OneOfWidget::H(w.into_widget_pod())),
+            OneOf::I(w) => self.create_pod(OneOfWidget::I(w.into_widget_pod())),
         }
     }
 

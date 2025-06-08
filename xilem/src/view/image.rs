@@ -5,8 +5,8 @@
 
 use masonry::widgets::{self};
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 pub use masonry::core::ObjectFit;
 /// Displays the bitmap `image`.
@@ -52,7 +52,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.new_pod(widgets::Image::new(self.image.clone()));
+        let pod = ctx.create_pod(widgets::Image::new(self.image.clone()));
         (pod, ())
     }
 

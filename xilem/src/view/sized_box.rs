@@ -8,7 +8,7 @@ use masonry::widgets;
 use vello::kurbo::RoundedRectRadii;
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget with predefined size.
@@ -163,7 +163,7 @@ where
         if let Some(border) = &self.border {
             widget = widget.border(border.brush.clone(), border.width);
         }
-        let pod = ctx.new_pod(widget);
+        let pod = ctx.create_pod(widget);
         (pod, child_state)
     }
 
@@ -233,7 +233,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         self.inner.message(view_state, id_path, message, app_state)
     }
 }

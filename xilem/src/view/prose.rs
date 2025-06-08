@@ -8,8 +8,8 @@ use masonry::widgets::{
 };
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Color, Pod, TextAlignment, ViewCtx};
 
 /// A view which displays selectable text.
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
@@ -97,7 +97,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.create_pod(
             widgets::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );

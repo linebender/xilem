@@ -6,8 +6,8 @@ use masonry::widgets;
 use vello::kurbo::Affine;
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, View, ViewMarker};
-use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Color, InsertNewline, Pod, TextAlignment, ViewCtx};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -103,7 +103,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
         ctx.record_action(id);
-        let widget_pod = ctx.new_pod(textbox);
+        let widget_pod = ctx.create_pod(textbox);
         (widget_pod, ())
     }
 

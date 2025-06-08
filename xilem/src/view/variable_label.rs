@@ -9,8 +9,8 @@ use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 
 use super::{Label, label};
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
@@ -94,7 +94,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         let (label, ()) = ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _, _>::build(&self.label, ctx)
         });
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.create_pod(
             widgets::VariableLabel::from_label_pod(label.into_widget_pod())
                 .with_initial_weight(self.target_weight.value()),
         );

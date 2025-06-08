@@ -4,8 +4,8 @@
 use masonry::core::ArcStr;
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// An element which can be in checked and unchecked state.
 ///
@@ -70,7 +70,7 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx.new_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
+            let mut pod = ctx.create_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
             pod.options.disabled = self.disabled;
             pod
         })

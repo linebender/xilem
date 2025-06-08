@@ -4,8 +4,8 @@
 use masonry::peniko::Color;
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// An indefinite spinner.
 ///
@@ -58,7 +58,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.new_pod(widgets::Spinner::new());
+        let pod = ctx.create_pod(widgets::Spinner::new());
         (pod, ())
     }
 

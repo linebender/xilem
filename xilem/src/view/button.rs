@@ -9,11 +9,11 @@ use masonry::properties::{
 use masonry::widgets;
 use xilem_core::ViewPathTracker;
 
-use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
 use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
 use crate::view::Label;
-use crate::{MessageResult, Pod, ViewCtx, ViewId};
+use crate::{Pod, ViewCtx};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///
@@ -149,7 +149,7 @@ where
             View::<State, Action, _>::build(&self.label, ctx)
         });
         ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx.new_pod(widgets::Button::from_label_pod(child.into_widget_pod()));
+            let mut pod = ctx.create_pod(widgets::Button::from_label_pod(child.into_widget_pod()));
             pod.properties = self.properties.build_properties();
             pod.options.disabled = self.disabled;
             pod

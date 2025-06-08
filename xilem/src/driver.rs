@@ -12,7 +12,7 @@ use masonry::widgets::RootWidget;
 use masonry_winit::app::{AppDriver, MasonryState, MasonryUserEvent, WindowId};
 
 use crate::core::{DynMessage, MessageResult, ProxyError, RawProxy, ViewId};
-use crate::{ViewCtx, WidgetMap, WidgetView};
+use crate::{ViewCtx, WidgetView};
 
 pub struct MasonryDriver<State, Logic, View, ViewState> {
     state: State,
@@ -41,13 +41,8 @@ where
     ) -> (Self, WindowId, Box<dyn Widget>) {
         let window_id = WindowId::next();
         let first_view = (logic)(&mut state);
-        let mut ctx = ViewCtx {
-            widget_map: WidgetMap::default(),
-            id_path: Vec::new(),
-            proxy: Arc::new(WindowProxy(window_id, MasonryProxy(Box::new(event_sink)))),
-            runtime,
-            state_changed: true,
-        };
+        let proxy = Arc::new(WindowProxy(window_id, MasonryProxy(Box::new(event_sink))));
+        let mut ctx = ViewCtx::new(proxy, runtime);
         let (pod, view_state) = first_view.build(&mut ctx);
         let driver = Self {
             logic,
@@ -153,7 +148,7 @@ where
             // Handle an async path
             self.current_view
                 .message(&mut self.view_state, &path, message, &mut self.state)
-        } else if let Some(id_path) = self.ctx.widget_map.get(&widget_id) {
+        } else if let Some(id_path) = self.ctx.get_id_path(widget_id) {
             self.current_view.message(
                 &mut self.view_state,
                 id_path.as_slice(),
@@ -175,13 +170,13 @@ where
             //     avoiding infinite loops.
             MessageResult::Action(()) => {
                 let next_view = (self.logic)(&mut self.state);
-                self.ctx.state_changed = true;
+                self.ctx.set_state_changed(true);
                 stashed_view = std::mem::replace(&mut self.current_view, next_view);
 
                 Some(&stashed_view)
             }
             MessageResult::RequestRebuild => {
-                self.ctx.state_changed = false;
+                self.ctx.set_state_changed(false);
                 Some(&self.current_view)
             }
             MessageResult::Nop => None,

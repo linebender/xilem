@@ -5,8 +5,8 @@ use std::marker::PhantomData;
 
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId, WidgetView};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view which puts `child` into a scrollable region.
 ///
@@ -42,7 +42,7 @@ where
         // The Portal `View` doesn't get any messages directly (yet - scroll events?), so doesn't need to
         // use ctx.with_id.
         let (child, child_state) = self.child.build(ctx);
-        let widget_pod = ctx.new_pod(widgets::Portal::new_pod(child.into_widget_pod()));
+        let widget_pod = ctx.create_pod(widgets::Portal::new_pod(child.into_widget_pod()));
         (widget_pod, child_state)
     }
 
