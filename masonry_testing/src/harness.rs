@@ -10,32 +10,32 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
 use cursor_icon::CursorIcon;
-use dpi::LogicalSize;
+use dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use masonry_core::core::WidgetPod;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
 use vello::kurbo::{Point, Size, Vec2};
+use vello::peniko::{Blob, Color};
 use vello::util::{RenderContext, block_on_wgpu};
 use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, TexelCopyBufferInfo,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
 
-use crate::Handled;
-use crate::app::{
+use masonry_core::Handled;
+use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
-use crate::core::{
+use masonry_core::core::{
     Action, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
     PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
-use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::peniko::{Blob, Color};
-use crate::testing::screenshots::get_image_diff;
-use crate::util::Duration;
+use masonry_core::util::Duration;
+
+use crate::screenshots::get_image_diff;
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {

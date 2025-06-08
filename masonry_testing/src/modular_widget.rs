@@ -10,7 +10,7 @@ use tracing::trace_span;
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
-use crate::core::{
+use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
