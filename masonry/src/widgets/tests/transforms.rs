@@ -5,22 +5,27 @@
 
 use std::f64::consts::PI;
 
+use masonry_core::core::Properties;
 use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
 use crate::assert_render_snapshot;
 use crate::core::{PointerButton, Widget, WidgetOptions, WidgetPod};
-use crate::testing::TestHarness;
+use crate::properties::{Background, BorderColor, BorderWidth};
+use crate::testing::{TestHarness, TestWidgetExt};
 use crate::theme::default_property_set;
 use crate::widgets::{Alignment, Button, ChildAlignment, Label, SizedBox, ZStack};
 
-fn blue_box(inner: impl Widget) -> Box<SizedBox> {
+fn blue_box(inner: impl Widget) -> Box<impl Widget> {
+    let mut box_props = Properties::new();
+    box_props.insert(Background::Color(palette::css::BLUE));
+    box_props.insert(BorderColor::new(palette::css::TEAL));
+    box_props.insert(BorderWidth::all(2.0));
     Box::new(
         SizedBox::new(inner)
             .width(200.)
             .height(100.)
-            .background(palette::css::BLUE)
-            .border(palette::css::TEAL, 2.),
+            .with_props(box_props),
     )
 }
 

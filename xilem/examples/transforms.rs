@@ -6,6 +6,7 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
+use xilem::style::Style as _;
 use xilem::view::{GridExt as _, button, grid, label, sized_box, transformed};
 use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, WindowOptions, Xilem};
 
@@ -41,7 +42,7 @@ impl TransformsGame {
             [1.0, 0.0, 0.0, 0.2]
         };
 
-        let status = sized_box(status).background(Color::new(bg_color));
+        let status = sized_box(status).background_color(Color::new(bg_color));
         // Every view can be transformed similar as with CSS transforms in the web.
         // Currently only 2D transforms are supported.
         // Note that the order of the transformations is relevant.

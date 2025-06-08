@@ -20,6 +20,11 @@ impl Property for CornerRadius {
 }
 
 impl CornerRadius {
+    /// Create new `CornerRadius` with given value.
+    pub fn all(radius: f64) -> Self {
+        Self { radius }
+    }
+
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {

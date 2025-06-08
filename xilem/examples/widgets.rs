@@ -7,6 +7,7 @@ use masonry::dpi::LogicalSize;
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::core::adapt;
+use xilem::style::Style as _;
 use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, flex_item, progress_bar, sized_box};
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 

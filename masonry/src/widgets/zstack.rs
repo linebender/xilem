@@ -380,29 +380,38 @@ impl Widget for ZStack {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::Properties;
     use vello::peniko::color::palette;
 
     use super::*;
     use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::properties::{Background, BorderColor, BorderWidth};
+    use crate::testing::{TestHarness, TestWidgetExt as _};
     use crate::theme::default_property_set;
     use crate::widgets::{Label, SizedBox};
 
     #[test]
     fn zstack_alignments_parent_aligned() {
+        let mut bg_props = Properties::new();
+        bg_props.insert(Background::Color(palette::css::BLUE));
+        bg_props.insert(BorderColor::new(palette::css::TEAL));
+        bg_props.insert(BorderWidth::all(2.0));
+
+        let mut fg_props = Properties::new();
+        fg_props.insert(Background::Color(palette::css::RED));
+        fg_props.insert(BorderColor::new(palette::css::PINK));
+        fg_props.insert(BorderWidth::all(2.0));
+
         let widget = ZStack::new()
             .with_child(
                 SizedBox::new(Label::new("Background"))
                     .width(200.)
                     .height(100.)
-                    .background(palette::css::BLUE)
-                    .border(palette::css::TEAL, 2.),
+                    .with_props(bg_props),
                 ChildAlignment::ParentAligned,
             )
             .with_child(
-                SizedBox::new(Label::new("Foreground"))
-                    .background(palette::css::RED)
-                    .border(palette::css::PINK, 2.),
+                SizedBox::new(Label::new("Foreground")).with_props(fg_props),
                 ChildAlignment::ParentAligned,
             );
 

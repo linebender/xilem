@@ -5,9 +5,10 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
-use masonry::core::{Action, PointerButton, StyleProperty, WidgetId};
+use masonry::core::{Action, PointerButton, Properties, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
+use masonry::properties::{BorderColor, BorderWidth};
 use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use parley::layout::Alignment;
@@ -53,12 +54,23 @@ fn grid_button(params: GridParams) -> Button {
 }
 
 fn make_grid(grid_spacing: f64) -> Grid {
-    let label = SizedBox::new(Prose::from_text_area(
+    let label = Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
             .with_alignment(Alignment::Middle),
-    ))
-    .border(Color::from_rgb8(40, 40, 80), 1.0);
+    );
+    let label = SizedBox::new(label);
+
+    let props = Properties::new()
+        .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
+        .with(BorderWidth::all(1.0));
+    let label = SizedBox::new_pod(WidgetPod::new_with(
+        Box::new(label),
+        WidgetId::next(),
+        Default::default(),
+        props,
+    ));
+
     let button_inputs = vec![
         GridParams {
             x: 0,

@@ -22,6 +22,13 @@ impl Property for BorderColor {
     }
 }
 
+impl BorderColor {
+    /// Create new `BorderColor` with given value.
+    pub fn new(color: AlphaColor<Srgb>) -> Self {
+        Self { color }
+    }
+}
+
 /// The color of a widget's border when hovered by a pointer.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct HoveredBorderColor(pub BorderColor);

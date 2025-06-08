@@ -10,6 +10,7 @@ use std::time::Duration;
 
 use winit::error::EventLoopError;
 use xilem::core::{fork, run_once};
+use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,

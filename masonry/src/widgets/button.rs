@@ -275,10 +275,12 @@ impl Widget for Button {
 #[cfg(test)]
 mod tests {
 
+    use masonry_core::core::Properties;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::core::{PointerButton, StyleProperty};
-    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use crate::testing::{TestHarness, TestWidgetExt, WrapperWidget, widget_ids};
     use crate::theme::{PRIMARY_LIGHT, default_property_set};
     use crate::widgets::{Grid, GridParams, SizedBox};
 
@@ -381,15 +383,19 @@ mod tests {
             .with_child(Button::new("B"), GridParams::new(1, 0, 1, 1))
             .with_child(Button::new("C"), GridParams::new(0, 1, 1, 1))
             .with_child(Button::new("D"), GridParams::new(1, 1, 1, 1));
-        let root_widget = SizedBox::new(grid).padding(20.);
+
+        let root_widget =
+            SizedBox::new(grid).with_props(Properties::new().with(Padding::all(20.0)));
 
         let window_size = Size::new(300.0, 300.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), root_widget, window_size);
 
         harness.edit_root_widget(|mut root| {
-            let mut root = root.downcast::<SizedBox>();
-            let mut grid = SizedBox::child_mut(&mut root).unwrap();
+            let mut root = root.downcast::<WrapperWidget>();
+            let mut sized_box = WrapperWidget::child_mut(&mut root);
+            let mut sized_box = sized_box.downcast::<SizedBox>();
+            let mut grid = SizedBox::child_mut(&mut sized_box).unwrap();
             let mut grid = grid.downcast::<Grid>();
 
             {

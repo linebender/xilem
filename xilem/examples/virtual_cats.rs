@@ -11,13 +11,15 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
+use masonry::properties::Padding;
 use masonry::widgets::Alignment;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
+use xilem::style::Style as _;
 use xilem::view::{
-    ObjectFit, Padding, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
+    ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, LineBreaking, TextAlignment, WidgetView, WindowOptions, Xilem,
@@ -101,8 +103,8 @@ impl VirtualCats {
                         .alignment(TextAlignment::End),
                 )
                 .padding(4.)
-                .rounded(4.)
-                .background(palette::css::BLACK.multiply_alpha(0.5)),
+                .corner_radius(4.)
+                .background_color(palette::css::BLACK.multiply_alpha(0.5)),
             )
             .padding(Padding {
                 left: 0.,

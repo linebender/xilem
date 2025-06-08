@@ -13,5 +13,7 @@
 //! [`Background::Gradient`]: crate::properties::Background::Gradient
 
 mod gradient;
+mod unit_point;
 
 pub use gradient::{Gradient, GradientShape};
+pub use unit_point::UnitPoint;

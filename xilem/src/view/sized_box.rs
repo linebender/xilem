@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use std::marker::PhantomData;
 
-pub use masonry::properties::Padding;
+use crate::property_tuple::PropertyTuple;
+use crate::style::Style;
 use masonry::widgets;
-use vello::kurbo::RoundedRectRadii;
-use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
@@ -40,10 +40,7 @@ where
         inner,
         height: None,
         width: None,
-        background: None,
-        border: None,
-        corner_radius: RoundedRectRadii::from_single_radius(0.0),
-        padding: Padding::ZERO,
+        properties: Default::default(),
         phantom: PhantomData,
     }
 }
@@ -56,10 +53,7 @@ pub struct SizedBox<V, State, Action = ()> {
     inner: V,
     width: Option<f64>,
     height: Option<f64>,
-    background: Option<Brush>,
-    border: Option<BorderStyle>,
-    corner_radius: RoundedRectRadii,
-    padding: Padding,
+    properties: SizedBoxProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -105,40 +99,26 @@ impl<V, State, Action> SizedBox<V, State, Action> {
         self.height = Some(f64::INFINITY);
         self
     }
+}
 
-    /// Builder-style method for setting the background for this widget.
-    ///
-    /// This can be passed anything which can be represented by a [`Brush`];
-    /// notably, it can be any [`Color`], any gradient, or an [`Image`].
-    ///
-    /// [`Color`]: crate::Color
-    /// [`Image`]: vello::peniko::Image
-    pub fn background(mut self, brush: impl Into<Brush>) -> Self {
-        self.background = Some(brush.into());
-        self
-    }
+impl<V, S, A> Style for SizedBox<V, S, A> {
+    type Props = SizedBoxProps;
 
-    /// Builder-style method for painting a border around the widget with a brush and width.
-    pub fn border(mut self, brush: impl Into<Brush>, width: impl Into<f64>) -> Self {
-        self.border = Some(BorderStyle {
-            brush: brush.into(),
-            width: width.into(),
-        });
-        self
-    }
-
-    /// Builder style method for rounding off corners of this container by setting a corner radius.
-    pub fn rounded(mut self, radius: impl Into<RoundedRectRadii>) -> Self {
-        self.corner_radius = radius.into();
-        self
-    }
-
-    /// Builder style method for adding a padding around the widget.
-    pub fn padding(mut self, padding: impl Into<Padding>) -> Self {
-        self.padding = padding.into();
-        self
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
     }
 }
+
+crate::declare_property_tuple!(
+    SizedBoxProps;
+    SizedBox<V, S, A>;
+
+    Background, 0;
+    BorderColor, 1;
+    BorderWidth, 2;
+    CornerRadius, 3;
+    Padding, 4;
+);
 
 impl<V, State, Action> ViewMarker for SizedBox<V, State, Action> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for SizedBox<V, State, Action>
@@ -152,18 +132,11 @@ where
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = self.inner.build(ctx);
-        let mut widget = widgets::SizedBox::new_pod(child.erased_widget_pod())
+        let widget = widgets::SizedBox::new_pod(child.erased_widget_pod())
             .raw_width(self.width)
-            .raw_height(self.height)
-            .rounded(self.corner_radius)
-            .padding(self.padding);
-        if let Some(background) = &self.background {
-            widget = widget.background(background.clone());
-        }
-        if let Some(border) = &self.border {
-            widget = widget.border(border.brush.clone(), border.width);
-        }
-        let pod = ctx.new_pod(widget);
+            .raw_height(self.height);
+        let mut pod = ctx.new_pod(widget);
+        pod.properties = self.properties.build_properties();
         (pod, child_state)
     }
 
@@ -174,6 +147,8 @@ where
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if self.width != prev.width {
             match self.width {
                 Some(width) => widgets::SizedBox::set_width(&mut element, width),
@@ -185,28 +160,6 @@ where
                 Some(height) => widgets::SizedBox::set_height(&mut element, height),
                 None => widgets::SizedBox::unset_height(&mut element),
             }
-        }
-        if self.background != prev.background {
-            match &self.background {
-                Some(background) => {
-                    widgets::SizedBox::set_background(&mut element, background.clone());
-                }
-                None => widgets::SizedBox::clear_background(&mut element),
-            }
-        }
-        if self.border != prev.border {
-            match &self.border {
-                Some(border) => {
-                    widgets::SizedBox::set_border(&mut element, border.brush.clone(), border.width);
-                }
-                None => widgets::SizedBox::clear_border(&mut element),
-            }
-        }
-        if self.corner_radius != prev.corner_radius {
-            widgets::SizedBox::set_rounded(&mut element, self.corner_radius);
-        }
-        if self.padding != prev.padding {
-            widgets::SizedBox::set_padding(&mut element, self.padding);
         }
         {
             let mut child = widgets::SizedBox::child_mut(&mut element)
@@ -236,11 +189,4 @@ where
     ) -> crate::MessageResult<Action> {
         self.inner.message(view_state, id_path, message, app_state)
     }
-}
-
-/// Something that can be used as the border for a widget.
-#[derive(PartialEq)]
-struct BorderStyle {
-    width: f64,
-    brush: Brush,
 }
