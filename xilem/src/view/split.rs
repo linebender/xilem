@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry_winit::widgets::{self, Axis};
+use masonry::widgets::{self, Axis};
 use xilem_core::{DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
 
 use crate::{Pod, ViewCtx, WidgetView};

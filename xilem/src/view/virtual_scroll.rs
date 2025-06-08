@@ -3,8 +3,8 @@
 
 use std::{collections::HashMap, marker::PhantomData, ops::Range};
 
-use masonry_winit::core::{FromDynWidget, Widget, WidgetPod};
-use masonry_winit::widgets::{self, VirtualScrollAction};
+use masonry::core::{FromDynWidget, Widget, WidgetPod};
+use masonry::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
 use xilem_core::{AsyncCtx, DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
 
@@ -77,7 +77,7 @@ where
 mod private {
     use std::{collections::HashMap, sync::Arc};
 
-    use masonry_winit::widgets::VirtualScrollAction;
+    use masonry::widgets::VirtualScrollAction;
     use xilem_core::ViewId;
 
     #[expect(
@@ -339,15 +339,15 @@ where
                 return MessageResult::Stale(message);
             }
         }
-        if message.is::<masonry_winit::core::Action>() {
-            let action = message.downcast::<masonry_winit::core::Action>().unwrap();
-            if let masonry_winit::core::Action::Other(action) = *action {
+        if message.is::<masonry::core::Action>() {
+            let action = message.downcast::<masonry::core::Action>().unwrap();
+            if let masonry::core::Action::Other(action) = *action {
                 if !action.is::<VirtualScrollAction>() {
                     tracing::error!("Wrong action type in VirtualScroll::message: {action:?}");
                     // Ideally we'd avoid this extra box, but it's not easy to write this kind of code in a clean way
-                    return MessageResult::Stale(DynMessage::new(
-                        masonry_winit::core::Action::Other(action),
-                    ));
+                    return MessageResult::Stale(DynMessage::new(masonry::core::Action::Other(
+                        action,
+                    )));
                 }
                 // We check then unwrap to avoid unwrapping a box (also, it makes the check path an early-exit)
                 let action = action.downcast::<VirtualScrollAction>().unwrap();

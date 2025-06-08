@@ -3,7 +3,7 @@
 
 //! Modularizing state can be done with `lens` which allows using modular components.
 
-use masonry_winit::widgets::MainAxisAlignment;
+use masonry::widgets::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;
 use xilem::view::{Axis, button, flex, label};

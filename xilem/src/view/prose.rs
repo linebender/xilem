@@ -1,9 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry_winit::core::{ArcStr, StyleProperty};
-use masonry_winit::parley::FontWeight;
-use masonry_winit::widgets::{
+use masonry::core::{ArcStr, StyleProperty};
+use masonry::parley::FontWeight;
+use masonry::widgets::{
     LineBreaking, {self},
 };
 use vello::peniko::Brush;
@@ -17,7 +17,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
         content: content.into(),
         text_brush: Color::WHITE.into(),
         alignment: TextAlignment::default(),
-        text_size: masonry_winit::theme::TEXT_SIZE_NORMAL,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
         weight: FontWeight::NORMAL,
     }
@@ -44,7 +44,7 @@ pub struct Prose {
     line_break_mode: LineBreaking,
     weight: FontWeight,
     // TODO: disabled: bool,
-    // TODO: add more attributes of `masonry_winit::widgets::Prose`
+    // TODO: add more attributes of `masonry::widgets::Prose`
 }
 
 impl Prose {

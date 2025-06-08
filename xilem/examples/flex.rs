@@ -3,7 +3,7 @@
 
 //! Flex properties can be set in Xilem.
 
-use masonry_winit::widgets::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::view::{Axis, FlexExt as _, FlexSpacer, Label, button, flex, label, sized_box};
 use xilem::{EventLoop, WidgetView, Xilem};

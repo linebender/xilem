@@ -6,10 +6,10 @@
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use masonry::core::{Widget, WidgetId};
+use masonry::peniko::Blob;
+use masonry::widgets::RootWidget;
 use masonry_winit::app::{AppDriver, MasonryState, MasonryUserEvent, WindowId};
-use masonry_winit::core::{Widget, WidgetId};
-use masonry_winit::peniko::Blob;
-use masonry_winit::widgets::RootWidget;
 
 use crate::core::{DynMessage, MessageResult, ProxyError, RawProxy, ViewId};
 use crate::{ViewCtx, WidgetMap, WidgetView};
@@ -70,8 +70,8 @@ where
 pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
 
 /// The action which should be used for async events.
-pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> masonry_winit::core::Action {
-    masonry_winit::core::Action::Other(Box::<MessagePackage>::new((path, message)))
+pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> masonry::core::Action {
+    masonry::core::Action::Other(Box::<MessagePackage>::new((path, message)))
 }
 
 /// The type used to send a message for async events.
@@ -91,8 +91,7 @@ impl MasonryProxy {
         )) {
             Ok(()) => Ok(()),
             Err(err) => {
-                let MasonryUserEvent::Action(_, masonry_winit::core::Action::Other(res), _) = err
-                else {
+                let MasonryUserEvent::Action(_, masonry::core::Action::Other(res), _) = err else {
                     unreachable!(
                         "We know this is the value we just created, which matches this pattern"
                     )
@@ -142,12 +141,12 @@ where
         window_id: WindowId,
         masonry_ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
         widget_id: WidgetId,
-        action: masonry_winit::core::Action,
+        action: masonry::core::Action,
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
         let message_result = if widget_id == ASYNC_MARKER_WIDGET {
-            let masonry_winit::core::Action::Other(action) = action else {
+            let masonry::core::Action::Other(action) = action else {
                 panic!();
             };
             let (path, message) = *action.downcast::<MessagePackage>().unwrap();

@@ -5,7 +5,7 @@
 //! You can also emulate the elm architecture for a subset of your app.
 //! Though usually it's more idiomatic to modularize state with `map_state` and update state directly within event callbacks, as seen in the `components` example.
 
-use masonry_winit::widgets::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::core::{MessageResult, adapt, map_action};
 use xilem::view::{Axis, button, flex, label};

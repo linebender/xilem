@@ -45,7 +45,7 @@ Let's start with the `main()` function.
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry_winit::widgets::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -96,10 +96,10 @@ That method gives our app a `DriverCtx` context, which we can use to access the 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
 ```rust,ignore
+use masonry::core::{Action, WidgetId};
+use masonry::widgets::Label;
+# use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 use masonry_winit::app::{AppDriver, DriverCtx};
-use masonry_winit::core::{Action, WidgetId};
-use masonry_winit::widgets::Label;
-# use masonry_winit::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
 struct Driver {
     next_task: String,
@@ -171,7 +171,7 @@ In our main function, we create a `Driver` and pass it to `event_loop_runner::ru
 The last step is to create our Winit window and start our main loop.
 
 ```rust,ignore
-    use masonry_winit::dpi::LogicalSize;
+    use masonry::dpi::LogicalSize;
     use winit::window::Window;
 
     let window_attributes = Window::default_attributes()
@@ -194,7 +194,7 @@ Our complete program therefore looks like this:
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry_winit::widgets::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -207,9 +207,9 @@ fn main() {
     );
     let main_widget = RootWidget::new(main_widget);
 
+    use masonry::core::{Action, WidgetId};
+    use masonry::widgets::Label;
     use masonry_winit::app::{AppDriver, DriverCtx};
-    use masonry_winit::core::{Action, WidgetId};
-    use masonry_winit::widgets::Label;
 
     struct Driver {
         next_task: String,
@@ -239,7 +239,7 @@ fn main() {
         next_task: String::new(),
     };
 
-    use masonry_winit::dpi::LogicalSize;
+    use masonry::dpi::LogicalSize;
     use winit::window::Window;
 
     let window_attributes = Window::default_attributes()

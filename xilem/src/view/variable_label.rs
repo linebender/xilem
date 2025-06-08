@@ -1,10 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry_winit::core::ArcStr;
-use masonry_winit::parley::Alignment as TextAlignment;
-use masonry_winit::parley::style::{FontStack, FontWeight};
-use masonry_winit::widgets;
+use masonry::core::ArcStr;
+use masonry::parley::Alignment as TextAlignment;
+use masonry::parley::style::{FontStack, FontWeight};
+use masonry::widgets;
 use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 
@@ -12,7 +12,7 @@ use super::{Label, label};
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
-/// A view for displaying non-editable text, with a variable [weight](masonry_winit::parley::style::FontWeight).
+/// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
     VariableLabel {
         label: label(text),

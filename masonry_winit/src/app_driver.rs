@@ -6,13 +6,13 @@ use std::hash::Hash;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use masonry::core::Widget;
+use masonry::app::RenderRoot;
+use masonry::core::{Action, Widget, WidgetId};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes};
 
-use crate::app::{MasonryState, RenderRoot};
-use crate::core::{Action, WidgetId};
+use crate::app::MasonryState;
 use crate::event_loop_runner::WindowState;
 
 /// A unique and persistent identifier for a window.
