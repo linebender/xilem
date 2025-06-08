@@ -15,20 +15,20 @@
 use std::str::FromStr;
 
 use masonry::accesskit::{Node, Role};
-use masonry::smallvec::{SmallVec, smallvec};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use masonry_winit::core::{
+use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetPod,
 };
-use masonry_winit::dpi::LogicalSize;
-use masonry_winit::kurbo::{Point, Size};
-use masonry_winit::peniko::Color;
-use masonry_winit::peniko::color::AlphaColor;
-use masonry_winit::properties::{Background, Padding};
-use masonry_winit::theme::default_property_set;
-use masonry_winit::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
+use masonry::dpi::LogicalSize;
+use masonry::kurbo::{Point, Size};
+use masonry::peniko::Color;
+use masonry::peniko::color::AlphaColor;
+use masonry::properties::{Background, Padding};
+use masonry::smallvec::{SmallVec, smallvec};
+use masonry::theme::default_property_set;
+use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace, trace_span};
 use vello::Scene;
 use winit::window::Window;
@@ -455,9 +455,9 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_winit::assert_render_snapshot;
-    use masonry_winit::testing::TestHarness;
-    use masonry_winit::theme::default_property_set;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+    use masonry::theme::default_property_set;
 
     use super::*;
 

@@ -7,10 +7,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
+use masonry::core::{Action, Widget, WidgetId};
+use masonry::dpi::LogicalSize;
+use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use masonry_winit::core::{Action, Widget, WidgetId};
-use masonry_winit::dpi::LogicalSize;
-use masonry_winit::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -93,9 +93,9 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_winit::assert_render_snapshot;
-    use masonry_winit::testing::TestHarness;
-    use masonry_winit::theme::default_property_set;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+    use masonry::theme::default_property_set;
 
     use super::*;
 

@@ -4955,6 +4955,7 @@ dependencies = [
  "accesskit",
  "anyhow",
  "image",
+ "masonry",
  "masonry_winit",
  "profiling",
  "reqwest",

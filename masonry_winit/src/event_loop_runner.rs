@@ -9,12 +9,14 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, mpsc};
 
 use accesskit_winit::Adapter;
-use masonry::core::DefaultProperties;
+use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal};
+use masonry::core::{DefaultProperties, TextEvent, Widget, WidgetId, WindowEvent};
 use masonry::theme::default_property_set;
 use masonry::util::Instant;
 use tracing::{debug, error, info, info_span};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use vello::kurbo::Affine;
+use vello::peniko::Color;
 use vello::util::{RenderContext, RenderSurface};
 use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
@@ -25,18 +27,15 @@ use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
 use crate::app::{
-    AppDriver, DriverCtx, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
-    masonry_resize_direction_to_winit, winit_ime_to_masonry,
+    AppDriver, DriverCtx, WindowSizePolicy, masonry_resize_direction_to_winit, winit_ime_to_masonry,
 };
 use crate::app_driver::WindowId;
-use crate::core::{TextEvent, Widget, WidgetId, WindowEvent};
-use crate::peniko::Color;
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
     AccessKit(HandleId, accesskit_winit::WindowEvent),
     // TODO: A more considered design here
-    Action(WindowId, crate::core::Action, WidgetId),
+    Action(WindowId, masonry::core::Action, WidgetId),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {

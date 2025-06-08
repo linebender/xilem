@@ -10,16 +10,16 @@
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
 use masonry::accesskit::{Node, Role};
-use masonry::smallvec::SmallVec;
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use masonry_winit::core::{
+use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
 };
-use masonry_winit::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
-use masonry_winit::palette;
-use masonry_winit::peniko::Color;
-use masonry_winit::widgets::RootWidget;
+use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
+use masonry::palette;
+use masonry::peniko::Color;
+use masonry::smallvec::SmallVec;
+use masonry::widgets::RootWidget;
+use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use parley::layout::{Alignment, AlignmentOptions};
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use tracing::{Span, trace_span};
@@ -147,7 +147,7 @@ impl Widget for CustomWidget {
         text_layout.align(None, Alignment::Start, AlignmentOptions::default());
 
         // We can pass a transform matrix to rotate the text we render
-        masonry_winit::core::render_text(
+        masonry::core::render_text(
             scene,
             Affine::rotate(std::f64::consts::FRAC_PI_4).then_translate((80.0, 40.0).into()),
             &text_layout,
@@ -215,9 +215,9 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_winit::assert_render_snapshot;
-    use masonry_winit::testing::TestHarness;
-    use masonry_winit::theme::default_property_set;
+    use masonry::assert_render_snapshot;
+    use masonry::testing::TestHarness;
+    use masonry::theme::default_property_set;
 
     use super::*;
 
