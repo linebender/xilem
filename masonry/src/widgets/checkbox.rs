@@ -3,6 +3,8 @@
 
 //! A checkbox widget.
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role, Toggled};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
@@ -14,8 +16,12 @@ use crate::core::{
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::{
+    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkWidth,
+    CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
+};
 use crate::theme;
-use crate::util::{UnitPoint, fill_lin_gradient, stroke};
+use crate::util::{fill, stroke};
 use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
@@ -23,6 +29,7 @@ use crate::widgets::Label;
 #[doc = crate::include_screenshot!("checkbox_hello_checked.png", "Checkbox with checked state.")]
 pub struct Checkbox {
     checked: bool,
+    // FIXME - Remove label child, have this widget only be a box with a checkmark.
     label: WidgetPod<Label>,
 }
 
@@ -137,21 +144,42 @@ impl Widget for Checkbox {
         ctx.register_child(&mut self.label);
     }
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        DisabledBackground::prop_changed(ctx, property_type);
+        ActiveBackground::prop_changed(ctx, property_type);
+        Background::prop_changed(ctx, property_type);
+        HoveredBorderColor::prop_changed(ctx, property_type);
+        BorderColor::prop_changed(ctx, property_type);
+        BorderWidth::prop_changed(ctx, property_type);
+        CornerRadius::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
+        CheckmarkWidth::prop_changed(ctx, property_type);
+        DisabledCheckmarkColor::prop_changed(ctx, property_type);
+        CheckmarkColor::prop_changed(ctx, property_type);
+    }
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+
         let x_padding = theme::WIDGET_CONTROL_COMPONENT_PADDING;
-        let check_size = theme::BASIC_WIDGET_HEIGHT;
+        let check_side = theme::BASIC_WIDGET_HEIGHT;
 
         let label_size = ctx.run_layout(&mut self.label, bc);
-        ctx.place_child(&mut self.label, (check_size + x_padding, 0.0).into());
+        ctx.place_child(&mut self.label, (check_side + x_padding, 0.0).into());
+
+        let check_size = Size::new(check_side, check_side);
+        let (check_size, _) = padding.layout_up(check_size, 0.);
+        let (check_size, _) = border.layout_up(check_size, 0.);
 
         let desired_size = Size::new(
-            check_size + x_padding + label_size.width,
-            check_size.max(label_size.height),
+            check_size.width + x_padding + label_size.width,
+            check_size.height.max(label_size.height),
         );
         let our_size = bc.constrain(desired_size);
         let baseline =
@@ -160,32 +188,45 @@ impl Widget for Checkbox {
         our_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let is_pressed = ctx.is_pointer_capture_target() && !ctx.is_disabled();
+        let is_hovered = ctx.is_hovered();
+
         let check_size = theme::BASIC_WIDGET_HEIGHT;
-        let border_width = 1.;
+        let size = Size::new(check_size, check_size);
 
-        let rect = Size::new(check_size, check_size)
-            .to_rect()
-            .inset(-border_width / 2.)
-            .to_rounded_rect(2.);
+        let border_width = props.get::<BorderWidth>();
+        let border_radius = props.get::<CornerRadius>();
 
-        fill_lin_gradient(
-            scene,
-            &rect,
-            [theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK],
-            UnitPoint::TOP,
-            UnitPoint::BOTTOM,
-        );
-
-        let border_color = if ctx.is_hovered() && !ctx.is_disabled() {
-            theme::BORDER_LIGHT
+        let bg = if ctx.is_disabled() {
+            &props.get::<DisabledBackground>().0
+        } else if is_pressed {
+            &props.get::<ActiveBackground>().0
         } else {
-            theme::BORDER_DARK
+            props.get::<Background>()
         };
 
-        stroke(scene, &rect, border_color, border_width);
+        let bg_rect = border_width.bg_rect(size, border_radius);
+        let border_rect = border_width.border_rect(size, border_radius);
+
+        let border_color = if is_hovered && !ctx.is_disabled() {
+            &props.get::<HoveredBorderColor>().0
+        } else {
+            props.get::<BorderColor>()
+        };
+
+        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
+        fill(scene, &bg_rect, &brush);
+        stroke(scene, &border_rect, border_color.color, border_width.width);
 
         if self.checked {
+            let checkmark_width = props.get::<CheckmarkWidth>();
+            let brush = if ctx.is_disabled() {
+                &props.get::<DisabledCheckmarkColor>().0
+            } else {
+                props.get::<CheckmarkColor>()
+            };
+
             // Paint the checkmark
             let mut path = BezPath::new();
             path.move_to((4.0, 9.0));
@@ -193,22 +234,15 @@ impl Widget for Checkbox {
             path.line_to((14.0, 5.0));
 
             let style = Stroke {
-                width: 2.0,
+                width: checkmark_width.width,
                 join: Join::Round,
                 miter_limit: 10.0,
                 start_cap: Cap::Round,
                 end_cap: Cap::Round,
-                dash_pattern: SmallVec::default(),
+                dash_pattern: SmallVec::new(),
                 dash_offset: 0.0,
             };
-
-            let brush = if ctx.is_disabled() {
-                theme::DISABLED_TEXT_COLOR
-            } else {
-                theme::TEXT_COLOR
-            };
-
-            scene.stroke(&style, Affine::IDENTITY, brush, None, &path);
+            scene.stroke(&style, Affine::IDENTITY, brush.color, None, &path);
         }
     }
 
