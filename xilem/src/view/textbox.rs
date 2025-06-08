@@ -2,11 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{WidgetOptions, WidgetPod};
+use masonry::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
+};
 use masonry::widgets;
 use vello::kurbo::Affine;
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::property_tuple::PropertyTuple;
+use crate::style::Style;
 use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the textbox contents)
@@ -29,6 +34,7 @@ where
         alignment: TextAlignment::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
+        properties: Default::default(),
     }
 }
 
@@ -42,6 +48,7 @@ pub struct Textbox<State, Action> {
     alignment: TextAlignment,
     insert_newline: InsertNewline,
     disabled: bool,
+    properties: TextboxProps,
     // TODO: add more attributes of `masonry::widgets::TextBox`
 }
 
@@ -81,6 +88,27 @@ impl<State, Action> Textbox<State, Action> {
     }
 }
 
+impl<S, A> Style for Textbox<S, A> {
+    type Props = TextboxProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    TextboxProps;
+    Textbox<S, A>;
+
+    Background, 0;
+    DisabledBackground, 1;
+    BorderColor, 2;
+    BorderWidth, 3;
+    BoxShadow, 4;
+    CornerRadius, 5;
+    Padding, 6;
+);
+
 impl<State, Action> ViewMarker for Textbox<State, Action> {}
 impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<State, Action> {
     type Element = Pod<widgets::Textbox>;
@@ -103,8 +131,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = textbox.area_pod().id();
         ctx.record_action(id);
-        let widget_pod = ctx.new_pod(textbox);
-        (widget_pod, ())
+        let mut pod = ctx.new_pod(textbox);
+        pod.properties = self.properties.build_properties();
+        (pod, ())
     }
 
     fn rebuild(
@@ -114,6 +143,8 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if element.ctx.is_disabled() != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }

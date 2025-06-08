@@ -9,6 +9,8 @@
 
 use masonry::core::{Action, Widget, WidgetId};
 use masonry::dpi::LogicalSize;
+use masonry::properties::Padding;
+use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
@@ -78,14 +80,22 @@ fn main() {
         next_task: String::new(),
         window_id: WindowId::next(),
     };
-    masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+
+    let mut default_properties = default_property_set();
+    default_properties.insert::<RootWidget, _>(Padding::all(5.0));
+
+    let event_loop = masonry_winit::app::EventLoop::with_user_event()
+        .build()
+        .unwrap();
+    masonry_winit::app::run_with(
+        event_loop,
         vec![(
             driver.window_id,
             window_attributes,
             Box::new(RootWidget::new(make_widget_tree())),
         )],
         driver,
+        default_properties,
     )
     .unwrap();
 }
