@@ -5,8 +5,8 @@
 
 use masonry::widgets::{self};
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 pub use masonry::core::ObjectFit;
 /// Displays the bitmap `image`.

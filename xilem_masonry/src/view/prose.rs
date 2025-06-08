@@ -3,13 +3,12 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::FontWeight;
-use masonry::widgets::{
-    LineBreaking, {self},
-};
+use masonry::widgets;
+use masonry::widgets::LineBreaking;
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Color, Pod, TextAlignment, ViewCtx};
 
 /// A view which displays selectable text.
 pub fn prose(content: impl Into<ArcStr>) -> Prose {

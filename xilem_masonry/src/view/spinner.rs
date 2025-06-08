@@ -4,8 +4,8 @@
 use masonry::peniko::Color;
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// An indefinite spinner.
 ///

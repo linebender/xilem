@@ -3,8 +3,8 @@
 
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// A view which displays a progress bar.
 ///

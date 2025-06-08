@@ -9,8 +9,8 @@ use vello::peniko::Brush;
 use xilem_core::ViewPathTracker;
 
 use super::{Label, label};
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Pod, ViewCtx};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {

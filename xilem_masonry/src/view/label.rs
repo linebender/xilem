@@ -8,8 +8,8 @@ use masonry::widgets::{
 };
 use vello::peniko::Brush;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::core::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+use crate::{Color, Pod, TextAlignment, ViewCtx};
 
 /// A non-interactive text element.
 /// # Example

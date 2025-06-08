@@ -20,7 +20,7 @@ use crate::core::{
 /// This `MessageProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
 ///
-/// For exampe, this can be used with the time functions in [`crate::tokio::time`].
+/// For example, this can be used with the time functions in [`crate::tokio::time`].
 ///
 /// Note that this task will not be updated if the view is rebuilt, so `init_future`
 /// cannot capture.
