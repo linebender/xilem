@@ -268,9 +268,9 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
     let target = root.global_state.focused_widget.or_else(|| {
         // In case no widget is focused target the root widget only child.
-        // We're targeting the child instead of the root widget to enable
-        // the usage of generic event handling widgets with Role::GenericContainer
-        // (since the root widget should have Role::Window).
+        // We're targeting the child instead of the root widget to accommodate
+        // Xilem, which wraps the main widget in another widget so that it can be swapped
+        // (since the root widget cannot be swapped).
         let root_widget_children = root.get_root_widget().children();
         if root_widget_children.len() == 1 {
             Some(root_widget_children[0].id())

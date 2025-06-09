@@ -160,7 +160,7 @@ where
                 view_state,
             },
         );
-        (attrs, WidgetPod::new(root_widget).erased())
+        (attrs, root_widget)
     }
 
     pub(crate) fn create_window(

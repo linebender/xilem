@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::widgets::RootWidget;
+use masonry::core::{Widget, WidgetPod};
 use winit::window::{Window, WindowAttributes};
 use xilem_core::{AnyViewState, View, ViewElement, ViewMarker};
 
@@ -25,7 +25,7 @@ impl<State> WindowView<State> {
     }
 }
 
-pub(crate) struct CreateWindow(pub WindowAttributes, pub RootWidget);
+pub(crate) struct CreateWindow(pub WindowAttributes, pub WidgetPod<dyn Widget>);
 
 impl ViewElement for CreateWindow {
     type Mut<'a> = (&'a Window, &'a mut RenderRoot);
@@ -42,10 +42,12 @@ where
     type ViewState = AnyViewState;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
-        let (pod, view_state) = self.root_widget_view.build(ctx, app_state);
-        let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
+        let (root_widget, view_state) = self.root_widget_view.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
-        (CreateWindow(initial_attributes, root_widget), view_state)
+        (
+            CreateWindow(initial_attributes, root_widget.into_widget_pod().erased()),
+            view_state,
+        )
     }
 
     fn rebuild(
@@ -70,13 +72,8 @@ where
         app_state: &mut State,
     ) {
         render_root.edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget>();
-            self.root_widget_view.teardown(
-                view_state,
-                ctx,
-                RootWidget::child_mut(&mut root).downcast(),
-                app_state,
-            );
+            self.root_widget_view
+                .teardown(view_state, ctx, root.downcast(), app_state);
         });
     }
 
@@ -105,12 +102,11 @@ where
         app_state: &mut State,
     ) {
         render_root.edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget>();
             self.root_widget_view.rebuild(
                 &prev.root_widget_view,
                 root_widget_view_state,
                 ctx,
-                RootWidget::child_mut(&mut root).downcast(),
+                root.downcast(),
                 app_state,
             );
         });

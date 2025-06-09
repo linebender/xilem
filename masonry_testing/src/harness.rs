@@ -12,7 +12,7 @@ use std::sync::{Arc, mpsc};
 use cursor_icon::CursorIcon;
 use dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use masonry_core::core::WidgetPod;
+use masonry_core::core::{Properties, WidgetPod};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
@@ -215,7 +215,12 @@ impl TestHarness {
     /// Window size will be [`TestHarnessParams::DEFAULT_SIZE`].
     /// Background color will be [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     pub fn create(default_props: DefaultProperties, root_widget: impl Widget) -> Self {
-        Self::create_with(default_props, root_widget, TestHarnessParams::default())
+        Self::create_with(
+            default_props,
+            root_widget,
+            Properties::new(),
+            TestHarnessParams::default(),
+        )
     }
 
     /// Builds harness with given root widget and window size.
@@ -227,6 +232,7 @@ impl TestHarness {
         Self::create_with(
             default_props,
             root_widget,
+            Properties::new(),
             TestHarnessParams {
                 window_size,
                 ..Default::default()
@@ -238,6 +244,7 @@ impl TestHarness {
     pub fn create_with(
         default_props: DefaultProperties,
         root_widget: impl Widget,
+        root_widget_props: Properties,
         params: TestHarnessParams,
     ) -> Self {
         let mouse_state = PointerState::default();
@@ -264,7 +271,7 @@ impl TestHarness {
         let mut harness = Self {
             signal_receiver,
             render_root: RenderRoot::new(
-                WidgetPod::new(root_widget).erased(),
+                WidgetPod::new_with_props(root_widget, root_widget_props).erased(),
                 move |signal| signal_sender.send(signal).unwrap(),
                 RenderRootOptions {
                     // TODO - Pass the default property set as an input instead.

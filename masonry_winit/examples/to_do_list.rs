@@ -7,11 +7,11 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{Action, DefaultProperties, Widget, WidgetId, WidgetPod};
+use masonry::core::{Action, Properties, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, TextArea, Textbox};
+use masonry::widgets::{Button, Flex, Label, Portal, TextArea, Textbox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -35,10 +35,7 @@ impl AppDriver for Driver {
         match action {
             Action::ButtonPressed(_) => {
                 ctx.render_root(window_id).edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget>();
-
-                    let mut portal = RootWidget::child_mut(&mut root);
-                    let mut portal = portal.downcast::<Portal<Flex>>();
+                    let mut portal = root.downcast::<Portal<Flex>>();
                     let mut flex = Portal::child_mut(&mut portal);
                     Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
 
@@ -61,20 +58,17 @@ impl AppDriver for Driver {
 fn make_widget_tree() -> impl Widget {
     Portal::new(
         Flex::column()
-            .with_child(
-                Flex::row()
-                    .with_flex_child(Textbox::new(""), 1.0)
-                    .with_child(Button::new("Add task")),
+            .with_child_pod(
+                WidgetPod::new_with_props(
+                    Flex::row()
+                        .with_flex_child(Textbox::new(""), 1.0)
+                        .with_child(Button::new("Add task")),
+                    Properties::new().with(Padding::all(WIDGET_SPACING)),
+                )
+                .erased(),
             )
             .with_spacer(WIDGET_SPACING),
     )
-}
-
-fn default_props() -> DefaultProperties {
-    let mut default_properties = default_property_set();
-    default_properties.insert::<RootWidget, _>(Padding::all(WIDGET_SPACING));
-
-    default_properties
 }
 
 fn main() {
@@ -96,10 +90,10 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(RootWidget::new(make_widget_tree())).erased(),
+            WidgetPod::new(make_widget_tree()).erased(),
         )],
         driver,
-        default_props(),
+        default_property_set(),
     )
     .unwrap();
 }
@@ -114,7 +108,7 @@ mod tests {
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(default_props(), RootWidget::new(make_widget_tree()));
+        let mut harness = TestHarness::create(default_property_set(), make_widget_tree());
 
         assert_render_snapshot!(harness, "example_to_do_list_initial");
 

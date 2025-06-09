@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use accesskit::{ActionRequest, TreeUpdate};
+use accesskit::{ActionRequest, NodeId, TreeUpdate};
 use cursor_icon::CursorIcon;
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
@@ -51,9 +51,9 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
     /// Root of the widget tree.
-    // TODO: prescribe a specific widget type here? because the role should be Role::Window
-    // and we're also special-casing the root widget in run_on_text_event_pass.
     pub(crate) root: WidgetPod<dyn Widget>,
+
+    pub(crate) window_node_id: NodeId,
 
     /// Whether the window size should be determined by the content or the user.
     pub(crate) size_policy: WindowSizePolicy,
@@ -244,6 +244,11 @@ pub(crate) struct InspectorState {
 impl RenderRoot {
     /// Create a new `RenderRoot` with the given options.
     ///
+    /// The provided root widget will always stay the root widget.
+    /// (It cannot be changed later for another widget, only its children can change.)
+    /// In case no widget is focused the event pass will target text events
+    /// at the child of the root widget if it only has one child.
+    ///
     /// Note that this doesn't create a window or start an event loop.
     /// The `masonry` crate doesn't provide a way to do that:
     /// look for `masonry_winit::app::run` instead.
@@ -263,6 +268,7 @@ impl RenderRoot {
 
         let mut root = Self {
             root: root_widget,
+            window_node_id: WidgetId::next().into(),
             size_policy,
             size: PhysicalSize::new(0, 0),
             last_mouse_pos: None,
