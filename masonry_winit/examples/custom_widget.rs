@@ -12,6 +12,7 @@ use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    WidgetPod,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
@@ -194,7 +195,7 @@ fn main() {
         vec![(
             WindowId::next(),
             window_attributes,
-            Box::new(RootWidget::new(CustomWidget(my_string))),
+            WidgetPod::new(RootWidget::new(CustomWidget(my_string))).erased(),
         )],
         Driver,
     )

@@ -18,8 +18,8 @@ use vello::kurbo::{
 use crate::Handled;
 use crate::core::{
     AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
-    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetOptions, WidgetPod,
-    WidgetRef, WidgetState, WindowEvent,
+    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -250,7 +250,7 @@ impl RenderRoot {
     /// The `masonry` crate doesn't provide a way to do that:
     /// look for `masonry_winit::app::run` instead.
     pub fn new(
-        root_widget: Box<dyn Widget>,
+        root_widget: WidgetPod<dyn Widget>,
         signal_sink: impl FnMut(RenderRootSignal) + 'static,
         options: RenderRootOptions,
     ) -> Self {
@@ -264,7 +264,7 @@ impl RenderRoot {
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
         let mut root = Self {
-            root: WidgetPod::new_with_options(root_widget, WidgetOptions::default()).erased(),
+            root: root_widget,
             size_policy,
             size: PhysicalSize::new(0, 0),
             last_mouse_pos: None,

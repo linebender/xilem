@@ -8,7 +8,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{Action, ObjectFit, WidgetId};
+use masonry::core::{Action, ObjectFit, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::{Image as ImageBuf, ImageFormat};
 use masonry::widgets::{Image, RootWidget};
@@ -54,7 +54,7 @@ fn main() {
         vec![(
             WindowId::next(),
             window_attributes,
-            Box::new(RootWidget::new(make_image())),
+            WidgetPod::new(RootWidget::new(make_image())).erased(),
         )],
         Driver,
     )

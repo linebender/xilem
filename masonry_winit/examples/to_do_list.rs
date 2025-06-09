@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{Action, DefaultProperties, Widget, WidgetId};
+use masonry::core::{Action, DefaultProperties, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
@@ -96,7 +96,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            Box::new(RootWidget::new(make_widget_tree())),
+            WidgetPod::new(RootWidget::new(make_widget_tree())).erased(),
         )],
         driver,
         default_props(),
