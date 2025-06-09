@@ -15,15 +15,14 @@ use masonry::core::{
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
-use masonry::peniko::Color;
+use masonry::peniko::{Color, Fill, Image, ImageFormat};
 use masonry::smallvec::SmallVec;
+use masonry::vello::Scene;
 use masonry::widgets::RootWidget;
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use parley::layout::{Alignment, AlignmentOptions};
 use parley::style::{FontFamily, FontStack, StyleProperty};
 use tracing::{Span, trace_span};
-use vello::Scene;
-use vello::peniko::{Fill, Image, ImageFormat};
 use winit::window::Window;
 
 struct Driver;

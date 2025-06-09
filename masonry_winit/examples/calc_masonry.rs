@@ -26,10 +26,10 @@ use masonry::peniko::color::AlphaColor;
 use masonry::properties::{Background, Padding};
 use masonry::smallvec::{SmallVec, smallvec};
 use masonry::theme::default_property_set;
+use masonry::vello::Scene;
 use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace, trace_span};
-use vello::Scene;
 use winit::window::Window;
 
 #[derive(Clone)]

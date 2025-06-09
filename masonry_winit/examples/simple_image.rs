@@ -10,9 +10,9 @@
 
 use masonry::core::{Action, ObjectFit, WidgetId};
 use masonry::dpi::LogicalSize;
+use masonry::peniko::{Image as ImageBuf, ImageFormat};
 use masonry::widgets::{Image, RootWidget};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use vello::peniko::{Image as ImageBuf, ImageFormat};
 use winit::window::Window;
 
 struct Driver;
