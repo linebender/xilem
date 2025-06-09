@@ -45,7 +45,7 @@ Let's start with the `main()` function.
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -56,7 +56,6 @@ fn main() {
             )
             .with_spacer(VERTICAL_WIDGET_SPACING),
     );
-    let main_widget = RootWidget::new(main_widget);
 
     // ...
 
@@ -71,8 +70,6 @@ fn main() {
 
 First we create our initial widget hierarchy.
 We're trying to build a simple to-do list app, so our root widget is a scrollable area ([`Portal`]) with a vertical list ([`Flex`]), whose first row is a horizontal list (`Flex` again) containing a text field ([`Textbox`]) and an "Add task" button ([`Button`]).
-
-We wrap it in a [`RootWidget`], whose main purpose is to include a `Window` node in the accessibility tree.
 
 At the end of the main function, we pass the root widget to the `event_loop_runner::run` function.
 That function starts the main event loop, which runs until the user closes the window.
@@ -98,7 +95,7 @@ We create a `Driver` struct to store a very simple app's state, and we implement
 ```rust,ignore
 use masonry::core::{Action, WidgetId};
 use masonry::widgets::Label;
-# use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
+# use masonry::widgets::{Button, Flex, Portal, Textbox};
 use masonry_winit::app::{AppDriver, DriverCtx};
 
 struct Driver {
@@ -110,9 +107,7 @@ impl AppDriver for Driver {
         match action {
             Action::ButtonPressed(_) => {
                 ctx.render_root().edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget>();
-                    let mut portal = RootWidget::child_mut(&mut root);
-                    let mut portal = portal.downcast::<Portal<Flex>>();
+                    let mut portal = root.downcast::<Portal<Flex>>();
                     let mut flex = Portal::child_mut(&mut portal);
                     Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
                 });
@@ -137,9 +132,7 @@ When handling `ButtonPressed`:
 
 - `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
 - `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<dyn Widget>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
-- `root.downcast::<...>()` returns a `WidgetMut<RootWidget>`.
-- `RootWidget::child_mut()` returns a `WidgetMut<>`.
-- `portal.downcast::<...>()` returns a `WidgetMut<Portal<Flex>>`.
+- `root.downcast::<...>()` returns a `WidgetMut<Portal<Flex>>`.
 - `Portal::child_mut()` returns a `WidgetMut<Flex>`.
 
 A [`WidgetMut`] is a smart reference type which lets us modify the widget tree.
@@ -194,7 +187,7 @@ Our complete program therefore looks like this:
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widgets::{Button, Flex, Portal, RootWidget, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, Textbox};
 
     let main_widget = Portal::new(
         Flex::column()
@@ -205,7 +198,6 @@ fn main() {
             )
             .with_spacer(VERTICAL_WIDGET_SPACING),
     );
-    let main_widget = RootWidget::new(main_widget);
 
     use masonry::core::{Action, WidgetId};
     use masonry::widgets::Label;
@@ -220,9 +212,7 @@ fn main() {
             match action {
                 Action::ButtonPressed(_) => {
                     ctx.render_root().edit_root_widget(|mut root| {
-                        let mut root = root.downcast::<RootWidget>();
-                        let mut portal = RootWidget::child_mut(&mut root);
-                        let mut portal = portal.downcast::<Portal<Flex>>();
+                        let mut portal = root.downcast::<Portal<Flex>>();
                         let mut flex = Portal::child_mut(&mut portal);
                         Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
                     });
@@ -282,7 +272,6 @@ Most of this documentation is written to help developers trying to build such a 
 [`Flex`]: crate::widgets::Flex
 [`Textbox`]: crate::widgets::Textbox
 [`Button`]: crate::widgets::Button
-[`RootWidget`]: crate::widgets::RootWidget
 
 [`Action`]: crate::core::Action
 [`WidgetId`]: crate::core::WidgetId

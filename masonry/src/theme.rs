@@ -120,8 +120,6 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Textbox, _>(Padding::all(5.));
     properties.insert::<Textbox, _>(Background::Color(Color::from_rgb8(0x1A, 0x1A, 0x1A)));
 
-    // TODO - Add default Padding to RootWidget?
-
     properties
 }
 

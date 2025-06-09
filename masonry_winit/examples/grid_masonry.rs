@@ -10,7 +10,7 @@ use masonry::dpi::LogicalSize;
 use masonry::parley::layout::Alignment;
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
-use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
+use masonry::widgets::{Button, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -37,9 +37,7 @@ impl AppDriver for Driver {
             };
 
             ctx.render_root(window_id).edit_root_widget(|mut root| {
-                let mut root = root.downcast::<RootWidget>();
-                let mut grid = RootWidget::child_mut(&mut root);
-                let mut grid = grid.downcast::<Grid>();
+                let mut grid = root.downcast::<Grid>();
                 Grid::set_spacing(&mut grid, self.grid_spacing);
             });
         }
@@ -146,7 +144,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(RootWidget::new(main_widget)).erased(),
+            WidgetPod::new(main_widget).erased(),
         )],
         driver,
     )
@@ -164,8 +162,7 @@ mod tests {
 
     #[test]
     fn screenshot_test() {
-        let mut harness =
-            TestHarness::create(default_property_set(), RootWidget::new(make_grid(1.0)));
+        let mut harness = TestHarness::create(default_property_set(), make_grid(1.0));
         assert_render_snapshot!(harness, "example_grid_masonry_initial");
 
         // TODO - Test clicking buttons

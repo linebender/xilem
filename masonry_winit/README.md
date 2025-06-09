@@ -43,7 +43,7 @@ The to-do-list example looks like this:
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry::core::{Action, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
-use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
+use masonry::widgets::{Button, Flex, Label, Portal, Textbox};
 use winit::window::Window;
 
 struct Driver {
@@ -64,9 +64,7 @@ impl AppDriver for Driver {
         match action {
             Action::ButtonPressed(_) => {
                 ctx.render_root(window_id).edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget>();
-                    let mut portal = RootWidget::child_mut(&mut root);
-                    let mut portal = portal.downcast::<Portal<Flex>>();
+                    let mut portal = root.downcast::<Portal<Flex>>();
                     let mut flex = Portal::child_mut(&mut portal);
                     Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
                 });
@@ -107,7 +105,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(RootWidget::new(main_widget)).erased(),
+            WidgetPod::new(main_widget).erased(),
         )],
         driver,
     )
