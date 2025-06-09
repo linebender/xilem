@@ -143,8 +143,6 @@ mod event_loop_runner;
 
 /// Types needed for running a Masonry app.
 pub mod app {
-    pub use masonry::app::*;
-
     pub use super::app_driver::{AppDriver, DriverCtx, WindowId};
     pub use super::event_loop_runner::{
         EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, run, run_with,

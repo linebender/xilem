@@ -1,8 +1,8 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::app::RenderRoot;
 use masonry::widgets::RootWidget;
-use masonry_winit::app::RenderRoot;
 use winit::window::{Window, WindowAttributes};
 use xilem_core::{AnyViewState, View, ViewElement, ViewMarker};
 

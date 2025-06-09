@@ -9,7 +9,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, mpsc};
 
 use accesskit_winit::Adapter;
-use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal};
+use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry::core::{DefaultProperties, TextEvent, Widget, WidgetId, WindowEvent};
 use masonry::theme::default_property_set;
 use masonry::util::Instant;
@@ -26,9 +26,7 @@ use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as Win
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
 
-use crate::app::{
-    AppDriver, DriverCtx, WindowSizePolicy, masonry_resize_direction_to_winit, winit_ime_to_masonry,
-};
+use crate::app::{AppDriver, DriverCtx, masonry_resize_direction_to_winit, winit_ime_to_masonry};
 use crate::app_driver::WindowId;
 
 #[derive(Debug)]
@@ -182,7 +180,7 @@ pub fn run_with(
     // already been set, we get an error which we swallow.
     // By now, we're about to take control of the event loop. The user is unlikely
     // to try to set their own subscriber once the event loop has started.
-    let _ = crate::app::try_init_tracing();
+    let _ = masonry::app::try_init_tracing();
 
     let mut main_state = MainState {
         masonry_state: MasonryState::new(event_loop.create_proxy(), windows, default_properties),
