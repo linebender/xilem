@@ -6,8 +6,13 @@ use std::any::TypeId;
 use crate::core::{Property, UpdateCtx};
 use crate::peniko::color::{AlphaColor, Srgb};
 
+// TODO - This is technically BaselineCheckmarkColor, since it won't  be used
+// when the checkbox is disabled.
+// For now "status-modified" properties are still somewhat janky.
+// We might want to rename these baseline properties in the future.
+
 /// The color of a checkbox's "check" icon.
-#[expect(missing_docs, reason = "obvious")]
+#[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CheckmarkColor {
     pub color: AlphaColor<Srgb>,
@@ -35,8 +40,8 @@ impl Property for DisabledCheckmarkColor {
     }
 }
 
-/// The with the stroke with which a checkbox's "check" icon is drawn.
-#[expect(missing_docs, reason = "obvious")]
+/// The width of the stroke which draws a checkbox's "check" icon.
+#[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CheckmarkStrokeWidth {
     pub width: f64,
