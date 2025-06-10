@@ -27,6 +27,7 @@ accesskit.workspace = true
 tokio.workspace = true
 
 [dev-dependencies]
+xilem.workspace = true
 
 [lints]
 workspace = true

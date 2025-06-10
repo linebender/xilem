@@ -34,5 +34,7 @@ pub(crate) use masonry::kurbo::{Affine, Vec2};
 pub(crate) use masonry::parley::Alignment as TextAlignment;
 pub(crate) use masonry::peniko::Color;
 pub(crate) use masonry::widgets::InsertNewline;
+#[cfg(doc)]
+pub(crate) use tokio;
 pub(crate) use xilem_core as core;
 pub(crate) use xilem_core::{MessageResult, View, ViewId};

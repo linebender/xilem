@@ -4979,6 +4979,7 @@ dependencies = [
  "tokio",
  "tracing",
  "vello",
+ "xilem",
  "xilem_core",
 ]
 

@@ -21,9 +21,8 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 /// # Example
 /// ```rust,no_run
 /// use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
-/// use winit::error::EventLoopError;
 /// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
-/// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+/// use xilem::{WidgetView};
 ///
 /// // A component to make a bigger than usual button
 /// fn big_button(
@@ -52,11 +51,7 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 ///     .main_axis_alignment(MainAxisAlignment::Center)
 /// }
 ///
-/// fn main() -> Result<(), EventLoopError> {
-///     let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
-///     app.run_in(EventLoop::with_user_event())?;
-///     Ok(())
-/// }
+/// # app_logic(&mut 0);
 /// ```
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,

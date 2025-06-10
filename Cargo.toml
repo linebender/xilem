@@ -40,6 +40,7 @@ repository = "https://github.com/linebender/xilem"
 masonry = { version = "0.3.0", path = "masonry" }
 masonry_core = { version = "0.3.0", path = "masonry_core" }
 masonry_winit = { version = "0.3.0", path = "masonry_winit" }
+xilem = { version = "0.3.0", path = "xilem" }
 xilem_core = { version = "0.3.0", path = "xilem_core" }
 xilem_masonry = { version = "0.3.0", path = "xilem_masonry" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }

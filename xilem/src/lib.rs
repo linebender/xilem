@@ -88,7 +88,7 @@
 //! * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 //! * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 //!
-//! [accesskit_docs]: accesskit
+//! [accesskit_docs]: ::masonry::accesskit
 //! [AccessKit]: https://accesskit.dev/
 //! [Druid]: https://crates.io/crates/druid
 //! [Fontique]: https://crates.io/crates/fontique
