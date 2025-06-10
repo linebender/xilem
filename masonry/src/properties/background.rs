@@ -13,7 +13,7 @@ use crate::properties::types::Gradient;
 // to BackgroundImage to match CSS spec.
 
 /// The background color/gradient of a widget.
-#[expect(missing_docs, reason = "obvious")]
+#[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Debug, PartialEq)]
 pub enum Background {
     Color(AlphaColor<Srgb>),

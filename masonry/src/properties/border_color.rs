@@ -7,7 +7,7 @@ use crate::core::{Property, UpdateCtx};
 use crate::peniko::color::{AlphaColor, Srgb};
 
 /// The color of a widget's border.
-#[expect(missing_docs, reason = "obvious")]
+#[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BorderColor {
     pub color: AlphaColor<Srgb>,
