@@ -109,7 +109,6 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///     let mut harness = TestHarness::create(default_property_set(), widget);
 ///
 ///     # if false {
-///     assert_debug_snapshot!(harness.root_widget());
 ///     assert_render_snapshot!(harness, "hello");
 ///     # }
 ///
