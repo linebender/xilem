@@ -498,14 +498,12 @@ impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
 {
 }
 
-type WidgetMap = HashMap<WidgetId, Vec<ViewId>>;
-
 /// A context type passed to various methods of Xilem traits.
 pub struct ViewCtx {
     /// The map from a widgets id to its position in the View tree.
     ///
     /// This includes only the widgets which might send actions
-    widget_map: WidgetMap,
+    widget_map: HashMap<WidgetId, Vec<ViewId>>,
     id_path: Vec<ViewId>,
     proxy: Arc<dyn RawProxy>,
     runtime: Arc<tokio::runtime::Runtime>,
@@ -526,11 +524,11 @@ impl ViewPathTracker for ViewCtx {
     }
 }
 
-#[expect(missing_docs, reason = "TODO - Document these items")]
+// Private items
 impl ViewCtx {
     pub(crate) fn new(proxy: Arc<dyn RawProxy>, runtime: Arc<tokio::runtime::Runtime>) -> Self {
         Self {
-            widget_map: WidgetMap::default(),
+            widget_map: HashMap::default(),
             id_path: Vec::new(),
             proxy,
             runtime,
@@ -538,6 +536,17 @@ impl ViewCtx {
         }
     }
 
+    pub(crate) fn set_state_changed(&mut self, value: bool) {
+        self.state_changed = value;
+    }
+
+    pub(crate) fn get_id_path(&self, widget_id: WidgetId) -> Option<&Vec<ViewId>> {
+        self.widget_map.get(&widget_id)
+    }
+}
+
+#[expect(missing_docs, reason = "TODO - Document these items")]
+impl ViewCtx {
     pub fn create_pod<W: Widget + FromDynWidget>(&mut self, widget: W) -> Pod<W> {
         Pod::new(widget)
     }
@@ -572,16 +581,8 @@ impl ViewCtx {
         self.state_changed
     }
 
-    pub(crate) fn set_state_changed(&mut self, value: bool) {
-        self.state_changed = value;
-    }
-
     pub fn teardown_leaf<W: Widget + FromDynWidget + ?Sized>(&mut self, widget: WidgetMut<'_, W>) {
         self.widget_map.remove(&widget.ctx.widget_id());
-    }
-
-    pub fn get_id_path(&self, widget_id: WidgetId) -> Option<&Vec<ViewId>> {
-        self.widget_map.get(&widget_id)
     }
 
     pub fn runtime(&self) -> &tokio::runtime::Runtime {
