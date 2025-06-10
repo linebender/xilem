@@ -16,10 +16,8 @@ use std::str::FromStr;
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, DefaultProperties, EventCtx, LayoutCtx,
-    PaintCtx, PointerEvent,
-    Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty,
-    TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
