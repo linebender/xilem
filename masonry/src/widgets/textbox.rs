@@ -132,7 +132,7 @@ impl Widget for Textbox {
         ctx.register_child(&mut self.text);
     }
 
-    fn property_changed(&mut self, ctx: &mut UpdateCtx, property_type: TypeId) {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         DisabledBackground::prop_changed(ctx, property_type);
         Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
