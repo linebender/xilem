@@ -32,18 +32,39 @@ struct Action;
 
 // TODO: Maybe this type should be renamed View.
 /// Functionality which runs on the main UI thread with your app's state.
-trait HyperView<AppState> {
+trait Component<AppState> {
     type Element;
     type View: View<AppState, Action, ViewCtx, Element = Self::Element>;
     type HyperState;
-    fn create(&mut self, state: &mut AppState) -> (Self::View, Self::HyperState);
+    fn create(self, state: &mut AppState) -> (Self::View, Self::HyperState);
+    fn update(self, hyper_state: &mut Self::HyperState, app_state: &mut AppState) -> Self::View;
+}
+
+impl<F, AppState, ResultComponent> Component<AppState> for F
+where
+    // TODO: We can have extra hooks in the arguments here :eyes:
+    F: FnOnce(&mut AppState) -> ResultComponent,
+    ResultComponent: Component<AppState>,
+{
+    type Element = ResultComponent::Element;
+    type View = ResultComponent::View;
+    type HyperState = ResultComponent::HyperState;
+
+    fn create(self, state: &mut AppState) -> (Self::View, Self::HyperState) {
+        let component = (self)(state);
+        component.create(state)
+    }
+
     fn update(
         // &mut self,
         self,
         // previous: Option<&mut Self>,
         hyper_state: &mut Self::HyperState,
         app_state: &mut AppState,
-    ) -> Self::View;
+    ) -> Self::View {
+        let component = (self)(app_state);
+        component.update(hyper_state, app_state)
+    }
 }
 
 trait WidgetView<State>:
@@ -65,7 +86,7 @@ where
     // TODO: Should these be FnOnce?
     InitData: Fn(&mut AppState) -> Data,
     NewData: Fn(&mut AppState, &mut Data) -> bool,
-    Component: Fn(&mut AppState, &Data) -> ResultHyper,
+    Component: FnOnce(&mut AppState, &Data) -> ResultHyper,
 {
     memoize: NewData,
     init_data: InitData,
@@ -77,34 +98,27 @@ where
     )>,
 }
 
-impl<Data, NewData, AppState, Component, InitData, ResultHyper, ResultView> HyperView<AppState>
-    for Memoized<Data, NewData, AppState, Component, InitData, ResultHyper>
+impl<Data, NewData, AppState, Memo, Comp, InitData> Component<AppState>
+    for Memoized<Data, NewData, AppState, Memo, InitData, Comp>
 where
     InitData: Fn(&mut AppState) -> Data,
     NewData: Fn(&mut AppState, &mut Data) -> bool,
-    Component: Fn(&mut AppState, &Data) -> ResultHyper,
-    ResultHyper: HyperView<AppState, View = ResultView>,
-    ResultView: View<AppState, Action, ViewCtx>,
+    Memo: Fn(&mut AppState, &Data) -> Comp,
+    Comp: Component<AppState>,
 {
-    type Element = ResultView::Element;
-    type View = Arc<ResultView>;
-    type HyperState = (Data, Arc<ResultView>, ResultHyper::HyperState);
+    type Element = Comp::Element;
+    type View = Arc<Comp::View>;
+    type HyperState = (Data, Arc<Comp::View>, Comp::HyperState);
 
-    fn create(&mut self, app_state: &mut AppState) -> (Self::View, Self::HyperState) {
+    fn create(self, app_state: &mut AppState) -> (Self::View, Self::HyperState) {
         let data = (self.init_data)(app_state);
-        let mut hyper = (self.component)(app_state, &data);
-        let (view, child_state) = hyper.create(app_state);
+        let component = (self.component)(app_state, &data);
+        let (view, child_state) = component.create(app_state);
         let view = Arc::new(view);
         (view.clone(), (data, view, child_state))
     }
 
-    fn update(
-        self,
-        // &mut self,
-        // previous: Option<&mut Self>,
-        hyper_state: &mut Self::HyperState,
-        app_state: &mut AppState,
-    ) -> Self::View {
+    fn update(self, hyper_state: &mut Self::HyperState, app_state: &mut AppState) -> Self::View {
         let (data, stored_view, hyper_state) = hyper_state;
         if (self.memoize)(app_state, data) {
             // TODO: We could optimisitically store the old version of `stored_view`,
