@@ -58,7 +58,7 @@ Masonry itself is built on top of a wide array of foundational Rust UI projects:
 * Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
 * GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
 * Text layout is provided by [Parley][masonry::parley].
-* Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
+* Accessibility is provided by [AccessKit][] ([docs][::masonry::accesskit]).
 * Window handling is provided by [winit][].
 
 Xilem can currently be considered to be in an alpha state. Lots of things need improvements (including this documentation!).
@@ -133,7 +133,6 @@ You should also expect to use the adapters from Xilem Core, including:
 * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 
-[accesskit_docs]: accesskit
 [AccessKit]: https://accesskit.dev/
 [Druid]: https://crates.io/crates/druid
 [Fontique]: https://crates.io/crates/fontique
