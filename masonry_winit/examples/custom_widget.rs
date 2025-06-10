@@ -15,13 +15,13 @@ use masonry::core::{
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
+use masonry::parley::layout::{Alignment, AlignmentOptions};
+use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
 use masonry::smallvec::SmallVec;
 use masonry::vello::Scene;
 use masonry::widgets::RootWidget;
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use parley::layout::{Alignment, AlignmentOptions};
-use parley::style::{FontFamily, FontStack, StyleProperty};
 use tracing::{Span, trace_span};
 use winit::window::Window;
 
@@ -136,7 +136,7 @@ impl Widget for CustomWidget {
         let mut text_layout_builder = lcx.ranged_builder(fcx, &self.0, 1.0, true);
 
         text_layout_builder.push_default(StyleProperty::FontStack(FontStack::Single(
-            FontFamily::Generic(parley::style::GenericFamily::Serif),
+            FontFamily::Generic(GenericFamily::Serif),
         )));
         text_layout_builder.push_default(StyleProperty::FontSize(24.0));
 

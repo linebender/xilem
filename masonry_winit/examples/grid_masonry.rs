@@ -7,10 +7,10 @@
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 use masonry::core::{Action, PointerButton, StyleProperty, WidgetId};
 use masonry::dpi::LogicalSize;
+use masonry::parley::layout::Alignment;
 use masonry::peniko::Color;
 use masonry::widgets::{Button, Grid, GridParams, Prose, RootWidget, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use parley::layout::Alignment;
 use winit::window::Window;
 
 struct Driver {

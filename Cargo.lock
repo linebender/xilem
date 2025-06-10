@@ -1917,17 +1917,13 @@ dependencies = [
 name = "masonry_winit"
 version = "0.3.0"
 dependencies = [
- "accesskit",
  "accesskit_winit",
  "image",
- "insta",
  "masonry",
- "parley",
  "pollster",
  "profiling",
  "tracing",
  "tracing-tracy",
- "ui-events",
  "ui-events-winit",
  "web-time",
  "wgpu",
