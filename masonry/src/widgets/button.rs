@@ -8,11 +8,11 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
-use ui_events::keyboard::{Key, NamedKey};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Color;
 
+use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
@@ -123,10 +123,9 @@ impl Widget for Button {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        const SPACE: &str = " ";
         match event {
             TextEvent::Keyboard(event) if event.state.is_up() => {
-                if event.key == Key::Character(SPACE.into())
+                if matches!(&event.key, Key::Character(c) if c == " ")
                     || event.key == Key::Named(NamedKey::Enter)
                 {
                     ctx.submit_action(Action::ButtonPressed(None));
@@ -305,10 +304,10 @@ impl Widget for Button {
 #[cfg(test)]
 mod tests {
     use masonry_core::core::Properties;
-    use ui_events::keyboard::NamedKey;
 
     use super::*;
     use crate::assert_render_snapshot;
+    use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, StyleProperty};
     use crate::testing::{TestHarness, TestWidgetExt, WrapperWidget, widget_ids};
     use crate::theme::{PRIMARY_LIGHT, default_property_set};
