@@ -461,38 +461,36 @@ fn update_focus_chain_for_widget(
     );
     let id = state.item.id;
 
-    if !state.item.needs_update_focus_chain {
-        return;
-    }
-
     // Replace has_focused to check if the value changed in the meantime
     state.item.has_focus_target = global_state.focused_widget == Some(id);
     let had_focus = state.item.has_focus_target;
 
-    state.item.focus_chain.clear();
-    if state.item.accepts_focus {
-        state.item.focus_chain.push(id);
-    }
-    state.item.needs_update_focus_chain = false;
+    if state.item.needs_update_focus_chain {
+        state.item.focus_chain.clear();
+        if state.item.accepts_focus {
+            state.item.focus_chain.push(id);
+        }
+        state.item.needs_update_focus_chain = false;
 
-    let parent_state = &mut *state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            update_focus_chain_for_widget(
-                global_state,
-                default_properties,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                &mut parent_state.focus_chain,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+        let parent_state = &mut *state.item;
+        recurse_on_children(
+            id,
+            widget.reborrow_mut(),
+            state.children,
+            properties.children,
+            |widget, mut state, properties| {
+                update_focus_chain_for_widget(
+                    global_state,
+                    default_properties,
+                    widget,
+                    state.reborrow_mut(),
+                    properties,
+                    &mut parent_state.focus_chain,
+                );
+                parent_state.merge_up(state.item);
+            },
+        );
+    }
 
     if !state.item.is_disabled {
         parent_focus_chain.extend(&state.item.focus_chain);

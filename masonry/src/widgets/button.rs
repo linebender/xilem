@@ -8,8 +8,10 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
+use ui_events::keyboard::{Key, NamedKey};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
+use vello::peniko::Color;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -117,10 +119,21 @@ impl Widget for Button {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx<'_>,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
+        event: &TextEvent,
     ) {
+        const SPACE: &str = " ";
+        match event {
+            TextEvent::Keyboard(event) if event.state.is_up() => {
+                if event.key == Key::Character(SPACE.into())
+                    || event.key == Key::Named(NamedKey::Enter)
+                {
+                    ctx.submit_action(Action::ButtonPressed(None));
+                }
+            }
+            _ => (),
+        }
     }
 
     fn on_access_event(
@@ -228,11 +241,18 @@ impl Widget for Button {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let border_color = if is_hovered && !ctx.is_disabled() {
+        let mut border_color = if is_hovered && !ctx.is_disabled() {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()
         };
+
+        // FIXME - Handle this properly
+        if ctx.is_focus_target() {
+            border_color = &BorderColor {
+                color: Color::WHITE,
+            };
+        }
 
         shadow.paint(scene, Affine::IDENTITY, bg_rect);
 
@@ -266,6 +286,16 @@ impl Widget for Button {
         smallvec![self.label.id()]
     }
 
+    fn accepts_focus(&self) -> bool {
+        // Buttons can be tab-focused...
+        true
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        // But they still aren't text areas.
+        false
+    }
+
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
         trace_span!("Button", id = ctx.widget_id().trace())
     }
@@ -274,8 +304,8 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-
     use masonry_core::core::Properties;
+    use ui_events::keyboard::NamedKey;
 
     use super::*;
     use crate::assert_render_snapshot;
@@ -304,6 +334,18 @@ mod tests {
                 Action::ButtonPressed(Some(PointerButton::Primary)),
                 button_id
             ))
+        );
+
+        // Check that Tab focuses on the widget
+        harness.focus_on(None);
+        harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
+        assert_eq!(harness.focused_widget().map(|w| w.id()), Some(button_id));
+
+        harness.process_text_event(TextEvent::key_down(Key::Character(" ".into())));
+        harness.process_text_event(TextEvent::key_up(Key::Character(" ".into())));
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::ButtonPressed(None), button_id))
         );
     }
 

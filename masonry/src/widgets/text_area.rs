@@ -797,7 +797,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 
     fn accepts_focus(&self) -> bool {
-        true
+        EDITABLE
     }
 
     fn accepts_text_input(&self) -> bool {
