@@ -11,14 +11,14 @@ use std::sync::{Arc, Mutex, mpsc};
 use accesskit_winit::Adapter;
 use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal};
 use masonry::core::{DefaultProperties, TextEvent, Widget, WidgetId, WindowEvent};
+use masonry::kurbo::Affine;
+use masonry::peniko::Color;
 use masonry::theme::default_property_set;
 use masonry::util::Instant;
+use masonry::vello::util::{RenderContext, RenderSurface};
+use masonry::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use tracing::{debug, error, info, info_span};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
-use vello::kurbo::Affine;
-use vello::peniko::Color;
-use vello::util::{RenderContext, RenderSurface};
-use vello::{AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
@@ -491,7 +491,7 @@ impl MasonryState<'_> {
             base_color: Color::BLACK,
             width,
             height,
-            antialiasing_method: vello::AaConfig::Area,
+            antialiasing_method: AaConfig::Area,
         };
 
         let _render_span = tracing::info_span!("Rendering using Vello").entered();

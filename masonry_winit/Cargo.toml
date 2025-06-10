@@ -25,7 +25,6 @@ tracy = ["dep:tracing-tracy", "dep:wgpu-profiler", "wgpu-profiler/tracy", "mason
 
 [dependencies]
 masonry.workspace = true
-vello.workspace = true
 wgpu.workspace = true
 winit.workspace = true
 tracing = { workspace = true, features = ["default"] }

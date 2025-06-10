@@ -1929,7 +1929,6 @@ dependencies = [
  "tracing-tracy",
  "ui-events",
  "ui-events-winit",
- "vello",
  "web-time",
  "wgpu",
  "wgpu-profiler",
