@@ -14,8 +14,9 @@ use crate::core::{
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::types::Gradient;
 use crate::theme;
-use crate::util::{UnitPoint, fill_lin_gradient, stroke};
+use crate::util::{fill, stroke};
 use crate::widgets::{Label, LineBreaking};
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
@@ -180,20 +181,18 @@ impl Widget for ProgressBar {
             .inset(-border_width)
             .to_rounded_rect(border_radius - border_width);
 
-        fill_lin_gradient(
-            scene,
-            &bg_rect,
-            [theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK],
-            UnitPoint::TOP,
-            UnitPoint::BOTTOM,
-        );
-        fill_lin_gradient(
-            scene,
-            &progress_rect,
-            [theme::PRIMARY_LIGHT, theme::PRIMARY_DARK],
-            UnitPoint::TOP,
-            UnitPoint::BOTTOM,
-        );
+        // TODO - Use properties instead.
+
+        let bg_gradient =
+            Gradient::new_linear(0.).with_stops([theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK]);
+        let progress_gradient =
+            Gradient::new_linear(0.).with_stops([theme::PRIMARY_LIGHT, theme::PRIMARY_DARK]);
+
+        let bg_brush = bg_gradient.get_peniko_gradient_for_rect(bg_rect.rect());
+        let progress_brush = progress_gradient.get_peniko_gradient_for_rect(progress_rect.rect());
+        fill(scene, &bg_rect, &bg_brush);
+        fill(scene, &progress_rect, &progress_brush);
+
         stroke(scene, &border_rect, theme::BORDER_DARK, border_width);
     }
 

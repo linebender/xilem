@@ -8,7 +8,7 @@ use std::hash::Hash;
 
 use vello::Scene;
 use vello::kurbo::{Affine, Join, Point, Rect, Shape, Stroke};
-use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
+use vello::peniko::{BrushRef, Color, Fill};
 
 /// Panic in debug and `tracing::error` in release mode.
 ///
@@ -138,19 +138,6 @@ impl UnitPoint {
 /// Helper function for [`Scene::fill`].
 pub fn fill<'b>(scene: &mut Scene, path: &impl Shape, brush: impl Into<BrushRef<'b>>) {
     scene.fill(Fill::NonZero, Affine::IDENTITY, brush, None, path);
-}
-
-/// Helper function for [`Scene::fill`] with a linear gradient as the brush.
-pub fn fill_lin_gradient(
-    scene: &mut Scene,
-    path: &impl Shape,
-    stops: impl ColorStopsSource,
-    start: UnitPoint,
-    end: UnitPoint,
-) {
-    let rect = path.bounding_box();
-    let brush = Gradient::new_linear(start.resolve(rect), end.resolve(rect)).with_stops(stops);
-    scene.fill(Fill::NonZero, Affine::IDENTITY, &brush, None, path);
 }
 
 /// Helper function for [`Scene::fill`] with a uniform color as the brush.
