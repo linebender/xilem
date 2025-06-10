@@ -93,11 +93,22 @@ where
         (NoElement, handle)
     }
 
-    fn rebuild(&self, _: &Self, _: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+    fn rebuild(
+        &self,
+        _: &Self,
+        _: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        (): Mut<'_, Self::Element>,
+    ) {
         // Nothing to do
     }
 
-    fn teardown(&self, join_handle: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        join_handle: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+    ) {
         join_handle.abort();
     }
 

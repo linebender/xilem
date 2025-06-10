@@ -51,7 +51,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let child_element = widgets::Portal::child_mut(&mut element);
         self.child
@@ -62,7 +62,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let child_element = widgets::Portal::child_mut(&mut element);
         self.child.teardown(view_state, ctx, child_element);

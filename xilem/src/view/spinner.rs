@@ -67,7 +67,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         prev: &Self,
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if prev.color != self.color {
             match self.color {
@@ -77,7 +77,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,

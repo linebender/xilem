@@ -172,7 +172,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         if self.width != prev.width {
             match self.width {
@@ -220,7 +220,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
     ) {
         let mut child = widgets::SizedBox::child_mut(&mut element)
             .expect("We only create SizedBox with a child");

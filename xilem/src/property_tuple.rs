@@ -13,7 +13,7 @@ pub trait PropertyTuple {
     /// Helper method for [`xilem_core::View::rebuild`].
     ///
     /// Check if any property has changed, and if so, applies it to the given widget.
-    fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<impl Widget>);
+    fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<'_, impl Widget>);
 }
 
 impl<P0: Property + Eq + Clone> PropertyTuple for (Option<P0>,) {
@@ -25,7 +25,7 @@ impl<P0: Property + Eq + Clone> PropertyTuple for (Option<P0>,) {
         props
     }
 
-    fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<impl Widget>) {
+    fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<'_, impl Widget>) {
         if self.0 != prev.0 {
             if let Some(prop) = self.0.clone() {
                 target.insert_prop(prop);
@@ -54,7 +54,7 @@ macro_rules! impl_property_tuple {
                 props
             }
 
-            fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<impl Widget>) {
+            fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<'_, impl Widget>) {
                 $(
                     if self.$idx != prev.$idx {
                         if let Some(prop) = self.$idx.clone() {

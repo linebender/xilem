@@ -294,7 +294,7 @@ where
         };
     }
 
-    fn on_start(&mut self, state: &mut MasonryState) {
+    fn on_start(&mut self, state: &mut MasonryState<'_>) {
         // self.fonts is never used again, so we may as well deallocate it.
         let fonts = std::mem::take(&mut self.fonts);
 

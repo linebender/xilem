@@ -42,55 +42,55 @@ impl<
 {
     type OneOfElement = Pod<OneOfWidget<A, B, C, D, E, F, G, H, I>>;
 
-    fn with_downcast_a(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<A>>)) {
+    fn with_downcast_a(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<A>>)) {
         match elem.widget {
             OneOfWidget::A(a) => f(elem.ctx.get_mut(a)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_b(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<B>>)) {
+    fn with_downcast_b(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<B>>)) {
         match elem.widget {
             OneOfWidget::B(b) => f(elem.ctx.get_mut(b)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_c(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<C>>)) {
+    fn with_downcast_c(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<C>>)) {
         match elem.widget {
             OneOfWidget::C(c) => f(elem.ctx.get_mut(c)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_d(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<D>>)) {
+    fn with_downcast_d(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<D>>)) {
         match elem.widget {
             OneOfWidget::D(d) => f(elem.ctx.get_mut(d)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_e(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<E>>)) {
+    fn with_downcast_e(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<E>>)) {
         match elem.widget {
             OneOfWidget::E(e) => f(elem.ctx.get_mut(e)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_f(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<F>>)) {
+    fn with_downcast_f(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<F>>)) {
         match elem.widget {
             OneOfWidget::F(f_) => f(elem.ctx.get_mut(f_)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_g(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<G>>)) {
+    fn with_downcast_g(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<G>>)) {
         match elem.widget {
             OneOfWidget::G(g) => f(elem.ctx.get_mut(g)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_h(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<H>>)) {
+    fn with_downcast_h(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<H>>)) {
         match elem.widget {
             OneOfWidget::H(h) => f(elem.ctx.get_mut(h)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_i(elem: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<I>>)) {
+    fn with_downcast_i(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<I>>)) {
         match elem.widget {
             OneOfWidget::I(i) => f(elem.ctx.get_mut(i)),
             _ => unreachable!(),
@@ -114,7 +114,7 @@ impl<
     }
 
     fn update_one_of_element_mut(
-        elem_mut: &mut Mut<Self::OneOfElement>,
+        elem_mut: &mut Mut<'_, Self::OneOfElement>,
         new_elem: OneOf<Pod<A>, Pod<B>, Pod<C>, Pod<D>, Pod<E>, Pod<F>, Pod<G>, Pod<H>, Pod<I>>,
     ) {
         let new_inner = match new_elem {
@@ -185,27 +185,27 @@ impl<
 {
     fn on_pointer_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
     ) {
     }
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
     }
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         match self {
             Self::A(w) => ctx.register_child(w),
             Self::B(w) => ctx.register_child(w),
@@ -221,7 +221,7 @@ impl<
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -274,7 +274,7 @@ impl<
         }
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -282,7 +282,7 @@ impl<
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {

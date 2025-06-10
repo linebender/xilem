@@ -35,7 +35,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<D
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<Pod<W>>) -> R,
+        f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = {
             let mut child = this.ctx.get_mut(&mut this.widget.inner);
@@ -71,33 +71,33 @@ impl DynWidget {
 impl Widget for DynWidget {
     fn on_pointer_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
     ) {
     }
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
     }
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
+        _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn register_children(&mut self, ctx: &mut RegisterCtx) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.inner);
     }
 
     fn layout(
         &mut self,
-        ctx: &mut LayoutCtx,
+        ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
@@ -106,7 +106,7 @@ impl Widget for DynWidget {
         size
     }
 
-    fn paint(&mut self, _ctx: &mut PaintCtx, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
+    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
     fn accessibility_role(&self) -> Role {
         Role::GenericContainer
@@ -114,7 +114,7 @@ impl Widget for DynWidget {
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         _node: &mut Node,
     ) {

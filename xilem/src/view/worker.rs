@@ -122,7 +122,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<Self::Element>,
+        (): Mut<'_, Self::Element>,
     ) {
         if self.value != prev.value {
             // TODO: Error handling
@@ -130,7 +130,12 @@ where
         }
     }
 
-    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+    ) {
         view_state.handle.abort();
     }
 
