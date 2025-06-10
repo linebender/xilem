@@ -8,7 +8,7 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
-use ui_events::keyboard::Key;
+use ui_events::keyboard::{Key, NamedKey};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Color;
@@ -125,10 +125,12 @@ impl Widget for Button {
     ) {
         const SPACE: &str = " ";
         match event {
-            TextEvent::Keyboard(event)
-                if event.key == Key::Character(SPACE.into()) && event.state.is_up() =>
-            {
-                ctx.submit_action(Action::ButtonPressed(None));
+            TextEvent::Keyboard(event) if event.state.is_up() => {
+                if event.key == Key::Character(SPACE.into())
+                    || event.key == Key::Named(NamedKey::Enter)
+                {
+                    ctx.submit_action(Action::ButtonPressed(None));
+                }
             }
             _ => (),
         }
