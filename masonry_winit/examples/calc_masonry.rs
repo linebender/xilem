@@ -13,7 +13,7 @@
 
 use std::str::FromStr;
 
-use masonry::accesskit::{Node, Role};
+use masonry::accesskit;
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, DefaultProperties, EventCtx, LayoutCtx,
     PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
@@ -259,15 +259,15 @@ impl Widget for CalcButton {
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
 
-    fn accessibility_role(&self) -> Role {
-        Role::Button
+    fn accessibility_role(&self) -> accesskit::Role {
+        accesskit::Role::Button
     }
 
     fn accessibility(
         &mut self,
         _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
-        node: &mut Node,
+        node: &mut accesskit::Node,
     ) {
         let _name = match self.action {
             CalcAction::Digit(digit) => digit.to_string(),
