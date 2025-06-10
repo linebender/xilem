@@ -85,7 +85,7 @@ crate::declare_property_tuple!(
     BorderWidth, 5;
     CornerRadius, 6;
     Padding, 7;
-    CheckmarkWidth, 8;
+    CheckmarkStrokeWidth, 8;
     DisabledCheckmarkColor, 9;
     CheckmarkColor, 10;
 );

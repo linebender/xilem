@@ -12,7 +12,7 @@ use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::peniko::Color;
 use crate::properties::types::Gradient;
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkWidth,
+    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
 };
 use crate::widgets::{Button, Checkbox};
@@ -107,7 +107,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledBackground(Background::Gradient(
         checkbox_gradient.clone(),
     )));
-    properties.insert::<Checkbox, _>(CheckmarkWidth { width: 2.0 });
+    properties.insert::<Checkbox, _>(CheckmarkStrokeWidth { width: 2.0 });
     properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,

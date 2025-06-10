@@ -17,7 +17,7 @@ use crate::core::{
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkWidth,
+    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
@@ -153,7 +153,7 @@ impl Widget for Checkbox {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
-        CheckmarkWidth::prop_changed(ctx, property_type);
+        CheckmarkStrokeWidth::prop_changed(ctx, property_type);
         DisabledCheckmarkColor::prop_changed(ctx, property_type);
         CheckmarkColor::prop_changed(ctx, property_type);
     }
@@ -220,7 +220,7 @@ impl Widget for Checkbox {
         stroke(scene, &border_rect, border_color.color, border_width.width);
 
         if self.checked {
-            let checkmark_width = props.get::<CheckmarkWidth>();
+            let checkmark_width = props.get::<CheckmarkStrokeWidth>();
             let brush = if ctx.is_disabled() {
                 &props.get::<DisabledCheckmarkColor>().0
             } else {

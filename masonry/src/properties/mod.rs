@@ -19,6 +19,6 @@ pub use background::{ActiveBackground, Background, DisabledBackground};
 pub use border_color::{BorderColor, HoveredBorderColor};
 pub use border_width::BorderWidth;
 pub use box_shadow::BoxShadow;
-pub use checkmark::{CheckmarkColor, CheckmarkWidth, DisabledCheckmarkColor};
+pub use checkmark::{CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor};
 pub use corner_radius::CornerRadius;
 pub use padding::Padding;

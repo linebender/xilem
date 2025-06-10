@@ -38,13 +38,13 @@ impl Property for DisabledCheckmarkColor {
 /// The with the stroke with which a checkbox's "check" icon is drawn.
 #[expect(missing_docs, reason = "obvious")]
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CheckmarkWidth {
+pub struct CheckmarkStrokeWidth {
     pub width: f64,
 }
 
-impl Property for CheckmarkWidth {
+impl Property for CheckmarkStrokeWidth {
     fn static_default() -> &'static Self {
-        static DEFAULT: CheckmarkWidth = CheckmarkWidth { width: 1. };
+        static DEFAULT: CheckmarkStrokeWidth = CheckmarkStrokeWidth { width: 1. };
         &DEFAULT
     }
 }
@@ -87,13 +87,13 @@ impl DisabledCheckmarkColor {
 
 // ---
 
-impl Default for CheckmarkWidth {
+impl Default for CheckmarkStrokeWidth {
     fn default() -> Self {
         *Self::static_default()
     }
 }
 
-impl CheckmarkWidth {
+impl CheckmarkStrokeWidth {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {
