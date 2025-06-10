@@ -1,7 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
+use masonry_core::core::UpdateCtx;
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -13,6 +16,8 @@ use crate::core::{
     WidgetPod,
 };
 use crate::debug_panic;
+use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::util::{fill, stroke};
 
 /// A widget that arranges its children in a grid.
 ///
@@ -313,12 +318,32 @@ impl Widget for Grid {
         }
     }
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        Background::prop_changed(ctx, property_type);
+        BorderColor::prop_changed(ctx, property_type);
+        BorderWidth::prop_changed(ctx, property_type);
+        CornerRadius::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
+    }
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+
+        let bc = *bc;
+        let bc = border.layout_down(bc);
+        let bc = padding.layout_down(bc);
+
+        let origin = Point::ORIGIN;
+        let origin = border.place_down(origin);
+        let origin = padding.place_down(origin);
+        let origin = origin.to_vec2();
+
         let total_size = bc.max();
         if !total_size.is_finite() {
             debug_panic!(
@@ -335,15 +360,29 @@ impl Widget for Grid {
             );
             let child_bc = BoxConstraints::new(cell_size, cell_size);
             let _ = ctx.run_layout(&mut child.widget, &child_bc);
-            ctx.place_child(
-                &mut child.widget,
-                Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit),
-            );
+
+            let child_pos = Point::new(child.x as f64 * width_unit, child.y as f64 * height_unit);
+            ctx.place_child(&mut child.widget, child_pos + origin);
         }
+
+        let (total_size, _) = padding.layout_up(total_size, 0.);
+        let (total_size, _) = border.layout_up(total_size, 0.);
         total_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let border_width = props.get::<BorderWidth>();
+        let border_radius = props.get::<CornerRadius>();
+        let bg = props.get::<Background>();
+        let border_color = props.get::<BorderColor>();
+
+        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
+        let border_rect = border_width.border_rect(ctx.size(), border_radius);
+
+        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
+        fill(scene, &bg_rect, &brush);
+        stroke(scene, &border_rect, border_color.color, border_width.width);
+
         // paint the baseline if we're debugging layout
         if ctx.debug_paint_enabled() && ctx.baseline_offset() != 0.0 {
             let color = ctx.debug_color();
