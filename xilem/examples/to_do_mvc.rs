@@ -8,7 +8,7 @@
 
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, textbox};
+use xilem::view::{Axis, button, checkbox, flex, textbox};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
@@ -71,12 +71,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         })
         .collect::<Vec<_>>();
 
-    flex((
-        FlexSpacer::Fixed(40.), // HACK: Spacer for Androird
-        first_line,
-        tasks,
-    ))
-    .padding(50.)
+    flex((first_line, tasks)).padding(50.)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
