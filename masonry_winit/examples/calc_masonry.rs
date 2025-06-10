@@ -15,9 +15,9 @@ use std::str::FromStr;
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, AccessEvent, Action, BoxConstraints, DefaultProperties, EventCtx, LayoutCtx,
+    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -434,6 +434,15 @@ fn build_calc() -> impl Widget {
         )
 }
 
+fn default_props() -> DefaultProperties {
+    let mut default_properties = default_property_set();
+    default_properties
+        .insert::<RootWidget, _>(Background::Color(AlphaColor::from_str("#794869").unwrap()));
+    default_properties.insert::<RootWidget, _>(Padding::all(2.0));
+
+    default_properties
+}
+
 fn main() {
     let window_size = LogicalSize::new(223., 300.);
 
@@ -450,11 +459,6 @@ fn main() {
         window_id: WindowId::next(),
     };
 
-    let mut default_properties = default_property_set();
-    default_properties
-        .insert::<RootWidget, _>(Background::Color(AlphaColor::from_str("#794869").unwrap()));
-    default_properties.insert::<RootWidget, _>(Padding::all(2.0));
-
     let event_loop = masonry_winit::app::EventLoop::with_user_event()
         .build()
         .unwrap();
@@ -466,7 +470,7 @@ fn main() {
             Box::new(RootWidget::new(build_calc())),
         )],
         calc_state,
-        default_properties,
+        default_props(),
     )
     .unwrap();
 }
@@ -476,13 +480,12 @@ fn main() {
 mod tests {
     use masonry::assert_render_snapshot;
     use masonry::testing::TestHarness;
-    use masonry::theme::default_property_set;
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(default_property_set(), build_calc());
+        let mut harness = TestHarness::create(default_props(), RootWidget::new(build_calc()));
         assert_render_snapshot!(harness, "example_calc_masonry_initial");
 
         // TODO - Test clicking buttons

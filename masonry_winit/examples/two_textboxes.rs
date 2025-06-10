@@ -9,6 +9,8 @@
 
 use masonry::core::{Action, WidgetId};
 use masonry::dpi::LogicalSize;
+use masonry::properties::Padding;
+use masonry::theme::default_property_set;
 use masonry::widgets::{Flex, RootWidget, Textbox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
@@ -42,14 +44,21 @@ fn main() {
         .with_resizable(true)
         .with_min_inner_size(window_size);
 
-    masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+    let mut default_properties = default_property_set();
+    default_properties.insert::<RootWidget, _>(Padding::all(5.0));
+
+    let event_loop = masonry_winit::app::EventLoop::with_user_event()
+        .build()
+        .unwrap();
+    masonry_winit::app::run_with(
+        event_loop,
         vec![(
             WindowId::next(),
             window_attributes,
             Box::new(RootWidget::new(main_widget)),
         )],
         Driver,
+        default_properties,
     )
     .unwrap();
 }

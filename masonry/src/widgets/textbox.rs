@@ -1,31 +1,24 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Insets, Point, Rect, Size};
+use vello::kurbo::{Affine, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
-use crate::peniko::Color;
-use crate::properties::Padding;
-use crate::util::stroke;
+use crate::properties::{
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
+};
+use crate::util::{fill, stroke};
 use crate::widgets::TextArea;
-
-// TODO - Replace with Padding property.
-/// Added padding between each horizontal edge of the widget
-/// and the text in logical pixels.
-///
-/// This makes it so that the surrounding box isn't crowding out the text.
-const TEXTBOX_PADDING: Padding = Padding::all(5.0);
-
-/// The margin added around textboxes to allow the boundaries to be visible inside the window edge.
-const TEXTBOX_MARGIN: Padding = Padding::horizontal(2.0);
 
 /// The textbox widget displays text which can be edited by the user,
 /// inside a surrounding box.
@@ -139,6 +132,16 @@ impl Widget for Textbox {
         ctx.register_child(&mut self.text);
     }
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        DisabledBackground::prop_changed(ctx, property_type);
+        Background::prop_changed(ctx, property_type);
+        BorderColor::prop_changed(ctx, property_type);
+        BorderWidth::prop_changed(ctx, property_type);
+        CornerRadius::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
+        BoxShadow::prop_changed(ctx, property_type);
+    }
+
     fn update(
         &mut self,
         _ctx: &mut UpdateCtx<'_>,
@@ -150,38 +153,63 @@ impl Widget for Textbox {
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let margin = TEXTBOX_MARGIN;
-        let padding = TEXTBOX_PADDING;
-        // Shrink constraints by padding inset
-        let margin_size = Size::new(margin.left + margin.left, margin.top + margin.bottom);
-        let padding_size = Size::new(padding.left + padding.left, padding.top + padding.bottom);
-        let child_bc = bc.shrink(margin_size);
-        let child_bc = child_bc.shrink(padding_size);
+        let border = props.get::<BorderWidth>();
+        let padding = props.get::<Padding>();
+        let shadow = props.get::<BoxShadow>();
+
+        let bc = *bc;
+        let bc = border.layout_down(bc);
+        let bc = padding.layout_down(bc);
+
         // TODO: Set minimum to deal with alignment
-        let size = ctx.run_layout(&mut self.text, &child_bc);
-        ctx.place_child(
-            &mut self.text,
-            Point::new(margin.left + padding.left, margin.top + padding.top),
-        );
+        let size = ctx.run_layout(&mut self.text, &bc);
+        let baseline = ctx.child_baseline_offset(&self.text);
+
+        let (size, baseline) = padding.layout_up(size, baseline);
+        let (size, baseline) = border.layout_up(size, baseline);
+
+        let pos = Point::ORIGIN;
+        let pos = border.place_down(pos);
+        let pos = padding.place_down(pos);
+        ctx.place_child(&mut self.text, pos);
+
+        if shadow.is_visible() {
+            ctx.set_paint_insets(shadow.get_insets());
+        }
+
         if self.clip {
             ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
         }
-        size + margin_size + padding_size
+
+        ctx.set_baseline_offset(baseline);
+        size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let size = ctx.size();
-        let border_width = 1.0;
-        let outline_rect = size.to_rect().inset(Insets::new(
-            -TEXTBOX_MARGIN.left - border_width / 2.,
-            -TEXTBOX_MARGIN.top - border_width / 2.,
-            -TEXTBOX_MARGIN.left - border_width / 2.,
-            -TEXTBOX_MARGIN.bottom - border_width / 2.,
-        ));
-        stroke(scene, &outline_rect, Color::WHITE, border_width);
+
+        let border_width = props.get::<BorderWidth>();
+        let border_radius = props.get::<CornerRadius>();
+        let shadow = props.get::<BoxShadow>();
+        let border_color = props.get::<BorderColor>();
+
+        let bg = if ctx.is_disabled() {
+            &props.get::<DisabledBackground>().0
+        } else {
+            props.get::<Background>()
+        };
+
+        let bg_rect = border_width.bg_rect(size, border_radius);
+        let border_rect = border_width.border_rect(size, border_radius);
+
+        shadow.paint(scene, Affine::IDENTITY, bg_rect);
+
+        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
+        fill(scene, &bg_rect, &brush);
+        stroke(scene, &border_rect, border_color.color, border_width.width);
     }
 
     fn accessibility_role(&self) -> Role {

@@ -15,7 +15,7 @@ use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
 };
-use crate::widgets::{Button, Checkbox};
+use crate::widgets::{Button, Checkbox, Textbox};
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -112,6 +112,13 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
+
+    properties.insert::<Textbox, _>(BorderColor {
+        color: Color::WHITE,
+    });
+    properties.insert::<Textbox, _>(BorderWidth { width: 1.0 });
+    properties.insert::<Textbox, _>(Padding::all(5.));
+    properties.insert::<Textbox, _>(Background::Color(Color::from_rgb8(0x1A, 0x1A, 0x1A)));
 
     // TODO - Add default Padding to RootWidget?
 
