@@ -61,8 +61,8 @@ This widget has a size, a color, and will notify Masonry when the user left-clic
 First, let's create our struct:
 
 ```rust,ignore
-use vello::kurbo::Size;
-use vello::peniko::Color;
+use masonry::kurbo::Size;
+use masonry::peniko::Color;
 
 struct ColorRectangle {
     size: Size,
@@ -85,15 +85,15 @@ Note that we store a size, and not a position: our widget's position is managed 
 First we implement event methods:
 
 ```rust,ignore
-use masonry_winit::core::{
-    Widget, EventCtx, PointerEvent, TextEvent, AccessEvent, Action
+use masonry::core::{
+    AccessEvent, Action, EventCtx, PointerButton, PointerEvent, PropertiesMut, TextEvent, Widget
 };
 
 impl Widget for ColorRectangle {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
         match event {
-            PointerEvent::PointerDown(PointerButton::Primary, _) => {
-                ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
+            PointerEvent::Down { button: Some(PointerButton::Primary), .. } => {
+                ctx.submit_action(Action::ButtonPressed(Some(PointerButton::Primary)));
             }
             _ => {},
         }
@@ -104,7 +104,7 @@ impl Widget for ColorRectangle {
     fn on_access_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::ButtonPressed(PointerButton::Primary));
+                    ctx.submit_action(Action::ButtonPressed(Some(PointerButton::Primary)));
                 }
                 _ => {}
             }
@@ -129,8 +129,8 @@ We don't handle any text events.
 Since our widget isn't animated and doesn't react to changes in status, we can leave the `on_anim_frame` and `update` implementations empty:
 
 ```rust,ignore
-use masonry_winit::core::{
-    UpdateCtx, Update,
+use masonry::core::{
+    PropertiesMut, UpdateCtx, Update, Widget
 };
 
 impl Widget for ColorRectangle {
@@ -148,9 +148,10 @@ impl Widget for ColorRectangle {
 Next we implement layout:
 
 ```rust,ignore
-use masonry_winit::core::{
-    LayoutCtx, BoxConstraints
+use masonry::core::{
+    BoxConstraints, LayoutCtx, PropertiesMut, Widget
 };
+use masonry::kurbo::Size;
 
 impl Widget for ColorRectangle {
     // ...
@@ -173,11 +174,13 @@ We return our stored size, clamped between the min and max constraints.
 Next we write our render methods:
 
 ```rust,ignore
-use masonry_winit::core::{
-    PaintCtx, AccessCtx
+use masonry::accesskit::{Node, Role};
+use masonry::core::{
+    AccessCtx, PaintCtx, PropertiesRef, Widget
 };
-use vello::Scene;
-use accesskit::{Node, Role};
+use masonry::kurbo::Affine;
+use masonry::peniko::Fill;
+use masonry::vello::Scene;
 
 impl Widget for ColorRectangle {
     // ...
@@ -239,13 +242,14 @@ Pragmatically, if you're not sure about what a certain value means or how to imp
 We also write a `make_trace_span()` method, which is useful for debugging with the [tracing](https://docs.rs/tracing/latest/tracing/) framework.
 
 ```rust,ignore
+use masonry::core::{QueryCtx, Widget};
 use tracing::{trace_span, Span};
 
 impl Widget for ColorRectangle {
     // ...
 
-    fn make_trace_span(&self) -> Span {
-        trace_span!("ColorRectangle")
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        trace_span!("ColorRectangle", id = ctx.widget_id().trace())
     }
 
     // ...
@@ -255,10 +259,10 @@ impl Widget for ColorRectangle {
 And last, we stub in some additional methods:
 
 ```rust,ignore
-use masonry_winit::core::{
-    RegisterCtx, WidgetId
+use masonry::core::{
+    RegisterCtx, Widget, WidgetId
 };
-use smallvec::SmallVec;
+use masonry::smallvec::SmallVec;
 
 impl Widget for ColorRectangle {
     // ...

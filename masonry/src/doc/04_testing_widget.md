@@ -31,8 +31,8 @@ First, let's write a test module with a first unit test:
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
-    use masonry_winit::testing::{widget_ids, TestHarness, TestWidgetExt};
-    use masonry_winit::theme::default_property_set;
+    use masonry::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use masonry::theme::default_property_set;
 
     use super::*;
 
@@ -78,7 +78,7 @@ Let's add a visual test:
 
 ```rust,ignore
     // ...
-    use masonry_winit::assert_render_snapshot;
+    use masonry::assert_render_snapshot;
 
     #[test]
     fn simple_rect() {
@@ -191,7 +191,7 @@ Since our `WidgetRectangle` doesn't emit actions, let's look at a unit test for 
         harness.mouse_click_on(button_id);
         assert_eq!(
             harness.pop_action(),
-            Some((Action::ButtonPressed(PointerButton::Primary), button_id))
+            Some((Action::ButtonPressed(Some(PointerButton::Primary)), button_id))
         );
     }
 ```

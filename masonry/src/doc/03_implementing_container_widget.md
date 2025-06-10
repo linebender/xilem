@@ -50,7 +50,7 @@ A container widget needs to pay special attention to these methods:
 trait Widget {
     // ...
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>) -> Size;
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size;
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>);
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
@@ -78,9 +78,10 @@ When debug assertions are on, Masonry will actively try to detect cases where yo
 For our `VerticalStack`, we'll lay out our children in a vertical line, with a gap between each child; we give each child an equal share of the available height:
 
 ```rust,ignore
-use masonry_winit::core::{
-    LayoutCtx, BoxConstraints
+use masonry::core::{
+    BoxConstraints, LayoutCtx, PropertiesMut, Widget
 };
+use masonry::kurbo::{Point, Size};
 
 impl Widget for VerticalStack {
     // ...
@@ -131,8 +132,8 @@ For instance, if a widget in a list changes size, its siblings and parents must 
 In the case of our `VerticalStack`, we don't implement any transform-only changes, so we don't need to do anything in compose:
 
 ```rust,ignore
-use masonry_winit::core::{
-    LayoutCtx, BoxConstraints
+use masonry::core::{
+    BoxConstraints, ComposeCtx, Widget
 };
 
 impl Widget for VerticalStack {
@@ -147,8 +148,8 @@ impl Widget for VerticalStack {
 The `register_children` method must call [`RegisterCtx::register_child`] for each child:
 
 ```rust,ignore
-use masonry_winit::{
-    Widget, RegisterCtx
+use masonry::core::{
+    RegisterCtx, Widget
 };
 
 impl Widget for VerticalStack {
