@@ -57,7 +57,7 @@ where
     ) {
         self.options.rebuild(&prev.options, window);
 
-        ctx.state_changed = true;
+        ctx.set_state_changed(true);
         self.rebuild_root_widget(prev, root_widget_view_state, ctx, render_root);
     }
 

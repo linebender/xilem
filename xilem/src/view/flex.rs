@@ -161,7 +161,7 @@ where
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        let pod = ctx.new_pod(widget);
+        let pod = ctx.create_pod(widget);
         (pod, seq_state)
     }
 

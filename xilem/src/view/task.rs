@@ -86,7 +86,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
-        let proxy = ctx.proxy.clone();
+        let proxy = ctx.proxy();
         let handle = ctx
             .runtime()
             .spawn((self.init_future)(MessageProxy::new(proxy, path)));

@@ -52,7 +52,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.new_pod(widgets::Image::new(self.image.clone()));
+        let pod = ctx.create_pod(widgets::Image::new(self.image.clone()));
         (pod, ())
     }
 

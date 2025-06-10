@@ -108,7 +108,7 @@ where
         for element in elements.into_inner() {
             widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
         }
-        let pod = ctx.new_pod(widget);
+        let pod = ctx.create_pod(widget);
         (pod, seq_state)
     }
 

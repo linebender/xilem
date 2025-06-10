@@ -107,7 +107,7 @@ where
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
-        let proxy = ctx.proxy.clone();
+        let proxy = ctx.proxy();
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         // No opportunity for the channel to be closed.
         tx.send(self.value.clone()).unwrap();

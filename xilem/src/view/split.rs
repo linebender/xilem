@@ -180,7 +180,7 @@ where
         let (child1, child1_state) = ctx.with_id(CHILD1_VIEW_ID, |ctx| self.child1.build(ctx));
         let (child2, child2_state) = ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx));
 
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.create_pod(
             widgets::Split::new_pod(child1.into_widget_pod(), child2.into_widget_pod())
                 .split_axis(self.split_axis)
                 .split_point(self.split_point)
