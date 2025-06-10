@@ -16,7 +16,7 @@ use xilem_core::{AnyViewState, RawProxy, View};
 
 use crate::core::{DynMessage, MessageResult, ProxyError, ViewId};
 use crate::window_view::{CreateWindow, WindowView};
-use crate::{AnyWidgetView, AppState, ViewCtx, WidgetMap, WindowOptions};
+use crate::{AnyWidgetView, AppState, ViewCtx, WindowOptions};
 
 pub struct MasonryDriver<State, Logic> {
     state: State,
@@ -144,13 +144,10 @@ where
         window_id: WindowId,
         view: WindowView<State>,
     ) -> (WindowAttributes, RootWidget) {
-        let mut view_ctx = ViewCtx {
-            widget_map: WidgetMap::default(),
-            id_path: Vec::new(),
-            proxy: Arc::new(WindowProxy(window_id, self.proxy.clone())),
-            runtime: self.runtime.clone(),
-            state_changed: true,
-        };
+        let mut view_ctx = ViewCtx::new(
+            Arc::new(WindowProxy(window_id, self.proxy.clone())),
+            self.runtime.clone(),
+        );
         let (CreateWindow(attrs, root_widget), view_state) = view.build(&mut view_ctx);
         self.windows.insert(
             window_id,
@@ -256,7 +253,7 @@ where
             window
                 .view
                 .message(&mut window.view_state, &path, message, &mut self.state)
-        } else if let Some(id_path) = window.view_ctx.widget_map.get(&widget_id) {
+        } else if let Some(id_path) = window.view_ctx.get_id_path(widget_id) {
             window.view.message(
                 &mut window.view_state,
                 id_path.as_slice(),
@@ -279,7 +276,7 @@ where
                 self.run_logic(masonry_ctx);
             }
             MessageResult::RequestRebuild => {
-                window.view_ctx.state_changed = false;
+                window.view_ctx.set_state_changed(false);
                 window.view.rebuild_root_widget(
                     &window.view,
                     &mut window.view_state,

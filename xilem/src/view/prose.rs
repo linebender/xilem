@@ -97,7 +97,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
-        let widget_pod = ctx.new_pod(
+        let widget_pod = ctx.create_pod(
             widgets::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );

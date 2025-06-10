@@ -135,7 +135,7 @@ where
         let widget = widgets::SizedBox::new_pod(child.erased_widget_pod())
             .raw_width(self.width)
             .raw_height(self.height);
-        let mut pod = ctx.new_pod(widget);
+        let mut pod = ctx.create_pod(widget);
         pod.properties = self.properties.build_properties();
         (pod, child_state)
     }
