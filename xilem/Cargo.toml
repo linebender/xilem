@@ -33,18 +33,17 @@ name = "android.permission.INTERNET"
 
 [dependencies]
 xilem_core.workspace = true
+xilem_masonry.workspace = true
 masonry.workspace = true
 masonry_winit.workspace = true
 winit.workspace = true
 tracing.workspace = true
-vello.workspace = true
-smallvec.workspace = true
-accesskit.workspace = true
-tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
+tokio.workspace = true
 
 [dev-dependencies]
 # Used for `variable_clock`
 time = { workspace = true, features = ["local-offset"] }
+vello.workspace = true
 
 # Used for http_cats
 reqwest = { version = "0.12.15", default-features = false, features = [

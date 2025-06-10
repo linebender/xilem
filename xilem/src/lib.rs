@@ -125,9 +125,6 @@
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
 )]
-#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-// https://github.com/rust-lang/rust/pull/130025
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 pub use masonry::kurbo::{Affine, Vec2};
 pub use masonry::parley::Alignment as TextAlignment;
@@ -144,27 +141,19 @@ pub use tokio;
 
 pub use winit;
 
-mod any_view;
 mod app;
 mod driver;
-mod one_of;
-mod pod;
-mod property_tuple;
-mod view_ctx;
-mod widget_view;
 mod window_options;
 mod window_view;
 
-pub mod style;
-pub mod view;
-pub use any_view::AnyWidgetView;
-pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
-pub use property_tuple::PropertyTuple;
+pub use xilem_masonry::style;
+pub use xilem_masonry::view;
 
 pub use app::{AppState, ExitOnClose, Xilem};
-pub use pod::Pod;
-pub use view_ctx::ViewCtx;
-pub use widget_view::{WidgetView, WidgetViewSequence};
+pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
 
-// FIXME - Remove these re-exports.
-pub(crate) use xilem_core::{MessageResult, View, ViewId};
+pub use xilem_masonry::AnyWidgetView;
+pub use xilem_masonry::Pod;
+pub use xilem_masonry::PropertyTuple;
+pub use xilem_masonry::ViewCtx;
+pub use xilem_masonry::{WidgetView, WidgetViewSequence};

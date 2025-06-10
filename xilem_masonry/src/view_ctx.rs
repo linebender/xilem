@@ -35,9 +35,9 @@ impl ViewPathTracker for ViewCtx {
     }
 }
 
-// Private items
+#[expect(missing_docs, reason = "TODO - Document these items")]
 impl ViewCtx {
-    pub(crate) fn new(proxy: Arc<dyn RawProxy>, runtime: Arc<tokio::runtime::Runtime>) -> Self {
+    pub fn new(proxy: Arc<dyn RawProxy>, runtime: Arc<tokio::runtime::Runtime>) -> Self {
         Self {
             widget_map: HashMap::default(),
             id_path: Vec::new(),
@@ -47,11 +47,11 @@ impl ViewCtx {
         }
     }
 
-    pub(crate) fn set_state_changed(&mut self, value: bool) {
+    pub fn set_state_changed(&mut self, value: bool) {
         self.state_changed = value;
     }
 
-    pub(crate) fn get_id_path(&self, widget_id: WidgetId) -> Option<&Vec<ViewId>> {
+    pub fn get_id_path(&self, widget_id: WidgetId) -> Option<&Vec<ViewId>> {
         self.widget_map.get(&widget_id)
     }
 }
