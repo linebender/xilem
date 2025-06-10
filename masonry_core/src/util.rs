@@ -8,7 +8,7 @@ use std::hash::Hash;
 
 use vello::Scene;
 use vello::kurbo::{Affine, Join, Point, Rect, Shape, Stroke};
-use vello::peniko::{BrushRef, Color, ColorStopsSource, Fill, Gradient};
+use vello::peniko::{BrushRef, Color, Fill};
 
 /// Panic in debug and `tracing::error` in release mode.
 ///
