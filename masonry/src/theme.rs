@@ -12,10 +12,10 @@ use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::peniko::Color;
 use crate::properties::types::Gradient;
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CornerRadius, DisabledBackground,
-    HoveredBorderColor, Padding,
+    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
+    CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
 };
-use crate::widgets::Button;
+use crate::widgets::{Button, Checkbox};
 
 // Colors are from https://sashat.me/2017/01/11/list-of-20-simple-distinct-colors/
 // They're picked for visual distinction and accessibility (99 percent)
@@ -91,6 +91,27 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Button, _>(DisabledBackground(Background::Gradient(
         Gradient::new_linear(0.0).with_stops([DISABLED_BUTTON_LIGHT, DISABLED_BUTTON_DARK]),
     )));
+
+    let checkbox_gradient =
+        Gradient::new_linear(0.0).with_stops([BACKGROUND_DARK, BACKGROUND_LIGHT]);
+    properties.insert::<Checkbox, _>(BorderWidth { width: 1.0 });
+    properties.insert::<Checkbox, _>(BorderColor { color: BORDER_DARK });
+    properties.insert::<Checkbox, _>(HoveredBorderColor(BorderColor {
+        color: BORDER_LIGHT,
+    }));
+    properties.insert::<Checkbox, _>(CornerRadius { radius: 2. });
+    properties.insert::<Checkbox, _>(Background::Gradient(checkbox_gradient.clone()));
+    properties.insert::<Checkbox, _>(ActiveBackground(Background::Gradient(
+        checkbox_gradient.clone(),
+    )));
+    properties.insert::<Checkbox, _>(DisabledBackground(Background::Gradient(
+        checkbox_gradient.clone(),
+    )));
+    properties.insert::<Checkbox, _>(CheckmarkStrokeWidth { width: 2.0 });
+    properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
+    properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
 
     // TODO - Add default Padding to RootWidget?
 

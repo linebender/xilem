@@ -9,6 +9,7 @@ mod background;
 mod border_color;
 mod border_width;
 mod box_shadow;
+mod checkmark;
 mod corner_radius;
 mod padding;
 
@@ -18,5 +19,6 @@ pub use background::{ActiveBackground, Background, DisabledBackground};
 pub use border_color::{BorderColor, HoveredBorderColor};
 pub use border_width::BorderWidth;
 pub use box_shadow::BoxShadow;
+pub use checkmark::{CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor};
 pub use corner_radius::CornerRadius;
 pub use padding::Padding;
