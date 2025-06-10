@@ -9,7 +9,7 @@ use crate::core::{BoxConstraints, Property, UpdateCtx};
 use crate::properties::CornerRadius;
 
 /// The width of a widget's border, in logical pixels.
-#[expect(missing_docs, reason = "obvious")]
+#[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct BorderWidth {
     pub width: f64,

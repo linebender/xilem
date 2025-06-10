@@ -6,7 +6,7 @@ use std::any::TypeId;
 use crate::core::{Property, UpdateCtx};
 
 /// The radius of a widget's box corners, in logical pixels.
-#[expect(missing_docs, reason = "obvious")]
+#[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Default, Clone, Copy, Debug, PartialEq)]
 pub struct CornerRadius {
     pub radius: f64,
