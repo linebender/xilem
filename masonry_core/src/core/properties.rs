@@ -76,6 +76,14 @@ impl Properties {
         Self { map: AnyMap::new() }
     }
 
+    /// Builder-style method to add a property `P` with the given value.
+    ///
+    /// If the value was already set, it's discarded and replaced with the new value.
+    pub fn with<P: Property>(mut self, value: P) -> Self {
+        self.map.insert(value);
+        self
+    }
+
     /// Get value of property `P`.
     pub fn get<P: Property>(&self) -> Option<&P> {
         self.map.get::<P>()

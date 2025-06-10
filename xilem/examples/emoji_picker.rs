@@ -5,6 +5,7 @@
 
 use winit::error::EventLoopError;
 use xilem::core::map_state;
+use xilem::style::Style as _;
 use xilem::view::{
     Axis, FlexExt, FlexSpacer, GridExt, button, flex, grid, label, prose, sized_box,
 };

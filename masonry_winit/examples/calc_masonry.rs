@@ -16,14 +16,14 @@ use std::str::FromStr;
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetPod,
+    Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
-use masonry::properties::{Background, Padding};
+use masonry::properties::{Background, BorderColor, BorderWidth, Padding};
 use masonry::smallvec::{SmallVec, smallvec};
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
@@ -31,6 +31,9 @@ use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, Sized
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace, trace_span};
 use winit::window::Window;
+
+// TODO - Rewrite this example to be simpler,
+// use properties directly and remove the CalcButton widget.
 
 #[derive(Clone)]
 struct CalcState {
@@ -142,9 +145,14 @@ impl CalcState {
 }
 
 impl CalcButton {
-    fn new(inner: SizedBox, action: CalcAction, base_color: Color, active_color: Color) -> Self {
+    fn new(
+        inner: WidgetPod<SizedBox>,
+        action: CalcAction,
+        base_color: Color,
+        active_color: Color,
+    ) -> Self {
         Self {
-            inner: WidgetPod::new(inner),
+            inner,
             action,
             base_color,
             active_color,
@@ -165,7 +173,7 @@ impl Widget for CalcButton {
                     let color = self.active_color;
                     // See `update` for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        SizedBox::set_background(&mut inner, color);
+                        inner.insert_prop(Background::Color(color));
                     });
                     ctx.capture_pointer();
                     trace!("CalcButton {:?} pressed", ctx.widget_id());
@@ -176,7 +184,7 @@ impl Widget for CalcButton {
                     let color = self.base_color;
                     // See `update` for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        SizedBox::set_background(&mut inner, color);
+                        inner.insert_prop(Background::Color(color));
                     });
                     ctx.submit_action(Action::Other(Box::new(self.action)));
                     trace!("CalcButton {:?} released", ctx.widget_id());
@@ -219,12 +227,14 @@ impl Widget for CalcButton {
         match event {
             Update::HoveredChanged(true) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    SizedBox::set_border(&mut inner, Color::WHITE, 3.0);
+                    inner.insert_prop(BorderColor::new(Color::WHITE));
+                    inner.insert_prop(BorderWidth::all(3.0));
                 });
             }
             Update::HoveredChanged(false) => {
                 ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    SizedBox::set_border(&mut inner, Color::TRANSPARENT, 3.0);
+                    inner.remove_prop::<BorderColor>();
+                    inner.remove_prop::<BorderWidth>();
                 });
             }
             _ => (),
@@ -312,16 +322,18 @@ fn op_button_with_label(op: char, label: String) -> CalcButton {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
-    CalcButton::new(
-        SizedBox::new(Align::centered(
-            Label::new(label).with_style(StyleProperty::FontSize(24.)),
-        ))
-        .background(BLUE)
-        .expand(),
-        CalcAction::Op(op),
-        BLUE,
-        LIGHT_BLUE,
-    )
+    let sized_box = SizedBox::new(Align::centered(
+        Label::new(label).with_style(StyleProperty::FontSize(24.)),
+    ))
+    .expand();
+    let sized_box = WidgetPod::new_with(
+        Box::new(sized_box),
+        WidgetId::next(),
+        Default::default(),
+        Properties::new().with(Background::Color(BLUE)),
+    );
+
+    CalcButton::new(sized_box, CalcAction::Op(op), BLUE, LIGHT_BLUE)
 }
 
 fn op_button(op: char) -> CalcButton {
@@ -331,16 +343,19 @@ fn op_button(op: char) -> CalcButton {
 fn digit_button(digit: u8) -> CalcButton {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
     const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
-    CalcButton::new(
-        SizedBox::new(Align::centered(
-            Label::new(format!("{digit}")).with_style(StyleProperty::FontSize(24.)),
-        ))
-        .background(GRAY)
-        .expand(),
-        CalcAction::Digit(digit),
-        GRAY,
-        LIGHT_GRAY,
-    )
+
+    let sized_box = SizedBox::new(Align::centered(
+        Label::new(format!("{digit}")).with_style(StyleProperty::FontSize(24.)),
+    ))
+    .expand();
+    let sized_box = WidgetPod::new_with(
+        Box::new(sized_box),
+        WidgetId::next(),
+        Default::default(),
+        Properties::new().with(Background::Color(GRAY)),
+    );
+
+    CalcButton::new(sized_box, CalcAction::Digit(digit), GRAY, LIGHT_GRAY)
 }
 
 fn flex_row(

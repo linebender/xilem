@@ -8,15 +8,17 @@
 
 use std::sync::Arc;
 
+use masonry::properties::Padding;
 use masonry::widgets::{Alignment, LineBreaking};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
+use xilem::style::Style as _;
 use xilem::view::{
-    Axis, FlexSpacer, Padding, ZStackExt, button, flex, image, inline_prose, portal, prose,
-    sized_box, spinner, split, worker, zstack,
+    Axis, FlexSpacer, ZStackExt, button, flex, image, inline_prose, portal, prose, sized_box,
+    spinner, split, worker, zstack,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, TextAlignment, WidgetView, WindowOptions, Xilem, palette,
@@ -191,8 +193,8 @@ impl Status {
                             .alignment(TextAlignment::End),
                     )
                     .padding(4.)
-                    .rounded(4.)
-                    .background(palette::css::BLACK.multiply_alpha(0.5)),
+                    .corner_radius(4.)
+                    .background_color(palette::css::BLACK.multiply_alpha(0.5)),
                 )
                 .padding(Padding {
                     left: 0.,

@@ -33,6 +33,11 @@ impl WrapperWidget {
     pub fn new_pod(child: WidgetPod<dyn Widget>) -> Self {
         Self { child }
     }
+
+    /// Get mutable reference to the child widget.
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
+        this.ctx.get_mut(&mut this.widget.child)
+    }
 }
 
 impl WrapperWidget {

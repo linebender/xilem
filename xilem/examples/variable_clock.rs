@@ -11,6 +11,7 @@ use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
 use xilem::core::fork;
+use xilem::style::Style as _;
 use xilem::view::{
     Axis, FlexExt, FlexSpacer, button, flex, inline_prose, label, portal, prose, sized_box, task,
     variable_label,

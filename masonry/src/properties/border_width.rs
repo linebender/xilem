@@ -26,6 +26,11 @@ impl Property for BorderWidth {
 }
 
 impl BorderWidth {
+    /// Create new `BorderWidth` with given value.
+    pub fn all(width: f64) -> Self {
+        Self { width }
+    }
+
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {
@@ -65,7 +70,7 @@ impl BorderWidth {
     pub fn bg_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
         size.to_rect()
             .inset(-self.width)
-            .to_rounded_rect(border_radius.radius - self.width)
+            .to_rounded_rect((border_radius.radius - self.width).max(0.))
     }
 
     /// Creates a rounded rectangle that is inset by half the border width.

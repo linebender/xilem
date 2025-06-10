@@ -5,6 +5,7 @@
 
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
+use xilem::style::Style as _;
 use xilem::view::{button, flex, label, prose, sized_box, spinner};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
