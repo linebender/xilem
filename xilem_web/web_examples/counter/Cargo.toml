@@ -6,6 +6,12 @@ license.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[[bin]]
+name = "counter"
+test = false
+doctest = false
+bench = false
+
 [lints]
 workspace = true
 
