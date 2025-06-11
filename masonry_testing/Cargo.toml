@@ -1,7 +1,7 @@
 [package]
 name = "masonry_testing"
 version.workspace = true # We mimic Xilem's version
-description = "Traits and types of the Masonry toolkit."
+description = "Helper tools for writing unit tests for Masonry."
 keywords = ["gui", "ui", "toolkit"]
 categories = ["gui", "internationalization", "accessibility"]
 edition.workspace = true
