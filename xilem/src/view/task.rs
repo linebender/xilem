@@ -5,7 +5,8 @@
 
 use std::future::Future;
 use std::marker::PhantomData;
-use std::sync::Arc;
+use std::pin::Pin;
+use std::sync::{Arc, Mutex};
 
 use tokio::task::JoinHandle;
 
@@ -16,6 +17,10 @@ use crate::core::{
 };
 
 /// Launch a task which will run until the view is no longer in the tree.
+///
+/// If the view is removed from the tree and then later re-inserted the task will be
+/// run again.
+///
 /// `init_future` is given a [`MessageProxy`], which it will store in the future it returns.
 /// This `MessageProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
@@ -26,20 +31,15 @@ use crate::core::{
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
+pub fn task<M, H, State, Action, Fut>(
+    init_future: fn(MessageProxy<M>) -> Fut,
+    on_event: H,
+) -> Task<fn(MessageProxy<M>) -> Fut, H, M>
 where
-    F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
-    const {
-        assert!(
-            size_of::<F>() == 0,
-            "`task` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `task_raw`."
-        );
-    };
     Task {
         init_future,
         on_event,
@@ -58,6 +58,43 @@ where
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
+    Task {
+        init_future,
+        on_event,
+        message: PhantomData,
+    }
+}
+
+/// Launch a task which will run until the view is no longer in the tree.
+///
+/// This task will only be run the first time this view is inserted in the tree. If the
+/// view is stashed and then later re-inserted into the tree, the task will not be run again.
+/// However, if the view is re-created and then inserted into the tree the task will be run again.
+///
+/// See [`task`] for full documentation.
+pub fn task_raw_once<M, F, H, State, Action, Fut>(
+    init_future: F,
+    on_event: H,
+) -> Task<impl Fn(MessageProxy<M>) -> Pin<Box<dyn Future<Output = ()> + Send + 'static>>, H, M>
+where
+    F: FnOnce(MessageProxy<M>) -> Fut,
+    Fut: Future<Output = ()> + Send + 'static,
+    H: Fn(&mut State, M) -> Action + 'static,
+    M: AnyMessage + 'static,
+{
+    let init_future = Mutex::new(Some(init_future));
+    let init_future = move |proxy| {
+        let init_future = init_future.lock().unwrap().take();
+        let future = init_future.map(|f| f(proxy));
+
+        // We have to box the future to make it a nameable type
+        Box::pin(async {
+            if let Some(future) = future {
+                future.await;
+            }
+        }) as Pin<Box<dyn Future<Output = ()> + Send + 'static>>
+    };
+
     Task {
         init_future,
         on_event,

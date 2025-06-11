@@ -43,17 +43,7 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// # // We need to call the function to make the inline constant be evaluated
 /// # let _ = log_data(&mut AppData { data: 10 });
 /// ```
-pub fn run_once<F>(once: F) -> RunOnce<F>
-where
-    F: Fn() + 'static,
-{
-    const {
-        assert!(
-            size_of::<F>() == 0,
-            "`run_once` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `run_once_raw`."
-        );
-    };
+pub fn run_once(once: fn()) -> RunOnce<fn()> {
     RunOnce { once }
 }
 
