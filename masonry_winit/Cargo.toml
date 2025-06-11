@@ -39,6 +39,7 @@ web-time.workspace = true
 
 [dev-dependencies]
 image = { workspace = true, features = ["png"] }
+masonry = { workspace = true, features = ["testing"] }
 
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.16", features = ["profile-with-tracing"] }

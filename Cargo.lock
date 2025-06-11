@@ -1871,20 +1871,17 @@ dependencies = [
  "cursor-icon",
  "dpi",
  "float-cmp",
- "futures-intrusive",
  "image",
  "insta",
  "masonry_core",
- "oxipng",
+ "masonry_testing",
  "parley",
- "pollster",
  "profiling",
  "smallvec",
  "tracing",
  "ui-events",
  "vello",
  "web-time",
- "wgpu",
 ]
 
 [[package]]
@@ -1911,6 +1908,29 @@ dependencies = [
  "ui-events",
  "vello",
  "web-time",
+]
+
+[[package]]
+name = "masonry_testing"
+version = "0.3.0"
+dependencies = [
+ "accesskit",
+ "assert_matches",
+ "cursor-icon",
+ "dpi",
+ "futures-intrusive",
+ "image",
+ "masonry_core",
+ "oxipng",
+ "parley",
+ "pollster",
+ "profiling",
+ "smallvec",
+ "tracing",
+ "ui-events",
+ "vello",
+ "web-time",
+ "wgpu",
 ]
 
 [[package]]

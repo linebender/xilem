@@ -10,32 +10,32 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
 use cursor_icon::CursorIcon;
-use dpi::LogicalSize;
+use dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use masonry_core::core::WidgetPod;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
 use vello::kurbo::{Point, Size, Vec2};
+use vello::peniko::{Blob, Color};
 use vello::util::{RenderContext, block_on_wgpu};
 use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, TexelCopyBufferInfo,
     TextureDescriptor, TextureFormat, TextureUsages,
 };
 
-use crate::Handled;
-use crate::app::{
+use masonry_core::Handled;
+use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
-use crate::core::{
+use masonry_core::core::{
     Action, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
     PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
-use crate::dpi::{LogicalPosition, PhysicalPosition, PhysicalSize};
-use crate::peniko::{Blob, Color};
-use crate::testing::screenshots::get_image_diff;
-use crate::util::Duration;
+use masonry_core::util::Duration;
+
+use crate::screenshots::get_image_diff;
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
@@ -49,6 +49,9 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 // - Getting a WidgetRef/WidgetMut to a node from a kittest::Queryable
 // - Making a debug snapshot of the access tree
 // https://github.com/rerun-io/kittest
+
+// TODO - Re-enable doc test.
+// Doc test is currently disabled because it depends on a parent crate.
 
 /// A safe headless environment to test widgets in.
 ///
@@ -85,18 +88,17 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///
 /// ## Example
 ///
-/// ```
+/// ```rust,ignore
 /// use insta::assert_debug_snapshot;
 ///
 /// use masonry::core::PointerButton;
-/// use masonry::widgets::Button;
 /// use masonry::core::Action;
-/// use masonry::assert_render_snapshot;
+/// use masonry::testing::assert_render_snapshot;
 /// use masonry::testing::widget_ids;
 /// use masonry::testing::TestHarness;
 /// use masonry::testing::TestWidgetExt;
-/// use masonry::theme::PRIMARY_LIGHT;
 /// use masonry::theme::default_property_set;
+/// use masonry::widgets::Button;
 /// # /*
 /// #[test]
 /// # */
@@ -107,7 +109,6 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///     let mut harness = TestHarness::create(default_property_set(), widget);
 ///
 ///     # if false {
-///     assert_debug_snapshot!(harness.root_widget());
 ///     assert_render_snapshot!(harness, "hello");
 ///     # }
 ///
@@ -290,7 +291,7 @@ impl TestHarness {
 
     /// Send a [`WindowEvent`] to the simulated window.
     ///
-    /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
+    /// This will run [rewrite passes](masonry_core::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
         let handled = self.render_root.handle_window_event(event);
         self.process_signals();
@@ -299,7 +300,7 @@ impl TestHarness {
 
     /// Send a [`PointerEvent`] to the simulated window.
     ///
-    /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
+    /// This will run [rewrite passes](masonry_core::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let handled = self.render_root.handle_pointer_event(event);
         self.process_signals();
@@ -308,7 +309,7 @@ impl TestHarness {
 
     /// Send a [`TextEvent`] to the simulated window.
     ///
-    /// This will run [rewrite passes](crate::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
+    /// This will run [rewrite passes](masonry_core::doc::doc_05_pass_system#rewrite-passes) after the event is processed.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
         let handled = self.render_root.handle_text_event(event);
         self.process_signals();
@@ -563,7 +564,7 @@ impl TestHarness {
         }
     }
 
-    /// Sets the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
+    /// Sets the [focused widget](masonry_core::doc::doc_06_masonry_concepts#text-focus).
     ///
     /// ## Panics
     ///
@@ -620,19 +621,19 @@ impl TestHarness {
         self.render_root.get_widget(id)
     }
 
-    /// Return a [`WidgetRef`] to the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
+    /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::doc_06_masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
-    /// Return a [`WidgetRef`] to the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
+    /// Return a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::doc_06_masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
             .get_widget(self.render_root.pointer_capture_target()?)
     }
 
-    /// Return the id of the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
+    /// Return the id of the widget which [captures pointer events](masonry_core::doc::doc_06_masonry_concepts#pointer-capture).
     // TODO - This is kinda redundant with the above
     pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
         self.render_root.pointer_capture_target()

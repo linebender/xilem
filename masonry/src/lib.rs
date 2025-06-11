@@ -36,7 +36,6 @@ pub mod doc;
 
 // TODO - Add logo
 pub mod properties;
-pub mod testing;
 pub mod theme;
 pub mod widgets;
 
@@ -47,8 +46,12 @@ pub use vello::{kurbo, peniko};
 pub use {cursor_icon, dpi, parley, vello};
 
 pub use masonry_core::{app, core, util};
+#[cfg(any(feature = "testing", test))]
+pub use masonry_testing as testing;
 pub use ui_events;
 
 // TODO - Remove these re-exports.
 pub use masonry_core::util::{Handled, UnitPoint};
 pub use masonry_core::{debug_panic, include_screenshot};
+#[cfg(any(feature = "testing", test))]
+pub use masonry_testing::{assert_failing_render_snapshot, assert_render_snapshot};
