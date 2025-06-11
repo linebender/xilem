@@ -7,9 +7,8 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use masonry::core::{Widget, WidgetId};
+use masonry::core::{Widget, WidgetId, WidgetPod};
 use masonry::peniko::Blob;
-use masonry::widgets::RootWidget;
 use masonry_winit::app::{AppDriver, DriverCtx, MasonryState, MasonryUserEvent, WindowId};
 use winit::window::WindowAttributes;
 use xilem_core::{AnyViewState, RawProxy, View};
@@ -48,7 +47,10 @@ where
         event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
         runtime: tokio::runtime::Runtime,
         fonts: Vec<Blob<u8>>,
-    ) -> (Self, Vec<(WindowId, WindowAttributes, Box<dyn Widget>)>) {
+    ) -> (
+        Self,
+        Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+    ) {
         let mut driver = Self {
             state,
             logic,
@@ -61,7 +63,7 @@ where
             .map(|(id, attrs, root_widget_view)| {
                 let view = WindowView::new(attrs, root_widget_view);
                 let (attrs, root_widget) = driver.build_window(id, view);
-                (id, attrs, Box::new(root_widget) as Box<dyn Widget>)
+                (id, attrs, root_widget)
             })
             .collect();
         (driver, windows)
@@ -143,7 +145,7 @@ where
         &mut self,
         window_id: WindowId,
         view: WindowView<State>,
-    ) -> (WindowAttributes, RootWidget) {
+    ) -> (WindowAttributes, WidgetPod<dyn Widget>) {
         let mut view_ctx = ViewCtx::new(
             Arc::new(WindowProxy(window_id, self.proxy.clone())),
             self.runtime.clone(),
@@ -157,7 +159,7 @@ where
                 view_state,
             },
         );
-        (attrs, root_widget)
+        (attrs, WidgetPod::new(root_widget).erased())
     }
 
     pub(crate) fn create_window(

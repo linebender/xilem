@@ -146,7 +146,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            Box::new(RootWidget::new(main_widget)),
+            WidgetPod::new(RootWidget::new(main_widget)).erased(),
         )],
         driver,
     )

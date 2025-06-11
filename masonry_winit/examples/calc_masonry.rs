@@ -467,7 +467,7 @@ fn main() {
         vec![(
             calc_state.window_id,
             window_attributes,
-            Box::new(RootWidget::new(build_calc())),
+            WidgetPod::new(RootWidget::new(build_calc())).erased(),
         )],
         calc_state,
         default_props(),

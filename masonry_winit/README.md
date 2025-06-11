@@ -41,7 +41,7 @@ The to-do-list example looks like this:
 
 ```rust
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use masonry::core::{Action, Widget, WidgetId};
+use masonry::core::{Action, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::{Button, Flex, Label, Portal, RootWidget, Textbox};
 use winit::window::Window;
@@ -107,7 +107,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            Box::new(RootWidget::new(main_widget)),
+            WidgetPod::new(RootWidget::new(main_widget)).erased(),
         )],
         driver,
     )

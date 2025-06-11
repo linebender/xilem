@@ -110,7 +110,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            Box::new(RootWidget::from_pod(main_widget)),
+            WidgetPod::new(RootWidget::from_pod(main_widget)).erased(),
         )],
         driver,
     )

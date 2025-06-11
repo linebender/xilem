@@ -12,6 +12,7 @@ use std::sync::{Arc, mpsc};
 use cursor_icon::CursorIcon;
 use dpi::LogicalSize;
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
+use masonry_core::core::WidgetPod;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 use vello::RendererOptions;
@@ -261,7 +262,7 @@ impl TestHarness {
         let mut harness = Self {
             signal_receiver,
             render_root: RenderRoot::new(
-                Box::new(root_widget),
+                WidgetPod::new(root_widget).erased(),
                 move |signal| signal_sender.send(signal).unwrap(),
                 RenderRootOptions {
                     // TODO - Pass the default property set as an input instead.
