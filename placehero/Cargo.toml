@@ -1,0 +1,13 @@
+[package]
+name = "placehero"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+xilem = { version = "0.3.0", path = "../xilem" }
+
+[lints]
+workspace = true
