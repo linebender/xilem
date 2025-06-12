@@ -21,6 +21,12 @@ fn get_pointer_target(
 ) -> Option<WidgetId> {
     // See the [pointer capture documentation](../doc/06_masonry_concepts.md#pointer-capture).
     if let Some(capture_target) = root.global_state.pointer_capture_target {
+        if !root.is_still_interactive(capture_target) {
+            debug_panic!(
+                "Widget {capture_target} is still capture target even though it is no longer interactive."
+            );
+            return None;
+        }
         return Some(capture_target);
     }
 
