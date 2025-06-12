@@ -7,6 +7,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+megalodon = "1.0.0"
 xilem = { version = "0.3.0", path = "../xilem" }
 
 [lints]
