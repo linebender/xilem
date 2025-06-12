@@ -1,8 +1,13 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 //! A mastodon client written in Xilem.
 //!
 //! Features:
 //!
 //! - None
+
+#![expect(clippy::todo, reason = "Landing intentionally in-progress work.")]
 
 use std::sync::Arc;
 
