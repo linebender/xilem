@@ -21,7 +21,6 @@ use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
 use masonry::smallvec::SmallVec;
 use masonry::vello::Scene;
-use masonry::widgets::RootWidget;
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace_span};
 use winit::window::Window;
@@ -195,7 +194,7 @@ fn main() {
         vec![(
             WindowId::next(),
             window_attributes,
-            WidgetPod::new(RootWidget::new(CustomWidget(my_string))).erased(),
+            WidgetPod::new(CustomWidget(my_string)).erased(),
         )],
         Driver,
     )
@@ -229,10 +228,7 @@ mod tests {
     fn screenshot_test() {
         let my_string = "Masonry + Vello".to_string();
 
-        let mut harness = TestHarness::create(
-            default_property_set(),
-            RootWidget::new(CustomWidget(my_string)),
-        );
+        let mut harness = TestHarness::create(default_property_set(), CustomWidget(my_string));
         assert_render_snapshot!(harness, "example_custom_widget_initial");
     }
 }

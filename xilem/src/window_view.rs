@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::widgets::RootWidget;
+use masonry::core::{Widget, WidgetPod};
 use winit::window::{Window, WindowAttributes};
 use xilem_core::{AnyViewState, View, ViewElement, ViewMarker};
 
@@ -25,7 +25,7 @@ impl<State> WindowView<State> {
     }
 }
 
-pub(crate) struct CreateWindow(pub WindowAttributes, pub RootWidget);
+pub(crate) struct CreateWindow(pub WindowAttributes, pub WidgetPod<dyn Widget>);
 
 impl ViewElement for CreateWindow {
     type Mut<'a> = (&'a Window, &'a mut RenderRoot);
@@ -42,10 +42,12 @@ where
     type ViewState = AnyViewState;
 
     fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, view_state) = self.root_widget_view.build(ctx);
-        let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
+        let (root_widget, view_state) = self.root_widget_view.build(ctx);
         let initial_attributes = self.options.build_initial_attrs();
-        (CreateWindow(initial_attributes, root_widget), view_state)
+        (
+            CreateWindow(initial_attributes, root_widget.into_widget_pod().erased()),
+            view_state,
+        )
     }
 
     fn rebuild(
@@ -68,12 +70,8 @@ where
         (_, render_root): xilem_core::Mut<'_, Self::Element>,
     ) {
         render_root.edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget>();
-            self.root_widget_view.teardown(
-                view_state,
-                ctx,
-                RootWidget::child_mut(&mut root).downcast(),
-            );
+            self.root_widget_view
+                .teardown(view_state, ctx, root.downcast());
         });
     }
 
@@ -101,12 +99,11 @@ where
         render_root: &mut RenderRoot,
     ) {
         render_root.edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget>();
             self.root_widget_view.rebuild(
                 &prev.root_widget_view,
                 root_widget_view_state,
                 ctx,
-                RootWidget::child_mut(&mut root).downcast(),
+                root.downcast(),
             );
         });
         if cfg!(debug_assertions) && !render_root.needs_rewrite_passes() {

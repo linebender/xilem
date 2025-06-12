@@ -10,7 +10,7 @@
 use masonry::core::{Action, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
-use masonry::widgets::{Button, Flex, Label, RootWidget};
+use masonry::widgets::{Button, Flex, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -69,7 +69,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(RootWidget::new(main_widget)).erased(),
+            WidgetPod::new(main_widget).erased(),
         )],
         driver,
     )
