@@ -15,7 +15,7 @@ mod screenshots;
 mod wrapper_widget;
 
 pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};
-use masonry_core::core::Properties;
+use masonry_core::core::{Properties, WidgetOptions};
 pub use modular_widget::ModularWidget;
 pub use recorder_widget::{Record, Recorder, Recording};
 pub use wrapper_widget::WrapperWidget;
@@ -41,9 +41,13 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
 
     /// Wrap this widget in a [`WrapperWidget`] with the given [`Properties`].
     fn with_props(self, props: Properties) -> WrapperWidget {
-        let child =
-            WidgetPod::new_with(Box::new(self), WidgetId::next(), Default::default(), props)
-                .erased();
+        let child = WidgetPod::new_with(
+            Box::new(self),
+            WidgetId::next(),
+            WidgetOptions::default(),
+            props,
+        )
+        .erased();
         WrapperWidget::new_pod(child)
     }
 }

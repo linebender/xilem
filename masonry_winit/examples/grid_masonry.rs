@@ -5,7 +5,9 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
-use masonry::core::{Action, PointerButton, Properties, StyleProperty, WidgetId, WidgetPod};
+use masonry::core::{
+    Action, PointerButton, Properties, StyleProperty, WidgetId, WidgetOptions, WidgetPod,
+};
 use masonry::dpi::LogicalSize;
 use masonry::parley::layout::Alignment;
 use masonry::peniko::Color;
@@ -67,7 +69,7 @@ fn make_grid(grid_spacing: f64) -> Grid {
     let label = SizedBox::new_pod(WidgetPod::new_with(
         Box::new(label),
         WidgetId::next(),
-        Default::default(),
+        WidgetOptions::default(),
         props,
     ));
 

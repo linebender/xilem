@@ -17,7 +17,7 @@ use masonry::accesskit;
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, DefaultProperties, EventCtx, LayoutCtx,
     PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetPod,
+    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -329,7 +329,7 @@ fn op_button_with_label(op: char, label: String) -> CalcButton {
     let sized_box = WidgetPod::new_with(
         Box::new(sized_box),
         WidgetId::next(),
-        Default::default(),
+        WidgetOptions::default(),
         Properties::new().with(Background::Color(BLUE)),
     );
 
@@ -351,7 +351,7 @@ fn digit_button(digit: u8) -> CalcButton {
     let sized_box = WidgetPod::new_with(
         Box::new(sized_box),
         WidgetId::next(),
-        Default::default(),
+        WidgetOptions::default(),
         Properties::new().with(Background::Color(GRAY)),
     );
 

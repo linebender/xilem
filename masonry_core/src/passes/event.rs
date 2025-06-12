@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::{debug, info_span, trace};
+use ui_events::pointer::PointerType;
 
 use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
@@ -245,7 +246,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             &PointerEvent::Cancel(PointerInfo {
                 pointer_id: None,
                 persistent_device_id: None,
-                pointer_type: Default::default(),
+                pointer_type: PointerType::default(),
             }),
         );
     }
