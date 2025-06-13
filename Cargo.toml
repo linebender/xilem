@@ -20,6 +20,7 @@ members = [
     "xilem_web/web_examples/svgtoy",
     "xilem_web/web_examples/svgdraw",
     "tree_arena",
+    "placehero",
 ]
 
 [workspace.package]
