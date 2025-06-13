@@ -28,24 +28,16 @@ use crate::core::{
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn worker<M, V, F, H, State, Action, Fut>(
+pub fn worker<M, V, H, State, Action, Fut>(
     value: V,
-    init_future: F,
+    init_future: fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     on_response: H,
-) -> Worker<F, H, M, V>
+) -> Worker<fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut, H, M, V>
 where
-    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
-    const {
-        assert!(
-            size_of::<F>() == 0,
-            "`worker` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `worker_raw`."
-        );
-    };
     Worker {
         value,
         init_future,
