@@ -21,12 +21,12 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 [[package]]
 name = "accesskit"
 version = "0.19.0"
-source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#dfbce0c3576d736fd2568428c91a06809323b0ea"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#7cca865fcd738df927cd951f9814dee25ae02c68"
 
 [[package]]
 name = "accesskit_atspi_common"
 version = "0.12.0"
-source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#dfbce0c3576d736fd2568428c91a06809323b0ea"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#7cca865fcd738df927cd951f9814dee25ae02c68"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -39,7 +39,7 @@ dependencies = [
 [[package]]
 name = "accesskit_consumer"
 version = "0.28.0"
-source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#dfbce0c3576d736fd2568428c91a06809323b0ea"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#7cca865fcd738df927cd951f9814dee25ae02c68"
 dependencies = [
  "accesskit",
  "hashbrown",
@@ -48,7 +48,7 @@ dependencies = [
 [[package]]
 name = "accesskit_macos"
 version = "0.20.0"
-source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#dfbce0c3576d736fd2568428c91a06809323b0ea"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#7cca865fcd738df927cd951f9814dee25ae02c68"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -61,7 +61,7 @@ dependencies = [
 [[package]]
 name = "accesskit_unix"
 version = "0.15.0"
-source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#dfbce0c3576d736fd2568428c91a06809323b0ea"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#7cca865fcd738df927cd951f9814dee25ae02c68"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",
@@ -78,7 +78,7 @@ dependencies = [
 [[package]]
 name = "accesskit_windows"
 version = "0.27.0"
-source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#dfbce0c3576d736fd2568428c91a06809323b0ea"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#7cca865fcd738df927cd951f9814dee25ae02c68"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -91,7 +91,7 @@ dependencies = [
 [[package]]
 name = "accesskit_winit"
 version = "0.27.0"
-source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#dfbce0c3576d736fd2568428c91a06809323b0ea"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#7cca865fcd738df927cd951f9814dee25ae02c68"
 dependencies = [
  "accesskit",
  "accesskit_macos",
