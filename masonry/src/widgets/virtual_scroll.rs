@@ -522,11 +522,30 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx<'_>,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
+        event: &AccessEvent,
     ) {
-        // TODO: Handle scroll-etc. eventss
+        if matches!(
+            event.action,
+            accesskit::Action::ScrollUp | accesskit::Action::ScrollDown
+        ) {
+            let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
+                *unit
+            } else {
+                accesskit::ScrollUnit::Item
+            };
+            let amount = match unit {
+                accesskit::ScrollUnit::Item => self.anchor_height,
+                accesskit::ScrollUnit::Page => ctx.size().height,
+            };
+            if event.action == accesskit::Action::ScrollUp {
+                self.scroll_offset_from_anchor -= amount;
+            } else {
+                self.scroll_offset_from_anchor += amount;
+            }
+            self.post_scroll(ctx);
+        }
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
@@ -850,23 +869,62 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     }
 
     fn accessibility_role(&self) -> accesskit::Role {
-        // TODO: accesskit::Role::ScrollView ?
-        accesskit::Role::GenericContainer
+        accesskit::Role::ScrollView
     }
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx<'_>,
+        ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         node: &mut accesskit::Node,
     ) {
-        // TODO: Better virtual scrolling accessibility
-        // Intended as a follow-up collaboration with Matt
         node.set_clips_children();
+        node.set_orientation(accesskit::Orientation::Vertical);
+        if self.valid_range.start == i64::MIN {
+            // Even when we support infinite scroll in both directions, we need
+            // to set scroll_y somehow, so the platform adapter can know when
+            // scrolling happened and fire the appropriate platform event;
+            // this is particularly important on Android. Here, we assume that
+            // in practice, the anchor index is in range for an f64.
+            // TBD: Is there a better way to do this?
+            if self.anchor_index != i64::MIN && self.anchor_index != i64::MAX {
+                let y = (self.anchor_index as f64) * self.mean_item_height
+                    + self.scroll_offset_from_anchor;
+                node.set_scroll_y(y);
+            }
+        } else {
+            node.set_scroll_y_min(0.0);
+            let y = (((self.anchor_index - self.valid_range.start) as f64) * self.mean_item_height
+                + self.scroll_offset_from_anchor)
+                .max(0.);
+            node.set_scroll_y(y);
+            if self.valid_range.end != i64::MAX {
+                let y_max = (((self.valid_range.end - self.valid_range.start) as f64)
+                    * self.mean_item_height)
+                    .max(0.);
+                node.set_scroll_y_max(y_max);
+            }
+        }
+        if self.anchor_index != self.valid_range.start || self.scroll_offset_from_anchor > 0. {
+            node.add_action(accesskit::Action::ScrollUp);
+        }
+        let at_end = self.anchor_index + 1 == self.valid_range.end && {
+            let max_scroll = (self.anchor_height - ctx.size().height / 2.).max(0.0);
+            self.scroll_offset_from_anchor >= max_scroll
+        };
+        if !at_end {
+            node.add_action(accesskit::Action::ScrollDown);
+        }
     }
 
     fn children_ids(&self) -> smallvec::SmallVec<[WidgetId; 16]> {
-        self.items.values().map(|pod| pod.id()).collect()
+        let mut items = self
+            .items
+            .iter()
+            .map(|(index, pod)| (*index, pod.id()))
+            .collect::<smallvec::SmallVec<[(i64, WidgetId); 10]>>();
+        items.sort_unstable_by_key(|(index, _)| *index);
+        items.into_iter().map(|(_, id)| id).collect()
     }
 
     fn accepts_text_input(&self) -> bool {
