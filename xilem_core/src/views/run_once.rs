@@ -45,6 +45,7 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// ```
 pub fn run_once<F>(once: F) -> RunOnce<F>
 where
+    // TODO(DJMcNab): Accept
     F: Fn() + 'static,
 {
     const {
@@ -94,7 +95,7 @@ where
 
     type ViewState = ();
 
-    fn build(&self, _: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _: &mut Context, _: &mut State) -> (Self::Element, Self::ViewState) {
         (self.once)();
         (NoElement, ())
     }
@@ -105,6 +106,7 @@ where
         (): &mut Self::ViewState,
         _: &mut Context,
         (): crate::Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         // Nothing to do
     }
@@ -114,6 +116,7 @@ where
         (): &mut Self::ViewState,
         _: &mut Context,
         _: crate::Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         // Nothing to do
     }

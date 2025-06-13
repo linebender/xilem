@@ -172,8 +172,13 @@ where
 
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.child.build(ctx)
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: &mut ParentState,
+    ) -> (Self::Element, Self::ViewState) {
+        todo!("TODO(DJMcNab)");
+        // self.child.build(ctx)
     }
 
     fn rebuild(
@@ -182,8 +187,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut ParentState,
     ) {
-        self.child.rebuild(&prev.child, view_state, ctx, element);
+        todo!("TODO(DJMcNab)");
+        // self.child.rebuild(&prev.child, view_state, ctx, element);
     }
 
     fn teardown(
@@ -191,8 +198,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut ParentState,
     ) {
-        self.child.teardown(view_state, ctx, element);
+        todo!("TODO(DJMcNab)");
+        // self.child.teardown(view_state, ctx, element);
     }
 
     fn message(
