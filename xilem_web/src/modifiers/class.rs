@@ -345,10 +345,11 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let add_class_iter = self.classes.add_class_iter();
-        let (mut e, s) = ctx
-            .with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| self.el.build(ctx));
+        let (mut e, s) = ctx.with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| {
+            self.el.build(ctx, app_state)
+        });
         let len = Classes::extend(&mut e.modifier(), add_class_iter);
         (e, (len, s))
     }
@@ -359,10 +360,11 @@ where
         (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         Classes::rebuild(element, *len, |mut elem| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut(), app_state);
             *len = Classes::update_as_add_class_iter(
                 &mut elem.modifier(),
                 *len,
@@ -377,8 +379,9 @@ where
         (_, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        self.el.teardown(view_state, ctx, element);
+        self.el.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(

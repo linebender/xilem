@@ -148,9 +148,9 @@ where
     type ViewState = PointerState<V::ViewState>;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
-            let (element, child_state) = self.child.build(ctx);
+            let (element, child_state) = self.child.build(ctx, app_state);
             let el = element.node.as_ref();
 
             let [down_closure, move_closure, up_closure] = build_event_listeners(ctx, el);
@@ -170,10 +170,16 @@ where
         state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut el: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
-            self.child
-                .rebuild(&prev.child, &mut state.child_state, ctx, el.reborrow_mut());
+            self.child.rebuild(
+                &prev.child,
+                &mut state.child_state,
+                ctx,
+                el.reborrow_mut(),
+                app_state,
+            );
 
             if el.flags.was_created() {
                 [state.down_closure, state.move_closure, state.up_closure] =
@@ -187,11 +193,12 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
             // TODO remove event listeners from child or is this not necessary?
             self.child
-                .teardown(&mut view_state.child_state, ctx, element);
+                .teardown(&mut view_state.child_state, ctx, element, app_state);
         });
     }
 

@@ -140,7 +140,7 @@ where
 
     type ViewState = TaskState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let (shutdown_signal, abort_handle) = ShutdownSignal::new();
         let view_state = TaskState {
@@ -153,11 +153,24 @@ where
         (NoElement, view_state)
     }
 
-    fn rebuild(&self, _: &Self, _: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+    fn rebuild(
+        &self,
+        _: &Self,
+        _: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        (): Mut<Self::Element>,
+        _: &mut State,
+    ) {
         // Nothing to do
     }
 
-    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<Self::Element>,
+        _: &mut State,
+    ) {
         let handle = view_state.abort_handle.take().unwrap_throw();
         handle.abort();
     }

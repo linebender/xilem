@@ -58,6 +58,7 @@ pub fn memoize<State, Action, Context, Message, Data, V, InitView>(
 ) -> Memoize<Data, InitView, State, Action, Context, Message>
 where
     Data: PartialEq + 'static,
+    // TODO(DJMcNab): Also accept `&mut State` in this argument closure
     InitView: Fn(&Data) -> V + 'static,
     V: View<State, Action, Context, Message>,
     Context: ViewPathTracker,
@@ -99,9 +100,9 @@ where
 
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)(&self.data);
-        let (element, view_state) = view.build(ctx);
+        let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {
             view,
             view_state,
@@ -116,10 +117,17 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.init_view)(&self.data);
-            view.rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
+            view.rebuild(
+                &view_state.view,
+                &mut view_state.view_state,
+                ctx,
+                element,
+                app_state,
+            );
             view_state.view = view;
         }
     }
@@ -146,10 +154,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         view_state
             .view
-            .teardown(&mut view_state.view_state, ctx, element);
+            .teardown(&mut view_state.view_state, ctx, element, app_state);
     }
 }
 
@@ -210,9 +219,9 @@ where
 
     type ViewState = MemoizeState<V, V::ViewState>;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)();
-        let (element, view_state) = view.build(ctx);
+        let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {
             view,
             view_state,
@@ -227,12 +236,17 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         if core::mem::take(&mut view_state.dirty) {
             let view = (self.init_view)();
-            view_state
-                .view
-                .rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
+            view_state.view.rebuild(
+                &view_state.view,
+                &mut view_state.view_state,
+                ctx,
+                element,
+                app_state,
+            );
             view_state.view = view;
         }
     }
@@ -242,10 +256,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         view_state
             .view
-            .teardown(&mut view_state.view_state, ctx, element);
+            .teardown(&mut view_state.view_state, ctx, element, app_state);
     }
 
     fn message(

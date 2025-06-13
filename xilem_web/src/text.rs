@@ -17,6 +17,7 @@ macro_rules! impl_string_view {
             fn orphan_build(
                 view: &$ty,
                 ctx: &mut ViewCtx,
+                _: &mut State,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
@@ -32,6 +33,7 @@ macro_rules! impl_string_view {
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 element: Mut<Self::OrphanElement>,
+                _: &mut State,
             ) {
                 if prev != new {
                     element.node.set_data(new);
@@ -43,6 +45,7 @@ macro_rules! impl_string_view {
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 _element: Mut<Self::OrphanElement>,
+                _: &mut State,
             ) {
             }
 
@@ -73,6 +76,7 @@ macro_rules! impl_to_string_view {
             fn orphan_build(
                 view: &$ty,
                 ctx: &mut ViewCtx,
+                _: &mut State,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
@@ -88,6 +92,7 @@ macro_rules! impl_to_string_view {
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 element: Mut<Self::OrphanElement>,
+                _: &mut State,
             ) {
                 if prev != new {
                     element.node.set_data(&new.to_string());
@@ -99,6 +104,7 @@ macro_rules! impl_to_string_view {
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 _element: Mut<Pod<web_sys::Text>>,
+                _: &mut State,
             ) {
             }
 

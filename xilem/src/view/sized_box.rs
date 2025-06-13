@@ -130,8 +130,8 @@ where
     type Element = Pod<widgets::SizedBox>;
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (child, child_state) = self.inner.build(ctx);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (child, child_state) = self.inner.build(ctx, app_state);
         let widget = widgets::SizedBox::new_pod(child.erased_widget_pod())
             .raw_width(self.width)
             .raw_height(self.height);
@@ -146,6 +146,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
@@ -165,7 +166,7 @@ where
             let mut child = widgets::SizedBox::child_mut(&mut element)
                 .expect("We only create SizedBox with a child");
             self.inner
-                .rebuild(&prev.inner, view_state, ctx, child.downcast());
+                .rebuild(&prev.inner, view_state, ctx, child.downcast(), app_state);
         }
     }
 
@@ -174,10 +175,12 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut child = widgets::SizedBox::child_mut(&mut element)
             .expect("We only create SizedBox with a child");
-        self.inner.teardown(view_state, ctx, child.downcast());
+        self.inner
+            .teardown(view_state, ctx, child.downcast(), app_state);
     }
 
     fn message(

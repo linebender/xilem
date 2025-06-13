@@ -57,7 +57,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type Element = Pod<widgets::Spinner>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let pod = ctx.create_pod(widgets::Spinner::new());
         (pod, ())
     }
@@ -68,6 +68,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         if prev.color != self.color {
             match self.color {
@@ -77,7 +78,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+    }
 
     fn message(
         &self,

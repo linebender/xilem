@@ -51,7 +51,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
     type Element = Pod<widgets::Image>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let pod = ctx.create_pod(widgets::Image::new(self.image.clone()));
         (pod, ())
     }
@@ -62,6 +62,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         if prev.object_fit != self.object_fit {
             widgets::Image::set_fit_mode(&mut element, self.object_fit);
@@ -71,7 +72,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+    }
 
     fn message(
         &self,

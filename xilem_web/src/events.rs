@@ -129,6 +129,7 @@ fn build_event_listener<State, Action, V, Event>(
     capture: bool,
     passive: bool,
     ctx: &mut ViewCtx,
+    app_state: &mut State,
 ) -> (V::Element, OnEventState<V::ViewState>)
 where
     State: 'static,
@@ -138,7 +139,7 @@ where
 {
     // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-        let (element, child_state) = element_view.build(ctx);
+        let (element, child_state) = element_view.build(ctx, app_state);
         let callback =
             create_event_listener::<Event>(element.as_ref(), event, capture, passive, ctx);
         let state = OnEventState {
@@ -161,6 +162,7 @@ fn rebuild_event_listener<State, Action, V, Event>(
     prev_passive: bool,
     state: &mut OnEventState<V::ViewState>,
     ctx: &mut ViewCtx,
+    app_state: &mut State,
 ) where
     State: 'static,
     Action: 'static,
@@ -173,6 +175,7 @@ fn rebuild_event_listener<State, Action, V, Event>(
             &mut state.child_state,
             ctx,
             element.reborrow_mut(),
+            app_state,
         );
         let was_created = element.flags.was_created();
         let needs_update = prev_capture != capture || prev_passive != passive || was_created;
@@ -194,6 +197,7 @@ fn teardown_event_listener<State, Action, V>(
     state: &mut OnEventState<V::ViewState>,
     _capture: bool,
     ctx: &mut ViewCtx,
+    app_state: &mut State,
 ) where
     State: 'static,
     Action: 'static,
@@ -202,7 +206,7 @@ fn teardown_event_listener<State, Action, V>(
     // TODO: is this really needed (as the element will be removed anyway)?
     // remove_event_listener(element.as_ref(), event, &state.callback, capture);
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-        element_view.teardown(&mut state.child_state, ctx, element);
+        element_view.teardown(&mut state.child_state, ctx, element, app_state);
     });
 }
 
@@ -254,13 +258,14 @@ where
 
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         build_event_listener::<_, _, _, Event>(
             &self.dom_view,
             &self.event,
             self.capture,
             self.passive,
             ctx,
+            app_state,
         )
     }
 
@@ -270,6 +275,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
@@ -278,6 +284,7 @@ where
                 &mut view_state.child_state,
                 ctx,
                 element.reborrow_mut(),
+                app_state,
             );
 
             let was_created = element.flags.was_created();
@@ -312,6 +319,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         teardown_event_listener(
             &self.dom_view,
@@ -320,6 +328,7 @@ where
             view_state,
             self.capture,
             ctx,
+            app_state,
         );
     }
 
@@ -401,13 +410,14 @@ macro_rules! event_definitions {
 
             type Element = V::Element;
 
-            fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+            fn build(&self, ctx: &mut ViewCtx,app_state: &mut State) -> (Self::Element, Self::ViewState) {
                 build_event_listener::<_, _, _, web_sys::$web_sys_ty>(
                     &self.dom_view,
                     $event_name,
                     self.capture,
                     self.passive,
                     ctx,
+                    app_state
                 )
             }
 
@@ -417,6 +427,7 @@ macro_rules! event_definitions {
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
                 element: Mut<Self::Element>,
+                app_state: &mut State
             ) {
                 rebuild_event_listener::<_, _, _, web_sys::$web_sys_ty>(
                     &self.dom_view,
@@ -429,6 +440,7 @@ macro_rules! event_definitions {
                     prev.passive,
                     view_state,
                     ctx,
+                    app_state
                 );
             }
 
@@ -437,8 +449,9 @@ macro_rules! event_definitions {
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
                 element: Mut<Self::Element>,
+                app_state: &mut State
             ) {
-                teardown_event_listener(&self.dom_view, element, $event_name, view_state, self.capture, ctx);
+                teardown_event_listener(&self.dom_view, element, $event_name, view_state, self.capture, ctx, app_state);
             }
 
             fn message(
@@ -566,7 +579,7 @@ where
 
     type ViewState = OnResizeState<V::ViewState>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             let thunk = ctx.message_thunk();
             let callback = Closure::new(move |entries: js_sys::Array| {
@@ -576,7 +589,7 @@ where
 
             let observer =
                 web_sys::ResizeObserver::new(callback.as_ref().unchecked_ref()).unwrap_throw();
-            let (element, child_state) = self.dom_view.build(ctx);
+            let (element, child_state) = self.dom_view.build(ctx, app_state);
             observer.observe(element.as_ref());
 
             let state = OnResizeState {
@@ -595,6 +608,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             self.dom_view.rebuild(
@@ -602,6 +616,7 @@ where
                 &mut view_state.child_state,
                 ctx,
                 element.reborrow_mut(),
+                app_state,
             );
             if element.flags.was_created() {
                 view_state.observer.disconnect();
@@ -615,11 +630,12 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             view_state.observer.disconnect();
             self.dom_view
-                .teardown(&mut view_state.child_state, ctx, element);
+                .teardown(&mut view_state.child_state, ctx, element, app_state);
         });
     }
 

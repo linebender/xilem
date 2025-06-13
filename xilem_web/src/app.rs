@@ -92,7 +92,11 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
     fn ensure_app(&mut self) {
         if self.fragment.is_none() {
             let fragment = (self.app_logic)(&mut self.data);
-            let state = fragment.seq_build(&mut self.ctx, &mut self.fragment_append_scratch);
+            let state = fragment.seq_build(
+                &mut self.ctx,
+                &mut self.fragment_append_scratch,
+                &mut self.data,
+            );
             self.fragment = Some(fragment);
             self.fragment_state = Some(state);
 
@@ -149,6 +153,7 @@ where
                 inner.fragment_state.as_mut().unwrap(),
                 &mut inner.ctx,
                 &mut dom_children_splice,
+                &mut inner.data,
             );
             *fragment = new_fragment;
         }

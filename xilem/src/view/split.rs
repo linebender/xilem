@@ -176,9 +176,11 @@ where
 
     type ViewState = (ChildA::ViewState, ChildB::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (child1, child1_state) = ctx.with_id(CHILD1_VIEW_ID, |ctx| self.child1.build(ctx));
-        let (child2, child2_state) = ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx));
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (child1, child1_state) =
+            ctx.with_id(CHILD1_VIEW_ID, |ctx| self.child1.build(ctx, app_state));
+        let (child2, child2_state) =
+            ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx, app_state));
 
         let widget_pod = ctx.create_pod(
             widgets::Split::new_pod(child1.into_widget_pod(), child2.into_widget_pod())
@@ -200,6 +202,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         if prev.split_axis != self.split_axis {
             widgets::Split::set_split_axis(&mut element, self.split_axis);
@@ -231,14 +234,24 @@ where
 
         ctx.with_id(CHILD1_VIEW_ID, |ctx| {
             let child1_element = widgets::Split::child1_mut(&mut element);
-            self.child1
-                .rebuild(&prev.child1, &mut view_state.0, ctx, child1_element);
+            self.child1.rebuild(
+                &prev.child1,
+                &mut view_state.0,
+                ctx,
+                child1_element,
+                app_state,
+            );
         });
 
         ctx.with_id(CHILD2_VIEW_ID, |ctx| {
             let child2_element = widgets::Split::child2_mut(&mut element);
-            self.child2
-                .rebuild(&prev.child2, &mut view_state.1, ctx, child2_element);
+            self.child2.rebuild(
+                &prev.child2,
+                &mut view_state.1,
+                ctx,
+                child2_element,
+                app_state,
+            );
         });
     }
 
@@ -247,12 +260,15 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let child1_element = widgets::Split::child1_mut(&mut element);
-        self.child1.teardown(&mut view_state.0, ctx, child1_element);
+        self.child1
+            .teardown(&mut view_state.0, ctx, child1_element, app_state);
 
         let child2_element = widgets::Split::child2_mut(&mut element);
-        self.child2.teardown(&mut view_state.1, ctx, child2_element);
+        self.child2
+            .teardown(&mut view_state.1, ctx, child2_element, app_state);
     }
 
     fn message(

@@ -144,9 +144,9 @@ where
     type Element = Pod<widgets::Button>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (child, ()) = ctx.with_id(LABEL_VIEW_ID, |ctx| {
-            View::<State, Action, _>::build(&self.label, ctx)
+            View::<State, Action, _>::build(&self.label, ctx, app_state)
         });
         ctx.with_leaf_action_widget(|ctx| {
             let mut pod = ctx.create_pod(widgets::Button::from_label_pod(child.into_widget_pod()));
@@ -162,6 +162,7 @@ where
         state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
@@ -175,6 +176,7 @@ where
                 state,
                 ctx,
                 widgets::Button::label_mut(&mut element),
+                app_state,
             );
         });
     }
@@ -184,6 +186,7 @@ where
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         ctx.with_id(LABEL_VIEW_ID, |ctx| {
             View::<State, Action, _>::teardown(
@@ -191,6 +194,7 @@ where
                 &mut (),
                 ctx,
                 widgets::Button::label_mut(&mut element),
+                app_state,
             );
         });
         ctx.teardown_leaf(element);

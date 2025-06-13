@@ -98,7 +98,7 @@ where
     type Element = Pod<widgets::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
             let mut pod = ctx.create_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
             pod.properties = self.properties.build_properties();
@@ -113,6 +113,7 @@ where
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
@@ -132,6 +133,7 @@ where
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         ctx.teardown_leaf(element);
     }

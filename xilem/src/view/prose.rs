@@ -90,7 +90,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     type Element = Pod<widgets::Prose>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let text_area = widgets::TextArea::new_immutable(&self.content)
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment)
@@ -110,6 +110,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         let mut text_area = widgets::Prose::text_mut(&mut element);
         if prev.content != self.content {
@@ -140,7 +141,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+    }
 
     fn message(
         &self,

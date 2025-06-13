@@ -175,7 +175,7 @@ where
 
     type ViewState = MemoizedAwaitState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let mut state = MemoizedAwaitState::default();
 
         if self.debounce_ms > 0 {
@@ -193,6 +193,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         (): Mut<Self::Element>,
+        _: &mut State,
     ) {
         let debounce_has_changed_and_update_is_scheduled = view_state.schedule_update
             && (prev.reset_debounce_on_update != self.reset_debounce_on_update
@@ -228,7 +229,13 @@ where
         }
     }
 
-    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        (): Mut<Self::Element>,
+        _: &mut State,
+    ) {
         state.clear_update_timeout();
     }
 

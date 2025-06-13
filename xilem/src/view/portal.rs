@@ -38,10 +38,10 @@ where
     type Element = Pod<widgets::Portal<Child::Widget>>;
     type ViewState = Child::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         // The Portal `View` doesn't get any messages directly (yet - scroll events?), so doesn't need to
         // use ctx.with_id.
-        let (child, child_state) = self.child.build(ctx);
+        let (child, child_state) = self.child.build(ctx, app_state);
         let widget_pod = ctx.create_pod(widgets::Portal::new_pod(child.into_widget_pod()));
         (widget_pod, child_state)
     }
@@ -52,10 +52,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let child_element = widgets::Portal::child_mut(&mut element);
         self.child
-            .rebuild(&prev.child, view_state, ctx, child_element);
+            .rebuild(&prev.child, view_state, ctx, child_element, app_state);
     }
 
     fn teardown(
@@ -63,9 +64,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let child_element = widgets::Portal::child_mut(&mut element);
-        self.child.teardown(view_state, ctx, child_element);
+        self.child
+            .teardown(view_state, ctx, child_element, app_state);
     }
 
     fn message(

@@ -195,9 +195,13 @@ macro_rules! overwrite_bool_modifier_view {
 
             type ViewState = V::ViewState;
 
-            fn build(&self, ctx: &mut $crate::ViewCtx) -> (Self::Element, Self::ViewState) {
+            fn build(
+                &self,
+                ctx: &mut $crate::ViewCtx,
+                app_state: &mut State,
+            ) -> (Self::Element, Self::ViewState) {
                 use $crate::modifiers::WithModifier;
-                let (mut el, state) = self.inner.build(ctx);
+                let (mut el, state) = self.inner.build(ctx, app_state);
                 let modifier = &mut super::$modifier::as_overwrite_bool_modifier(el.modifier());
                 $crate::modifiers::OverwriteBool::push(modifier, self.value);
                 (el, state)
@@ -209,11 +213,17 @@ macro_rules! overwrite_bool_modifier_view {
                 view_state: &mut Self::ViewState,
                 ctx: &mut $crate::ViewCtx,
                 mut element: $crate::core::Mut<Self::Element>,
+                app_state: &mut State,
             ) {
                 use $crate::modifiers::WithModifier;
                 element.modifier().modifier.0.rebuild(1);
-                self.inner
-                    .rebuild(&prev.inner, view_state, ctx, element.reborrow_mut());
+                self.inner.rebuild(
+                    &prev.inner,
+                    view_state,
+                    ctx,
+                    element.reborrow_mut(),
+                    app_state,
+                );
                 let mut modifier = super::$modifier::as_overwrite_bool_modifier(element.modifier());
                 $crate::modifiers::OverwriteBool::update(&mut modifier, prev.value, self.value);
             }
@@ -223,8 +233,9 @@ macro_rules! overwrite_bool_modifier_view {
                 view_state: &mut Self::ViewState,
                 ctx: &mut $crate::ViewCtx,
                 element: $crate::core::Mut<Self::Element>,
+                app_state: &mut State,
             ) {
-                self.inner.teardown(view_state, ctx, element);
+                self.inner.teardown(view_state, ctx, element, app_state);
             }
 
             fn message(

@@ -28,6 +28,7 @@ use crate::core::{
 /// See [`run_once`](crate::core::run_once) for details.
 pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
+    // TODO: Accept the state in this function
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
@@ -83,7 +84,7 @@ where
 
     type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
@@ -99,6 +100,7 @@ where
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         // Nothing to do
     }
@@ -108,6 +110,7 @@ where
         join_handle: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         join_handle.abort();
     }

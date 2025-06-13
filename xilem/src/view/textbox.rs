@@ -114,7 +114,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
     type Element = Pod<widgets::Textbox>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
             .with_brush(self.text_brush.clone())
@@ -142,6 +142,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
@@ -178,6 +179,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         ctx.teardown_leaf(element);
     }
