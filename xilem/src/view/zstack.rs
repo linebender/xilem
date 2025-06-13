@@ -68,10 +68,10 @@ where
 
     type ViewState = Seq::SeqState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::ZStack::new().with_alignment(self.alignment);
-        let seq_state = self.sequence.seq_build(ctx, &mut elements);
+        let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for child in elements.into_inner() {
             widget = widget.with_child_pod(child.widget.erased_widget_pod(), child.alignment);
         }
@@ -85,6 +85,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         if self.alignment != prev.alignment {
             widgets::ZStack::set_alignment(&mut element, self.alignment);
@@ -92,7 +93,7 @@ where
 
         let mut splice = ZStackSplice::new(element);
         self.sequence
-            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
+            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.is_empty());
     }
 
@@ -101,9 +102,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut splice = ZStackSplice::new(element);
-        self.sequence.seq_teardown(view_state, ctx, &mut splice);
+        self.sequence
+            .seq_teardown(view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.into_inner().is_empty());
     }
 
@@ -176,8 +179,8 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, state) = self.view.build(ctx);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (pod, state) = self.view.build(ctx, app_state);
         (ZStackElement::new(pod.erased(), self.alignment), state)
     }
 
@@ -187,6 +190,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         {
             if self.alignment != prev.alignment {
@@ -199,7 +203,7 @@ where
             let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
                 .expect("ZStackWrapper always has a widget child");
             self.view
-                .rebuild(&prev.view, view_state, ctx, child.downcast());
+                .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
     }
 
@@ -208,10 +212,12 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
             .expect("ZStackWrapper always has a widget child");
-        self.view.teardown(view_state, ctx, child.downcast());
+        self.view
+            .teardown(view_state, ctx, child.downcast(), app_state);
     }
 
     fn message(

@@ -24,7 +24,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
     type Element = Pod<widgets::ProgressBar>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| ctx.create_pod(widgets::ProgressBar::new(self.progress)))
     }
 
@@ -34,6 +34,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         if prev.progress != self.progress {
             widgets::ProgressBar::set_progress(&mut element, self.progress);
@@ -45,6 +46,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         ctx.teardown_leaf(element);
     }
