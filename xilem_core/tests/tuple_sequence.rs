@@ -15,7 +15,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn unit_no_elements() {
     let view = sequence(0, ());
     let mut ctx = TestCtx::default();
-    let (element, _state) = view.build(&mut ctx);
+    let (element, _state) = view.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert!(element.children.unwrap().active.is_empty());
 }
@@ -25,7 +25,7 @@ fn unit_no_elements() {
 fn one_element_passthrough() {
     let view = sequence(1, (record_ops(0),));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
     assert_eq!(element.view_path, &[]);
@@ -42,7 +42,7 @@ fn one_element_passthrough() {
     );
 
     let view2 = sequence(3, (record_ops(2),));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     let seq_children = element.children.as_ref().unwrap();
     assert_eq!(
@@ -62,7 +62,7 @@ fn one_element_passthrough() {
     // The message should have been routed to the only child
     assert_action(result, 2);
 
-    view2.teardown(&mut state, &mut ctx, &mut element);
+    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
     assert_eq!(
         element.operations,
         &[
@@ -93,7 +93,7 @@ fn one_element_passthrough() {
 fn two_element_passthrough() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx);
+    let (mut element, mut state) = view.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -109,7 +109,7 @@ fn two_element_passthrough() {
     assert_eq!(second_child.view_path.len(), 1);
 
     let view2 = sequence(5, (record_ops(3), record_ops(4)));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -130,7 +130,7 @@ fn two_element_passthrough() {
         &[Operation::Build(1), Operation::Rebuild { from: 1, to: 4 }]
     );
 
-    view2.teardown(&mut state, &mut ctx, &mut element);
+    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
     assert_eq!(
         element.operations,
         &[
@@ -172,7 +172,7 @@ fn two_element_passthrough() {
 fn two_element_message() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view.build(&mut ctx);
+    let (element, mut state) = view.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);

@@ -58,7 +58,7 @@ fn main() {
         current_folder_path: path.clone(),
         view_path: Vec::new(),
     };
-    let (mut element, mut initial_state) = previous.build(&mut root_ctx);
+    let (mut element, mut initial_state) = previous.build(&mut root_ctx, &mut state);
     loop {
         input_buf.clear();
         let read_count = stdin()
@@ -87,7 +87,13 @@ fn main() {
         };
         let new_view = app_logic(&mut state);
         root_ctx.current_folder_path.clone_from(&path);
-        new_view.rebuild(&previous, &mut initial_state, &mut root_ctx, &mut element.0);
+        new_view.rebuild(
+            &previous,
+            &mut initial_state,
+            &mut root_ctx,
+            &mut element.0,
+            &mut state,
+        );
         previous = new_view;
     }
 }
@@ -153,7 +159,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
     type Element = FsPath;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let path = ctx.current_folder_path.join(&*self.name);
 
         // TODO: How to handle errors here?
@@ -167,6 +173,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         _view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _app_state: &mut State,
     ) {
         if prev.name != self.name {
             let new_path = ctx.current_folder_path.join(&*self.name);
@@ -183,6 +190,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _app_state: &mut State,
     ) {
         let _ = std::fs::remove_file(element);
     }

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Model version of Masonry for exploration
+// TODO(DJMcNab): Remove this file
 
 use core::any::Any;
 
@@ -15,9 +16,10 @@ fn app_logic(_: &mut u32) -> impl WidgetView<u32> + use<> {
 }
 
 fn main() {
-    let view = app_logic(&mut 10);
+    let mut state = 10;
+    let view = app_logic(&mut state);
     let mut ctx = ViewCtx { path: vec![] };
-    let (_widget_tree, _state) = view.build(&mut ctx);
+    let (_widget_tree, _state) = view.build(&mut ctx, &mut state);
     // TODO: dbg!(widget_tree);
 }
 
@@ -50,7 +52,11 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
     type Element = WidgetBox<ButtonWidget>;
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        _ctx: &mut ViewCtx,
+        _app_state: &mut State,
+    ) -> (Self::Element, Self::ViewState) {
         (
             WidgetBox {
                 widget: ButtonWidget {},
@@ -65,6 +71,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         _element: Mut<'_, Self::Element>,
+        _app_state: &mut State,
     ) {
         // Nothing to do
     }
@@ -74,6 +81,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         _element: Mut<'_, Self::Element>,
+        _app_state: &mut State,
     ) {
         // Nothing to do
     }
