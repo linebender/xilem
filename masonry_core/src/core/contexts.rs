@@ -1097,6 +1097,11 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
             .expect("remove_child: child not found");
         self.global_state.scenes.remove(&child.id());
 
+        // Release pointer if captured by deleted child.
+        if self.global_state.pointer_capture_target == Some(id) {
+            self.global_state.pointer_capture_target = None;
+        }
+
         self.children_changed();
     }
 
