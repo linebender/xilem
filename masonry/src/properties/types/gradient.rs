@@ -66,10 +66,10 @@ impl Gradient {
     pub fn new_linear(angle: f64) -> Self {
         Self {
             shape: GradientShape::Linear { angle },
-            extend: Default::default(),
+            extend: Extend::default(),
             interpolation_cs: ColorSpaceTag::Srgb,
-            hue_direction: Default::default(),
-            stops: Default::default(),
+            hue_direction: HueDirection::default(),
+            stops: ColorStops::default(),
         }
     }
 

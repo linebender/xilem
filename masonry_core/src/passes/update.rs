@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
+use ui_events::pointer::PointerType;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
@@ -38,7 +39,7 @@ fn dummy_pointer_cancel() -> PointerEvent {
     PointerEvent::Cancel(PointerInfo {
         pointer_id: None,
         persistent_device_id: None,
-        pointer_type: Default::default(),
+        pointer_type: PointerType::default(),
     })
 }
 
