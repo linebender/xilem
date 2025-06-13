@@ -174,33 +174,33 @@ where
 
     fn build(
         &self,
-        ctx: &mut Context,
-        app_state: &mut ParentState,
+        _ctx: &mut Context,
+        _app_state: &mut ParentState,
     ) -> (Self::Element, Self::ViewState) {
-        todo!("TODO(DJMcNab)");
+        unimplemented!("TODO(DJMcNab)");
         // self.child.build(ctx)
     }
 
     fn rebuild(
         &self,
-        prev: &Self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-        app_state: &mut ParentState,
+        _prev: &Self,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut Context,
+        _element: Mut<'_, Self::Element>,
+        _app_state: &mut ParentState,
     ) {
-        todo!("TODO(DJMcNab)");
+        unimplemented!("TODO(DJMcNab)");
         // self.child.rebuild(&prev.child, view_state, ctx, element);
     }
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
-        ctx: &mut Context,
-        element: Mut<'_, Self::Element>,
-        app_state: &mut ParentState,
+        _view_state: &mut Self::ViewState,
+        _ctx: &mut Context,
+        _element: Mut<'_, Self::Element>,
+        _app_state: &mut ParentState,
     ) {
-        todo!("TODO(DJMcNab)");
+        unimplemented!("TODO(DJMcNab)");
         // self.child.teardown(view_state, ctx, element);
     }
 
