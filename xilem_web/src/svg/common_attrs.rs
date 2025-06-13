@@ -105,9 +105,9 @@ where
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
-            ctx.with_size_hint::<Attributes, _>(2, |ctx| self.child.build(ctx));
+            ctx.with_size_hint::<Attributes, _>(2, |ctx| self.child.build(ctx, app_state));
         let mut attrs = element.modifier();
         Attributes::push(&mut attrs, ("fill", brush_to_string(&self.brush)));
         Attributes::push(
@@ -123,10 +123,16 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         Attributes::rebuild(element, 2, |mut element| {
-            self.child
-                .rebuild(&prev.child, view_state, ctx, element.reborrow_mut());
+            self.child.rebuild(
+                &prev.child,
+                view_state,
+                ctx,
+                element.reborrow_mut(),
+                app_state,
+            );
             let mut attrs = element.modifier();
             if attrs.flags.was_created() {
                 Attributes::push(&mut attrs, ("fill", brush_to_string(&self.brush)));
@@ -152,8 +158,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        self.child.teardown(view_state, ctx, element);
+        self.child.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
@@ -242,9 +249,9 @@ where
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
-            ctx.with_size_hint::<Attributes, _>(5, |ctx| self.child.build(ctx));
+            ctx.with_size_hint::<Attributes, _>(5, |ctx| self.child.build(ctx, app_state));
         push_stroke_modifiers(element.modifier(), &self.style, &self.brush);
         (element, state)
     }
@@ -255,10 +262,16 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         Attributes::rebuild(element, 5, |mut element| {
-            self.child
-                .rebuild(&prev.child, view_state, ctx, element.reborrow_mut());
+            self.child.rebuild(
+                &prev.child,
+                view_state,
+                ctx,
+                element.reborrow_mut(),
+                app_state,
+            );
             update_stroke_modifiers(
                 element.modifier(),
                 &prev.style,
@@ -274,8 +287,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        self.child.teardown(view_state, ctx, element);
+        self.child.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(

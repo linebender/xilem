@@ -26,7 +26,12 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
 
     /// Build the associated widgets into `elements` and initialize all states.
     #[must_use]
-    fn dyn_seq_build(&self, ctx: &mut ViewCtx, elements: &mut AppendVec<AnyPod>) -> Box<dyn Any>;
+    fn dyn_seq_build(
+        &self,
+        ctx: &mut ViewCtx,
+        elements: &mut AppendVec<AnyPod>,
+        app_state: &mut State,
+    ) -> Box<dyn Any>;
 
     /// Update the associated widgets.
     fn dyn_seq_rebuild(
@@ -35,6 +40,7 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice,
+        app_state: &mut State,
     );
 
     /// Update the associated widgets.
@@ -43,6 +49,7 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice,
+        app_state: &mut State,
     );
 
     /// Propagate a message.
@@ -68,8 +75,13 @@ where
         self
     }
 
-    fn dyn_seq_build(&self, ctx: &mut ViewCtx, elements: &mut AppendVec<AnyPod>) -> Box<dyn Any> {
-        Box::new(self.seq_build(ctx, elements))
+    fn dyn_seq_build(
+        &self,
+        ctx: &mut ViewCtx,
+        elements: &mut AppendVec<AnyPod>,
+        app_state: &mut State,
+    ) -> Box<dyn Any> {
+        Box::new(self.seq_build(ctx, elements, app_state))
     }
 
     fn dyn_seq_rebuild(
@@ -78,12 +90,14 @@ where
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice,
+        app_state: &mut State,
     ) {
         self.seq_rebuild(
             prev.as_any().downcast_ref().unwrap_throw(),
             seq_state.downcast_mut().unwrap_throw(),
             ctx,
             elements,
+            app_state,
         );
     }
 
@@ -92,8 +106,14 @@ where
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice,
+        app_state: &mut State,
     ) {
-        self.seq_teardown(seq_state.downcast_mut().unwrap_throw(), ctx, elements);
+        self.seq_teardown(
+            seq_state.downcast_mut().unwrap_throw(),
+            ctx,
+            elements,
+            app_state,
+        );
     }
 
     fn dyn_seq_message(
@@ -233,6 +253,7 @@ pub(crate) fn build_element<State, Action, Element>(
     tag_name: &str,
     ns: &str,
     ctx: &mut ViewCtx,
+    app_state: &mut State,
 ) -> (Element, ElementState)
 where
     State: 'static,
@@ -241,7 +262,8 @@ where
     Element: FromWithContext<Pod<web_sys::Element>>,
 {
     let mut elements = AppendVec::default();
-    let children_state = ctx.with_build_children(|ctx| children.dyn_seq_build(ctx, &mut elements));
+    let children_state =
+        ctx.with_build_children(|ctx| children.dyn_seq_build(ctx, &mut elements, app_state));
     let element = if ctx.is_hydrating() {
         Pod::hydrate_element_with_ctx(elements.into_inner(), ctx)
     } else {
@@ -259,6 +281,7 @@ pub(crate) fn rebuild_element<State, Action, Element>(
     element: Mut<Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
+    app_state: &mut State,
 ) where
     State: 'static,
     Action: 'static,
@@ -279,6 +302,7 @@ pub(crate) fn rebuild_element<State, Action, Element>(
         &mut state.seq_state,
         ctx,
         &mut dom_children_splice,
+        app_state,
     );
 }
 
@@ -287,6 +311,7 @@ pub(crate) fn teardown_element<State, Action, Element>(
     element: Mut<Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
+    app_state: &mut State,
 ) where
     State: 'static,
     Action: 'static,
@@ -302,7 +327,12 @@ pub(crate) fn teardown_element<State, Action, Element>(
         true,
         ctx.is_hydrating(),
     );
-    children.dyn_seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);
+    children.dyn_seq_teardown(
+        &mut state.seq_state,
+        ctx,
+        &mut dom_children_splice,
+        app_state,
+    );
 }
 
 /// An element that can change its tag, it's useful for autonomous custom elements (i.e. web components)
@@ -340,8 +370,8 @@ where
 
     type ViewState = ElementState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        build_element(&*self.children, &self.name, HTML_NS, ctx)
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        build_element(&*self.children, &self.name, HTML_NS, ctx, app_state)
     }
 
     fn rebuild(
@@ -350,6 +380,7 @@ where
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         if prev.name != self.name {
             let new_element = document()
@@ -373,6 +404,7 @@ where
             element,
             element_state,
             ctx,
+            app_state,
         );
     }
 
@@ -381,8 +413,9 @@ where
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        teardown_element(&*self.children, element, element_state, ctx);
+        teardown_element(&*self.children, element, element_state, ctx, app_state);
     }
 
     fn message(
@@ -431,8 +464,12 @@ macro_rules! define_element {
 
             type ViewState = ElementState;
 
-            fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-                build_element(&*self.children, $tag_name, $ns, ctx)
+            fn build(
+                &self,
+                ctx: &mut ViewCtx,
+                app_state: &mut State,
+            ) -> (Self::Element, Self::ViewState) {
+                build_element(&*self.children, $tag_name, $ns, ctx, app_state)
             }
 
             fn rebuild(
@@ -441,6 +478,7 @@ macro_rules! define_element {
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
                 element: Mut<Self::Element>,
+                app_state: &mut State,
             ) {
                 rebuild_element(
                     &*self.children,
@@ -448,6 +486,7 @@ macro_rules! define_element {
                     element,
                     element_state,
                     ctx,
+                    app_state,
                 );
             }
 
@@ -456,8 +495,9 @@ macro_rules! define_element {
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
                 element: Mut<Self::Element>,
+                app_state: &mut State,
             ) {
-                teardown_element(&*self.children, element, element_state, ctx);
+                teardown_element(&*self.children, element, element_state, ctx, app_state);
             }
 
             fn message(

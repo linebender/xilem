@@ -309,9 +309,9 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
-            ctx.with_size_hint::<Attributes, _>(1, |ctx| self.inner.build(ctx));
+            ctx.with_size_hint::<Attributes, _>(1, |ctx| self.inner.build(ctx, app_state));
         Attributes::push(&mut element.modifier(), self.modifier.clone());
         (element, state)
     }
@@ -322,10 +322,16 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         Attributes::rebuild(element, 1, |mut element| {
-            self.inner
-                .rebuild(&prev.inner, view_state, ctx, element.reborrow_mut());
+            self.inner.rebuild(
+                &prev.inner,
+                view_state,
+                ctx,
+                element.reborrow_mut(),
+                app_state,
+            );
             Attributes::update(&mut element.modifier(), &prev.modifier, &self.modifier);
         });
     }
@@ -335,8 +341,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        self.inner.teardown(view_state, ctx, element);
+        self.inner.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(

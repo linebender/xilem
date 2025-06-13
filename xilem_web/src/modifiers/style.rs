@@ -470,10 +470,11 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let style_iter = self.styles.style_modifiers_iter();
-        let (mut e, s) =
-            ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| self.el.build(ctx));
+        let (mut e, s) = ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| {
+            self.el.build(ctx, app_state)
+        });
         let len = Styles::extend(&mut e.modifier(), style_iter);
         (e, (len, s))
     }
@@ -484,10 +485,11 @@ where
         (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         Styles::rebuild(element, *len, |mut elem| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, elem.reborrow_mut(), app_state);
             let styles = &mut elem.modifier();
             *len = Styles::update_style_modifier_iter(styles, *len, &prev.styles, &self.styles);
         });
@@ -498,8 +500,9 @@ where
         (_, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        self.el.teardown(view_state, ctx, element);
+        self.el.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
@@ -555,8 +558,9 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (mut element, state) = ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx));
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (mut element, state) =
+            ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
         Styles::push(
             styles,
@@ -571,10 +575,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         Styles::rebuild(element, 1, |mut element| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut(), app_state);
             let mut styles = element.modifier();
             Styles::update_with_modify_style(
                 &mut styles,
@@ -591,8 +596,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        self.el.teardown(view_state, ctx, element);
+        self.el.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
@@ -678,8 +684,9 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (mut element, state) = ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx));
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (mut element, state) =
+            ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
         Styles::push(
             styles,
@@ -694,10 +701,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
         Styles::rebuild(element, 1, |mut element| {
             self.el
-                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut());
+                .rebuild(&prev.el, view_state, ctx, element.reborrow_mut(), app_state);
             let styles = &mut element.modifier();
             Styles::update_with_modify_style(
                 styles,
@@ -714,8 +722,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<Self::Element>,
+        app_state: &mut State,
     ) {
-        self.el.teardown(view_state, ctx, element);
+        self.el.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(

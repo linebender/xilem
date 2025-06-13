@@ -29,7 +29,11 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgLineElement>;
 
-    fn orphan_build(view: &Line, ctx: &mut Self) -> (Self::OrphanElement, Self::OrphanViewState) {
+    fn orphan_build(
+        view: &Line,
+        ctx: &mut Self,
+        _: &mut State,
+    ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("line", ctx, 4, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
             let attrs = &mut element.modifier();
@@ -47,6 +51,7 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
             let attrs = &mut element.modifier();
@@ -62,6 +67,7 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
     }
 
@@ -80,7 +86,11 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgRectElement>;
 
-    fn orphan_build(view: &Rect, ctx: &mut Self) -> (Self::OrphanElement, Self::OrphanViewState) {
+    fn orphan_build(
+        view: &Rect,
+        ctx: &mut Self,
+        _: &mut State,
+    ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("rect", ctx, 4, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
             let attrs = &mut element.modifier();
@@ -98,6 +108,7 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
             let attrs = &mut element.modifier();
@@ -113,6 +124,7 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
     }
 
@@ -131,7 +143,11 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgCircleElement>;
 
-    fn orphan_build(view: &Circle, ctx: &mut Self) -> (Self::OrphanElement, Self::OrphanViewState) {
+    fn orphan_build(
+        view: &Circle,
+        ctx: &mut Self,
+        _: &mut State,
+    ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("circle", ctx, 3, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
             let attrs = &mut element.modifier();
@@ -148,6 +164,7 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 3, |mut element| {
             let attrs = &mut element.modifier();
@@ -162,6 +179,7 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
     }
 
@@ -183,6 +201,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
     fn orphan_build(
         view: &BezPath,
         ctx: &mut Self,
+        _: &mut State,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         create_element("path", ctx, 1, |element, ctx| {
             let mut element = Self::OrphanElement::from_with_ctx(element, ctx);
@@ -198,6 +217,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
         Attributes::rebuild(element, 1, |mut element| {
             let attrs = &mut element.modifier();
@@ -216,6 +236,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         _view_state: &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<Self::OrphanElement>,
+        _: &mut State,
     ) {
     }
 
