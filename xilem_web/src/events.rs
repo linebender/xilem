@@ -410,7 +410,7 @@ macro_rules! event_definitions {
 
             type Element = V::Element;
 
-            fn build(&self, ctx: &mut ViewCtx,app_state: &mut State) -> (Self::Element, Self::ViewState) {
+            fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
                 build_event_listener::<_, _, _, web_sys::$web_sys_ty>(
                     &self.dom_view,
                     $event_name,
