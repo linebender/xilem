@@ -168,14 +168,14 @@ where
 
     type ViewState = Seq::SeqState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
-        let seq_state = self.sequence.seq_build(ctx, &mut elements);
+        let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for child in elements.into_inner() {
             widget = match child {
                 FlexElement::Child(child, params) => {
@@ -196,6 +196,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
@@ -217,7 +218,7 @@ where
         // TODO: Re-use scratch space?
         let mut splice = FlexSplice::new(element);
         self.sequence
-            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
+            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.is_empty());
     }
 
@@ -226,9 +227,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut splice = FlexSplice::new(element);
-        self.sequence.seq_teardown(view_state, ctx, &mut splice);
+        self.sequence
+            .seq_teardown(view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.into_inner().is_empty());
     }
 
@@ -533,8 +536,8 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, state) = self.view.build(ctx);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (pod, state) = self.view.build(ctx, app_state);
         (FlexElement::Child(pod.erased(), self.params), state)
     }
 
@@ -544,6 +547,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         {
             if self.params != prev.params {
@@ -556,7 +560,7 @@ where
             let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
                 .expect("FlexWrapper always has a widget child");
             self.view
-                .rebuild(&prev.view, view_state, ctx, child.downcast());
+                .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
     }
 
@@ -565,10 +569,12 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
             .expect("FlexWrapper always has a widget child");
-        self.view.teardown(view_state, ctx, child.downcast());
+        self.view
+            .teardown(view_state, ctx, child.downcast(), app_state);
     }
 
     fn message(
@@ -604,7 +610,7 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
 
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let el = match self {
             Self::Fixed(len) => FlexElement::FixedSpacer(*len),
             Self::Flex(flex) => FlexElement::FlexSpacer(*flex),
@@ -618,6 +624,7 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         if self != prev {
             match self {
@@ -631,7 +638,14 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         }
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+    }
 
     fn message(
         &self,
@@ -728,18 +742,19 @@ where
 
     type ViewState = AnyFlexChildState<State, Action>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, view_state) = match self {
             Self::Item(flex_item) => {
-                let (element, state) =
-                    ctx.with_id(ViewId::new(generation), |ctx| flex_item.build(ctx));
+                let (element, state) = ctx.with_id(ViewId::new(generation), |ctx| {
+                    flex_item.build(ctx, app_state)
+                });
                 (element, Some(state))
             }
             Self::Spacer(spacer) => {
                 // We know that the spacer doesn't need any id, as it doesn't receive or sends any messages
                 // (Similar to `None` as a ViewSequence)
-                let (element, ()) = View::<(), (), ViewCtx>::build(spacer, ctx);
+                let (element, ()) = View::<(), (), ViewCtx>::build(spacer, ctx, &mut ());
                 (element, None)
             }
         };
@@ -758,15 +773,22 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         match (prev, self) {
             (Self::Item(prev), Self::Item(this)) => {
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
-                    this.rebuild(prev, view_state.inner.as_mut().unwrap(), ctx, element);
+                    this.rebuild(
+                        prev,
+                        view_state.inner.as_mut().unwrap(),
+                        ctx,
+                        element,
+                        app_state,
+                    );
                 });
             }
             (Self::Spacer(prev), Self::Spacer(this)) => {
-                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element);
+                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element, &mut ());
             }
             (Self::Item(prev_flex_item), Self::Spacer(new_spacer)) => {
                 // Run teardown with the old path
@@ -778,6 +800,7 @@ where
                             parent: element.parent.reborrow_mut(),
                             idx: element.idx,
                         },
+                        app_state,
                     );
                 });
                 widgets::Flex::remove_child(&mut element.parent, element.idx);
@@ -791,7 +814,7 @@ where
                 // If would overflow, wrap to zero. Would need async message sent
                 // to view *exactly* `u64::MAX` versions of the view ago, which is implausible
                 view_state.generation = view_state.generation.wrapping_add(1);
-                let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx);
+                let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx, &mut ());
                 match spacer_element {
                     FlexElement::FixedSpacer(len) => {
                         widgets::Flex::insert_spacer(&mut element.parent, element.idx, len);
@@ -811,12 +834,13 @@ where
                         parent: element.parent.reborrow_mut(),
                         idx: element.idx,
                     },
+                    &mut (),
                 );
                 widgets::Flex::remove_child(&mut element.parent, element.idx);
 
                 let (flex_item_element, child_state) = ctx
                     .with_id(ViewId::new(view_state.generation), |ctx| {
-                        new_flex_item.build(ctx)
+                        new_flex_item.build(ctx, app_state)
                     });
                 view_state.inner = Some(child_state);
                 if let FlexElement::Child(child, params) = flex_item_element {
@@ -838,13 +862,14 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         match self {
             Self::Item(flex_item) => {
-                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element);
+                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element, app_state);
             }
             Self::Spacer(spacer) => {
-                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element);
+                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element, &mut ());
             }
         }
     }

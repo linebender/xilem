@@ -125,11 +125,11 @@ where
 
     type ViewState = Seq::SeqState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Grid::with_dimensions(self.width, self.height);
         widget = widget.with_spacing(self.spacing);
-        let seq_state = self.sequence.seq_build(ctx, &mut elements);
+        let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.into_inner() {
             widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
         }
@@ -144,6 +144,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
@@ -159,7 +160,7 @@ where
 
         let mut splice = GridSplice::new(element);
         self.sequence
-            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
+            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.is_empty());
     }
 
@@ -168,9 +169,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut splice = GridSplice::new(element);
-        self.sequence.seq_teardown(view_state, ctx, &mut splice);
+        self.sequence
+            .seq_teardown(view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.into_inner().is_empty());
     }
 
@@ -429,8 +432,8 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, state) = self.view.build(ctx);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (pod, state) = self.view.build(ctx, app_state);
         (
             GridElement {
                 child: pod.erased(),
@@ -446,6 +449,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         {
             if self.params != prev.params {
@@ -457,7 +461,7 @@ where
             }
             let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
             self.view
-                .rebuild(&prev.view, view_state, ctx, child.downcast());
+                .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
     }
 
@@ -466,9 +470,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
-        self.view.teardown(view_state, ctx, child.downcast());
+        self.view
+            .teardown(view_state, ctx, child.downcast(), app_state);
     }
 
     fn message(

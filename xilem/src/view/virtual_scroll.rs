@@ -137,7 +137,7 @@ where
 
     type ViewState = VirtualScrollState<ChildrenViews, ChildrenViews::ViewState>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         // TODO: How does the anchor interact with Xilem?
         // Setting that seems like an imperative action?
         let widget = Pod::new(
@@ -159,6 +159,7 @@ where
         )
     }
 
+    // TODO(DJMcNab): Remove this back/forth/back/forth messaging, now that this is no longer true
     // This implementation is ugly. This is needed because the `rebuild` function
     // doesn't have access to the app's state. The way we handle this is:
     // 1) If the app's state has changed since the last rebuild (i.e. the `app_logic` function has been rerun),
@@ -172,6 +173,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         if self.valid_range != prev.valid_range {
             widgets::VirtualScroll::set_valid_range(&mut element, self.valid_range.clone());
@@ -209,6 +211,7 @@ where
                             &mut child_state.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, *idx),
+                            app_state,
                         );
                     });
                     child_state.requested_rebuild = false;
@@ -236,6 +239,7 @@ where
                         &mut child_state.state,
                         ctx,
                         widgets::VirtualScroll::child_mut(&mut element, idx),
+                        app_state,
                     );
                     widgets::VirtualScroll::remove_child(&mut element, idx);
                     view_state.cleanup_queue.push(idx);
@@ -265,13 +269,14 @@ where
                             &mut child_state.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, idx),
+                            app_state,
                         );
                         child_state.requested_rebuild = false;
                         view_state.previous_views.insert(idx, child);
                     } else {
                         debug_assert!(used_action);
                         // Otherwise, build the first version of this view.
-                        let (new_child, child_state) = child.build(ctx);
+                        let (new_child, child_state) = child.build(ctx, app_state);
                         widgets::VirtualScroll::add_child(
                             &mut element,
                             idx,
@@ -303,6 +308,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         for (&idx, child) in &view_state.previous_views {
             ctx.with_id(view_id_for_index(idx), |ctx| {
@@ -311,6 +317,7 @@ where
                     &mut view_state.state,
                     ctx,
                     widgets::VirtualScroll::child_mut(&mut element, idx),
+                    app_state,
                 );
             });
         }

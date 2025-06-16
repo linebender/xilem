@@ -100,7 +100,7 @@ where
 
     type ViewState = IntervalState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let interval_fn = Closure::new(move || thunk.push_message(()));
         let state = IntervalState {
@@ -117,6 +117,7 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<Self::Element>,
+        _: &mut State,
     ) {
         if prev.ms != self.ms {
             clear_interval(view_state.interval_handle);
@@ -124,7 +125,13 @@ where
         }
     }
 
-    fn teardown(&self, view_state: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<Self::Element>,
+        _: &mut State,
+    ) {
         clear_interval(view_state.interval_handle);
     }
 

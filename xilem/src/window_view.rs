@@ -41,8 +41,8 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, view_state) = self.root_widget_view.build(ctx);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (pod, view_state) = self.root_widget_view.build(ctx, app_state);
         let root_widget = RootWidget::from_pod(pod.into_widget_pod().erased());
         let initial_attributes = self.options.build_initial_attrs();
         (CreateWindow(initial_attributes, root_widget), view_state)
@@ -54,11 +54,12 @@ where
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         (window, render_root): xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         self.options.rebuild(&prev.options, window);
 
         ctx.set_state_changed(true);
-        self.rebuild_root_widget(prev, root_widget_view_state, ctx, render_root);
+        self.rebuild_root_widget(prev, root_widget_view_state, ctx, render_root, app_state);
     }
 
     fn teardown(
@@ -66,6 +67,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         (_, render_root): xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         render_root.edit_root_widget(|mut root| {
             let mut root = root.downcast::<RootWidget>();
@@ -73,6 +75,7 @@ where
                 view_state,
                 ctx,
                 RootWidget::child_mut(&mut root).downcast(),
+                app_state,
             );
         });
     }
@@ -99,6 +102,7 @@ where
         root_widget_view_state: &mut AnyViewState,
         ctx: &mut ViewCtx,
         render_root: &mut RenderRoot,
+        app_state: &mut State,
     ) {
         render_root.edit_root_widget(|mut root| {
             let mut root = root.downcast::<RootWidget>();
@@ -107,6 +111,7 @@ where
                 root_widget_view_state,
                 ctx,
                 RootWidget::child_mut(&mut root).downcast(),
+                app_state,
             );
         });
         if cfg!(debug_assertions) && !render_root.needs_rewrite_passes() {

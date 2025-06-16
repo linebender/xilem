@@ -150,7 +150,8 @@ where
             Arc::new(WindowProxy(window_id, self.proxy.clone())),
             self.runtime.clone(),
         );
-        let (CreateWindow(attrs, root_widget), view_state) = view.build(&mut view_ctx);
+        let (CreateWindow(attrs, root_widget), view_state) =
+            view.build(&mut view_ctx, &mut self.state);
         self.windows.insert(
             window_id,
             Window {
@@ -178,6 +179,7 @@ where
             &mut window.view_state,
             &mut window.view_ctx,
             ctx.window_handle_and_render_root(window_id),
+            &mut self.state,
         );
         self.windows.remove(&window_id);
         ctx.close_window(window_id);
@@ -206,6 +208,7 @@ where
                         view_state,
                         view_ctx,
                         driver_ctx.window_handle_and_render_root(window_id),
+                        &mut self.state,
                     );
                     *view = next_view;
                 }
@@ -284,6 +287,7 @@ where
                     &mut window.view_state,
                     &mut window.view_ctx,
                     masonry_ctx.render_root(window_id),
+                    &mut self.state,
                 );
             }
             MessageResult::Nop => {}

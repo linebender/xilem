@@ -110,7 +110,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widgets::Label>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let widget_pod = ctx.create_pod(
             widgets::Label::new(self.label.clone())
                 .with_brush(self.text_brush.clone())
@@ -129,6 +129,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         if prev.label != self.label {
             widgets::Label::set_text(&mut element, self.label.clone());
@@ -153,7 +154,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+    }
 
     fn message(
         &self,

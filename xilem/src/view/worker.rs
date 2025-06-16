@@ -64,6 +64,7 @@ pub fn worker_raw<M, V, F, H, State, Action, Fut>(
     on_response: H,
 ) -> Worker<F, H, M, V>
 where
+    // TODO(DJMcNab): Accept app_state here
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
@@ -104,7 +105,7 @@ where
 
     type ViewState = WorkerState<V>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
@@ -123,6 +124,7 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         if self.value != prev.value {
             // TODO: Error handling
@@ -135,6 +137,7 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         view_state.handle.abort();
     }

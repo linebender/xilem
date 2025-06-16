@@ -103,8 +103,8 @@ where
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.child.build(ctx)
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.child.build(ctx, app_state)
     }
 
     fn rebuild(
@@ -113,8 +113,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.child.rebuild(&prev.child, view_state, ctx, element);
+        self.child
+            .rebuild(&prev.child, view_state, ctx, element, app_state);
     }
 
     fn teardown(
@@ -122,8 +124,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.child.teardown(view_state, ctx, element);
+        self.child.teardown(view_state, ctx, element, app_state);
     }
 
     fn message(

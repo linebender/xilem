@@ -92,7 +92,12 @@ where
 
     /// Build the associated widgets into `elements` and initialize all states.
     #[must_use]
-    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState;
+    fn seq_build(
+        &self,
+        ctx: &mut Context,
+        elements: &mut AppendVec<Element>,
+        app_state: &mut State,
+    ) -> Self::SeqState;
 
     /// Update the associated widgets.
     fn seq_rebuild(
@@ -101,6 +106,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     );
 
     /// Update the associated widgets.
@@ -109,6 +115,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     );
 
     /// Propagate a message.
@@ -152,8 +159,13 @@ where
 {
     type SeqState = V::ViewState;
 
-    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
-        let (element, view_state) = self.build(ctx);
+    fn seq_build(
+        &self,
+        ctx: &mut Context,
+        elements: &mut AppendVec<Element>,
+        app_state: &mut State,
+    ) -> Self::SeqState {
+        let (element, view_state) = self.build(ctx, app_state);
         elements.push(Element::upcast(ctx, element));
         view_state
     }
@@ -163,11 +175,12 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         // Mutate the item we added in `seq_build`
         elements.mutate(|this_element| {
             Element::with_downcast(this_element, |element| {
-                self.rebuild(prev, seq_state, ctx, element);
+                self.rebuild(prev, seq_state, ctx, element, app_state);
             });
         });
     }
@@ -176,10 +189,11 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         elements.delete(|this_element| {
             Element::with_downcast(this_element, |element| {
-                self.teardown(seq_state, ctx, element);
+                self.teardown(seq_state, ctx, element, app_state);
             });
         });
     }
@@ -227,12 +241,18 @@ where
     type SeqState = OptionSeqState<Seq::SeqState>;
 
     #[doc(hidden)]
-    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
+    fn seq_build(
+        &self,
+        ctx: &mut Context,
+        elements: &mut AppendVec<Element>,
+        app_state: &mut State,
+    ) -> Self::SeqState {
         let generation = 0;
         match self {
             Some(seq) => {
-                let inner =
-                    ctx.with_id(ViewId::new(generation), |ctx| seq.seq_build(ctx, elements));
+                let inner = ctx.with_id(ViewId::new(generation), |ctx| {
+                    seq.seq_build(ctx, elements, app_state)
+                });
                 OptionSeqState {
                     inner: Some(inner),
                     generation,
@@ -252,6 +272,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         // If `prev` was `Some`, we set `seq_state` in reacting to it (and building the inner view)
         // This could only fail if some malicious parent view was messing with our internal state
@@ -268,21 +289,21 @@ where
             (Some(seq), Some((prev, inner_state))) => {
                 // Perform a normal rebuild
                 ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    seq.seq_rebuild(prev, inner_state, ctx, elements);
+                    seq.seq_rebuild(prev, inner_state, ctx, elements, app_state);
                 });
             }
             (Some(seq), None) => {
                 // The sequence is newly re-added, build the inner sequence
                 // We don't increment the generation here, as that was already done in the below case
                 let inner_state = ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    elements.with_scratch(|elements| seq.seq_build(ctx, elements))
+                    elements.with_scratch(|elements| seq.seq_build(ctx, elements, app_state))
                 });
                 seq_state.inner = Some(inner_state);
             }
             (None, Some((prev, inner_state))) => {
                 // Run teardown with the old path
                 ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    prev.seq_teardown(inner_state, ctx, elements);
+                    prev.seq_teardown(inner_state, ctx, elements, app_state);
                 });
                 // The sequence has just been destroyed, teardown the old view
                 // We increment the generation only on the falling edge by convention
@@ -304,6 +325,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         assert_eq!(
             self.is_some(),
@@ -312,7 +334,7 @@ where
         );
         if let Some((seq, inner_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
             ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                seq.seq_teardown(inner_state, ctx, elements);
+                seq.seq_teardown(inner_state, ctx, elements, app_state);
             });
         }
     }
@@ -400,7 +422,12 @@ where
     type SeqState = VecViewState<Seq::SeqState>;
 
     #[doc(hidden)]
-    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
+    fn seq_build(
+        &self,
+        ctx: &mut Context,
+        elements: &mut AppendVec<Element>,
+        app_state: &mut State,
+    ) -> Self::SeqState {
         let generations = alloc::vec![0; self.len()];
         let inner_states = self
             .iter()
@@ -408,7 +435,7 @@ where
             .zip(&generations)
             .map(|((index, seq), generation)| {
                 let id = create_generational_view_id(index, *generation);
-                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements))
+                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state))
             })
             .collect();
         VecViewState {
@@ -424,6 +451,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         for (i, (((child, child_prev), child_state), child_generation)) in self
             .iter()
@@ -435,7 +463,7 @@ where
             // Rebuild the items which are common to both vectors
             let id = create_generational_view_id(i, *child_generation);
             ctx.with_id(id, |ctx| {
-                child.seq_rebuild(child_prev, child_state, ctx, elements);
+                child.seq_rebuild(child_prev, child_state, ctx, elements, app_state);
             });
         }
         let n = self.len();
@@ -452,7 +480,7 @@ where
             {
                 let id = create_generational_view_id(index + n, *generation);
                 ctx.with_id(id, |ctx| {
-                    old_seq.seq_teardown(&mut inner_state, ctx, elements);
+                    old_seq.seq_teardown(&mut inner_state, ctx, elements, app_state);
                 });
                 // We increment the generation on the "falling edge" by convention
                 *generation = generation.checked_add(1).unwrap_or_else(|| {
@@ -493,7 +521,7 @@ where
                         .enumerate()
                         .map(|(index, (seq, generation))| {
                             let id = create_generational_view_id(index + prev_n, *generation);
-                            ctx.with_id(id, |ctx| seq.seq_build(ctx, elements))
+                            ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state))
                         }),
                 );
             });
@@ -506,6 +534,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         for (index, ((seq, state), generation)) in self
             .iter()
@@ -514,7 +543,7 @@ where
             .enumerate()
         {
             let id = create_generational_view_id(index, *generation);
-            ctx.with_id(id, |ctx| seq.seq_teardown(state, ctx, elements));
+            ctx.with_id(id, |ctx| seq.seq_teardown(state, ctx, elements, app_state));
         }
     }
 
@@ -551,11 +580,18 @@ where
     type SeqState = [Seq::SeqState; N];
 
     #[doc(hidden)]
-    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
+    fn seq_build(
+        &self,
+        ctx: &mut Context,
+        elements: &mut AppendVec<Element>,
+        app_state: &mut State,
+    ) -> Self::SeqState {
         // there's no enumerate directly on an array
         let mut idx = 0;
         self.each_ref().map(|vs| {
-            let state = ctx.with_id(ViewId::new(idx), |ctx| vs.seq_build(ctx, elements));
+            let state = ctx.with_id(ViewId::new(idx), |ctx| {
+                vs.seq_build(ctx, elements, app_state)
+            });
             idx += 1;
             state
         })
@@ -568,6 +604,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         for (idx, ((seq, prev_seq), state)) in self.iter().zip(prev).zip(seq_state).enumerate() {
             ctx.with_id(
@@ -575,7 +612,7 @@ where
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
                 )),
                 |ctx| {
-                    seq.seq_rebuild(prev_seq, state, ctx, elements);
+                    seq.seq_rebuild(prev_seq, state, ctx, elements, app_state);
                 },
             );
         }
@@ -605,6 +642,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
         for (idx, (seq, state)) in self.iter().zip(seq_state).enumerate() {
             ctx.with_id(
@@ -612,7 +650,7 @@ where
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
                 )),
                 |ctx| {
-                    seq.seq_teardown(state, ctx, elements);
+                    seq.seq_teardown(state, ctx, elements, app_state);
                 },
             );
         }
@@ -627,7 +665,13 @@ where
 {
     type SeqState = ();
 
-    fn seq_build(&self, _: &mut Context, _: &mut AppendVec<Element>) -> Self::SeqState {}
+    fn seq_build(
+        &self,
+        _: &mut Context,
+        _: &mut AppendVec<Element>,
+        _: &mut State,
+    ) -> Self::SeqState {
+    }
 
     fn seq_rebuild(
         &self,
@@ -635,6 +679,7 @@ where
         _: &mut Self::SeqState,
         _: &mut Context,
         _: &mut impl ElementSplice<Element>,
+        _: &mut State,
     ) {
     }
 
@@ -643,6 +688,7 @@ where
         _seq_state: &mut Self::SeqState,
         _ctx: &mut Context,
         _elements: &mut impl ElementSplice<Element>,
+        _: &mut State,
     ) {
     }
 
@@ -667,8 +713,13 @@ where
 {
     type SeqState = Seq::SeqState;
 
-    fn seq_build(&self, ctx: &mut Context, elements: &mut AppendVec<Element>) -> Self::SeqState {
-        self.0.seq_build(ctx, elements)
+    fn seq_build(
+        &self,
+        ctx: &mut Context,
+        elements: &mut AppendVec<Element>,
+        app_state: &mut State,
+    ) -> Self::SeqState {
+        self.0.seq_build(ctx, elements, app_state)
     }
 
     fn seq_rebuild(
@@ -677,8 +728,10 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
-        self.0.seq_rebuild(&prev.0, seq_state, ctx, elements);
+        self.0
+            .seq_rebuild(&prev.0, seq_state, ctx, elements, app_state);
     }
 
     fn seq_teardown(
@@ -686,8 +739,9 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
+        app_state: &mut State,
     ) {
-        self.0.seq_teardown(seq_state, ctx, elements);
+        self.0.seq_teardown(seq_state, ctx, elements, app_state);
     }
 
     fn seq_message(
@@ -723,10 +777,11 @@ macro_rules! impl_view_tuple {
                 &self,
                 ctx: &mut Context,
                 elements: &mut AppendVec<Element>,
+                app_state: &mut State,
             ) -> Self::SeqState {
                 ($(
                     ctx.with_id(ViewId::new($idx), |ctx| {
-                        self.$idx.seq_build(ctx, elements)
+                        self.$idx.seq_build(ctx, elements, app_state)
                     }),
                 )+)
             }
@@ -737,10 +792,11 @@ macro_rules! impl_view_tuple {
                 seq_state: &mut Self::SeqState,
                 ctx: &mut Context,
                 elements: &mut impl ElementSplice<Element>,
+                app_state: &mut State,
             ) {
                 $(
                     ctx.with_id(ViewId::new($idx), |ctx| {
-                        self.$idx.seq_rebuild(&prev.$idx, &mut seq_state.$idx, ctx, elements);
+                        self.$idx.seq_rebuild(&prev.$idx, &mut seq_state.$idx, ctx, elements, app_state);
                     });
                 )+
             }
@@ -750,10 +806,11 @@ macro_rules! impl_view_tuple {
                 seq_state: &mut Self::SeqState,
                 ctx: &mut Context,
                 elements: &mut impl ElementSplice<Element>,
+                app_state: &mut State,
             ) {
                 $(
                     ctx.with_id(ViewId::new($idx), |ctx| {
-                        self.$idx.seq_teardown(&mut seq_state.$idx, ctx, elements)
+                        self.$idx.seq_teardown(&mut seq_state.$idx, ctx, elements, app_state)
                     });
                 )+
             }

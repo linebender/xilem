@@ -96,8 +96,8 @@ where
     type Element = Pod<Child::Widget>;
     type ViewState = private::TransformedState<Child::ViewState>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (mut child_pod, child_state) = self.child.build(ctx);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (mut child_pod, child_state) = self.child.build(ctx, app_state);
         let state = private::TransformedState {
             child: child_state,
             previous_transform: child_pod.options.transform,
@@ -112,12 +112,14 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         self.child.rebuild(
             &prev.child,
             &mut view_state.child,
             ctx,
             element.reborrow_mut(),
+            app_state,
         );
         let transform_changed = element.ctx.transform_has_changed();
         // If the child view changed the transform, we know we're out of date.
@@ -142,8 +144,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: xilem_core::Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.child.teardown(&mut view_state.child, ctx, element);
+        self.child
+            .teardown(&mut view_state.child, ctx, element, app_state);
     }
 
     fn message(
