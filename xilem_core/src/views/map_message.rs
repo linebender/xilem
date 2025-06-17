@@ -4,13 +4,13 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
-/// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
+/// View type for [`map_message`] and [`map_action`]. Most users will want to use `map_action` (the latter).
 ///
-/// This is very similar to the Elm architecture, where the parent view can update state based on the action message from the child view
+/// This view maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`], whilst allowing the kind of [`MessageResult`] to be changed.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct MapAction<
+pub struct MapMessage<
     V,
     State,
     ParentAction,
@@ -26,7 +26,7 @@ pub struct MapAction<
 }
 
 impl<V, State, ParentAction, ChildAction, Context, Message, F> Debug
-    for MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
+    for MapMessage<V, State, ParentAction, ChildAction, Context, Message, F>
 where
     V: Debug,
 {
@@ -69,15 +69,49 @@ where
 pub fn map_action<State, ParentAction, ChildAction, Context: ViewPathTracker, Message, V, F>(
     view: V,
     map_fn: F,
-) -> MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
+) -> MapMessage<
+    V,
+    State,
+    ParentAction,
+    ChildAction,
+    Context,
+    Message,
+    impl Fn(&mut State, MessageResult<ChildAction, Message>) -> MessageResult<ParentAction, Message>
+    + 'static,
+>
 where
     State: 'static,
     ParentAction: 'static,
     ChildAction: 'static,
     V: View<State, ChildAction, Context, Message>,
-    F: Fn(&mut State, ChildAction) -> ParentAction + 'static,
+    F: for<'a> Fn(&mut State, ChildAction) -> ParentAction + 'static,
 {
-    MapAction {
+    MapMessage {
+        map_fn: move |app_state: &mut State, result: MessageResult<ChildAction, Message>| {
+            result.map(|action| map_fn(app_state, action))
+        },
+        child: view,
+        phantom: PhantomData,
+    }
+}
+
+/// A view which maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`], whilst allowing the kind of [`MessageResult`] to be changed.
+///
+/// This is the more general form of [`map_action`].
+/// In most cases, you probably want to use that function.
+pub fn map_message<State, ParentAction, ChildAction, Context: ViewPathTracker, Message, V, F>(
+    view: V,
+    map_fn: F,
+) -> MapMessage<V, State, ParentAction, ChildAction, Context, Message, F>
+where
+    State: 'static,
+    ParentAction: 'static,
+    ChildAction: 'static,
+    V: View<State, ChildAction, Context, Message>,
+    F: Fn(&mut State, MessageResult<ChildAction, Message>) -> MessageResult<ParentAction, Message>
+        + 'static,
+{
+    MapMessage {
         map_fn,
         child: view,
         phantom: PhantomData,
@@ -85,18 +119,19 @@ where
 }
 
 impl<V, State, ParentAction, ChildAction, F, Context, Message> ViewMarker
-    for MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
+    for MapMessage<V, State, ParentAction, ChildAction, Context, Message, F>
 {
 }
 impl<V, State, ParentAction, ChildAction, Context, Message, F>
     View<State, ParentAction, Context, Message>
-    for MapAction<V, State, ParentAction, ChildAction, Context, Message, F>
+    for MapMessage<V, State, ParentAction, ChildAction, Context, Message, F>
 where
     V: View<State, ChildAction, Context, Message>,
     State: 'static,
     ParentAction: 'static,
     ChildAction: 'static,
-    F: Fn(&mut State, ChildAction) -> ParentAction + 'static,
+    F: Fn(&mut State, MessageResult<ChildAction, Message>) -> MessageResult<ParentAction, Message>
+        + 'static,
     Context: ViewPathTracker + 'static,
     Message: 'static,
 {
@@ -135,9 +170,8 @@ where
         id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<ParentAction, Message> {
-        self.child
-            .message(view_state, id_path, message, app_state)
-            .map(|action| (self.map_fn)(app_state, action))
+    ) -> MessageResult<ParentAction, Message> {
+        let child_result = self.child.message(view_state, id_path, message, app_state);
+        (self.map_fn)(app_state, child_result)
     }
 }

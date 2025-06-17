@@ -10,8 +10,8 @@ pub use adapt::{Adapt, AdaptThunk, adapt};
 mod map_state;
 pub use map_state::{MapState, lens, map_state};
 
-mod map_action;
-pub use map_action::{MapAction, map_action};
+mod map_message;
+pub use map_message::{MapMessage, map_action, map_message};
 
 mod fork;
 pub use fork::{Fork, fork};
