@@ -659,4 +659,16 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             None
         }
     }
+
+    /// Used in tests to simulate a call to `Self::insert` or `Self::remove` that
+    /// triggers a realloc.
+    ///
+    /// This is used to surface potential Use-After-Free (UAF) errors in the code.
+    #[doc(hidden)]
+    pub fn realloc_inner_storage(&mut self) {
+        self.parent_arena.items.shrink_to_fit();
+        self.parent_arena
+            .items
+            .reserve(self.parent_arena.items.len() + 32);
+    }
 }
