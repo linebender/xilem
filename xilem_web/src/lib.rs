@@ -89,7 +89,7 @@ pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{Adapt, AdaptThunk, AnyView, MapState, MessageResult, View, ViewSequence};
+use core::{AnyView, MapState, MessageResult, View, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -137,26 +137,6 @@ pub trait DomView<State, Action = ()>:
         Self: Sized,
     {
         Box::new(self)
-    }
-
-    /// See [`adapt`](`core::adapt`)
-    fn _adapt<ParentState, ParentAction, ProxyFn>(
-        self,
-        f: ProxyFn,
-    ) -> Adapt<ParentState, ParentAction, State, Action, ViewCtx, Self, DynMessage, ProxyFn>
-    where
-        State: 'static,
-        Action: 'static,
-        ParentState: 'static,
-        ParentAction: 'static,
-        Self: Sized,
-        ProxyFn: Fn(
-                &mut ParentState,
-                AdaptThunk<State, Action, ViewCtx, Self, DynMessage>,
-            ) -> MessageResult<ParentAction, DynMessage>
-            + 'static,
-    {
-        core::_adapt(self, f)
     }
 
     /// See [`after_build`](`after_update::after_build`)

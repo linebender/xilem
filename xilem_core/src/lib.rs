@@ -41,9 +41,8 @@ pub use view::{View, ViewId, ViewMarker, ViewPathTracker};
 
 mod views;
 pub use views::{
-    _adapt, Adapt, AdaptThunk, Fork, Frozen, MapMessage, MapState, Memoize, OrphanView, RunOnce,
-    fork, frozen, lens, map_action, map_message, map_state, memoize, one_of, run_once,
-    run_once_raw,
+    Fork, Frozen, MapMessage, MapState, Memoize, OrphanView, RunOnce, fork, frozen, lens,
+    map_action, map_message, map_state, memoize, one_of, run_once, run_once_raw,
 };
 
 mod message;

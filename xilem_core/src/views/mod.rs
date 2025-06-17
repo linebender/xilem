@@ -4,9 +4,6 @@
 mod run_once;
 pub use run_once::{RunOnce, run_once, run_once_raw};
 
-mod adapt;
-pub use adapt::{_adapt, Adapt, AdaptThunk};
-
 mod map_state;
 pub use map_state::{MapState, lens, map_state};
 
