@@ -6,14 +6,12 @@ use std::sync::Arc;
 
 use accesskit::{ActionRequest, TreeUpdate};
 use cursor_icon::CursorIcon;
-use parley::fontique::{self, Blob, Collection, CollectionOptions, SourceCache};
+use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
-use vello::kurbo::{
-    Rect, {self},
-};
+use vello::kurbo::{Rect, Size};
 
 use crate::Handled;
 use crate::core::{
@@ -421,10 +419,7 @@ impl RenderRoot {
     ///
     /// Returns a list of pairs each containing the family identifier and fonts
     /// added to that family.
-    pub fn register_fonts(
-        &mut self,
-        data: Blob<u8>,
-    ) -> Vec<(fontique::FamilyId, Vec<fontique::FontInfo>)> {
+    pub fn register_fonts(&mut self, data: Blob<u8>) -> Vec<(FamilyId, Vec<FontInfo>)> {
         self.global_state
             .font_context
             .collection
@@ -534,9 +529,9 @@ impl RenderRoot {
         res
     }
 
-    pub(crate) fn get_kurbo_size(&self) -> kurbo::Size {
+    pub(crate) fn get_kurbo_size(&self) -> Size {
         let size = self.size.to_logical(self.global_state.scale_factor);
-        kurbo::Size::new(size.width, size.height)
+        Size::new(size.width, size.height)
     }
 
     // --- MARK: REWRITE PASSES
