@@ -67,7 +67,7 @@ fn main() {
 ```
 The most important construct at the reactive layer is the `View` trait. `View` implementations need to assign the associated `State` and `Element` and implement `build()`, `rebuild()` and `message()`. The `build()` is run only once (first run) to initialize the associated `State` create the associated `Element`of the view. The `rebuild()` is used to update the associated `State` and `Element` and it is what enables Xilem's reactivity. It is worth noting three special types of views the `Adapt`, `Memoize` and `AnyView` views. 
 
-The `Adapt` node is used to adapt/convert from the parent data (often the `AppData`) to the child data (some subset of the `AppData`). The `Adapt` node can also adapt messages from the child scope to the parent scope and vice versa.
+The `lens` view is used to adapt/convert from the parent data (often the `AppData`) to the child data (some subset of the `AppData`).
 
 The `View` trees are always eagerly evaluated when the `app_logic()` is called. Even though the `View`'s are very lightweight when the tree becomes large it can create performance issues; the `Memoize` node prunes the `View` tree to improve performance. The generation of the subtree is postponed until the `build()`/`rebuild()` are executed. If none of the `AppData` dependencies change during a UI cycle neither the `View` subtree will be constructed nor the `rebuild()` will be called. The `View` subtree will only be constructed if any of the `AppData` dependencies change. The `Memoize` node should be used when the subtree is a pure function of the `AppData`.
 

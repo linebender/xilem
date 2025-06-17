@@ -15,7 +15,7 @@ use xilem_core::{lens, map_message};
 
 #[derive(Default)]
 struct AppState {
-    adapt_count: i32,
+    map_message_count: i32,
     map_action_count: i32,
 }
 
@@ -40,9 +40,9 @@ enum AdaptMessage {
     Nop,
 }
 
-// `adapt()` is the most flexible but also most verbose way to modularize the views by state and action,
-// This is basically a combination of `map_state` and `map_action`, but it also allows to change the `MessageResult` for the parent view
-fn adapt_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
+// `map_message` is the most flexible but also most verbose way to modularize the views by action.
+// It's very similar to `map_action`, but it also allows to change the `MessageResult` for the parent view
+fn map_message_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
     flex((
         flex((
             label(format!("adapt count: {count}")),
@@ -76,14 +76,14 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         ),
         map_message(
             lens(
-                |count| adapt_counter(*count),
+                |count| map_message_counter(*count),
                 state,
-                |state| &mut state.adapt_count,
+                |state| &mut state.map_message_count,
             ),
             |state: &mut AppState, message| {
                 match message {
                     MessageResult::Action(AdaptMessage::Reset) => {
-                        state.adapt_count = 0;
+                        state.map_message_count = 0;
                         state.map_action_count = 0;
                         MessageResult::Action(())
                     }
