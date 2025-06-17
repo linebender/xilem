@@ -549,7 +549,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
-    ) -> vello::kurbo::Size {
+    ) -> Size {
         let viewport_size = bc.max();
         ctx.set_clip_path(viewport_size.to_rect());
         let child_bc = BoxConstraints::new(
