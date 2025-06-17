@@ -99,7 +99,7 @@ where
 ///         })
 ///     )
 /// ```
-pub fn adapt<
+pub fn _adapt<
     ParentState,
     ParentAction,
     ChildState,

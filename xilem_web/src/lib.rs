@@ -40,6 +40,7 @@ use std::any::Any;
 use std::ops::Deref as _;
 
 use web_sys::wasm_bindgen::JsCast;
+use xilem_core::MapMessage;
 
 /// The HTML namespace
 pub const HTML_NS: &str = "http://www.w3.org/1999/xhtml";
@@ -88,7 +89,7 @@ pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{Adapt, AdaptThunk, AnyView, MapAction, MapState, MessageResult, View, ViewSequence};
+use core::{Adapt, AdaptThunk, AnyView, MapState, MessageResult, View, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -139,7 +140,7 @@ pub trait DomView<State, Action = ()>:
     }
 
     /// See [`adapt`](`core::adapt`)
-    fn adapt<ParentState, ParentAction, ProxyFn>(
+    fn _adapt<ParentState, ParentAction, ProxyFn>(
         self,
         f: ProxyFn,
     ) -> Adapt<ParentState, ParentAction, State, Action, ViewCtx, Self, DynMessage, ProxyFn>
@@ -155,7 +156,7 @@ pub trait DomView<State, Action = ()>:
             ) -> MessageResult<ParentAction, DynMessage>
             + 'static,
     {
-        core::adapt(self, f)
+        core::_adapt(self, f)
     }
 
     /// See [`after_build`](`after_update::after_build`)
@@ -209,7 +210,19 @@ pub trait DomView<State, Action = ()>:
     fn map_action<ParentAction, F>(
         self,
         f: F,
-    ) -> MapAction<Self, State, ParentAction, Action, ViewCtx, DynMessage, F>
+    ) -> MapMessage<
+        Self,
+        State,
+        ParentAction,
+        Action,
+        ViewCtx,
+        DynMessage,
+        impl Fn(
+            &mut State,
+            MessageResult<Action, DynMessage>,
+        ) -> MessageResult<ParentAction, DynMessage>
+        + 'static,
+    >
     where
         State: 'static,
         ParentAction: 'static,

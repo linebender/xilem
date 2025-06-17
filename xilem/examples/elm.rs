@@ -6,11 +6,12 @@
 //! Though usually it's more idiomatic to modularize state with `map_state` and update state directly within event callbacks, as seen in the `components` example.
 
 use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
-use xilem::core::{MessageResult, adapt, map_action};
+use xilem::core::{MessageResult, map_action};
 use xilem::view::{Axis, button, flex, label};
 use xilem::winit::dpi::LogicalSize;
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
+use xilem_core::{lens, map_message};
 
 #[derive(Default)]
 struct AppState {
@@ -73,16 +74,22 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 CountMessage::Decrement => state.map_action_count -= 1,
             },
         ),
-        adapt(
-            adapt_counter(state.adapt_count),
-            |state: &mut AppState, thunk| match thunk.call(&mut state.adapt_count) {
-                MessageResult::Action(AdaptMessage::Reset) => {
-                    state.adapt_count = 0;
-                    state.map_action_count = 0;
-                    MessageResult::Action(())
+        map_message(
+            lens(
+                |count| adapt_counter(*count),
+                state,
+                |state| &mut state.adapt_count,
+            ),
+            |state: &mut AppState, message| {
+                match message {
+                    MessageResult::Action(AdaptMessage::Reset) => {
+                        state.adapt_count = 0;
+                        state.map_action_count = 0;
+                        MessageResult::Action(())
+                    }
+                    MessageResult::Action(AdaptMessage::Nop) => MessageResult::Nop, // nothing changed, don't rebuild view tree
+                    message_result => message_result.map(|_| ()), // just convert the result to `MessageResult<()>`
                 }
-                MessageResult::Action(AdaptMessage::Nop) => MessageResult::Nop, // nothing changed, don't rebuild view tree
-                message_result => message_result.map(|_| ()), // just convert the result to `MessageResult<()>`
             },
         ),
     ))

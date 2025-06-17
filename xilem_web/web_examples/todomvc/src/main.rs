@@ -8,7 +8,7 @@ mod state;
 
 use state::{AppState, Filter, Todo};
 use wasm_bindgen::JsCast;
-use xilem_web::core::{MessageResult, adapt};
+use xilem_web::core::{MessageResult, map_message, map_state};
 use xilem_web::elements::html as el;
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
@@ -129,10 +129,13 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     let todos: Vec<_> = state
         .visible_todos()
         .map(|(idx, todo)| {
-            adapt(
-                todo_item(todo, editing_id == Some(todo.id)),
-                move |data: &mut AppState, thunk| {
-                    if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
+            map_message(
+                map_state(
+                    todo_item(todo, editing_id == Some(todo.id)),
+                    move |data: &mut AppState| &mut data.todos[idx],
+                ),
+                move |data: &mut AppState, result| {
+                    if let MessageResult::Action(action) = result {
                         match action {
                             TodoAction::SetEditing(id) => data.start_editing(id),
                             TodoAction::CommitEdit => {

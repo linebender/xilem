@@ -6,10 +6,10 @@
 use masonry::dpi::LogicalSize;
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
-use xilem::core::adapt;
 use xilem::style::Style as _;
 use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, flex_item, progress_bar, sized_box};
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
+use xilem_core::lens;
 
 const SPACER_WIDTH: f64 = 10.;
 
@@ -70,13 +70,15 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
     // Use a `sized_box` to pad the window contents
     sized_box(
         flex((
-            adapt(
-                flex_item(border_box(progress_bar_view(data.progress)), 1.),
-                |data: &mut WidgetGallery, thunk| thunk.call(&mut data.progress),
+            lens(
+                |progress| flex_item(border_box(progress_bar_view(*progress)), 1.),
+                data,
+                |data: &mut WidgetGallery| &mut data.progress,
             ),
-            adapt(
-                flex_item(border_box(checkbox_view(data.checked)), 1.),
-                |data: &mut WidgetGallery, thunk| thunk.call(&mut data.checked),
+            lens(
+                |checked| flex_item(border_box(checkbox_view(*checked)), 1.),
+                data,
+                |data: &mut WidgetGallery| &mut data.checked,
             ),
         ))
         .gap(SPACER_WIDTH)
