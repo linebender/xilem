@@ -187,6 +187,7 @@ fn load_statuses(
                         id,
                         Some(&GetAccountStatusesInputOptions {
                             exclude_reblogs: Some(true),
+                            exclude_replies: Some(true),
                             ..Default::default()
                         }),
                     )
