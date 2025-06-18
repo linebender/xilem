@@ -2891,6 +2891,7 @@ name = "placehero"
 version = "0.3.0"
 dependencies = [
  "megalodon",
+ "tracing",
  "xilem",
 ]
 

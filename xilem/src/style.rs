@@ -4,12 +4,13 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::Property;
-use masonry::properties::types::Gradient;
-use masonry::properties::{
+use vello::peniko::Color;
+
+pub use masonry::properties::types::{Gradient, GradientShape};
+pub use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
-use vello::peniko::Color;
 
 /// Trait implemented by views to signal that a given property can be set on them.
 ///

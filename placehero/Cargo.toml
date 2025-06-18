@@ -9,6 +9,7 @@ publish = false
 
 [dependencies]
 megalodon = "1.0.0"
+tracing.workspace = true
 xilem = { version = "0.3.0", path = "../xilem" }
 
 [lints]
