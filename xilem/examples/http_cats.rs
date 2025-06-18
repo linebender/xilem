@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 use masonry::properties::Padding;
 use masonry::widgets::{Alignment, LineBreaking};
+use tokio::sync::mpsc::UnboundedSender;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -29,6 +30,8 @@ struct HttpCats {
     statuses: Vec<Status>,
     // The currently active (http status) code.
     selected_code: Option<u32>,
+    /// Send a status code to download the image for it.
+    download_sender: Option<UnboundedSender<u32>>,
 }
 
 #[derive(Debug)]
@@ -60,44 +63,24 @@ impl HttpCats {
             .padding(Padding::left(5.)),
         );
 
-        let (info_area, worker_value) = if let Some(selected_code) = self.selected_code {
+        let info_area = if let Some(selected_code) = self.selected_code {
             if let Some(selected_status) =
                 self.statuses.iter_mut().find(|it| it.code == selected_code)
             {
-                // If we haven't requested the image yet, make sure we do so.
-                let value = match selected_status.image {
-                    ImageState::NotRequested => {
-                        // TODO: Should a view_function be editing `self`?
-                        // This feels too imperative.
-                        selected_status.image = ImageState::Pending;
-                        Some(selected_code)
-                    }
-                    // If the image is pending, that means that worker already knows about it.
-                    // We don't set the requested code to `selected_code` here because we could have been on
-                    // a different view in-between, so we don't want to request the same image twice.
-                    ImageState::Pending => None,
-                    ImageState::Available(_) => None,
-                };
-                (OneOf3::A(selected_status.details_view()), value)
+                OneOf3::A(selected_status.details_view())
             } else {
-                (
-                    OneOf3::B(
-                        prose(format!(
-                            "Status code {selected_code} selected, but this was not found."
-                        ))
-                        .alignment(TextAlignment::Middle)
-                        .brush(palette::css::YELLOW),
-                    ),
-                    None,
+                OneOf3::B(
+                    prose(format!(
+                        "Status code {selected_code} selected, but this was not found."
+                    ))
+                    .alignment(TextAlignment::Middle)
+                    .brush(palette::css::YELLOW),
                 )
             }
         } else {
-            (
-                OneOf3::C(
-                    prose("No selection yet made. Select an item from the sidebar to continue.")
-                        .alignment(TextAlignment::Middle),
-                ),
-                None,
+            OneOf3::C(
+                prose("No selection yet made. Select an item from the sidebar to continue.")
+                    .alignment(TextAlignment::Middle),
             )
         };
 
@@ -111,27 +94,27 @@ impl HttpCats {
             ))
             .must_fill_major_axis(true),
             worker(
-                worker_value,
                 |proxy, mut rx| async move {
-                    while let Some(request) = rx.recv().await {
-                        if let Some(code) = request {
-                            let proxy = proxy.clone();
-                            tokio::task::spawn(async move {
-                                let url = format!("https://http.cat/{code}");
-                                let result = image_from_url(&url).await;
-                                match result {
-                                    // We choose not to handle the case where the event loop has ended
-                                    Ok(image) => drop(proxy.message((code, image))),
-                                    // TODO: Report in the frontend
-                                    Err(err) => {
-                                        tracing::warn!(
-                                            "Loading image for HTTP status code {code} from {url} failed: {err:?}"
-                                        );
-                                    }
+                    while let Some(code) = rx.recv().await {
+                        let proxy = proxy.clone();
+                        tokio::task::spawn(async move {
+                            let url = format!("https://http.cat/{code}");
+                            let result = image_from_url(&url).await;
+                            match result {
+                                // We choose not to handle the case where the event loop has ended
+                                Ok(image) => drop(proxy.message((code, image))),
+                                // TODO: Report in the frontend
+                                Err(err) => {
+                                    tracing::warn!(
+                                        "Loading image for HTTP status code {code} from {url} failed: {err:?}"
+                                    );
                                 }
-                            });
-                        }
+                            }
+                        });
                     }
+                },
+                |state: &mut Self, sender| {
+                    state.download_sender = Some(sender);
                 },
                 |state: &mut Self, (code, image): (u32, Image)| {
                     if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
@@ -172,6 +155,17 @@ impl Status {
             // TODO: Spinner if image pending?
             // TODO: Tick if image loaded?
             button("Select", move |state: &mut HttpCats| {
+                let status = state
+                    .statuses
+                    .iter_mut()
+                    .find(|it| it.code == code)
+                    .unwrap();
+
+                if matches!(status.image, ImageState::NotRequested) {
+                    state.download_sender.as_ref().unwrap().send(code).unwrap();
+                    status.image = ImageState::Pending;
+                }
+
                 state.selected_code = Some(code);
             }),
             FlexSpacer::Fixed(masonry::theme::SCROLLBAR_WIDTH),
@@ -226,6 +220,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = HttpCats {
         statuses: Status::parse_file(),
         selected_code: None,
+        download_sender: None,
     };
 
     let app = Xilem::new_simple(

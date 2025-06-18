@@ -28,14 +28,15 @@ use crate::core::{
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn worker<M, V, F, H, State, Action, Fut>(
-    value: V,
+pub fn worker<F, H, M, S, V, State, Action, Fut>(
     init_future: F,
+    store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, V>
+) -> Worker<F, H, M, S, V>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
+    S: Fn(&mut State, UnboundedSender<V>),
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
@@ -47,8 +48,8 @@ where
         );
     };
     Worker {
-        value,
         init_future,
+        store_sender,
         on_response,
         message: PhantomData,
     }
@@ -58,88 +59,80 @@ where
 ///
 /// This is [`worker`] without the capturing rules.
 /// See `worker` for full documentation.
-pub fn worker_raw<M, V, F, H, State, Action, Fut>(
-    value: V,
+pub fn worker_raw<M, V, S, F, H, State, Action, Fut>(
     init_future: F,
+    store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, V>
+) -> Worker<F, H, M, S, V>
 where
     // TODO(DJMcNab): Accept app_state here
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
+    S: Fn(&mut State, UnboundedSender<V>),
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
     Worker {
-        value,
         init_future,
         on_response,
+        store_sender,
         message: PhantomData,
     }
 }
 
-pub struct Worker<F, H, M, V> {
+pub struct Worker<F, H, M, S, V> {
     init_future: F,
-    value: V,
+    store_sender: S,
     on_response: H,
-    message: PhantomData<fn() -> M>,
+    message: PhantomData<fn(M, V)>,
 }
 
-#[doc(hidden)] // Implementation detail, public because of trait visibility rules
-pub struct WorkerState<V> {
-    handle: JoinHandle<()>,
-    sender: UnboundedSender<V>,
-}
+impl<F, H, M, S, V> ViewMarker for Worker<F, H, M, S, V> {}
 
-impl<F, H, M, V> ViewMarker for Worker<F, H, M, V> {}
-
-impl<State, Action, V, F, H, M, Fut> View<State, Action, ViewCtx> for Worker<F, H, M, V>
+impl<State, Action, F, H, M, Fut, S, V> View<State, Action, ViewCtx> for Worker<F, H, M, S, V>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
-    V: Send + PartialEq + Clone + 'static,
+    V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
+    S: Fn(&mut State, UnboundedSender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyMessage + 'static,
 {
     type Element = NoElement;
 
-    type ViewState = WorkerState<V>;
+    type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
+
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        // No opportunity for the channel to be closed.
-        tx.send(self.value.clone()).unwrap();
+        (self.store_sender)(app_state, tx);
         let handle = ctx
             .runtime()
             .spawn((self.init_future)(MessageProxy::new(proxy, path), rx));
-        (NoElement, WorkerState { handle, sender: tx })
+        (NoElement, handle)
     }
 
     fn rebuild(
         &self,
-        prev: &Self,
-        view_state: &mut Self::ViewState,
+        _prev: &Self,
+        _view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        if self.value != prev.value {
-            // TODO: Error handling
-            drop(view_state.sender.send(self.value.clone()));
-        }
     }
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
+        handle: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        view_state.handle.abort();
+        handle.abort();
     }
 
     fn message(
