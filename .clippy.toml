@@ -17,3 +17,8 @@ doc-valid-idents = ["FizzBuzz", "MathML", "RustNL", ".."]
 # like Box<dyn Fn(&mut Env, &T)>, which seems overly strict. The new value of 400 is
 # a simple guess. It might be worth lowering this, or using the default, in the future.
 type-complexity-threshold = 400
+
+disallowed-types = [
+    # For Placehero
+    { path = "megalodon::mastodon::Mastodon", reason = "In case of future changes, we want to keep all our assumptions about using Mastodon centralised", replacement = "placehero::Mastodon" },
+]

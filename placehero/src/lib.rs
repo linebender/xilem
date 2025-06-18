@@ -11,7 +11,7 @@
 
 use std::sync::Arc;
 
-use megalodon::{Megalodon, entities::Instance};
+use megalodon::{Megalodon, entities::Instance, mastodon};
 use xilem::{
     EventLoopBuilder, WidgetView, WindowOptions, Xilem,
     core::{
@@ -22,8 +22,21 @@ use xilem::{
     winit::error::EventLoopError,
 };
 
+/// Our shared API client type.
+///
+/// Megalodon suggests using `dyn Megaldon`, but specifying Mastodon here specifically
+/// has the advantage that go-to-definition works.
+///
+/// We also do not plan to support non-Mastodon servers at the moment.
+/// However, keeping this type definition means a greater chance of.
+#[expect(
+    clippy::disallowed_types,
+    reason = "We want to allow using the type only through this path"
+)]
+type Mastodon = Arc<mastodon::Mastodon>;
+
 struct Placehero {
-    megalodon: Arc<dyn Megalodon + Send + Sync + 'static>,
+    mastodon: Mastodon,
     instance: Option<Instance>,
 }
 
@@ -42,12 +55,12 @@ impl Placehero {
 }
 
 fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
-    let megalodon = app_state.megalodon.clone();
+    let mastodon = app_state.mastodon.clone();
     fork(
         app_state.sidebar(),
         task_raw(
             move |result| {
-                let megalodon = megalodon.clone();
+                let megalodon = mastodon.clone();
                 async move {
                     // We choose not to handle the case where the event loop has ended
                     let instance_result = megalodon.get_instance().await;
@@ -73,16 +86,20 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
 
 /// Execute the app in the given winit event loop.
 pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
-    let megalodon = megalodon::generator(
-        megalodon::SNS::Mastodon,
-        "https://mastodon.online".to_string(),
-        None,
-        Some("Placehero".into()),
-    )
-    // TODO: Better error handling
-    .unwrap();
+    let base_url = "https://mastodon.online".to_string();
+    // TODO: Determine what user agent we want to send.
+    // Currently we send "megalodon", as that is the default in the library
+    let user_agent = None;
+
+    #[expect(
+        clippy::disallowed_types,
+        reason = "We are constructing a value of the type, which we will never directly use elsewhere"
+    )]
+    let mastodon =
+        mastodon::Mastodon::new(base_url, None, user_agent).expect("Provided User Agent is valid");
+
     let app_state = Placehero {
-        megalodon: megalodon.into(),
+        mastodon: Arc::new(mastodon),
         instance: None,
     };
 
