@@ -129,6 +129,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 pub struct TestHarness {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
+    access_tree: Option<accesskit_consumer::Tree>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
@@ -274,6 +275,7 @@ impl TestHarness {
                     test_font: Some(data),
                 },
             ),
+            access_tree: None,
             mouse_state,
             window_size,
             background_color: params.background_color,
@@ -358,9 +360,16 @@ impl TestHarness {
     // --- MARK: RENDER
     // TODO - We add way too many dependencies in this code
     // TODO - Should be async?
-    /// Create a bitmap (an array of pixels), paint the window and return the bitmap as an 8-bits-per-channel RGB image.
+    /// Renders the window into an image and updates the `accesskit_consumer` tree.
+    ///
+    /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
-        let (scene, _tree_update) = self.render_root.redraw();
+        let (scene, tree_update) = self.render_root.redraw();
+        if let Some(access_tree) = &mut self.access_tree {
+            access_tree.update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
+        } else {
+            self.access_tree = Some(accesskit_consumer::Tree::new(tree_update, false));
+        }
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
@@ -795,4 +804,26 @@ impl TestHarness {
             let _ = std::fs::remove_file(&diff_path);
         }
     }
+}
+
+struct NoOpTreeChangeHandler;
+
+impl accesskit_consumer::TreeChangeHandler for NoOpTreeChangeHandler {
+    fn node_added(&mut self, _node: &accesskit_consumer::Node<'_>) {}
+
+    fn node_updated(
+        &mut self,
+        _old_node: &accesskit_consumer::Node<'_>,
+        _new_node: &accesskit_consumer::Node<'_>,
+    ) {
+    }
+
+    fn focus_moved(
+        &mut self,
+        _old_node: Option<&accesskit_consumer::Node<'_>>,
+        _new_node: Option<&accesskit_consumer::Node<'_>>,
+    ) {
+    }
+
+    fn node_removed(&mut self, _node: &accesskit_consumer::Node<'_>) {}
 }
