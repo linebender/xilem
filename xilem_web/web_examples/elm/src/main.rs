@@ -4,8 +4,7 @@
 //! Xilem supports several patterns for creating modular components.
 //! You can also emulate the elm architecture for a subset of your app.
 //! Though usually it's more idiomatic to modularize state with
-//! [`map_state`](xilem_web::core::map_state) or
-//! [`adapt`](xilem_web::core::adapt).
+//! [`map_state`](xilem_web::core::map_state) or [`lens`](xilem_web::core::lens).
 
 use xilem_web::core::map_action;
 use xilem_web::elements::html as el;
