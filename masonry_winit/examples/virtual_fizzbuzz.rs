@@ -11,7 +11,7 @@
 
 use masonry::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
-use masonry::widgets::{Label, RootWidget, VirtualScroll, VirtualScrollAction};
+use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -52,9 +52,7 @@ impl AppDriver for Driver {
                 // items to be loaded or unloaded.
                 let action = action.downcast::<VirtualScrollAction>().unwrap();
                 ctx.render_root(window_id).edit_root_widget(|mut root| {
-                    let mut root = root.downcast::<RootWidget>();
-                    let mut scroll = RootWidget::child_mut(&mut root);
-                    let mut scroll = scroll.downcast::<VirtualScroll<ScrollContents>>();
+                    let mut scroll = root.downcast::<VirtualScroll<ScrollContents>>();
                     // We need to tell the `VirtualScroll` which request this is associated with
                     // This is so that the controller knows which actions have been handled.
                     VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -107,11 +105,7 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(
-            driver.window_id,
-            window_attributes,
-            WidgetPod::new(RootWidget::from_pod(main_widget)).erased(),
-        )],
+        vec![(driver.window_id, window_attributes, main_widget)],
         driver,
     )
     .unwrap();

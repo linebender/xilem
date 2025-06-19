@@ -44,6 +44,16 @@ impl<W: Widget> WidgetPod<W> {
     pub fn new_with_id(inner: W, id: WidgetId) -> Self {
         Self::new_with_id_and_options(Box::new(inner), id, WidgetOptions::default())
     }
+
+    /// Create a new widget pod with properties.
+    pub fn new_with_props(inner: W, props: Properties) -> Self {
+        Self::new_with(
+            Box::new(inner),
+            WidgetId::next(),
+            WidgetOptions::default(),
+            props,
+        )
+    }
 }
 
 impl<W: Widget + ?Sized> WidgetPod<W> {

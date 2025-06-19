@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use accesskit::{Node, NodeId, Tree, TreeUpdate};
+use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
 use tracing::{debug, info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
@@ -155,7 +155,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
     let mut tree_update = TreeUpdate {
         nodes: vec![],
         tree: Some(Tree {
-            root: root.root.id().into(),
+            root: root.window_node_id,
             toolkit_name: Some("Masonry".to_string()),
             toolkit_version: Some(env!("CARGO_PKG_VERSION").to_string()),
         }),
@@ -200,6 +200,12 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         Some(scale_factor),
     );
     root.rebuild_access_tree = false;
+
+    // TODO: make root node type customizable to support Dialog/AlertDialog roles
+    // (should go hand in hand with introducing support for modal windows?)
+    let mut window_node = Node::new(Role::Window);
+    window_node.set_children(vec![root.root.id().into()]);
+    tree_update.nodes.push((root.window_node_id, window_node));
 
     tree_update
 }

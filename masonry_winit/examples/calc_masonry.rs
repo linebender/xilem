@@ -15,9 +15,9 @@ use std::str::FromStr;
 
 use masonry::accesskit;
 use masonry::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, DefaultProperties, EventCtx, LayoutCtx,
-    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -27,7 +27,7 @@ use masonry::properties::{Background, BorderColor, BorderWidth, Padding};
 use masonry::smallvec::{SmallVec, smallvec};
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
-use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, RootWidget, SizedBox};
+use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, SizedBox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace, trace_span};
 use winit::window::Window;
@@ -306,9 +306,7 @@ impl AppDriver for CalcState {
         }
 
         ctx.render_root(window_id).edit_root_widget(|mut root| {
-            let mut root = root.downcast::<RootWidget>();
-            let mut flex = RootWidget::child_mut(&mut root);
-            let mut flex = flex.downcast();
+            let mut flex = root.downcast();
             let mut label = Flex::child_mut(&mut flex, 1).unwrap();
             let mut label = label.downcast::<Label>();
             Label::set_text(&mut label, &*self.value);
@@ -434,13 +432,10 @@ fn build_calc() -> impl Widget {
         )
 }
 
-fn default_props() -> DefaultProperties {
-    let mut default_properties = default_property_set();
-    default_properties
-        .insert::<RootWidget, _>(Background::Color(AlphaColor::from_str("#794869").unwrap()));
-    default_properties.insert::<RootWidget, _>(Padding::all(2.0));
-
-    default_properties
+fn root_props() -> Properties {
+    Properties::new()
+        .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
+        .with(Padding::all(2.0))
 }
 
 fn main() {
@@ -467,10 +462,10 @@ fn main() {
         vec![(
             calc_state.window_id,
             window_attributes,
-            WidgetPod::new(RootWidget::new(build_calc())).erased(),
+            WidgetPod::new_with_props(build_calc(), root_props()).erased(),
         )],
         calc_state,
-        default_props(),
+        default_property_set(),
     )
     .unwrap();
 }
@@ -479,13 +474,18 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
+    use masonry::testing::{TestHarness, TestHarnessParams};
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(default_props(), RootWidget::new(build_calc()));
+        let mut harness = TestHarness::create_with(
+            default_property_set(),
+            build_calc(),
+            root_props(),
+            TestHarnessParams::default(),
+        );
         assert_render_snapshot!(harness, "example_calc_masonry_initial");
 
         // TODO - Test clicking buttons

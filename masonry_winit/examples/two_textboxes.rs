@@ -11,7 +11,7 @@ use masonry::core::{Action, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
-use masonry::widgets::{Flex, RootWidget, Textbox};
+use masonry::widgets::{Flex, Textbox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -45,7 +45,7 @@ fn main() {
         .with_min_inner_size(window_size);
 
     let mut default_properties = default_property_set();
-    default_properties.insert::<RootWidget, _>(Padding::all(5.0));
+    default_properties.insert::<Flex, _>(Padding::all(5.0));
 
     let event_loop = masonry_winit::app::EventLoop::with_user_event()
         .build()
@@ -55,7 +55,7 @@ fn main() {
         vec![(
             WindowId::next(),
             window_attributes,
-            WidgetPod::new(RootWidget::new(main_widget)).erased(),
+            WidgetPod::new(main_widget).erased(),
         )],
         Driver,
         default_properties,

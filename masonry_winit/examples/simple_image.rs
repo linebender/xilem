@@ -11,7 +11,7 @@
 use masonry::core::{Action, ObjectFit, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::{Image as ImageBuf, ImageFormat};
-use masonry::widgets::{Image, RootWidget};
+use masonry::widgets::Image;
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -54,7 +54,7 @@ fn main() {
         vec![(
             WindowId::next(),
             window_attributes,
-            WidgetPod::new(RootWidget::new(make_image())).erased(),
+            WidgetPod::new(make_image()).erased(),
         )],
         Driver,
     )
