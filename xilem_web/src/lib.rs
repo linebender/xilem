@@ -40,7 +40,6 @@ use std::any::Any;
 use std::ops::Deref as _;
 
 use web_sys::wasm_bindgen::JsCast;
-use xilem_core::MapMessage;
 
 /// The HTML namespace
 pub const HTML_NS: &str = "http://www.w3.org/1999/xhtml";
@@ -89,7 +88,7 @@ pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{AnyView, MapState, MessageResult, View, ViewSequence};
+use core::{AnyView, MapMessage, MapState, MessageResult, View, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]

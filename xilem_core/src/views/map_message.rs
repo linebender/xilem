@@ -84,7 +84,7 @@ where
     ParentAction: 'static,
     ChildAction: 'static,
     V: View<State, ChildAction, Context, Message>,
-    F: for<'a> Fn(&mut State, ChildAction) -> ParentAction + 'static,
+    F: Fn(&mut State, ChildAction) -> ParentAction + 'static,
 {
     MapMessage {
         map_fn: move |app_state: &mut State, result: MessageResult<ChildAction, Message>| {

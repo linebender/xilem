@@ -34,7 +34,8 @@ fn elm_counter<T: 'static>(count: i32) -> impl WidgetView<T, CountMessage> {
     ))
 }
 
-enum AdaptMessage {
+/// A View Action type recording how the counter changed in [`map_message_counter`].
+enum CounterChanged {
     Changed,
     Reset,
     Nop,
@@ -42,23 +43,23 @@ enum AdaptMessage {
 
 // `map_message` is the most flexible but also most verbose way to modularize the views by action.
 // It's very similar to `map_action`, but it also allows to change the `MessageResult` for the parent view
-fn map_message_counter(count: i32) -> impl WidgetView<i32, AdaptMessage> {
+fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
     flex((
         flex((
-            label(format!("adapt count: {count}")),
+            label(format!("map_message count: {count}")),
             button("+", |count| {
                 *count += 1;
-                AdaptMessage::Changed
+                CounterChanged::Changed
             }),
             button("-", |count| {
                 *count -= 1;
-                AdaptMessage::Changed
+                CounterChanged::Changed
             }),
         )),
         flex((
-            button("reset all", |_| AdaptMessage::Reset),
+            button("reset all", |_| CounterChanged::Reset),
             button("do nothing (and don't rebuild the view tree)", |_| {
-                AdaptMessage::Nop
+                CounterChanged::Nop
             }),
         )),
     ))
@@ -82,12 +83,12 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
             ),
             |state: &mut AppState, message| {
                 match message {
-                    MessageResult::Action(AdaptMessage::Reset) => {
+                    MessageResult::Action(CounterChanged::Reset) => {
                         state.map_message_count = 0;
                         state.map_action_count = 0;
                         MessageResult::Action(())
                     }
-                    MessageResult::Action(AdaptMessage::Nop) => MessageResult::Nop, // nothing changed, don't rebuild view tree
+                    MessageResult::Action(CounterChanged::Nop) => MessageResult::Nop, // nothing changed, don't rebuild view tree
                     message_result => message_result.map(|_| ()), // just convert the result to `MessageResult<()>`
                 }
             },

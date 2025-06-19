@@ -73,24 +73,23 @@ When they're run, they take a mutable reference to the app data.
 
 ### Components
 
-A major goal is to support React-like components, where modules that build UI for some fragment of the overall app state are composed together. 
+A major goal is to support React-like components, where modules that build UI for some fragment of the overall app state are composed together.
 
 ```rust
 struct AppData {
     count: u32,
 }
 
-fn count_button(count: u32) -> impl View<u32, (), Element = impl Widget> {
+fn count_button(count: &mut u32) -> impl View<u32, (), Element = impl Widget> {
     Button::new(format!("count: {}", count), |data| *data += 1)
 }
 
 fn app_logic(data: &mut AppData) -> impl View<AppData, (), Element = impl Widget> {
-    Adapt::new(|data: &mut AppData, thunk| thunk.call(&mut data.count),
-        count_button(data.count))
+    lens(count_button, data, |data| &mut data.count)
 }
 ```
 
-This adapt node is very similar to a lens (quite familiar to existing Druid users), and is also very similar to the [Html.map] node in Elm.
+This `lens` node should be quite familiar to existing Druid users, and is also very similar to the [Html.map] node in Elm.
 Note that in this case the data presented to the child component to render, and the mutable app state available in callbacks is the same, but that is not necessarily the case.
 
 ### Memoization
@@ -112,9 +111,6 @@ fn app_logic(data: &mut AppData) -> impl View<AppData, (), Element = impl Widget
 ```
 
 The current code uses a `PartialEq` bound, but in practice I think it might be much more useful to use pointer equality on `Rc` and `Arc`.
-
-The combination of memoization with pointer equality and an adapt node that calls [Rc::make_mut] on the parent type is actually a powerful form of change tracking, similar in scope to Adapton, self-adjusting computation, or the types of binding objects used in SwiftUI.
-If a piece of data is rendered in two different places, it automatically propagates the change to both of those, without having to do any explicit management of the dependency graph.
 
 I anticipate it will also be possible to do dirty tracking manually - the app logic can set a dirty flag when a subtree needs re-rendering.
 

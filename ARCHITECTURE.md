@@ -65,7 +65,7 @@ fn main() {
     app.run_windowed("Application Example".into()).unwrap();
 }
 ```
-The most important construct at the reactive layer is the `View` trait. `View` implementations need to assign the associated `State` and `Element` and implement `build()`, `rebuild()` and `message()`. The `build()` is run only once (first run) to initialize the associated `State` create the associated `Element`of the view. The `rebuild()` is used to update the associated `State` and `Element` and it is what enables Xilem's reactivity. It is worth noting three special types of views the `Adapt`, `Memoize` and `AnyView` views. 
+The most important construct at the reactive layer is the `View` trait. `View` implementations need to assign the associated `State` and `Element` and implement `build()`, `rebuild()` and `message()`. The `build()` is run only once (first run) to initialize the associated `State` create the associated `Element`of the view. The `rebuild()` is used to update the associated `State` and `Element` and it is what enables Xilem's reactivity. It is worth noting three special types of views the `lens`, `Memoize` and `AnyView` views. 
 
 The `lens` view is used to adapt/convert from the parent data (often the `AppData`) to the child data (some subset of the `AppData`).
 
