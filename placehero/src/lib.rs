@@ -19,10 +19,7 @@ use megalodon::{
 };
 use xilem::{
     EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem,
-    core::{
-        NoElement, View, fork,
-        one_of::{Either, OneOf},
-    },
+    core::{NoElement, View, fork, one_of::Either},
     palette::css::{LIME, WHITE, YELLOW},
     style::{Gradient, Style},
     view::{GridExt, GridParams, flex, grid, label, portal, prose, sized_box, split, task_raw},
@@ -58,13 +55,13 @@ impl Placehero {
                 prose(instance.title.as_str()),
             )))
         } else {
-            OneOf::B(prose("Not yet connected (or other unhandled error)"))
+            Either::B(prose("Not yet connected (or other unhandled error)"))
         }
     }
 
     fn main_view(&mut self) -> impl WidgetView<Self> + use<> {
         if self.statuses.is_empty() {
-            OneOf::A(prose("No statuses yet loaded"))
+            Either::A(prose("No statuses yet loaded"))
         } else {
             Either::B(portal(flex(
                 self.statuses.iter().map(status_view).collect::<Vec<_>>(),
