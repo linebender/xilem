@@ -7,9 +7,7 @@ use crate::style::Style;
 
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use masonry::widgets::{
-    GridParams, {self},
-};
+use masonry::widgets;
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -17,6 +15,7 @@ use crate::core::{
 };
 use crate::{Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
+pub use masonry::widgets::GridParams;
 /// A Grid layout divides a window into regions and defines the relationship
 /// between inner elements in terms of size and position.
 ///
