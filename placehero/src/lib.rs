@@ -18,11 +18,14 @@ use megalodon::{
     megalodon::GetAccountStatusesInputOptions,
 };
 use xilem::{
-    EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem,
+    EventLoopBuilder, FontWeight, ViewCtx, WidgetView, WindowOptions, Xilem,
     core::{NoElement, View, fork, lens, one_of::Either},
-    palette::css,
-    style::Style,
-    view::{GridExt, GridParams, flex, grid, label, portal, prose, sized_box, split, task_raw},
+    palette::css::{self, LIME, WHITE, YELLOW},
+    style::{Gradient, Padding, Style},
+    view::{
+        CrossAxisAlignment, FlexExt, FlexSpacer, GridExt, GridParams, MainAxisAlignment, flex,
+        grid, inline_prose, label, portal, prose, sized_box, spinner, split, task_raw,
+    },
     winit::error::EventLoopError,
 };
 
@@ -70,16 +73,24 @@ impl Placehero {
         if self.statuses.is_empty() {
             Either::A(prose("No statuses yet loaded"))
         } else {
-            Either::B(portal(flex(
-                self.statuses
-                    .iter()
-                    .map(|status| status_view(&mut self.avatars, status))
-                    .collect::<Vec<_>>(),
-            )))
+            Either::B(portal(
+                flex(
+                    self.statuses
+                        .iter()
+                        .map(|status| status_view_alt(&mut self.avatars, status))
+                        .collect::<Vec<_>>(),
+                )
+                .padding(Padding {
+                    // Leaave room for scrollbar
+                    right: 20.,
+                    ..Padding::all(5.0)
+                }),
+            ))
         }
     }
 }
 
+#[expect(unused, reason = "Kept around to make rebases cleaner.")]
 fn status_view(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Placehero> + use<> {
     sized_box(grid(
         (
@@ -102,7 +113,7 @@ fn status_view(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Placeh
 
 fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
     fork(
-        split(app_state.sidebar(), app_state.main_view()),
+        split(app_state.sidebar(), app_state.main_view()).split_point(0.2),
         (
             load_instance(app_state.mastodon.clone()),
             load_account(app_state.mastodon.clone()),
@@ -243,4 +254,52 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         WindowOptions::new("Placehero: A placeholder named Mastodon client"),
     )
     .run_in(event_loop)
+}
+
+fn status_view_alt(status: &Status) -> impl WidgetView<Placehero> + use<> {
+    sized_box(flex((
+        flex((
+            sized_box(spinner().color(css::BLACK))
+                .background_gradient(
+                    Gradient::new_linear(
+                        // down-right
+                        const { -45_f64.to_radians() },
+                    )
+                    .with_stops([YELLOW, LIME]),
+                )
+                .height(50.)
+                .width(50.)
+                .padding(4.0),
+            flex((
+                inline_prose(status.account.display_name.as_str())
+                    .weight(FontWeight::SEMI_BOLD)
+                    .alignment(xilem::TextAlignment::Start)
+                    .text_size(20.)
+                    .flex(CrossAxisAlignment::Start),
+                inline_prose(status.account.username.as_str())
+                    .weight(FontWeight::SEMI_LIGHT)
+                    .alignment(xilem::TextAlignment::Start)
+                    .flex(CrossAxisAlignment::Start),
+            ))
+            .main_axis_alignment(MainAxisAlignment::Start)
+            .gap(1.),
+            FlexSpacer::Flex(1.0),
+            inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
+                .alignment(xilem::TextAlignment::End),
+        ))
+        .must_fill_major_axis(true)
+        .direction(xilem::view::Axis::Horizontal),
+        prose(status.content.as_str()),
+        flex((
+            label(format!("💬 {}", status.replies_count)).flex(1.0),
+            label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
+            label(format!("⭐ {}", status.favourites_count)).flex(1.0),
+        ))
+        .direction(xilem::view::Axis::Horizontal)
+        // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
+    )))
+    .border(WHITE, 2.0)
+    .padding(10.0)
+    .corner_radius(5.)
 }
