@@ -9,7 +9,7 @@
 use std::time::Duration;
 
 use winit::error::EventLoopError;
-use xilem::core::{fork, run_once};
+use xilem::core::{fork, run_once, without_elements};
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
@@ -126,18 +126,18 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     if data.active {
-        fork(
-            flex((
-                button("Deactivate", |data: &mut AppData| {
-                    data.active = false;
-                }),
-                button("Unlimited Power", |data: &mut AppData| {
-                    data.count = -1_000_000;
-                }),
-            ))
-            .direction(Axis::Horizontal),
-            run_once(|| tracing::warn!("The pathway to unlimited power has been revealed")),
-        )
+        flex((
+            button("Deactivate", |data: &mut AppData| {
+                data.active = false;
+            }),
+            button("Unlimited Power", |data: &mut AppData| {
+                data.count = -1_000_000;
+            }),
+            without_elements(run_once(|| {
+                tracing::warn!("The pathway to unlimited power has been revealed");
+            })),
+        ))
+        .direction(Axis::Horizontal)
         .boxed()
     } else {
         button("Activate", |data: &mut AppData| data.active = true).boxed()
