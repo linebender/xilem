@@ -14,9 +14,8 @@ use vello::kurbo::common::FloatExt;
 use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, TextEvent, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::debug_panic;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
@@ -966,30 +965,6 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
 
 // --- MARK: IMPL WIDGET---
 impl Widget for Flex {
-    fn on_pointer_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &PointerEvent,
-    ) {
-    }
-
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
-    }
-
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);

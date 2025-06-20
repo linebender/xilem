@@ -15,9 +15,9 @@ use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Brush};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, BrushIndex, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, StyleSet,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
+    AccessCtx, ArcStr, BoxConstraints, BrushIndex, LayoutCtx, PaintCtx, PropertiesMut,
+    PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, render_text,
 };
 use crate::debug_panic;
 use crate::theme;
@@ -315,32 +315,8 @@ impl Label {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Label {
-    fn on_pointer_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &PointerEvent,
-    ) {
-    }
-
     fn accepts_pointer_interaction(&self) -> bool {
         false
-    }
-
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}

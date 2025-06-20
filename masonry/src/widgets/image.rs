@@ -12,9 +12,8 @@ use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut,
+    AccessCtx, BoxConstraints, LayoutCtx, ObjectFit, PaintCtx, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -71,30 +70,6 @@ impl Image {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Image {
-    fn on_pointer_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &PointerEvent,
-    ) {
-    }
-
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
-    }
-
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn update(

@@ -10,9 +10,8 @@ use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
@@ -104,30 +103,6 @@ impl Textbox {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Textbox {
-    fn on_pointer_event(
-        &mut self,
-        _: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _: &PointerEvent,
-    ) {
-    }
-
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
-    }
-
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.text);
     }

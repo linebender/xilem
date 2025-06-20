@@ -13,9 +13,8 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::Label;
 
@@ -179,32 +178,8 @@ impl VariableLabel {
 
 // --- MARK: IMPL WIDGET
 impl Widget for VariableLabel {
-    fn on_pointer_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &PointerEvent,
-    ) {
-    }
-
     fn accepts_pointer_interaction(&self) -> bool {
         false
-    }
-
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
     }
 
     fn update(

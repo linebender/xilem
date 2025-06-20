@@ -10,9 +10,8 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::types::Gradient;
 use crate::theme;
@@ -98,30 +97,6 @@ fn clamp_progress(progress: Option<f64>) -> Option<f64> {
 
 // --- MARK: IMPL WIDGET
 impl Widget for ProgressBar {
-    fn on_pointer_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &PointerEvent,
-    ) {
-    }
-
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
-    ) {
-    }
-
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.label);
     }
