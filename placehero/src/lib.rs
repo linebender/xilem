@@ -19,15 +19,17 @@ use megalodon::{
 };
 use xilem::{
     EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem,
-    core::{NoElement, View, fork, one_of::Either},
-    palette::css::{LIME, WHITE, YELLOW},
-    style::{Gradient, Style},
+    core::{NoElement, View, fork, lens, one_of::Either},
+    palette::css,
+    style::Style,
     view::{GridExt, GridParams, flex, grid, label, portal, prose, sized_box, split, task_raw},
     winit::error::EventLoopError,
 };
 
+use crate::avatars::Avatars;
 use crate::html_content::status_html_to_plaintext;
 
+mod avatars;
 mod html_content;
 
 /// Our shared API client type.
@@ -48,6 +50,7 @@ struct Placehero {
     instance: Option<Instance>,
     statuses: Vec<Status>,
     account: Option<Account>,
+    avatars: Avatars,
 }
 
 impl Placehero {
@@ -68,24 +71,19 @@ impl Placehero {
             Either::A(prose("No statuses yet loaded"))
         } else {
             Either::B(portal(flex(
-                self.statuses.iter().map(status_view).collect::<Vec<_>>(),
+                self.statuses
+                    .iter()
+                    .map(|status| status_view(&mut self.avatars, status))
+                    .collect::<Vec<_>>(),
             )))
         }
     }
 }
 
-fn status_view(status: &Status) -> impl WidgetView<Placehero> + use<> {
+fn status_view(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Placehero> + use<> {
     sized_box(grid(
         (
-            sized_box(label("Avatar"))
-                .background_gradient(
-                    Gradient::new_linear(
-                        // down-right
-                        const { -45_f64.to_radians() },
-                    )
-                    .with_stops([YELLOW, LIME]),
-                )
-                .grid_pos(0, 0),
+            avatars.avatar(&status.account.avatar_static).grid_pos(0, 0),
             prose(status.account.display_name.as_str()).grid_pos(1, 0),
             prose(status.account.username.as_str()).grid_pos(2, 0),
             prose(status_html_to_plaintext(status.content.as_str()))
@@ -99,21 +97,25 @@ fn status_view(status: &Status) -> impl WidgetView<Placehero> + use<> {
     ))
     .expand_width()
     .height(300.0)
-    .border(WHITE, 2.)
+    .border(css::WHITE, 2.)
 }
 
 fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
-    let map = app_state
-        .account
-        .as_ref()
-        .map(|it| it.id.clone())
-        .map(|id| load_statuses(app_state.mastodon.clone(), id));
     fork(
         split(app_state.sidebar(), app_state.main_view()),
         (
             load_instance(app_state.mastodon.clone()),
             load_account(app_state.mastodon.clone()),
-            map,
+            app_state
+                .account
+                .as_ref()
+                .map(|it| it.id.clone())
+                .map(|id| load_statuses(app_state.mastodon.clone(), id)),
+            lens(
+                |avatars: &mut Avatars| avatars.worker(),
+                app_state,
+                |app_state: &mut Placehero| &mut app_state.avatars,
+            ),
         ),
     )
 }
@@ -232,6 +234,7 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         instance: None,
         account: None,
         statuses: Vec::new(),
+        avatars: Avatars::default(),
     };
 
     Xilem::new_simple(
