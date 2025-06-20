@@ -23,7 +23,7 @@ enum TagCloseBehaviour {
 /// 3) We don't handle `microformat` at all.
 // TODO: We know this code is not great (and probably way too imperative!)
 // We're deferring refactoring this until we want to handle more attributes.
-pub(crate) fn handle_content_html(content: &str) -> String {
+pub(crate) fn status_html_to_plaintext(content: &str) -> String {
     let _span = tracing::info_span!("handle_content_html").entered();
     let tokeniser = html5gum::Tokenizer::new(content);
     // The resulting string will *always*(?) be shorter than the initial string

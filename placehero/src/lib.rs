@@ -26,7 +26,7 @@ use xilem::{
     winit::error::EventLoopError,
 };
 
-use crate::html_content::handle_content_html;
+use crate::html_content::status_html_to_plaintext;
 
 mod html_content;
 
@@ -88,7 +88,7 @@ fn status_view(status: &Status) -> impl WidgetView<Placehero> + use<> {
                 .grid_pos(0, 0),
             prose(status.account.display_name.as_str()).grid_pos(1, 0),
             prose(status.account.username.as_str()).grid_pos(2, 0),
-            prose(handle_content_html(status.content.as_str()))
+            prose(status_html_to_plaintext(status.content.as_str()))
                 .grid_item(GridParams::new(0, 1, 3, 1)),
             prose(status.created_at.to_rfc2822()).grid_pos(0, 2),
             prose(status.favourites_count.to_string()).grid_pos(1, 2),
