@@ -289,7 +289,7 @@ fn status_view_alt(status: &Status) -> impl WidgetView<Placehero> + use<> {
         ))
         .must_fill_major_axis(true)
         .direction(xilem::view::Axis::Horizontal),
-        prose(status.content.as_str()),
+        prose(status_html_to_plaintext(status.content.as_str())),
         flex((
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
