@@ -1,3 +1,6 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use xilem::core::one_of::Either;
 use xilem::core::{MessageProxy, NoElement, View};
 use xilem::palette::css;
