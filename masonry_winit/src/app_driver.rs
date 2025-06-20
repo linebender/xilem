@@ -6,8 +6,9 @@ use std::hash::Hash;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use masonry::AnyDebug;
 use masonry::app::RenderRoot;
-use masonry::core::{Action, AnyWidget, WidgetId, WidgetPod};
+use masonry::core::{AnyWidget, WidgetId, WidgetPod};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes};
@@ -52,6 +53,9 @@ impl<'a, 's> DriverCtx<'a, 's> {
         Self { state, event_loop }
     }
 }
+
+/// Action type passed to [`AppDriver::on_action`].
+pub type Action = Box<dyn AnyDebug>;
 
 /// A trait for defining how your app interacts with the Masonry widget tree.
 ///

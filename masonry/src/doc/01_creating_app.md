@@ -86,7 +86,7 @@ trait AppDriver {
 }
 ```
 
-Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), an [`Action`] is emitted, and the `on_action` method is called.
+Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), an `Action` is emitted, and the `on_action` method is called.
 
 That method gives our app a `DriverCtx` context, which we can use to access the root widget, and a [`WidgetId`] identifying the widget that emitted the action.
 
@@ -273,7 +273,6 @@ Most of this documentation is written to help developers trying to build such a 
 [`Textbox`]: crate::widgets::Textbox
 [`Button`]: crate::widgets::Button
 
-[`Action`]: crate::core::Action
 [`WidgetId`]: crate::core::WidgetId
 [`WidgetMut`]: crate::core::WidgetMut
 [add_child]: crate::widgets::Flex::add_child

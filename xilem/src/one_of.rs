@@ -183,11 +183,14 @@ impl<
     I: AnyWidget + FromDynWidget + ?Sized,
 > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_text_event(
@@ -195,6 +198,7 @@ impl<
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_access_event(
@@ -202,6 +206,7 @@ impl<
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -224,6 +229,7 @@ impl<
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         match self {
             Self::A(w) => {

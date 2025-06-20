@@ -226,11 +226,14 @@ impl<S> ModularWidget<S> {
 
 #[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
+    type Action = (); // TODO: add type parameter
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         if let Some(f) = self.on_pointer_event.as_mut() {
             f(&mut self.state, ctx, props, event);
@@ -242,6 +245,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         if let Some(f) = self.on_text_event.as_mut() {
             f(&mut self.state, ctx, props, event);
@@ -253,6 +257,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         if let Some(f) = self.on_access_event.as_mut() {
             f(&mut self.state, ctx, props, event);
@@ -293,6 +298,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let Self { state, layout, .. } = self;
         layout

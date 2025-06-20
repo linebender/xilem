@@ -4,9 +4,11 @@
 use std::any::{Any, TypeId};
 use std::fmt::Display;
 use std::num::NonZeroU64;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::{Node, Role};
+use any_debug::AnyDebug;
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
@@ -14,6 +16,7 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
+use crate::app::RenderRootSignal;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
@@ -125,6 +128,9 @@ impl FromDynWidget for dyn AnyWidget {
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsDynWidget + Any {
+    /// Type that can be emitted by the event handlers and the layout method.
+    type Action: AnyDebug;
+
     /// Handle a pointer event.
     ///
     /// Pointer events will target the widget under the pointer, and then the
@@ -134,6 +140,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -147,6 +154,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
+        emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -158,6 +166,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -240,6 +249,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        emit: impl Fn(Self::Action),
     ) -> Size;
 
     /// Runs after the widget's final transform has been computed.
@@ -387,6 +397,17 @@ pub trait Widget: AsDynWidget + Any {
     }
 }
 
+pub struct ActionSink {
+    pub(crate) id: WidgetId,
+    pub(crate) signal_sink: Arc<dyn Fn(RenderRootSignal)>,
+}
+
+impl ActionSink {
+    pub fn emit(&self, signal: impl AnyDebug) {
+        (self.signal_sink)(RenderRootSignal::Action(Box::new(signal), self.id));
+    }
+}
+
 #[expect(
     missing_docs,
     reason = "Don't want to duplicate documentation of Widget trait."
@@ -400,6 +421,7 @@ pub trait AnyWidget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        emit: ActionSink,
     );
 
     fn on_text_event(
@@ -407,6 +429,7 @@ pub trait AnyWidget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
+        emit: ActionSink,
     );
 
     fn on_access_event(
@@ -414,6 +437,7 @@ pub trait AnyWidget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        emit: ActionSink,
     );
 
     fn on_anim_frame(
@@ -434,6 +458,7 @@ pub trait AnyWidget: AsDynWidget + Any {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        sink: ActionSink,
     ) -> Size;
 
     fn compose(&mut self, _ctx: &mut ComposeCtx<'_>) {}
@@ -484,8 +509,9 @@ impl<W: Widget> AnyWidget for W {
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        sink: ActionSink,
     ) {
-        self.on_pointer_event(ctx, props, event);
+        self.on_pointer_event(ctx, props, event, |event| sink.emit(event));
     }
 
     fn on_text_event(
@@ -493,8 +519,9 @@ impl<W: Widget> AnyWidget for W {
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &TextEvent,
+        sink: ActionSink,
     ) {
-        self.on_text_event(ctx, props, event);
+        self.on_text_event(ctx, props, event, |event| sink.emit(event));
     }
 
     fn on_access_event(
@@ -502,8 +529,9 @@ impl<W: Widget> AnyWidget for W {
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        sink: ActionSink,
     ) {
-        self.on_access_event(ctx, props, event);
+        self.on_access_event(ctx, props, event, |event| sink.emit(event));
     }
 
     fn on_anim_frame(
@@ -532,8 +560,9 @@ impl<W: Widget> AnyWidget for W {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        sink: ActionSink,
     ) -> Size {
-        self.layout(ctx, props, bc)
+        self.layout(ctx, props, bc, |event| sink.emit(event))
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {

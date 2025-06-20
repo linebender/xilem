@@ -10,9 +10,8 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
-    WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetPod,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
@@ -21,7 +20,7 @@ use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
 use masonry::smallvec::SmallVec;
 use masonry::vello::Scene;
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{Action, AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace_span};
 use winit::window::Window;
 
@@ -41,11 +40,14 @@ impl AppDriver for Driver {
 struct CustomWidget(String);
 
 impl Widget for CustomWidget {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -54,6 +56,7 @@ impl Widget for CustomWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -62,6 +65,7 @@ impl Widget for CustomWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -72,6 +76,7 @@ impl Widget for CustomWidget {
         _layout_ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         // BoxConstraints are passed by the parent widget.
         // This method can return any Size within those constraints:

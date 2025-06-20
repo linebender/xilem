@@ -264,11 +264,14 @@ impl<W: AnyWidget + FromDynWidget + ?Sized> Portal<W> {
 
 // --- MARK: IMPL WIDGET
 impl<W: AnyWidget + FromDynWidget + ?Sized> Widget for Portal<W> {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         let portal_size = ctx.size();
         let content_size = ctx.get_raw_ref(&mut self.child).ctx().size();
@@ -342,6 +345,7 @@ impl<W: AnyWidget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -351,6 +355,7 @@ impl<W: AnyWidget + FromDynWidget + ?Sized> Widget for Portal<W> {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -394,6 +399,7 @@ impl<W: AnyWidget + FromDynWidget + ?Sized> Widget for Portal<W> {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         // TODO - How Portal handles BoxConstraints is due for a rework
         let min_child_size = if self.must_fill { bc.min() } else { Size::ZERO };

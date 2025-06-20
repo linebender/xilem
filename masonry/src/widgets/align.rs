@@ -87,6 +87,8 @@ impl Align {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Align {
+    type Action = ();
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.child);
     }
@@ -96,6 +98,7 @@ impl Widget for Align {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let size = ctx.run_layout(&mut self.child, &bc.loosen());
 

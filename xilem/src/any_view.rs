@@ -69,11 +69,14 @@ impl DynWidget {
 
 /// Forward all events to the child widget.
 impl Widget for DynWidget {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_text_event(
@@ -81,6 +84,7 @@ impl Widget for DynWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_access_event(
@@ -88,6 +92,7 @@ impl Widget for DynWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -100,6 +105,7 @@ impl Widget for DynWidget {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let size = ctx.run_layout(&mut self.inner, bc);
         ctx.place_child(&mut self.inner, Point::ORIGIN);

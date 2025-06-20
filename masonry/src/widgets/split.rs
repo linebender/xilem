@@ -398,11 +398,14 @@ where
     ChildA: AnyWidget + ?Sized,
     ChildB: AnyWidget + ?Sized,
 {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         if self.draggable {
             match event {
@@ -446,6 +449,7 @@ where
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -454,6 +458,7 @@ where
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -467,6 +472,7 @@ where
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         match self.split_axis {
             Axis::Horizontal => {

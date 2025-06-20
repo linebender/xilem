@@ -132,14 +132,17 @@ impl<W: Widget> Recorder<W> {
 
 #[warn(clippy::missing_trait_methods)]
 impl<W: Widget> Widget for Recorder<W> {
+    type Action = W::Action;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        emit: impl Fn(W::Action),
     ) {
         self.recording.push(Record::PE(event.clone()));
-        self.child.on_pointer_event(ctx, props, event);
+        self.child.on_pointer_event(ctx, props, event, emit);
     }
 
     fn on_text_event(
@@ -147,9 +150,10 @@ impl<W: Widget> Widget for Recorder<W> {
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &TextEvent,
+        emit: impl Fn(W::Action),
     ) {
         self.recording.push(Record::TE(event.clone()));
-        self.child.on_text_event(ctx, props, event);
+        self.child.on_text_event(ctx, props, event, emit);
     }
 
     fn on_access_event(
@@ -157,9 +161,10 @@ impl<W: Widget> Widget for Recorder<W> {
         ctx: &mut EventCtx<'_>,
         props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        emit: impl Fn(W::Action),
     ) {
         self.recording.push(Record::AE(event.clone()));
-        self.child.on_access_event(ctx, props, event);
+        self.child.on_access_event(ctx, props, event, emit);
     }
 
     fn on_anim_frame(
@@ -192,8 +197,9 @@ impl<W: Widget> Widget for Recorder<W> {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        emit: impl Fn(Self::Action),
     ) -> Size {
-        let size = self.child.layout(ctx, props, bc);
+        let size = self.child.layout(ctx, props, bc, emit);
         self.recording.push(Record::Layout(size));
         size
     }

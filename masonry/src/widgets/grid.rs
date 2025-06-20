@@ -287,6 +287,8 @@ impl Grid {
 
 // --- MARK: IMPL WIDGET---
 impl Widget for Grid {
+    type Action = ();
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut() {
             ctx.register_child(&mut child.widget);
@@ -306,6 +308,7 @@ impl Widget for Grid {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();

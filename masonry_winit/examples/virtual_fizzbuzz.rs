@@ -9,10 +9,10 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
+use masonry::core::{ArcStr, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{Action, AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
 /// The widget kind contained in the scroll area. This is a type parameter (`W`) of [`VirtualScroll`],
@@ -47,41 +47,39 @@ impl AppDriver for Driver {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
         if widget_id == self.scroll_id {
-            if let Action::Other(action) = action {
-                // The VirtualScroll widget will send us a VirtualScrollAction every time it wants different
-                // items to be loaded or unloaded.
-                let action = action.downcast::<VirtualScrollAction>().unwrap();
-                ctx.render_root(window_id).edit_root_widget(|mut root| {
-                    let mut scroll = root.downcast::<VirtualScroll<ScrollContents>>();
-                    // We need to tell the `VirtualScroll` which request this is associated with
-                    // This is so that the controller knows which actions have been handled.
-                    VirtualScroll::will_handle_action(&mut scroll, &action);
-                    for idx in action.old_active.clone() {
-                        if !action.target.contains(&idx) {
-                            // If we had different work to do in response to the item being unloaded
-                            // (for example, saving some related data?), then we'd do it here
-                            VirtualScroll::remove_child(&mut scroll, idx);
-                        }
+            // The VirtualScroll widget will send us a VirtualScrollAction every time it wants different
+            // items to be loaded or unloaded.
+            let action = action.downcast::<VirtualScrollAction>().unwrap();
+            ctx.render_root(window_id).edit_root_widget(|mut root| {
+                let mut scroll = root.downcast::<VirtualScroll<ScrollContents>>();
+                // We need to tell the `VirtualScroll` which request this is associated with
+                // This is so that the controller knows which actions have been handled.
+                VirtualScroll::will_handle_action(&mut scroll, &action);
+                for idx in action.old_active.clone() {
+                    if !action.target.contains(&idx) {
+                        // If we had different work to do in response to the item being unloaded
+                        // (for example, saving some related data?), then we'd do it here
+                        VirtualScroll::remove_child(&mut scroll, idx);
                     }
-                    for idx in action.target.clone() {
-                        if !action.old_active.contains(&idx) {
-                            let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
-                                (false, true) => self.buzz.clone(),
-                                (true, false) => self.fizz.clone(),
-                                (true, true) => self.fizzbuzz.clone(),
-                                (false, false) => format!("{idx}").into(),
-                            };
-                            VirtualScroll::add_child(
-                                &mut scroll,
-                                idx,
-                                WidgetPod::new(Label::new(label).with_style(
-                                    StyleProperty::FontSize(if idx % 100 == 0 { 40. } else { 20. }),
-                                )),
-                            );
-                        }
+                }
+                for idx in action.target.clone() {
+                    if !action.old_active.contains(&idx) {
+                        let label: ArcStr = match (idx % 3 == 0, idx % 5 == 0) {
+                            (false, true) => self.buzz.clone(),
+                            (true, false) => self.fizz.clone(),
+                            (true, true) => self.fizzbuzz.clone(),
+                            (false, false) => format!("{idx}").into(),
+                        };
+                        VirtualScroll::add_child(
+                            &mut scroll,
+                            idx,
+                            WidgetPod::new(Label::new(label).with_style(StyleProperty::FontSize(
+                                if idx % 100 == 0 { 40. } else { 20. },
+                            ))),
+                        );
                     }
-                });
-            }
+                }
+            });
         } else {
             tracing::warn!("Got unexpected action {action:?}");
         }

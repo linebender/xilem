@@ -122,11 +122,14 @@ impl ScrollBar {
 
 // --- MARK: IMPL WIDGET
 impl Widget for ScrollBar {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         match event {
             PointerEvent::Down { state, .. } => {
@@ -173,6 +176,7 @@ impl Widget for ScrollBar {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -181,6 +185,7 @@ impl Widget for ScrollBar {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         // TODO - Handle scroll-related events?
     }
@@ -200,6 +205,7 @@ impl Widget for ScrollBar {
         _ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         // TODO - handle resize
 
@@ -279,11 +285,11 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_default");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action().is_none());
 
         harness.mouse_click_on(scrollbar_id);
         // TODO - Scroll action?
-        assert_eq!(harness.pop_action(), None);
+        assert_eq!(harness.pop_action_for::<ScrollBar>(), None);
 
         assert_render_snapshot!(harness, "scrollbar_middle");
 
@@ -306,11 +312,11 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action().is_none());
 
         harness.mouse_click_on(scrollbar_id);
         // TODO - Scroll action?
-        assert_eq!(harness.pop_action(), None);
+        assert_eq!(harness.pop_action_for::<ScrollBar>(), None);
 
         assert_render_snapshot!(harness, "scrollbar_horizontal_middle");
     }

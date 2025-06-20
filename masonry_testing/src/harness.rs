@@ -3,6 +3,7 @@
 
 //! Tools and infrastructure for testing widgets.
 
+use std::any::Any;
 use std::collections::VecDeque;
 use std::io::Cursor;
 use std::num::NonZeroUsize;
@@ -29,7 +30,7 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    Action, AnyWidget, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
+    AnyWidget, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
     PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
@@ -133,7 +134,7 @@ pub struct TestHarness {
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
-    action_queue: VecDeque<(Action, WidgetId)>,
+    action_queue: VecDeque<(Box<dyn Any + Send>, WidgetId)>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
     title: String,
@@ -692,9 +693,15 @@ impl TestHarness {
         ret
     }
 
-    /// Pop the oldest [`Action`] emitted by the widget tree.
-    pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
+    /// Pop the oldest action emitted by the widget tree.
+    pub fn pop_action(&mut self) -> Option<(Box<dyn Any + Send>, WidgetId)> {
         self.action_queue.pop_front()
+    }
+
+    /// Pop the oldest action emitted by the widget tree and downcast it to the Action type of the given widget.
+    pub fn pop_action_for<W: Widget>(&mut self) -> Option<(W::Action, WidgetId)> {
+        let (action, id) = self.action_queue.pop_front()?;
+        Some((*action.downcast().unwrap(), id))
     }
 
     /// Return the app's current cursor icon.

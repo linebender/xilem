@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::Arc;
+
 use tracing::{debug, info_span, trace};
 use ui_events::pointer::PointerType;
 
@@ -8,8 +10,8 @@ use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessEvent, AnyWidget, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut,
-    TextEvent, WidgetId,
+    AccessEvent, ActionSink, AnyWidget, EventCtx, PointerEvent, PointerInfo, PointerUpdate,
+    PropertiesMut, TextEvent, WidgetId,
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
@@ -71,7 +73,13 @@ fn run_event_pass<E>(
     target: Option<WidgetId>,
     event: &E,
     allow_pointer_capture: bool,
-    pass_fn: impl FnMut(&mut dyn AnyWidget, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &E),
+    pass_fn: impl FnMut(
+        &mut dyn AnyWidget,
+        &mut EventCtx<'_>,
+        &mut PropertiesMut<'_>,
+        &E,
+        Arc<dyn Fn(RenderRootSignal)>,
+    ),
     trace: bool,
 ) -> Handled {
     let mut pass_fn = pass_fn;
@@ -99,6 +107,7 @@ fn run_event_pass<E>(
                 state_mut.reborrow(),
                 properties_mut.reborrow(),
             );
+            let signal_sink = root.global_state.signal_sink.clone();
             let mut ctx = EventCtx {
                 global_state: &mut root.global_state,
                 widget_state: state_mut.item,
@@ -122,7 +131,7 @@ fn run_event_pass<E>(
                 map: properties_mut.item,
                 default_map: root.default_properties.for_widget(widget.type_id()),
             };
-            pass_fn(&mut **widget, &mut ctx, &mut props, event);
+            pass_fn(&mut **widget, &mut ctx, &mut props, event, signal_sink);
             is_handled = ctx.is_handled;
         }
 
@@ -208,13 +217,23 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         }
     }
 
+    // let signal_sink = root.global_state.signal_sink.clone();
+
     let handled = run_event_pass(
         root,
         target_widget_id,
         event,
         matches!(event, PointerEvent::Down { .. }),
-        |widget, ctx, props, event| {
-            widget.on_pointer_event(ctx, props, event);
+        move |widget, ctx, props, event, signal_sink| {
+            widget.on_pointer_event(
+                ctx,
+                props,
+                event,
+                ActionSink {
+                    id: ctx.widget_id(),
+                    signal_sink,
+                },
+            );
         },
         !is_very_frequent(event),
     );
@@ -288,8 +307,16 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         target,
         event,
         false,
-        |widget, ctx, props, event| {
-            widget.on_text_event(ctx, props, event);
+        |widget, ctx, props, event, signal_sink| {
+            widget.on_text_event(
+                ctx,
+                props,
+                event,
+                ActionSink {
+                    id: ctx.widget_id(),
+                    signal_sink,
+                },
+            );
         },
         !event.is_high_density(),
     );
@@ -354,8 +381,16 @@ pub(crate) fn run_on_access_event_pass(
         Some(target),
         event,
         false,
-        |widget, ctx, props, event| {
-            widget.on_access_event(ctx, props, event);
+        |widget, ctx, props, event, signal_sink| {
+            widget.on_access_event(
+                ctx,
+                props,
+                event,
+                ActionSink {
+                    id: ctx.widget_id(),
+                    signal_sink,
+                },
+            );
         },
         true,
     );

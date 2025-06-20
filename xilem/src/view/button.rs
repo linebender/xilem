@@ -1,7 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::type_name;
+
 pub use masonry::core::PointerButton;
+use masonry::core::Widget;
 use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
@@ -209,17 +212,13 @@ where
     ) -> MessageResult<Action> {
         match id_path.split_first() {
             Some((&LABEL_VIEW_ID, rest)) => self.label.message(&mut (), rest, message, app_state),
-            None => match message.downcast::<masonry::core::Action>() {
-                Ok(action) => {
-                    if let masonry::core::Action::ButtonPressed(button) = *action {
-                        (self.callback)(app_state, button)
-                    } else {
-                        tracing::error!("Wrong action type in Button::message: {action:?}");
-                        MessageResult::Stale(DynMessage(action))
-                    }
-                }
+            None => match message.downcast::<<widgets::Button as Widget>::Action>() {
+                Ok(press) => (self.callback)(app_state, press.button),
                 Err(message) => {
-                    tracing::error!("Wrong message type in Button::message: {message:?}");
+                    tracing::error!(
+                        "Wrong message type in Button::message: {message:?} expected {}",
+                        type_name::<<widgets::Button as Widget>::Action>()
+                    );
                     MessageResult::Stale(message)
                 }
             },

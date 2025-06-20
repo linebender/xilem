@@ -57,11 +57,14 @@ impl WrapperWidget {
 }
 
 impl Widget for WrapperWidget {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -70,6 +73,7 @@ impl Widget for WrapperWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -78,6 +82,7 @@ impl Widget for WrapperWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -100,6 +105,7 @@ impl Widget for WrapperWidget {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let size = ctx.run_layout(&mut self.child, bc);
         ctx.place_child(&mut self.child, Point::ORIGIN);

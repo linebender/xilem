@@ -220,6 +220,8 @@ impl SizedBox {
 
 // --- MARK: IMPL WIDGET
 impl Widget for SizedBox {
+    type Action = ();
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         if let Some(ref mut child) = self.child {
             ctx.register_child(child);
@@ -239,6 +241,7 @@ impl Widget for SizedBox {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();

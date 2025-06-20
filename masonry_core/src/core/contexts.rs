@@ -14,7 +14,7 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    Action, AllowRawMut, AnyWidget, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties,
+    AllowRawMut, AnyWidget, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties,
     FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState,
 };
@@ -556,7 +556,7 @@ impl LayoutCtx<'_> {
         child: &mut WidgetPod<impl AnyWidget + ?Sized>,
         bc: &BoxConstraints,
     ) -> Size {
-        run_layout_on(self, child, bc)
+        run_layout_on(self, child, bc, self.global_state.signal_sink.clone())
     }
 
     /// Set the position of a child widget, in the parent's coordinate space.
@@ -1185,15 +1185,6 @@ impl_context_method!(
                 callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
             };
             self.global_state.mutate_callbacks.push(callback);
-        }
-
-        /// Submit an [`Action`].
-        ///
-        /// Note: Actions are still a WIP feature.
-        pub fn submit_action(&mut self, action: Action) {
-            trace!("submit_action");
-            self.global_state
-                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
         }
 
         /// Set the IME cursor area.

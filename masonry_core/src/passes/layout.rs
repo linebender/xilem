@@ -5,13 +5,17 @@
 //! before any translations applied in [`compose`](crate::passes::compose).
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
 
+use std::sync::Arc;
+
 use dpi::LogicalSize;
 use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{AnyWidget, BoxConstraints, LayoutCtx, PropertiesMut, WidgetPod, WidgetState};
+use crate::core::{
+    ActionSink, AnyWidget, BoxConstraints, LayoutCtx, PropertiesMut, WidgetPod, WidgetState,
+};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -22,6 +26,7 @@ pub(crate) fn run_layout_on<W: AnyWidget + ?Sized>(
     parent_ctx: &mut LayoutCtx<'_>,
     pod: &mut WidgetPod<W>,
     bc: &BoxConstraints,
+    signal_sink: Arc<dyn Fn(RenderRootSignal)>,
 ) -> Size {
     let id = pod.id();
     let mut widget = parent_ctx.widget_children.item_mut(id).unwrap();
@@ -118,7 +123,16 @@ pub(crate) fn run_layout_on<W: AnyWidget + ?Sized>(
                 .default_properties
                 .for_widget(widget.item.type_id()),
         };
-        widget.item.layout(&mut inner_ctx, &mut props, bc)
+        let widget_id = inner_ctx.widget_id();
+        widget.item.layout(
+            &mut inner_ctx,
+            &mut props,
+            bc,
+            ActionSink {
+                id: widget_id,
+                signal_sink,
+            },
+        )
     };
     if state.item.request_layout {
         debug_panic!(
@@ -219,6 +233,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     let root_widget_token = root.widget_arena.widgets.roots_mut();
     let root_properties_token = root.widget_arena.properties.roots_mut();
 
+    let signal_sink = root.global_state.signal_sink.clone();
+
     let mut ctx = LayoutCtx {
         global_state: &mut root.global_state,
         widget_state: &mut dummy_state,
@@ -228,7 +244,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         default_properties: &root.default_properties,
     };
 
-    let size = run_layout_on(&mut ctx, &mut root.root, &bc);
+    let size = run_layout_on(&mut ctx, &mut root.root, &bc, signal_sink);
     ctx.place_child(&mut root.root, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.size_policy {

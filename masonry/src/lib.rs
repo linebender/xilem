@@ -50,6 +50,8 @@ pub use masonry_core::{app, core, util};
 pub use masonry_testing as testing;
 pub use ui_events;
 
+pub use masonry_core::AnyDebug;
+
 // TODO - Remove these re-exports.
 pub use masonry_core::util::{Handled, UnitPoint};
 pub use masonry_core::{debug_panic, include_screenshot};

@@ -51,5 +51,7 @@ pub mod core;
 // TODO - Move to core?
 pub use util::{Handled, UnitPoint};
 
+pub use any_debug::AnyDebug;
+
 // TODO - Remove re-exports
 pub(crate) use {::dpi, ::vello, vello::peniko};

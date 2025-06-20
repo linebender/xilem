@@ -9,6 +9,7 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex, mpsc};
 
 use accesskit_winit::Adapter;
+use masonry::AnyDebug;
 use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry::core::{AnyWidget, DefaultProperties, TextEvent, WidgetId, WidgetPod, WindowEvent};
 use masonry::kurbo::Affine;
@@ -33,7 +34,7 @@ use crate::app_driver::WindowId;
 pub enum MasonryUserEvent {
     AccessKit(HandleId, accesskit_winit::WindowEvent),
     // TODO: A more considered design here
-    Action(WindowId, masonry::core::Action, WidgetId),
+    Action(WindowId, Box<dyn AnyDebug>, WidgetId),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {

@@ -296,11 +296,14 @@ impl ZStack {
 
 // --- MARK: IMPL WIDGET---
 impl Widget for ZStack {
+    type Action = ();
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         // First pass: calculate the smallest bounds needed to layout the children.
         let mut max_size = bc.min();

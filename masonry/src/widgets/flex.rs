@@ -965,6 +965,8 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn AnyWidget>) -> Child
 
 // --- MARK: IMPL WIDGET---
 impl Widget for Flex {
+    type Action = ();
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);
@@ -984,6 +986,7 @@ impl Widget for Flex {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();

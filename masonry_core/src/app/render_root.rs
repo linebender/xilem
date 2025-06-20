@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use accesskit::{ActionRequest, NodeId, TreeUpdate};
+use any_debug::AnyDebug;
 use cursor_icon::CursorIcon;
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
@@ -15,9 +16,9 @@ use vello::kurbo::{Rect, Size};
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, AnyWidget, BrushIndex, DefaultProperties, Ime, PointerEvent,
-    PropertiesRef, QueryCtx, ResizeDirection, TextEvent, WidgetArena, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState, WindowEvent,
+    AccessEvent, AnyWidget, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef,
+    QueryCtx, ResizeDirection, TextEvent, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -84,7 +85,7 @@ pub struct RenderRoot {
 /// State shared between passes.
 pub(crate) struct RenderRootState {
     /// Sink for signals to be processed by the event loop.
-    signal_sink: Box<dyn FnMut(RenderRootSignal)>,
+    pub(crate) signal_sink: Arc<dyn Fn(RenderRootSignal)>,
 
     /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
@@ -198,7 +199,7 @@ pub struct RenderRootOptions {
 #[derive(Debug)]
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
-    Action(Action, WidgetId),
+    Action(Box<dyn AnyDebug>, WidgetId),
     /// An IME session has been started.
     StartIme,
     /// The IME session has ended.
@@ -254,7 +255,7 @@ impl RenderRoot {
     /// look for `masonry_winit::app::run` instead.
     pub fn new(
         root_widget: WidgetPod<dyn AnyWidget>,
-        signal_sink: impl FnMut(RenderRootSignal) + 'static,
+        signal_sink: impl Fn(RenderRootSignal) + 'static,
         options: RenderRootOptions,
     ) -> Self {
         let RenderRootOptions {
@@ -274,7 +275,7 @@ impl RenderRoot {
             last_mouse_pos: None,
             default_properties,
             global_state: RenderRootState {
-                signal_sink: Box::new(signal_sink),
+                signal_sink: Arc::new(signal_sink),
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
