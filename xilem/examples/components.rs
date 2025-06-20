@@ -25,7 +25,9 @@ fn modular_counter(count: &mut i32) -> impl WidgetView<i32> + use<> {
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     flex((
-        lens(modular_counter, state, |state| &mut state.modularized_count),
+        lens(modular_counter, |state: &mut AppState| {
+            &mut state.modularized_count
+        }),
         button(
             format!("clicked {} times", state.global_count),
             |state: &mut AppState| state.global_count += 1,

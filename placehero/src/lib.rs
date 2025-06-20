@@ -113,7 +113,6 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
                 .map(|id| load_statuses(app_state.mastodon.clone(), id)),
             lens(
                 |avatars: &mut Avatars| avatars.worker(),
-                app_state,
                 |app_state: &mut Placehero| &mut app_state.avatars,
             ),
         ),

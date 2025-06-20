@@ -66,18 +66,16 @@ fn border_box<State: 'static, Action: 'static>(
 }
 
 /// Top-level view
-fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
+fn app_logic(_data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
         flex((
             lens(
                 |progress| flex_item(border_box(progress_bar_view(*progress)), 1.),
-                data,
                 |data: &mut WidgetGallery| &mut data.progress,
             ),
             lens(
                 |checked| flex_item(border_box(checkbox_view(*checked)), 1.),
-                data,
                 |data: &mut WidgetGallery| &mut data.checked,
             ),
         ))

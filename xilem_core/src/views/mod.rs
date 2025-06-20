@@ -4,8 +4,11 @@
 mod run_once;
 pub use run_once::{RunOnce, run_once, run_once_raw};
 
+mod lens;
+pub use lens::{Lens, lens};
+
 mod map_state;
-pub use map_state::{MapState, lens, map_state};
+pub use map_state::{MapState, map_state};
 
 mod map_message;
 pub use map_message::{MapMessage, map_action, map_message};
