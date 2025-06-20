@@ -9,6 +9,7 @@
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
 use accesskit::{Node, Role};
+use masonry_core::core::AnyWidget;
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -27,7 +28,7 @@ use crate::util::UnitPoint;
 #[doc = crate::include_screenshot!("align_right.png", "Right-aligned label.")]
 pub struct Align {
     align: UnitPoint,
-    child: WidgetPod<dyn Widget>,
+    child: WidgetPod<dyn AnyWidget>,
     width_factor: Option<f64>,
     height_factor: Option<f64>,
 }

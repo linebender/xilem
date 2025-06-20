@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{
-    FromDynWidget, Properties, Widget, WidgetId, WidgetMut, WidgetOptions, WidgetPod,
+    AnyWidget, FromDynWidget, Properties, WidgetId, WidgetMut, WidgetOptions, WidgetPod,
 };
 
 use crate::ViewCtx;
@@ -19,7 +19,7 @@ use crate::core::{Mut, SuperElement, ViewElement};
 ///    When creating widgets in Xilem, layered views all want access to the - using
 ///    `WidgetPod` for this purpose would require fallible unwrapping.
 #[expect(missing_docs, reason = "TODO - Document these items")]
-pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
+pub struct Pod<W: AnyWidget + FromDynWidget + ?Sized> {
     pub widget: Box<W>,
     pub id: WidgetId,
     /// The options the widget will be created with.
@@ -35,7 +35,7 @@ pub struct Pod<W: Widget + FromDynWidget + ?Sized> {
     pub properties: Properties,
 }
 
-impl<W: Widget + FromDynWidget> Pod<W> {
+impl<W: AnyWidget + FromDynWidget> Pod<W> {
     /// Create a new `Pod` from a `widget`.
     ///
     /// This contains the widget value, and other metadata which will
@@ -50,12 +50,12 @@ impl<W: Widget + FromDynWidget> Pod<W> {
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> Pod<W> {
     /// Type-erase the contained widget.
     ///
     /// Convert a `Pod` pointing to a widget of a specific concrete type
-    /// `Pod` pointing to a `dyn Widget`.
-    pub fn erased(self) -> Pod<dyn Widget> {
+    /// `Pod` pointing to a `dyn AnyWidget`.
+    pub fn erased(self) -> Pod<dyn AnyWidget> {
         Pod {
             widget: self.widget.as_box_dyn(),
             id: self.id,
@@ -80,16 +80,16 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// In most cases, you will use the return value for adding to a layout
     /// widget which supports heterogenous widgets.
     /// For example, [`Flex`](masonry::widgets::Flex) accepts type-erased widget pods.
-    pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
+    pub fn erased_widget_pod(self) -> WidgetPod<dyn AnyWidget> {
         WidgetPod::new_with(self.widget, self.id, self.options, self.properties).erased()
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> ViewElement for Pod<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> ViewElement for Pod<W> {
     type Mut<'a> = WidgetMut<'a, W>;
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<dyn Widget> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<dyn AnyWidget> {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         child.erased()
     }

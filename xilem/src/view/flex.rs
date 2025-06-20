@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use crate::style::Style;
 
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::core::{AnyWidget, FromDynWidget, WidgetMut};
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets::{self};
 pub use masonry::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
@@ -250,7 +250,7 @@ where
 /// A child element of a [`Flex`] view.
 pub enum FlexElement {
     /// Child widget.
-    Child(Pod<dyn Widget>, FlexParams),
+    Child(Pod<dyn AnyWidget>, FlexParams),
     /// Child spacer with fixed size.
     FixedSpacer(f64),
     /// Child spacer with flex size.
@@ -304,7 +304,7 @@ impl SuperElement<Self, ViewCtx> for FlexElement {
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexElement {
+impl<W: AnyWidget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         Self::Child(child.erased(), FlexParams::default())
     }

@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::AnyWidget;
 use masonry_core::util::fill;
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
@@ -31,7 +32,7 @@ use crate::util::stroke;
 ///
 #[doc = crate::include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
 pub struct SizedBox {
-    child: Option<WidgetPod<dyn Widget>>,
+    child: Option<WidgetPod<dyn AnyWidget>>,
     width: Option<f64>,
     height: Option<f64>,
 }
@@ -57,7 +58,7 @@ impl SizedBox {
     }
 
     /// Construct container with child in a pod, and both width and height not set.
-    pub fn new_pod(child: WidgetPod<dyn Widget>) -> Self {
+    pub fn new_pod(child: WidgetPod<dyn AnyWidget>) -> Self {
         Self {
             child: Some(child),
             width: None,
@@ -181,7 +182,9 @@ impl SizedBox {
     }
 
     /// Get mutable reference to the child widget, if any.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> Option<WidgetMut<'t, dyn Widget>> {
+    pub fn child_mut<'t>(
+        this: &'t mut WidgetMut<'_, Self>,
+    ) -> Option<WidgetMut<'t, dyn AnyWidget>> {
         let child = this.widget.child.as_mut()?;
         Some(this.ctx.get_mut(child))
     }

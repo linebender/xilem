@@ -11,9 +11,9 @@ use vello::Scene;
 use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, AnyWidget, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget,
+    LayoutCtx, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Axis, ScrollBar};
 
@@ -23,7 +23,7 @@ use crate::widgets::{Axis, ScrollBar};
 // Conceptually, a Portal is a Widget giving a restricted view of a child widget
 // Imagine a very large widget, and a rect that represents the part of the widget we see
 #[expect(missing_docs, reason = "TODO")]
-pub struct Portal<W: Widget + ?Sized> {
+pub struct Portal<W: AnyWidget + ?Sized> {
     child: WidgetPod<W>,
     // TODO - differentiate between the "explicit" viewport pos determined
     // by user input, and the computed viewport pos that may change based
@@ -48,7 +48,7 @@ impl<W: Widget> Portal<W> {
     }
 }
 
-impl<W: Widget + ?Sized> Portal<W> {
+impl<W: AnyWidget + ?Sized> Portal<W> {
     #[expect(missing_docs, reason = "TODO")]
     pub fn new_pod(child: WidgetPod<W>) -> Self {
         Self {
@@ -133,7 +133,7 @@ fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64>
     viewport
 }
 
-impl<W: Widget + ?Sized> Portal<W> {
+impl<W: AnyWidget + ?Sized> Portal<W> {
     // TODO - rename
     fn set_viewport_pos_raw(&mut self, portal_size: Size, content_size: Size, pos: Point) -> bool {
         let viewport_max_pos =
@@ -173,7 +173,7 @@ impl<W: Widget + ?Sized> Portal<W> {
 }
 
 // --- MARK: WIDGETMUT
-impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> Portal<W> {
     #[expect(missing_docs, reason = "TODO")]
     pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
         this.ctx.get_mut(&mut this.widget.child)
@@ -263,7 +263,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Portal<W> {
 }
 
 // --- MARK: IMPL WIDGET
-impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> Widget for Portal<W> {
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,

@@ -3,7 +3,7 @@
 
 use std::{collections::HashMap, marker::PhantomData, ops::Range};
 
-use masonry::core::{FromDynWidget, Widget, WidgetPod};
+use masonry::core::{AnyWidget, FromDynWidget, WidgetPod};
 use masonry::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
 use xilem_core::{AsyncCtx, DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
@@ -44,7 +44,7 @@ pub fn virtual_scroll<State, Action, ChildrenViews, F, Element>(
 where
     ChildrenViews: WidgetView<State, Action, Widget = Element>,
     F: Fn(&mut State, i64) -> ChildrenViews + 'static,
-    Element: Widget + FromDynWidget + ?Sized,
+    Element: AnyWidget + FromDynWidget + ?Sized,
 {
     VirtualScroll {
         phantom: PhantomData,
@@ -120,7 +120,7 @@ const fn index_for_view_id(id: ViewId) -> i64 {
 #[derive(Debug)]
 struct UpdateVirtualChildren;
 
-impl<State, Action, ChildrenViews, F, Element: Widget + FromDynWidget + ?Sized> ViewMarker
+impl<State, Action, ChildrenViews, F, Element: AnyWidget + FromDynWidget + ?Sized> ViewMarker
     for VirtualScroll<State, Action, ChildrenViews, F, Element>
 {
 }
@@ -131,7 +131,7 @@ where
     Action: 'static,
     ChildrenViews: WidgetView<State, Action, Widget = Element>,
     F: Fn(&mut State, i64) -> ChildrenViews + 'static,
-    Element: Widget + FromDynWidget + ?Sized,
+    Element: AnyWidget + FromDynWidget + ?Sized,
 {
     type Element = Pod<widgets::VirtualScroll<Element>>;
 

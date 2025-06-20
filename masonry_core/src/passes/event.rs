@@ -8,8 +8,8 @@ use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessEvent, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut, TextEvent,
-    Widget, WidgetId,
+    AccessEvent, AnyWidget, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut,
+    TextEvent, WidgetId,
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
@@ -71,7 +71,7 @@ fn run_event_pass<E>(
     target: Option<WidgetId>,
     event: &E,
     allow_pointer_capture: bool,
-    pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &E),
+    pass_fn: impl FnMut(&mut dyn AnyWidget, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &E),
     trace: bool,
 ) -> Handled {
     let mut pass_fn = pass_fn;

@@ -11,14 +11,14 @@ use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
+use crate::core::{AnyWidget, BoxConstraints, LayoutCtx, PropertiesMut, WidgetPod, WidgetState};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RUN LAYOUT
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
-pub(crate) fn run_layout_on<W: Widget + ?Sized>(
+pub(crate) fn run_layout_on<W: AnyWidget + ?Sized>(
     parent_ctx: &mut LayoutCtx<'_>,
     pod: &mut WidgetPod<W>,
     bc: &BoxConstraints,

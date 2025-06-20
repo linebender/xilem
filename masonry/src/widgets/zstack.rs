@@ -8,12 +8,12 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AnyWidget, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 
 struct Child {
-    widget: WidgetPod<dyn Widget>,
+    widget: WidgetPod<dyn AnyWidget>,
     alignment: ChildAlignment,
 }
 
@@ -166,7 +166,7 @@ impl From<Alignment> for ChildAlignment {
 }
 
 impl Child {
-    fn new(widget: WidgetPod<dyn Widget>, alignment: ChildAlignment) -> Self {
+    fn new(widget: WidgetPod<dyn AnyWidget>, alignment: ChildAlignment) -> Self {
         Self { widget, alignment }
     }
 
@@ -209,7 +209,7 @@ impl ZStack {
     /// See also [`Self::with_child`] if the widget is not already wrapped in a [`WidgetPod`].
     pub fn with_child_pod(
         mut self,
-        child: WidgetPod<dyn Widget>,
+        child: WidgetPod<dyn AnyWidget>,
         alignment: impl Into<ChildAlignment>,
     ) -> Self {
         let child = Child::new(child, alignment.into());
@@ -229,7 +229,7 @@ impl ZStack {
         child: impl Widget,
         alignment: impl Into<ChildAlignment>,
     ) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
+        let child_pod: WidgetPod<dyn AnyWidget> = WidgetPod::new(child).erased();
         Self::insert_child_pod(this, child_pod, alignment);
     }
 
@@ -242,14 +242,14 @@ impl ZStack {
         id: WidgetId,
         alignment: impl Into<ChildAlignment>,
     ) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
+        let child_pod: WidgetPod<dyn AnyWidget> = WidgetPod::new_with_id(child, id).erased();
         Self::insert_child_pod(this, child_pod, alignment);
     }
 
     /// Add a child widget to the `ZStack`.
     pub fn insert_child_pod(
         this: &mut WidgetMut<'_, Self>,
-        widget: WidgetPod<dyn Widget>,
+        widget: WidgetPod<dyn AnyWidget>,
         alignment: impl Into<ChildAlignment>,
     ) {
         let child = Child::new(widget, alignment.into());
@@ -269,7 +269,7 @@ impl ZStack {
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, dyn Widget>> {
+    ) -> Option<WidgetMut<'t, dyn AnyWidget>> {
         let child = &mut this.widget.children[idx].widget;
         Some(this.ctx.get_mut(child))
     }

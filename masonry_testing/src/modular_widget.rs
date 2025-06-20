@@ -11,7 +11,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, AnyWidget, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
 };
@@ -368,7 +368,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
-    ) -> Option<WidgetRef<'c, dyn Widget>> {
+    ) -> Option<WidgetRef<'c, dyn AnyWidget>> {
         find_widget_under_pointer(self, ctx, pos)
     }
 

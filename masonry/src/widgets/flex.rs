@@ -6,7 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::RegisterCtx;
+use masonry_core::core::{AnyWidget, RegisterCtx};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -110,11 +110,11 @@ struct Spacing {
 
 enum Child {
     Fixed {
-        widget: WidgetPod<dyn Widget>,
+        widget: WidgetPod<dyn AnyWidget>,
         alignment: Option<CrossAxisAlignment>,
     },
     Flex {
-        widget: WidgetPod<dyn Widget>,
+        widget: WidgetPod<dyn AnyWidget>,
         alignment: Option<CrossAxisAlignment>,
         flex: f64,
     },
@@ -232,7 +232,7 @@ impl Flex {
     }
 
     /// Builder-style method for [adding](Flex::add_child) a type-erased child to this.
-    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>) -> Self {
+    pub fn with_child_pod(mut self, widget: WidgetPod<dyn AnyWidget>) -> Self {
         let child = Child::Fixed {
             widget,
             alignment: None,
@@ -249,7 +249,7 @@ impl Flex {
     /// Builder-style method to add a flexible child to the container.
     pub fn with_flex_child_pod(
         mut self,
-        widget: WidgetPod<dyn Widget>,
+        widget: WidgetPod<dyn AnyWidget>,
         params: impl Into<FlexParams>,
     ) -> Self {
         // TODO - dedup?
@@ -479,7 +479,7 @@ impl Flex {
     pub fn insert_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        widget: WidgetPod<dyn Widget>,
+        widget: WidgetPod<dyn AnyWidget>,
     ) {
         let child = Child::Fixed {
             widget,
@@ -511,7 +511,7 @@ impl Flex {
     pub fn insert_flex_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: WidgetPod<dyn Widget>,
+        child: WidgetPod<dyn AnyWidget>,
         params: impl Into<FlexParams>,
     ) {
         let child = new_flex_child(params.into(), child);
@@ -597,7 +597,7 @@ impl Flex {
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, dyn Widget>> {
+    ) -> Option<WidgetMut<'t, dyn AnyWidget>> {
         let child = match &mut this.widget.children[idx] {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
             Child::FixedSpacer(..) => return None,
@@ -916,13 +916,13 @@ impl From<CrossAxisAlignment> for FlexParams {
 }
 
 impl Child {
-    fn widget_mut(&mut self) -> Option<&mut WidgetPod<dyn Widget>> {
+    fn widget_mut(&mut self) -> Option<&mut WidgetPod<dyn AnyWidget>> {
         match self {
             Self::Fixed { widget, .. } | Self::Flex { widget, .. } => Some(widget),
             _ => None,
         }
     }
-    fn widget(&self) -> Option<&WidgetPod<dyn Widget>> {
+    fn widget(&self) -> Option<&WidgetPod<dyn AnyWidget>> {
         match self {
             Self::Fixed { widget, .. } | Self::Flex { widget, .. } => Some(widget),
             _ => None,
@@ -938,7 +938,7 @@ fn axis_default_spacer(axis: Axis) -> f64 {
     }
 }
 
-fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
+fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn AnyWidget>) -> Child {
     if let Some(flex) = params.flex {
         if flex.is_normal() && flex > 0.0 {
             Child::Flex {

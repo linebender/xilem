@@ -7,7 +7,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use masonry::core::{Widget, WidgetId, WidgetPod};
+use masonry::core::{AnyWidget, WidgetId, WidgetPod};
 use masonry::peniko::Blob;
 use masonry_winit::app::{AppDriver, DriverCtx, MasonryState, MasonryUserEvent, WindowId};
 use winit::window::WindowAttributes;
@@ -49,7 +49,7 @@ where
         fonts: Vec<Blob<u8>>,
     ) -> (
         Self,
-        Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+        Vec<(WindowId, WindowAttributes, WidgetPod<dyn AnyWidget>)>,
     ) {
         let mut driver = Self {
             state,
@@ -145,7 +145,7 @@ where
         &mut self,
         window_id: WindowId,
         view: WindowView<State>,
-    ) -> (WindowAttributes, WidgetPod<dyn Widget>) {
+    ) -> (WindowAttributes, WidgetPod<dyn AnyWidget>) {
         let mut view_ctx = ViewCtx::new(
             Arc::new(WindowProxy(window_id, self.proxy.clone())),
             self.runtime.clone(),

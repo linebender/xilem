@@ -10,7 +10,7 @@ use vello::kurbo::{Affine, Rect};
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
+use crate::core::{AnyWidget, DefaultProperties, PaintCtx, PropertiesRef, WidgetId, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::{AnyMap, get_debug_color, stroke};
 
@@ -20,7 +20,7 @@ fn paint_widget(
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
     debug_paint: bool,

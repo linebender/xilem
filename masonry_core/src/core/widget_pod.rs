@@ -1,7 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{Properties, Widget, WidgetId, WidgetOptions};
+use crate::core::{AnyWidget, Properties, WidgetId, WidgetOptions};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -30,7 +30,7 @@ enum WidgetPodInner<W: ?Sized> {
     Inserted,
 }
 
-impl<W: Widget> WidgetPod<W> {
+impl<W: AnyWidget> WidgetPod<W> {
     /// Create a new widget pod.
     ///
     /// In a widget hierarchy, each widget is wrapped in a `WidgetPod`
@@ -56,7 +56,7 @@ impl<W: Widget> WidgetPod<W> {
     }
 }
 
-impl<W: Widget + ?Sized> WidgetPod<W> {
+impl<W: AnyWidget + ?Sized> WidgetPod<W> {
     /// Create a new widget pod with custom options.
     pub fn new_with_options(inner: Box<W>, options: WidgetOptions) -> Self {
         Self::new_with_id_and_options(inner, WidgetId::next(), options)
@@ -110,8 +110,8 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
     /// Type-erase the contained widget.
     ///
     /// Convert a `WidgetPod` pointing to a widget of a specific concrete type
-    /// `WidgetPod` pointing to a `dyn Widget`.
-    pub fn erased(self) -> WidgetPod<dyn Widget> {
+    /// `WidgetPod` pointing to a `dyn AnyWidget`.
+    pub fn erased(self) -> WidgetPod<dyn AnyWidget> {
         let WidgetPodInner::Create(inner) = self.inner else {
             // TODO - Enabling this case isn't impossible anymore.
             // We're keeping it forbidden for now.
