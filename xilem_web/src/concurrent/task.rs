@@ -104,7 +104,7 @@ pub struct Task<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
-#[allow(
+#[expect(
     unnameable_types,
     reason = "Implementation detail, public because of trait visibility rules"
 )]

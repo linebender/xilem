@@ -58,7 +58,7 @@ where
     }
 }
 
-#[allow(
+#[expect(
     unnameable_types,
     reason = "Implementation detail, public because of trait visibility rules"
 )]

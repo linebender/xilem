@@ -111,7 +111,7 @@ fn remove_event_listener(
 
 mod hidden {
     use wasm_bindgen::prelude::Closure;
-    #[allow(
+    #[expect(
         unnameable_types,
         reason = "Implementation detail, public because of trait visibility rules"
     )]
@@ -153,10 +153,6 @@ where
     })
 }
 
-#[allow(
-    clippy::too_many_arguments,
-    reason = "This is only used to avoid more boilerplate in macros, also so that rust-analyzer can be of help here."
-)]
 fn rebuild_event_listener<State, Action, V, Event>(
     element_view: &V,
     prev_element_view: &V,
@@ -565,8 +561,8 @@ pub struct OnResize<V, State, Action, Callback> {
 
 pub struct OnResizeState<VState> {
     child_state: VState,
-    #[allow(
-        unused,
+    #[expect(
+        dead_code,
         reason = "Closures are retained so they can be called by environment"
     )]
     callback: Closure<dyn FnMut(js_sys::Array)>,

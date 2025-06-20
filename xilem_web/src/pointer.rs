@@ -27,25 +27,13 @@ pub struct Pointer<V, T, A, F> {
     phantom: PhantomData<fn() -> (T, A)>,
 }
 
-#[allow(
+#[expect(
     unnameable_types,
     reason = "Implementation detail, public because of trait visibility rules"
 )]
 pub struct PointerState<S> {
-    #[allow(
-        unused,
-        reason = "Closures are retained so they can be called by environment"
-    )]
     down_closure: Closure<dyn FnMut(PointerEvent)>,
-    #[allow(
-        unused,
-        reason = "Closures are retained so they can be called by environment"
-    )]
     move_closure: Closure<dyn FnMut(PointerEvent)>,
-    #[allow(
-        unused,
-        reason = "Closures are retained so they can be called by environment"
-    )]
     up_closure: Closure<dyn FnMut(PointerEvent)>,
     child_state: S,
 }

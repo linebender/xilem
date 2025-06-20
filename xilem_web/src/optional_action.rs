@@ -13,7 +13,7 @@ pub trait OptionalAction<A>: sealed::Sealed {
     fn action(self) -> Option<A>;
 }
 mod sealed {
-    #[allow(
+    #[expect(
         unnameable_types,
         reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
     )]
