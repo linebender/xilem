@@ -38,6 +38,7 @@ license = "Apache-2.0"
 repository = "https://github.com/linebender/xilem"
 
 [workspace.dependencies]
+
 masonry = { version = "0.3.0", path = "masonry" }
 masonry_core = { version = "0.3.0", path = "masonry_core" }
 masonry_testing = { version = "0.3.0", path = "masonry_testing" }
@@ -63,6 +64,11 @@ accesskit = "0.19.0"
 accesskit_winit = "0.27.0"
 accesskit_consumer = "0.28.0"
 time = "0.3.41"
+reqwest = { version = "0.12.20", default-features = false, features = [
+    # We use rustls as Android doesn't ship with openssl
+    # and this is likely to be easiest to get working.
+    "rustls-tls",
+] }
 
 [workspace.lints]
 # unsafe code is not allowed in Xilem or Masonry
