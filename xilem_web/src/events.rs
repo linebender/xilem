@@ -111,7 +111,10 @@ fn remove_event_listener(
 
 mod hidden {
     use wasm_bindgen::prelude::Closure;
-    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    #[allow(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
     /// State for the `OnEvent` view.
     pub struct OnEventState<S> {
         pub(crate) child_state: S,
@@ -150,11 +153,14 @@ where
     })
 }
 
-#[allow(clippy::too_many_arguments)] // reason: This is only used to avoid more boilerplate in macros, also so that rust-analyzer can be of help here.
+#[allow(
+    clippy::too_many_arguments,
+    reason = "This is only used to avoid more boilerplate in macros, also so that rust-analyzer can be of help here."
+)]
 fn rebuild_event_listener<State, Action, V, Event>(
     element_view: &V,
     prev_element_view: &V,
-    mut element: Mut<V::Element>,
+    mut element: Mut<'_, V::Element>,
     event: &str,
     capture: bool,
     passive: bool,
@@ -192,7 +198,7 @@ fn rebuild_event_listener<State, Action, V, Event>(
 
 fn teardown_event_listener<State, Action, V>(
     element_view: &V,
-    element: Mut<V::Element>,
+    element: Mut<'_, V::Element>,
     _event: &str,
     state: &mut OnEventState<V::ViewState>,
     _capture: bool,
@@ -274,7 +280,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         // special case, where event name can change, so we can't reuse the rebuild_event_listener function above
@@ -318,7 +324,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         teardown_event_listener(
@@ -426,7 +432,7 @@ macro_rules! event_definitions {
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
                 app_state: &mut State
             ) {
                 rebuild_event_listener::<_, _, _, web_sys::$web_sys_ty>(
@@ -448,7 +454,7 @@ macro_rules! event_definitions {
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
                 app_state: &mut State
             ) {
                 teardown_event_listener(&self.dom_view, element, $event_name, view_state, self.capture, ctx, app_state);
@@ -559,8 +565,10 @@ pub struct OnResize<V, State, Action, Callback> {
 
 pub struct OnResizeState<VState> {
     child_state: VState,
-    // reason: Closures are retained so they can be called by environment
-    #[allow(unused)]
+    #[allow(
+        unused,
+        reason = "Closures are retained so they can be called by environment"
+    )]
     callback: Closure<dyn FnMut(js_sys::Array)>,
     observer: web_sys::ResizeObserver,
 }
@@ -607,7 +615,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
@@ -629,7 +637,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {

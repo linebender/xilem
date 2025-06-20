@@ -32,12 +32,20 @@ pub struct Pointer<V, T, A, F> {
     reason = "Implementation detail, public because of trait visibility rules"
 )]
 pub struct PointerState<S> {
-    // reason: Closures are retained so they can be called by environment
-    #[allow(unused)]
+    #[allow(
+        unused,
+        reason = "Closures are retained so they can be called by environment"
+    )]
     down_closure: Closure<dyn FnMut(PointerEvent)>,
-    #[allow(unused)]
+    #[allow(
+        unused,
+        reason = "Closures are retained so they can be called by environment"
+    )]
     move_closure: Closure<dyn FnMut(PointerEvent)>,
-    #[allow(unused)]
+    #[allow(
+        unused,
+        reason = "Closures are retained so they can be called by environment"
+    )]
     up_closure: Closure<dyn FnMut(PointerEvent)>,
     child_state: S,
 }
@@ -169,7 +177,7 @@ where
         prev: &Self,
         state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut el: Mut<Self::Element>,
+        mut el: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
@@ -192,7 +200,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {

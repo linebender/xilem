@@ -484,7 +484,7 @@ where
         prev: &Self,
         (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         Styles::rebuild(element, *len, |mut elem| {
@@ -499,7 +499,7 @@ where
         &self,
         (_, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.el.teardown(view_state, ctx, element, app_state);
@@ -574,7 +574,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         Styles::rebuild(element, 1, |mut element| {
@@ -595,7 +595,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.el.teardown(view_state, ctx, element, app_state);
@@ -700,7 +700,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         Styles::rebuild(element, 1, |mut element| {
@@ -721,7 +721,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.el.teardown(view_state, ctx, element, app_state);

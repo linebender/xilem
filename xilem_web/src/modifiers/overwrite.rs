@@ -212,7 +212,7 @@ macro_rules! overwrite_bool_modifier_view {
                 prev: &Self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut $crate::ViewCtx,
-                mut element: $crate::core::Mut<Self::Element>,
+                mut element: $crate::core::Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) {
                 use $crate::modifiers::WithModifier;
@@ -232,7 +232,7 @@ macro_rules! overwrite_bool_modifier_view {
                 &self,
                 view_state: &mut Self::ViewState,
                 ctx: &mut $crate::ViewCtx,
-                element: $crate::core::Mut<Self::Element>,
+                element: $crate::core::Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) {
                 self.inner.teardown(view_state, ctx, element, app_state);

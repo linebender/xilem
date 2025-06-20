@@ -27,7 +27,7 @@ Run `trunk serve`, then navigate the browser to the link provided (usually <http
 
 ### Example
 
-A minimal example to run an application with xilem_web:
+A minimal example to run an application with `xilem_web`:
 
 ```rust,no_run
 use xilem_web::{

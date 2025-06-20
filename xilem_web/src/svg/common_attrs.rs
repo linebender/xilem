@@ -54,10 +54,10 @@ fn join(iter: &mut impl Iterator<Item: std::fmt::Display>, sep: &str) -> String 
             // estimate lower bound of capacity needed
             let (lower, _) = iter.size_hint();
             let mut result = String::with_capacity(sep.len() * lower);
-            write!(&mut result, "{}", first_elt).unwrap();
+            write!(&mut result, "{first_elt}").unwrap();
             iter.for_each(|elt| {
                 result.push_str(sep);
-                write!(&mut result, "{}", elt).unwrap();
+                write!(&mut result, "{elt}").unwrap();
             });
             result
         }
@@ -122,7 +122,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         Attributes::rebuild(element, 2, |mut element| {
@@ -157,7 +157,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.child.teardown(view_state, ctx, element, app_state);
@@ -261,7 +261,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         Attributes::rebuild(element, 5, |mut element| {
@@ -286,7 +286,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.child.teardown(view_state, ctx, element, app_state);

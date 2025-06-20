@@ -103,7 +103,10 @@ where
 }
 
 #[derive(Default)]
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[allow(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct MemoizedAwaitState {
     generation: u64,
     schedule_update: bool,
@@ -192,7 +195,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        (): Mut<Self::Element>,
+        (): Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         let debounce_has_changed_and_update_is_scheduled = view_state.schedule_update
@@ -233,7 +236,7 @@ where
         &self,
         state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<Self::Element>,
+        (): Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         state.clear_update_timeout();

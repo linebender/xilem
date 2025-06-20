@@ -26,7 +26,6 @@
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(elided_lifetimes_in_paths, reason = "Deferred: Noisy")]
 #![expect(missing_docs, reason = "We have many as-yet undocumented items")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
 #![expect(
@@ -34,7 +33,6 @@
     reason = "Requires lint_reasons rustc feature for exceptions"
 )]
 #![expect(clippy::todo, reason = "We have a lot of 'real' todos")]
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 use std::any::Any;
 use std::ops::Deref as _;

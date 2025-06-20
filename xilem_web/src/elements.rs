@@ -39,7 +39,7 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         prev: &dyn DomViewSequence<State, Action>,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
         app_state: &mut State,
     );
 
@@ -48,7 +48,7 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         &self,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
         app_state: &mut State,
     );
 
@@ -89,7 +89,7 @@ where
         prev: &dyn DomViewSequence<State, Action>,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
         app_state: &mut State,
     ) {
         self.seq_rebuild(
@@ -105,7 +105,7 @@ where
         &self,
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
-        elements: &mut DomChildrenSplice,
+        elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
         app_state: &mut State,
     ) {
         self.seq_teardown(
@@ -206,7 +206,7 @@ impl ElementSplice<AnyPod> for DomChildrenSplice<'_, '_, '_, '_> {
         self.children.insert(element);
     }
 
-    fn mutate<R>(&mut self, f: impl FnOnce(Mut<AnyPod>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
         let child = self.children.mutate();
         let ret = f(child.as_mut(self.parent, self.parent_was_removed));
         self.ix += 1;
@@ -218,7 +218,7 @@ impl ElementSplice<AnyPod> for DomChildrenSplice<'_, '_, '_, '_> {
         self.ix += n;
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(Mut<AnyPod>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, AnyPod>) -> R) -> R {
         let mut child = self.children.delete_next();
         let child = child.as_mut(self.parent, true);
         // This is an optimization to avoid too much DOM traffic, otherwise first the children would be deleted from that node in an up-traversal
@@ -278,7 +278,7 @@ where
 pub(crate) fn rebuild_element<State, Action, Element>(
     children: &dyn DomViewSequence<State, Action>,
     prev_children: &dyn DomViewSequence<State, Action>,
-    element: Mut<Pod<Element>>,
+    element: Mut<'_, Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
     app_state: &mut State,
@@ -308,7 +308,7 @@ pub(crate) fn rebuild_element<State, Action, Element>(
 
 pub(crate) fn teardown_element<State, Action, Element>(
     children: &dyn DomViewSequence<State, Action>,
-    element: Mut<Pod<Element>>,
+    element: Mut<'_, Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
     app_state: &mut State,
@@ -379,7 +379,7 @@ where
         prev: &Self,
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         if prev.name != self.name {
@@ -412,7 +412,7 @@ where
         &self,
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         teardown_element(&*self.children, element, element_state, ctx, app_state);
@@ -477,7 +477,7 @@ macro_rules! define_element {
                 prev: &Self,
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) {
                 rebuild_element(
@@ -494,7 +494,7 @@ macro_rules! define_element {
                 &self,
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
-                element: Mut<Self::Element>,
+                element: Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) {
                 teardown_element(&*self.children, element, element_state, ctx, app_state);

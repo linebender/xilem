@@ -26,7 +26,7 @@ impl<K: PartialEq, V: PartialEq> PartialEq for VecMap<K, V> {
 }
 
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for VecMap<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_map().entries(self.iter()).finish()
     }
 }
