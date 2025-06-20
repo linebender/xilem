@@ -79,17 +79,6 @@ where
     InnerView: View<InnerState, Action, Context, Message>,
     Context: ViewPathTracker,
 {
-    // TODO: allow either of these? But we can't easily detect whether the functions have changed. Do a similar pattern as within worker_raw?
-    const {
-        assert!(
-            size_of::<Component>() == 0,
-            "The component function needs to be a non capturing closure"
-        );
-        assert!(
-            size_of::<StateF>() == 0,
-            "The child state access function needs to be a non capturing closure"
-        );
-    }
     Lens {
         child_component: component,
         access_state,
