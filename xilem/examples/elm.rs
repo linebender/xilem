@@ -78,8 +78,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         map_message(
             lens(
                 |count| map_message_counter(*count),
-                state,
-                |state| &mut state.map_message_count,
+                |state: &mut AppState| &mut state.map_message_count,
             ),
             |state: &mut AppState, message| {
                 match message {
