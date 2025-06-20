@@ -8,6 +8,7 @@ repository.workspace = true
 publish = false
 
 [dependencies]
+html5gum = "0.7.0"
 megalodon = "1.0.0"
 tracing.workspace = true
 xilem = { version = "0.3.0", path = "../xilem" }
