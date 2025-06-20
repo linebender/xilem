@@ -14,7 +14,7 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties,
+    Action, AllowRawMut, AnyWidget, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties,
     FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState,
 };
@@ -52,7 +52,7 @@ pub struct MutateCtx<'a> {
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
     pub(crate) properties: PropertiesMut<'a>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
@@ -65,7 +65,7 @@ pub struct QueryCtx<'a> {
     pub(crate) global_state: &'a RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaRefList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaRefList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaRefList<'a, Box<dyn AnyWidget>>,
     pub(crate) properties: PropertiesRef<'a>,
     pub(crate) properties_children: ArenaRefList<'a, AnyMap>,
 }
@@ -75,7 +75,7 @@ pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
@@ -85,7 +85,7 @@ pub struct EventCtx<'a> {
 /// A context provided to the [`Widget::register_children`] method.
 pub struct RegisterCtx<'a> {
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     #[cfg(debug_assertions)]
     pub(crate) registered_ids: Vec<WidgetId>,
@@ -96,7 +96,7 @@ pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
 }
 
@@ -106,7 +106,7 @@ pub struct LayoutCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
@@ -116,7 +116,7 @@ pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
 }
 
 /// A context passed to [`Widget::paint`] method.
@@ -124,7 +124,7 @@ pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
     pub(crate) debug_paint: bool,
 }
 
@@ -133,7 +133,7 @@ pub struct AccessCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn AnyWidget>>,
     pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) rebuild_all: bool,
@@ -170,7 +170,10 @@ impl_context_method!(
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
-        fn get_child_dyn(&self, child: &'_ WidgetPod<impl Widget + ?Sized>) -> &'_ dyn Widget {
+        fn get_child_dyn(
+            &self,
+            child: &'_ WidgetPod<impl AnyWidget + ?Sized>,
+        ) -> &'_ dyn AnyWidget {
             let child_ref = self
                 .widget_children
                 .item(child.id())
@@ -180,7 +183,10 @@ impl_context_method!(
 
         #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// Helper method to get a direct reference to a child widget's `WidgetState` from its `WidgetPod`.
-        fn get_child_state(&self, child: &'_ WidgetPod<impl Widget + ?Sized>) -> &'_ WidgetState {
+        fn get_child_state(
+            &self,
+            child: &'_ WidgetPod<impl AnyWidget + ?Sized>,
+        ) -> &'_ WidgetState {
             let child_state_ref = self
                 .widget_state_children
                 .item(child.id())
@@ -207,7 +213,7 @@ impl_context_method!(
         /// This one isn't defined for `PaintCtx` and `AccessCtx` because those contexts
         /// can't mutate `WidgetState`.
         #[track_caller]
-        fn get_child_state_mut<Child: Widget + ?Sized>(
+        fn get_child_state_mut<Child: AnyWidget + ?Sized>(
             &mut self,
             child: &'_ mut WidgetPod<Child>,
         ) -> &'_ mut WidgetState {
@@ -224,7 +230,7 @@ impl_context_method!(
 // Methods to get a child WidgetMut from a parent.
 impl MutateCtx<'_> {
     /// Return a [`WidgetMut`] to a child widget.
-    pub fn get_mut<'c, Child: Widget + FromDynWidget + ?Sized>(
+    pub fn get_mut<'c, Child: AnyWidget + FromDynWidget + ?Sized>(
         &'c mut self,
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
@@ -297,7 +303,7 @@ impl MutateCtx<'_> {
 // Methods to get a child WidgetRef from a parent.
 impl<'w> QueryCtx<'w> {
     /// Return a [`WidgetRef`] to a child widget.
-    pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn Widget> {
+    pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn AnyWidget> {
         let child_state = self
             .widget_state_children
             .into_item(child)
@@ -514,7 +520,7 @@ impl AccessCtx<'_> {
 // --- MARK: UPDATE LAYOUT
 impl LayoutCtx<'_> {
     #[track_caller]
-    fn assert_layout_done(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
+    fn assert_layout_done(&self, child: &WidgetPod<impl AnyWidget + ?Sized>, method_name: &str) {
         if self.get_child_state(child).needs_layout {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before computing its layout",
@@ -527,7 +533,7 @@ impl LayoutCtx<'_> {
     }
 
     #[track_caller]
-    fn assert_placed(&self, child: &WidgetPod<impl Widget + ?Sized>, method_name: &str) {
+    fn assert_placed(&self, child: &WidgetPod<impl AnyWidget + ?Sized>, method_name: &str) {
         if self.get_child_state(child).is_expecting_place_child_call {
             debug_panic!(
                 "Error in {}: trying to call '{}' with child '{}' {} before placing it",
@@ -547,7 +553,7 @@ impl LayoutCtx<'_> {
     /// [`layout`]: Widget::layout
     pub fn run_layout(
         &mut self,
-        child: &mut WidgetPod<impl Widget + ?Sized>,
+        child: &mut WidgetPod<impl AnyWidget + ?Sized>,
         bc: &BoxConstraints,
     ) -> Size {
         run_layout_on(self, child, bc)
@@ -564,7 +570,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
-    pub fn place_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, origin: Point) {
+    pub fn place_child(&mut self, child: &mut WidgetPod<impl AnyWidget + ?Sized>, origin: Point) {
         self.assert_layout_done(child, "place_child");
         if origin.x.is_nan()
             || origin.x.is_infinite()
@@ -618,7 +624,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn compute_insets_from_child(
         &mut self,
-        child: &WidgetPod<impl Widget + ?Sized>,
+        child: &WidgetPod<impl AnyWidget + ?Sized>,
         my_size: Size,
     ) -> Insets {
         self.assert_layout_done(child, "compute_insets_from_child");
@@ -650,7 +656,7 @@ impl LayoutCtx<'_> {
     }
 
     /// Returns whether a child of this widget needs to call [`LayoutCtx::run_layout`].
-    pub fn child_needs_layout(&self, child: &WidgetPod<impl Widget + ?Sized>) -> bool {
+    pub fn child_needs_layout(&self, child: &WidgetPod<impl AnyWidget + ?Sized>) -> bool {
         self.get_child_state(child).needs_layout
     }
 
@@ -661,7 +667,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
-    pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
+    pub fn child_baseline_offset(&self, child: &WidgetPod<impl AnyWidget + ?Sized>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
         self.get_child_state(child).baseline_offset
     }
@@ -669,7 +675,7 @@ impl LayoutCtx<'_> {
     // TODO - Remove (used in Flex)
     #[doc(hidden)]
     #[track_caller]
-    pub fn child_layout_rect(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Rect {
+    pub fn child_layout_rect(&self, child: &WidgetPod<impl AnyWidget + ?Sized>) -> Rect {
         self.assert_layout_done(child, "child_layout_rect");
         self.assert_placed(child, "child_layout_rect");
         self.get_child_state(child).layout_rect()
@@ -682,7 +688,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
     #[track_caller]
-    pub fn child_paint_rect(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Rect {
+    pub fn child_paint_rect(&self, child: &WidgetPod<impl AnyWidget + ?Sized>) -> Rect {
         self.assert_layout_done(child, "child_paint_rect");
         self.assert_placed(child, "child_paint_rect");
         self.get_child_state(child).paint_rect()
@@ -695,7 +701,7 @@ impl LayoutCtx<'_> {
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
     #[track_caller]
-    pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
+    pub fn child_size(&self, child: &WidgetPod<impl AnyWidget + ?Sized>) -> Size {
         self.assert_layout_done(child, "child_size");
         self.get_child_state(child).size
     }
@@ -704,7 +710,7 @@ impl LayoutCtx<'_> {
     ///
     /// This may be removed in the future. Currently it's useful for
     /// stashed children and children whose layout is cached.
-    pub fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
+    pub fn skip_layout(&mut self, child: &mut WidgetPod<impl AnyWidget + ?Sized>) {
         self.get_child_state_mut(child).request_layout = false;
     }
 
@@ -760,7 +766,7 @@ impl ComposeCtx<'_> {
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
     pub fn set_child_scroll_translation(
         &mut self,
-        child: &mut WidgetPod<impl Widget + ?Sized>,
+        child: &mut WidgetPod<impl AnyWidget + ?Sized>,
         translation: Vec2,
     ) {
         if translation.x.is_nan()
@@ -1080,7 +1086,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     ///
     /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
     /// pass them to this method.
-    pub fn remove_child(&mut self, child: WidgetPod<impl Widget + ?Sized>) {
+    pub fn remove_child(&mut self, child: WidgetPod<impl AnyWidget + ?Sized>) {
         // TODO - Send recursive event to child
         let id = child.id();
         let _ = self
@@ -1136,7 +1142,11 @@ impl_context_method!(
         /// If `stashed` is true, the child will not be painted or listed in the accessibility tree.
         ///
         /// This will *not* trigger a layout pass.
-        pub fn set_stashed(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>, stashed: bool) {
+        pub fn set_stashed(
+            &mut self,
+            child: &mut WidgetPod<impl AnyWidget + ?Sized>,
+            stashed: bool,
+        ) {
             let child_state = self.get_child_state_mut(child);
             // Stashing is generally a property derived from the parent widget's state
             // (rather than set imperatively), so it is likely to be set as part of passes.
@@ -1153,7 +1163,7 @@ impl_context_method!(
         /// The callbacks will be run in the order they were submitted during the mutate pass.
         pub fn mutate_self_later(
             &mut self,
-            f: impl FnOnce(WidgetMut<'_, dyn Widget>) + Send + 'static,
+            f: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) + Send + 'static,
         ) {
             let callback = MutateCallback {
                 id: self.widget_state.id,
@@ -1165,7 +1175,7 @@ impl_context_method!(
         /// Queue a callback that will be called with a [`WidgetMut`] for the given child widget.
         ///
         /// The callbacks will be run in the order they were submitted during the mutate pass.
-        pub fn mutate_later<W: Widget + FromDynWidget + ?Sized>(
+        pub fn mutate_later<W: AnyWidget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<W>,
             f: impl FnOnce(WidgetMut<'_, W>) + Send + 'static,
@@ -1257,7 +1267,7 @@ impl RegisterCtx<'_> {
     ///
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
-    pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
+    pub fn register_child(&mut self, child: &mut WidgetPod<impl AnyWidget + ?Sized>) {
         let Some(CreateWidget {
             widget,
             options,
@@ -1313,7 +1323,7 @@ macro_rules! impl_get_raw {
             ///
             /// The child context can be used to call context methods on behalf of the
             /// child widget.
-            pub fn get_raw_ref<'a, 'r, Child: Widget + FromDynWidget + ?Sized>(
+            pub fn get_raw_ref<'a, 'r, Child: AnyWidget + FromDynWidget + ?Sized>(
                 &'a mut self,
                 child: &'a mut WidgetPod<Child>,
             ) -> RawWrapper<'r, $SomeCtx<'r>, Child>
@@ -1351,7 +1361,7 @@ macro_rules! impl_get_raw {
             /// Get a raw mutable reference to a child widget.
             ///
             /// See documentation for [`AllowRawMut`] for more details.
-            pub fn get_raw_mut<'a, 'r, Child: Widget + FromDynWidget + AllowRawMut + ?Sized>(
+            pub fn get_raw_mut<'a, 'r, Child: AnyWidget + FromDynWidget + AllowRawMut + ?Sized>(
                 &'a mut self,
                 child: &'a mut WidgetPod<Child>,
             ) -> RawWrapperMut<'r, $SomeCtx<'r>, Child>
@@ -1396,7 +1406,7 @@ impl_get_raw!(LayoutCtx);
 
 #[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
 impl<'s> AccessCtx<'s> {
-    pub fn get_raw_ref<'a, 'r, Child: Widget + FromDynWidget + ?Sized>(
+    pub fn get_raw_ref<'a, 'r, Child: AnyWidget + FromDynWidget + ?Sized>(
         &'a mut self,
         child: &'a WidgetPod<Child>,
     ) -> RawWrapper<'r, AccessCtx<'r>, Child>

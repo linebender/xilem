@@ -15,9 +15,9 @@ use vello::kurbo::{Rect, Size};
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
-    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState, WindowEvent,
+    AccessEvent, Action, AnyWidget, BrushIndex, DefaultProperties, Ime, PointerEvent,
+    PropertiesRef, QueryCtx, ResizeDirection, TextEvent, WidgetArena, WidgetId, WidgetMut,
+    WidgetPod, WidgetRef, WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -51,7 +51,7 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
     /// Root of the widget tree.
-    pub(crate) root: WidgetPod<dyn Widget>,
+    pub(crate) root: WidgetPod<dyn AnyWidget>,
 
     pub(crate) window_node_id: NodeId,
 
@@ -149,7 +149,7 @@ pub(crate) struct RenderRootState {
 
 pub(crate) struct MutateCallback {
     pub(crate) id: WidgetId,
-    pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, dyn Widget>)>,
+    pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, dyn AnyWidget>)>,
 }
 
 /// Defines how a windows size should be determined
@@ -253,7 +253,7 @@ impl RenderRoot {
     /// The `masonry` crate doesn't provide a way to do that:
     /// look for `masonry_winit::app::run` instead.
     pub fn new(
-        root_widget: WidgetPod<dyn Widget>,
+        root_widget: WidgetPod<dyn AnyWidget>,
         signal_sink: impl FnMut(RenderRootSignal) + 'static,
         options: RenderRootOptions,
     ) -> Self {
@@ -452,7 +452,7 @@ impl RenderRoot {
 
     // --- MARK: ACCESS WIDGETS---
     /// Get a [`WidgetRef`] to the root widget.
-    pub fn get_root_widget(&self) -> WidgetRef<'_, dyn Widget> {
+    pub fn get_root_widget(&self) -> WidgetRef<'_, dyn AnyWidget> {
         let root_state_token = self.widget_arena.states.roots();
         let root_widget_token = self.widget_arena.widgets.roots();
         let root_properties_token = self.widget_arena.properties.roots();
@@ -481,7 +481,7 @@ impl RenderRoot {
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
-    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
+    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn AnyWidget>> {
         let state_ref = self.widget_arena.states.find(id)?;
         let widget_ref = self
             .widget_arena
@@ -512,7 +512,7 @@ impl RenderRoot {
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
+    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) -> R) -> R {
         let res = mutate_widget(self, self.root.id(), f);
 
         self.run_rewrite_passes();
@@ -526,7 +526,7 @@ impl RenderRoot {
     pub fn edit_widget<R>(
         &mut self,
         id: WidgetId,
-        f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
+        f: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) -> R,
     ) -> R {
         let res = mutate_widget(self, id, f);
 
@@ -617,7 +617,7 @@ impl RenderRoot {
 
     pub(crate) fn request_render_all(&mut self) {
         fn request_render_all_in(
-            mut widget: ArenaMut<'_, Box<dyn Widget>>,
+            mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
             state: ArenaMut<'_, WidgetState>,
             properties: ArenaMut<'_, AnyMap>,
         ) {

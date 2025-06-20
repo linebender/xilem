@@ -5,6 +5,7 @@
 
 use accesskit::{Node, Role};
 use cursor_icon::CursorIcon;
+use masonry_core::core::AnyWidget;
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
@@ -25,8 +26,8 @@ use crate::widgets::flex::Axis;
 #[doc = crate::include_screenshot!("split_columns.png", "Split panel with two labels.")]
 pub struct Split<ChildA, ChildB>
 where
-    ChildA: Widget + ?Sized,
-    ChildB: Widget + ?Sized,
+    ChildA: AnyWidget + ?Sized,
+    ChildB: AnyWidget + ?Sized,
 {
     split_axis: Axis,
     split_point_chosen: f64,
@@ -52,7 +53,7 @@ impl<ChildA: Widget, ChildB: Widget> Split<ChildA, ChildB> {
     }
 }
 
-impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
+impl<ChildA: AnyWidget + ?Sized, ChildB: AnyWidget + ?Sized> Split<ChildA, ChildB> {
     /// Build split panel from two children already wrapped in [`WidgetPod`]s.
     pub fn new_pod(child1: WidgetPod<ChildA>, child2: WidgetPod<ChildB>) -> Self {
         Self {
@@ -150,7 +151,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 }
 
 // --- MARK: INTERNALS
-impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
+impl<ChildA: AnyWidget + ?Sized, ChildB: AnyWidget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the size of the splitter bar area.
     #[inline]
     fn bar_area(&self) -> f64 {
@@ -301,8 +302,8 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 // --- MARK: WIDGETMUT
 impl<ChildA, ChildB> Split<ChildA, ChildB>
 where
-    ChildA: Widget + FromDynWidget + ?Sized,
-    ChildB: Widget + FromDynWidget + ?Sized,
+    ChildA: AnyWidget + FromDynWidget + ?Sized,
+    ChildB: AnyWidget + FromDynWidget + ?Sized,
 {
     /// Get a mutable reference to the first child widget.
     pub fn child1_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, ChildA> {
@@ -394,8 +395,8 @@ where
 // --- MARK: IMPL WIDGET
 impl<ChildA, ChildB> Widget for Split<ChildA, ChildB>
 where
-    ChildA: Widget + ?Sized,
-    ChildB: Widget + ?Sized,
+    ChildA: AnyWidget + ?Sized,
+    ChildB: AnyWidget + ?Sized,
 {
     fn on_pointer_event(
         &mut self,

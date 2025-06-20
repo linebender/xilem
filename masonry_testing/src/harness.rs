@@ -29,7 +29,7 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    Action, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
+    Action, AnyWidget, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
     PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
@@ -616,7 +616,7 @@ impl TestHarness {
     // --- MARK: GETTERS
 
     /// Return a [`WidgetRef`] to the root widget.
-    pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
+    pub fn root_widget(&self) -> WidgetRef<'_, dyn AnyWidget> {
         self.render_root.get_root_widget()
     }
 
@@ -626,25 +626,25 @@ impl TestHarness {
     ///
     /// Panics if no Widget with this id can be found.
     #[track_caller]
-    pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
+    pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn AnyWidget> {
         self.render_root
             .get_widget(id)
             .unwrap_or_else(|| panic!("could not find widget {}", id))
     }
 
     /// Try to return a [`WidgetRef`] to the widget with the given id.
-    pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
+    pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn AnyWidget>> {
         self.render_root.get_widget(id)
     }
 
     /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::doc_06_masonry_concepts#text-focus).
-    pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
+    pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn AnyWidget>> {
         self.root_widget()
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
     /// Return a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::doc_06_masonry_concepts#pointer-capture).
-    pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
+    pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn AnyWidget>> {
         self.render_root
             .get_widget(self.render_root.pointer_capture_target()?)
     }
@@ -656,10 +656,10 @@ impl TestHarness {
     }
 
     /// Call the provided visitor on every widget in the widget tree.
-    pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn Widget>) + 'static) {
+    pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn AnyWidget>) + 'static) {
         fn inspect(
-            widget: WidgetRef<'_, dyn Widget>,
-            f: &(impl Fn(WidgetRef<'_, dyn Widget>) + 'static),
+            widget: WidgetRef<'_, dyn AnyWidget>,
+            f: &(impl Fn(WidgetRef<'_, dyn AnyWidget>) + 'static),
         ) {
             f(widget);
             for child in widget.children() {
@@ -673,7 +673,7 @@ impl TestHarness {
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
+    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) -> R) -> R {
         let ret = self.render_root.edit_root_widget(f);
         self.process_signals();
         ret
@@ -685,7 +685,7 @@ impl TestHarness {
     pub fn edit_widget<R>(
         &mut self,
         id: WidgetId,
-        f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
+        f: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) -> R,
     ) -> R {
         let ret = self.render_root.edit_widget(id, f);
         self.process_signals();

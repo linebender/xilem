@@ -28,7 +28,7 @@ pub use object_fit::ObjectFit;
 pub use properties::{DefaultProperties, Properties, PropertiesMut, PropertiesRef, Property};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;
-pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
+pub use widget::{AllowRawMut, AnyWidget, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;

@@ -12,7 +12,7 @@ use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
 
 use crate::app::RenderRootState;
 use crate::core::{
-    DefaultProperties, PropertiesRef, QueryCtx, Widget, WidgetArena, WidgetId, WidgetState,
+    AnyWidget, DefaultProperties, PropertiesRef, QueryCtx, WidgetArena, WidgetId, WidgetState,
 };
 use crate::util::AnyMap;
 
@@ -30,7 +30,7 @@ pub(crate) fn enter_span_if(
     enabled: bool,
     global_state: &RenderRootState,
     default_properties: &DefaultProperties,
-    widget: ArenaRef<'_, Box<dyn Widget>>,
+    widget: ArenaRef<'_, Box<dyn AnyWidget>>,
     state: ArenaRef<'_, WidgetState>,
     properties: ArenaRef<'_, AnyMap>,
 ) -> Option<EnteredSpan> {
@@ -51,7 +51,7 @@ pub(crate) fn enter_span_if(
 pub(crate) fn enter_span(
     global_state: &RenderRootState,
     default_properties: &DefaultProperties,
-    widget: ArenaRef<'_, Box<dyn Widget>>,
+    widget: ArenaRef<'_, Box<dyn AnyWidget>>,
     state: ArenaRef<'_, WidgetState>,
     properties: ArenaRef<'_, AnyMap>,
 ) -> EnteredSpan {
@@ -73,11 +73,11 @@ pub(crate) fn enter_span(
 
 pub(crate) fn recurse_on_children(
     id: WidgetId,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
     mut state: ArenaMutList<'_, WidgetState>,
     mut properties: ArenaMutList<'_, AnyMap>,
     mut callback: impl FnMut(
-        ArenaMut<'_, Box<dyn Widget>>,
+        ArenaMut<'_, Box<dyn AnyWidget>>,
         ArenaMut<'_, WidgetState>,
         ArenaMut<'_, AnyMap>,
     ),

@@ -16,7 +16,7 @@ use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
 /// The widget kind contained in the scroll area. This is a type parameter (`W`) of [`VirtualScroll`],
-/// although note that [`dyn Widget`](masonry::core::Widget) can also be used for dynamic children kinds.
+/// although note that [`dyn AnyWidget`](masonry::core::Widget) can also be used for dynamic children kinds.
 ///
 /// We use a type alias for this, as when we downcast to the `VirtualScroll`, we need to be sure to
 /// always use the same type for `W`.

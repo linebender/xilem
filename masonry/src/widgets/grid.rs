@@ -4,7 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::UpdateCtx;
+use masonry_core::core::{AnyWidget, UpdateCtx};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -29,7 +29,7 @@ pub struct Grid {
 }
 
 struct Child {
-    widget: WidgetPod<dyn Widget>,
+    widget: WidgetPod<dyn AnyWidget>,
     x: i32,
     y: i32,
     width: i32,
@@ -78,7 +78,7 @@ impl Grid {
     }
 
     /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
-    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>, params: GridParams) -> Self {
+    pub fn with_child_pod(mut self, widget: WidgetPod<dyn AnyWidget>, params: GridParams) -> Self {
         let child = Child {
             widget,
             x: params.x,
@@ -101,7 +101,7 @@ impl Child {
     }
 }
 
-fn new_grid_child(params: GridParams, widget: WidgetPod<dyn Widget>) -> Child {
+fn new_grid_child(params: GridParams, widget: WidgetPod<dyn AnyWidget>) -> Child {
     Child {
         widget,
         x: params.x,
@@ -157,7 +157,7 @@ impl Grid {
     ///
     /// See also [`with_child`](Grid::with_child).
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
+        let child_pod: WidgetPod<dyn AnyWidget> = WidgetPod::new(child).erased();
         Self::add_child_pod(this, child_pod, params);
     }
 
@@ -170,7 +170,7 @@ impl Grid {
         id: WidgetId,
         params: GridParams,
     ) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
+        let child_pod: WidgetPod<dyn AnyWidget> = WidgetPod::new_with_id(child, id).erased();
         Self::add_child_pod(this, child_pod, params);
     }
 
@@ -179,7 +179,7 @@ impl Grid {
     /// See also [`with_child_pod`](Grid::with_child_pod).
     pub fn add_child_pod(
         this: &mut WidgetMut<'_, Self>,
-        widget: WidgetPod<dyn Widget>,
+        widget: WidgetPod<dyn AnyWidget>,
         params: GridParams,
     ) {
         let child = new_grid_child(params, widget);
@@ -216,7 +216,7 @@ impl Grid {
     pub fn insert_grid_child_pod(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: WidgetPod<dyn Widget>,
+        child: WidgetPod<dyn AnyWidget>,
         params: impl Into<GridParams>,
     ) {
         let child = new_grid_child(params.into(), child);
@@ -253,7 +253,7 @@ impl Grid {
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> WidgetMut<'t, dyn Widget> {
+    ) -> WidgetMut<'t, dyn AnyWidget> {
         let child = &mut this.widget.children[idx].widget;
         this.ctx.get_mut(child)
     }

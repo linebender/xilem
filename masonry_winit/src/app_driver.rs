@@ -7,7 +7,7 @@ use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry::app::RenderRoot;
-use masonry::core::{Action, Widget, WidgetId, WidgetPod};
+use masonry::core::{Action, AnyWidget, WidgetId, WidgetPod};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes};
@@ -135,7 +135,7 @@ impl DriverCtx<'_, '_> {
         &mut self,
         window_id: WindowId,
         attributes: WindowAttributes,
-        root_widget: WidgetPod<dyn Widget>,
+        root_widget: WidgetPod<dyn AnyWidget>,
     ) {
         self.state
             .create_window(self.event_loop, window_id, attributes, root_widget);

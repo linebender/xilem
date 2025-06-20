@@ -131,7 +131,7 @@ Because our widget tree only has one button and one textbox, there is no possibl
 When handling `ButtonPressed`:
 
 - `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
-- `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<dyn Widget>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
+- `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<dyn AnyWidget>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
 - `root.downcast::<...>()` returns a `WidgetMut<Portal<Flex>>`.
 - `Portal::child_mut()` returns a `WidgetMut<Flex>`.
 

@@ -6,7 +6,7 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{ComposeCtx, DefaultProperties, Widget, WidgetState};
+use crate::core::{AnyWidget, ComposeCtx, DefaultProperties, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
@@ -14,7 +14,7 @@ use crate::util::AnyMap;
 fn compose_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
     parent_transformed: bool,

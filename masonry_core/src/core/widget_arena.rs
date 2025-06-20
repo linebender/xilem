@@ -3,11 +3,11 @@
 
 use tree_arena::{ArenaMut, ArenaRef, TreeArena};
 
-use crate::core::{Widget, WidgetId, WidgetState};
+use crate::core::{AnyWidget, WidgetId, WidgetState};
 use crate::util::AnyMap;
 
 pub(crate) struct WidgetArena {
-    pub(crate) widgets: TreeArena<Box<dyn Widget>>,
+    pub(crate) widgets: TreeArena<Box<dyn AnyWidget>>,
     pub(crate) states: TreeArena<WidgetState>,
     pub(crate) properties: TreeArena<AnyMap>,
 }
@@ -33,7 +33,7 @@ impl WidgetArena {
         &self,
         widget_id: WidgetId,
     ) -> (
-        ArenaRef<'_, Box<dyn Widget>>,
+        ArenaRef<'_, Box<dyn AnyWidget>>,
         ArenaRef<'_, WidgetState>,
         ArenaRef<'_, AnyMap>,
     ) {
@@ -57,7 +57,7 @@ impl WidgetArena {
         &mut self,
         widget_id: WidgetId,
     ) -> (
-        ArenaMut<'_, Box<dyn Widget>>,
+        ArenaMut<'_, Box<dyn AnyWidget>>,
         ArenaMut<'_, WidgetState>,
         ArenaMut<'_, AnyMap>,
     ) {
@@ -78,7 +78,7 @@ impl WidgetArena {
 
     #[allow(dead_code)]
     #[track_caller]
-    pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<'_, Box<dyn Widget>> {
+    pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<'_, Box<dyn AnyWidget>> {
         self.widgets
             .find(widget_id)
             .expect("get_widget: widget not in widget tree")
@@ -86,7 +86,10 @@ impl WidgetArena {
 
     #[allow(dead_code)]
     #[track_caller]
-    pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> ArenaMut<'_, Box<dyn Widget>> {
+    pub(crate) fn get_widget_mut(
+        &mut self,
+        widget_id: WidgetId,
+    ) -> ArenaMut<'_, Box<dyn AnyWidget>> {
         self.widgets
             .find_mut(widget_id)
             .expect("get_widget_mut: widget not in widget tree")

@@ -4,13 +4,13 @@
 use tracing::info_span;
 
 use crate::app::RenderRoot;
-use crate::core::{MutateCtx, PropertiesMut, Widget, WidgetId, WidgetMut};
+use crate::core::{AnyWidget, MutateCtx, PropertiesMut, WidgetId, WidgetMut};
 use crate::passes::merge_state_up;
 
 pub(crate) fn mutate_widget<R>(
     root: &mut RenderRoot,
     id: WidgetId,
-    mutate_fn: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
+    mutate_fn: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) -> R,
 ) -> R {
     let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(id);
 

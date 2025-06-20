@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use crate::style::Style;
 
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::core::{AnyWidget, FromDynWidget, WidgetMut};
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets;
 
@@ -36,7 +36,7 @@ pub use masonry::widgets::GridParams;
 /// let mut state = State::default();
 ///
 /// grid(
-///     (   
+///     (
 ///         label(state.int.to_string()).grid_item(GridParams::new(0, 0, 3, 1)),
 ///         button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
 ///         button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
@@ -215,7 +215,7 @@ impl SuperElement<Self, ViewCtx> for GridElement {
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridElement {
+impl<W: AnyWidget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         // Getting here means that the widget didn't use .grid_item or .grid_pos.
         // This currently places the widget in the top left cell.
@@ -367,7 +367,7 @@ impl<State, Action, V: WidgetView<State, Action>> GridExt<State, Action> for V {
 /// A child widget within a [`Grid`] view.
 pub struct GridElement {
     /// The child widget.
-    child: Pod<dyn Widget>,
+    child: Pod<dyn AnyWidget>,
     /// The grid parameters of the child widget.
     params: GridParams,
 }
