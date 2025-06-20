@@ -1,14 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{future::Future, marker::PhantomData, sync::Arc};
+#![expect(missing_docs, reason = "TODO - Document these items")]
+
+use std::future::Future;
+use std::marker::PhantomData;
+use std::sync::Arc;
 
 use tokio::task::JoinHandle;
-use xilem_core::{
-    DynMessage, Message, MessageProxy, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
-};
 
 use crate::ViewCtx;
+use crate::core::{
+    AnyMessage, DynMessage, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+    ViewPathTracker,
+};
 
 /// Launch a task which will run until the view is no longer in the tree.
 /// `init_future` is given a [`MessageProxy`], which it will store in the future it returns.
@@ -23,14 +28,15 @@ use crate::ViewCtx;
 /// See [`run_once`](crate::core::run_once) for details.
 pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
 where
+    // TODO: Accept the state in this function
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message + 'static,
+    M: AnyMessage + 'static,
 {
     const {
         assert!(
-            core::mem::size_of::<F>() == 0,
+            size_of::<F>() == 0,
             "`task` will not be ran again when its captured variables are updated.\n\
             To ignore this warning, use `task_raw`."
         );
@@ -51,7 +57,7 @@ where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message + 'static,
+    M: AnyMessage + 'static,
 {
     Task {
         init_future,
@@ -72,29 +78,30 @@ where
     F: Fn(MessageProxy<M>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message + 'static,
+    M: AnyMessage + 'static,
 {
     type Element = NoElement;
 
     type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
-        let proxy = ctx.proxy.clone();
+        let proxy = ctx.proxy();
         let handle = ctx
             .runtime()
             .spawn((self.init_future)(MessageProxy::new(proxy, path)));
         (NoElement, handle)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         _: &Self,
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): xilem_core::Mut<'el, Self::Element>,
-    ) -> xilem_core::Mut<'el, Self::Element> {
+        (): Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         // Nothing to do
     }
 
@@ -102,7 +109,8 @@ where
         &self,
         join_handle: &mut Self::ViewState,
         _: &mut ViewCtx,
-        _: xilem_core::Mut<'_, Self::Element>,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         join_handle.abort();
     }
@@ -110,15 +118,15 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
             "id path should be empty in Task::message"
         );
         let message = message.downcast::<M>().unwrap();
-        xilem_core::MessageResult::Action((self.on_event)(app_state, *message))
+        MessageResult::Action((self.on_event)(app_state, *message))
     }
 }

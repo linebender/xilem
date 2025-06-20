@@ -45,11 +45,12 @@ use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 /// ```
 pub fn run_once<F>(once: F) -> RunOnce<F>
 where
+    // TODO(DJMcNab): Accept
     F: Fn() + 'static,
 {
     const {
         assert!(
-            core::mem::size_of::<F>() == 0,
+            size_of::<F>() == 0,
             "`run_once` will not be ran again when its captured variables are updated.\n\
             To ignore this warning, use `run_once_raw`."
         );
@@ -71,8 +72,15 @@ where
 /// The view type for [`run_once`].
 ///
 /// This is a [`NoElement`] view.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct RunOnce<F> {
     once: F,
+}
+
+impl<F> Debug for RunOnce<F> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("RunOnce").finish_non_exhaustive()
+    }
 }
 
 impl<F> ViewMarker for RunOnce<F> {}
@@ -87,18 +95,19 @@ where
 
     type ViewState = ();
 
-    fn build(&self, _: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _: &mut Context, _: &mut State) -> (Self::Element, Self::ViewState) {
         (self.once)();
         (NoElement, ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         _: &Self,
         (): &mut Self::ViewState,
         _: &mut Context,
-        (): crate::Mut<'el, Self::Element>,
-    ) -> crate::Mut<'el, Self::Element> {
+        (): crate::Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         // Nothing to do
     }
 
@@ -107,6 +116,7 @@ where
         (): &mut Self::ViewState,
         _: &mut Context,
         _: crate::Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         // Nothing to do
     }

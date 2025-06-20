@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>
+    SvgDraw | Xilem Web
+  </title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    input[type=radio] {
+      display: none;
+    }
+
+    .color>input[type=radio]:checked+div {
+      transform: scale(1.25);
+    }
+
+    .color>input[type=radio]+div {
+      transition: transform 0.3s ease-in-out;
+      border-radius: 50%;
+      border-color: black;
+      border-width: 1px;
+      border-style: solid;
+      width: 23px;
+      height: 23px;
+      margin: 2.2px;
+      background-color: red;
+      display: block;
+    }
+
+    .color {
+      display: inline-block
+    }
+
+    .controls {
+      position: absolute;
+      left: 0;
+      width: fit-content;
+      height: 1.5rem;
+      padding: 1.0rem;
+      font-family: Arial, Helvetica, sans-serif, monospace;
+    }
+
+    .controls>div {
+      margin-bottom: 10px;
+    }
+
+    .value-range {
+      position: absolute;
+      height: 1.5rem;
+      width: 20rem;
+    }
+
+    .value-range::before,
+    .value-range::after {
+      display: block;
+      position: absolute;
+      z-index: 99;
+      color: #000;
+      width: 100%;
+      line-height: 1rem;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+      pointer-events: none;
+    }
+
+    .value-range::before {
+      text-align: left;
+      /* hardcoded values aren't optimal here, but this example is not about styling/layouting */
+      content: "0.1";
+    }
+
+    .value-range::after {
+      text-align: right;
+      content: "1000";
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      background-color: rgba(255, 255, 255, 0.2);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin: 0;
+      padding: 0;
+      width: 20rem;
+      height: 1.5rem;
+      transform: translate(-50%, -50%);
+      border-radius: 0.5rem;
+      overflow: hidden;
+      cursor: col-resize;
+    }
+
+    input[type=range][step] {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 0;
+      box-shadow: -20rem 0 0 20rem rgba(0, 0, 0, 0.2);
+    }
+
+    input[type=range]::-moz-range-thumb {
+      border: none;
+      width: 0;
+      box-shadow: -20rem 0 0 20rem rgba(0, 0, 0, 0.2);
+    }
+
+    label {
+      line-height: 1.5rem;
+    }
+  </style>
+</head>
+
+<body>
+</body>
+
+</html>

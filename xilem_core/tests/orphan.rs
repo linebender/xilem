@@ -6,7 +6,9 @@
 //!
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
-use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewPathTracker};
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+
+use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewId, ViewPathTracker};
 
 mod common;
 use common::*;
@@ -21,6 +23,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
     fn orphan_build(
         _view: &&'static str,
         ctx: &mut Self,
+        _app_state: &mut State,
     ) -> (Self::OrphanElement, Self::OrphanViewState) {
         let id = 0;
         (
@@ -33,13 +36,14 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         )
     }
 
-    fn orphan_rebuild<'el>(
+    fn orphan_rebuild(
         new: &&'static str,
         prev: &&'static str,
         generation: &mut Self::OrphanViewState,
         ctx: &mut Self,
-        element: Mut<'el, Self::OrphanElement>,
-    ) -> Mut<'el, Self::OrphanElement> {
+        element: Mut<'_, Self::OrphanElement>,
+        _app_state: &mut State,
+    ) {
         assert_eq!(&*element.view_path, ctx.view_path());
 
         let old_generation = *generation;
@@ -52,7 +56,6 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
             from: old_generation,
             to: *generation,
         });
-        element
     }
 
     fn orphan_teardown(
@@ -60,6 +63,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         generation: &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
+        _app_state: &mut State,
     ) {
         element.operations.push(Operation::Teardown(*generation));
     }
@@ -67,7 +71,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
     fn orphan_message(
         _view: &&'static str,
         _view_state: &mut Self::OrphanViewState,
-        _id_path: &[xilem_core::ViewId],
+        _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action, DynMessage> {
@@ -79,13 +83,19 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
 fn str_as_orphan_view() {
     let view1 = "This string is now also a view";
     let mut ctx = TestCtx::default();
-    let (mut element, mut generation) = View::<(), (), TestCtx>::build(&view1, &mut ctx);
+    let (mut element, mut generation) = View::<(), (), TestCtx>::build(&view1, &mut ctx, &mut ());
 
     let view2 = "This string is now an updated view";
     assert_eq!(element.operations[0], Operation::Build(0));
-    let element =
-        View::<(), (), TestCtx>::rebuild(&view1, &view2, &mut generation, &mut ctx, &mut element);
+    View::<(), (), TestCtx>::rebuild(
+        &view1,
+        &view2,
+        &mut generation,
+        &mut ctx,
+        &mut element,
+        &mut (),
+    );
     assert_eq!(element.operations[1], Operation::Rebuild { from: 0, to: 1 });
-    View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, element);
+    View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, &mut element, &mut ());
     assert_eq!(element.operations[2], Operation::Teardown(1));
 }

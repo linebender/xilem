@@ -3,26 +3,26 @@
 
 //! This example uses variable fonts in a touch sensitive digital clock.
 
+use std::sync::Arc;
 use std::time::Duration;
 
-use masonry::parley::{
-    fontique::Weight,
-    style::{FontFamily, FontStack},
-};
-use time::{error::IndeterminateOffset, macros::format_description, OffsetDateTime, UtcOffset};
+use time::error::IndeterminateOffset;
+use time::macros::format_description;
+use time::{OffsetDateTime, UtcOffset};
 use winit::error::EventLoopError;
-use xilem::{
-    view::{
-        button, flex, label, portal, prose, sized_box, task, variable_label, Axis, FlexExt,
-        FlexSpacer,
-    },
-    Color, EventLoop, EventLoopBuilder, WidgetView, Xilem,
+use xilem::core::fork;
+use xilem::style::Style as _;
+use xilem::view::{
+    Axis, FlexExt, FlexSpacer, button, flex, inline_prose, label, portal, prose, sized_box, task,
+    variable_label,
 };
-use xilem_core::fork;
+use xilem::{
+    Blob, EventLoop, EventLoopBuilder, FontWeight, WidgetView, WindowOptions, Xilem, palette,
+};
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
-    /// The font [weight](Weight) used for the values.
+    /// The font [weight](FontWeight) used for the values.
     weight: f32,
     /// The current UTC offset on this machine.
     local_offset: Result<UtcOffset, IndeterminateOffset>,
@@ -35,10 +35,10 @@ struct TimeZone {
     /// An approximate region which this offset applies to.
     region: &'static str,
     /// The offset from UTC
-    offset: time::UtcOffset,
+    offset: UtcOffset,
 }
 
-fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
+fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
     let view = flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.),
@@ -49,7 +49,8 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
             TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
         ))
         .flex(1.),
-    ));
+    ))
+    .padding(10.0);
     fork(
         view,
         task(
@@ -71,12 +72,15 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> {
 
 /// Shows the current system time on a best-effort basis.
 // TODO: Maybe make this have a larger font size?
-fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> {
+fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
     let (error_view, offset) = if let Ok(offset) = data.local_offset {
         (None, offset)
     } else {
         (
-            Some(prose("Could not determine local UTC offset, using UTC").brush(Color::ORANGE_RED)),
+            Some(
+                prose("Could not determine local UTC offset, using UTC")
+                    .brush(palette::css::ORANGE_RED),
+            ),
             UtcOffset::UTC,
         )
     };
@@ -112,16 +116,16 @@ fn controls() -> impl WidgetView<Clocks> {
 
 impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
-    fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> {
+    fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
         sized_box(flex((
             flex((
-                prose(self.region),
+                inline_prose(self.region),
                 FlexSpacer::Flex(1.),
                 label(format!("UTC{}", self.offset)).brush(
                     if data.local_offset.is_ok_and(|it| it == self.offset) {
                         // TODO: Consider accessibility here.
-                        Color::ORANGE
+                        palette::css::ORANGE
                     } else {
                         masonry::theme::TEXT_COLOR
                     },
@@ -139,7 +143,7 @@ impl TimeZone {
                 )
                 .text_size(48.)
                 // Use the roboto flex we have just loaded.
-                .with_font(FontStack::List(&[FontFamily::Named("Roboto Flex")]))
+                .font("Roboto Flex")
                 .target_weight(data.weight, 400.),
                 FlexSpacer::Flex(1.0),
                 (data.local_now().date() != date_time_in_self.date()).then(|| {
@@ -184,16 +188,17 @@ const ROBOTO_FLEX: &[u8] = include_bytes!(concat!(
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = Clocks {
-        weight: Weight::BLACK.value(),
+        weight: FontWeight::BLACK.value(),
         // TODO: We can't get this on Android, because
         local_offset: UtcOffset::current_local_offset(),
         now_utc: OffsetDateTime::now_utc(),
     };
 
     // Load Roboto Flex so that it can be used at runtime.
-    let app = Xilem::new(data, app_logic).with_font(ROBOTO_FLEX);
+    let app = Xilem::new_simple(data, app_logic, WindowOptions::new("Clocks"))
+        .with_font(Blob::new(Arc::new(ROBOTO_FLEX)));
 
-    app.run_windowed(event_loop, "Clocks".into())?;
+    app.run_in(event_loop)?;
     Ok(())
 }
 
@@ -201,7 +206,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 const fn tz(region: &'static str, offset: i8) -> TimeZone {
     TimeZone {
         region,
-        offset: match time::UtcOffset::from_hms(offset, 0, 0) {
+        offset: match UtcOffset::from_hms(offset, 0, 0) {
             Ok(it) => it,
             Err(_) => {
                 panic!("Component out of range.");
@@ -236,22 +241,23 @@ const TIMEZONES: &[TimeZone] = &[
     tz("Tonga", 13),
 ];
 
-#[cfg(not(target_os = "android"))]
-#[allow(dead_code)]
+// Boilerplate code: Identical across all applications which support Android
+
+#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
+#[allow(dead_code, reason = "False positive: needed in not-_android version")]
 // This is treated as dead code by the Android version of the example, but is actually live
 // This hackery is required because Cargo doesn't care to support this use case, of one
 // example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
 }
-
-// Boilerplate code for android: Identical across all applications
-
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here
-// We believe that there are no other declarations using this name in the compiled objects here
-#[allow(unsafe_code)]
-#[no_mangle]
+#[expect(
+    unsafe_code,
+    reason = "We believe that there are no other declarations using this name in the compiled objects here"
+)]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
@@ -259,12 +265,4 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     event_loop.with_android_app(app);
 
     run(event_loop).expect("Can create app");
-}
-
-// TODO: This is a hack because of how we handle our examples in Cargo.toml
-// Ideally, we change Cargo to be more sensible here?
-#[cfg(target_os = "android")]
-#[allow(dead_code)]
-fn main() {
-    unreachable!()
 }

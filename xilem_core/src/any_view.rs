@@ -3,9 +3,8 @@
 
 //! Support for a type erased [`View`].
 
-use core::any::Any;
-
 use alloc::boxed::Box;
+use core::any::Any;
 
 use crate::{
     AnyElement, DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
@@ -32,16 +31,17 @@ pub trait AnyView<State, Action, Context, Element: ViewElement, Message = DynMes
     fn as_any(&self) -> &dyn Any;
 
     /// Type erased [`View::build`].
-    fn dyn_build(&self, ctx: &mut Context) -> (Element, AnyViewState);
+    fn dyn_build(&self, ctx: &mut Context, app_state: &mut State) -> (Element, AnyViewState);
 
     /// Type erased [`View::rebuild`].
-    fn dyn_rebuild<'el>(
+    fn dyn_rebuild(
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, Element, Message>,
-        element: Element::Mut<'el>,
-    ) -> Element::Mut<'el>;
+        element: Element::Mut<'_>,
+        app_state: &mut State,
+    );
 
     /// Type erased [`View::teardown`].
     ///
@@ -51,6 +51,7 @@ pub trait AnyView<State, Action, Context, Element: ViewElement, Message = DynMes
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         element: Element::Mut<'el>,
+        app_state: &mut State,
     ) -> Element::Mut<'el>;
 
     /// Type erased [`View::message`].
@@ -76,9 +77,14 @@ where
         self
     }
 
-    fn dyn_build(&self, ctx: &mut Context) -> (DynamicElement, AnyViewState) {
+    fn dyn_build(
+        &self,
+        ctx: &mut Context,
+        app_state: &mut State,
+    ) -> (DynamicElement, AnyViewState) {
         let generation = 0;
-        let (element, view_state) = ctx.with_id(ViewId::new(generation), |ctx| self.build(ctx));
+        let (element, view_state) =
+            ctx.with_id(ViewId::new(generation), |ctx| self.build(ctx, app_state));
         (
             DynamicElement::upcast(ctx, element),
             AnyViewState {
@@ -88,13 +94,14 @@ where
         )
     }
 
-    fn dyn_rebuild<'el>(
+    fn dyn_rebuild(
         &self,
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, DynamicElement, Message>,
-        mut element: DynamicElement::Mut<'el>,
-    ) -> DynamicElement::Mut<'el> {
+        mut element: DynamicElement::Mut<'_>,
+        app_state: &mut State,
+    ) {
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
             DynamicElement::with_downcast(element, |element| {
@@ -104,23 +111,24 @@ where
                     .expect("build or rebuild always set the correct corresponding state type");
 
                 ctx.with_id(ViewId::new(dyn_state.generation), move |ctx| {
-                    self.rebuild(prev, state, ctx, element);
+                    self.rebuild(prev, state, ctx, element, app_state);
                 });
-            })
+            });
         } else {
             // Otherwise, teardown the old element, then replace the value
             // Note that we need to use `dyn_teardown` here, because `prev`
             // is of a different type.
-            element = prev.dyn_teardown(dyn_state, ctx, element);
+            element = prev.dyn_teardown(dyn_state, ctx, element, app_state);
 
             // Increase the generation, because the underlying widget has been swapped out.
             // Overflow condition: Impossible to overflow, as u64 only ever incremented by 1
             // and starting at 0.
             dyn_state.generation = dyn_state.generation.wrapping_add(1);
-            let (new_element, view_state) =
-                ctx.with_id(ViewId::new(dyn_state.generation), |ctx| self.build(ctx));
+            let (new_element, view_state) = ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
+                self.build(ctx, app_state)
+            });
             dyn_state.inner_state = Box::new(view_state);
-            DynamicElement::replace_inner(element, new_element)
+            DynamicElement::replace_inner(element, new_element);
         }
     }
     fn dyn_teardown<'el>(
@@ -128,6 +136,7 @@ where
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         element: DynamicElement::Mut<'el>,
+        app_state: &mut State,
     ) -> DynamicElement::Mut<'el> {
         let state = dyn_state
             .inner_state
@@ -137,7 +146,7 @@ where
         // We only need to teardown the inner value - there's no other state to cleanup in this widget
         DynamicElement::with_downcast(element, |element| {
             ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
-                self.teardown(state, ctx, element);
+                self.teardown(state, ctx, element, app_state);
             });
         })
     }
@@ -166,22 +175,20 @@ where
 
 /// The state used by [`AnyView`].
 #[doc(hidden)]
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[derive(Debug)]
 pub struct AnyViewState {
     inner_state: Box<dyn Any>,
     /// The generation is the value which is shown
     generation: u64,
 }
 
-impl<State, Action, Context, Element, Message> ViewMarker
-    for dyn AnyView<State, Action, Context, Element, Message>
-{
-}
-impl<State, Action, Context, Element, Message> View<State, Action, Context, Message>
-    for dyn AnyView<State, Action, Context, Element, Message>
+impl<State, Action, Context, Element, Message> ViewMarker for dyn AnyView<State, Action, Context, Element, Message> {}
+impl<State, Action, Context, Element, Message> View<State, Action, Context, Message> for dyn AnyView<State, Action, Context, Element, Message>
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -190,18 +197,19 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.dyn_build(ctx)
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx, app_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
 
     fn teardown(
@@ -209,17 +217,18 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element);
+        self.dyn_teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
@@ -235,7 +244,7 @@ impl<State, Action, Context, Element, Message> View<State, Action, Context, Mess
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -244,18 +253,19 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.dyn_build(ctx)
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx, app_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
 
     fn teardown(
@@ -263,17 +273,18 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element);
+        self.dyn_teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
@@ -287,7 +298,7 @@ impl<State, Action, Context, Element, Message> View<State, Action, Context, Mess
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -296,18 +307,19 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.dyn_build(ctx)
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx, app_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
 
     fn teardown(
@@ -315,17 +327,18 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element);
+        self.dyn_teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }
@@ -339,7 +352,7 @@ impl<State, Action, Context, Element, Message> View<State, Action, Context, Mess
 where
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
-    Context: crate::ViewPathTracker + 'static,
+    Context: ViewPathTracker + 'static,
     State: 'static,
     Action: 'static,
     Message: 'static,
@@ -348,18 +361,19 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.dyn_build(ctx)
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.dyn_build(ctx, app_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.dyn_rebuild(view_state, ctx, prev, element)
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
 
     fn teardown(
@@ -367,17 +381,18 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element);
+        self.dyn_teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         self.dyn_message(view_state, id_path, message, app_state)
     }
 }

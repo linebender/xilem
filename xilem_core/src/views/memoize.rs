@@ -1,6 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
@@ -10,10 +11,23 @@ use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 ///
 /// The story of Memoization in Xilem is still being worked out,
 /// so the details of this view might change.
-pub struct Memoize<Data, InitView, State, Action> {
+#[must_use = "View values do nothing unless provided to Xilem."]
+pub struct Memoize<Data, InitView, State, Action, Context, Message> {
     data: Data,
     init_view: InitView,
-    phantom: PhantomData<fn() -> (State, Action)>,
+    phantom: PhantomData<fn() -> (State, Action, Context, Message)>,
+}
+
+impl<Data, InitView, State, Action, Context, Message> Debug
+    for Memoize<Data, InitView, State, Action, Context, Message>
+where
+    Data: Debug,
+{
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Memoize")
+            .field("data", &self.data)
+            .finish_non_exhaustive()
+    }
 }
 
 const NON_CAPTURING_CLOSURE: &str = "
@@ -41,9 +55,10 @@ It's not possible in Rust currently to check whether the (content of the) callba
 pub fn memoize<State, Action, Context, Message, Data, V, InitView>(
     data: Data,
     init_view: InitView,
-) -> Memoize<Data, InitView, State, Action>
+) -> Memoize<Data, InitView, State, Action, Context, Message>
 where
     Data: PartialEq + 'static,
+    // TODO(DJMcNab): Also accept `&mut State` in this argument closure
     InitView: Fn(&Data) -> V + 'static,
     V: View<State, Action, Context, Message>,
     Context: ViewPathTracker,
@@ -58,19 +73,25 @@ where
     }
 }
 
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[derive(Debug)]
 pub struct MemoizeState<V, VState> {
     view: V,
     view_state: VState,
     dirty: bool,
 }
 
-impl<Data, ViewFn, State, Action> ViewMarker for Memoize<Data, ViewFn, State, Action> {}
+impl<Data, ViewFn, State, Action, Context, Message> ViewMarker
+    for Memoize<Data, ViewFn, State, Action, Context, Message>
+{
+}
 impl<State, Action, Context, Data, V, ViewFn, Message> View<State, Action, Context, Message>
-    for Memoize<Data, ViewFn, State, Action>
+    for Memoize<Data, ViewFn, State, Action, Context, Message>
 where
     State: 'static,
     Action: 'static,
-    Context: ViewPathTracker,
+    Context: ViewPathTracker + 'static,
+    Message: 'static,
     Data: PartialEq + 'static,
     V: View<State, Action, Context, Message>,
     ViewFn: Fn(&Data) -> V + 'static,
@@ -79,9 +100,9 @@ where
 
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)(&self.data);
-        let (element, view_state) = view.build(ctx);
+        let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {
             view,
             view_state,
@@ -90,20 +111,24 @@ where
         (element, memoize_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.init_view)(&self.data);
-            let el = view.rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
+            view.rebuild(
+                &view_state.view,
+                &mut view_state.view_state,
+                ctx,
+                element,
+                app_state,
+            );
             view_state.view = view;
-            el
-        } else {
-            element
         }
     }
 
@@ -129,10 +154,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         view_state
             .view
-            .teardown(&mut view_state.view_state, ctx, element);
+            .teardown(&mut view_state.view_state, ctx, element, app_state);
     }
 }
 
@@ -140,6 +166,12 @@ where
 pub struct Frozen<InitView, State, Action> {
     init_view: InitView,
     phantom: PhantomData<fn() -> (State, Action)>,
+}
+
+impl<InitView, State, Action> Debug for Frozen<InitView, State, Action> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("Frozen").finish_non_exhaustive()
+    }
 }
 
 /// This view can be used, when the view returned by `init_view` doesn't access the `State`, other than in event callbacks
@@ -187,9 +219,9 @@ where
 
     type ViewState = MemoizeState<V, V::ViewState>;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)();
-        let (element, view_state) = view.build(ctx);
+        let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {
             view,
             view_state,
@@ -198,23 +230,24 @@ where
         (element, memoize_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         _prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: crate::Mut<'el, Self::Element>,
-    ) -> crate::Mut<'el, Self::Element> {
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
         if core::mem::take(&mut view_state.dirty) {
             let view = (self.init_view)();
-            let element =
-                view_state
-                    .view
-                    .rebuild(&view_state.view, &mut view_state.view_state, ctx, element);
+            view_state.view.rebuild(
+                &view_state.view,
+                &mut view_state.view_state,
+                ctx,
+                element,
+                app_state,
+            );
             view_state.view = view;
-            element
-        } else {
-            element
         }
     }
 
@@ -222,20 +255,21 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: crate::Mut<'_, Self::Element>,
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         view_state
             .view
-            .teardown(&mut view_state.view_state, ctx, element);
+            .teardown(&mut view_state.view_state, ctx, element, app_state);
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> MessageResult<Action, Message> {
         let message_result =
             view_state
                 .view

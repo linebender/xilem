@@ -4,11 +4,10 @@
 //! A state machine to detect whether the button was pressed an even or an odd number of times.
 
 use winit::error::EventLoopError;
-use xilem::{
-    core::one_of::{OneOf, OneOf3},
-    view::{button, flex, label, prose, sized_box, spinner},
-    EventLoop, WidgetView, Xilem,
-};
+use xilem::core::one_of::{OneOf, OneOf3};
+use xilem::style::Style as _;
+use xilem::view::{button, flex, label, prose, sized_box, spinner};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
 ///
@@ -28,7 +27,7 @@ enum IsEven {
     Success,
 }
 
-fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
+fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
     match app_data.state {
         // The first time we use `OneOf` in a conditional statement, we need
         // to specify the number of `OneOf` variants used - 3 in this case.
@@ -59,7 +58,7 @@ fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView
     })
 }
 
-fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
+fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
     flex((
         button("Reset", |app_data: &mut StateMachine| {
             app_data.history.clear();
@@ -72,6 +71,7 @@ fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> {
         state_machine(app_data),
         // TODO: When we have a canvas widget, visualise the entire state machine here.
     ))
+    .padding(15.0)
 }
 
 fn main() -> Result<(), EventLoopError> {
@@ -79,7 +79,7 @@ fn main() -> Result<(), EventLoopError> {
         state: IsEven::Initial,
         history: String::new(),
     };
-    let app = Xilem::new(app_data, app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+    let app = Xilem::new_simple(app_data, app_logic, WindowOptions::new("Centered Flex"));
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }

@@ -1,12 +1,14 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{elements::DomChildrenSplice, AnyPod, DomFragment, ViewCtx};
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::DynMessage;
 use wasm_bindgen::UnwrapThrowExt;
-use xilem_core::{AppendVec, MessageResult, ViewId};
+
+use crate::core::{AppendVec, MessageResult, ViewId};
+use crate::elements::DomChildrenSplice;
+use crate::{AnyPod, DomFragment, DynMessage, ViewCtx};
 
 pub(crate) struct AppMessage {
     pub id_path: Rc<[ViewId]>,
@@ -40,7 +42,7 @@ impl<State, Fragment: DomFragment<State>, InitFragment> Clone
     for App<State, Fragment, InitFragment>
 {
     fn clone(&self) -> Self {
-        App(self.0.clone())
+        Self(self.0.clone())
     }
 }
 
@@ -53,7 +55,7 @@ where
     /// Create an instance of your app with the given logic and initial state.
     pub fn new(root: impl AsRef<web_sys::Node>, data: State, app_logic: InitFragment) -> Self {
         let inner = AppInner::new(root.as_ref().clone(), data, app_logic);
-        let app = App(Rc::new(RefCell::new(inner)));
+        let app = Self(Rc::new(RefCell::new(inner)));
         app.0.borrow_mut().ctx.set_runner(app.clone());
         app
     }
@@ -72,9 +74,9 @@ where
 impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fragment>
     AppInner<State, Fragment, InitFragment>
 {
-    pub fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
+    fn new(root: web_sys::Node, data: State, app_logic: InitFragment) -> Self {
         let ctx = ViewCtx::default();
-        AppInner {
+        Self {
             data,
             root,
             app_logic,
@@ -82,15 +84,19 @@ impl<State, Fragment: DomFragment<State>, InitFragment: FnMut(&mut State) -> Fra
             fragment_state: None,
             elements: Vec::new(),
             ctx,
-            fragment_append_scratch: Default::default(),
-            vec_splice_scratch: Default::default(),
+            fragment_append_scratch: AppendVec::default(),
+            vec_splice_scratch: Vec::default(),
         }
     }
 
     fn ensure_app(&mut self) {
         if self.fragment.is_none() {
             let fragment = (self.app_logic)(&mut self.data);
-            let state = fragment.seq_build(&mut self.ctx, &mut self.fragment_append_scratch);
+            let state = fragment.seq_build(
+                &mut self.ctx,
+                &mut self.fragment_append_scratch,
+                &mut self.data,
+            );
             self.fragment = Some(fragment);
             self.fragment_state = Some(state);
 
@@ -140,7 +146,6 @@ where
                 &inner.root,
                 inner.ctx.fragment.clone(),
                 false,
-                #[cfg(feature = "hydration")]
                 false,
             );
             new_fragment.seq_rebuild(
@@ -148,6 +153,7 @@ where
                 inner.fragment_state.as_mut().unwrap(),
                 &mut inner.ctx,
                 &mut dom_children_splice,
+                &mut inner.data,
             );
             *fragment = new_fragment;
         }

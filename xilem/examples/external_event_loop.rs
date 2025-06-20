@@ -5,34 +5,26 @@
 //! Currently, this supports running as its own window alongside an existing application, or
 //! accessing raw events from winit.
 //! Support for more custom embeddings would be welcome, but needs more design work
-use std::sync::Arc;
 
-use masonry::{
-    app_driver::AppDriver,
-    event_loop_runner::MasonryUserEvent,
-    widget::{CrossAxisAlignment, MainAxisAlignment},
-    ArcStr, Color,
-};
-use winit::{
-    application::ApplicationHandler,
-    error::EventLoopError,
-    event::ElementState,
-    keyboard::{KeyCode, PhysicalKey},
-};
-use xilem::{
-    view::{button, flex, label, sized_box, Axis},
-    EventLoop, MasonryProxy, WidgetView, Xilem,
-};
+use masonry::theme::default_property_set;
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
+use masonry_winit::app::{AppDriver, MasonryUserEvent};
+use winit::application::ApplicationHandler;
+use winit::error::EventLoopError;
+use winit::event::ElementState;
+use winit::keyboard::{KeyCode, PhysicalKey};
+use xilem::view::{Axis, Label, button, flex, label, sized_box};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
-    label: impl Into<ArcStr>,
+    label: impl Into<Label>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
     sized_box(button(label, callback)).width(40.).height(40.)
 }
 
-fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
+fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
     flex((
         big_button("-", |data| {
             *data -= 1;
@@ -49,13 +41,14 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
 
 /// An application not managed by Xilem, but which wishes to embed Xilem.
 struct ExternalApp {
-    masonry_state: masonry::event_loop_runner::MasonryState<'static>,
+    masonry_state: masonry_winit::app::MasonryState<'static>,
     app_driver: Box<dyn AppDriver>,
 }
 
 impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
-        self.masonry_state.handle_resumed(event_loop);
+        self.masonry_state
+            .handle_resumed(event_loop, &mut *self.app_driver);
     }
 
     fn suspended(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
@@ -132,21 +125,18 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
 
 fn main() -> Result<(), EventLoopError> {
     let window_size = winit::dpi::LogicalSize::new(800.0, 800.0);
-    let window_attributes = winit::window::Window::default_attributes()
-        .with_title("External event loop".to_string())
-        .with_resizable(true)
-        .with_min_inner_size(window_size);
+    let window_options = WindowOptions::new("External event loop").with_min_inner_size(window_size);
 
-    let xilem = Xilem::new(0, app_logic);
+    let xilem = Xilem::new_simple(0, app_logic, window_options);
 
     let event_loop = EventLoop::with_user_event().build().unwrap();
-    let proxy = MasonryProxy::new(event_loop.create_proxy());
-    let (widget, driver) = xilem.into_driver(Arc::new(proxy));
-    let masonry_state = masonry::event_loop_runner::MasonryState::new(
-        window_attributes,
-        &event_loop,
-        widget,
-        Color::BLACK,
+    let proxy = event_loop.create_proxy();
+    let (driver, windows) =
+        xilem.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
+    let masonry_state = masonry_winit::app::MasonryState::new(
+        event_loop.create_proxy(),
+        windows,
+        default_property_set(),
     );
 
     let mut app = ExternalApp {

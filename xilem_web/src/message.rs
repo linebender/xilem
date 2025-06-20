@@ -1,7 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{any::Any, fmt::Debug, ops::Deref};
+use std::any::Any;
+use std::fmt::Debug;
+use std::ops::Deref;
 
 /// A dynamically typed message for the [`View`] trait.
 ///
@@ -51,8 +53,6 @@ impl dyn Message {
     /// If the message contained within `self` is not of type `T`, returns `self`
     /// (so that e.g. a different type can be used)
     pub fn downcast<T: Message>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        // The panic is unreachable
-        #![allow(clippy::missing_panics_doc)]
         if self.deref().as_any().is::<T>() {
             Ok(self
                 .into_any()

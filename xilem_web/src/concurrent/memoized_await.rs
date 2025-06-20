@@ -1,12 +1,14 @@
 // Copyright 2024 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{future::Future, marker::PhantomData};
+use std::future::Future;
+use std::marker::PhantomData;
 
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
-use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker};
 
+use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{DynMessage, OptionalAction, ViewCtx};
 
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the future. `init_future` will be invoked again, when `data` changes. Use [`memoized_await`] for construction of this [`View`]
@@ -101,6 +103,10 @@ where
 }
 
 #[derive(Default)]
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct MemoizedAwaitState {
     generation: u64,
     schedule_update: bool,
@@ -172,7 +178,7 @@ where
 
     type ViewState = MemoizedAwaitState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let mut state = MemoizedAwaitState::default();
 
         if self.debounce_ms > 0 {
@@ -184,13 +190,14 @@ where
         (NoElement, state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        (): Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        (): Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         let debounce_has_changed_and_update_is_scheduled = view_state.schedule_update
             && (prev.reset_debounce_on_update != self.reset_debounce_on_update
                 || prev.debounce_ms != self.debounce_ms);
@@ -225,7 +232,13 @@ where
         }
     }
 
-    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<'_, Self::Element>) {
+    fn teardown(
+        &self,
+        state: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        (): Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         state.clear_update_timeout();
     }
 

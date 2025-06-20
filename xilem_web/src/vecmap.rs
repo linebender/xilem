@@ -1,8 +1,12 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{borrow::Borrow, fmt, ops::Index};
+use std::borrow::Borrow;
+use std::fmt;
+use std::ops::Index;
+use std::vec::Drain;
 
+#[derive(Clone)]
 /// Basically an ordered `Map` (similar as `BTreeMap`) with a `Vec` as backend for very few elements
 /// As it uses linear search instead of a tree traversal,
 /// which seems to be faster for small `n` (currently roughly `n < ~20` for the use case of diffing html attributes)
@@ -14,8 +18,15 @@ impl<K, V> Default for VecMap<K, V> {
     }
 }
 
+impl<K: Eq, V: Eq> Eq for VecMap<K, V> {}
+impl<K: PartialEq, V: PartialEq> PartialEq for VecMap<K, V> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
 impl<K: fmt::Debug, V: fmt::Debug> fmt::Debug for VecMap<K, V> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_map().entries(self.iter()).finish()
     }
 }
@@ -140,8 +151,34 @@ impl<K, V> VecMap<K, V> {
     /// assert_eq!((*first_key, *first_value), (1, "a"));
     /// ```
     pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
-        #[allow(clippy::map_identity)]
         self.0.iter().map(|(k, v)| (k, v))
+    }
+
+    /// Clears the map, returning all key-value pairs as an iterator. Keeps the
+    /// allocated memory for reuse.
+    ///
+    /// If the returned iterator is dropped before being fully consumed, it
+    /// drops the remaining key-value pairs. The returned iterator keeps a
+    /// mutable borrow on the map to optimize its implementation.
+    ///
+    /// # Examples
+    ///
+    /// ```ignore
+    /// use crate::vecmap::VecMap;
+    ///
+    /// let mut a = VecMap::default();
+    /// a.insert(1, "a");
+    /// a.insert(2, "b");
+    ///
+    /// for (k, v) in a.drain().take(1) {
+    ///     assert!(k == 1 || k == 2);
+    ///     assert!(v == "a" || v == "b");
+    /// }
+    ///
+    /// assert!(a.is_empty());
+    /// ```
+    pub fn drain(&mut self) -> Drain<'_, (K, V)> {
+        self.0.drain(..)
     }
 
     /// Inserts a key-value pair into the map.
@@ -249,6 +286,39 @@ impl<K, V> VecMap<K, V> {
     pub fn len(&self) -> usize {
         self.0.len()
     }
+
+    /// Reserves capacity for at least `additional` more elements to be inserted
+    /// in the given `Vec<T>`. The collection may reserve more space to
+    /// speculatively avoid frequent reallocations. After calling `reserve`,
+    /// capacity will be greater than or equal to `self.len() + additional`.
+    /// Does nothing if capacity is already sufficient.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity exceeds `isize::MAX` _bytes_.
+    pub fn reserve(&mut self, additional: usize) {
+        self.0.reserve(additional);
+    }
+
+    /// Reserves the minimum capacity for at least `additional` more elements to
+    /// be inserted in the given `VecMap<K, V>`. Unlike [`reserve`], this will not
+    /// deliberately over-allocate to speculatively avoid frequent allocations.
+    /// After calling `reserve_exact`, capacity will be greater than or equal to
+    /// `self.len() + additional`. Does nothing if the capacity is already
+    /// sufficient.
+    ///
+    /// Note that the allocator may give the collection more space than it
+    /// requests. Therefore, capacity can not be relied upon to be precisely
+    /// minimal. Prefer [`reserve`] if future insertions are expected.
+    ///
+    /// [`reserve`]: VecMap::reserve
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new capacity exceeds `isize::MAX` _bytes_.
+    pub fn reserve_exact(&mut self, additional: usize) {
+        self.0.reserve_exact(additional);
+    }
 }
 
 impl<K, Q, V> Index<&Q> for VecMap<K, V>
@@ -276,6 +346,19 @@ impl<'a, K, V> IntoIterator for &'a VecMap<K, V> {
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.iter().map(|(k, v)| (k, v))
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a mut VecMap<K, V> {
+    type Item = (&'a mut K, &'a mut V);
+
+    type IntoIter = std::iter::Map<
+        std::slice::IterMut<'a, (K, V)>,
+        fn(&'a mut (K, V)) -> (&'a mut K, &'a mut V),
+    >;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.iter_mut().map(|(k, v)| (k, v))
     }
 }
 
@@ -340,6 +423,20 @@ mod tests {
         }
         let (first_key, first_value) = map.iter().next().unwrap();
         assert_eq!((*first_key, *first_value), (1, "a"));
+    }
+
+    #[test]
+    fn drain() {
+        let mut a = VecMap::default();
+        a.insert(1, "a");
+        a.insert(2, "b");
+
+        for (k, v) in a.drain().take(1) {
+            assert!(k == 1 || k == 2);
+            assert!(v == "a" || v == "b");
+        }
+
+        assert!(a.is_empty());
     }
 
     #[test]

@@ -13,6 +13,10 @@ pub trait OptionalAction<A>: sealed::Sealed {
     fn action(self) -> Option<A>;
 }
 mod sealed {
+    #[expect(
+        unnameable_types,
+        reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
+    )]
     pub trait Sealed {}
 }
 
@@ -32,7 +36,7 @@ impl<A: Action> OptionalAction<A> for A {
 
 impl<A: Action> sealed::Sealed for Option<A> {}
 impl<A: Action> OptionalAction<A> for Option<A> {
-    fn action(self) -> Option<A> {
+    fn action(self) -> Self {
         self
     }
 }

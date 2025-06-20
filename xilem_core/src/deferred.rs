@@ -1,13 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use core::{fmt::Display, marker::PhantomData};
+use alloc::boxed::Box;
+use alloc::sync::Arc;
+use core::fmt::{Debug, Display};
+use core::marker::PhantomData;
 
-use alloc::{boxed::Box, sync::Arc};
+use crate::{AnyMessage, DynMessage, NoElement, View, ViewId, ViewPathTracker};
 
-use crate::{DynMessage, Message, NoElement, View, ViewId, ViewPathTracker};
-
-/// A `Context` for a [`View`](crate::View) implementation which supports
+/// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
 pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
     /// Get a [`RawProxy`] for this context.
@@ -28,13 +29,13 @@ pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
 ///
 /// ## Lifetimes
 ///
-/// It is valid for a [`RawProxy`] to outlive the [`View`](crate::View) it is associated with.
+/// It is valid for a [`RawProxy`] to outlive the [`View`] it is associated with.
 pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
     /// Note that it is only valid to send messages to views which expect
     /// them, of the type they expect.
-    /// It is expected for [`View`](crate::View)s to panic otherwise, and the routing
+    /// It is expected for [`View`]s to panic otherwise, and the routing
     /// will prefer to send stable.
     ///
     /// # Errors
@@ -46,16 +47,25 @@ pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
     //
     // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
     fn send_message(&self, path: Arc<[ViewId]>, message: Message) -> Result<(), ProxyError>;
+    /// Get the debug formatter for this proxy type.
+    fn dyn_debug(&self) -> &dyn Debug;
+}
+
+impl<Message: 'static> Debug for dyn RawProxy<Message> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        self.dyn_debug().fmt(f)
+    }
 }
 
 /// A way to send a message of an expected type to a specific view.
-pub struct MessageProxy<M: Message> {
+#[derive(Debug)]
+pub struct MessageProxy<M: AnyMessage> {
     proxy: Arc<dyn RawProxy<DynMessage>>,
     path: Arc<[ViewId]>,
     message: PhantomData<fn(M)>,
 }
 
-impl<M: Message> Clone for MessageProxy<M> {
+impl<M: AnyMessage> Clone for MessageProxy<M> {
     fn clone(&self) -> Self {
         Self {
             proxy: self.proxy.clone(),
@@ -65,7 +75,7 @@ impl<M: Message> Clone for MessageProxy<M> {
     }
 }
 
-impl<M: Message> MessageProxy<M> {
+impl<M: AnyMessage> MessageProxy<M> {
     /// Create a new `MessageProxy`
     pub fn new(proxy: Arc<dyn RawProxy<DynMessage>>, path: Arc<[ViewId]>) -> Self {
         Self {
@@ -76,9 +86,16 @@ impl<M: Message> MessageProxy<M> {
     }
 
     /// Send `message` to the `View` which created this `MessageProxy`
+    ///
+    /// # Errors
+    ///
+    /// - `DriverFinished`: If the main thread event loop couldn't receive the message (for example if it was shut down).
+    /// - `Other`: As determined by the Xilem implementation.
+    ///
+    /// This method is currently not expected to return `ViewExpired`, as it does not block.
     pub fn message(&self, message: M) -> Result<(), ProxyError> {
         self.proxy
-            .send_message(self.path.clone(), Box::new(message))
+            .send_message(self.path.clone(), DynMessage::new(message))
     }
 }
 
@@ -104,35 +121,32 @@ pub enum ProxyError {
     ///
     /// TODO: Should this also support a source message?
     DriverFinished(DynMessage),
-    /// The [`View`](crate::View) the message was being routed to is no longer in the view tree.
+    /// The [`View`] the message was being routed to is no longer in the view tree.
     ///
     /// This likely requires async error handling to happen.
     ViewExpired(DynMessage, Arc<[ViewId]>),
-    #[allow(missing_docs)]
-    Other(&'static str),
-    // TODO: When core::error::Error is stabilised
-    // Other(Box<dyn core::error::Error + Send>),
+    /// An error specific to the driver being used.
+    Other(Box<dyn core::error::Error + Send>),
 }
 
 // Is it fine to use thiserror in this crate?
 impl Display for ProxyError {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match &self {
-            ProxyError::DriverFinished(_) => f.write_fmt(format_args!("the driver finished")),
-            ProxyError::ViewExpired(_, _) => {
+            Self::DriverFinished(_) => f.write_fmt(format_args!("the driver finished")),
+            Self::ViewExpired(_, _) => {
                 f.write_fmt(format_args!("the corresponding view is no longer present"))
             }
-
-            ProxyError::Other(inner) => inner.fmt(f),
+            Self::Other(inner) => Display::fmt(inner, f),
         }
     }
 }
 
-// impl std::error::Error for ProxyError {
-//     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-//         match self {
-//             ProxyError::Other(inner) => inner.source(),
-//             _ => None,
-//         }
-//     }
-// }
+impl core::error::Error for ProxyError {
+    fn source(&self) -> Option<&(dyn core::error::Error + 'static)> {
+        match self {
+            Self::Other(inner) => inner.source(),
+            _ => None,
+        }
+    }
+}

@@ -1,7 +1,0 @@
----
-source: masonry/src/widget/progress_bar.rs
-expression: harness.root_widget()
----
-SizedBox(
-    ProgressBar<25%>,
-)

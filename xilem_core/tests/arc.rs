@@ -8,7 +8,8 @@
 //! This is an integration test so that it can use the infrastructure in [`common`].
 
 use std::sync::Arc;
-use xilem_core::{MessageResult, View};
+
+use xilem_core::{DynMessage, MessageResult, View};
 
 mod common;
 use common::*;
@@ -22,7 +23,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn arc_no_path() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (element, _) = view1.build(&mut ctx);
+    let (element, _) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert!(element.view_path.is_empty());
 }
@@ -31,12 +32,12 @@ fn arc_no_path() {
 fn same_arc_skip_rebuild() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
     let view2 = Arc::clone(&view1);
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 }
@@ -46,12 +47,12 @@ fn same_arc_skip_rebuild() {
 fn new_arc_rebuild() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
     let view2 = Arc::new(record_ops(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -64,12 +65,12 @@ fn new_arc_rebuild() {
 fn new_arc_rebuild_same_value() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
     let view2 = Arc::new(record_ops(0));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -82,11 +83,11 @@ fn new_arc_rebuild_same_value() {
 fn arc_passthrough_teardown() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    view1.teardown(&mut state, &mut ctx, &mut element);
+    view1.teardown(&mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -98,21 +99,21 @@ fn arc_passthrough_teardown() {
 fn arc_passthrough_message() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view1.build(&mut ctx);
+    let (element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, Box::new(()), &mut ());
+    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
     assert_action(result, 0);
 }
 
-// --- MARK: Box tests ---
+// --- MARK: Box tests
 #[test]
 /// The Box view shouldn't impact the view path
 fn box_no_path() {
     let view1 = Box::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (element, ()) = view1.build(&mut ctx);
+    let (element, ()) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert!(element.view_path.is_empty());
 }
@@ -122,12 +123,12 @@ fn box_no_path() {
 fn box_passthrough_rebuild() {
     let view1 = Box::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
     let view2 = Box::new(record_ops(1));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -140,12 +141,12 @@ fn box_passthrough_rebuild() {
 fn box_passthrough_rebuild_same_value() {
     let view1 = Box::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
     let view2 = Box::new(record_ops(0));
-    view2.rebuild(&view1, &mut state, &mut ctx, &mut element);
+    view2.rebuild(&view1, &mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -157,11 +158,11 @@ fn box_passthrough_rebuild_same_value() {
 fn box_passthrough_teardown() {
     let view1 = Box::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view1.build(&mut ctx);
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    view1.teardown(&mut state, &mut ctx, &mut element);
+    view1.teardown(&mut state, &mut ctx, &mut element, &mut ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -173,11 +174,11 @@ fn box_passthrough_teardown() {
 fn box_passthrough_message() {
     let view1 = Box::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view1.build(&mut ctx);
+    let (element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, Box::new(()), &mut ());
+    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
     let MessageResult::Action(inner) = result else {
         panic!()
     };

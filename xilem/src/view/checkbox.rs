@@ -1,11 +1,33 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget, ArcStr};
-use xilem_core::{Mut, ViewMarker};
-
+use crate::PropertyTuple as _;
+use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::style::Style;
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
+use masonry::core::ArcStr;
+use masonry::properties::*;
+use masonry::widgets;
+
+/// An element which can be in checked and unchecked state.
+///
+/// # Example
+/// ```ignore
+/// use xilem::view::checkbox;
+///
+/// struct State {
+///     value: bool,
+/// }
+///
+/// // ...
+///
+/// let new_state = false;
+///
+/// checkbox("A simple checkbox", app_state.value, |app_state: &mut State, new_state: bool| {
+/// *app_state.value = new_state;
+/// })
+/// ```
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
     checked: bool,
@@ -18,48 +40,92 @@ where
         label: label.into(),
         callback,
         checked,
+        disabled: false,
+        properties: Default::default(),
     }
 }
 
+/// The [`View`] created by [`checkbox`] from a `label`, a bool value and a callback.
+///
+/// See `checkbox` documentation for more context.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Checkbox<F> {
     label: ArcStr,
     checked: bool,
     callback: F,
+    disabled: bool,
+    properties: CheckboxProps,
 }
+
+impl<F> Checkbox<F> {
+    /// Set the disabled state of the widget.
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
+}
+
+impl<F> Style for Checkbox<F> {
+    type Props = CheckboxProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    CheckboxProps;
+    Checkbox<F>;
+
+    DisabledBackground, 0;
+    ActiveBackground, 1;
+    Background, 2;
+    HoveredBorderColor, 3;
+    BorderColor, 4;
+    BorderWidth, 5;
+    CornerRadius, 6;
+    Padding, 7;
+    CheckmarkStrokeWidth, 8;
+    DisabledCheckmarkColor, 9;
+    CheckmarkColor, 10;
+);
 
 impl<F> ViewMarker for Checkbox<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<F>
 where
     F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
 {
-    type Element = Pod<widget::Checkbox>;
+    type Element = Pod<widgets::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(masonry::widget::Checkbox::new(
-                self.checked,
-                self.label.clone(),
-            ))
+            let mut pod = ctx.create_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
+            pod.properties = self.properties.build_properties();
+            pod.options.disabled = self.disabled;
+            pod
         })
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        _ctx: &mut ViewCtx,
+        mut element: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
+        if element.ctx.is_disabled() != self.disabled {
+            element.ctx.set_disabled(self.disabled);
+        }
         if prev.label != self.label {
-            element.set_text(self.label.clone());
-            ctx.mark_changed();
+            widgets::Checkbox::set_text(&mut element, self.label.clone());
         }
         if prev.checked != self.checked {
-            element.set_checked(self.checked);
-            ctx.mark_changed();
+            widgets::Checkbox::set_checked(&mut element, self.checked);
         }
-        element
     }
 
     fn teardown(
@@ -67,6 +133,7 @@ where
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         ctx.teardown_leaf(element);
     }
@@ -75,20 +142,20 @@ where
         &self,
         (): &mut Self::ViewState,
         id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
             "id path should be empty in Checkbox::message"
         );
-        match message.downcast::<masonry::Action>() {
+        match message.downcast::<masonry::core::Action>() {
             Ok(action) => {
-                if let masonry::Action::CheckboxChecked(checked) = *action {
+                if let masonry::core::Action::CheckboxToggled(checked) = *action {
                     MessageResult::Action((self.callback)(app_state, checked))
                 } else {
                     tracing::error!("Wrong action type in Checkbox::message: {action:?}");
-                    MessageResult::Stale(action)
+                    MessageResult::Stale(DynMessage(action))
                 }
             }
             Err(message) => {

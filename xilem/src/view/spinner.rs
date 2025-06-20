@@ -1,9 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{widget, Color};
-use xilem_core::{Mut, ViewMarker};
+use masonry::peniko::Color;
+use masonry::widgets;
 
+use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 /// An indefinite spinner.
@@ -11,7 +12,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 /// This can be used to display that progress is happening on some process,
 /// but that the exact status is not known.
 ///
-/// The underlying widget is the Masonry [Spinner](widget::Spinner).
+/// The underlying widget is the Masonry [`Spinner`](widgets::Spinner).
 ///
 /// # Examples
 ///
@@ -38,6 +39,7 @@ pub fn spinner() -> Spinner {
 /// The [`View`] created by [`spinner`].
 ///
 /// See `spinner`'s docs for more details.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Spinner {
     color: Option<Color>,
 }
@@ -52,39 +54,53 @@ impl Spinner {
 
 impl ViewMarker for Spinner {}
 impl<State, Action> View<State, Action, ViewCtx> for Spinner {
-    type Element = Pod<widget::Spinner>;
+    type Element = Pod<widgets::Spinner>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        (ctx.new_pod(widget::Spinner::new()), ())
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+        let mut spinner = widgets::Spinner::new();
+        if let Some(color) = self.color {
+            spinner = spinner.with_color(color);
+        }
+        let pod = ctx.create_pod(spinner);
+        (pod, ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         if prev.color != self.color {
             match self.color {
-                Some(color) => element.set_color(color),
-                None => element.reset_color(),
+                Some(color) => widgets::Spinner::set_color(&mut element, color),
+                None => widgets::Spinner::reset_color(&mut element),
             };
         }
-        element
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(
+        &self,
+        (): &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+    }
 
     fn message(
         &self,
         (): &mut Self::ViewState,
         _: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in Label::message, but Label doesn't consume any messages, this is a bug");
+        tracing::error!(
+            "Message arrived in Spinner::message, but Spinner doesn't consume any messages, this is a bug"
+        );
         MessageResult::Stale(message)
     }
 }

@@ -27,7 +27,7 @@ Run `trunk serve`, then navigate the browser to the link provided (usually <http
 
 ### Example
 
-A minimal example to run an application with xilem_web:
+A minimal example to run an application with `xilem_web`:
 
 ```rust,no_run
 use xilem_web::{
@@ -37,7 +37,7 @@ use xilem_web::{
     App,
 };
 
-fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> {
+fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> + use<> {
     div((
         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
@@ -52,7 +52,7 @@ pub fn main() {
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Xilem Web has been verified to compile with **Rust 1.79** and later.
+This version of Xilem Web has been verified to compile with **Rust 1.86** and later.
 
 Future versions of Xilem Web might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
@@ -67,27 +67,28 @@ If you encounter a compilation issue due to a dependency and don't want to upgra
 # Use the problematic dependency's name and version
 cargo update -p package_name --precise 0.1.1
 ```
-
 </details>
 
+<!-- We hide these elements when viewing in Rustdoc, because they're not expected to be present in crate level docs -->
 <div class="rustdoc-hidden">
 
 ## Community
 
-Discussion of Xilem Web development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically in
-[#xilem](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
+Discussion of Xilem Web development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
 All public content can be read without logging in.
 
-Contributions are welcome by pull request. The [Rust code of conduct][] applies.
+Contributions are welcome by pull request.
+The [Rust code of conduct] applies.
 
 ## License
 
-- Licensed under the Apache License, Version 2.0
-  ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
+Licensed under the Apache License, Version 2.0 ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
 
 </div>
 
-[rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
+[Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
 [Trunk]: https://trunkrs.dev/
-[LICENSE]: LICENSE
 [Xilem Core]: https://crates.io/crates/xilem_core
+
+<!-- Needs to be defined here for rustdoc's benefit -->
+[LICENSE]: LICENSE

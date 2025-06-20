@@ -1,51 +1,55 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{future::Future, marker::PhantomData, sync::Arc};
+#![expect(missing_docs, reason = "TODO - Document these items")]
 
-use tokio::{
-    sync::mpsc::{UnboundedReceiver, UnboundedSender},
-    task::JoinHandle,
-};
-use xilem_core::{
-    DynMessage, Message, MessageProxy, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
-};
+use std::future::Future;
+use std::marker::PhantomData;
+use std::sync::Arc;
+
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::task::JoinHandle;
 
 use crate::ViewCtx;
+use crate::core::{
+    AnyMessage, DynMessage, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+    ViewPathTracker,
+};
 
 /// Launch a task which will run until the view is no longer in the tree.
+///
 /// `init_future` is given a [`MessageProxy`], which it will store in the future it returns.
 /// This `MessageProxy` can be used to send a message to `on_event`, which can then update
 /// the app's state.
 ///
-/// For exampe, this can be used with the time functions in [`crate::tokio::time`].
+/// For example, this can be used with the time functions in [`crate::tokio::time`].
 ///
 /// Note that this task will not be updated if the view is rebuilt, so `init_future`
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn worker<M, V, F, H, State, Action, Fut>(
-    value: V,
+pub fn worker<F, H, M, S, V, State, Action, Fut>(
     init_future: F,
+    store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, V>
+) -> Worker<F, H, M, S, V>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
+    S: Fn(&mut State, UnboundedSender<V>),
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message + 'static,
+    M: AnyMessage + 'static,
 {
     const {
         assert!(
-            core::mem::size_of::<F>() == 0,
+            size_of::<F>() == 0,
             "`worker` will not be ran again when its captured variables are updated.\n\
-            To ignore this warning, use `worker_raw`.
-            To provide an updating value to this task, use the "
+            To ignore this warning, use `worker_raw`."
         );
     };
     Worker {
-        value,
         init_future,
+        store_sender,
         on_response,
         message: PhantomData,
     }
@@ -55,99 +59,94 @@ where
 ///
 /// This is [`worker`] without the capturing rules.
 /// See `worker` for full documentation.
-pub fn worker_raw<M, V, F, H, State, Action, Fut>(
-    value: V,
+pub fn worker_raw<M, V, S, F, H, State, Action, Fut>(
     init_future: F,
+    store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, V>
+) -> Worker<F, H, M, S, V>
 where
+    // TODO(DJMcNab): Accept app_state here
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
+    S: Fn(&mut State, UnboundedSender<V>),
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message + 'static,
+    M: AnyMessage + 'static,
 {
     Worker {
-        value,
         init_future,
         on_response,
+        store_sender,
         message: PhantomData,
     }
 }
 
-pub struct Worker<F, H, M, V> {
+pub struct Worker<F, H, M, S, V> {
     init_future: F,
-    value: V,
+    store_sender: S,
     on_response: H,
-    message: PhantomData<fn() -> M>,
+    message: PhantomData<fn(M, V)>,
 }
 
-#[doc(hidden)] // Implementation detail, public because of trait visibility rules
-pub struct WorkerState<V> {
-    handle: JoinHandle<()>,
-    sender: UnboundedSender<V>,
-}
+impl<F, H, M, S, V> ViewMarker for Worker<F, H, M, S, V> {}
 
-impl<F, H, M, V> ViewMarker for Worker<F, H, M, V> {}
-
-impl<State, Action, V, F, H, M, Fut> View<State, Action, ViewCtx> for Worker<F, H, M, V>
+impl<State, Action, F, H, M, Fut, S, V> View<State, Action, ViewCtx> for Worker<F, H, M, S, V>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
-    V: Send + PartialEq + Clone + 'static,
+    V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
+    S: Fn(&mut State, UnboundedSender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message + 'static,
+    M: AnyMessage + 'static,
 {
     type Element = NoElement;
 
-    type ViewState = WorkerState<V>;
+    type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
-        let proxy = ctx.proxy.clone();
+        let proxy = ctx.proxy();
+
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        // No opportunity for the channel to be closed.
-        tx.send(self.value.clone()).unwrap();
+        (self.store_sender)(app_state, tx);
         let handle = ctx
             .runtime()
             .spawn((self.init_future)(MessageProxy::new(proxy, path), rx));
-        (NoElement, WorkerState { handle, sender: tx })
+        (NoElement, handle)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
-        prev: &Self,
-        view_state: &mut Self::ViewState,
+        _prev: &Self,
+        _view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): xilem_core::Mut<'el, Self::Element>,
-    ) -> xilem_core::Mut<'el, Self::Element> {
-        if self.value != prev.value {
-            // TODO: Error handling
-            drop(view_state.sender.send(self.value.clone()));
-        }
+        (): Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
     }
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
+        handle: &mut Self::ViewState,
         _: &mut ViewCtx,
-        _: xilem_core::Mut<'_, Self::Element>,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
-        view_state.handle.abort();
+        handle.abort();
     }
 
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
             "id path should be empty in Task::message"
         );
         let message = message.downcast::<M>().unwrap();
-        xilem_core::MessageResult::Action((self.on_response)(app_state, *message))
+        MessageResult::Action((self.on_response)(app_state, *message))
     }
 }

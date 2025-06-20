@@ -89,20 +89,21 @@ where
 /// correct `State` and `Action` types), as they do not need to actually add an element to the sequence.
 ///
 /// These views can also as the `alongside_view` in [`fork`](crate::fork).
+#[derive(Debug)]
 pub struct NoElement;
 
 impl ViewElement for NoElement {
     type Mut<'a> = ();
 }
 
-impl<Context> SuperElement<NoElement, Context> for NoElement {
-    fn upcast(_ctx: &mut Context, child: NoElement) -> Self {
+impl<Context> SuperElement<Self, Context> for NoElement {
+    fn upcast(_ctx: &mut Context, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         this: Mut<'_, Self>,
-        f: impl FnOnce(Mut<'_, NoElement>) -> R,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         ((), f(this))
     }

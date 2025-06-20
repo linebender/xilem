@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    sequence::NoElements, AppendVec, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
-    ViewSequence,
+    AppendVec, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker, ViewSequence,
+    sequence::NoElements,
 };
 
 /// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
@@ -20,6 +20,8 @@ pub fn fork<Active, Alongside>(
 }
 
 /// The view for [`fork`].
+#[derive(Debug)]
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Fork<Active, Alongside> {
     active_view: Active,
     alongside_view: Alongside,
@@ -37,26 +39,27 @@ where
 
     type ViewState = (Active::ViewState, Alongside::SeqState);
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (element, active_state) =
-            ctx.with_id(ViewId::new(0), |ctx| self.active_view.build(ctx));
+            ctx.with_id(ViewId::new(0), |ctx| self.active_view.build(ctx, app_state));
         let alongside_state = ctx.with_id(ViewId::new(1), |ctx| {
             self.alongside_view
-                .seq_build(ctx, &mut AppendVec::default())
+                .seq_build(ctx, &mut AppendVec::default(), app_state)
         });
         (element, (active_state, alongside_state))
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        let element = ctx.with_id(ViewId::new(0), |ctx| {
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        ctx.with_id(ViewId::new(0), |ctx| {
             self.active_view
-                .rebuild(&prev.active_view, active_state, ctx, element)
+                .rebuild(&prev.active_view, active_state, ctx, element, app_state);
         });
         ctx.with_id(ViewId::new(1), |ctx| {
             self.alongside_view.seq_rebuild(
@@ -64,9 +67,9 @@ where
                 alongside_state,
                 ctx,
                 &mut NoElements,
+                app_state,
             );
         });
-        element
     }
 
     fn teardown(
@@ -74,20 +77,22 @@ where
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.alongside_view
-                .seq_teardown(alongside_state, ctx, &mut NoElements);
+                .seq_teardown(alongside_state, ctx, &mut NoElements, app_state);
         });
         ctx.with_id(ViewId::new(1), |ctx| {
-            self.active_view.teardown(active_state, ctx, element);
+            self.active_view
+                .teardown(active_state, ctx, element, app_state);
         });
     }
 
     fn message(
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
-        id_path: &[crate::ViewId],
+        id_path: &[ViewId],
         message: Message,
         app_state: &mut State,
     ) -> crate::MessageResult<Action, Message> {

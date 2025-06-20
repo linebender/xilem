@@ -3,8 +3,7 @@
 
 use std::marker::PhantomData;
 
-use xilem_core::{MessageResult, Mut, View, ViewId, ViewMarker};
-
+use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker};
 use crate::{DomNode, DomView, DynMessage, ViewCtx};
 
 /// Invokes the `callback` after the inner `element` [`DomView`] was created.
@@ -118,22 +117,23 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (mut el, view_state) = self.element.build(ctx);
-        el.node.apply_props(&mut el.props);
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (mut el, view_state) = self.element.build(ctx, app_state);
+        el.node.apply_props(&mut el.props, &mut el.flags);
         (self.callback)(&el.node);
         (el, view_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
         self.element
-            .rebuild(&prev.element, view_state, ctx, element)
+            .rebuild(&prev.element, view_state, ctx, element, app_state);
     }
 
     fn teardown(
@@ -141,8 +141,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         el: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.element.teardown(view_state, ctx, el);
+        self.element.teardown(view_state, ctx, el, app_state);
     }
 
     fn message(
@@ -169,23 +170,27 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        self.element.build(ctx)
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.element.build(ctx, app_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        let element = self
-            .element
-            .rebuild(&prev.element, view_state, ctx, element);
-        element.node.apply_props(element.props);
+        mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.element.rebuild(
+            &prev.element,
+            view_state,
+            ctx,
+            element.reborrow_mut(),
+            app_state,
+        );
+        element.node.apply_props(element.props, element.flags);
         (self.callback)(element.node);
-        element
     }
 
     fn teardown(
@@ -193,8 +198,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         el: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.element.teardown(view_state, ctx, el);
+        self.element.teardown(view_state, ctx, el, app_state);
     }
 
     fn message(
@@ -221,19 +227,20 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        self.element.build(ctx)
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.element.build(ctx, app_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
         self.element
-            .rebuild(&prev.element, view_state, ctx, element)
+            .rebuild(&prev.element, view_state, ctx, element, app_state);
     }
 
     fn teardown(
@@ -241,9 +248,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         el: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         (self.callback)(el.node);
-        self.element.teardown(view_state, ctx, el);
+        self.element.teardown(view_state, ctx, el, app_state);
     }
 
     fn message(

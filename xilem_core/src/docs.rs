@@ -35,9 +35,10 @@
 //! # struct InterestingPrimitive;
 //! ```
 
-use crate::{run_once, NoElement, View, ViewPathTracker, ViewSequence};
+use crate::{NoElement, View, ViewPathTracker, ViewSequence, run_once};
 
 /// A type used for documentation
+#[derive(Debug)]
 pub enum Fake {}
 
 impl ViewPathTracker for Fake {
@@ -79,10 +80,13 @@ impl<Seq, State, Action> DocsViewSequence<State, Action> for Seq where
 }
 
 /// A state type usable in a component
+#[derive(Debug)]
 pub struct State;
 
 /// A minimal component.
-pub fn some_component<Action>(_: &mut State) -> impl DocsView<State, Action, Element = NoElement> {
+pub fn some_component<Action>(
+    _: &mut State,
+) -> impl DocsView<State, Action, Element = NoElement> + use<Action> {
     // The view which does nothing already exists in `run_once`.
     run_once(|| {})
 }
@@ -90,7 +94,7 @@ pub fn some_component<Action>(_: &mut State) -> impl DocsView<State, Action, Ele
 /// A minimal component with generic State.
 pub fn some_component_generic<State, Action>(
     _: &mut State,
-) -> impl DocsView<State, Action, Element = NoElement> {
+) -> impl DocsView<State, Action, Element = NoElement> + use<State, Action> {
     // The view which does nothing already exists in `run_once`.
     run_once(|| {})
 }

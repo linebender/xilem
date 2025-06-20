@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Opinionated extension traits roughly resembling their equivalently named DOM interfaces.
-//! It is used for DOM elements, e.g. created with [`html::span`](`crate::elements::html::span`) to modify the underlying element, such as [`Element::attr`] or [`HtmlElement::style`]
+//!
+//! It is used for DOM elements, e.g. created with [`html::span`](`crate::elements::html::span`) to modify the underlying element, such as [`Element::attr`] or [`Element::style`]
 //!
 //! These traits can also be used as return type of components to allow modifying the underlying DOM element that is returned.
 //! For example:
@@ -13,14 +14,11 @@
 
 use std::borrow::Cow;
 
-use crate::{
-    attribute::{Attr, WithAttributes},
-    class::{AsClassIter, Class, WithClasses},
-    events,
-    style::{IntoStyles, Style, WithStyle},
-    DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg,
-};
 use wasm_bindgen::JsCast;
+
+use crate::modifiers::{Attr, Class, ClassIter, Rotate, Scale, ScaleValue, Style, StyleIter};
+use crate::props::{WithElementProps, WithHtmlInputElementProps};
+use crate::{DomNode, DomView, IntoAttributeValue, OptionalAction, Pointer, PointerMsg, events};
 
 macro_rules! event_handler_mixin {
     ($(($event_ty: ident, $fn_name:ident, $event:expr, $web_sys_event_type:ident),)*) => {
@@ -37,10 +35,10 @@ macro_rules! event_handler_mixin {
             handler: Callback,
         ) -> events::$event_ty<Self, State, Action, Callback>
         where
-            Self: Sized,
-            Self::Element: AsRef<web_sys::Element>,
-            OA: OptionalAction<Action>,
-            Callback: Fn(&mut State, web_sys::$web_sys_event_type) -> OA,
+            State: 'static,
+            Action: 'static,
+            OA: OptionalAction<Action> + 'static,
+            Callback: Fn(&mut State, web_sys::$web_sys_event_type) -> OA + 'static,
         {
             events::$event_ty::new(self, handler)
         }
@@ -49,8 +47,7 @@ macro_rules! event_handler_mixin {
 }
 
 pub trait Element<State, Action = ()>:
-    Sized
-    + DomView<State, Action, Props: WithAttributes + WithClasses, DomNode: AsRef<web_sys::Element>>
+    Sized + DomView<State, Action, DomNode: DomNode<Props: WithElementProps> + AsRef<web_sys::Element>>
 {
     /// Set an attribute for an [`Element`]
     ///
@@ -92,7 +89,7 @@ pub trait Element<State, Action = ()>:
     ///     .class(Some("optional-class"))
     /// # }
     /// ```
-    fn class<AsClasses: AsClassIter>(
+    fn class<AsClasses: ClassIter>(
         self,
         as_classes: AsClasses,
     ) -> Class<Self, AsClasses, State, Action> {
@@ -117,15 +114,41 @@ pub trait Element<State, Action = ()>:
         handler: Callback,
     ) -> events::OnEvent<Self, State, Action, Event, Callback>
     where
-        Self::Element: AsRef<web_sys::Element>,
-        Event: JsCast + 'static,
+        State: 'static,
+        Action: 'static,
         OA: OptionalAction<Action>,
-        Callback: Fn(&mut State, Event) -> OA,
-        Self: Sized,
+        Callback: Fn(&mut State, Event) -> OA + 'static,
+        Event: JsCast + 'static + crate::Message,
     {
         events::OnEvent::new(self, event, handler)
     }
 
+    /// Add a stateful pointer event (down/move/up) listener to this [`Element`].
+    ///
+    /// The pointer ids are captured from the underlying element.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::Element, elements::html::div, PointerDetails, PointerMsg};
+    /// use web_sys::console::log_1;
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// div(()).pointer(|_, pointer_msg| {
+    ///     match pointer_msg {
+    ///         PointerMsg::Down(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Down({id}) at {position} and button: {button}").into());
+    ///         }
+    ///         PointerMsg::Move(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Move({id}) at {position} and button: {button}").into());
+    ///         }
+    ///         PointerMsg::Up(PointerDetails { position, button, id }) => {
+    ///             log_1(&format!("Up({id}) at {position} and button: {button}").into());
+    ///         }
+    ///     };
+    /// })
+    /// # }
+    /// ```
     fn pointer<Callback: Fn(&mut State, PointerMsg)>(
         self,
         handler: Callback,
@@ -139,6 +162,60 @@ pub trait Element<State, Action = ()>:
     /// See <https://developer.mozilla.org/en-US/docs/Web/API/Element/id> for more details
     fn id(self, value: impl IntoAttributeValue) -> Attr<Self, State, Action> {
         Attr::new(self, Cow::from("id"), value.into_attr_value())
+    }
+
+    /// Set the [style](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) attribute
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{modifiers::style as s, elements::html::div, interfaces::Element};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// div(())
+    ///     .style([s("display", "flex"), s("align-items", "center")])
+    ///     .style(s("justify-content", "center"))
+    /// # }
+    /// ```
+    fn style<AsStyles: StyleIter>(self, styles: AsStyles) -> Style<Self, AsStyles, State, Action> {
+        Style::new(self, styles)
+    }
+
+    /// Add a `rotate(<radians>rad)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{modifiers::style as s, interfaces::Element, svg::kurbo::Rect};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// Rect::from_origin_size((0.0, 10.0), (20.0, 30.0))
+    ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
+    ///     .rotate(std::f64::consts::PI / 4.0)
+    /// // results in the following html:
+    /// // <rect width="20" height="30" x="0.0" y="10.0" style="transform: translate(10px, 0) rotate(0.78539rad);"></rect>
+    /// # }
+    /// ```
+    fn rotate(self, radians: f64) -> Rotate<Self, State, Action> {
+        Rotate::new(self, radians)
+    }
+
+    /// Add a `scale(<scale>)` [transform-function](https://developer.mozilla.org/en-US/docs/Web/CSS/transform-function) to the current CSS `transform`
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{modifiers::style as s, interfaces::Element, svg::kurbo::Circle};
+    ///
+    /// # fn component() -> impl Element<()> {
+    /// Circle::new((10.0, 20.0), 30.0)
+    ///     .style(s("transform", "translate(10px, 0)")) // can be combined with untyped `transform`
+    ///     .scale(1.5)
+    ///     .scale((1.5, 2.0))
+    /// // results in the following html:
+    /// // <circle r="30" cy="20" cx="10" style="transform: translate(10px, 0) scale(1.5) scale(1.5, 2);"></circle>
+    /// # }
+    /// ```
+    fn scale(self, scale: impl Into<ScaleValue>) -> Scale<Self, State, Action> {
+        Scale::new(self, scale)
     }
 
     // event list from
@@ -157,7 +234,7 @@ pub trait Element<State, Action = ()>:
         (OnCanPlay, on_canplay, "canplay", Event),
         (OnCanPlayThrough, on_canplaythrough, "canplaythrough", Event),
         (OnChange, on_change, "change", Event),
-        (OnClick, on_click, "click", MouseEvent),
+        (OnClick, on_click, "click", PointerEvent),
         (OnClose, on_close, "close", Event),
         (OnContextLost, on_contextlost, "contextlost", Event),
         (OnContextMenu, on_contextmenu, "contextmenu", PointerEvent),
@@ -205,6 +282,35 @@ pub trait Element<State, Action = ()>:
         (OnPause, on_pause, "pause", Event),
         (OnPlay, on_play, "play", Event),
         (OnPlaying, on_playing, "playing", Event),
+        (
+            OnPointerCancel,
+            on_pointercancel,
+            "pointercancel",
+            PointerEvent
+        ),
+        (OnPointerDown, on_pointerdown, "pointerdown", PointerEvent),
+        (
+            OnPointerEnter,
+            on_pointerenter,
+            "pointerenter",
+            PointerEvent
+        ),
+        (
+            OnPointerLeave,
+            on_pointerleave,
+            "pointerleave",
+            PointerEvent
+        ),
+        (OnPointerMove, on_pointermove, "pointermove", PointerEvent),
+        (OnPointerOut, on_pointerout, "pointerout", PointerEvent),
+        (OnPointerOver, on_pointerover, "pointerover", PointerEvent),
+        (
+            OnPointerRawUpdate,
+            on_pointerrawupdate,
+            "pointerrawupdate",
+            PointerEvent
+        ),
+        (OnPointerUp, on_pointerup, "pointerup", PointerEvent),
         (OnProgress, on_progress, "progress", Event),
         (OnRateChange, on_ratechange, "ratechange", Event),
         (OnReset, on_reset, "reset", Event),
@@ -260,7 +366,7 @@ pub trait Element<State, Action = ()>:
         Self::Element: AsRef<web_sys::Element>,
     {
         events::OnResize {
-            element: self,
+            dom_view: self,
             handler,
             phantom_event_ty: std::marker::PhantomData,
         }
@@ -270,7 +376,7 @@ pub trait Element<State, Action = ()>:
 impl<State, Action, T> Element<State, Action> for T
 where
     T: DomView<State, Action>,
-    T::Props: WithAttributes + WithClasses,
+    <T::DomNode as DomNode>::Props: WithElementProps,
     T::DomNode: AsRef<web_sys::Element>,
 {
 }
@@ -495,14 +601,8 @@ where
 
 // #[cfg(feature = "HtmlElement")]
 pub trait HtmlElement<State, Action = ()>:
-    Element<State, Action, Props: WithStyle, DomNode: AsRef<web_sys::HtmlElement>>
+    Element<State, Action, DomNode: AsRef<web_sys::HtmlElement>>
 {
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
-        Style::new(self, styles)
-    }
 }
 
 // #[cfg(feature = "HtmlElement")]
@@ -510,7 +610,6 @@ impl<State, Action, T> HtmlElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlElement>,
-    T::Props: WithStyle,
 {
 }
 
@@ -704,10 +803,122 @@ where
 {
 }
 
+use crate::modifiers::html_input_element;
 // #[cfg(feature = "HtmlInputElement")]
 pub trait HtmlInputElement<State, Action = ()>:
-    HtmlElement<State, Action, DomNode: AsRef<web_sys::HtmlInputElement>>
+    HtmlElement<
+        State,
+        Action,
+        DomNode: DomNode<Props: WithHtmlInputElementProps> + AsRef<web_sys::HtmlInputElement>,
+    >
 {
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).type_("checkbox").checked(true) // results in <input type="checkbox" checked></input>
+    /// # }
+    /// ```
+    fn checked(self, checked: bool) -> html_input_element::view::Checked<Self, State, Action> {
+        html_input_element::view::Checked::new(self, checked)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/type> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).type_("radio") // results in <input type="radio"></input>
+    /// # }
+    /// ```
+    fn type_(self, value: impl Into<Cow<'static, str>>) -> Attr<Self, State, Action> {
+        Attr::new(self, "type".into(), value.into().into_attr_value())
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/name> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).name("color") // results in <input name="color"></input>
+    /// # }
+    /// ```
+    fn name(self, value: impl Into<Cow<'static, str>>) -> Attr<Self, State, Action> {
+        Attr::new(self, "name".into(), value.into().into_attr_value())
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/checked> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).type_("radio").default_checked(true) // results in <input type="radio" checked></input>
+    /// # }
+    /// ```
+    fn default_checked(
+        self,
+        default_checked: bool,
+    ) -> html_input_element::view::DefaultChecked<Self, State, Action> {
+        html_input_element::view::DefaultChecked::new(self, default_checked)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/disabled> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).disabled(true) // results in <input disabled></input>
+    /// # }
+    /// ```
+    fn disabled(self, disabled: bool) -> html_input_element::view::Disabled<Self, State, Action> {
+        html_input_element::view::Disabled::new(self, disabled)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/disabled> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).required(true) // results in <input required></input>
+    /// # }
+    /// ```
+    fn required(self, required: bool) -> html_input_element::view::Required<Self, State, Action> {
+        html_input_element::view::Required::new(self, required)
+    }
+
+    /// See <https://developer.mozilla.org/en-US/docs/Web/API/HTMLInputElement/multiple> for more details.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use xilem_web::{interfaces::{Element, HtmlInputElement}, elements::html::input};
+    ///
+    /// # fn component() -> impl HtmlInputElement<()> {
+    /// input(()).multiple(true) // results in <input multiple></input>
+    /// # }
+    /// ```
+    fn multiple(self, multiple: bool) -> html_input_element::view::Multiple<Self, State, Action> {
+        html_input_element::view::Multiple::new(self, multiple)
+    }
 }
 
 // #[cfg(feature = "HtmlInputElement")]
@@ -715,6 +926,7 @@ impl<State, Action, T> HtmlInputElement<State, Action> for T
 where
     T: HtmlElement<State, Action>,
     T::DomNode: AsRef<web_sys::HtmlInputElement>,
+    <T::DomNode as DomNode>::Props: WithHtmlInputElementProps,
 {
 }
 
@@ -1472,14 +1684,8 @@ where
 
 // #[cfg(feature = "SvgElement")]
 pub trait SvgElement<State, Action = ()>:
-    Element<State, Action, Props: WithStyle, DomNode: AsRef<web_sys::SvgElement>>
+    Element<State, Action, DomNode: AsRef<web_sys::SvgElement>>
 {
-    /// Set a style attribute
-    fn style(self, style: impl IntoStyles) -> Style<Self, State, Action> {
-        let mut styles = vec![];
-        style.into_styles(&mut styles);
-        Style::new(self, styles)
-    }
 }
 
 // #[cfg(feature = "SvgElement")]
@@ -1487,7 +1693,6 @@ impl<State, Action, T> SvgElement<State, Action> for T
 where
     T: Element<State, Action>,
     T::DomNode: AsRef<web_sys::SvgElement>,
-    T::Props: WithStyle,
 {
 }
 

@@ -1,14 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::{future::Future, marker::PhantomData, rc::Rc};
+use std::future::Future;
+use std::marker::PhantomData;
+use std::rc::Rc;
 
-use futures::{channel::oneshot, FutureExt};
+use futures::FutureExt;
+use futures::channel::oneshot;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
-use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 
-use crate::{context::MessageThunk, DynMessage, Message, ViewCtx};
+use crate::context::MessageThunk;
+use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
+use crate::{DynMessage, Message, ViewCtx};
 
 /// Spawn an async task to update state asynchronously
 ///
@@ -75,7 +79,7 @@ pub struct ShutdownSignal {
 impl ShutdownSignal {
     fn new() -> (Self, AbortHandle) {
         let (abort_tx, shutdown_rx) = oneshot::channel();
-        (ShutdownSignal { shutdown_rx }, AbortHandle { abort_tx })
+        (Self { shutdown_rx }, AbortHandle { abort_tx })
     }
 
     /// Detect whether the view has disappeared and
@@ -100,6 +104,10 @@ pub struct Task<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct TaskState {
     abort_handle: Option<AbortHandle>,
 }
@@ -135,7 +143,7 @@ where
 
     type ViewState = TaskState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let (shutdown_signal, abort_handle) = ShutdownSignal::new();
         let view_state = TaskState {
@@ -148,13 +156,14 @@ where
         (NoElement, view_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         _: &Self,
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        (): Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         // Nothing to do
     }
 
@@ -163,6 +172,7 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         let handle = view_state.abort_handle.take().unwrap_throw();
         handle.abort();

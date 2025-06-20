@@ -1,12 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! You can use memoization to avoid allocations.
+
 use std::sync::Arc;
-use xilem::{
-    core::{frozen, memoize},
-    view::{button, flex},
-};
-use xilem::{AnyWidgetView, EventLoop, WidgetView, Xilem};
+
+use xilem::core::{frozen, memoize};
+use xilem::view::{button, flex};
+use xilem::{AnyWidgetView, EventLoop, WidgetView, WindowOptions, Xilem};
 
 // There are currently two ways to do memoization
 
@@ -41,7 +42,7 @@ fn increase_button(state: &mut AppState) -> Arc<AnyWidgetView<AppState>> {
 
 // This is the alternative with Memoize
 // Note how this requires a closure that returns the memoized view, while Arc does not
-fn decrease_button(state: &AppState) -> impl WidgetView<AppState> {
+fn decrease_button(state: &AppState) -> impl WidgetView<AppState> + use<> {
     memoize(state.count, |count| {
         button(
             format!("decrease the count: {count}"),
@@ -56,7 +57,7 @@ fn reset_button() -> impl WidgetView<AppState> {
     frozen(|| button("reset", |data: &mut AppState| data.count = 0))
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     flex((
         increase_button(state),
         decrease_button(state),
@@ -67,10 +68,9 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
 fn main() {
     let data = AppState {
         count: 0,
-        increase_button: Default::default(),
+        increase_button: MemoizedArcView::default(),
     };
 
-    let app = Xilem::new(data, app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Memoization".into())
-        .unwrap();
+    let app = Xilem::new_simple(data, app_logic, WindowOptions::new("Memoization"));
+    app.run_in(EventLoop::with_user_event()).unwrap();
 }

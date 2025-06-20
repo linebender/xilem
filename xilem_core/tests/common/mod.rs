@@ -1,8 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(dead_code)] // This is a utility module, which means that some exposed items aren't
+#![allow(
+    dead_code,
+    reason = "This is a utility module, which means that some exposed items aren't used in all instantiations"
+)]
 #![deny(unreachable_pub)]
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::*;
 
@@ -87,9 +92,9 @@ where
 
     type ViewState = (Seq::SeqState, AppendVec<TestElement>);
 
-    fn build(&self, ctx: &mut TestCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx, app_state: &mut ()) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let state = self.seq.seq_build(ctx, &mut elements);
+        let state = self.seq.seq_build(ctx, &mut elements, app_state);
         (
             TestElement {
                 operations: vec![Operation::Build(self.id)],
@@ -103,13 +108,14 @@ where
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut TestCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<'_, Self::Element>,
+        app_state: &mut (),
+    ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
             from: prev.id,
@@ -121,8 +127,7 @@ where
             scratch: &mut view_state.1,
         };
         self.seq
-            .seq_rebuild(&prev.seq, &mut view_state.0, ctx, &mut elements);
-        element
+            .seq_rebuild(&prev.seq, &mut view_state.0, ctx, &mut elements, app_state);
     }
 
     fn teardown(
@@ -130,6 +135,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
+        app_state: &mut (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.id));
@@ -138,7 +144,8 @@ where
             ix: 0,
             scratch: &mut view_state.1,
         };
-        self.seq.seq_teardown(&mut view_state.0, ctx, &mut elements);
+        self.seq
+            .seq_teardown(&mut view_state.0, ctx, &mut elements, app_state);
     }
 
     fn message(
@@ -159,7 +166,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
 
     type ViewState = ();
 
-    fn build(&self, ctx: &mut TestCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx, (): &mut ()) -> (Self::Element, Self::ViewState) {
         (
             TestElement {
                 operations: vec![Operation::Build(self.0)],
@@ -170,19 +177,19 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         ctx: &mut TestCtx,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<'_, Self::Element>,
+        (): &mut (),
+    ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
             from: prev.0,
             to: self.0,
         });
-        element
     }
 
     fn teardown(
@@ -190,6 +197,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         _: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
+        (): &mut (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.0));
@@ -210,22 +218,22 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     }
 }
 
-impl SuperElement<TestElement, TestCtx> for TestElement {
-    fn upcast(_ctx: &mut TestCtx, child: TestElement) -> Self {
+impl SuperElement<Self, TestCtx> for TestElement {
+    fn upcast(_ctx: &mut TestCtx, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         this: Self::Mut<'_>,
-        f: impl FnOnce(Mut<'_, TestElement>) -> R,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let ret = f(this);
         (this, ret)
     }
 }
 
-impl AnyElement<TestElement, TestCtx> for TestElement {
-    fn replace_inner(this: Self::Mut<'_>, child: TestElement) -> Self::Mut<'_> {
+impl AnyElement<Self, TestCtx> for TestElement {
+    fn replace_inner(this: Self::Mut<'_>, child: Self) -> Self::Mut<'_> {
         assert_eq!(child.operations.len(), 1);
         let Operation::Build(child_id) = child.operations.first().unwrap() else {
             panic!()
@@ -264,7 +272,7 @@ pub(super) fn assert_action(result: MessageResult<Action>, id: u32) {
     assert_eq!(inner.id, id);
 }
 
-impl<'a> ElementSplice<TestElement> for SeqTracker<'a> {
+impl ElementSplice<TestElement> for SeqTracker<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<TestElement>) -> R) -> R {
         let ret = f(self.scratch);
         for element in self.scratch.drain() {

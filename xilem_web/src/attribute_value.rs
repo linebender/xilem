@@ -22,15 +22,15 @@ pub enum AttributeValue {
 impl AttributeValue {
     pub fn serialize(&self) -> CowStr {
         match self {
-            AttributeValue::True => "".into(), // empty string is equivalent to a true set attribute
-            AttributeValue::I16(n) => n.to_string().into(),
-            AttributeValue::U16(n) => n.to_string().into(),
-            AttributeValue::I32(n) => n.to_string().into(),
-            AttributeValue::U32(n) => n.to_string().into(),
-            AttributeValue::Usize(n) => n.to_string().into(),
-            AttributeValue::F32(n) => n.to_string().into(),
-            AttributeValue::F64(n) => n.to_string().into(),
-            AttributeValue::String(s) => s.clone(),
+            Self::True => "".into(), // empty string is equivalent to a true set attribute
+            Self::I16(n) => n.to_string().into(),
+            Self::U16(n) => n.to_string().into(),
+            Self::I32(n) => n.to_string().into(),
+            Self::U32(n) => n.to_string().into(),
+            Self::Usize(n) => n.to_string().into(),
+            Self::F32(n) => n.to_string().into(),
+            Self::F64(n) => n.to_string().into(),
+            Self::String(s) => s.clone(),
         }
     }
 }

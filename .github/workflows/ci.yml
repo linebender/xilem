@@ -3,33 +3,21 @@ env:
   # version like 1.70. Note that we only specify MAJOR.MINOR and not PATCH so that bugfixes still
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
-  RUST_STABLE_VER: "1.80" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
+  RUST_STABLE_VER: "1.86" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
   # The purpose of checking with the minimum supported Rust toolchain is to detect its staleness.
   # If the compilation fails, then the version specified here needs to be bumped up to reality.
   # Be sure to also update the rust-version property in the workspace Cargo.toml file,
   # plus all the README.md files of the affected packages.
-  RUST_MIN_VER: "1.79"
-  # List of packages that will be checked with the minimum supported Rust version.
-  # This should be limited to packages that are intended for publishing.
-  # If updating, synchronise RUST_MIN_VER_WASM_PKGS
-  RUST_MIN_VER_PKGS: "-p xilem -p xilem_core -p masonry"
-
+  RUST_MIN_VER: "1.86"
   # List of packages that can not target Wasm.
-  # If updating, synchronise RUST_MIN_VER_WASM_PKGS
-  NO_WASM_PKGS: "--exclude masonry --exclude xilem"
-  # RUST_MIN_VER_PKGS + NO_WASM_PKGS, evaluated.
-  # This is required because `cargo hack` does not support -p {x} --exclude {x}
-  RUST_MIN_VER_WASM_PKGS: "-p xilem_core"
-
+  NO_WASM_PKGS: "--exclude masonry_core --exclude masonry_testing --exclude masonry --exclude masonry_winit --exclude xilem --exclude placehero"
   # Only some of our examples support Android (primarily due to extra required boilerplate).
-  ANDROID_TARGETS: -p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android
+  ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
+  # Whether the workspace contains Rust code using the debug_assertions configuration option.
+  USING_DEBUG_ASSERTIONS: "true"
+  # The files stored in LFS the tests need to access
+  LFS_FILES: "**/screenshots/*.png"
 
-  # We do not run the masonry snapshot tests, because those currently require a specific font stack
-  # See https://github.com/linebender/xilem/pull/233
-  SKIP_RENDER_SNAPSHOTS: 1
-  # We do not run the masonry render tests, because those require Vello rendering to be working
-  # See also https://github.com/linebender/vello/pull/610
-  SKIP_RENDER_TESTS: 1
 
 # Rationale
 #
@@ -49,15 +37,27 @@ env:
 # Using cargo-hack also allows us to more easily test the feature matrix of our packages.
 # We use --each-feature & --optional-deps which will run a separate check for every feature.
 #
+# We use cargo-nextest, which has a faster concurrency model for running tests.
+# However cargo-nextest does not support running doc tests, so we also have a cargo test --doc step.
+# For more information see https://github.com/nextest-rs/nextest/issues/16
+#
 # The MSRV jobs run only cargo check because different clippy versions can disagree on goals and
 # running tests introduces dev dependencies which may require a higher MSRV than the bare package.
+# Checking is limited to packages that are intended for publishing to keep MSRV as low as possible.
+#
+# If the workspace uses debug_assertions then we verify code twice, with it set to true or false.
+# We always keep it true for external dependencies so that we can reuse the cache for faster builds.
+#
+# We don't save caches in the merge-group cases, because those caches will never be re-used (apart
+# from the very rare cases where there are multiple PRs in the merge queue).
+# This is because GitHub doesn't share caches between merge queues and the main branch.
 
 name: CI
 
 on:
   pull_request:
   merge_group:
-  # We run on push, even though the commit is the same as when we ran in merge_group. 
+  # We run on push, even though the commit is the same as when we ran in merge_group.
   # This allows the cache to be primed.
   # See https://github.com/orgs/community/discussions/66430
   push:
@@ -69,33 +69,56 @@ jobs:
     name: formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           components: rustfmt
 
-      - name: cargo fmt
+      - name: Run cargo fmt
         run: cargo fmt --all --check
 
-      - name: install ripgrep
+      - name: Install Taplo
+        uses: uncenter/setup-taplo@09968a8ae38d66ddd3d23802c44bf6122d7aa991 # v1
+        with:
+          version: "0.9.3"
+
+      - name: Run taplo fmt
+        run: taplo fmt --check --diff
+
+      - name: Install ripgrep
         run: |
           sudo apt update
           sudo apt install ripgrep
 
-      - name: check copyright headers
+      - name: Check copyright headers
         run: bash .github/copyright.sh
 
-      - name: install cargo-rdme
+      - name: Check debug_assertions presence
+        run: bash .github/debug_assertions.sh
+
+      - name: Install cargo-rdme
         uses: taiki-e/install-action@v2
         with:
-          tool: cargo-rdme
+          tool: cargo-rdme@1.4.8
 
-      - name: cargo rdme
-        run: |
-          cargo rdme --check --workspace-project=masonry
+      - name: Run cargo rdme (masonry)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry
+
+      - name: Run cargo rdme (masonry_winit)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_winit
+    
+      - name: Run cargo rdme (tree_arena)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
+      
+      - name: Run cargo rdme (xilem)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=xilem
+      
+      - name: Run cargo rdme (placehero)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=placehero
 
   clippy-stable:
     name: cargo clippy
@@ -104,95 +127,117 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           components: clippy
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
-      - name: cargo clippy
-        run: cargo hack clippy --workspace --locked --each-feature --optional-deps -- -D warnings
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo clippy (auxiliary)
-        run: cargo hack clippy --workspace --locked --each-feature --optional-deps --tests --benches --examples -- -D warnings
+      - name: Run cargo clippy
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
 
-      # Verify that we can build in release mode
-      # TODO: Find a way for this to share artifacts with the above job?
-      - name: cargo clippy (release)
-        run: cargo clippy --release --workspace --locked --all-targets -- -D warnings
+      - name: Run cargo clippy (auxiliary)
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
+
+      - name: Run cargo clippy (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
+
+      - name: Run cargo clippy (auxiliary) (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace --locked --profile ci --optional-deps --each-feature --tests --benches --examples -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   clippy-stable-wasm:
     name: cargo clippy (wasm32)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: wasm32-unknown-unknown
           components: clippy
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: cargo clippy
-        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps -- -D warnings
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: cargo clippy (auxiliary)
-        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps --tests --benches --examples -- -D warnings
+      - name: Run cargo clippy
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
 
-      # Verify that we can build in release mode
-      # TODO: Find a way for this to share artifacts with the above job?
-      - name: cargo clippy (release)
-        run: cargo clippy --release --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-targets -- -D warnings
+      - name: Run cargo clippy (auxiliary)
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
+
+      - name: Run cargo clippy (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
+
+      - name: Run cargo clippy (auxiliary) (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack clippy --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature --tests --benches --examples -- -D warnings
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   prime-lfs-cache:
     name: Prime LFS Cache
     runs-on: ubuntu-latest
     continue-on-error: true
+    outputs:
+      lfs-hash: ${{ steps.calc-hash.outputs.result }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
-    - name: Cache git lfs
+
+    - id: calc-hash
+      name: Calculate LFS hash
+      run: echo "result=${{ hashFiles(env.LFS_FILES) }}" | tee -a "$GITHUB_OUTPUT"
+
+    - name: Cache git LFS
       id: lfs-cache
       uses: actions/cache@v4
       with:
         path: .git/lfs
         # The files stored in git lfs are all in this folder
-        key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+        key: masonry-lfs-${{ steps.calc-hash.outputs.result }}
         restore-keys: masonry-lfs-
         enableCrossOsArchive: true
 
-    - name: Fetch lfs data
+    - name: Fetch LFS data
       if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
-      run: git lfs fetch
-        
+      run: git lfs fetch --include '${{ env.LFS_FILES }}'
+
   test-stable:
     name: cargo test
     needs: prime-lfs-cache
@@ -210,109 +255,137 @@ jobs:
           - os: ubuntu-latest
             skip_gpu: ''
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: Restore lfs cache
+      - name: Restore LFS cache
         id: lfs-cache
         uses: actions/cache/restore@v4
         with:
           path: .git/lfs
           # The files stored in git lfs are all in this folder
-          key: masonry-lfs-${{ hashFiles('masonry/src/widget/screenshots/*.png') }}
+          key: masonry-lfs-${{ needs.prime-lfs-cache.outputs.lfs-hash }}
           enableCrossOsArchive: true
 
       - name: Checkout LFS files
-        run: git lfs checkout
+        run: git lfs checkout '${{ env.LFS_FILES }}'
         continue-on-error: true
 
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
 
-      - name: install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
       # Adapted from https://github.com/bevyengine/bevy/blob/b446374392adc70aceb92621b080d1a6cf7a7392/.github/workflows/validation-jobs.yml#L74-L79
-      - name: install xvfb, llvmpipe and lavapipe
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install xvfb, llvmpipe and lavapipe
+        if: runner.os == 'Linux'
         # https://launchpad.net/~kisak/+archive/ubuntu/turtle
         run: |
           sudo apt-get update -y -qq
           sudo add-apt-repository ppa:kisak/turtle -y
           sudo apt-get update
-          sudo apt install -y xvfb libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
+          sudo apt install -y xvfb libegl-mesa0 libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
 
       - name: Install cargo-nextest
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-nextest
 
-      - name: cargo test
-        run: cargo nextest run --workspace --locked --all-features
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Run cargo nextest
+        run: cargo nextest run --workspace --locked --cargo-profile ci --all-features --no-fail-fast
         env:
+          # We do not run the masonry render tests on platforms without a working GPU,
+          # because those require Vello rendering to be working
+          # See also https://github.com/linebender/vello/pull/610
           SKIP_RENDER_TESTS: ${{ matrix.skip_gpu }}
 
-      # Run doc tests separately because nexttest doesn't run them.
-      # See https://github.com/linebender/xilem/issues/500
-      - name: cargo test doc
-        run: cargo test --doc --workspace --locked --all-features
-      
-      - uses: actions/upload-artifact@v4
+      - name: Run cargo nextest on unsafe arena
+        run: cargo nextest run -p tree_arena --locked --no-fail-fast --no-default-features
+  
+      - name: Upload test results due to failure
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: masonry-snapshot-tests-${{ matrix.os }}
-          path: masonry/src/widget/screenshots/
+          path: '**/screenshots/*.png'
+
+      - name: Run cargo test --doc
+        run: cargo test --doc --workspace --locked --profile ci --all-features --no-fail-fast
+
+  miri:
+    name: cargo miri (unsafe tree_arena)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install nightly toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly
+          components: miri
+
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Run cargo miri
+        run: cargo miri test -p tree_arena --locked --no-default-features --no-fail-fast
 
   test-stable-wasm:
     name: cargo test (wasm32)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: wasm32-unknown-unknown
 
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
       # TODO: Find a way to make tests work. Until then the tests are merely compiled.
-      - name: cargo test compile
-        run: cargo test --workspace ${{ env.NO_WASM_PKGS }} --locked --target wasm32-unknown-unknown --all-features --no-run
+      - name: Run cargo test --no-run
+        run: cargo test --workspace ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --all-features --no-run
 
   check-stable-android:
     name: cargo check (aarch64-android)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: install stable toolchain
+      - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_STABLE_VER }}
           targets: aarch64-linux-android
 
-      - name: install cargo apk
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Install cargo-apk
         run: cargo install cargo-apk
 
-      - name: cargo apk check (android)
+      - name: Run cargo apk check
         run: cargo apk check ${{ env.ANDROID_TARGETS }}
         env:
           # This is a bit of a hack, but cargo apk doesn't seem to allow customising this otherwise
@@ -325,54 +398,68 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: install msrv toolchain
+      - name: Install Rust ${{ env.RUST_MIN_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_MIN_VER }}
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: install native dependencies
-        if: matrix.os == 'ubuntu-latest'
+      - name: Install native dependencies
+        if: runner.os == 'Linux'
         run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev libudev-dev
 
-      - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_PKGS }} --locked --each-feature --optional-deps
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Run cargo check
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
+
+      - name: Run cargo check (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack check --workspace --ignore-private --locked --profile ci --optional-deps --each-feature
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   check-msrv-wasm:
     name: cargo check (msrv) (wasm32)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: restore cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.event_name != 'merge_group' }}
-
-      - name: install msrv toolchain
+      - name: Install Rust ${{ env.RUST_MIN_VER }}
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ env.RUST_MIN_VER }}
           targets: wasm32-unknown-unknown
 
-      - name: install cargo-hack
+      - name: Install cargo-hack
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-hack
 
-      - name: cargo check
-        run: cargo hack check ${{ env.RUST_MIN_VER_WASM_PKGS }} --locked --target wasm32-unknown-unknown --each-feature --optional-deps
+      - name: Restore cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          save-if: ${{ github.event_name != 'merge_group' }}
+
+      - name: Run cargo check
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+
+      - name: Run cargo check (no debug_assertions)
+        if: env.USING_DEBUG_ASSERTIONS == 'true'
+        run: cargo hack check --workspace --ignore-private ${{ env.NO_WASM_PKGS }} --locked --profile ci --target wasm32-unknown-unknown --optional-deps --each-feature
+        env:
+          CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
   doc:
     name: cargo doc
@@ -380,25 +467,29 @@ jobs:
     #       If we get per-platform docs (win/macos/linux/wasm32/..) then doc jobs should match that.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: restore cache
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - name: Restore cache
         uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.event_name != 'merge_group' }}
 
-      - name: install nightly toolchain
-        uses: dtolnay/rust-toolchain@nightly
+      # We test documentation using nightly to match docs.rs.
+      - name: Run cargo doc
+        run: cargo doc --workspace --locked --profile ci --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+        env:
+          RUSTDOCFLAGS: '--cfg docsrs -D warnings'
 
-      # We test documentation using nightly to match docs.rs. This prevents potential breakages
-      - name: cargo doc
-        run: cargo doc --workspace --locked --all-features --no-deps --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
-
-  # If this fails, consider changing your text or adding something to .typos.toml
+  # If this fails, consider changing your text or adding something to .typos.toml.
   typos:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: check typos
-        uses: crate-ci/typos@v1.23.2
+      - name: Check typos
+        uses: crate-ci/typos@v1.31.1

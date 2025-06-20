@@ -1,16 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget::{CrossAxisAlignment, GridParams, MainAxisAlignment};
+//! A simple calculator example
+#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+
+use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
-use winit::window::Window;
-use xilem::view::{grid, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence};
-use xilem::EventLoopBuilder;
-use xilem::{
-    view::{button, flex, label, sized_box, Axis},
-    EventLoop, WidgetView, Xilem,
+use xilem::style::Style;
+use xilem::view::{
+    Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, button, flex, grid, label,
+    sized_box,
 };
+use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -21,21 +23,21 @@ enum MathOperator {
 }
 
 impl MathOperator {
-    fn as_str(&self) -> &'static str {
+    fn as_str(self) -> &'static str {
         match self {
-            MathOperator::Add => "+",
-            MathOperator::Subtract => "\u{2212}",
-            MathOperator::Multiply => "×",
-            MathOperator::Divide => "÷",
+            Self::Add => "+",
+            Self::Subtract => "\u{2212}",
+            Self::Multiply => "×",
+            Self::Divide => "÷",
         }
     }
 
-    fn perform_op(&self, num1: f64, num2: f64) -> f64 {
+    fn perform_op(self, num1: f64, num2: f64) -> f64 {
         match self {
-            MathOperator::Add => num1 + num2,
-            MathOperator::Subtract => num1 - num2,
-            MathOperator::Multiply => num1 * num2,
-            MathOperator::Divide => num1 / num2,
+            Self::Add => num1 + num2,
+            Self::Subtract => num1 - num2,
+            Self::Multiply => num1 * num2,
+            Self::Divide => num1 / num2,
         }
     }
 }
@@ -50,7 +52,11 @@ struct Calculator {
 
 impl Calculator {
     fn get_current_number(&self) -> String {
-        self.numbers[self.current_num_index].clone()
+        self.current_number().to_string()
+    }
+
+    fn current_number(&self) -> &str {
+        &self.numbers[self.current_num_index]
     }
 
     fn set_current_number(&mut self, new_num: String) {
@@ -194,7 +200,7 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: f64 = 2.;
-fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
+fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
     grid(
         (
             // Display
@@ -212,7 +218,15 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             ))
             .grid_item(GridParams::new(0, 0, 4, 1)),
             // Top row
-            expanded_button("CE", Calculator::clear_entry).grid_pos(0, 1),
+            expanded_button(
+                label("CE").brush(if data.get_current_number().is_empty() {
+                    palette::css::MEDIUM_VIOLET_RED
+                } else {
+                    palette::css::WHITE
+                }),
+                Calculator::clear_entry,
+            )
+            .grid_pos(0, 1),
             expanded_button("C", Calculator::clear_all).grid_pos(1, 1),
             expanded_button("DEL", Calculator::on_delete).grid_pos(2, 1),
             operator_button(MathOperator::Divide).grid_pos(3, 1),
@@ -225,7 +239,10 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> {
             // bottom row
             expanded_button("±", Calculator::negate).grid_pos(0, 5),
             digit_button("0").grid_pos(1, 5),
-            digit_button(".").grid_pos(2, 5),
+            expanded_button(".", |data: &mut Calculator| {
+                data.on_entered_digit(".");
+            })
+            .grid_pos(2, 5),
             expanded_button("=", Calculator::on_equals).grid_pos(3, 5),
         ),
         4,
@@ -245,17 +262,26 @@ pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex
 
 /// Returns a label intended to be used in the calculator's top display.
 /// The default text size is out of proportion for this use case.
-fn display_label(text: &str) -> impl WidgetView<Calculator> {
+fn display_label(text: &str) -> impl WidgetView<Calculator> + use<> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
 
 /// Returns a button contained in an expanded box. Useful for the buttons so that
 /// they take up all available space in flex containers.
 fn expanded_button(
-    text: &str,
+    text: impl Into<Label>,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
-) -> impl WidgetView<Calculator> + '_ {
-    sized_box(button(text, callback)).expand()
+) -> impl WidgetView<Calculator> {
+    const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
+
+    sized_box(
+        button(text, callback)
+            .background_color(BLUE)
+            .corner_radius(10.)
+            .border_color(Color::TRANSPARENT)
+            .hovered_border_color(Color::WHITE),
+    )
+    .expand()
 }
 
 /// Returns an expanded button that triggers the calculator's operator handler,
@@ -268,9 +294,17 @@ fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
 
 /// A button which adds `digit` to the current input when pressed
 fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
-    expanded_button(digit, |data: &mut Calculator| {
-        data.on_entered_digit(digit);
-    })
+    const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
+
+    sized_box(
+        button(digit, |data: &mut Calculator| {
+            data.on_entered_digit(digit);
+        })
+        .background_color(GRAY)
+        .corner_radius(10.)
+        .border_color(Color::TRANSPARENT),
+    )
+    .expand()
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
@@ -282,42 +316,35 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         operation: None,
     };
 
-    let app = Xilem::new(data, app_logic);
     let min_window_size = LogicalSize::new(200., 200.);
     let window_size = LogicalSize::new(400., 500.);
-    let window_attributes = Window::default_attributes()
-        .with_title("Calculator")
-        .with_resizable(true)
-        .with_min_inner_size(min_window_size)
-        .with_inner_size(window_size);
+    let window_options = WindowOptions::new("Calculator").with_min_inner_size(min_window_size);
     // On iOS, winit has unsensible handling of `inner_size`
     // See https://github.com/rust-windowing/winit/issues/2308 for more details
-    #[cfg(target_os = "ios")]
-    let window_attributes = {
-        let mut window_attributes = window_attributes; // to avoid `unused_mut`
-        window_attributes.inner_size = None;
-        window_attributes
-    };
-    app.run_windowed_in(event_loop, window_attributes)?;
+    #[cfg(not(target_os = "ios"))]
+    let window_options = window_options.with_initial_inner_size(window_size);
+    let app = Xilem::new_simple(data, app_logic, window_options);
+    app.run_in(event_loop)?;
     Ok(())
 }
 
-#[cfg(not(target_os = "android"))]
-#[allow(dead_code)]
+// Boilerplate code: Identical across all applications which support Android
+
+#[expect(clippy::allow_attributes, reason = "No way to specify the condition")]
+#[allow(dead_code, reason = "False positive: needed in not-_android version")]
 // This is treated as dead code by the Android version of the example, but is actually live
 // This hackery is required because Cargo doesn't care to support this use case, of one
 // example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
     run(EventLoop::with_user_event())
 }
-
-// Boilerplate code for android: Identical across all applications
-
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here
-// We believe that there are no other declarations using this name in the compiled objects here
-#[allow(unsafe_code)]
-#[no_mangle]
+#[expect(
+    unsafe_code,
+    reason = "We believe that there are no other declarations using this name in the compiled objects here"
+)]
+#[unsafe(no_mangle)]
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
@@ -325,12 +352,4 @@ fn android_main(app: winit::platform::android::activity::AndroidApp) {
     event_loop.with_android_app(app);
 
     run(event_loop).expect("Can create app");
-}
-
-// TODO: This is a hack because of how we handle our examples in Cargo.toml
-// Ideally, we change Cargo to be more sensible here?
-#[cfg(target_os = "android")]
-#[allow(dead_code)]
-fn main() {
-    unreachable!()
 }

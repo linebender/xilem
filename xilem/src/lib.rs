@@ -1,310 +1,170 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// False-positive with dev-dependencies only used in examples
+//! Xilem is a UI toolkit. It combines ideas from `Flutter`, `SwiftUI`, and `Elm`.
+//! Like all of these, it uses lightweight view objects, diffing them to provide
+//! minimal updates to a retained UI. Like `SwiftUI`, it is strongly typed.
+//!
+//! The talk *[Xilem: Let's Build High Performance Rust UI](https://www.youtube.com/watch?v=OvfNipIcRiQ)* by Raph Levien
+//! was presented at the RustNL conference in 2024, and gives a video introduction to these ideas.
+//! Xilem is implemented as a reactive layer on top of [Masonry][masonry], a widget toolkit which is developed alongside Xilem.
+//! Masonry itself is built on top of a wide array of foundational Rust UI projects:
+//!
+//! * Rendering is provided by [Vello][masonry::vello], a high performance GPU compute-centric 2D renderer.
+//! * GPU compute infrastructure is provided by [wgpu][masonry::vello::wgpu].
+//! * Text layout is provided by [Parley][masonry::parley].
+//! * Accessibility is provided by [AccessKit][] ([docs][accesskit_docs]).
+//! * Window handling is provided by [winit][].
+//!
+//! Xilem can currently be considered to be in an alpha state. Lots of things need improvements (including this documentation!).
+//!
+//! There is also a [blog post][xilem_blog] from when Xilem was first introduced.
+//!
+//! ## Example
+//!
+//! A simple incrementing counter application looks like:
+//!
+//! ```rust,no_run
+//! use winit::error::EventLoopError;
+//! use xilem::view::{button, flex, label};
+//! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+//!
+//! #[derive(Default)]
+//! struct Counter {
+//!     num: i32,
+//! }
+//!
+//! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
+//!     flex((
+//!         label(format!("{}", data.num)),
+//!         button("increment", |data: &mut Counter| data.num += 1),
+//!     ))
+//! }
+//!
+//! fn main() -> Result<(), EventLoopError> {
+//!     let app = Xilem::new_simple(Counter::default(), app_logic, WindowOptions::new("Counter app"));
+//!     app.run_in(EventLoop::with_user_event())?;
+//!     Ok(())
+//! }
+//! ```
+//!
+//! A key feature of Xilem's architecture is that the application's state, in this case `Counter`, is an arbitrary `'static` Rust type.
+//! In this example, `app_logic` is the root component, which creates the view value it returns.
+//! This, in turn, leads to corresponding Masonry widgets being created, in this case a button and a label.
+//! When the button is pressed, the number will be incremented, and then `app_logic` will be re-ran.
+//! The returned view will be compared with its previous value, which will minimally update the contents of these widgets.
+//! As the `num` field's value has changed, the `label`'s formatted text will be different.
+//! This means that the label widget's text will be updated, updating the value displayed to the user.
+//! In this case, because the button is the same, it will not be updated.
+//!
+//! More examples can be found [in the repository][xilem_examples].
+//!
+//! **Note: The linked examples are for the `main` branch of Xilem. If you are using a released version, please view the examples in the tag for that release.**
+//!
+//! ## Reactive layer
+//!
+//! The core concepts of the reactive layer are explained in [Xilem Core][xilem_core].
+//!
+//! ## View elements
+//!
+//! The primitives your `Xilem` app’s view tree will generally be constructed from:
+//!
+//! * [`flex`][crate::view::flex]: defines how items will be arranged in a row or column
+//! * [`grid`][crate::view::grid]: divides a window into regions and defines the relationship
+//!   between inner elements in terms of size and position
+//! * [`sized_box`][crate::view::sized_box]: forces its child to have a specific width and/or height
+//! * [`split`][crate::view::split]: contains two views splitting the area either vertically or horizontally which can be resized.
+//! * [`button`][crate::view::button]: basic button element
+//! * [`image`][crate::view::image]: displays a bitmap image
+//! * [`portal`][crate::view::portal]: a scrollable region
+//! * [`progress_bar`][crate::view::progress_bar]: progress bar element
+//! * [`prose`][crate::view::prose]: displays immutable, selectable text
+//! * [`textbox`][crate::view::textbox]: allows text to be edited by the user
+//! * [`task`][crate::view::task]: launch an async task which will run until the view is no longer in the tree
+//! * [`zstack`][crate::view::zstack]: an element that lays out its children on top of each other
+//!
+//! You should also expect to use the adapters from Xilem Core, including:
+//!
+//! * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
+//! * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
+//!
+//! [accesskit_docs]: accesskit
+//! [AccessKit]: https://accesskit.dev/
+//! [Druid]: https://crates.io/crates/druid
+//! [Fontique]: https://crates.io/crates/fontique
+//! [Masonry]: https://crates.io/crates/masonry
+//! [Parley]: https://crates.io/crates/parley
+//! [skrifa]: https://crates.io/crates/skrifa
+//! [swash]: https://crates.io/crates/swash
+//! [Vello]: https://crates.io/crates/vello
+//! [winit]: https://crates.io/crates/winit
+//! [xilem_blog]: https://raphlinus.github.io/rust/gui/2022/05/07/ui-architecture.html
+//! [xilem_examples]: https://github.com/linebender/xilem/tree/main/xilem/examples
+
+#![doc(html_logo_url = "https://avatars.githubusercontent.com/u/46134943?s=48&v=4")]
+// LINEBENDER LINT SET - lib.rs - v3
+// See https://linebender.org/wiki/canonical-lints/
+// These lints shouldn't apply to examples or tests.
 #![cfg_attr(not(test), warn(unused_crate_dependencies))]
-#![warn(unnameable_types, unreachable_pub)]
-#![warn(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
-use std::{collections::HashMap, sync::Arc};
+// These lints shouldn't apply to examples.
+#![warn(clippy::print_stdout, clippy::print_stderr)]
+// Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
+#![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
+// END LINEBENDER LINT SET
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(
+    test,
+    expect(
+        unused_crate_dependencies,
+        reason = "False-positive with dev-dependencies only used in examples"
+    )
+)]
+// TODO: Remove any items listed as "Deferred"
+#![cfg_attr(not(debug_assertions), allow(unused))]
+#![expect(
+    missing_debug_implementations,
+    reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
+)]
+#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
+// https://github.com/rust-lang/rust/pull/130025
+#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
-use masonry::{
-    dpi::LogicalSize,
-    event_loop_runner,
-    widget::{RootWidget, WidgetMut},
-    Widget, WidgetId, WidgetPod,
-};
-use winit::{
-    error::EventLoopError,
-    window::{Window, WindowAttributes},
-};
-use xilem_core::{
-    AsyncCtx, MessageResult, RawProxy, SuperElement, View, ViewElement, ViewId, ViewPathTracker,
-    ViewSequence,
-};
-
-pub use masonry::{
-    dpi,
-    event_loop_runner::{EventLoop, EventLoopBuilder},
-    Color, TextAlignment,
-};
+pub use masonry::kurbo::{Affine, Vec2};
+pub use masonry::parley::Alignment as TextAlignment;
+pub use masonry::parley::style::FontWeight;
+pub use masonry::peniko::{Blob, Color, Image, ImageFormat};
+pub use masonry::widgets::{InsertNewline, LineBreaking};
+pub use masonry::{dpi, palette};
+pub use masonry_winit::app::{EventLoop, EventLoopBuilder, WindowId};
+pub use window_options::WindowOptions;
 pub use xilem_core as core;
-
-mod one_of;
-
-mod any_view;
-pub use any_view::AnyWidgetView;
-
-mod driver;
-pub use driver::{async_action, MasonryDriver, MasonryProxy, ASYNC_MARKER_WIDGET};
-
-pub mod view;
 
 /// Tokio is the async runner used with Xilem.
 pub use tokio;
 
-pub struct Xilem<State, Logic> {
-    state: State,
-    logic: Logic,
-    runtime: tokio::runtime::Runtime,
-    background_color: Color,
-    // Font data to include in loading.
-    fonts: Vec<Vec<u8>>,
-}
+pub use winit;
 
-impl<State, Logic, View> Xilem<State, Logic>
-where
-    Logic: FnMut(&mut State) -> View,
-    View: WidgetView<State>,
-{
-    pub fn new(state: State, logic: Logic) -> Self {
-        let runtime = tokio::runtime::Runtime::new().unwrap();
-        Xilem {
-            state,
-            logic,
-            runtime,
-            background_color: Color::BLACK,
-            fonts: Vec::new(),
-        }
-    }
+mod any_view;
+mod app;
+mod driver;
+mod one_of;
+mod pod;
+mod property_tuple;
+mod view_ctx;
+mod widget_view;
+mod window_options;
+mod window_view;
 
-    /// Load a font when this `Xilem` is run.
-    ///
-    /// This is an interim API whilst font lifecycles are determined.
-    pub fn with_font(mut self, data: impl Into<Vec<u8>>) -> Self {
-        self.fonts.push(data.into());
-        self
-    }
+pub mod style;
+pub mod view;
+pub use any_view::AnyWidgetView;
+pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
+pub use property_tuple::PropertyTuple;
 
-    /// Sets main window background color.
-    pub fn background_color(mut self, color: Color) -> Self {
-        self.background_color = color;
-        self
-    }
+pub use app::{AppState, ExitOnClose, Xilem};
+pub use pod::Pod;
+pub use view_ctx::ViewCtx;
+pub use widget_view::{WidgetView, WidgetViewSequence};
 
-    // TODO: Make windows a specific view
-    pub fn run_windowed(
-        self,
-        // We pass in the event loop builder to allow
-        // This might need to be generic over the event type?
-        event_loop: EventLoopBuilder,
-        window_title: String,
-    ) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
-        let window_size = LogicalSize::new(600., 800.);
-        let window_attributes = Window::default_attributes()
-            .with_title(window_title)
-            .with_resizable(true)
-            .with_min_inner_size(window_size);
-        self.run_windowed_in(event_loop, window_attributes)
-    }
-
-    // TODO: Make windows into a custom view
-    pub fn run_windowed_in(
-        self,
-        mut event_loop: EventLoopBuilder,
-        window_attributes: WindowAttributes,
-    ) -> Result<(), EventLoopError>
-    where
-        State: 'static,
-        Logic: 'static,
-        View: 'static,
-    {
-        let event_loop = event_loop.build()?;
-        let proxy = event_loop.create_proxy();
-        let bg_color = self.background_color;
-        let (root_widget, driver) = self.into_driver(Arc::new(MasonryProxy(proxy)));
-        event_loop_runner::run_with(event_loop, window_attributes, root_widget, driver, bg_color)
-    }
-
-    pub fn into_driver(
-        mut self,
-        proxy: Arc<dyn RawProxy>,
-    ) -> (
-        impl Widget,
-        MasonryDriver<State, Logic, View, View::ViewState>,
-    ) {
-        let first_view = (self.logic)(&mut self.state);
-        let mut ctx = ViewCtx {
-            widget_map: WidgetMap::default(),
-            id_path: Vec::new(),
-            view_tree_changed: false,
-            proxy,
-            runtime: self.runtime,
-        };
-        let (pod, view_state) = first_view.build(&mut ctx);
-        let root_widget = RootWidget::from_pod(pod.inner);
-        let driver = MasonryDriver {
-            current_view: first_view,
-            logic: self.logic,
-            state: self.state,
-            ctx,
-            view_state,
-            fonts: self.fonts,
-        };
-        (root_widget, driver)
-    }
-}
-
-/// A container for a [Masonry](masonry) widget to be used with Xilem.
-///
-/// Equivalent to [`WidgetPod<W>`], but in the [`xilem`](crate) crate to work around the orphan rule.
-pub struct Pod<W: Widget> {
-    pub inner: WidgetPod<W>,
-}
-
-impl<W: Widget> ViewElement for Pod<W> {
-    type Mut<'a> = WidgetMut<'a, W>;
-}
-
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for Pod<Box<dyn Widget>> {
-    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        ctx.boxed_pod(child)
-    }
-
-    fn with_downcast_val<R>(
-        mut this: Self::Mut<'_>,
-        f: impl FnOnce(<Pod<W> as xilem_core::ViewElement>::Mut<'_>) -> R,
-    ) -> (Self::Mut<'_>, R) {
-        let downcast = this.downcast();
-        let ret = f(downcast);
-        (this, ret)
-    }
-}
-
-pub trait WidgetView<State, Action = ()>:
-    View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
-{
-    type Widget: Widget;
-
-    /// Returns a boxed type erased [`AnyWidgetView`]
-    ///
-    /// # Examples
-    /// ```
-    /// use xilem::{view::label, WidgetView};
-    ///
-    /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// label("a label").boxed()
-    /// # }
-    ///
-    /// ```
-    fn boxed(self) -> Box<AnyWidgetView<State, Action>>
-    where
-        State: 'static,
-        Action: 'static,
-        Self: Sized,
-    {
-        Box::new(self)
-    }
-}
-
-impl<V, State, Action, W> WidgetView<State, Action> for V
-where
-    V: View<State, Action, ViewCtx, Element = Pod<W>> + Send + Sync,
-    W: Widget,
-{
-    type Widget = W;
-}
-
-/// An ordered sequence of widget views, it's used for `0..N` views.
-/// See [`ViewSequence`] for more technical details.
-///
-/// # Examples
-///
-/// ```
-/// use xilem::{view::prose, WidgetViewSequence};
-///
-/// fn prose_sequence<State: 'static>(
-///     texts: impl Iterator<Item = &'static str>,
-/// ) -> impl WidgetViewSequence<State> {
-///     texts.map(prose).collect::<Vec<_>>()
-/// }
-/// ```
-pub trait WidgetViewSequence<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>>
-{
-}
-
-impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, Pod<Box<dyn Widget>>>
-{
-}
-
-type WidgetMap = HashMap<WidgetId, Vec<ViewId>>;
-
-pub struct ViewCtx {
-    /// The map from a widgets id to its position in the View tree.
-    ///
-    /// This includes only the widgets which might send actions
-    widget_map: WidgetMap,
-    id_path: Vec<ViewId>,
-    view_tree_changed: bool,
-    proxy: Arc<dyn RawProxy>,
-    runtime: tokio::runtime::Runtime,
-}
-
-impl ViewPathTracker for ViewCtx {
-    fn push_id(&mut self, id: xilem_core::ViewId) {
-        self.id_path.push(id);
-    }
-
-    fn pop_id(&mut self) {
-        self.id_path.pop();
-    }
-
-    fn view_path(&mut self) -> &[xilem_core::ViewId] {
-        &self.id_path
-    }
-}
-
-impl ViewCtx {
-    pub fn new_pod<W: Widget>(&mut self, widget: W) -> Pod<W> {
-        Pod {
-            inner: WidgetPod::new(widget),
-        }
-    }
-
-    pub fn boxed_pod<W: Widget>(&mut self, pod: Pod<W>) -> Pod<Box<dyn Widget>> {
-        Pod {
-            inner: pod.inner.boxed(),
-        }
-    }
-
-    pub fn mark_changed(&mut self) {
-        if cfg!(debug_assertions) {
-            self.view_tree_changed = true;
-        }
-    }
-
-    pub fn with_leaf_action_widget<E: Widget>(
-        &mut self,
-        f: impl FnOnce(&mut Self) -> Pod<E>,
-    ) -> (Pod<E>, ()) {
-        (self.with_action_widget(f), ())
-    }
-
-    pub fn with_action_widget<E: Widget>(&mut self, f: impl FnOnce(&mut Self) -> Pod<E>) -> Pod<E> {
-        let value = f(self);
-        let id = value.inner.id();
-        let path = self.id_path.clone();
-        self.widget_map.insert(id, path);
-        value
-    }
-
-    pub fn teardown_leaf<E: Widget>(&mut self, widget: WidgetMut<E>) {
-        self.widget_map.remove(&widget.ctx.widget_id());
-    }
-
-    pub fn runtime(&self) -> &tokio::runtime::Runtime {
-        &self.runtime
-    }
-}
-
-impl AsyncCtx for ViewCtx {
-    fn proxy(&mut self) -> Arc<dyn RawProxy> {
-        self.proxy.clone()
-    }
-}
+// FIXME - Remove these re-exports.
+pub(crate) use xilem_core::{MessageResult, View, ViewId};

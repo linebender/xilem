@@ -3,9 +3,10 @@
 
 use std::marker::PhantomData;
 
-use wasm_bindgen::{closure::Closure, JsCast, UnwrapThrowExt};
-use xilem_core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
+use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 use crate::{DynMessage, OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
@@ -57,6 +58,10 @@ where
     }
 }
 
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct IntervalState {
     // Closures are retained so they can be called by environment
     interval_fn: Closure<dyn FnMut()>,
@@ -98,7 +103,7 @@ where
 
     type ViewState = IntervalState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let interval_fn = Closure::new(move || thunk.push_message(()));
         let state = IntervalState {
@@ -109,13 +114,14 @@ where
         (NoElement, state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        (): Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         if prev.ms != self.ms {
             clear_interval(view_state.interval_handle);
             view_state.interval_handle = start_interval(&view_state.interval_fn, self.ms);
@@ -127,6 +133,7 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         clear_interval(view_state.interval_handle);
     }

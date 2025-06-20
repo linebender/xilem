@@ -3,19 +3,61 @@
 
 use std::marker::PhantomData;
 
-use masonry::{
-    widget::{self, WidgetMut},
-    Widget,
-};
-use xilem_core::{
+use crate::style::Style;
+
+use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use masonry::widgets::{self};
+pub use masonry::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
+
+use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
+use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
-use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
-
-pub use masonry::widget::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
-
+/// A layout which defines how items will be arranged in rows or columns.
+///
+/// # Example
+/// ```rust,no_run
+/// use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
+/// use winit::error::EventLoopError;
+/// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
+/// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+///
+/// // A component to make a bigger than usual button
+/// fn big_button(
+///     label: impl Into<Label>,
+///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
+/// ) -> impl WidgetView<i32> {
+///     sized_box(button(label, callback)).width(40.).height(40.)
+/// }
+///
+/// fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
+///     flex((
+///         FlexSpacer::Fixed(30.0),
+///         big_button("-", |data| {
+///             *data -= 1;
+///         }),
+///         FlexSpacer::Flex(1.0),
+///         label(format!("count: {}", data)).text_size(32.).flex(5.0),
+///         FlexSpacer::Flex(1.0),
+///         big_button("+", |data| {
+///             *data += 1;
+///         }),
+///         FlexSpacer::Fixed(30.0),
+///     ))
+///     .direction(Axis::Horizontal)
+///     .cross_axis_alignment(CrossAxisAlignment::Center)
+///     .main_axis_alignment(MainAxisAlignment::Center)
+/// }
+///
+/// fn main() -> Result<(), EventLoopError> {
+///     let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
+///     app.run_in(EventLoop::with_user_event())?;
+///     Ok(())
+/// }
+/// ```
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
@@ -26,10 +68,15 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
         gap: None,
+        properties: Default::default(),
         phantom: PhantomData,
     }
 }
 
+/// The [`View`] created by [`flex`] from a sequence.
+///
+/// See `flex` documentation for more context.
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Flex<Seq, State, Action = ()> {
     sequence: Seq,
     axis: Axis,
@@ -37,24 +84,28 @@ pub struct Flex<Seq, State, Action = ()> {
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     gap: Option<f64>,
+    properties: FlexProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
 impl<Seq, State, Action> Flex<Seq, State, Action> {
+    /// Set the flex direction (see [`Axis`]).
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
     }
+    /// Set the childrens' [`CrossAxisAlignment`].
     pub fn cross_axis_alignment(mut self, axis: CrossAxisAlignment) -> Self {
         self.cross_axis_alignment = axis;
         self
     }
-
+    /// Set the childrens' [`MainAxisAlignment`].
     pub fn main_axis_alignment(mut self, axis: MainAxisAlignment) -> Self {
         self.main_axis_alignment = axis;
         self
     }
-
+    /// Set whether the container must expand to fill the available space on
+    /// its main axis.
     pub fn must_fill_major_axis(mut self, fill_major_axis: bool) -> Self {
         self.fill_major_axis = fill_major_axis;
         self
@@ -87,6 +138,25 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     }
 }
 
+impl<Seq, S, A> Style for Flex<Seq, S, A> {
+    type Props = FlexProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    FlexProps;
+    Flex<Seq, S, A>;
+
+    Background, 0;
+    BorderColor, 1;
+    BorderWidth, 2;
+    CornerRadius, 3;
+    Padding, 4;
+);
+
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
@@ -94,63 +164,62 @@ where
     Action: 'static,
     Seq: FlexSequence<State, Action>,
 {
-    type Element = Pod<widget::Flex>;
+    type Element = Pod<widgets::Flex>;
 
     type ViewState = Seq::SeqState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
-        let mut widget = widget::Flex::for_axis(self.axis)
+        let mut widget = widgets::Flex::for_axis(self.axis)
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
-        let seq_state = self.sequence.seq_build(ctx, &mut elements);
+        let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for child in elements.into_inner() {
             widget = match child {
                 FlexElement::Child(child, params) => {
-                    widget.with_flex_child_pod(child.inner, params)
+                    widget.with_flex_child_pod(child.erased_widget_pod(), params)
                 }
                 FlexElement::FixedSpacer(size) => widget.with_spacer(size),
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        (ctx.new_pod(widget), seq_state)
+        let mut pod = ctx.create_pod(widget);
+        pod.properties = self.properties.build_properties();
+        (pod, seq_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if prev.axis != self.axis {
-            element.set_direction(self.axis);
-            ctx.mark_changed();
+            widgets::Flex::set_direction(&mut element, self.axis);
         }
         if prev.cross_axis_alignment != self.cross_axis_alignment {
-            element.set_cross_axis_alignment(self.cross_axis_alignment);
-            ctx.mark_changed();
+            widgets::Flex::set_cross_axis_alignment(&mut element, self.cross_axis_alignment);
         }
         if prev.main_axis_alignment != self.main_axis_alignment {
-            element.set_main_axis_alignment(self.main_axis_alignment);
-            ctx.mark_changed();
+            widgets::Flex::set_main_axis_alignment(&mut element, self.main_axis_alignment);
         }
         if prev.fill_major_axis != self.fill_major_axis {
-            element.set_must_fill_main_axis(self.fill_major_axis);
-            ctx.mark_changed();
+            widgets::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
         }
         if prev.gap != self.gap {
-            element.set_raw_gap(self.gap);
-            ctx.mark_changed();
+            widgets::Flex::set_raw_gap(&mut element, self.gap);
         }
         // TODO: Re-use scratch space?
         let mut splice = FlexSplice::new(element);
         self.sequence
-            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice);
+            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.is_empty());
-        splice.element
     }
 
     fn teardown(
@@ -158,16 +227,18 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         let mut splice = FlexSplice::new(element);
-        self.sequence.seq_teardown(view_state, ctx, &mut splice);
+        self.sequence
+            .seq_teardown(view_state, ctx, &mut splice, app_state);
         debug_assert!(splice.scratch.into_inner().is_empty());
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
@@ -176,27 +247,30 @@ where
     }
 }
 
-#[allow(clippy::large_enum_variant)]
+/// A child element of a [`Flex`] view.
 pub enum FlexElement {
-    // Avoid making the enum massive for the spacer cases by boxing
-    Child(Pod<Box<dyn Widget>>, FlexParams),
+    /// Child widget.
+    Child(Pod<dyn Widget>, FlexParams),
+    /// Child spacer with fixed size.
     FixedSpacer(f64),
+    /// Child spacer with flex size.
     FlexSpacer(f64),
 }
 
+/// A mutable reference to a [`FlexElement`], used internally by Xilem traits.
 pub struct FlexElementMut<'w> {
-    parent: WidgetMut<'w, widget::Flex>,
+    parent: WidgetMut<'w, widgets::Flex>,
     idx: usize,
 }
 
 struct FlexSplice<'w> {
     idx: usize,
-    element: WidgetMut<'w, widget::Flex>,
+    element: WidgetMut<'w, widgets::Flex>,
     scratch: AppendVec<FlexElement>,
 }
 
 impl<'w> FlexSplice<'w> {
-    fn new(element: WidgetMut<'w, widget::Flex>) -> Self {
+    fn new(element: WidgetMut<'w, widgets::Flex>) -> Self {
         Self {
             idx: 0,
             element,
@@ -209,14 +283,14 @@ impl ViewElement for FlexElement {
     type Mut<'w> = FlexElementMut<'w>;
 }
 
-impl SuperElement<FlexElement, ViewCtx> for FlexElement {
-    fn upcast(_ctx: &mut ViewCtx, child: FlexElement) -> Self {
+impl SuperElement<Self, ViewCtx> for FlexElement {
+    fn upcast(_ctx: &mut ViewCtx, child: Self) -> Self {
         child
     }
 
     fn with_downcast_val<R>(
         mut this: Mut<'_, Self>,
-        f: impl FnOnce(Mut<'_, FlexElement>) -> R,
+        f: impl FnOnce(Mut<'_, Self>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let r = {
             let parent = this.parent.reborrow_mut();
@@ -230,9 +304,9 @@ impl SuperElement<FlexElement, ViewCtx> for FlexElement {
     }
 }
 
-impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
-    fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
-        FlexElement::Child(ctx.boxed_pod(child), FlexParams::default())
+impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexElement {
+    fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
+        Self::Child(child.erased(), FlexParams::default())
     }
 
     fn with_downcast_val<R>(
@@ -240,9 +314,7 @@ impl<W: Widget> SuperElement<Pod<W>, ViewCtx> for FlexElement {
         f: impl FnOnce(Mut<'_, Pod<W>>) -> R,
     ) -> (Mut<'_, Self>, R) {
         let ret = {
-            let mut child = this
-                .parent
-                .child_mut(this.idx)
+            let mut child = widgets::Flex::child_mut(&mut this.parent, this.idx)
                 .expect("This is supposed to be a widget");
             let downcast = child.downcast();
             f(downcast)
@@ -256,11 +328,19 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     fn insert(&mut self, element: FlexElement) {
         match element {
             FlexElement::Child(child, params) => {
-                self.element
-                    .insert_flex_child_pod(self.idx, child.inner, params);
+                widgets::Flex::insert_flex_child_pod(
+                    &mut self.element,
+                    self.idx,
+                    child.erased_widget_pod(),
+                    params,
+                );
             }
-            FlexElement::FixedSpacer(len) => self.element.insert_spacer(self.idx, len),
-            FlexElement::FlexSpacer(len) => self.element.insert_flex_spacer(self.idx, len),
+            FlexElement::FixedSpacer(len) => {
+                widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
+            }
+            FlexElement::FlexSpacer(len) => {
+                widgets::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
+            }
         };
         self.idx += 1;
     }
@@ -270,11 +350,19 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         for element in self.scratch.drain() {
             match element {
                 FlexElement::Child(child, params) => {
-                    self.element
-                        .insert_flex_child_pod(self.idx, child.inner, params);
+                    widgets::Flex::insert_flex_child_pod(
+                        &mut self.element,
+                        self.idx,
+                        child.erased_widget_pod(),
+                        params,
+                    );
                 }
-                FlexElement::FixedSpacer(len) => self.element.insert_spacer(self.idx, len),
-                FlexElement::FlexSpacer(len) => self.element.insert_flex_spacer(self.idx, len),
+                FlexElement::FixedSpacer(len) => {
+                    widgets::Flex::insert_spacer(&mut self.element, self.idx, len);
+                }
+                FlexElement::FlexSpacer(len) => {
+                    widgets::Flex::insert_flex_spacer(&mut self.element, self.idx, len);
+                }
             };
             self.idx += 1;
         }
@@ -299,7 +387,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
             };
             f(child)
         };
-        self.element.remove_child(self.idx);
+        widgets::Flex::remove_child(&mut self.element, self.idx);
         ret
     }
 
@@ -333,7 +421,7 @@ impl<Seq, State, Action> FlexSequence<State, Action> for Seq where
 {
 }
 
-/// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer
+/// A trait which extends a [`WidgetView`] with methods to provide parameters for a flex item, or being able to use it interchangeably with a spacer.
 pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     /// Applies [`impl Into<FlexParams>`](`FlexParams`) to this view, can be used as child of a [`Flex`] [`View`]
     ///
@@ -386,14 +474,14 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
 
 impl<State, Action, V: WidgetView<State, Action>> FlexExt<State, Action> for V {}
 
-/// A `WidgetView` that can be used within a [`Flex`] [`View`]
+/// A `WidgetView` that can be used within a [`Flex`] [`View`].
 pub struct FlexItem<V, State, Action> {
     view: V,
     params: FlexParams,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-/// Applies [`impl Into<FlexParams>`](`FlexParams`) to the [`View`] `V`, can be used as child of a [`Flex`] View
+/// Applies [`impl Into<FlexParams>`](`FlexParams`) to the [`View`] `V`, can be used as child of a [`Flex`] View.
 ///
 /// # Examples
 /// ```
@@ -433,7 +521,7 @@ where
     V: WidgetView<State, Action, ViewState: 'static>,
 {
     fn from(value: FlexItem<V, State, Action>) -> Self {
-        AnyFlexChild::Item(flex_item(value.view.boxed(), value.params))
+        Self::Item(flex_item(value.view.boxed(), value.params))
     }
 }
 
@@ -448,32 +536,32 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        let (pod, state) = self.view.build(ctx);
-        (FlexElement::Child(ctx.boxed_pod(pod), self.params), state)
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (pod, state) = self.view.build(ctx, app_state);
+        (FlexElement::Child(pod.erased(), self.params), state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
         {
             if self.params != prev.params {
-                element
-                    .parent
-                    .update_child_flex_params(element.idx, self.params);
+                widgets::Flex::update_child_flex_params(
+                    &mut element.parent,
+                    element.idx,
+                    self.params,
+                );
             }
-            let mut child = element
-                .parent
-                .child_mut(element.idx)
+            let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
                 .expect("FlexWrapper always has a widget child");
             self.view
-                .rebuild(&prev.view, view_state, ctx, child.downcast());
+                .rebuild(&prev.view, view_state, ctx, child.downcast(), app_state);
         }
-        element
     }
 
     fn teardown(
@@ -481,18 +569,18 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        let mut child = element
-            .parent
-            .child_mut(element.idx)
+        let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
             .expect("FlexWrapper always has a widget child");
-        self.view.teardown(view_state, ctx, child.downcast());
+        self.view
+            .teardown(view_state, ctx, child.downcast(), app_state);
     }
 
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
@@ -502,6 +590,7 @@ where
 
 /// A spacer that can be used within a [`Flex`] [`View`]
 #[derive(Copy, Clone, PartialEq)]
+#[expect(missing_docs, reason = "TODO - Need to document units used.")]
 pub enum FlexSpacer {
     Fixed(f64),
     Flex(f64),
@@ -509,7 +598,7 @@ pub enum FlexSpacer {
 
 impl<State, Action> From<FlexSpacer> for AnyFlexChild<State, Action> {
     fn from(spacer: FlexSpacer) -> Self {
-        AnyFlexChild::Spacer(spacer)
+        Self::Spacer(spacer)
     }
 }
 
@@ -521,36 +610,47 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
 
     type ViewState = ();
 
-    fn build(&self, _ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let el = match self {
-            FlexSpacer::Fixed(len) => FlexElement::FixedSpacer(*len),
-            FlexSpacer::Flex(flex) => FlexElement::FlexSpacer(*flex),
+            Self::Fixed(len) => FlexElement::FixedSpacer(*len),
+            Self::Flex(flex) => FlexElement::FlexSpacer(*flex),
         };
         (el, ())
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         if self != prev {
             match self {
-                FlexSpacer::Fixed(len) => element.parent.update_spacer_fixed(element.idx, *len),
-                FlexSpacer::Flex(flex) => element.parent.update_spacer_flex(element.idx, *flex),
+                Self::Fixed(len) => {
+                    widgets::Flex::update_spacer_fixed(&mut element.parent, element.idx, *len);
+                }
+                Self::Flex(flex) => {
+                    widgets::Flex::update_spacer_flex(&mut element.parent, element.idx, *flex);
+                }
             };
         }
-        element
     }
 
-    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
+    fn teardown(
+        &self,
+        _: &mut Self::ViewState,
+        _: &mut ViewCtx,
+        _: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
+    }
 
     fn message(
         &self,
         _: &mut Self::ViewState,
-        _: &[xilem_core::ViewId],
+        _: &[ViewId],
         _: DynMessage,
         _: &mut State,
     ) -> MessageResult<Action> {
@@ -560,7 +660,9 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
 
 /// A widget-type-erased flex child [`View`], can be used within a [`Flex`] [`View`]
 pub enum AnyFlexChild<State, Action = ()> {
+    /// A child widget.
     Item(FlexItem<Box<AnyWidgetView<State, Action>>, State, Action>),
+    /// A spacer.
     Spacer(FlexSpacer),
 }
 
@@ -606,21 +708,29 @@ where
     }
 }
 
-#[doc(hidden)] // Implementation detail, public because of trait visibility rules
-pub struct AnyFlexChildState<State: 'static, Action: 'static> {
-    /// Just the optional view state of the flex item view
-    #[allow(clippy::type_complexity)]
-    inner: Option<
-        <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
-            State,
-            Action,
-            ViewCtx,
-        >>::ViewState,
-    >,
-    /// The generational id handling is essentially very similar to that of the `Option<impl ViewSequence>`,
-    /// where `None` would represent a Spacer, and `Some` a view
-    generation: u64,
+mod hidden {
+    use super::FlexItem;
+    use crate::core::View;
+    use crate::{AnyWidgetView, ViewCtx};
+    #[doc(hidden)] // Implementation detail, public because of trait visibility rules
+    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    pub struct AnyFlexChildState<State: 'static, Action: 'static> {
+        /// Just the optional view state of the flex item view
+        #[allow(clippy::type_complexity)]
+        // reason: There's no reasonable other way to avoid this.
+        pub(crate) inner: Option<
+            <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
+                State,
+                Action,
+                ViewCtx,
+            >>::ViewState,
+        >,
+        /// The generational id handling is essentially very similar to that of the `Option<impl ViewSequence>`,
+        /// where `None` would represent a Spacer, and `Some` a view
+        pub(crate) generation: u64,
+    }
 }
+use hidden::AnyFlexChildState;
 
 impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>
@@ -632,18 +742,19 @@ where
 
     type ViewState = AnyFlexChildState<State, Action>;
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, view_state) = match self {
-            AnyFlexChild::Item(flex_item) => {
-                let (element, state) =
-                    ctx.with_id(ViewId::new(generation), |ctx| flex_item.build(ctx));
+            Self::Item(flex_item) => {
+                let (element, state) = ctx.with_id(ViewId::new(generation), |ctx| {
+                    flex_item.build(ctx, app_state)
+                });
                 (element, Some(state))
             }
-            AnyFlexChild::Spacer(spacer) => {
+            Self::Spacer(spacer) => {
                 // We know that the spacer doesn't need any id, as it doesn't receive or sends any messages
                 // (Similar to `None` as a ViewSequence)
-                let (element, ()) = View::<(), (), ViewCtx>::build(spacer, ctx);
+                let (element, ()) = View::<(), (), ViewCtx>::build(spacer, ctx, &mut ());
                 (element, None)
             }
         };
@@ -656,22 +767,30 @@ where
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        mut element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
         match (prev, self) {
-            (AnyFlexChild::Item(prev), AnyFlexChild::Item(this)) => ctx
-                .with_id(ViewId::new(view_state.generation), |ctx| {
-                    this.rebuild(prev, view_state.inner.as_mut().unwrap(), ctx, element)
-                }),
-            (AnyFlexChild::Spacer(prev), AnyFlexChild::Spacer(this)) => {
-                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element)
+            (Self::Item(prev), Self::Item(this)) => {
+                ctx.with_id(ViewId::new(view_state.generation), |ctx| {
+                    this.rebuild(
+                        prev,
+                        view_state.inner.as_mut().unwrap(),
+                        ctx,
+                        element,
+                        app_state,
+                    );
+                });
             }
-            (AnyFlexChild::Item(prev_flex_item), AnyFlexChild::Spacer(new_spacer)) => {
+            (Self::Spacer(prev), Self::Spacer(this)) => {
+                View::<(), (), ViewCtx>::rebuild(this, prev, &mut (), ctx, element, &mut ());
+            }
+            (Self::Item(prev_flex_item), Self::Spacer(new_spacer)) => {
                 // Run teardown with the old path
                 ctx.with_id(ViewId::new(view_state.generation), |ctx| {
                     prev_flex_item.teardown(
@@ -681,9 +800,10 @@ where
                             parent: element.parent.reborrow_mut(),
                             idx: element.idx,
                         },
+                        app_state,
                     );
                 });
-                element.parent.remove_child(element.idx);
+                widgets::Flex::remove_child(&mut element.parent, element.idx);
                 // The Flex item view has just been destroyed, teardown the old view
                 // We increment the generation only on the falling edge (new item `FlexSpacer`) by convention
                 // This choice has no impact on functionality
@@ -694,17 +814,18 @@ where
                 // If would overflow, wrap to zero. Would need async message sent
                 // to view *exactly* `u64::MAX` versions of the view ago, which is implausible
                 view_state.generation = view_state.generation.wrapping_add(1);
-                let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx);
+                let (spacer_element, ()) = View::<(), (), ViewCtx>::build(new_spacer, ctx, &mut ());
                 match spacer_element {
-                    FlexElement::FixedSpacer(len) => element.parent.insert_spacer(element.idx, len),
+                    FlexElement::FixedSpacer(len) => {
+                        widgets::Flex::insert_spacer(&mut element.parent, element.idx, len);
+                    }
                     FlexElement::FlexSpacer(len) => {
-                        element.parent.insert_flex_spacer(element.idx, len);
+                        widgets::Flex::insert_flex_spacer(&mut element.parent, element.idx, len);
                     }
                     FlexElement::Child(_, _) => unreachable!(),
                 };
-                element
             }
-            (AnyFlexChild::Spacer(prev_spacer), AnyFlexChild::Item(new_flex_item)) => {
+            (Self::Spacer(prev_spacer), Self::Item(new_flex_item)) => {
                 View::<(), (), ViewCtx>::teardown(
                     prev_spacer,
                     &mut (),
@@ -713,23 +834,25 @@ where
                         parent: element.parent.reborrow_mut(),
                         idx: element.idx,
                     },
+                    &mut (),
                 );
-                element.parent.remove_child(element.idx);
+                widgets::Flex::remove_child(&mut element.parent, element.idx);
 
                 let (flex_item_element, child_state) = ctx
                     .with_id(ViewId::new(view_state.generation), |ctx| {
-                        new_flex_item.build(ctx)
+                        new_flex_item.build(ctx, app_state)
                     });
                 view_state.inner = Some(child_state);
                 if let FlexElement::Child(child, params) = flex_item_element {
-                    element
-                        .parent
-                        .insert_flex_child_pod(element.idx, child.inner, params);
+                    widgets::Flex::insert_flex_child_pod(
+                        &mut element.parent,
+                        element.idx,
+                        child.erased_widget_pod(),
+                        params,
+                    );
                 } else {
                     unreachable!("We just created a new flex item, this should not be reached")
                 }
-
-                element
             }
         }
     }
@@ -739,13 +862,14 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         match self {
-            AnyFlexChild::Item(flex_item) => {
-                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element);
+            Self::Item(flex_item) => {
+                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element, app_state);
             }
-            AnyFlexChild::Spacer(spacer) => {
-                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element);
+            Self::Spacer(spacer) => {
+                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element, &mut ());
             }
         }
     }
@@ -753,7 +877,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
+        id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
     ) -> MessageResult<Action> {
@@ -764,7 +888,7 @@ where
             // The message was sent to a previous edition of the inner value
             return MessageResult::Stale(message);
         }
-        let AnyFlexChild::Item(flex_item) = self else {
+        let Self::Item(flex_item) = self else {
             unreachable!(
                 "this should be unreachable as the generation was increased on the falling edge"
             )

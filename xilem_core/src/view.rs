@@ -3,11 +3,13 @@
 
 //! The primary view trait and associated trivial implementations.
 
+use alloc::boxed::Box;
+use alloc::rc::Rc;
+use alloc::sync::Arc;
 use core::ops::Deref;
 
-use alloc::{boxed::Box, sync::Arc};
-
-use crate::{message::MessageResult, DynMessage, Mut, ViewElement};
+use crate::message::MessageResult;
+use crate::{DynMessage, Mut, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -71,20 +73,17 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
     type ViewState;
 
     /// Create the corresponding Element value.
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState);
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
-    ///
-    /// This returns `element`, to allow parent views to modify the element after this `rebuild` has
-    /// completed. This returning is needed as some reference types do not allow reborrowing,
-    /// without unwieldy boilerplate.
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element>;
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    );
 
     /// Handle `element` being removed from the tree.
     ///
@@ -98,6 +97,7 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     );
 
     /// Route `message` to `id_path`, if that is still a valid path.
@@ -113,9 +113,9 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-/// An identifier used to differentiation between the direct children of a [View].
+/// An identifier used to differentiation between the direct children of a [`View`].
 ///
-/// These are [u64] backed identifiers, which will be added to the "view path" in
+/// These are [`u64`] backed identifiers, which will be added to the "view path" in
 /// [`View::build`] and [`View::rebuild`] (and their [`ViewSequence`](crate::ViewSequence) counterparts),
 /// and removed from the start of the path if necessary in [`View::message`].
 /// The value of `ViewId`s are only meaningful for the `View` or `ViewSequence` added them
@@ -172,18 +172,20 @@ where
     type Element = V::Element;
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        self.deref().build(ctx)
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        self.deref().build(ctx, app_state)
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
-        self.deref().rebuild(prev, view_state, ctx, element)
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.deref()
+            .rebuild(prev, view_state, ctx, element, app_state);
     }
 
     fn teardown(
@@ -191,8 +193,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
-        self.deref().teardown(view_state, ctx, element);
+        self.deref().teardown(view_state, ctx, element, app_state);
     }
 
     fn message(
@@ -207,8 +210,14 @@ where
     }
 }
 
-pub struct ArcState<ViewState> {
+#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[derive(Debug)]
+pub struct RcState<ViewState> {
     view_state: ViewState,
+    /// This is a flag that is set, when an inner view signifies that it requires a rebuild (via [`MessageResult::RequestRebuild`]).
+    /// This can happen, e.g. when an inner view wasn't changed by the app-developer directly (i.e. it points to the same view),
+    /// but e.g. through some kind of async action.
+    /// An example would be an async virtualized list, which fetches new entries, and requires a rebuild for the new entries.
     dirty: bool,
 }
 
@@ -220,32 +229,31 @@ where
     V: View<State, Action, Context, Message> + ?Sized,
 {
     type Element = V::Element;
-    type ViewState = ArcState<V::ViewState>;
+    type ViewState = RcState<V::ViewState>;
 
-    fn build(&self, ctx: &mut Context) -> (Self::Element, Self::ViewState) {
-        let (element, view_state) = self.deref().build(ctx);
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (element, view_state) = self.deref().build(ctx, app_state);
         (
             element,
-            ArcState {
+            RcState {
                 view_state,
                 dirty: false,
             },
         )
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
-        element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        #![expect(clippy::use_self, reason = "`Arc::ptr_eq` is the canonical form")]
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
             self.deref()
-                .rebuild(prev, &mut view_state.view_state, ctx, element)
-        } else {
-            // If this is the same value, or no rebuild was forced, there's no need to rebuild
-            element
+                .rebuild(prev, &mut view_state.view_state, ctx, element, app_state);
         }
     }
 
@@ -254,9 +262,74 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
+        app_state: &mut State,
     ) {
         self.deref()
-            .teardown(&mut view_state.view_state, ctx, element);
+            .teardown(&mut view_state.view_state, ctx, element, app_state);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        id_path: &[ViewId],
+        message: Message,
+        app_state: &mut State,
+    ) -> MessageResult<Action, Message> {
+        let message_result =
+            self.deref()
+                .message(&mut view_state.view_state, id_path, message, app_state);
+        if matches!(message_result, MessageResult::RequestRebuild) {
+            view_state.dirty = true;
+        }
+        message_result
+    }
+}
+
+impl<V: ?Sized> ViewMarker for Rc<V> {}
+/// An implementation of [`View`] which only runs rebuild if the states are different
+impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Rc<V>
+where
+    Context: ViewPathTracker,
+    V: View<State, Action, Context, Message> + ?Sized,
+{
+    type Element = V::Element;
+    type ViewState = RcState<V::ViewState>;
+
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (element, view_state) = self.deref().build(ctx, app_state);
+        (
+            element,
+            RcState {
+                view_state,
+                dirty: false,
+            },
+        )
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        #![expect(clippy::use_self, reason = "`Rc::ptr_eq` is the canonical form")]
+        if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
+            self.deref()
+                .rebuild(prev, &mut view_state.view_state, ctx, element, app_state);
+        }
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.deref()
+            .teardown(&mut view_state.view_state, ctx, element, app_state);
     }
 
     fn message(

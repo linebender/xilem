@@ -1,12 +1,11 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use xilem_web::{
-    document_body,
-    elements::html as el,
-    interfaces::{Element, HtmlButtonElement},
-    App, DomFragment,
-};
+//! A simple counter
+
+use xilem_web::elements::html as el;
+use xilem_web::interfaces::{Element, HtmlButtonElement};
+use xilem_web::{App, DomFragment, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -45,18 +44,18 @@ impl AppState {
 /// You can create functions that generate views.
 fn btn(
     label: &'static str,
-    click_fn: impl Fn(&mut AppState, web_sys::MouseEvent) + 'static,
+    click_fn: impl Fn(&mut AppState, web_sys::PointerEvent) + 'static,
 ) -> impl HtmlButtonElement<AppState> {
     el::button(label).on_click(click_fn)
 }
 
 /// And functions that return a sequence of views.
-fn huzzah(state: &mut AppState) -> impl DomFragment<AppState> {
+fn huzzah(state: &mut AppState) -> impl DomFragment<AppState> + use<> {
     (state.clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 }
 
 /// Even the root `app_logic` can return a sequence of views
-fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> + use<> {
     (
         el::span(format!("clicked {} times", state.clicks)).class(state.class),
         el::br(()),
@@ -72,7 +71,7 @@ fn app_logic(state: &mut AppState) -> impl DomFragment<AppState> {
     )
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     App::new(document_body(), AppState::default(), app_logic).run();
 }

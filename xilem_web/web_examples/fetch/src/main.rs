@@ -1,25 +1,27 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Demonstrates fetching other web content from Xilem Web
+
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_web::{
-    concurrent::memoized_await,
-    core::{fork, one_of::Either},
-    document_body,
-    elements::html::*,
-    interfaces::{Element, HtmlDivElement, HtmlImageElement, HtmlLabelElement},
-    App,
+use xilem_web::concurrent::memoized_await;
+use xilem_web::core::fork;
+use xilem_web::core::one_of::Either;
+use xilem_web::elements::html::*;
+use xilem_web::interfaces::{
+    Element, HtmlDivElement, HtmlImageElement, HtmlInputElement, HtmlLabelElement,
 };
+use xilem_web::{App, document_body};
 
 const TOO_MANY_CATS: usize = 8;
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Cat {
-    pub url: String,
-    pub width: u16,
-    pub height: u16,
+struct Cat {
+    url: String,
+    width: u16,
+    height: u16,
 }
 
 struct AppState {
@@ -88,7 +90,7 @@ async fn fetch_cats(count: usize) -> Result<Vec<Cat>, gloo_net::Error> {
         .collect())
 }
 
-pub fn input_target<T>(event: &T) -> web_sys::HtmlInputElement
+fn input_target<T>(event: &T) -> web_sys::HtmlInputElement
 where
     T: JsCast,
 {
@@ -99,7 +101,7 @@ where
         .unchecked_into::<web_sys::HtmlInputElement>()
 }
 
-fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
+fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> + use<> {
     div((
         cat_fetch_controls(state),
         fork(
@@ -135,7 +137,7 @@ fn app_logic(state: &mut AppState) -> impl HtmlDivElement<AppState> {
     ))
 }
 
-fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<AppState> {
+fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<AppState> + use<> {
     let cat_images = state
         .cats
         .iter()
@@ -161,7 +163,7 @@ fn cat_images_and_fetching_indicator(state: &AppState) -> impl HtmlDivElement<Ap
     div((error_message, fetch_state, cat_images))
 }
 
-fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
+fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> + use<> {
     fieldset((
         legend("Cat fetch controls"),
         table((
@@ -169,7 +171,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 td(label("How many cats would you like?").for_("cat-count")),
                 td(input(())
                     .id("cat-count")
-                    .attr("type", "number")
+                    .type_("number")
                     .attr("min", 0)
                     .attr("value", state.cats_to_fetch)
                     .on_input(|state: &mut AppState, ev: web_sys::Event| {
@@ -187,8 +189,8 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 ),
                 td(input(())
                     .id("reset-debounce-update")
-                    .attr("type", "checkbox")
-                    .attr("checked", state.reset_debounce_on_update)
+                    .type_("checkbox")
+                    .checked(state.reset_debounce_on_update)
                     .on_input(|state: &mut AppState, event: web_sys::Event| {
                         state.reset_debounce_on_update = input_target(&event).checked();
                     })),
@@ -197,7 +199,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
                 td(label("Debounce timeout in ms:").for_("debounce-timeout-duration")),
                 td(input(())
                     .id("debounce-timeout-duration")
-                    .attr("type", "number")
+                    .type_("number")
                     .attr("min", 0)
                     .attr("value", state.debounce_in_ms)
                     .on_input(|state: &mut AppState, ev: web_sys::Event| {
@@ -209,7 +211,7 @@ fn cat_fetch_controls(state: &AppState) -> impl Element<AppState> {
     .class("cat-fetch-controls")
 }
 
-pub fn main() {
+fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
     console_error_panic_hook::set_once();
 

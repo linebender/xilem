@@ -4,17 +4,14 @@
 //! This example shows how (external) tasks can send messages
 //! to be able to change the app state.
 
-use futures::{select, FutureExt};
+use futures::{FutureExt, select};
 use gloo_timers::future::TimeoutFuture;
-use xilem_web::{
-    concurrent::{task, ShutdownSignal, TaskProxy},
-    core::fork,
-    core::one_of::Either,
-    document_body,
-    elements::html,
-    interfaces::Element,
-    App,
-};
+use xilem_web::concurrent::{ShutdownSignal, TaskProxy, task};
+use xilem_web::core::fork;
+use xilem_web::core::one_of::Either;
+use xilem_web::elements::html;
+use xilem_web::interfaces::Element;
+use xilem_web::{App, document_body};
 
 #[derive(Default)]
 struct AppState {
@@ -35,7 +32,6 @@ async fn create_ping_task(proxy: TaskProxy, shutdown_signal: ShutdownSignal) {
     log::debug!("Start ping task");
     let mut abort = shutdown_signal.into_future().fuse();
 
-    #[allow(clippy::infinite_loop)]
     loop {
         let mut timeout = TimeoutFuture::new(1_000).fuse();
 
@@ -54,7 +50,7 @@ async fn create_ping_task(proxy: TaskProxy, shutdown_signal: ShutdownSignal) {
     log::debug!("Stop ping task");
 }
 
-fn app_logic(state: &mut AppState) -> impl Element<AppState> {
+fn app_logic(state: &mut AppState) -> impl Element<AppState> + use<> {
     let task = task(
         create_ping_task,
         |state: &mut AppState, message: Message| match message {
@@ -80,8 +76,7 @@ fn app_logic(state: &mut AppState) -> impl Element<AppState> {
         },
     ))
 }
-
-pub fn main() {
+fn main() {
     _ = console_log::init_with_level(log::Level::Debug);
     console_error_panic_hook::set_once();
     log::info!("Start web application");

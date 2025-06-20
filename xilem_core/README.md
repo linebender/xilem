@@ -1,4 +1,3 @@
-
 <div align="center" class="rustdoc-hidden">
 
 # Xilem Core
@@ -12,7 +11,7 @@
 [![Latest published version.](https://img.shields.io/crates/v/xilem_core.svg)](https://crates.io/crates/xilem_core)
 [![Documentation build status.](https://img.shields.io/docsrs/xilem_core.svg)](https://docs.rs/xilem_core)
 [![Apache 2.0 license.](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](#license)
-
+\
 [![Linebender Zulip chat.](https://img.shields.io/badge/Linebender-%23xilem-blue?logo=Zulip)](https://xi.zulipchat.com/#narrow/stream/354396-xilem)
 [![GitHub Actions CI status.](https://img.shields.io/github/actions/workflow/status/linebender/xilem/ci.yml?logo=github&label=CI)](https://github.com/linebender/xilem/actions)
 [![Dependency staleness status.](https://deps.rs/crate/xilem_core/latest/status.svg)](https://deps.rs/crate/xilem_core)
@@ -38,7 +37,7 @@ The current proposal would split the application into two processes:
 
 ## Quickstart
 
-## no_std support
+## `no_std` support
 
 Xilem Core supports running with `#![no_std]`, but does use [`alloc`][] to be available.
 
@@ -47,7 +46,7 @@ If you wish to use Xilem Core in environments where an allocator is not availabl
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Xilem Core has been verified to compile with **Rust 1.79** and later.
+This version of Xilem Core has been verified to compile with **Rust 1.86** and later.
 
 Future versions of Xilem Core might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
@@ -62,7 +61,6 @@ If you encounter a compilation issue due to a dependency and don't want to upgra
 # Use the problematic dependency's name and version
 cargo update -p package_name --precise 0.1.1
 ```
-
 </details>
 
 <!-- We hide these elements when viewing in Rustdoc, because they're not expected to be present in crate level docs -->
@@ -73,21 +71,22 @@ cargo update -p package_name --precise 0.1.1
 Discussion of Xilem Core development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
 All public content can be read without logging in.
 
-Contributions are welcome by pull request. The [Rust code of conduct][] applies.
+Contributions are welcome by pull request.
+The [Rust code of conduct] applies.
 
 ## License
 
-- Licensed under the Apache License, Version 2.0
-  ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
+Licensed under the Apache License, Version 2.0 ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
 
 </div>
 
-[rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
-
-[LICENSE]: LICENSE
+[Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
 [Xilem]: https://crates.io/crates/xilem
 [Xilem Web]: https://crates.io/crates/xilem_web
 [xilem docs]: https://docs.rs/xilem/latest/xilem/
 [`alloc`]: https://doc.rust-lang.org/stable/alloc/
 [`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
 [`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html
+
+<!-- Needs to be defined here for rustdoc's benefit -->
+[LICENSE]: LICENSE

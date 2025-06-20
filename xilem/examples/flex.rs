@@ -1,25 +1,22 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::{
-    widget::{CrossAxisAlignment, MainAxisAlignment},
-    ArcStr,
-};
+//! Flex properties can be set in Xilem.
+
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::{
-    view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer},
-    EventLoop, WidgetView, Xilem,
-};
+use xilem::view::{Axis, FlexExt as _, FlexSpacer, Label, button, flex, label, sized_box};
+use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
-    label: impl Into<ArcStr>,
+    label: impl Into<Label>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
     sized_box(button(label, callback)).width(40.).height(40.)
 }
 
-fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
+fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
     flex((
         FlexSpacer::Fixed(30.0),
         big_button("-", |data| {
@@ -39,7 +36,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> {
 }
 
 fn main() -> Result<(), EventLoopError> {
-    let app = Xilem::new(0, app_logic);
-    app.run_windowed(EventLoop::with_user_event(), "Centered Flex".into())?;
+    let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
+    app.run_in(EventLoop::with_user_event())?;
     Ok(())
 }

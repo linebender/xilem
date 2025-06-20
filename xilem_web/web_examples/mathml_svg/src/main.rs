@@ -1,11 +1,15 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! Shows using mathml and SVG on the web
+
+#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
+
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
-use xilem_web::{
-    document_body, elements::html, elements::mathml as ml, elements::svg, interfaces::*,
-    style as s, App,
-};
+use xilem_web::elements::{html, mathml as ml, svg};
+use xilem_web::interfaces::*;
+use xilem_web::modifiers::style as s;
+use xilem_web::{App, document_body};
 
 struct Triangle {
     a: u32,
@@ -41,14 +45,14 @@ fn slider(
     cb: fn(&mut Triangle, web_sys::Event),
 ) -> impl HtmlInputElement<Triangle> {
     html::input(())
-        .attr("type", "range")
+        .type_("range")
         .attr("min", 1)
         .attr("max", max)
         .attr("value", value)
         .on_input(cb)
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     App::new(document_body(), Triangle { a: 200, b: 100 }, |t| {
         let x1 = 390;

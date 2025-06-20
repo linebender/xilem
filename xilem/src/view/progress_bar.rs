@@ -1,42 +1,44 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::widget;
-use xilem_core::{Mut, ViewMarker};
+use masonry::widgets;
 
+use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
+/// A view which displays a progress bar.
+///
+/// This can be for showing progress of a task or a download.
 pub fn progress_bar(progress: Option<f64>) -> ProgressBar {
     ProgressBar { progress }
 }
 
+/// The [`View`] created by [`progress_bar`].
+#[must_use = "View values do nothing unless provided to Xilem."]
 pub struct ProgressBar {
     progress: Option<f64>,
 }
 
 impl ViewMarker for ProgressBar {}
 impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
-    type Element = Pod<widget::ProgressBar>;
+    type Element = Pod<widgets::ProgressBar>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
-        ctx.with_leaf_action_widget(|ctx| {
-            ctx.new_pod(masonry::widget::ProgressBar::new(self.progress))
-        })
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+        ctx.with_leaf_action_widget(|ctx| ctx.create_pod(widgets::ProgressBar::new(self.progress)))
     }
 
-    fn rebuild<'el>(
+    fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
-        ctx: &mut ViewCtx,
-        mut element: Mut<'el, Self::Element>,
-    ) -> Mut<'el, Self::Element> {
+        _ctx: &mut ViewCtx,
+        mut element: Mut<'_, Self::Element>,
+        _: &mut State,
+    ) {
         if prev.progress != self.progress {
-            element.set_progress(self.progress);
-            ctx.mark_changed();
+            widgets::ProgressBar::set_progress(&mut element, self.progress);
         }
-        element
     }
 
     fn teardown(
@@ -44,6 +46,7 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
+        _: &mut State,
     ) {
         ctx.teardown_leaf(element);
     }
@@ -52,10 +55,12 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         &self,
         (): &mut Self::ViewState,
         _id_path: &[ViewId],
-        message: xilem_core::DynMessage,
+        message: DynMessage,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        tracing::error!("Message arrived in ProgressBar::message, but ProgressBar doesn't consume any messages, this is a bug");
+        tracing::error!(
+            "Message arrived in ProgressBar::message, but ProgressBar doesn't consume any messages, this is a bug"
+        );
         MessageResult::Stale(message)
     }
 }

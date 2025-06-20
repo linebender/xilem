@@ -1,18 +1,18 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A recreation of todomvc in Xilem Web
+// TODO: Link
+
 mod state;
 
 use state::{AppState, Filter, Todo};
-
 use wasm_bindgen::JsCast;
-use xilem_web::{
-    core::{adapt, MessageResult},
-    elements::html as el,
-    get_element_by_id,
-    interfaces::*,
-    style as s, Action, App, DomView,
-};
+use xilem_web::core::{MessageResult, map_message, map_state};
+use xilem_web::elements::html as el;
+use xilem_web::interfaces::*;
+use xilem_web::modifiers::style as s;
+use xilem_web::{Action, App, DomView, get_element_by_id};
 
 // All of these actions arise from within a `Todo`, but we need access to the full state to reduce
 // them.
@@ -25,11 +25,11 @@ enum TodoAction {
 
 impl Action for TodoAction {}
 
-fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
+fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> + use<> {
     let checkbox = el::input(())
         .class("toggle")
-        .attr("type", "checkbox")
-        .attr("checked", todo.completed)
+        .type_("checkbox")
+        .checked(todo.completed)
         .on_click(|state: &mut Todo, _| state.completed = !state.completed);
 
     el::li((
@@ -73,13 +73,7 @@ fn todo_item(todo: &mut Todo, editing: bool) -> impl Element<Todo, TodoAction> {
     .class(editing.then_some("editing"))
 }
 
-fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
-    let item_str = if state.todos.len() == 1 {
-        "item"
-    } else {
-        "items"
-    };
-
+fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> + use<> {
     let clear_button = (state.todos.iter().filter(|todo| todo.completed).count() > 0).then(|| {
         el::button("Clear completed")
             .class("clear-completed")
@@ -90,12 +84,11 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
 
     let filter_class = |filter| (state.filter == filter).then_some("selected");
 
+    let items_left = state.todos.iter().filter(|todo| !todo.completed).count();
+    let item_noun = if items_left == 1 { "item" } else { "items" };
+
     el::footer((
-        el::span((
-            el::strong(state.todos.len().to_string()),
-            format!(" {} left", item_str),
-        ))
-        .class("todo-count"),
+        el::span(format!("{items_left} {item_noun} left")).class("todo-count"),
         el::ul((
             el::li(Element::on_click(
                 el::a("All")
@@ -131,15 +124,18 @@ fn footer_view(state: &mut AppState, should_display: bool) -> impl Element<AppSt
     .style((!should_display).then_some(s("display", "none")))
 }
 
-fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> {
+fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppState> + use<> {
     let editing_id = state.editing_id;
     let todos: Vec<_> = state
         .visible_todos()
         .map(|(idx, todo)| {
-            adapt(
-                todo_item(todo, editing_id == Some(todo.id)),
-                move |data: &mut AppState, thunk| {
-                    if let MessageResult::Action(action) = thunk.call(&mut data.todos[idx]) {
+            map_message(
+                map_state(
+                    todo_item(todo, editing_id == Some(todo.id)),
+                    move |data: &mut AppState| &mut data.todos[idx],
+                ),
+                move |data: &mut AppState, result| {
+                    if let MessageResult::Action(action) = result {
                         match action {
                             TodoAction::SetEditing(id) => data.start_editing(id),
                             TodoAction::CommitEdit => {
@@ -158,8 +154,8 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     let toggle_all = el::input(())
         .attr("id", "toggle-all")
         .class("toggle-all")
-        .attr("type", "checkbox")
-        .attr("checked", state.are_all_complete());
+        .type_("checkbox")
+        .checked(state.are_all_complete());
 
     el::section((
         toggle_all.on_click(|state: &mut AppState, _| state.toggle_all_complete()),
@@ -170,7 +166,7 @@ fn main_view(state: &mut AppState, should_display: bool) -> impl Element<AppStat
     .style((!should_display).then_some(s("display", "none")))
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
+fn app_logic(state: &mut AppState) -> impl DomView<AppState> + use<> {
     tracing::debug!("render: {state:?}");
     let some_todos = !state.todos.is_empty();
     let main = main_view(state, some_todos);
@@ -207,7 +203,7 @@ fn app_logic(state: &mut AppState) -> impl DomView<AppState> {
     ))
 }
 
-pub fn main() {
+fn main() {
     console_error_panic_hook::set_once();
     tracing_wasm::set_as_global_default();
     App::new(get_element_by_id("todoapp"), AppState::load(), app_logic).run();

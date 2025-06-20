@@ -1,64 +1,62 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#[cfg(feature = "hydration")]
 use wasm_bindgen::JsCast;
-use xilem_core::{Mut, OrphanView};
 
-use crate::{DynMessage, Pod, ViewCtx};
+use crate::core::{MessageResult, Mut, OrphanView, ViewId};
+use crate::{DynMessage, Pod, PodFlags, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {
     ($ty:ty) => {
         impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
-            type OrphanElement = Pod<web_sys::Text, ()>;
+            type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
 
             fn orphan_build(
                 view: &$ty,
-                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
+                ctx: &mut ViewCtx,
+                _: &mut State,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
-                #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
                 } else {
                     web_sys::Text::new_with_data(view).unwrap()
                 };
-                #[cfg(not(feature = "hydration"))]
-                let node = web_sys::Text::new_with_data(view).unwrap();
-                (Pod { node, props: () }, ())
+                (Pod::new(node, (), PodFlags::new(ctx.is_hydrating())), ())
             }
 
-            fn orphan_rebuild<'a>(
+            fn orphan_rebuild(
                 new: &$ty,
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<'a, Self::OrphanElement>,
-            ) -> Mut<'a, Self::OrphanElement> {
+                element: Mut<'_, Self::OrphanElement>,
+                _: &mut State,
+            ) {
                 if prev != new {
                     element.node.set_data(new);
                 }
-                element
             }
 
             fn orphan_teardown(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text, ()>>,
+                _element: Mut<'_, Self::OrphanElement>,
+                _: &mut State,
             ) {
             }
 
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[xilem_core::ViewId],
+                _id_path: &[ViewId],
                 message: DynMessage,
                 _app_state: &mut State,
-            ) -> xilem_core::MessageResult<Action, DynMessage> {
-                xilem_core::MessageResult::Stale(message)
+            ) -> MessageResult<Action, DynMessage> {
+                MessageResult::Stale(message)
             }
         }
     };
@@ -71,54 +69,53 @@ impl_string_view!(std::borrow::Cow<'static, str>);
 macro_rules! impl_to_string_view {
     ($ty:ty) => {
         impl<State, Action> OrphanView<$ty, State, Action, DynMessage> for ViewCtx {
-            type OrphanElement = Pod<web_sys::Text, ()>;
+            type OrphanElement = Pod<web_sys::Text>;
 
             type OrphanViewState = ();
 
             fn orphan_build(
                 view: &$ty,
-                #[cfg_attr(not(feature = "hydration"), allow(unused_variables))] ctx: &mut ViewCtx,
+                ctx: &mut ViewCtx,
+                _: &mut State,
             ) -> (Self::OrphanElement, Self::OrphanViewState) {
-                #[cfg(feature = "hydration")]
                 let node = if ctx.is_hydrating() {
                     ctx.hydrate_node().unwrap().unchecked_into()
                 } else {
                     web_sys::Text::new_with_data(&view.to_string()).unwrap()
                 };
-                #[cfg(not(feature = "hydration"))]
-                let node = web_sys::Text::new_with_data(&view.to_string()).unwrap();
-                (Pod { node, props: () }, ())
+                (Pod::new(node, (), PodFlags::new(ctx.is_hydrating())), ())
             }
 
-            fn orphan_rebuild<'a>(
+            fn orphan_rebuild(
                 new: &$ty,
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<'a, Self::OrphanElement>,
-            ) -> Mut<'a, Self::OrphanElement> {
+                element: Mut<'_, Self::OrphanElement>,
+                _: &mut State,
+            ) {
                 if prev != new {
                     element.node.set_data(&new.to_string());
                 }
-                element
             }
 
             fn orphan_teardown(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<'_, Pod<web_sys::Text, ()>>,
+                _element: Mut<'_, Pod<web_sys::Text>>,
+                _: &mut State,
             ) {
             }
 
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[xilem_core::ViewId],
+                _id_path: &[ViewId],
                 message: DynMessage,
                 _app_state: &mut State,
-            ) -> xilem_core::MessageResult<Action, DynMessage> {
-                xilem_core::MessageResult::Stale(message)
+            ) -> MessageResult<Action, DynMessage> {
+                MessageResult::Stale(message)
             }
         }
     };
