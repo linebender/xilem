@@ -21,6 +21,8 @@ enum TagCloseBehaviour {
 /// 1) We convert HTML entities to their regular value (hopefully?)
 /// 2) We only handle the `p`, `br`, `span.invisible`, `span.ellipsis` cases
 /// 3) We don't handle `microformat` at all.
+// TODO: We know this code is not great (and probably way too imperative!)
+// We're deferring refactoring this until we want to handle more attributes.
 pub(crate) fn handle_content_html(content: &str) -> String {
     let _span = tracing::info_span!("handle_content_html").entered();
     let tokeniser = html5gum::Tokenizer::new(content);
@@ -42,6 +44,7 @@ pub(crate) fn handle_content_html(content: &str) -> String {
                     }
                     if start_tag.self_closing {
                         tracing::warn!("Got unexpected self-closing paragraph.");
+                        result.push_str("\n\n");
                     } else {
                         stack.push(TagCloseBehaviour::Paragraph);
                     }
