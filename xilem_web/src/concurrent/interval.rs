@@ -58,7 +58,10 @@ where
     }
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct IntervalState {
     // Closures are retained so they can be called by environment
     interval_fn: Closure<dyn FnMut()>,
@@ -116,7 +119,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<Self::Element>,
+        (): Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         if prev.ms != self.ms {
@@ -129,7 +132,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        _: Mut<Self::Element>,
+        _: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         clear_interval(view_state.interval_handle);

@@ -129,7 +129,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.element
@@ -140,7 +140,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<Self::Element>,
+        el: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.element.teardown(view_state, ctx, el, app_state);
@@ -179,7 +179,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: Mut<Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.element.rebuild(
@@ -197,7 +197,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<Self::Element>,
+        el: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.element.teardown(view_state, ctx, el, app_state);
@@ -236,7 +236,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.element
@@ -247,7 +247,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        el: Mut<Self::Element>,
+        el: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         (self.callback)(el.node);

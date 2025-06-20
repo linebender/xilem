@@ -58,7 +58,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.0.rebuild(&prev.0, view_state, ctx, element, app_state);
@@ -68,7 +68,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.0.teardown(view_state, ctx, element, app_state);

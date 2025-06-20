@@ -51,7 +51,7 @@ where
     }
 
     fn update_one_of_element_mut(
-        elem_mut: &mut Mut<Self::OneOfElement>,
+        elem_mut: &mut Mut<'_, Self::OneOfElement>,
         new_elem: OneOf<
             Pod<N1>,
             Pod<N2>,
@@ -84,63 +84,63 @@ where
         };
     }
 
-    fn with_downcast_a(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N1>>)) {
+    fn with_downcast_a(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N1>>)) {
         let (OneOf::A(node), OneOf::A(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_b(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N2>>)) {
+    fn with_downcast_b(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N2>>)) {
         let (OneOf::B(node), OneOf::B(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_c(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N3>>)) {
+    fn with_downcast_c(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N3>>)) {
         let (OneOf::C(node), OneOf::C(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_d(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N4>>)) {
+    fn with_downcast_d(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N4>>)) {
         let (OneOf::D(node), OneOf::D(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_e(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N5>>)) {
+    fn with_downcast_e(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N5>>)) {
         let (OneOf::E(node), OneOf::E(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_f(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N6>>)) {
+    fn with_downcast_f(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N6>>)) {
         let (OneOf::F(node), OneOf::F(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_g(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N7>>)) {
+    fn with_downcast_g(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N7>>)) {
         let (OneOf::G(node), OneOf::G(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_h(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N8>>)) {
+    fn with_downcast_h(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N8>>)) {
         let (OneOf::H(node), OneOf::H(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
         f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
     }
 
-    fn with_downcast_i(e: &mut Mut<Self::OneOfElement>, f: impl FnOnce(Mut<Pod<N9>>)) {
+    fn with_downcast_i(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N9>>)) {
         let (OneOf::I(node), OneOf::I(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
@@ -187,7 +187,10 @@ where
     }
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub enum Noop {}
 
 impl<T> AsRef<T> for Noop {

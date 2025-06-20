@@ -71,7 +71,7 @@ impl<N: DomNode> SuperElement<Pod<N>, ViewCtx> for AnyPod {
 
     fn with_downcast_val<R>(
         mut this: Self::Mut<'_>,
-        f: impl FnOnce(PodMut<N>) -> R,
+        f: impl FnOnce(PodMut<'_, N>) -> R,
     ) -> (Self::Mut<'_>, R) {
         let downcast = this.downcast();
         let ret = f(downcast);
@@ -125,7 +125,7 @@ impl<'a, N: DomNode> PodMut<'a, N> {
         }
     }
 
-    pub fn reborrow_mut(&mut self) -> PodMut<N> {
+    pub fn reborrow_mut(&mut self) -> PodMut<'_, N> {
         PodMut {
             node: self.node,
             props: self.props,
@@ -145,7 +145,7 @@ impl<'a, N: DomNode> PodMut<'a, N> {
 }
 
 impl PodMut<'_, Box<dyn AnyNode>> {
-    fn downcast<N: DomNode>(&mut self) -> PodMut<N> {
+    fn downcast<N: DomNode>(&mut self) -> PodMut<'_, N> {
         PodMut::new(
             self.node.deref_mut().as_any_mut().downcast_mut().unwrap(),
             self.props.downcast_mut().unwrap(),

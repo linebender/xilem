@@ -32,7 +32,7 @@ macro_rules! impl_string_view {
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<Self::OrphanElement>,
+                element: Mut<'_, Self::OrphanElement>,
                 _: &mut State,
             ) {
                 if prev != new {
@@ -44,7 +44,7 @@ macro_rules! impl_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<Self::OrphanElement>,
+                _element: Mut<'_, Self::OrphanElement>,
                 _: &mut State,
             ) {
             }
@@ -91,7 +91,7 @@ macro_rules! impl_to_string_view {
                 prev: &$ty,
                 (): &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                element: Mut<Self::OrphanElement>,
+                element: Mut<'_, Self::OrphanElement>,
                 _: &mut State,
             ) {
                 if prev != new {
@@ -103,7 +103,7 @@ macro_rules! impl_to_string_view {
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
-                _element: Mut<Pod<web_sys::Text>>,
+                _element: Mut<'_, Pod<web_sys::Text>>,
                 _: &mut State,
             ) {
             }

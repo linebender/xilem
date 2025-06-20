@@ -50,7 +50,7 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         prev: &Line,
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
@@ -66,7 +66,7 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         _view: &Line,
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        _element: Mut<Self::OrphanElement>,
+        _element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
     }
@@ -107,7 +107,7 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         prev: &Rect,
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
         Attributes::rebuild(element, 4, |mut element| {
@@ -123,7 +123,7 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         _view: &Rect,
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        _element: Mut<Self::OrphanElement>,
+        _element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
     }
@@ -163,7 +163,7 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         prev: &Circle,
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
         Attributes::rebuild(element, 3, |mut element| {
@@ -178,7 +178,7 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         _view: &Circle,
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        _element: Mut<Self::OrphanElement>,
+        _element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
     }
@@ -216,7 +216,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         prev: &BezPath,
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        element: Mut<Self::OrphanElement>,
+        element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
         Attributes::rebuild(element, 1, |mut element| {
@@ -235,7 +235,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         _view: &BezPath,
         _view_state: &mut Self::OrphanViewState,
         _ctx: &mut Self,
-        _element: Mut<Self::OrphanElement>,
+        _element: Mut<'_, Self::OrphanElement>,
         _: &mut State,
     ) {
     }

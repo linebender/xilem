@@ -104,7 +104,10 @@ pub struct Task<F, H, M> {
     message: PhantomData<fn() -> M>,
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct TaskState {
     abort_handle: Option<AbortHandle>,
 }
@@ -158,7 +161,7 @@ where
         _: &Self,
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
-        (): Mut<Self::Element>,
+        (): Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         // Nothing to do
@@ -168,7 +171,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
-        _: Mut<Self::Element>,
+        _: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         let handle = view_state.abort_handle.take().unwrap_throw();
