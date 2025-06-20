@@ -1,3 +1,6 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
@@ -43,11 +46,16 @@ impl<CF, V, F, ParentState, ChildState, Action, Context, Message> Debug
 /// In code, the date picker example might look like:
 ///
 /// ```
-/// # use xilem_core::docs::{DocsView as WidgetView, State as Date, State as Flight, some_component as date_picker};
+/// # use xilem_core::docs::{DocsView as WidgetView, State as Date, State as Flight, some_component};
 /// use xilem_core::lens;
 ///
+/// fn date_picker(date: &mut Date) -> impl WidgetView<Date> + use<> {
+/// # some_component(date)
+/// // ...
+/// }
+///
 /// fn app_logic(state: &mut FlightPlanner) -> impl WidgetView<FlightPlanner> {
-///     lens(date_picker, |state| &mut state.date)
+///     lens(date_picker, |state: &mut FlightPlanner| &mut state.date)
 /// }
 ///
 /// struct FlightPlanner {
