@@ -58,7 +58,11 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.create_pod(widgets::Spinner::new());
+        let mut spinner = widgets::Spinner::new();
+        if let Some(color) = self.color {
+            spinner = spinner.with_color(color);
+        }
+        let pod = ctx.create_pod(spinner);
         (pod, ())
     }
 
