@@ -297,7 +297,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
-    use crate::theme::{PRIMARY_LIGHT, default_property_set};
+    use crate::theme::{ACCENT_COLOR, default_property_set};
 
     #[test]
     fn simple_checkbox() {
@@ -333,7 +333,7 @@ mod tests {
             let checkbox = Checkbox::from_label(
                 true,
                 Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_brush(PRIMARY_LIGHT)
+                    .with_brush(ACCENT_COLOR)
                     .with_style(StyleProperty::FontSize(20.0)),
             );
 
@@ -364,7 +364,7 @@ mod tests {
                 );
 
                 let mut label = Checkbox::label_mut(&mut checkbox);
-                Label::set_brush(&mut label, PRIMARY_LIGHT);
+                Label::set_brush(&mut label, ACCENT_COLOR);
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 
