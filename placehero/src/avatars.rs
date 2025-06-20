@@ -70,9 +70,11 @@ impl Avatars {
         &mut self,
         url: &str,
     ) -> impl WidgetView<State> + use<State> {
+        let width = 50.;
+        let height = 50.;
         if let Some(maybe_image) = self.icons.get(url) {
             if let Some(image_) = maybe_image {
-                return Either::A(image(image_));
+                return Either::A(sized_box(image(image_)).width(width).height(height));
             }
         } else if let Some(requester) = self.requester.as_ref() {
             drop(requester.send(AvatarRequest {
@@ -83,13 +85,17 @@ impl Avatars {
             // If the worker hasn't started yet, we have to wait until it does to do so.
         }
         Either::B(
-            sized_box(spinner()).background_gradient(
-                Gradient::new_linear(
-                    // down-right
-                    const { -45_f64.to_radians() },
+            sized_box(spinner().color(css::BLACK))
+                .background_gradient(
+                    Gradient::new_linear(
+                        // down-right
+                        const { -45_f64.to_radians() },
+                    )
+                    .with_stops([css::YELLOW, css::LIME]),
                 )
-                .with_stops([css::YELLOW, css::LIME]),
-            ),
+                .width(width)
+                .height(height)
+                .padding(4.0),
         )
     }
 }

@@ -18,11 +18,14 @@ use megalodon::{
     megalodon::GetAccountStatusesInputOptions,
 };
 use xilem::{
-    EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem,
+    EventLoopBuilder, FontWeight, ViewCtx, WidgetView, WindowOptions, Xilem,
     core::{NoElement, View, fork, lens, one_of::Either},
     palette::css,
-    style::Style,
-    view::{GridExt, GridParams, flex, grid, label, portal, prose, sized_box, split, task_raw},
+    style::{Padding, Style},
+    view::{
+        CrossAxisAlignment, FlexExt, FlexSpacer, MainAxisAlignment, flex, inline_prose, label,
+        portal, prose, sized_box, split, task_raw,
+    },
     winit::error::EventLoopError,
 };
 
@@ -70,39 +73,64 @@ impl Placehero {
         if self.statuses.is_empty() {
             Either::A(prose("No statuses yet loaded"))
         } else {
-            Either::B(portal(flex(
-                self.statuses
-                    .iter()
-                    .map(|status| status_view(&mut self.avatars, status))
-                    .collect::<Vec<_>>(),
-            )))
+            Either::B(portal(
+                flex(
+                    self.statuses
+                        .iter()
+                        .map(|status| status_view(&mut self.avatars, status))
+                        .collect::<Vec<_>>(),
+                )
+                .padding(Padding {
+                    // Leaave room for scrollbar
+                    right: 20.,
+                    ..Padding::all(5.0)
+                }),
+            ))
         }
     }
 }
 
 fn status_view(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Placehero> + use<> {
-    sized_box(grid(
-        (
-            avatars.avatar(&status.account.avatar_static).grid_pos(0, 0),
-            prose(status.account.display_name.as_str()).grid_pos(1, 0),
-            prose(status.account.username.as_str()).grid_pos(2, 0),
-            prose(status_html_to_plaintext(status.content.as_str()))
-                .grid_item(GridParams::new(0, 1, 3, 1)),
-            prose(status.created_at.to_rfc2822()).grid_pos(0, 2),
-            prose(status.favourites_count.to_string()).grid_pos(1, 2),
-            prose(status.replies_count.to_string()).grid_pos(2, 2),
-        ),
-        3,
-        3,
-    ))
-    .expand_width()
-    .height(300.0)
-    .border(css::WHITE, 2.)
+    sized_box(flex((
+        flex((
+            avatars.avatar(&status.account.avatar_static),
+            flex((
+                inline_prose(status.account.display_name.as_str())
+                    .weight(FontWeight::SEMI_BOLD)
+                    .alignment(xilem::TextAlignment::Start)
+                    .text_size(20.)
+                    .flex(CrossAxisAlignment::Start),
+                inline_prose(status.account.username.as_str())
+                    .weight(FontWeight::SEMI_LIGHT)
+                    .alignment(xilem::TextAlignment::Start)
+                    .flex(CrossAxisAlignment::Start),
+            ))
+            .main_axis_alignment(MainAxisAlignment::Start)
+            .gap(1.),
+            FlexSpacer::Flex(1.0),
+            inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
+                .alignment(xilem::TextAlignment::End),
+        ))
+        .must_fill_major_axis(true)
+        .direction(xilem::view::Axis::Horizontal),
+        prose(status_html_to_plaintext(status.content.as_str())),
+        flex((
+            label(format!("💬 {}", status.replies_count)).flex(1.0),
+            label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
+            label(format!("⭐ {}", status.favourites_count)).flex(1.0),
+        ))
+        .direction(xilem::view::Axis::Horizontal)
+        // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
+    )))
+    .border(css::WHITE, 2.0)
+    .padding(10.0)
+    .corner_radius(5.)
 }
 
 fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
     fork(
-        split(app_state.sidebar(), app_state.main_view()),
+        split(app_state.sidebar(), app_state.main_view()).split_point(0.2),
         (
             load_instance(app_state.mastodon.clone()),
             load_account(app_state.mastodon.clone()),
