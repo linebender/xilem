@@ -1,6 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use core::any::type_name;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
@@ -8,7 +9,7 @@ use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// The View for [`lens`].
 ///
-/// See their documentation for more context.
+/// See its documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Lens<CF, V, F, ParentState, ChildState, Action, Context, Message> {
     access_state: F,
@@ -20,7 +21,10 @@ impl<CF, V, F, ParentState, ChildState, Action, Context, Message> Debug
     for Lens<CF, V, F, ParentState, ChildState, Action, Context, Message>
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        f.debug_struct("Lens").finish_non_exhaustive()
+        f.debug_struct("Lens")
+            .field("from", &type_name::<ParentState>())
+            .field("to", &type_name::<ChildState>())
+            .finish_non_exhaustive()
     }
 }
 

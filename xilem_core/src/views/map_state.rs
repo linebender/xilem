@@ -8,7 +8,7 @@ use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// The View for [`map_state`].
 ///
-/// See their documentation for more context.
+/// See its documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct MapState<V, F, ParentState, ChildState, Action, Context, Message> {
     map_state: F,
