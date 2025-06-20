@@ -13,7 +13,6 @@ use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::types::Gradient;
 use crate::theme;
 use crate::util::{fill, stroke};
 use crate::widgets::{Label, LineBreaking};
@@ -158,17 +157,13 @@ impl Widget for ProgressBar {
 
         // TODO - Use properties instead.
 
-        let bg_gradient =
-            Gradient::new_linear(0.).with_stops([theme::BACKGROUND_LIGHT, theme::BACKGROUND_DARK]);
-        let progress_gradient =
-            Gradient::new_linear(0.).with_stops([theme::PRIMARY_LIGHT, theme::PRIMARY_DARK]);
+        let bg = theme::ZYNC_900;
+        let progress_bg = theme::ACCENT_COLOR;
 
-        let bg_brush = bg_gradient.get_peniko_gradient_for_rect(bg_rect.rect());
-        let progress_brush = progress_gradient.get_peniko_gradient_for_rect(progress_rect.rect());
-        fill(scene, &bg_rect, &bg_brush);
-        fill(scene, &progress_rect, &progress_brush);
+        fill(scene, &bg_rect, bg);
+        fill(scene, &progress_rect, progress_bg);
 
-        stroke(scene, &border_rect, theme::BORDER_DARK, border_width);
+        stroke(scene, &border_rect, theme::ZYNC_800, border_width);
     }
 
     fn accessibility_role(&self) -> Role {

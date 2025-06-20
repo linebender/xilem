@@ -473,7 +473,7 @@ mod tests {
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
-    use crate::theme::{PRIMARY_DARK, PRIMARY_LIGHT, default_property_set};
+    use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox};
 
     #[test]
@@ -489,7 +489,7 @@ mod tests {
     #[test]
     fn styled_label() {
         let label = Label::new("The quick brown fox jumps over the lazy dog")
-            .with_brush(PRIMARY_LIGHT)
+            .with_brush(ACCENT_COLOR)
             .with_style(FontFamily::Generic(GenericFamily::Monospace))
             .with_style(StyleProperty::FontSize(20.0))
             .with_line_break_mode(LineBreaking::WordWrap)
@@ -595,7 +595,7 @@ mod tests {
     fn edit_label() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_brush(PRIMARY_LIGHT)
+                .with_brush(ACCENT_COLOR)
                 .with_style(FontFamily::Generic(GenericFamily::Monospace))
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
@@ -609,7 +609,7 @@ mod tests {
 
         let image_2 = {
             let label = Label::new("Hello world")
-                .with_brush(PRIMARY_DARK)
+                .with_brush(ACCENT_COLOR)
                 .with_style(StyleProperty::FontSize(40.0));
 
             let mut harness =
@@ -618,7 +618,7 @@ mod tests {
             harness.edit_root_widget(|mut label| {
                 let mut label = label.downcast::<Label>();
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
-                Label::set_brush(&mut label, PRIMARY_LIGHT);
+                Label::set_brush(&mut label, ACCENT_COLOR);
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
                 Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);
