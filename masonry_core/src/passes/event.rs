@@ -22,7 +22,9 @@ fn get_pointer_target(
 ) -> Option<WidgetId> {
     // See the [pointer capture documentation](../doc/06_masonry_concepts.md#pointer-capture).
     if let Some(capture_target) = root.global_state.pointer_capture_target {
-        return Some(capture_target);
+        if root.is_still_interactive(capture_target) {
+            return Some(capture_target);
+        }
     }
 
     if let Some(pointer_pos) = pointer_pos {
@@ -205,6 +207,13 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
                     root.global_state.next_focused_widget = None;
                 }
             }
+        }
+    }
+
+    if let Some(id) = target_widget_id {
+        if !root.widget_arena.has(id) {
+            debug_panic!("Trying to target non-existent widget {id}");
+            return Handled::No;
         }
     }
 
