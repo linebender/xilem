@@ -68,11 +68,11 @@ pub fn default_property_set() -> DefaultProperties {
         width: BORDER_WIDTH,
     });
 
-    properties.insert::<Checkbox, _>(Background::Color(ZYNC_900));
-    properties.insert::<Checkbox, _>(ActiveBackground(Background::Color(ZYNC_800)));
+    properties.insert::<Checkbox, _>(Background::Color(ZYNC_800));
+    properties.insert::<Checkbox, _>(ActiveBackground(Background::Color(ZYNC_700)));
     properties.insert::<Checkbox, _>(DisabledBackground(Background::Color(Color::BLACK)));
-    properties.insert::<Checkbox, _>(BorderColor { color: ZYNC_800 });
-    properties.insert::<Checkbox, _>(HoveredBorderColor(BorderColor { color: ZYNC_600 }));
+    properties.insert::<Checkbox, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<Checkbox, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
 
     properties.insert::<Checkbox, _>(CheckmarkStrokeWidth { width: 2.0 });
     properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
@@ -89,8 +89,7 @@ pub fn default_property_set() -> DefaultProperties {
         width: BORDER_WIDTH,
     });
 
-    properties.insert::<Textbox, _>(Background::Color(ZYNC_900));
-    properties.insert::<Textbox, _>(BorderColor { color: ZYNC_800 });
+    properties.insert::<Textbox, _>(BorderColor { color: ZYNC_600 });
 
     properties
 }

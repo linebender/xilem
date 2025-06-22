@@ -157,11 +157,8 @@ impl Widget for ProgressBar {
 
         // TODO - Use properties instead.
 
-        let bg = theme::ZYNC_900;
-        let progress_bg = theme::ACCENT_COLOR;
-
-        fill(scene, &bg_rect, bg);
-        fill(scene, &progress_rect, progress_bg);
+        fill(scene, &bg_rect, theme::ZYNC_900);
+        fill(scene, &progress_rect, theme::ACCENT_COLOR);
 
         stroke(scene, &border_rect, theme::ZYNC_800, border_width);
     }
