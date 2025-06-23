@@ -10,9 +10,7 @@
 use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList};
 
-use crate::core::{
-    Widget, WidgetArena, WidgetArenaMut, WidgetItemMut, WidgetId, WidgetState,
-};
+use crate::core::{Widget, WidgetArena, WidgetArenaMut, WidgetId, WidgetItemMut, WidgetState};
 use crate::util::AnyMap;
 
 pub(crate) mod accessibility;

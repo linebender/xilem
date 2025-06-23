@@ -16,8 +16,8 @@ use vello::peniko::{BlendMode, Brush};
 
 use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, BrushIndex, LayoutCtx, PaintCtx, PropertiesMut,
-    PropertiesRef,  RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, render_text,
+    PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, render_text,
 };
 use crate::debug_panic;
 use crate::theme;

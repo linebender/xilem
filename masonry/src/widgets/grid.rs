@@ -11,8 +11,8 @@ use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, 
-    RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::debug_panic;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};

@@ -13,7 +13,7 @@ use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, ObjectFit, PaintCtx, PropertiesMut, PropertiesRef,
-     RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
