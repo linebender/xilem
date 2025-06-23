@@ -3,56 +3,55 @@
 
 use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
 use tracing::{debug, info_span, trace};
-use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetState};
-use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::AnyMap;
+use crate::core::{
+    AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetArenaMut, WidgetItemMut,
+};
+use crate::passes::enter_span_if;
 
 // --- MARK: BUILD TREE
 fn build_accessibility_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     tree_update: &mut TreeUpdate,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    item: WidgetItemMut<'_>,
+    mut children: WidgetArenaMut<'_>,
     rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {
-    let _span = enter_span_if(global_state.trace.access, &**widget.item, state.item.id);
-    let id = state.item.id;
+    let _span = enter_span_if(global_state.trace.access, &**item.widget, item.state.id);
+    let id = item.state.id;
 
-    if !rebuild_all && !state.item.needs_accessibility {
+    if !rebuild_all && !item.state.needs_accessibility {
         return;
     }
 
-    if rebuild_all || state.item.request_accessibility {
+    if rebuild_all || item.state.request_accessibility {
         if global_state.trace.access {
             trace!(
                 "Building accessibility node for widget '{}' {}",
-                widget.item.short_type_name(),
+                item.widget.short_type_name(),
                 id,
             );
         }
 
         let mut ctx = AccessCtx {
             global_state,
-            widget_state: state.item,
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children.reborrow_mut(),
-            properties_children: properties.children.reborrow_mut(),
+            widget_state: item.state,
+            widget_state_children: children.state_children.reborrow_mut(),
+            widget_children: children.widget_children.reborrow_mut(),
+            properties_children: children.properties_children.reborrow_mut(),
             tree_update,
             rebuild_all,
         };
-        let mut node = build_access_node(&mut **widget.item, &mut ctx, scale_factor);
+        let mut node = build_access_node(&mut **item.widget, &mut ctx, scale_factor);
         let props = PropertiesRef {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
+            map: item.properties,
+            default_map: default_properties.for_widget(item.widget.type_id()),
         };
-        widget.item.accessibility(&mut ctx, &props, &mut node);
+        item.widget.accessibility(&mut ctx, &props, &mut node);
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {
@@ -61,32 +60,25 @@ fn build_accessibility_tree(
         ctx.tree_update.nodes.push((id, node));
     }
 
-    state.item.request_accessibility = false;
-    state.item.needs_accessibility = false;
+    item.state.request_accessibility = false;
+    item.state.needs_accessibility = false;
 
-    let id = state.item.id;
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            // TODO - We don't skip updating stashed items because doing so
-            // is error-prone. We may want to revisit that decision.
-            build_accessibility_tree(
-                global_state,
-                default_properties,
-                tree_update,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                rebuild_all,
-                None,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+    let id = item.state.id;
+    let parent_state = item.state;
+    crate::passes::recurse_on_children2(id, &**item.widget, children, |mut item, children| {
+        // TODO - We don't skip updating stashed items because doing so
+        // is error-prone. We may want to revisit that decision.
+        build_accessibility_tree(
+            global_state,
+            default_properties,
+            tree_update,
+            item.reborrow_mut(),
+            children,
+            rebuild_all,
+            None,
+        );
+        parent_state.merge_up(item.state);
+    });
 }
 
 // --- MARK: BUILD NODE
@@ -159,25 +151,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
             .into(),
     };
 
-    let (root_widget, root_state, root_properties) = {
-        let widget_id = root.root.id();
-        let widget = root
-            .widget_arena
-            .widgets
-            .find_mut(widget_id)
-            .expect("root_accessibility: root not in widget tree");
-        let state = root
-            .widget_arena
-            .states
-            .find_mut(widget_id)
-            .expect("root_accessibility: root state not in widget tree");
-        let properties = root
-            .widget_arena
-            .properties
-            .find_mut(widget_id)
-            .expect("root_accessibility: root properties not in widget tree");
-        (widget, state, properties)
-    };
+    let (root_item, root_children) = root.widget_arena.get_mut(root.root.id());
 
     if root.rebuild_access_tree {
         debug!("Running ACCESSIBILITY pass with rebuild_all");
@@ -186,9 +160,8 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         &mut root.global_state,
         &root.default_properties,
         &mut tree_update,
-        root_widget,
-        root_state,
-        root_properties,
+        root_item,
+        root_children,
         root.rebuild_access_tree,
         Some(scale_factor),
     );

@@ -4,15 +4,16 @@
 use std::collections::HashMap;
 
 use tracing::{info_span, trace};
-use tree_arena::ArenaMut;
 use vello::Scene;
 use vello::kurbo::{Affine, Rect};
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
-use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::{AnyMap, get_debug_color, stroke};
+use crate::core::{
+    DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaMut, WidgetId, WidgetItemMut,
+};
+use crate::passes::enter_span_if;
+use crate::util::{get_debug_color, stroke};
 
 // --- MARK: PAINT WIDGET
 fn paint_widget(
@@ -20,28 +21,27 @@ fn paint_widget(
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
+    item: WidgetItemMut<'_>,
+    mut children: WidgetArenaMut<'_>,
     debug_paint: bool,
 ) {
     let trace = global_state.trace.paint;
-    let _span = enter_span_if(trace, &**widget.item, state.item.id);
+    let _span = enter_span_if(trace, &**item.widget, item.state.id);
 
-    let id = state.item.id;
+    let id = item.state.id;
 
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
     let mut ctx = PaintCtx {
         global_state,
-        widget_state: state.item,
-        widget_state_children: state.children.reborrow_mut(),
-        widget_children: widget.children.reborrow_mut(),
+        widget_state: item.state,
+        widget_state_children: children.state_children.reborrow_mut(),
+        widget_children: children.widget_children.reborrow_mut(),
         debug_paint,
     };
     if ctx.widget_state.request_paint {
         if trace {
-            trace!("Painting widget '{}' {}", widget.item.short_type_name(), id);
+            trace!("Painting widget '{}' {}", item.widget.short_type_name(), id);
         }
 
         // TODO - Reserve scene
@@ -49,18 +49,18 @@ fn paint_widget(
         let scene = scenes.entry(id).or_default();
         scene.reset();
         let props = PropertiesRef {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
+            map: item.properties,
+            default_map: default_properties.for_widget(item.widget.type_id()),
         };
-        widget.item.paint(&mut ctx, &props, scene);
+        item.widget.paint(&mut ctx, &props, scene);
     }
 
-    state.item.request_paint = false;
-    state.item.needs_paint = false;
+    item.state.request_paint = false;
+    item.state.needs_paint = false;
 
-    let clip = state.item.clip_path;
+    let clip = item.state.clip_path;
     let has_clip = clip.is_some();
-    let transform = state.item.window_transform;
+    let transform = item.state.window_transform;
     let scene = scenes.get(&id).unwrap();
 
     if let Some(clip) = clip {
@@ -69,37 +69,30 @@ fn paint_widget(
 
     complete_scene.append(scene, Some(transform));
 
-    let id = state.item.id;
-    let bounding_rect = state.item.bounding_rect;
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            // TODO - We skip painting stashed items.
-            // This may lead to zombie flags in rare cases, we need to fix this.
-            if state.item.is_stashed {
-                return;
-            }
-            // TODO: We could skip painting children outside the parent clip path.
-            // There's a few things to consider if we do:
-            // - Some widgets can paint outside of their layout box.
-            // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
-            paint_widget(
-                global_state,
-                default_properties,
-                complete_scene,
-                scenes,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                debug_paint,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+    let id = item.state.id;
+    let bounding_rect = item.state.bounding_rect;
+    let parent_state = item.state;
+    crate::passes::recurse_on_children2(id, &**item.widget, children, |mut item, children| {
+        // TODO - We skip painting stashed items.
+        // This may lead to zombie flags in rare cases, we need to fix this.
+        if item.state.is_stashed {
+            return;
+        }
+        // TODO: We could skip painting children outside the parent clip path.
+        // There's a few things to consider if we do:
+        // - Some widgets can paint outside of their layout box.
+        // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
+        paint_widget(
+            global_state,
+            default_properties,
+            complete_scene,
+            scenes,
+            item.reborrow_mut(),
+            children,
+            debug_paint,
+        );
+        parent_state.merge_up(item.state);
+    });
 
     // draw the global axis aligned bounding rect of the widget
     if debug_paint {
@@ -123,25 +116,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
 
-    let (root_widget, root_state, root_properties) = {
-        let widget_id = root.root.id();
-        let widget = root
-            .widget_arena
-            .widgets
-            .find_mut(widget_id)
-            .expect("root_paint: root not in widget tree");
-        let state = root
-            .widget_arena
-            .states
-            .find_mut(widget_id)
-            .expect("root_paint: root state not in widget tree");
-        let properties = root
-            .widget_arena
-            .properties
-            .find_mut(widget_id)
-            .expect("root_paint: root properties not in widget tree");
-        (widget, state, properties)
-    };
+    let (root_item, root_children) = root.widget_arena.get_mut(root.root.id());
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
     // This should be removed once remove_child is exclusive to MutateCtx.
@@ -152,9 +127,8 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         &root.default_properties,
         &mut complete_scene,
         &mut scenes,
-        root_widget,
-        root_state,
-        root_properties,
+        root_item,
+        root_children,
         root.debug_paint,
     );
     root.global_state.scenes = scenes;

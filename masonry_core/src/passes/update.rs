@@ -192,7 +192,7 @@ fn update_widget_tree(
     // We can recurse on this widget's children, because they have already been added
     // to the arena above.
     let parent_state = item.state;
-    recurse_on_children2(id, &**item.widget, children, |mut item, children| {
+    crate::passes::recurse_on_children2(id, &**item.widget, children, |mut item, children| {
         update_widget_tree(
             global_state,
             default_properties,
