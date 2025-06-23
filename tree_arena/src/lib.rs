@@ -65,14 +65,17 @@
 //!
 //! [Masonry]: https://crates.io/crates/masonry
 
+#![cfg_attr(feature = "implement_both", allow(unused))]
+#![cfg_attr(feature = "implement_both", allow(unreachable_pub))]
+
 type NodeId = u64;
 
-#[cfg(not(feature = "safe_tree"))]
+#[cfg(any(feature = "implement_both", not(feature = "safe_tree")))]
 mod tree_arena_unsafe;
 #[cfg(not(feature = "safe_tree"))]
 pub use tree_arena_unsafe::*;
 
-#[cfg(feature = "safe_tree")]
+#[cfg(any(feature = "implement_both", feature = "safe_tree"))]
 mod tree_arena_safe;
 #[cfg(feature = "safe_tree")]
 pub use tree_arena_safe::*;

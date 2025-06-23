@@ -22,6 +22,9 @@ targets = []
 # The unsafe tree is not yet fully tested, and is not used by default.
 default = ["safe_tree"]
 safe_tree = []
+# This flag implements both versions but only exports one.
+# This is useful when developing the crate.
+implement_both = []
 
 [dependencies]
 hashbrown.workspace = true
