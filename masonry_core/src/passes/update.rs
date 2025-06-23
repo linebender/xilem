@@ -5,17 +5,15 @@ use std::collections::HashSet;
 
 use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
-use tree_arena::ArenaMut;
 use ui_events::pointer::PointerType;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
     DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetState,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaMut, WidgetId, WidgetItemMut,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
-use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
-use crate::util::AnyMap;
+use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children2};
 
 // --- MARK: HELPERS
 /// Returns the id path starting from the given widget id and ending at the root.
@@ -112,41 +110,38 @@ fn run_single_update_pass(
 fn update_widget_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    item: WidgetItemMut<'_>,
+    mut children: WidgetArenaMut<'_>,
 ) {
     let trace = global_state.trace.update_tree;
-    let _span = enter_span_if(trace, &**widget.item, state.item.id);
-    let id = state.item.id;
+    let _span = enter_span_if(trace, &**item.widget, item.state.id);
+    let id = item.state.id;
 
-    if !state.item.children_changed {
+    if !item.state.children_changed {
         return;
     }
-    state.item.children_changed = false;
+    item.state.children_changed = false;
 
     {
         let mut ctx = RegisterCtx {
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children.reborrow_mut(),
-            properties_children: properties.children.reborrow_mut(),
+            children: children.reborrow_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };
         // The widget will call `RegisterCtx::register_child` on all its children,
         // which will add the new widgets to the arena.
-        widget.item.register_children(&mut ctx);
+        item.widget.register_children(&mut ctx);
 
         #[cfg(debug_assertions)]
         {
-            let children_ids = widget.item.children_ids();
+            let children_ids = item.widget.children_ids();
             for child_id in ctx.registered_ids {
                 if !children_ids.contains(&child_id) {
                     panic!(
                         "Error in '{}' {}: method register_children() called \
                         RegisterCtx::register_child() on child {}, which isn't \
                         in the list returned by children_ids()",
-                        widget.item.short_type_name(),
+                        item.widget.short_type_name(),
                         id,
                         child_id
                     );
@@ -155,12 +150,12 @@ fn update_widget_tree(
         }
 
         #[cfg(debug_assertions)]
-        for child_id in widget.item.children_ids() {
-            if widget.children.item(child_id).is_none() {
+        for child_id in item.widget.children_ids() {
+            if children.widget_children.item(child_id).is_none() {
                 panic!(
                     "Error in '{}' {}: method register_children() did not call \
                     RegisterCtx::register_child() on child {} returned by children_ids()",
-                    widget.item.short_type_name(),
+                    item.widget.short_type_name(),
                     id,
                     child_id
                 );
@@ -168,52 +163,44 @@ fn update_widget_tree(
         }
     }
 
-    if state.item.is_new {
+    if item.state.is_new {
         let mut ctx = UpdateCtx {
             global_state,
-            widget_state: state.item,
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children.reborrow_mut(),
-            properties_children: properties.children.reborrow_mut(),
+            widget_state: item.state,
+            widget_state_children: children.state_children.reborrow_mut(),
+            widget_children: children.widget_children.reborrow_mut(),
+            properties_children: children.properties_children.reborrow_mut(),
         };
         let mut props = PropertiesMut {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
+            map: item.properties,
+            default_map: default_properties.for_widget(item.widget.type_id()),
         };
-        widget
-            .item
+        item.widget
             .update(&mut ctx, &mut props, &Update::WidgetAdded);
         if trace {
             trace!(
                 "{} received Update::WidgetAdded",
-                widget.item.short_type_name()
+                item.widget.short_type_name()
             );
         }
-        state.item.accepts_pointer_interaction = widget.item.accepts_pointer_interaction();
-        state.item.accepts_focus = widget.item.accepts_focus();
-        state.item.accepts_text_input = widget.item.accepts_text_input();
-        state.item.is_new = false;
+        item.state.accepts_pointer_interaction = item.widget.accepts_pointer_interaction();
+        item.state.accepts_focus = item.widget.accepts_focus();
+        item.state.accepts_text_input = item.widget.accepts_text_input();
+        item.state.is_new = false;
     }
 
     // We can recurse on this widget's children, because they have already been added
     // to the arena above.
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            update_widget_tree(
-                global_state,
-                default_properties,
-                widget,
-                state.reborrow_mut(),
-                properties,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+    let parent_state = item.state;
+    recurse_on_children2(id, &**item.widget, children, |mut item, children| {
+        update_widget_tree(
+            global_state,
+            default_properties,
+            item.reborrow_mut(),
+            children,
+        );
+        parent_state.merge_up(item.state);
+    });
 }
 
 /// See the [passes documentation](../doc/05_pass_system.md#update-tree-pass).
@@ -222,23 +209,19 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
     if root.root.incomplete() {
         let mut ctx = RegisterCtx {
-            widget_state_children: root.widget_arena.states.roots_mut(),
-            widget_children: root.widget_arena.widgets.roots_mut(),
-            properties_children: root.widget_arena.properties.roots_mut(),
+            children: root.widget_arena.roots_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };
         ctx.register_child(&mut root.root);
     }
 
-    let (root_widget, mut root_state, root_properties) =
-        root.widget_arena.get_all_mut(root.root.id());
+    let (root_item, root_children) = root.widget_arena.get_mut(root.root.id());
     update_widget_tree(
         &mut root.global_state,
         &root.default_properties,
-        root_widget,
-        root_state.reborrow_mut(),
-        root_properties,
+        root_item,
+        root_children,
     );
 }
 
@@ -250,60 +233,51 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    item: WidgetItemMut<'_>,
+    mut children: WidgetArenaMut<'_>,
     parent_disabled: bool,
 ) {
-    let _span = enter_span(&**widget.item, state.item.id);
-    let id = state.item.id;
+    let _span = enter_span(&**item.widget, item.state.id);
+    let id = item.state.id;
 
-    let disabled = state.item.is_explicitly_disabled || parent_disabled;
-    if !state.item.needs_update_disabled && disabled == state.item.is_disabled {
+    let disabled = item.state.is_explicitly_disabled || parent_disabled;
+    if !item.state.needs_update_disabled && disabled == item.state.is_disabled {
         return;
     }
 
-    if disabled != state.item.is_disabled {
+    if disabled != item.state.is_disabled {
         let mut ctx = UpdateCtx {
             global_state,
-            widget_state: state.item,
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children.reborrow_mut(),
-            properties_children: properties.children.reborrow_mut(),
+            widget_state: item.state,
+            widget_state_children: children.state_children.reborrow_mut(),
+            widget_children: children.widget_children.reborrow_mut(),
+            properties_children: children.properties_children.reborrow_mut(),
         };
         let mut props = PropertiesMut {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
+            map: item.properties,
+            default_map: default_properties.for_widget(item.widget.type_id()),
         };
-        widget
-            .item
+        item.widget
             .update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
-        state.item.is_disabled = disabled;
-        state.item.needs_update_focus_chain = true;
-        state.item.request_accessibility = true;
-        state.item.needs_accessibility = true;
+        item.state.is_disabled = disabled;
+        item.state.needs_update_focus_chain = true;
+        item.state.request_accessibility = true;
+        item.state.needs_accessibility = true;
     }
 
-    state.item.needs_update_disabled = false;
+    item.state.needs_update_disabled = false;
 
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            update_disabled_for_widget(
-                global_state,
-                default_properties,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                disabled,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+    let parent_state = item.state;
+    recurse_on_children2(id, &**item.widget, children, |mut item, children| {
+        update_disabled_for_widget(
+            global_state,
+            default_properties,
+            item.reborrow_mut(),
+            children,
+            disabled,
+        );
+        parent_state.merge_up(item.state);
+    });
 }
 
 pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
@@ -314,13 +288,12 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
         root.global_state.needs_pointer_pass = true;
     }
 
-    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
+    let (root_item, root_children) = root.widget_arena.get_mut(root.root.id());
     update_disabled_for_widget(
         &mut root.global_state,
         &root.default_properties,
-        root_widget,
-        root_state,
-        root_properties,
+        root_item,
+        root_children,
         false,
     );
 }
@@ -336,81 +309,71 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    item: WidgetItemMut<'_>,
+    mut children: WidgetArenaMut<'_>,
     parent_stashed: bool,
 ) {
-    let _span = enter_span(&**widget.item, state.item.id);
-    let id = state.item.id;
+    let _span = enter_span(&**item.widget, item.state.id);
+    let id = item.state.id;
 
-    let stashed = state.item.is_explicitly_stashed || parent_stashed;
-    if !state.item.needs_update_stashed && stashed == state.item.is_stashed {
+    let stashed = item.state.is_explicitly_stashed || parent_stashed;
+    if !item.state.needs_update_stashed && stashed == item.state.is_stashed {
         return;
     }
 
-    if stashed != state.item.is_stashed {
+    if stashed != item.state.is_stashed {
         let mut ctx = UpdateCtx {
             global_state,
-            widget_state: state.item,
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children.reborrow_mut(),
-            properties_children: properties.children.reborrow_mut(),
+            widget_state: item.state,
+            widget_state_children: children.state_children.reborrow_mut(),
+            widget_children: children.widget_children.reborrow_mut(),
+            properties_children: children.properties_children.reborrow_mut(),
         };
         let mut props = PropertiesMut {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
+            map: item.properties,
+            default_map: default_properties.for_widget(item.widget.type_id()),
         };
-        widget
-            .item
+        item.widget
             .update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
-        state.item.is_stashed = stashed;
-        state.item.needs_update_focus_chain = true;
+        item.state.is_stashed = stashed;
+        item.state.needs_update_focus_chain = true;
         // Note: We don't need request_repaint because stashing doesn't actually change
         // how widgets are painted, only how the Scenes they create are composed.
-        state.item.needs_paint = true;
-        state.item.needs_accessibility = true;
+        item.state.needs_paint = true;
+        item.state.needs_accessibility = true;
         // TODO - Remove once accessibility can be composed, same as above.
-        state.item.request_accessibility = true;
+        item.state.request_accessibility = true;
         // A stashed child doesn't need layout. We assumed that a child that just got
         // un-stashed will need relayout.
         // TODO - Handle this interaction more elegantly.
-        state.item.needs_layout = !stashed;
-        state.item.request_layout = !stashed;
+        item.state.needs_layout = !stashed;
+        item.state.request_layout = !stashed;
     }
 
-    state.item.needs_update_stashed = false;
+    item.state.needs_update_stashed = false;
 
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            update_stashed_for_widget(
-                global_state,
-                default_properties,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                stashed,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+    let parent_state = item.state;
+    recurse_on_children2(id, &**item.widget, children, |mut item, children| {
+        update_stashed_for_widget(
+            global_state,
+            default_properties,
+            item.reborrow_mut(),
+            children,
+            stashed,
+        );
+        parent_state.merge_up(item.state);
+    });
 }
 
 pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_stashed").entered();
 
-    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
+    let (root_item, root_children) = root.widget_arena.get_mut(root.root.id());
     update_stashed_for_widget(
         &mut root.global_state,
         &root.default_properties,
-        root_widget,
-        root_state,
-        root_properties,
+        root_item,
+        root_children,
         false,
     );
 }
@@ -429,70 +392,61 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
+    item: WidgetItemMut<'_>,
+    children: WidgetArenaMut<'_>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
-    let _span = enter_span(&**widget.item, state.item.id);
-    let id = state.item.id;
+    let _span = enter_span(&**item.widget, item.state.id);
+    let id = item.state.id;
 
     // Replace has_focused to check if the value changed in the meantime
-    state.item.has_focus_target = global_state.focused_widget == Some(id);
-    let had_focus = state.item.has_focus_target;
+    item.state.has_focus_target = global_state.focused_widget == Some(id);
+    let had_focus = item.state.has_focus_target;
 
-    if state.item.needs_update_focus_chain {
-        state.item.focus_chain.clear();
-        if state.item.accepts_focus {
-            state.item.focus_chain.push(id);
+    if item.state.needs_update_focus_chain {
+        item.state.focus_chain.clear();
+        if item.state.accepts_focus {
+            item.state.focus_chain.push(id);
         }
-        state.item.needs_update_focus_chain = false;
+        item.state.needs_update_focus_chain = false;
 
-        let parent_state = &mut *state.item;
-        recurse_on_children(
-            id,
-            widget.reborrow_mut(),
-            state.children,
-            properties.children,
-            |widget, mut state, properties| {
-                update_focus_chain_for_widget(
-                    global_state,
-                    default_properties,
-                    widget,
-                    state.reborrow_mut(),
-                    properties,
-                    &mut parent_state.focus_chain,
-                );
-                parent_state.merge_up(state.item);
-            },
-        );
+        let parent_state = &mut *item.state;
+        recurse_on_children2(id, &**item.widget, children, |mut item, children| {
+            update_focus_chain_for_widget(
+                global_state,
+                default_properties,
+                item.reborrow_mut(),
+                children,
+                &mut parent_state.focus_chain,
+            );
+            parent_state.merge_up(item.state);
+        });
     }
 
-    if !state.item.is_disabled {
-        parent_focus_chain.extend(&state.item.focus_chain);
+    if !item.state.is_disabled {
+        parent_focus_chain.extend(&item.state.focus_chain);
     }
 
     // had_focus is the old focus value. state.has_focused was replaced with parent_ctx.is_focused().
     // Therefore if had_focus is true but state.has_focused is false then the widget which is
     // currently focused is not part of the functional tree anymore and should resign the focus.
-    if had_focus && !state.item.has_focus_target {
+    if had_focus && !item.state.has_focus_target {
         // Not sure about this logic, might remove
         global_state.next_focused_widget = None;
     }
-    state.item.has_focus_target = had_focus;
+    item.state.has_focus_target = had_focus;
 }
 
 pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus_chain").entered();
     let mut dummy_focus_chain = Vec::new();
 
-    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
+    let (root_item, root_children) = root.widget_arena.get_mut(root.root.id());
     update_focus_chain_for_widget(
         &mut root.global_state,
         &root.default_properties,
-        root_widget,
-        root_state,
-        root_properties,
+        root_item,
+        root_children,
         &mut dummy_focus_chain,
     );
 }

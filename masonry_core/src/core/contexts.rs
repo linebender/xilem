@@ -15,8 +15,8 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties,
-    FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState,
+    FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaMut, WidgetId,
+    WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::layout::run_layout_on;
@@ -84,9 +84,7 @@ pub struct EventCtx<'a> {
 
 /// A context provided to the [`Widget::register_children`] method.
 pub struct RegisterCtx<'a> {
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaMut<'a>,
     #[cfg(debug_assertions)]
     pub(crate) registered_ids: Vec<WidgetId>,
 }
@@ -1275,9 +1273,11 @@ impl RegisterCtx<'_> {
         let id = child.id();
         let state = WidgetState::new(child.id(), widget.short_type_name(), options);
 
-        self.widget_children.insert(id, widget.as_box_dyn());
-        self.widget_state_children.insert(id, state);
-        self.properties_children.insert(id, properties.map);
+        self.children
+            .widget_children
+            .insert(id, widget.as_box_dyn());
+        self.children.state_children.insert(id, state);
+        self.children.properties_children.insert(id, properties.map);
     }
 }
 

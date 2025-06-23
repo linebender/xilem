@@ -10,7 +10,9 @@
 use tracing::span::EnteredSpan;
 use tree_arena::{ArenaMut, ArenaMutList};
 
-use crate::core::{Widget, WidgetArena, WidgetId, WidgetState};
+use crate::core::{
+    Widget, WidgetArena, WidgetArenaMut, WidgetItemMut, WidgetId, WidgetState,
+};
 use crate::util::AnyMap;
 
 pub(crate) mod accessibility;
@@ -75,6 +77,27 @@ pub(crate) fn recurse_on_children(
         });
 
         callback(widget, state, properties);
+    }
+}
+
+pub(crate) fn recurse_on_children2(
+    id: WidgetId,
+    widget: &dyn Widget,
+    mut children: WidgetArenaMut<'_>,
+    mut callback: impl FnMut(WidgetItemMut<'_>, WidgetArenaMut<'_>),
+) {
+    let parent_name = widget.short_type_name();
+    let parent_id = id;
+
+    for child_id in widget.children_ids() {
+        let Some(child) = children.child_mut(child_id) else {
+            panic!(
+                "Error in '{}' {}: cannot find child {} returned by children_ids()",
+                parent_name, parent_id, child_id
+            );
+        };
+
+        callback(child.0, child.1);
     }
 }
 

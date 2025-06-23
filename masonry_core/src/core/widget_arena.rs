@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use tree_arena::{ArenaMut, ArenaRef, TreeArena};
+use tree_arena::{ArenaMut, ArenaMutList, ArenaRef, TreeArena};
 
 use crate::core::{Widget, WidgetId, WidgetState};
 use crate::util::AnyMap;
@@ -12,7 +12,54 @@ pub(crate) struct WidgetArena {
     pub(crate) properties: TreeArena<AnyMap>,
 }
 
+pub(crate) struct WidgetItemMut<'a> {
+    pub(crate) widget: &'a mut Box<dyn Widget>,
+    pub(crate) state: &'a mut WidgetState,
+    pub(crate) properties: &'a mut AnyMap,
+}
+
+pub(crate) struct WidgetArenaMut<'a> {
+    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) state_children: ArenaMutList<'a, WidgetState>,
+    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+}
+
 impl WidgetArena {
+    pub(crate) fn roots_mut(&mut self) -> WidgetArenaMut<'_> {
+        WidgetArenaMut {
+            state_children: self.states.roots_mut(),
+            widget_children: self.widgets.roots_mut(),
+            properties_children: self.properties.roots_mut(),
+        }
+    }
+
+    pub(crate) fn get_mut(&mut self, id: WidgetId) -> (WidgetItemMut<'_>, WidgetArenaMut<'_>) {
+        let widget = self
+            .widgets
+            .find_mut(id)
+            .expect("get_mut: widget not in widget tree");
+        let widget_state = self
+            .states
+            .find_mut(id)
+            .expect("get_mut: widget state not in widget tree");
+        let properties = self
+            .properties
+            .find_mut(id)
+            .expect("get_mut: widget properties not in widget tree");
+        (
+            WidgetItemMut {
+                widget: widget.item,
+                state: widget_state.item,
+                properties: properties.item,
+            },
+            WidgetArenaMut {
+                widget_children: widget.children,
+                state_children: widget_state.children,
+                properties_children: properties.children,
+            },
+        )
+    }
+
     pub(crate) fn has(&self, widget_id: WidgetId) -> bool {
         self.widgets.find(widget_id).is_some()
     }
@@ -104,5 +151,47 @@ impl WidgetArena {
         self.states
             .find_mut(widget_id)
             .expect("get_state_mut: widget state not in widget tree")
+    }
+}
+
+impl WidgetArenaMut<'_> {
+    pub(crate) fn child_mut<'c>(
+        &'c mut self,
+        child_id: WidgetId,
+    ) -> Option<(WidgetItemMut<'c>, WidgetArenaMut<'c>)> {
+        let widget = self.widget_children.item_mut(child_id)?;
+        let state = self.state_children.item_mut(child_id)?;
+        let properties = self.properties_children.item_mut(child_id)?;
+
+        Some((
+            WidgetItemMut {
+                widget: widget.item,
+                state: state.item,
+                properties: properties.item,
+            },
+            WidgetArenaMut {
+                widget_children: widget.children,
+                state_children: state.children,
+                properties_children: properties.children,
+            },
+        ))
+    }
+
+    pub(crate) fn reborrow_mut(&mut self) -> WidgetArenaMut<'_> {
+        WidgetArenaMut {
+            widget_children: self.widget_children.reborrow_mut(),
+            state_children: self.state_children.reborrow_mut(),
+            properties_children: self.properties_children.reborrow_mut(),
+        }
+    }
+}
+
+impl WidgetItemMut<'_> {
+    pub(crate) fn reborrow_mut(&mut self) -> WidgetItemMut<'_> {
+        WidgetItemMut {
+            widget: &mut *self.widget,
+            state: &mut *self.state,
+            properties: &mut *self.properties,
+        }
     }
 }
