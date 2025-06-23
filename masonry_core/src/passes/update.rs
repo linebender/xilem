@@ -117,14 +117,7 @@ fn update_widget_tree(
     mut properties: ArenaMut<'_, AnyMap>,
 ) {
     let trace = global_state.trace.update_tree;
-    let _span = enter_span_if(
-        trace,
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span_if(trace, &**widget.item, state.item.id);
     let id = state.item.id;
 
     if !state.item.children_changed {
@@ -262,13 +255,7 @@ fn update_disabled_for_widget(
     mut properties: ArenaMut<'_, AnyMap>,
     parent_disabled: bool,
 ) {
-    let _span = enter_span(
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span(&**widget.item, state.item.id);
     let id = state.item.id;
 
     let disabled = state.item.is_explicitly_disabled || parent_disabled;
@@ -354,13 +341,7 @@ fn update_stashed_for_widget(
     mut properties: ArenaMut<'_, AnyMap>,
     parent_stashed: bool,
 ) {
-    let _span = enter_span(
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span(&**widget.item, state.item.id);
     let id = state.item.id;
 
     let stashed = state.item.is_explicitly_stashed || parent_stashed;
@@ -449,17 +430,11 @@ fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    state: ArenaMut<'_, WidgetState>,
+    properties: ArenaMut<'_, AnyMap>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
-    let _span = enter_span(
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span(&**widget.item, state.item.id);
     let id = state.item.id;
 
     // Replace has_focused to check if the value changed in the meantime

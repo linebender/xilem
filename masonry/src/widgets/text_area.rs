@@ -968,8 +968,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Textbox", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Textbox", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

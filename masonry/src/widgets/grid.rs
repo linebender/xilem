@@ -11,7 +11,7 @@ use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, 
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::debug_panic;
@@ -388,8 +388,8 @@ impl Widget for Grid {
             .collect()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Grid", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Grid", id = id.trace())
     }
 }
 

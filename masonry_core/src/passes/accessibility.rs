@@ -22,14 +22,7 @@ fn build_accessibility_tree(
     rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {
-    let _span = enter_span_if(
-        global_state.trace.access,
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span_if(global_state.trace.access, &**widget.item, state.item.id);
     let id = state.item.id;
 
     if !rebuild_all && !state.item.needs_accessibility {

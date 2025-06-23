@@ -8,7 +8,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, 
     RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 
@@ -372,8 +372,8 @@ impl Widget for ZStack {
     ) {
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
-        trace_span!("ZStack", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> tracing::Span {
+        trace_span!("ZStack", id = id.trace())
     }
 }
 

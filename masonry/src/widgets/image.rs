@@ -13,7 +13,7 @@ use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, ObjectFit, PaintCtx, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+     RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -143,8 +143,8 @@ impl Widget for Image {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Image", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Image", id = id.trace())
     }
 }
 

@@ -16,18 +16,11 @@ fn compose_widget(
     default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    properties: ArenaMut<'_, AnyMap>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {
-    let _span = enter_span_if(
-        global_state.trace.compose,
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span_if(global_state.trace.compose, &**widget.item, state.item.id);
 
     let transformed = parent_transformed || state.item.transform_changed;
 

@@ -8,12 +8,9 @@
 //! This file includes utility functions used by multiple passes.
 
 use tracing::span::EnteredSpan;
-use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
+use tree_arena::{ArenaMut, ArenaMutList};
 
-use crate::app::RenderRootState;
-use crate::core::{
-    DefaultProperties, PropertiesRef, QueryCtx, Widget, WidgetArena, WidgetId, WidgetState,
-};
+use crate::core::{Widget, WidgetArena, WidgetId, WidgetState};
 use crate::util::AnyMap;
 
 pub(crate) mod accessibility;
@@ -28,47 +25,19 @@ pub(crate) mod update;
 #[must_use = "Span will be immediately closed if dropped"]
 pub(crate) fn enter_span_if(
     enabled: bool,
-    global_state: &RenderRootState,
-    default_properties: &DefaultProperties,
-    widget: ArenaRef<'_, Box<dyn Widget>>,
-    state: ArenaRef<'_, WidgetState>,
-    properties: ArenaRef<'_, AnyMap>,
+    widget: &dyn Widget,
+    id: WidgetId,
 ) -> Option<EnteredSpan> {
     if enabled {
-        Some(enter_span(
-            global_state,
-            default_properties,
-            widget,
-            state,
-            properties,
-        ))
+        Some(enter_span(widget, id))
     } else {
         None
     }
 }
 
 #[must_use = "Span will be immediately closed if dropped"]
-pub(crate) fn enter_span(
-    global_state: &RenderRootState,
-    default_properties: &DefaultProperties,
-    widget: ArenaRef<'_, Box<dyn Widget>>,
-    state: ArenaRef<'_, WidgetState>,
-    properties: ArenaRef<'_, AnyMap>,
-) -> EnteredSpan {
-    let ctx = QueryCtx {
-        global_state,
-        widget_state: state.item,
-        widget_state_children: state.children,
-        widget_children: widget.children,
-        properties: PropertiesRef {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
-        },
-        properties_children: properties.children,
-    };
-    // TODO - Should `make_trace_span` take QueryCtx?
-    // Building it adds a lot of boilerplate to this function.
-    widget.item.make_trace_span(&ctx).entered()
+pub(crate) fn enter_span(widget: &dyn Widget, id: WidgetId) -> EnteredSpan {
+    widget.make_trace_span(id).entered()
 }
 
 pub(crate) fn recurse_on_children(

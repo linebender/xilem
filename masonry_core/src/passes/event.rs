@@ -88,17 +88,10 @@ fn run_event_pass<E>(
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
-        let (mut widget_mut, mut state_mut, mut properties_mut) =
-            root.widget_arena.get_all_mut(widget_id);
+        let (widget_mut, state_mut, mut properties_mut) = root.widget_arena.get_all_mut(widget_id);
 
         if !is_handled {
-            let _span = enter_span(
-                &root.global_state,
-                &root.default_properties,
-                widget_mut.reborrow(),
-                state_mut.reborrow(),
-                properties_mut.reborrow(),
-            );
+            let _span = enter_span(&**widget_mut.item, state_mut.item.id);
             let mut ctx = EventCtx {
                 global_state: &mut root.global_state,
                 widget_state: state_mut.item,

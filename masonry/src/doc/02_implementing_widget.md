@@ -248,8 +248,8 @@ use tracing::{trace_span, Span};
 impl Widget for ColorRectangle {
     // ...
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("ColorRectangle", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("ColorRectangle", id = id.trace())
     }
 
     // ...

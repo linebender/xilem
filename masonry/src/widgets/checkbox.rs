@@ -13,7 +13,7 @@ use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    PointerEvent, PropertiesMut, PropertiesRef,  RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
@@ -276,8 +276,8 @@ impl Widget for Checkbox {
         smallvec![self.label.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Checkbox", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Checkbox", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

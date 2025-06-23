@@ -9,7 +9,7 @@ use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    PropertiesMut, PropertiesRef,  RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::TextArea;
@@ -172,8 +172,8 @@ impl Widget for Prose {
         smallvec![self.text.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Prose", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Prose", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

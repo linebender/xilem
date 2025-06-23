@@ -13,7 +13,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, 
     RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
@@ -310,8 +310,8 @@ impl Widget for SizedBox {
         }
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("SizedBox", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("SizedBox", id = id.trace())
     }
 }
 

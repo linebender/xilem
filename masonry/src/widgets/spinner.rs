@@ -12,7 +12,7 @@ use vello::Scene;
 use vello::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, 
     RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::peniko::Color;
@@ -154,8 +154,8 @@ impl Widget for Spinner {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Spinner", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Spinner", id = id.trace())
     }
 }
 

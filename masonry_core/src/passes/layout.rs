@@ -29,14 +29,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     let mut properties = parent_ctx.properties_children.item_mut(id).unwrap();
 
     let trace = parent_ctx.global_state.trace.layout;
-    let _span = enter_span_if(
-        trace,
-        parent_ctx.global_state,
-        parent_ctx.default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span_if(trace, &**widget.item, state.item.id);
 
     let mut children_ids = SmallVec::new();
     if cfg!(debug_assertions) {
