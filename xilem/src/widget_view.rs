@@ -5,7 +5,6 @@ use masonry::kurbo::Affine;
 
 use masonry::core::{FromDynWidget, Widget};
 
-use crate::any_view::DynWidget;
 use crate::core::{View, ViewSequence};
 use crate::view::{Transformed, transformed};
 use crate::{AnyWidgetView, Pod, ViewCtx};
@@ -72,11 +71,11 @@ where
 /// }
 /// ```
 pub trait WidgetViewSequence<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, Pod<DynWidget>>
+    ViewSequence<State, Action, ViewCtx, Pod<dyn Widget>>
 {
 }
 
 impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, Pod<DynWidget>>
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<dyn Widget>>
 {
 }
