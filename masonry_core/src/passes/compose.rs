@@ -37,8 +37,7 @@ fn compose_widget(
     let mut ctx = ComposeCtx {
         global_state,
         widget_state: item.state,
-        widget_state_children: children.state_children.reborrow_mut(),
-        widget_children: children.widget_children.reborrow_mut(),
+        children: children.reborrow_mut(),
     };
     if ctx.widget_state.request_compose {
         item.widget.compose(&mut ctx);

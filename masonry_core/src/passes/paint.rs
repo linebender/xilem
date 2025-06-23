@@ -22,7 +22,7 @@ fn paint_widget(
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
     item: WidgetItemMut<'_>,
-    mut children: WidgetArenaMut<'_>,
+    children: WidgetArenaMut<'_>,
     debug_paint: bool,
 ) {
     let trace = global_state.trace.paint;
@@ -35,8 +35,6 @@ fn paint_widget(
     let mut ctx = PaintCtx {
         global_state,
         widget_state: item.state,
-        widget_state_children: children.state_children.reborrow_mut(),
-        widget_children: children.widget_children.reborrow_mut(),
         debug_paint,
     };
     if ctx.widget_state.request_paint {

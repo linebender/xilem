@@ -12,27 +12,23 @@ pub(crate) fn mutate_widget<R>(
     id: WidgetId,
     mutate_fn: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
 ) -> R {
-    let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(id);
+    let (item, children) = root.widget_arena.get_mut(root.root.id());
 
-    let _span = info_span!("mutate_widget", name = widget_mut.item.short_type_name()).entered();
+    let _span = info_span!("mutate_widget", name = item.widget.short_type_name()).entered();
     // NOTE - we can set parent_widget_state to None here, because the loop below will merge the
     // states up to the root.
     let root_widget = WidgetMut {
         ctx: MutateCtx {
             global_state: &mut root.global_state,
             parent_widget_state: None,
-            widget_state: state_mut.item,
-            widget_state_children: state_mut.children,
-            widget_children: widget_mut.children,
+            widget_state: item.state,
             properties: PropertiesMut {
-                map: properties_mut.item,
-                default_map: root
-                    .default_properties
-                    .for_widget(widget_mut.item.type_id()),
+                map: item.properties,
+                default_map: root.default_properties.for_widget(item.widget.type_id()),
             },
-            properties_children: properties_mut.children,
+            children,
         },
-        widget: &mut **widget_mut.item,
+        widget: &mut **item.widget,
     };
 
     let result = mutate_fn(root_widget);

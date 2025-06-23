@@ -13,7 +13,7 @@ use vello::kurbo::{Point, Rect, Size};
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
 use crate::debug_panic;
-use crate::passes::{enter_span_if, recurse_on_children};
+use crate::passes::{enter_span_if, recurse_on_children2};
 
 // --- MARK: RUN LAYOUT
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
@@ -24,21 +24,19 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     bc: &BoxConstraints,
 ) -> Size {
     let id = pod.id();
-    let mut widget = parent_ctx.widget_children.item_mut(id).unwrap();
-    let mut state = parent_ctx.widget_state_children.item_mut(id).unwrap();
-    let mut properties = parent_ctx.properties_children.item_mut(id).unwrap();
+    let (item, mut children) = parent_ctx.children.child_mut(id).unwrap();
 
     let trace = parent_ctx.global_state.trace.layout;
-    let _span = enter_span_if(trace, &**widget.item, state.item.id);
+    let _span = enter_span_if(trace, &**item.widget, item.state.id);
 
     let mut children_ids = SmallVec::new();
     if cfg!(debug_assertions) {
-        children_ids = widget.item.children_ids();
+        children_ids = item.widget.children_ids();
 
         // We forcefully set request_layout to true for all children.
         // This is used below to check that widget.layout(..) visited all of them.
-        for child_id in widget.item.children_ids() {
-            let child_state = state.children.item_mut(child_id).unwrap().item;
+        for child_id in item.widget.children_ids() {
+            let child_state = children.state_children.item_mut(child_id).unwrap().item;
             if !child_state.is_stashed {
                 child_state.request_layout = true;
             }
@@ -51,53 +49,50 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     // Note that, because this check exits before recursing, run_layout can only ever be
     // reached for a widget whose parent is not stashed, which means is_explicitly_stashed
     // being false is sufficient to know the widget is non-stashed.
-    if state.item.is_explicitly_stashed {
+    if item.state.is_explicitly_stashed {
         debug_panic!(
             "Error in '{}' {}: trying to compute layout of stashed widget.",
-            widget.item.short_type_name(),
+            item.widget.short_type_name(),
             pod.id(),
         );
-        state.item.size = Size::ZERO;
+        item.state.size = Size::ZERO;
         return Size::ZERO;
     }
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
-    state.item.needs_paint = true;
-    state.item.needs_compose = true;
-    state.item.needs_accessibility = true;
-    state.item.request_paint = true;
-    state.item.request_compose = true;
-    state.item.request_accessibility = true;
+    item.state.needs_paint = true;
+    item.state.needs_compose = true;
+    item.state.needs_accessibility = true;
+    item.state.request_paint = true;
+    item.state.request_compose = true;
+    item.state.request_accessibility = true;
 
-    bc.debug_check(widget.item.short_type_name());
+    bc.debug_check(item.widget.short_type_name());
     if trace {
         trace!("Computing layout with constraints {:?}", bc);
     }
 
-    state.item.local_paint_rect = Rect::ZERO;
+    item.state.local_paint_rect = Rect::ZERO;
 
     // TODO - Handle more elegantly
     // We suppress need_layout and request_layout for stashed children
     // to avoid unnecessary relayouts in corner cases.
-    recurse_on_children(
+    recurse_on_children2(
         pod.id(),
-        widget.reborrow_mut(),
-        state.children.reborrow_mut(),
-        properties.children.reborrow_mut(),
-        |_, state, _| {
-            if state.item.is_stashed {
-                state.item.needs_layout = false;
-                state.item.request_layout = false;
+        &**item.widget,
+        children.reborrow_mut(),
+        |item, _| {
+            if item.state.is_stashed {
+                item.state.needs_layout = false;
+                item.state.request_layout = false;
             }
         },
     );
 
     let new_size = {
         let mut inner_ctx = LayoutCtx {
-            widget_state: state.item,
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children,
-            properties_children: properties.children.reborrow_mut(),
+            widget_state: item.state,
+            children: children.reborrow_mut(),
             default_properties: parent_ctx.default_properties,
             global_state: parent_ctx.global_state,
         };
@@ -106,40 +101,40 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         // skip calling layout
         inner_ctx.widget_state.request_layout = false;
         let mut props = PropertiesMut {
-            map: properties.item,
+            map: item.properties,
             default_map: parent_ctx
                 .default_properties
-                .for_widget(widget.item.type_id()),
+                .for_widget(item.widget.type_id()),
         };
-        widget.item.layout(&mut inner_ctx, &mut props, bc)
+        item.widget.layout(&mut inner_ctx, &mut props, bc)
     };
-    if state.item.request_layout {
+    if item.state.request_layout {
         debug_panic!(
             "Error in '{}' {}: layout request flag was set during layout pass",
-            widget.item.short_type_name(),
+            item.widget.short_type_name(),
             pod.id(),
         );
     }
     if trace {
         trace!(
             "Computed layout: size={}, baseline={}, insets={:?}",
-            new_size, state.item.baseline_offset, state.item.paint_insets,
+            new_size, item.state.baseline_offset, item.state.paint_insets,
         );
     }
 
-    state.item.needs_layout = false;
-    state.item.is_expecting_place_child_call = true;
+    item.state.needs_layout = false;
+    item.state.is_expecting_place_child_call = true;
 
-    state.item.local_paint_rect = state
-        .item
+    item.state.local_paint_rect = item
+        .state
         .local_paint_rect
-        .union(new_size.to_rect() + state.item.paint_insets);
+        .union(new_size.to_rect() + item.state.paint_insets);
 
     #[cfg(debug_assertions)]
     {
-        let name = widget.item.short_type_name();
-        for child_id in widget.item.children_ids() {
-            let child_state = state.children.item_mut(child_id).unwrap().item;
+        let name = item.widget.short_type_name();
+        for child_id in item.widget.children_ids() {
+            let child_state = children.state_children.item_mut(child_id).unwrap().item;
 
             if child_state.is_stashed {
                 continue;
@@ -166,8 +161,8 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
             }
         }
 
-        let new_children_ids = widget.item.children_ids();
-        if children_ids != new_children_ids && !state.item.children_changed {
+        let new_children_ids = item.widget.children_ids();
+        if children_ids != new_children_ids && !item.state.children_changed {
             debug_panic!(
                 "Error in '{}' {}: children changed during layout pass",
                 name,
@@ -185,7 +180,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         }
     }
 
-    let state_mut = parent_ctx.widget_state_children.item_mut(id).unwrap();
+    let state_mut = parent_ctx.children.state_children.item_mut(id).unwrap();
     parent_ctx.widget_state.merge_up(state_mut.item);
     state_mut.item.size = new_size;
     new_size
@@ -208,16 +203,10 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     };
 
     let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-    let root_state_token = root.widget_arena.states.roots_mut();
-    let root_widget_token = root.widget_arena.widgets.roots_mut();
-    let root_properties_token = root.widget_arena.properties.roots_mut();
-
     let mut ctx = LayoutCtx {
         global_state: &mut root.global_state,
         widget_state: &mut dummy_state,
-        widget_state_children: root_state_token,
-        widget_children: root_widget_token,
-        properties_children: root_properties_token,
+        children: root.widget_arena.roots_mut(),
         default_properties: &root.default_properties,
     };
 

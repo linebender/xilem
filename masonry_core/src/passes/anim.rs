@@ -29,9 +29,7 @@ fn update_anim_for_widget(
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: item.state,
-            widget_state_children: children.state_children.reborrow_mut(),
-            widget_children: children.widget_children.reborrow_mut(),
-            properties_children: children.properties_children.reborrow_mut(),
+            children: children.reborrow_mut(),
         };
         let mut props = PropertiesMut {
             map: item.properties,

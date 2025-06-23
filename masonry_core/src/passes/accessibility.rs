@@ -40,9 +40,7 @@ fn build_accessibility_tree(
         let mut ctx = AccessCtx {
             global_state,
             widget_state: item.state,
-            widget_state_children: children.state_children.reborrow_mut(),
-            widget_children: children.widget_children.reborrow_mut(),
-            properties_children: children.properties_children.reborrow_mut(),
+            children: children.reborrow_mut(),
             tree_update,
             rebuild_all,
         };

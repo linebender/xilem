@@ -49,18 +49,17 @@ fn run_targeted_update_pass(
     let mut current_id = target;
     while let Some(widget_id) = current_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
-        let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(widget_id);
 
-        let widget = &mut **widget_mut.item;
+        let (item, children) = root.widget_arena.get_mut(widget_id);
+
+        let widget = &mut **item.widget;
         let mut ctx = UpdateCtx {
             global_state: &mut root.global_state,
-            widget_state: state_mut.item,
-            widget_state_children: state_mut.children,
-            widget_children: widget_mut.children,
-            properties_children: properties_mut.children,
+            widget_state: item.state,
+            children,
         };
         let mut props = PropertiesMut {
-            map: properties_mut.item,
+            map: item.properties,
             default_map: root.default_properties.for_widget(widget.type_id()),
         };
         pass_fn(widget, &mut ctx, &mut props);
@@ -82,22 +81,18 @@ fn run_single_update_pass(
         return;
     }
 
-    let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(target);
+    let (item, children) = root.widget_arena.get_mut(target);
 
     let mut ctx = UpdateCtx {
         global_state: &mut root.global_state,
-        widget_state: state_mut.item,
-        widget_state_children: state_mut.children,
-        widget_children: widget_mut.children,
-        properties_children: properties_mut.children,
+        widget_state: item.state,
+        children,
     };
     let mut props = PropertiesMut {
-        map: properties_mut.item,
-        default_map: root
-            .default_properties
-            .for_widget(widget_mut.item.type_id()),
+        map: item.properties,
+        default_map: root.default_properties.for_widget(item.widget.type_id()),
     };
-    pass_fn(&mut **widget_mut.item, &mut ctx, &mut props);
+    pass_fn(&mut **item.widget, &mut ctx, &mut props);
 
     let mut current_id = Some(target);
     while let Some(widget_id) = current_id {
@@ -167,9 +162,7 @@ fn update_widget_tree(
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: item.state,
-            widget_state_children: children.state_children.reborrow_mut(),
-            widget_children: children.widget_children.reborrow_mut(),
-            properties_children: children.properties_children.reborrow_mut(),
+            children: children.reborrow_mut(),
         };
         let mut props = PropertiesMut {
             map: item.properties,
@@ -249,9 +242,7 @@ fn update_disabled_for_widget(
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: item.state,
-            widget_state_children: children.state_children.reborrow_mut(),
-            widget_children: children.widget_children.reborrow_mut(),
-            properties_children: children.properties_children.reborrow_mut(),
+            children: children.reborrow_mut(),
         };
         let mut props = PropertiesMut {
             map: item.properties,
@@ -325,9 +316,7 @@ fn update_stashed_for_widget(
         let mut ctx = UpdateCtx {
             global_state,
             widget_state: item.state,
-            widget_state_children: children.state_children.reborrow_mut(),
-            widget_children: children.widget_children.reborrow_mut(),
-            properties_children: children.properties_children.reborrow_mut(),
+            children: children.reborrow_mut(),
         };
         let mut props = PropertiesMut {
             map: item.properties,

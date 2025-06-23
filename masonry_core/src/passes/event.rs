@@ -88,21 +88,20 @@ fn run_event_pass<E>(
     let mut is_handled = false;
     while let Some(widget_id) = target_widget_id {
         let parent_id = root.widget_arena.parent_of(widget_id);
-        let (widget_mut, state_mut, mut properties_mut) = root.widget_arena.get_all_mut(widget_id);
+
+        let (item, children) = root.widget_arena.get_mut(widget_id);
 
         if !is_handled {
-            let _span = enter_span(&**widget_mut.item, state_mut.item.id);
+            let _span = enter_span(&**item.widget, item.state.id);
             let mut ctx = EventCtx {
                 global_state: &mut root.global_state,
-                widget_state: state_mut.item,
-                widget_state_children: state_mut.children,
-                widget_children: widget_mut.children,
-                properties_children: properties_mut.children.reborrow_mut(),
+                widget_state: item.state,
+                children,
                 target: original_target.unwrap(),
                 allow_pointer_capture,
                 is_handled: false,
             };
-            let widget = widget_mut.item;
+            let widget = item.widget;
             if trace {
                 trace!(
                     "Widget '{}' {} visited",
@@ -112,7 +111,7 @@ fn run_event_pass<E>(
             }
 
             let mut props = PropertiesMut {
-                map: properties_mut.item,
+                map: item.properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
             };
             pass_fn(&mut **widget, &mut ctx, &mut props, event);
