@@ -42,6 +42,32 @@ impl Property for HoveredBorderColor {
     }
 }
 
+/// The color of a widget's border when the user is clicking or otherwise using it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ActiveBorderColor(pub BorderColor);
+
+impl Property for ActiveBorderColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: ActiveBorderColor = ActiveBorderColor(BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        });
+        &DEFAULT
+    }
+}
+
+/// The color of a widget's border when disabled.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct DisabledBorderColor(pub BorderColor);
+
+impl Property for DisabledBorderColor {
+    fn static_default() -> &'static Self {
+        static DEFAULT: DisabledBorderColor = DisabledBorderColor(BorderColor {
+            color: AlphaColor::TRANSPARENT,
+        });
+        &DEFAULT
+    }
+}
+
 // ---
 
 // TODO - The default border color in CSS is `currentcolor`,
@@ -73,6 +99,42 @@ impl Default for HoveredBorderColor {
 }
 
 impl HoveredBorderColor {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_paint_only();
+    }
+}
+
+// ---
+
+impl Default for ActiveBorderColor {
+    fn default() -> Self {
+        *Self::static_default()
+    }
+}
+
+impl ActiveBorderColor {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_paint_only();
+    }
+}
+
+// ---
+
+impl Default for DisabledBorderColor {
+    fn default() -> Self {
+        *Self::static_default()
+    }
+}
+
+impl DisabledBorderColor {
     /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
     pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         if property_type != TypeId::of::<Self>() {

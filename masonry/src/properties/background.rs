@@ -20,6 +20,10 @@ pub enum Background {
     Gradient(Gradient),
 }
 
+/// The background color/gradient a widget takes when hovered by a pointer.
+#[derive(Clone, Debug, PartialEq)]
+pub struct HoveredBackground(pub Background);
+
 /// The background color/gradient a widget takes when the user is clicking or otherwise using it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ActiveBackground(pub Background);
@@ -65,6 +69,33 @@ impl Background {
             Self::Color(color) => (*color).into(),
             Self::Gradient(gradient) => gradient.get_peniko_gradient_for_rect(rect).into(),
         }
+    }
+}
+
+// ---
+
+impl Property for HoveredBackground {
+    fn static_default() -> &'static Self {
+        // This matches the CSS default.
+        const DEFAULT: HoveredBackground =
+            HoveredBackground(Background::Color(AlphaColor::TRANSPARENT));
+        &DEFAULT
+    }
+}
+
+impl Default for HoveredBackground {
+    fn default() -> Self {
+        Self::static_default().clone()
+    }
+}
+
+impl HoveredBackground {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_paint_only();
     }
 }
 
