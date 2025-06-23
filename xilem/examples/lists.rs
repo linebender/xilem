@@ -1,11 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Displaying a variable length list of widgets is trivially done using any kind of Seq
+//! Displaying a variable length list of widgets is trivially done using any kind of FlexSequence
 
-use masonry::widgets::MainAxisAlignment;
 use winit::error::EventLoopError;
-use xilem::view::{Axis, button, flex, prose};
+use xilem::view::{Axis, MainAxisAlignment, button, flex, prose};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 #[derive(Default)]
@@ -14,6 +13,9 @@ struct AppState {
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
+    // Here's the magic
+    // Creating a list of widgets can be as easy as using a flex(some_vec)
+    // with the alignment described using the flex(...) widget.
     let list = (0..state.count)
         .map(|n| prose(format!("item #{}", n)))
         .collect::<Vec<_>>();
