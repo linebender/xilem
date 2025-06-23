@@ -890,6 +890,9 @@ pub struct WithoutElements<Seq, State, Action, Context, Message> {
 
 /// An adapter which turns a [`ViewSequence`] containing any number of views with side effects, into a `ViewSequence` with any element type.
 ///
+/// The returned `ViewSequence` will not contain any elements, and will instead run the side effects
+/// of the wrapped `ViewSequence` when built and/or rebuilt.
+///
 /// This can be used to embed side-effects naturally into the flow of your program.
 /// This can be used as an alternative to [`fork`](crate::fork) , which avoids adding extra nesting at the cost of only being usable in places where there is already an existing sequence.
 ///
@@ -899,11 +902,11 @@ pub struct WithoutElements<Seq, State, Action, Context, Message> {
 /// # use xilem_core::docs::{DocsViewSequence as WidgetViewSequence, some_component_generic as component};
 /// use xilem_core::{without_elements, run_once};
 ///
-/// fn app_logic(state: &mut AppState) -> impl WidgetViewSequence<AppState> {
+/// fn isolated_child(state: &mut AppState) -> impl WidgetViewSequence<AppState> {
 ///     (component(state), without_elements(run_once(|| {})))
 /// }
 ///
-/// struct AppState;
+/// # struct AppState;
 /// ```
 pub fn without_elements<State, Action, Context, Message, Seq>(
     seq: Seq,
