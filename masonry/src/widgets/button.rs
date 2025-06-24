@@ -97,7 +97,7 @@ impl Widget for Button {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { .. } => {
+            PointerEvent::Down(..) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
                     // Changes in pointer capture impact appearance, but not accessibility node
@@ -105,9 +105,9 @@ impl Widget for Button {
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::Up { button, .. } => {
+            PointerEvent::Up(b) => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
-                    ctx.submit_action(Action::ButtonPressed(*button));
+                    ctx.submit_action(Action::ButtonPressed(b.button));
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 // Changes in pointer capture impact appearance, but not accessibility node
