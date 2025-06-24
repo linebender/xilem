@@ -3,10 +3,11 @@
 
 use alloc::boxed::Box;
 use alloc::sync::Arc;
+use any_debug::AnyDebug;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{AnyMessage, DynMessage, NoElement, View, ViewId, ViewPathTracker};
+use crate::{DynMessage, NoElement, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
@@ -59,13 +60,13 @@ impl<Message: 'static> Debug for dyn RawProxy<Message> {
 
 /// A way to send a message of an expected type to a specific view.
 #[derive(Debug)]
-pub struct MessageProxy<M: AnyMessage> {
+pub struct MessageProxy<M: AnyDebug> {
     proxy: Arc<dyn RawProxy<DynMessage>>,
     path: Arc<[ViewId]>,
     message: PhantomData<fn(M)>,
 }
 
-impl<M: AnyMessage> Clone for MessageProxy<M> {
+impl<M: AnyDebug> Clone for MessageProxy<M> {
     fn clone(&self) -> Self {
         Self {
             proxy: self.proxy.clone(),
@@ -75,7 +76,7 @@ impl<M: AnyMessage> Clone for MessageProxy<M> {
     }
 }
 
-impl<M: AnyMessage> MessageProxy<M> {
+impl<M: AnyDebug> MessageProxy<M> {
     /// Create a new `MessageProxy`
     pub fn new(proxy: Arc<dyn RawProxy<DynMessage>>, path: Arc<[ViewId]>) -> Self {
         Self {

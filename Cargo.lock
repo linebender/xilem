@@ -203,6 +203,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "any_debug"
+version = "0.1.0"
+
+[[package]]
 name = "anyhow"
 version = "1.0.98"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2139,6 +2143,7 @@ name = "masonry_core"
 version = "0.3.0"
 dependencies = [
  "accesskit",
+ "any_debug",
  "anymap3",
  "assert_matches",
  "cursor-icon",
@@ -5664,6 +5669,7 @@ dependencies = [
 name = "xilem_core"
 version = "0.3.0"
 dependencies = [
+ "any_debug",
  "kurbo",
  "tracing",
 ]

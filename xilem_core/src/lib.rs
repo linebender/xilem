@@ -33,6 +33,8 @@ extern crate alloc;
 #[cfg(test)]
 extern crate std;
 
+pub use any_debug::AnyDebug;
+
 mod deferred;
 pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 
@@ -46,7 +48,7 @@ pub use views::{
 };
 
 mod message;
-pub use message::{AnyMessage, DynMessage, MessageResult};
+pub use message::{DynMessage, MessageResult};
 
 mod element;
 pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};

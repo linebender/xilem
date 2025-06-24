@@ -1,0 +1,16 @@
+[package]
+name = "any_debug"
+version = "0.1.0"
+description = "Trait for debuggable Box<dyn Any> objects"
+keywords = ["trait", "any", "debug"]
+categories = ["rust-patterns"]
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+
+[lints]
+workspace = true

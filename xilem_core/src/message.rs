@@ -4,7 +4,7 @@
 //! Message routing and type erasure primitives.
 
 use alloc::boxed::Box;
-use core::any::Any;
+use any_debug::AnyDebug;
 use core::fmt::Debug;
 
 /// The possible outcomes from a [`View::message`]
@@ -62,11 +62,11 @@ impl<A, Message> MessageResult<A, Message> {
 ///
 /// [`View`]: crate::View
 #[derive(Debug)]
-pub struct DynMessage(pub Box<dyn AnyMessage>);
+pub struct DynMessage(pub Box<dyn AnyDebug>);
 
 impl DynMessage {
     /// Utility to make a `DynMessage` from a message value.
-    pub fn new(x: impl AnyMessage) -> Self {
+    pub fn new(x: impl AnyDebug) -> Self {
         Self(Box::new(x))
     }
 
@@ -80,45 +80,13 @@ impl DynMessage {
     /// In most cases, to handle this error, you will want to make an `error` log,
     /// and return this as [`MessageResult::Stale`]; this case indicates that a parent
     /// view has routed things incorrectly, but it's reasonable to be robust.
-    pub fn downcast<T: AnyMessage>(self) -> Result<Box<T>, Self> {
+    pub fn downcast<T: AnyDebug>(self) -> Result<Box<T>, Self> {
         self.0.downcast().map_err(Self)
     }
 
     /// Returns `true` if the inner type is the same as `T`.
-    pub fn is<T: AnyMessage>(&self) -> bool {
+    pub fn is<T: AnyDebug>(&self) -> bool {
         self.0.is::<T>()
-    }
-}
-
-/// Types which can be used in [`DynMessage`] (and so can be the messages for Xilem views).
-///
-/// The `Debug` requirement allows inspecting messages which were sent to the wrong place.
-// TODO: Should/Could we remove the `Send` requirement here?
-// It's not like implementing message handling in parallel is a meaningful operation.
-// (If you need to send one, you can always use `dyn AnyMessage + Send`)
-// Making that change would mean we could make View no longer generic over the message type again.
-pub trait AnyMessage: Any + Debug + Send {}
-impl<T> AnyMessage for T where T: Any + Debug + Send {}
-
-impl dyn AnyMessage {
-    /// Access the actual type of this [`DynMessage`].
-    ///
-    /// ## Errors
-    ///
-    /// If the message contained within `self` is not of type `T`, returns `self`
-    /// (so that e.g. a different type can be used)
-    pub fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        if self.is::<T>() {
-            Ok((self as Box<dyn Any>).downcast::<T>().unwrap())
-        } else {
-            Err(self)
-        }
-    }
-
-    /// Returns `true` if the inner type is the same as `T`.
-    pub fn is<T: AnyMessage>(&self) -> bool {
-        let this: &dyn Any = self;
-        this.is::<T>()
     }
 }
 

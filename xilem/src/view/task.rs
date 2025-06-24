@@ -11,7 +11,7 @@ use tokio::task::JoinHandle;
 
 use crate::ViewCtx;
 use crate::core::{
-    AnyMessage, DynMessage, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+    AnyDebug, DynMessage, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
     ViewPathTracker,
 };
 
@@ -32,7 +32,7 @@ where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + 'static,
+    M: AnyDebug + 'static,
 {
     const {
         assert!(
@@ -57,7 +57,7 @@ where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + 'static,
+    M: AnyDebug + 'static,
 {
     Task {
         init_future,
@@ -78,7 +78,7 @@ where
     F: Fn(MessageProxy<M>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + 'static,
+    M: AnyDebug + 'static,
 {
     type Element = NoElement;
 

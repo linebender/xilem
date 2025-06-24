@@ -21,6 +21,7 @@ cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 kurbo = ["dep:kurbo"]
 
 [dependencies]
+any_debug.workspace = true
 tracing.workspace = true
 kurbo = { optional = true, workspace = true }
 
