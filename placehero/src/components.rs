@@ -85,7 +85,7 @@ pub(crate) fn timeline(
                 .collect::<Vec<_>>(),
         )
         .padding(Padding {
-            // Leaave room for scrollbar
+            // Leave room for scrollbar
             right: 20.,
             ..Padding::all(5.0)
         }),
