@@ -6,6 +6,7 @@ use xilem::WidgetView;
 use xilem::palette::css;
 use xilem::style::Padding;
 use xilem::style::Style;
+use xilem::view::flex_row;
 use xilem::view::portal;
 use xilem::view::{
     CrossAxisAlignment, FlexExt, FlexSpacer, MainAxisAlignment, flex, inline_prose, label, prose,
@@ -33,7 +34,8 @@ pub(crate) fn timeline_status(
     status: &Status,
 ) -> impl WidgetView<Placehero> + use<> {
     sized_box(flex((
-        flex((
+        // Account info/message time
+        flex_row((
             avatars.avatar(&status.account.avatar_static),
             flex((
                 inline_prose(status.account.display_name.as_str())
@@ -52,15 +54,13 @@ pub(crate) fn timeline_status(
             inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
                 .alignment(xilem::TextAlignment::End),
         ))
-        .must_fill_major_axis(true)
-        .direction(xilem::view::Axis::Horizontal),
+        .must_fill_major_axis(true),
         prose(status_html_to_plaintext(status.content.as_str())),
-        flex((
+        flex_row((
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
         ))
-        .direction(xilem::view::Axis::Horizontal)
         // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
         .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
     )))

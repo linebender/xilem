@@ -18,7 +18,7 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::style::Style as _;
 use xilem::view::{
-    Axis, FlexSpacer, ZStackExt, button, flex, image, inline_prose, portal, prose, sized_box,
+    FlexSpacer, ZStackExt, button, flex, flex_row, image, inline_prose, portal, prose, sized_box,
     spinner, split, worker, zstack,
 };
 use xilem::{
@@ -147,7 +147,7 @@ async fn image_from_url(url: &str) -> anyhow::Result<Image> {
 impl Status {
     fn list_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
         let code = self.code;
-        flex((
+        flex_row((
             // TODO: Reduce allocations here?
             inline_prose(self.code.to_string()),
             inline_prose(self.message),
@@ -170,7 +170,6 @@ impl Status {
             }),
             FlexSpacer::Fixed(masonry::theme::SCROLLBAR_WIDTH),
         ))
-        .direction(Axis::Horizontal)
     }
 
     fn details_view(&mut self) -> impl WidgetView<HttpCats> + use<> {

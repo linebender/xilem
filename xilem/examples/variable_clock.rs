@@ -13,8 +13,8 @@ use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::style::Style as _;
 use xilem::view::{
-    Axis, FlexExt, FlexSpacer, button, flex, inline_prose, label, portal, prose, sized_box, task,
-    variable_label,
+    FlexExt, FlexSpacer, button, flex, flex_row, inline_prose, label, portal, prose, sized_box,
+    task, variable_label,
 };
 use xilem::{
     Blob, EventLoop, EventLoopBuilder, FontWeight, WidgetView, WindowOptions, Xilem, palette,
@@ -97,7 +97,7 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
 
 /// Controls for the variable font weight.
 fn controls() -> impl WidgetView<Clocks> {
-    flex((
+    flex_row((
         button("Increase", |data: &mut Clocks| {
             data.weight = (data.weight + 100.).clamp(1., 1000.);
         }),
@@ -111,7 +111,6 @@ fn controls() -> impl WidgetView<Clocks> {
             data.weight = 1000.;
         }),
     ))
-    .direction(Axis::Horizontal)
 }
 
 impl TimeZone {
@@ -119,7 +118,7 @@ impl TimeZone {
     fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
         sized_box(flex((
-            flex((
+            flex_row((
                 inline_prose(self.region),
                 FlexSpacer::Flex(1.),
                 label(format!("UTC{}", self.offset)).brush(
@@ -132,9 +131,8 @@ impl TimeZone {
                 ),
             ))
             .must_fill_major_axis(true)
-            .direction(Axis::Horizontal)
             .flex(1.),
-            flex((
+            flex_row((
                 variable_label(
                     date_time_in_self
                         .format(format_description!("[hour repr:24]:[minute]:[second]"))
@@ -153,8 +151,7 @@ impl TimeZone {
                             .unwrap(),
                     )
                 }),
-            ))
-            .direction(Axis::Horizontal),
+            )),
         )))
         .expand_width()
         .height(72.)

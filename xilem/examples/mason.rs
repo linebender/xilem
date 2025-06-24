@@ -14,7 +14,7 @@ use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
-    label, prose, task, textbox,
+    flex_row, label, prose, task, textbox,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
@@ -67,13 +67,12 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
 
     fork(
         flex((
-            flex((
+            flex_row((
                 label("Label").brush(palette::css::REBECCA_PURPLE),
                 label("Bold Label").weight(FontWeight::BOLD),
                 // TODO masonry doesn't allow setting disabled manually anymore?
                 // label("Disabled label").disabled(),
-            ))
-            .direction(Axis::Horizontal),
+            )),
             flex(
                 textbox(
                     data.textbox_contents.clone(),
@@ -83,6 +82,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 )
                 .insert_newline(InsertNewline::OnEnter),
             )
+            // Manually adding a direction is equivalent to using flex_row
             .direction(Axis::Horizontal),
             prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
             button_any_pointer(button_label, |data: &mut AppData, button| match button {
@@ -126,7 +126,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
 
 fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     if data.active {
-        flex((
+        flex_row((
             button("Deactivate", |data: &mut AppData| {
                 data.active = false;
             }),
@@ -137,7 +137,6 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 tracing::warn!("The pathway to unlimited power has been revealed");
             })),
         ))
-        .direction(Axis::Horizontal)
         .boxed()
     } else {
         button("Activate", |data: &mut AppData| data.active = true).boxed()
