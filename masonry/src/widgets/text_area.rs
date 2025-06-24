@@ -477,12 +477,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
 
         match event {
-            PointerEvent::Down { button, state, .. } => {
-                if !ctx.is_disabled() && matches!(button, None | Some(PointerButton::Primary)) {
-                    let cursor_pos = ctx.local_position(state.position);
+            PointerEvent::Down(b) => {
+                if !ctx.is_disabled() && matches!(b.button, None | Some(PointerButton::Primary)) {
+                    let cursor_pos = ctx.local_position(b.state.position);
                     let (fctx, lctx) = ctx.text_contexts();
                     let mut drv = self.editor.driver(fctx, lctx);
-                    match state.count {
+                    match b.state.count {
                         2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         3 => drv.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         _ => drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),

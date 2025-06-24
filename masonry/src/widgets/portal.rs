@@ -274,8 +274,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let content_size = ctx.get_raw_ref(&mut self.child).ctx().size();
 
         match *event {
-            PointerEvent::Scroll { delta, .. } => {
-                let delta = match delta {
+            PointerEvent::Scroll(ref s) => {
+                let delta = match s.delta {
                     ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x, y }) => -Vec2 { x, y },
                     ScrollDelta::LineDelta(x, y) => {
                         -Vec2 {
