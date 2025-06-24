@@ -209,13 +209,6 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         }
     }
 
-    if let Some(id) = target_widget_id {
-        if !root.widget_arena.has(id) {
-            debug_panic!("Trying to target non-existent widget {id}");
-            return Handled::No;
-        }
-    }
-
     let handled = run_event_pass(
         root,
         target_widget_id,
