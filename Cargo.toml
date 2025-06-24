@@ -54,8 +54,8 @@ parley = { version = "0.6.0", features = ["accesskit"] }
 peniko = "0.5.0"
 winit = "0.30.12"
 tracing = { version = "0.1.41", default-features = false }
-ui-events = "0.1.0"
-ui-events-winit = "0.1.0"
+ui-events = { version = "0.2.0", default-features = false, features = ["kurbo"] }
+ui-events-winit = { version = "0.2.0", default-features = false }
 smallvec = "1.15.1"
 hashbrown = "0.16.0"
 dpi = "0.1.2"

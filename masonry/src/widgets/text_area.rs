@@ -16,9 +16,9 @@ use vello::peniko::Fill;
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime,
-    LayoutCtx, PaintCtx, PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    render_text,
+    LayoutCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
 use crate::properties::{
     CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
@@ -493,37 +493,39 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
 
         match event {
-            PointerEvent::Down { button, state, .. } => {
-                if matches!(button, None | Some(PointerButton::Primary)) {
-                    let cursor_pos = ctx.local_position(state.position);
-                    let (fctx, lctx) = ctx.text_contexts();
-                    let mut drv = self.editor.driver(fctx, lctx);
-                    match state.count {
-                        2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
-                        3 => {
-                            drv.select_hard_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32);
-                        }
-                        _ => {
-                            if state.modifiers.shift() {
-                                drv.shift_click_extension(cursor_pos.x as f32, cursor_pos.y as f32);
-                            } else {
-                                drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
-                            }
+            PointerEvent::Down(PointerButtonEvent {
+                button: None | Some(PointerButton::Primary),
+                state,
+                ..
+            }) => {
+                let cursor_pos = ctx.local_position(state.position);
+                let (fctx, lctx) = ctx.text_contexts();
+                let mut drv = self.editor.driver(fctx, lctx);
+                match state.count {
+                    2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
+                    3 => {
+                        drv.select_hard_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32);
+                    }
+                    _ => {
+                        if state.modifiers.shift() {
+                            drv.shift_click_extension(cursor_pos.x as f32, cursor_pos.y as f32);
+                        } else {
+                            drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
                         }
                     }
-                    let new_generation = self.editor.generation();
-                    if new_generation != self.rendered_generation {
-                        ctx.request_render();
-                        ctx.set_ime_area(self.ime_area());
-                        self.rendered_generation = new_generation;
-                    }
-                    ctx.request_focus();
-                    ctx.capture_pointer();
                 }
+                let new_generation = self.editor.generation();
+                if new_generation != self.rendered_generation {
+                    ctx.request_render();
+                    ctx.set_ime_area(self.ime_area());
+                    self.rendered_generation = new_generation;
+                }
+                ctx.request_focus();
+                ctx.capture_pointer();
             }
-            PointerEvent::Move(u) => {
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if ctx.is_active() {
-                    let cursor_pos = ctx.local_position(u.current.position);
+                    let cursor_pos = ctx.local_position(current.position);
                     let (fctx, lctx) = ctx.text_contexts();
                     self.editor
                         .driver(fctx, lctx)

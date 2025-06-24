@@ -2,13 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::{debug, info_span, trace};
-use ui_events::pointer::PointerType;
 
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessEvent, EventCtx, Handled, Ime, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut,
-    TextEvent, Widget, WidgetId,
+    AccessEvent, EventCtx, Handled, Ime, PointerButtonEvent, PointerEvent, PointerGestureEvent,
+    PointerInfo, PointerScrollEvent, PointerType, PointerUpdate, PropertiesMut, TextEvent, Widget,
+    WidgetId,
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
@@ -48,23 +48,25 @@ fn is_very_frequent(e: &PointerEvent) -> bool {
 /// Short name for a [`PointerEvent`].
 fn pointer_event_short_name(e: &PointerEvent) -> &'static str {
     match e {
-        PointerEvent::Down { .. } => "Down",
-        PointerEvent::Up { .. } => "Up",
+        PointerEvent::Down(..) => "Down",
+        PointerEvent::Up(..) => "Up",
         PointerEvent::Move(..) => "Move",
         PointerEvent::Enter(..) => "Enter",
         PointerEvent::Leave(..) => "Leave",
         PointerEvent::Cancel(..) => "Cancel",
-        PointerEvent::Scroll { .. } => "Scroll",
+        PointerEvent::Scroll(..) => "Scroll",
+        PointerEvent::Gesture(..) => "Gesture",
     }
 }
 
 /// A position if the event has one.
 fn try_event_position(event: &PointerEvent) -> Option<PhysicalPosition<f64>> {
     match event {
-        PointerEvent::Down { state, .. }
-        | PointerEvent::Up { state, .. }
+        PointerEvent::Down(PointerButtonEvent { state, .. })
+        | PointerEvent::Up(PointerButtonEvent { state, .. })
         | PointerEvent::Move(PointerUpdate { current: state, .. })
-        | PointerEvent::Scroll { state, .. } => Some(state.position),
+        | PointerEvent::Scroll(PointerScrollEvent { state, .. })
+        | PointerEvent::Gesture(PointerGestureEvent { state, .. }) => Some(state.position),
         _ => None,
     }
 }

@@ -85,10 +85,7 @@ impl Widget for ColorRectangle {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down {
-                button: Some(PointerButton::Primary),
-                ..
-            } => {
+            PointerEvent::Down(b) if b.button == Some(PointerButton::Primary) => {
                 ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {}

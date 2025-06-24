@@ -9,8 +9,8 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, NewWidget, NoAction,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PaintCtx, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, RegisterCtx,
+    StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
 use masonry::parley::FontWeight;
@@ -74,10 +74,10 @@ impl Widget for OverlayBox {
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        if let PointerEvent::Move(e) = event
+        if let PointerEvent::Move(PointerUpdate { current, .. }) = event
             && ctx.is_hovered()
         {
-            let position = ctx.window_origin() + ctx.local_position(e.current.position).to_vec2();
+            let position = current.logical_point();
             if let Some(overlay_id) = self.layer_root_id {
                 ctx.reposition_layer(overlay_id, position);
             } else {
