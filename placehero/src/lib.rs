@@ -18,21 +18,16 @@ use megalodon::{
     megalodon::GetAccountStatusesInputOptions,
 };
 use xilem::{
-    EventLoopBuilder, FontWeight, ViewCtx, WidgetView, WindowOptions, Xilem,
+    EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem,
     core::{NoElement, View, fork, lens, one_of::Either},
-    palette::css,
-    style::{Padding, Style},
-    view::{
-        CrossAxisAlignment, FlexExt, FlexSpacer, MainAxisAlignment, flex, inline_prose, label,
-        portal, prose, sized_box, split, task_raw,
-    },
+    view::{flex, label, prose, split, task_raw},
     winit::error::EventLoopError,
 };
 
-use crate::avatars::Avatars;
-use crate::html_content::status_html_to_plaintext;
+use crate::{avatars::Avatars, components::timeline};
 
 mod avatars;
+mod components;
 mod html_content;
 
 /// Our shared API client type.
@@ -56,6 +51,36 @@ struct Placehero {
     avatars: Avatars,
 }
 
+/// Execute the app in the given winit event loop.
+pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+    let base_url = "https://mastodon.online".to_string();
+    // TODO: Determine what user agent we want to send.
+    // Currently we send "megalodon", as that is the default in the library.
+    let user_agent = None;
+
+    #[expect(
+        clippy::disallowed_types,
+        reason = "We are constructing a value of the type, which we will never directly use elsewhere"
+    )]
+    let mastodon =
+        mastodon::Mastodon::new(base_url, None, user_agent).expect("Provided User Agent is valid");
+
+    let app_state = Placehero {
+        mastodon: Arc::new(mastodon),
+        instance: None,
+        account: None,
+        statuses: Vec::new(),
+        avatars: Avatars::default(),
+    };
+
+    Xilem::new_simple(
+        app_state,
+        app_logic,
+        WindowOptions::new("Placehero: A placeholder named Mastodon client"),
+    )
+    .run_in(event_loop)
+}
+
 impl Placehero {
     fn sidebar(&mut self) -> impl WidgetView<Self> + use<> {
         if let Some(instance) = &self.instance {
@@ -73,59 +98,9 @@ impl Placehero {
         if self.statuses.is_empty() {
             Either::A(prose("No statuses yet loaded"))
         } else {
-            Either::B(portal(
-                flex(
-                    self.statuses
-                        .iter()
-                        .map(|status| status_view(&mut self.avatars, status))
-                        .collect::<Vec<_>>(),
-                )
-                .padding(Padding {
-                    // Leaave room for scrollbar
-                    right: 20.,
-                    ..Padding::all(5.0)
-                }),
-            ))
+            Either::B(timeline(&mut self.statuses, &mut self.avatars))
         }
     }
-}
-
-fn status_view(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Placehero> + use<> {
-    sized_box(flex((
-        flex((
-            avatars.avatar(&status.account.avatar_static),
-            flex((
-                inline_prose(status.account.display_name.as_str())
-                    .weight(FontWeight::SEMI_BOLD)
-                    .alignment(xilem::TextAlignment::Start)
-                    .text_size(20.)
-                    .flex(CrossAxisAlignment::Start),
-                inline_prose(status.account.username.as_str())
-                    .weight(FontWeight::SEMI_LIGHT)
-                    .alignment(xilem::TextAlignment::Start)
-                    .flex(CrossAxisAlignment::Start),
-            ))
-            .main_axis_alignment(MainAxisAlignment::Start)
-            .gap(1.),
-            FlexSpacer::Flex(1.0),
-            inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
-                .alignment(xilem::TextAlignment::End),
-        ))
-        .must_fill_major_axis(true)
-        .direction(xilem::view::Axis::Horizontal),
-        prose(status_html_to_plaintext(status.content.as_str())),
-        flex((
-            label(format!("💬 {}", status.replies_count)).flex(1.0),
-            label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
-            label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-        ))
-        .direction(xilem::view::Axis::Horizontal)
-        // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
-    )))
-    .border(css::WHITE, 2.0)
-    .padding(10.0)
-    .corner_radius(5.)
 }
 
 fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
@@ -240,34 +215,4 @@ fn load_statuses(
             }
         },
     )
-}
-
-/// Execute the app in the given winit event loop.
-pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
-    let base_url = "https://mastodon.online".to_string();
-    // TODO: Determine what user agent we want to send.
-    // Currently we send "megalodon", as that is the default in the library.
-    let user_agent = None;
-
-    #[expect(
-        clippy::disallowed_types,
-        reason = "We are constructing a value of the type, which we will never directly use elsewhere"
-    )]
-    let mastodon =
-        mastodon::Mastodon::new(base_url, None, user_agent).expect("Provided User Agent is valid");
-
-    let app_state = Placehero {
-        mastodon: Arc::new(mastodon),
-        instance: None,
-        account: None,
-        statuses: Vec::new(),
-        avatars: Avatars::default(),
-    };
-
-    Xilem::new_simple(
-        app_state,
-        app_logic,
-        WindowOptions::new("Placehero: A placeholder named Mastodon client"),
-    )
-    .run_in(event_loop)
 }
