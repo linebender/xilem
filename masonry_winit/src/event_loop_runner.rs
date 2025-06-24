@@ -126,8 +126,9 @@ pub struct MasonryState<'a> {
     frame: Option<tracing_tracy::client::Frame>,
 
     window_id_to_handle_id: HashMap<WindowId, HandleId>,
-    windows: HashMap<HandleId, Window>,
+
     surfaces: HashMap<HandleId, RenderSurface<'a>>,
+    windows: HashMap<HandleId, Window>,
 
     // Is `Some` if the most recently displayed frame was an animation frame.
     last_anim: Option<Instant>,
