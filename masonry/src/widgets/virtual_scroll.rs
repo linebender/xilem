@@ -524,10 +524,10 @@ impl Widget for VirtualScroll {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Scroll { delta, .. } => {
+            PointerEvent::Scroll(s) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
-                let delta = match delta {
+                let delta = match s.delta {
                     ScrollDelta::PixelDelta(p) => -p.to_logical::<f64>(ctx.get_scale_factor()).y,
                     ScrollDelta::LineDelta(_, y) => -y as f64 * ctx.get_scale_factor() * 120.,
                     _ => 0.0,
@@ -1030,15 +1030,13 @@ fn opt_iter_difference(
 mod tests {
     use std::collections::HashSet;
 
-    use dpi::PhysicalPosition;
+    use kurbo::{Size, Vec2};
     use parley::StyleProperty;
-    use vello::kurbo::Size;
 
-    use crate::core::{
-        NewWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId, WidgetMut,
-    };
-    use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
+    use crate::core::{NewWidget, Widget, WidgetId, WidgetMut};
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
+    use crate::vello::kurbo;
     use crate::widgets::{Label, VirtualScroll, VirtualScrollAction};
 
     use super::opt_iter_difference;
@@ -1114,11 +1112,7 @@ mod tests {
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_moved");
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 25. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 25. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_scrolled");
     }
@@ -1159,11 +1153,7 @@ mod tests {
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
@@ -1203,11 +1193,7 @@ mod tests {
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
@@ -1247,11 +1233,7 @@ mod tests {
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
@@ -1306,22 +1288,14 @@ mod tests {
             original_range = widget.active_range.clone();
         }
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: -50. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: -50. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_ne!(widget.anchor_index, MIN);
             assert_ne!(widget.active_range, original_range);
         }
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 60. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 60. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
@@ -1383,22 +1357,14 @@ mod tests {
             assert_render_snapshot!(harness, "virtual_scroll_limited_up_bottom");
         }
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 5. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 5. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_ne!(widget.anchor_index, MAX);
             assert_ne!(widget.active_range, original_range);
         }
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: -6. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: -6. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
