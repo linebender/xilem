@@ -112,15 +112,15 @@ impl Widget for Button {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { .. } => {
+            PointerEvent::Down(..) => {
                 ctx.capture_pointer();
                 // Changes in pointer capture impact appearance, but not accessibility node
                 ctx.request_paint_only();
                 trace!("Button {:?} pressed", ctx.widget_id());
             }
-            PointerEvent::Up { button, .. } => {
+            PointerEvent::Up(b) => {
                 if ctx.is_active() && ctx.is_hovered() {
-                    ctx.submit_action::<Self::Action>(ButtonPress { button: *button });
+                    ctx.submit_action::<Self::Action>(ButtonPress { button: b.button });
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 // Changes in pointer capture impact appearance, but not accessibility node
