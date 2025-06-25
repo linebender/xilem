@@ -6,7 +6,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
 use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
@@ -82,7 +82,7 @@ impl Window {
         window_id: WindowId,
         root_widget: WidgetPod<dyn Widget>,
         attributes: WindowAttributes,
-        signal_sender: Arc<Mutex<Sender<(WindowId, RenderRootSignal)>>>,
+        signal_sender: Sender<(WindowId, RenderRootSignal)>,
         default_properties: Arc<DefaultProperties>,
     ) -> Self {
         // TODO: We can't know this scale factor until later?
@@ -95,11 +95,7 @@ impl Window {
             render_root: RenderRoot::new(
                 root_widget,
                 move |signal| {
-                    signal_sender
-                        .lock()
-                        .unwrap()
-                        .send((window_id, signal))
-                        .unwrap();
+                    signal_sender.clone().send((window_id, signal)).unwrap();
                 },
                 RenderRootOptions {
                     default_properties,
@@ -134,7 +130,7 @@ pub struct MasonryState<'a> {
     last_anim: Option<Instant>,
     signal_receiver: mpsc::Receiver<(WindowId, RenderRootSignal)>,
 
-    signal_sender: Arc<Mutex<Sender<(WindowId, RenderRootSignal)>>>,
+    signal_sender: Sender<(WindowId, RenderRootSignal)>,
     default_properties: Arc<DefaultProperties>,
     pub(crate) exit: bool,
     initial_windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
@@ -272,7 +268,6 @@ impl MasonryState<'_> {
 
         let (signal_sender, signal_receiver) =
             std::sync::mpsc::channel::<(WindowId, RenderRootSignal)>();
-        let signal_sender = Arc::new(Mutex::new(signal_sender));
 
         MasonryState {
             render_cx,
