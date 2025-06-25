@@ -6,6 +6,7 @@ use xilem::WidgetView;
 use xilem::palette::css;
 use xilem::style::Padding;
 use xilem::style::Style;
+use xilem::view::FlexSequence;
 use xilem::view::flex_row;
 use xilem::view::portal;
 use xilem::view::{
@@ -33,7 +34,31 @@ pub(crate) fn timeline_status(
     avatars: &mut Avatars,
     status: &Status,
 ) -> impl WidgetView<Placehero> + use<> {
-    sized_box(flex((
+    let (info_line, primary_status) = if let Some(reblog) = status.reblog.as_ref() {
+        (
+            Some(prose(format!("🔄 {} boosted", status.account.display_name))),
+            &**reblog,
+        )
+    } else {
+        (None, status)
+    };
+    sized_box(flex((info_line, base_status(avatars, primary_status))))
+        .border(css::WHITE, 2.0)
+        .padding(10.0)
+        .corner_radius(5.)
+}
+
+/// Renders the key parts of a Status, in a shared way.
+///
+/// This is the shared funcitionality between a timeline and the list of views.
+// TODO: Determine our UX for boosting/reblogging.
+// In particular, do we want to have the same design as "normal" Mastodon, where the
+// avatar for the booster is shown in the "child" avatar.
+fn base_status(avatars: &mut Avatars, status: &Status) -> impl FlexSequence<Placehero> + use<> {
+    // TODO: In theory, it's possible to reblog a reblog; it's not clear what happens in this case.
+    debug_assert!(status.reblog.is_none(), "`base_status` can't show reblogs.");
+    // We return a child list.
+    (
         // Account info/message time
         flex_row((
             avatars.avatar(&status.account.avatar_static),
@@ -63,10 +88,7 @@ pub(crate) fn timeline_status(
         ))
         // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
         .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
-    )))
-    .border(css::WHITE, 2.0)
-    .padding(10.0)
-    .corner_radius(5.)
+    )
 }
 
 /// A [`timeline`]; statuses are rendered individually.
