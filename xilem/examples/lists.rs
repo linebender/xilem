@@ -13,9 +13,7 @@ struct AppState {
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
-    // Here's the magic
-    // Creating a list of widgets can be as easy as using a flex(some_vec)
-    // with the alignment described using the flex(...) widget.
+    // A vector (Vec) of views can be used as part of a `flex`'s children, allowing collections of dynamic length to be displayed.
     let list = (0..state.count)
         .map(|n| prose(format!("item #{}", n)))
         .collect::<Vec<_>>();
