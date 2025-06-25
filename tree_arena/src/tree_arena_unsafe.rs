@@ -246,7 +246,7 @@ impl<T> TreeArena<T> {
 
     /// Returns a handle whose children are the roots, if any, of the tree.
     ///
-    /// Using [`insert_child`](ArenaMutList::insert_child) on this handle
+    /// Using [`insert`](ArenaMutList::insert) on this handle
     /// will add a new root to the tree.
     pub fn roots_mut(&mut self) -> ArenaMutList<'_, T> {
         // safe as the roots are derived from the arena itself (same as safety for find for non root nodes)
