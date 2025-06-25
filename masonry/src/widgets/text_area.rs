@@ -488,8 +488,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
 
         match event {
-            PointerEvent::Down { button, state, .. } => {
-                if !ctx.is_disabled() && matches!(button, None | Some(PointerButton::Primary)) {
+            PointerEvent::Down(b) => {
+                if !ctx.is_disabled() && matches!(b.button, None | Some(PointerButton::Primary)) {
                     let now = Instant::now();
                     if let Some(last) = self.last_click_time.take() {
                         if now.duration_since(last).as_secs_f64() < 0.25 {
@@ -502,7 +502,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     }
                     self.last_click_time = Some(now);
                     let click_count = self.click_count;
-                    let cursor_pos = ctx.local_position(state.position);
+                    let cursor_pos = ctx.local_position(b.state.position);
                     let (fctx, lctx) = ctx.text_contexts();
                     let mut drv = self.editor.driver(fctx, lctx);
                     match click_count {

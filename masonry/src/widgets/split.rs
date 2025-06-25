@@ -405,8 +405,8 @@ where
     ) {
         if self.draggable {
             match event {
-                PointerEvent::Down { state, .. } => {
-                    let pos = ctx.local_position(state.position);
+                PointerEvent::Down(b) => {
+                    let pos = ctx.local_position(b.state.position);
                     if self.bar_hit_test(ctx.size(), pos) {
                         ctx.set_handled();
                         ctx.capture_pointer();
