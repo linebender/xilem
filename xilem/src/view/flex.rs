@@ -73,6 +73,16 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
     }
 }
 
+/// A layout where the children are laid out in a row.
+///
+/// This is equivalent to [`flex`] with a pre-applied horizontal
+/// [`direction`](Flex::direction).
+pub fn flex_row<State, Action, Seq: FlexSequence<State, Action>>(
+    sequence: Seq,
+) -> Flex<Seq, State, Action> {
+    flex(sequence).direction(Axis::Horizontal)
+}
+
 /// The [`View`] created by [`flex`] from a sequence.
 ///
 /// See `flex` documentation for more context.

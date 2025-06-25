@@ -6,7 +6,7 @@
 use masonry::widgets::MainAxisAlignment;
 use winit::error::EventLoopError;
 use xilem::core::lens;
-use xilem::view::{Axis, button, flex, label};
+use xilem::view::{button, flex, flex_row, label};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 #[derive(Default)]
@@ -24,7 +24,7 @@ fn modular_counter(count: &mut i32) -> impl WidgetView<i32> + use<> {
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
-    flex((
+    flex_row((
         lens(modular_counter, |state: &mut AppState| {
             &mut state.modularized_count
         }),
@@ -33,7 +33,6 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
             |state: &mut AppState| state.global_count += 1,
         ),
     ))
-    .direction(Axis::Horizontal)
     .main_axis_alignment(MainAxisAlignment::Center)
 }
 

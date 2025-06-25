@@ -7,7 +7,9 @@ use masonry::dpi::LogicalSize;
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{Axis, FlexSpacer, button, checkbox, flex, flex_item, progress_bar, sized_box};
+use xilem::view::{
+    FlexSpacer, button, checkbox, flex, flex_item, flex_row, progress_bar, sized_box,
+};
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::lens;
 
@@ -52,14 +54,11 @@ fn checkbox_view(data: bool) -> impl WidgetView<bool> {
 fn border_box<State: 'static, Action: 'static>(
     inner: impl WidgetView<State, Action>,
 ) -> impl WidgetView<State, Action> {
-    sized_box(
-        flex((
-            FlexSpacer::Flex(1.),
-            flex((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
-            FlexSpacer::Flex(1.),
-        ))
-        .direction(Axis::Horizontal),
-    )
+    sized_box(flex_row((
+        FlexSpacer::Flex(1.),
+        flex((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
+        FlexSpacer::Flex(1.),
+    )))
     .border(Color::WHITE, 2.)
     .width(450.)
     .height(200.)
@@ -69,7 +68,7 @@ fn border_box<State: 'static, Action: 'static>(
 fn app_logic(_data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
-        flex((
+        flex_row((
             lens(
                 |progress| flex_item(border_box(progress_bar_view(*progress)), 1.),
                 |data: &mut WidgetGallery| &mut data.progress,
@@ -79,10 +78,9 @@ fn app_logic(_data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<
                 |data: &mut WidgetGallery| &mut data.checked,
             ),
         ))
-        .gap(SPACER_WIDTH)
-        .direction(Axis::Horizontal),
+        .gap(SPACER_WIDTH),
     )
-    .border(Color::TRANSPARENT, SPACER_WIDTH)
+    .padding(SPACER_WIDTH)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

@@ -13,7 +13,7 @@ use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
-use xilem::view::{Axis, Label, button, flex, label, sized_box};
+use xilem::view::{Label, button, flex_row, label, sized_box};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
@@ -25,7 +25,7 @@ fn big_button(
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
-    flex((
+    flex_row((
         big_button("-", |data| {
             *data -= 1;
         }),
@@ -34,7 +34,6 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
             *data += 1;
         }),
     ))
-    .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Center)
 }

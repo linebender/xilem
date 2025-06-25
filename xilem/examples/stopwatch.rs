@@ -7,14 +7,14 @@ use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 
 use masonry::dpi::LogicalSize;
-use masonry::widgets::{Axis, CrossAxisAlignment, MainAxisAlignment};
+use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use tokio::time;
 use tracing::warn;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{FlexSequence, FlexSpacer, button, flex, label, task};
+use xilem::view::{FlexSequence, FlexSpacer, button, flex, flex_row, label, task};
 use xilem::{WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
@@ -110,7 +110,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
         flex((
             FlexSpacer::Fixed(5.0),
             label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
-            flex((lap_reset_button(data), start_stop_button(data))).direction(Axis::Horizontal),
+            flex_row((lap_reset_button(data), start_stop_button(data))),
             FlexSpacer::Fixed(1.0),
             laps_section(data),
             label(data.displayed_error.as_ref()),
@@ -160,14 +160,13 @@ fn single_lap(
     split_dur: Duration,
     total_dur: Duration,
 ) -> impl WidgetView<Stopwatch> {
-    flex((
+    flex_row((
         FlexSpacer::Flex(1.0),
         label(format!("Lap {}", lap_id + 1)),
         label(get_formatted_duration(split_dur)),
         label(get_formatted_duration(total_dur)),
         FlexSpacer::Flex(1.0),
     ))
-    .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Start)
     .must_fill_major_axis(true)

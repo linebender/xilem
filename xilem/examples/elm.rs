@@ -7,7 +7,7 @@
 
 use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
 use xilem::core::{MessageResult, map_action};
-use xilem::view::{Axis, button, flex, label};
+use xilem::view::{button, flex, flex_row, label};
 use xilem::winit::dpi::LogicalSize;
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
@@ -44,7 +44,7 @@ enum CounterChanged {
 // `map_message` is the most flexible but also most verbose way to modularize the views by action.
 // It's very similar to `map_action`, but it also allows to change the `MessageResult` for the parent view
 fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
-    flex((
+    flex_row((
         flex((
             label(format!("map_message count: {count}")),
             button("+", |count| {
@@ -63,11 +63,10 @@ fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
             }),
         )),
     ))
-    .direction(Axis::Horizontal)
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
-    flex((
+    flex_row((
         map_action(
             elm_counter(state.map_action_count),
             |state: &mut AppState, message| match message {
@@ -93,7 +92,6 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
             },
         ),
     ))
-    .direction(Axis::Horizontal)
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Center)
 }
