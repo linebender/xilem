@@ -659,4 +659,25 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             None
         }
     }
+
+    /// Used in tests to simulate a call to `Self::insert` or `Self::remove` that
+    /// triggers a realloc.
+    ///
+    /// This is an unstable API which can only be used in tests of the `tree_arena` crate itself,
+    /// and may change in any release.
+    /// It is used to surface potential Use-After-Free (UAF) errors in the code.
+    #[doc(hidden)]
+    pub fn realloc_inner_storage(&mut self) {
+        // By doubling the required capacity (plus a small constant for small capacities),
+        // we hopefully guarantee that a reallocation will happen no matter the original capabity.
+        let capacity = self.parent_arena.items.capacity();
+        let capacity = std::hint::black_box(capacity);
+        self.parent_arena.items.reserve(capacity + 32);
+
+        // We try to discard the extra memory.
+        // We use black_box to hide the fact that the above call to reserve could be elided.
+        if std::hint::black_box(true) {
+            self.parent_arena.items.shrink_to_fit();
+        }
+    }
 }

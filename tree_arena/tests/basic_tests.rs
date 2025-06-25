@@ -74,6 +74,9 @@ fn arena_item_removal() {
     let child_3_removed = child_1.children.remove(3_u64).expect("No child 3 found");
     assert_eq!(child_3_removed, 'c', "Expect removal of node 3");
 
+    // Force a realloc to surface potential UAFs.
+    child_1.children.realloc_inner_storage();
+
     // >-- 1(a)
     //
     // >-- 2(b)
@@ -102,9 +105,12 @@ fn arena_mutate_parent_and_child_at_once() {
     let mut roots = tree.roots_mut();
 
     let mut node_1 = roots.insert(1_u64, 'a');
-    let node_2 = node_1.children.insert(2_u64, 'b');
+    let mut node_2 = node_1.children.insert(2_u64, 'b');
 
     // >-- 1(a) -- 2(b)
+
+    // Force a realloc to surface potential UAFs.
+    node_2.children.realloc_inner_storage();
 
     let node_1_item = node_1.item;
     let node_2_item = node_2.item;

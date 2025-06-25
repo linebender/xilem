@@ -550,6 +550,15 @@ impl<'arena, T> ArenaMutList<'arena, T> {
         let node = node_children.get_mut(&id)?;
         Some(node.arena_mut(*parent_id, &mut *self.parents_map.parents_map))
     }
+
+    /// No-op. Added for parity with unsafe implementation.
+    ///
+    /// This is an unstable API which can only be used in tests of the `tree_arena` crate itself,
+    /// and may change in any release.
+    #[doc(hidden)]
+    pub fn realloc_inner_storage(&mut self) {
+        std::hint::black_box(());
+    }
 }
 
 impl ArenaMapRef<'_> {
