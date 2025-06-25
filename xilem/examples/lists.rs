@@ -23,9 +23,9 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         // tuple of children alongside the vector.
         button("more", |appstate: &mut AppState| appstate.count += 1),
         list,
-    ))
-    .direction(Axis::Vertical)
-    .main_axis_alignment(MainAxisAlignment::Start)
+    )) // we can controll alignment of the elements using the flexbox
+    .direction(Axis::Vertical) // Top to Bottom
+    .main_axis_alignment(MainAxisAlignment::Start) // Aligned to the left
 }
 
 fn main() -> Result<(), EventLoopError> {
