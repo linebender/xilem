@@ -65,17 +65,21 @@
 //!
 //! [Masonry]: https://crates.io/crates/masonry
 
-#![cfg_attr(feature = "implement_both", allow(unused))]
-#![cfg_attr(feature = "implement_both", allow(unreachable_pub))]
-
 type NodeId = u64;
 
-#[cfg(any(feature = "implement_both", not(feature = "safe_tree")))]
-mod tree_arena_unsafe;
-#[cfg(not(feature = "safe_tree"))]
-pub use tree_arena_unsafe::*;
+// We instantiate both modules when `cfg(test)` is true.
+// This tricks IDEs (at least VSCode) into always building both modules
+// and giving us completions, jump to definition, etc, at all times.
+// We make both modules `pub` and `doc(hidden)` so we don't get warnings about unused items.
 
-#[cfg(any(feature = "implement_both", feature = "safe_tree"))]
-mod tree_arena_safe;
+#[cfg(any(test, feature = "safe_tree"))]
+#[doc(hidden)]
+pub mod tree_arena_safe;
+#[cfg(any(test, not(feature = "safe_tree")))]
+#[doc(hidden)]
+pub mod tree_arena_unsafe;
+
 #[cfg(feature = "safe_tree")]
 pub use tree_arena_safe::*;
+#[cfg(not(feature = "safe_tree"))]
+pub use tree_arena_unsafe::*;
