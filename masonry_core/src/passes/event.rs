@@ -21,7 +21,7 @@ fn get_pointer_target(
 ) -> Option<WidgetId> {
     // See the [pointer capture documentation](../doc/06_masonry_concepts.md#pointer-capture).
     if let Some(capture_target) = root.global_state.pointer_capture_target {
-        if root.is_still_interactive(capture_target) {
+        if root.widget_arena.has(capture_target) {
             return Some(capture_target);
         }
     }
