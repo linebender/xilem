@@ -19,6 +19,8 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         .collect::<Vec<_>>();
 
     flex((
+        // Even if a `Vec` is used for the children, other widgets can be included by putting them in a
+        // tuple of children alongside the vector.
         button("more", |appstate: &mut AppState| appstate.count += 1),
         list,
     ))
