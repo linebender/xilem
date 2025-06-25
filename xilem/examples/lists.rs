@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Displaying a variable length list of widgets is trivially done using any kind of FlexSequence
+//! Displaying a variable length list is achieved using a [Vec] `FlexSequence`.
 
 use winit::error::EventLoopError;
 use xilem::view::{Axis, MainAxisAlignment, button, flex, prose};
