@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::mem::Discriminant;
-use std::time::Instant;
 
 use accesskit::{Node, NodeId, Role};
 use cursor_icon::CursorIcon;
@@ -56,14 +55,6 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     ///
     /// TODO: Split into rendered and layout generation. This will make the `edited` mechanism in [`on_text_event`](Widget::on_text_event).
     rendered_generation: Generation,
-
-    /// The time when this element was last clicked.
-    ///
-    /// Used to detect double/triple clicks.
-    /// The long-term plan is for this to be provided by the platform (i.e. winit), as that has more context.
-    last_click_time: Option<Instant>,
-    /// How many clicks have occurred in this click sequence.
-    click_count: u32,
 
     /// Whether to wrap words in this area.
     ///
@@ -136,8 +127,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         Self {
             editor,
             rendered_generation: Generation::default(),
-            last_click_time: None,
-            click_count: 0,
             word_wrap: true,
             last_available_width: None,
             brush: theme::TEXT_COLOR.into(),
@@ -490,22 +479,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         match event {
             PointerEvent::Down { button, state, .. } => {
                 if !ctx.is_disabled() && matches!(button, None | Some(PointerButton::Primary)) {
-                    let now = Instant::now();
-                    if let Some(last) = self.last_click_time.take() {
-                        if now.duration_since(last).as_secs_f64() < 0.25 {
-                            self.click_count = (self.click_count + 1) % 4;
-                        } else {
-                            self.click_count = 1;
-                        }
-                    } else {
-                        self.click_count = 1;
-                    }
-                    self.last_click_time = Some(now);
-                    let click_count = self.click_count;
                     let cursor_pos = ctx.local_position(state.position);
                     let (fctx, lctx) = ctx.text_contexts();
                     let mut drv = self.editor.driver(fctx, lctx);
-                    match click_count {
+                    match state.count {
                         2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         3 => drv.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
                         _ => drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),
