@@ -67,12 +67,19 @@
 
 type NodeId = u64;
 
-#[cfg(not(feature = "safe_tree"))]
-mod tree_arena_unsafe;
-#[cfg(not(feature = "safe_tree"))]
-pub use tree_arena_unsafe::*;
+// We instantiate both modules when `cfg(test)` is true.
+// This tricks IDEs (at least VSCode) into always building both modules
+// and giving us completions, jump to definition, etc, at all times.
+// We make both modules `pub` and `doc(hidden)` so we don't get warnings about unused items.
+
+#[cfg(any(test, feature = "safe_tree"))]
+#[doc(hidden)]
+pub mod tree_arena_safe;
+#[cfg(any(test, not(feature = "safe_tree")))]
+#[doc(hidden)]
+pub mod tree_arena_unsafe;
 
 #[cfg(feature = "safe_tree")]
-mod tree_arena_safe;
-#[cfg(feature = "safe_tree")]
 pub use tree_arena_safe::*;
+#[cfg(not(feature = "safe_tree"))]
+pub use tree_arena_unsafe::*;
