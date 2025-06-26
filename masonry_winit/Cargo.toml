@@ -34,9 +34,6 @@ pollster = "0.4.0"
 accesskit_winit.workspace = true
 wgpu-profiler = { optional = true, version = "0.22.0", default-features = false }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-web-time.workspace = true
-
 [dev-dependencies]
 image = { workspace = true, features = ["png"] }
 masonry = { workspace = true, features = ["testing"] }

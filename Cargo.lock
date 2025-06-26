@@ -2131,7 +2131,6 @@ dependencies = [
  "tracing",
  "ui-events",
  "vello",
- "web-time",
 ]
 
 [[package]]
@@ -2180,7 +2179,6 @@ dependencies = [
  "tracing",
  "ui-events",
  "vello",
- "web-time",
  "wgpu",
 ]
 
@@ -2196,7 +2194,6 @@ dependencies = [
  "tracing",
  "tracing-tracy",
  "ui-events-winit",
- "web-time",
  "wgpu",
  "wgpu-profiler",
  "winit",

@@ -32,9 +32,6 @@ tracing = { workspace = true, features = ["default"] }
 ui-events.workspace = true
 vello.workspace = true
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-web-time.workspace = true
-
 [dev-dependencies]
 assert_matches = "1.5.0"
 float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
