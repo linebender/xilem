@@ -11,24 +11,22 @@
 
 use std::sync::Arc;
 
-use megalodon::{
-    Megalodon,
-    entities::{Account, Instance, Status},
-    mastodon,
-    megalodon::GetAccountStatusesInputOptions,
-};
-use xilem::{
-    EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem,
-    core::{NoElement, View, fork, lens, one_of::Either},
-    view::{flex, label, prose, split, task_raw},
-    winit::error::EventLoopError,
-};
-
-use crate::{avatars::Avatars, components::timeline};
+use components::timeline;
+use megalodon::entities::{Account, Instance, Status};
+use megalodon::megalodon::GetAccountStatusesInputOptions;
+use megalodon::{Megalodon, mastodon};
+use xilem::core::one_of::Either;
+use xilem::core::{NoElement, View, fork, lens};
+use xilem::view::{flex, label, prose, split, task_raw};
+use xilem::winit::error::EventLoopError;
+use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem};
 
 mod avatars;
 mod components;
 mod html_content;
+
+pub(crate) use avatars::Avatars;
+pub(crate) use html_content::status_html_to_plaintext;
 
 /// Our shared API client type.
 ///
