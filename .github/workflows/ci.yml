@@ -484,6 +484,11 @@ jobs:
         env:
           RUSTDOCFLAGS: '--cfg docsrs -D warnings'
 
+      - name: Run cargo doc on unsafe arena
+        run: cargo doc -p tree_arena --locked --profile ci --no-default-features --document-private-items -Zunstable-options -Zrustdoc-scrape-examples
+        env:
+          RUSTDOCFLAGS: '--cfg docsrs -D warnings'
+
   # If this fails, consider changing your text or adding something to .typos.toml.
   typos:
     runs-on: ubuntu-latest
