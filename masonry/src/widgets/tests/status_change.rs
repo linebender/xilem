@@ -171,7 +171,7 @@ fn update_hovered_on_mouse_leave() {
 }
 
 // TODO - https://github.com/linebender/xilem/issues/336
-#[cfg(FALSE)]
+#[cfg(false)]
 #[test]
 fn update_hovered_from_layout() {
     pub const COLLAPSE: Selector = Selector::new("masonry-test.collapse");
