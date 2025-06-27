@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::core::{AnyWidget, FromDynWidget, WidgetMut};
 use masonry::widgets;
 use xilem_core::{MessageResult, ViewId};
 
@@ -235,7 +235,7 @@ where
 
 /// A struct implementing [`ViewElement`] for a `ZStack`.
 pub struct ZStackElement {
-    widget: Pod<dyn Widget>,
+    widget: Pod<dyn AnyWidget>,
     alignment: ChildAlignment,
 }
 
@@ -246,7 +246,7 @@ pub struct ZStackElementMut<'w> {
 }
 
 impl ZStackElement {
-    fn new(widget: Pod<dyn Widget>, alignment: ChildAlignment) -> Self {
+    fn new(widget: Pod<dyn AnyWidget>, alignment: ChildAlignment) -> Self {
         Self { widget, alignment }
     }
 }
@@ -276,7 +276,7 @@ impl SuperElement<Self, ViewCtx> for ZStackElement {
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
+impl<W: AnyWidget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStackElement {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
         Self::new(child.erased(), ChildAlignment::ParentAligned)
     }

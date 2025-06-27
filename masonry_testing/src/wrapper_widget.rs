@@ -9,14 +9,14 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, AnyWidget, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
 
 /// A basic wrapper widget that can replace its child.
 pub struct WrapperWidget {
-    child: WidgetPod<dyn Widget>,
+    child: WidgetPod<dyn AnyWidget>,
 }
 
 impl WrapperWidget {
@@ -30,12 +30,12 @@ impl WrapperWidget {
     /// Create a new `WrapperWidget` with a `WidgetPod`.
     ///
     /// The `child` is the initial child widget.
-    pub fn new_pod(child: WidgetPod<dyn Widget>) -> Self {
+    pub fn new_pod(child: WidgetPod<dyn AnyWidget>) -> Self {
         Self { child }
     }
 
     /// Get mutable reference to the child widget.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn AnyWidget> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 }
@@ -47,7 +47,7 @@ impl WrapperWidget {
     }
 
     /// Replace the container's child widget with a `WidgetPod`.
-    pub fn set_child_pod(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn Widget>) {
+    pub fn set_child_pod(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn AnyWidget>) {
         let old_child = std::mem::replace(&mut this.widget.child, child);
         this.ctx.remove_child(old_child);
 
@@ -57,11 +57,14 @@ impl WrapperWidget {
 }
 
 impl Widget for WrapperWidget {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -70,6 +73,7 @@ impl Widget for WrapperWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -78,6 +82,7 @@ impl Widget for WrapperWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -100,6 +105,7 @@ impl Widget for WrapperWidget {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let size = ctx.run_layout(&mut self.child, bc);
         ctx.place_child(&mut self.child, Point::ORIGIN);

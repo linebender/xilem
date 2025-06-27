@@ -86,7 +86,7 @@ trait AppDriver {
 }
 ```
 
-Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), an [`Action`] is emitted, and the `on_action` method is called.
+Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), an `Action` is emitted, and the `on_action` method is called.
 
 That method gives our app a `DriverCtx` context, which we can use to access the root widget, and a [`WidgetId`] identifying the widget that emitted the action.
 
@@ -131,7 +131,7 @@ Because our widget tree only has one button and one textbox, there is no possibl
 When handling `ButtonPressed`:
 
 - `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
-- `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<dyn Widget>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
+- `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<dyn AnyWidget>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
 - `root.downcast::<...>()` returns a `WidgetMut<Portal<Flex>>`.
 - `Portal::child_mut()` returns a `WidgetMut<Flex>`.
 
@@ -273,7 +273,6 @@ Most of this documentation is written to help developers trying to build such a 
 [`Textbox`]: crate::widgets::Textbox
 [`Button`]: crate::widgets::Button
 
-[`Action`]: crate::core::Action
 [`WidgetId`]: crate::core::WidgetId
 [`WidgetMut`]: crate::core::WidgetMut
 [add_child]: crate::widgets::Flex::add_child

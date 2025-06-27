@@ -20,6 +20,7 @@ members = [
     "xilem_web/web_examples/svgtoy",
     "xilem_web/web_examples/svgdraw",
     "tree_arena",
+    "any_debug",
     "placehero",
 ]
 
@@ -39,6 +40,7 @@ repository = "https://github.com/linebender/xilem"
 
 [workspace.dependencies]
 
+any_debug = { path = "any_debug" }
 masonry = { version = "0.3.0", path = "masonry" }
 masonry_core = { version = "0.3.0", path = "masonry_core" }
 masonry_testing = { version = "0.3.0", path = "masonry_testing" }

@@ -5,7 +5,7 @@ use masonry::core::{WidgetOptions, WidgetPod};
 use masonry::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
 };
-use masonry::widgets;
+use masonry::widgets::{self, TextAction};
 use vello::kurbo::Affine;
 use vello::peniko::Brush;
 
@@ -195,20 +195,16 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             id_path.is_empty(),
             "id path should be empty in Textbox::message"
         );
-        match message.downcast::<masonry::core::Action>() {
+        match message.downcast::<TextAction>() {
             Ok(action) => match *action {
-                masonry::core::Action::TextChanged(text) => {
+                TextAction::Changed(text) => {
                     MessageResult::Action((self.on_changed)(app_state, text))
                 }
-                masonry::core::Action::TextEntered(text) if self.on_enter.is_some() => {
+                TextAction::Entered(text) if self.on_enter.is_some() => {
                     MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
                 }
-                masonry::core::Action::TextEntered(_) => {
+                TextAction::Entered(_) => {
                     tracing::error!("Textbox::message: on_enter is not set");
-                    MessageResult::Stale(DynMessage(action))
-                }
-                _ => {
-                    tracing::error!("Wrong action type in Textbox::message: {action:?}");
                     MessageResult::Stale(DynMessage(action))
                 }
             },

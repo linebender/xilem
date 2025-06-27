@@ -70,6 +70,8 @@ impl Image {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Image {
+    type Action = ();
+
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn update(
@@ -85,6 +87,7 @@ impl Widget for Image {
         _ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         // If either the width or height is constrained calculate a value so that the image fits
         // in the size exactly. If it is unconstrained by both width and height take the size of

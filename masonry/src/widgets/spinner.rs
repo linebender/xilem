@@ -72,6 +72,8 @@ impl Spinner {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Spinner {
+    type Action = ();
+
     fn on_anim_frame(
         &mut self,
         ctx: &mut UpdateCtx<'_>,
@@ -102,6 +104,7 @@ impl Widget for Spinner {
         _ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         if bc.is_width_bounded() && bc.is_height_bounded() {
             bc.max()

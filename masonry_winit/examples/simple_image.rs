@@ -8,11 +8,11 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{Action, ObjectFit, WidgetId, WidgetPod};
+use masonry::core::{ObjectFit, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::{Image as ImageBuf, ImageFormat};
 use masonry::widgets::Image;
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{Action, AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
 struct Driver;

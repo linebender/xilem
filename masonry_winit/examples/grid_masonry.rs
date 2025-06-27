@@ -6,14 +6,14 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 use masonry::core::{
-    Action, PointerButton, Properties, StyleProperty, WidgetId, WidgetOptions, WidgetPod,
+    PointerButton, Properties, StyleProperty, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::parley::layout::Alignment;
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
 use masonry::widgets::{Button, Grid, GridParams, Prose, SizedBox, TextArea};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{Action, AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
 struct Driver {
@@ -31,8 +31,8 @@ impl AppDriver for Driver {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        if let Action::ButtonPressed(button) = action {
-            self.grid_spacing += match button {
+        if let Ok(press) = action.downcast::<<Button as Widget>::Action>() {
+            self.grid_spacing += match press.button {
                 Some(PointerButton::Primary) => 1.0,
                 Some(PointerButton::Secondary) => -1.0,
                 _ => 0.5,

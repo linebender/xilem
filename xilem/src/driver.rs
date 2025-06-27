@@ -7,9 +7,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use masonry::core::{Widget, WidgetId, WidgetPod};
+use masonry::core::{AnyWidget, WidgetId, WidgetPod};
 use masonry::peniko::Blob;
-use masonry_winit::app::{AppDriver, DriverCtx, MasonryState, MasonryUserEvent, WindowId};
+use masonry_winit::app::{Action, AppDriver, DriverCtx, MasonryState, MasonryUserEvent, WindowId};
 use winit::window::WindowAttributes;
 use xilem_core::{AnyViewState, RawProxy, View};
 
@@ -49,7 +49,7 @@ where
         fonts: Vec<Blob<u8>>,
     ) -> (
         Self,
-        Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+        Vec<(WindowId, WindowAttributes, WidgetPod<dyn AnyWidget>)>,
     ) {
         let mut driver = Self {
             state,
@@ -74,8 +74,8 @@ where
 pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
 
 /// The action which should be used for async events.
-pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> masonry::core::Action {
-    masonry::core::Action::Other(Box::<MessagePackage>::new((path, message)))
+pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> Action {
+    Box::<MessagePackage>::new((path, message))
 }
 
 /// The type used to send a message for async events.
@@ -95,7 +95,7 @@ impl MasonryProxy {
         )) {
             Ok(()) => Ok(()),
             Err(err) => {
-                let MasonryUserEvent::Action(_, masonry::core::Action::Other(res), _) = err else {
+                let MasonryUserEvent::Action(_, res, _) = err else {
                     unreachable!(
                         "We know this is the value we just created, which matches this pattern"
                     )
@@ -145,7 +145,7 @@ where
         &mut self,
         window_id: WindowId,
         view: WindowView<State>,
-    ) -> (WindowAttributes, WidgetPod<dyn Widget>) {
+    ) -> (WindowAttributes, WidgetPod<dyn AnyWidget>) {
         let mut view_ctx = ViewCtx::new(
             Arc::new(WindowProxy(window_id, self.proxy.clone())),
             self.runtime.clone(),
@@ -239,7 +239,7 @@ where
         window_id: WindowId,
         masonry_ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
         widget_id: WidgetId,
-        action: masonry::core::Action,
+        action: Action,
     ) {
         let Some(window) = self.windows.get_mut(&window_id) else {
             tracing::warn!(
@@ -250,9 +250,6 @@ where
         };
 
         let message_result = if widget_id == ASYNC_MARKER_WIDGET {
-            let masonry::core::Action::Other(action) = action else {
-                panic!();
-            };
             let (path, message) = *action.downcast::<MessagePackage>().unwrap();
             // Handle an async path
             window
@@ -262,7 +259,7 @@ where
             window.view.message(
                 &mut window.view_state,
                 id_path.as_slice(),
-                DynMessage::new(action),
+                DynMessage(action),
                 &mut self.state,
             )
         } else {

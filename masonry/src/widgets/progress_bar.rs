@@ -97,6 +97,8 @@ fn clamp_progress(progress: Option<f64>) -> Option<f64> {
 
 // --- MARK: IMPL WIDGET
 impl Widget for ProgressBar {
+    type Action = ();
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.label);
     }
@@ -114,6 +116,7 @@ impl Widget for ProgressBar {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         const DEFAULT_WIDTH: f64 = 400.;
         // TODO: Clearer constraints here

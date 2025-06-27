@@ -315,6 +315,8 @@ impl Label {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Label {
+    type Action = ();
+
     fn accepts_pointer_interaction(&self) -> bool {
         false
     }
@@ -337,6 +339,7 @@ impl Widget for Label {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let available_width = if bc.max().width.is_finite() {
             Some((bc.max().width as f32 - 2. * LABEL_X_PADDING as f32).max(0.))

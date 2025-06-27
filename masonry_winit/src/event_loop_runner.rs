@@ -9,8 +9,9 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
+use masonry::AnyDebug;
 use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
-use masonry::core::{DefaultProperties, TextEvent, Widget, WidgetId, WidgetPod, WindowEvent};
+use masonry::core::{AnyWidget, DefaultProperties, TextEvent, WidgetId, WidgetPod, WindowEvent};
 use masonry::kurbo::Affine;
 use masonry::peniko::Color;
 use masonry::theme::default_property_set;
@@ -33,7 +34,7 @@ use crate::app_driver::WindowId;
 pub enum MasonryUserEvent {
     AccessKit(HandleId, accesskit_winit::WindowEvent),
     // TODO: A more considered design here
-    Action(WindowId, masonry::core::Action, WidgetId),
+    Action(WindowId, Box<dyn AnyDebug>, WidgetId),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {
@@ -80,7 +81,7 @@ pub(crate) struct Window {
 impl Window {
     pub(crate) fn new(
         window_id: WindowId,
-        root_widget: WidgetPod<dyn Widget>,
+        root_widget: WidgetPod<dyn AnyWidget>,
         attributes: WindowAttributes,
         signal_sender: Sender<(WindowId, RenderRootSignal)>,
         default_properties: Arc<DefaultProperties>,
@@ -133,7 +134,7 @@ pub struct MasonryState<'a> {
     signal_sender: Sender<(WindowId, RenderRootSignal)>,
     default_properties: Arc<DefaultProperties>,
     pub(crate) exit: bool,
-    initial_windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+    initial_windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn AnyWidget>)>,
     need_first_frame: Vec<HandleId>,
 }
 
@@ -159,7 +160,7 @@ pub fn run(
     // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
     // This is passed in mostly to allow configuring the Android app
     mut loop_builder: EventLoopBuilder,
-    windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+    windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn AnyWidget>)>,
     app_driver: impl AppDriver + 'static,
 ) -> Result<(), EventLoopError> {
     let event_loop = loop_builder.build()?;
@@ -169,7 +170,7 @@ pub fn run(
 
 pub fn run_with(
     event_loop: EventLoop,
-    windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+    windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn AnyWidget>)>,
     app_driver: impl AppDriver + 'static,
     default_properties: DefaultProperties,
 ) -> Result<(), EventLoopError> {
@@ -261,7 +262,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 impl MasonryState<'_> {
     pub fn new(
         event_loop_proxy: EventLoopProxy,
-        initial_windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+        initial_windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn AnyWidget>)>,
         default_properties: DefaultProperties,
     ) -> Self {
         let render_cx = RenderContext::new();
@@ -330,7 +331,7 @@ impl MasonryState<'_> {
         event_loop: &ActiveEventLoop,
         window_id: WindowId,
         attributes: WindowAttributes,
-        root_widget: WidgetPod<dyn Widget>,
+        root_widget: WidgetPod<dyn AnyWidget>,
     ) {
         let window = Window::new(
             window_id,

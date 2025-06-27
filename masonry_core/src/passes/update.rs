@@ -10,8 +10,8 @@ use ui_events::pointer::PointerType;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
-    DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetState,
+    AnyWidget, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};
@@ -46,7 +46,7 @@ fn dummy_pointer_cancel() -> PointerEvent {
 fn run_targeted_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
-    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>),
+    mut pass_fn: impl FnMut(&mut dyn AnyWidget, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>),
 ) {
     let mut current_id = target;
     while let Some(widget_id) = current_id {
@@ -75,7 +75,7 @@ fn run_targeted_update_pass(
 fn run_single_update_pass(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
-    mut pass_fn: impl FnMut(&mut dyn Widget, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>),
+    mut pass_fn: impl FnMut(&mut dyn AnyWidget, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>),
 ) {
     let Some(target) = target else {
         return;
@@ -112,7 +112,7 @@ fn run_single_update_pass(
 fn update_widget_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
 ) {
@@ -257,7 +257,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
     parent_disabled: bool,
@@ -349,7 +349,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
     parent_stashed: bool,
@@ -448,7 +448,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
     parent_focus_chain: &mut Vec<WidgetId>,

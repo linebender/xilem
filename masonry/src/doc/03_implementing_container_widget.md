@@ -28,7 +28,7 @@ As an example, let's write a `VerticalStack` widget, which lays out its children
 
 ```rust,ignore
 struct VerticalStack {
-    children: Vec<WidgetPod<dyn Widget>>,
+    children: Vec<WidgetPod<dyn AnyWidget>>,
     gap: f64,
 }
 
@@ -200,7 +200,7 @@ Let's write WidgetMut methods for our `VerticalStack`:
 
 ```rust,ignore
 impl VerticalStack {
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn Widget>) {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: WidgetPod<dyn AnyWidget>) {
         this.widget.children.push(child);
         this.ctx.children_changed();
     }

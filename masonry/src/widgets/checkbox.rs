@@ -12,9 +12,9 @@ use vello::Scene;
 use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
@@ -75,11 +75,15 @@ impl Checkbox {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Checkbox {
+    /// The checkbox was toggled.
+    type Action = bool;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        emit: impl Fn(Self::Action),
     ) {
         match event {
             PointerEvent::Down { .. } => {
@@ -93,7 +97,7 @@ impl Widget for Checkbox {
             PointerEvent::Up { .. } => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    emit(self.checked);
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 // Checked state impacts appearance and accessibility node
@@ -108,6 +112,7 @@ impl Widget for Checkbox {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -116,12 +121,13 @@ impl Widget for Checkbox {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        emit: impl Fn(Self::Action),
     ) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    emit(self.checked);
                     // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                 }
@@ -163,6 +169,7 @@ impl Widget for Checkbox {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
@@ -310,20 +317,20 @@ mod tests {
 
         assert_render_snapshot!(harness, "checkbox_hello_unchecked");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action().is_none());
 
         harness.mouse_click_on(checkbox_id);
         assert_eq!(
-            harness.pop_action(),
-            Some((Action::CheckboxToggled(true), checkbox_id))
+            harness.pop_action_for::<Checkbox>(),
+            Some((true, checkbox_id))
         );
 
         assert_render_snapshot!(harness, "checkbox_hello_checked");
 
         harness.mouse_click_on(checkbox_id);
         assert_eq!(
-            harness.pop_action(),
-            Some((Action::CheckboxToggled(false), checkbox_id))
+            harness.pop_action_for::<Checkbox>(),
+            Some((false, checkbox_id))
         );
     }
 

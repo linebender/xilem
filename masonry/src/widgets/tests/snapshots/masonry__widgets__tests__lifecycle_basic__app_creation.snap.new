@@ -1,0 +1,17 @@
+---
+source: masonry/src/widgets/tests/lifecycle_basic.rs
+assertion_line: 23
+expression: record
+---
+[
+    RC,
+    U(
+        WidgetAdded,
+    ),
+    Layout(
+        0.0W×0.0H,
+    ),
+    Layout(
+        400.0W×400.0H,
+    ),
+]
