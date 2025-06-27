@@ -23,7 +23,7 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
         .children_fn(|child| smallvec![child.id()])
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic(expected = "not visited in method on_text_event")]
 #[test]
 fn check_forget_to_recurse_text_event() {
@@ -35,7 +35,7 @@ fn check_forget_to_recurse_text_event() {
     harness.mouse_move(Point::ZERO);
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic(expected = "not added in method lifecycle")]
 #[test]
 #[cfg_attr(
@@ -50,7 +50,7 @@ fn check_forget_to_recurse_lifecycle() {
     let _harness = TestHarness::create(widget);
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic(expected = "before receiving WidgetAdded.")]
 #[test]
 fn check_forget_to_recurse_widget_added() {
@@ -165,7 +165,7 @@ fn check_forget_to_call_place_child() {
 
 // TODO - allow non-recurse in some cases
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[test]
 fn allow_non_recurse_event_handled() {
     let widget = make_parent_widget(Flex::row())
@@ -182,7 +182,7 @@ fn allow_non_recurse_event_handled() {
     harness.mouse_move(Point::ZERO);
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[test]
 fn allow_non_recurse_cursor_oob() {
     let widget = make_parent_widget(Flex::row())
@@ -201,7 +201,7 @@ fn allow_non_recurse_cursor_oob() {
     harness.mouse_move(Point::new(5000.0, 5000.0));
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[test]
 fn allow_non_recurse_oob_paint() {
     let widget = make_parent_widget(Flex::row())
@@ -220,7 +220,7 @@ fn allow_non_recurse_oob_paint() {
 
 // ---
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic(expected = "children changed")]
 #[test]
 fn check_forget_children_changed() {
@@ -271,7 +271,7 @@ fn check_forget_children_changed() {
 
 // ---
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic]
 #[test]
 fn check_recurse_event_twice() {
@@ -284,7 +284,7 @@ fn check_recurse_event_twice() {
     harness.mouse_move(Point::ZERO);
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic]
 #[test]
 fn check_recurse_lifecycle_twice() {
@@ -296,7 +296,7 @@ fn check_recurse_lifecycle_twice() {
     let _harness = TestHarness::create(widget);
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic]
 #[test]
 fn check_recurse_layout_twice() {
@@ -310,7 +310,7 @@ fn check_recurse_layout_twice() {
     let _harness = TestHarness::create(widget);
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic]
 #[test]
 fn check_recurse_paint_twice() {
@@ -347,7 +347,7 @@ fn check_layout_stashed() {
 // ---
 
 // TODO - For now, paint_rect is automatically computed, so there's no way this test fails.
-#[cfg(FALSE)]
+#[cfg(false)]
 #[should_panic(expected = "doesn't contain paint_rect")]
 #[test]
 fn check_paint_rect_includes_children() {

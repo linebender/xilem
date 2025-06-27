@@ -33,7 +33,7 @@ See [Masonry Winit's documentation] for more details, examples and resources.
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Masonry has been verified to compile with **Rust 1.86** and later.
+This version of Masonry has been verified to compile with **Rust 1.88** and later.
 
 Future versions of Masonry might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

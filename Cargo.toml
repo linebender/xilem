@@ -33,7 +33,7 @@ version = "0.3.0"
 
 edition = "2024"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
-rust-version = "1.86"
+rust-version = "1.88"
 license = "Apache-2.0"
 repository = "https://github.com/linebender/xilem"
 
@@ -76,9 +76,6 @@ reqwest = { version = "0.12.20", default-features = false, features = [
 # requires us to use the `#[unsafe(no_mangle)]` attribute
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
-
-# Intentional break from the lint set. Intended to be temporary
-rust.unexpected_cfgs = { level = "warn", check-cfg = ['cfg(FALSE)'] }
 
 # LINEBENDER LINT SET - Cargo.toml - v6
 # See https://linebender.org/wiki/canonical-lints/

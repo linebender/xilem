@@ -550,10 +550,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // This means that if a parent widget was handling IME events, it won't get this event.
         // We know that IME events bubbling is not the correct behaviour, but have chosen to keep it for consistency,
         // as we also are planning to refactor how IME is delivered as we update to use Android View.
-        if let Some(prev_focused) = prev_focused {
-            if root.get_widget(prev_focused).is_some() {
-                run_on_text_event_pass(root, &TextEvent::Ime(Ime::Disabled));
-            }
+        if let Some(prev_focused) = prev_focused
+            && root.has_widget(prev_focused)
+        {
+            run_on_text_event_pass(root, &TextEvent::Ime(Ime::Disabled));
         }
 
         // Disable the IME, which was enabled specifically for this widget. Note that if the newly

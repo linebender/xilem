@@ -25,7 +25,7 @@ fn app_creation() {
 
 // FIXME - Need to figure out this test
 #[ignore]
-#[cfg(FALSE)]
+#[cfg(false)]
 /// Test that lifecycle events are sent correctly to a child added during event
 /// handling
 #[test]
@@ -60,7 +60,7 @@ fn adding_child() {
 
 /// Test that all children are registered correctly after a child is replaced.
 #[test]
-#[cfg(FALSE)]
+#[cfg(false)]
 fn register_after_adding_child() {
     let [id_1, id_2, id_3, id_4, id_5, id_6, id_8] = widget_ids();
 

@@ -92,7 +92,7 @@ This invariant is not checked by the compiler and thus relies on the logic to de
 
 ## Minimum supported Rust Version (MSRV)
 
-This version of Tree Arena has been verified to compile with **Rust 1.86** and later.
+This version of Tree Arena has been verified to compile with **Rust 1.88** and later.
 
 Future versions of Tree Arena might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.

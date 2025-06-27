@@ -202,7 +202,7 @@ macro_rules! include_screenshot {
 
 // TODO - Re-enable this once we find a way to load screenshots that doesn't go against our
 // storage quotas.
-#[cfg(FALSE)]
+#[cfg(false)]
 #[cfg(docsrs)]
 #[doc(hidden)]
 #[macro_export]
@@ -217,7 +217,7 @@ macro_rules! include_screenshot {
     };
 }
 
-#[cfg(FALSE)]
+#[cfg(false)]
 #[cfg(not(docsrs))]
 #[doc(hidden)]
 #[macro_export]
