@@ -23,7 +23,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
             *data -= 1;
         }),
         FlexSpacer::Flex(1.0),
-        label(format!("count: {}", data)).text_size(32.).flex(5.0),
+        label(format!("count: {data}")).text_size(32.).flex(5.0),
         FlexSpacer::Flex(1.0),
         big_button("+", |data| {
             *data += 1;
