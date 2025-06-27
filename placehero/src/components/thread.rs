@@ -51,9 +51,7 @@ pub(crate) fn thread(
         ))
         .padding(Padding {
             // Leave room for scrollbar
-            // For reasons unknown, the ~8 pixel left bar messes with things.
-            // We just stick some extra amount on.
-            right: 30.,
+            right: 20.,
             ..Padding::all(5.0)
         }),
     )
@@ -68,7 +66,7 @@ fn thread_ancestor(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Pl
                 .height(50.)
                 .background_color(css::WHITE)
                 .flex(CrossAxisAlignment::Start),
-            flex(base_status(avatars, status)),
+            flex(base_status(avatars, status)).flex(1.0),
         ))
         .must_fill_major_axis(true),
     )

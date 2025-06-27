@@ -92,7 +92,10 @@ impl Placehero {
     fn sidebar(&mut self) -> impl WidgetView<Self> + use<> {
         if let Some(instance) = &self.instance {
             let back = if self.show_context.is_some() {
-                Some(button("🔙", |app_state: &mut Self| {
+                // TODO: Make the ⬅️ arrow not be available to screen readers.
+                Some(button("⬅️ Back to Timeline", |app_state: &mut Self| {
+                    // TODO: Maintain scroll state in the timeline.
+                    // TODO: More of a back stack.
                     app_state.show_context = None;
                     app_state.context = None;
                 }))

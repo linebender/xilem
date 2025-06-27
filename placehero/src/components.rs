@@ -55,7 +55,7 @@ fn base_status(avatars: &mut Avatars, status: &Status) -> impl FlexSequence<Plac
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            button("🔗", move |state: &mut Placehero| {
+            button("View Replies", move |state: &mut Placehero| {
                 state
                     .context_sender
                     .as_ref()
