@@ -12,14 +12,15 @@
 use std::sync::Arc;
 
 use components::timeline;
-use megalodon::entities::{Account, Instance, Status};
+use megalodon::entities::{Account, Context, Instance, Status};
 use megalodon::megalodon::GetAccountStatusesInputOptions;
 use megalodon::{Megalodon, mastodon};
-use xilem::core::one_of::Either;
+use xilem::core::one_of::{Either, OneOf, OneOf4};
 use xilem::core::{NoElement, View, fork, lens};
-use xilem::view::{flex, label, prose, split, task_raw};
+use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use xilem::view::{button, flex, label, prose, split, task_raw, worker_raw};
 use xilem::winit::error::EventLoopError;
-use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem};
+use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
 
 mod avatars;
 mod components;
@@ -27,6 +28,8 @@ mod html_content;
 
 pub(crate) use avatars::Avatars;
 pub(crate) use html_content::status_html_to_plaintext;
+
+use crate::components::thread;
 
 /// Our shared API client type.
 ///
@@ -44,9 +47,12 @@ type Mastodon = Arc<mastodon::Mastodon>;
 struct Placehero {
     mastodon: Mastodon,
     instance: Option<Instance>,
-    statuses: Vec<Status>,
+    thread_statuses: Vec<Status>,
     account: Option<Account>,
     avatars: Avatars,
+    show_context: Option<Status>,
+    context: Option<Context>,
+    context_sender: Option<UnboundedSender<String>>,
 }
 
 /// Execute the app in the given winit event loop.
@@ -67,8 +73,11 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         mastodon: Arc::new(mastodon),
         instance: None,
         account: None,
-        statuses: Vec::new(),
+        thread_statuses: Vec::new(),
         avatars: Avatars::default(),
+        show_context: None,
+        context: None,
+        context_sender: None,
     };
 
     Xilem::new_simple(
@@ -82,10 +91,19 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 impl Placehero {
     fn sidebar(&mut self) -> impl WidgetView<Self> + use<> {
         if let Some(instance) = &self.instance {
+            let back = if self.show_context.is_some() {
+                Some(button("🔙", |app_state: &mut Self| {
+                    app_state.show_context = None;
+                    app_state.context = None;
+                }))
+            } else {
+                None
+            };
             Either::A(flex((
                 label("Connected to:"),
                 // TODO: We should probably use an ArcStr for this?
                 prose(instance.title.as_str()),
+                back,
             )))
         } else {
             Either::B(prose("Not yet connected (or other unhandled error)"))
@@ -93,10 +111,18 @@ impl Placehero {
     }
 
     fn main_view(&mut self) -> impl WidgetView<Self> + use<> {
-        if self.statuses.is_empty() {
-            Either::A(prose("No statuses yet loaded"))
+        if let Some(show_context) = self.show_context.as_ref() {
+            if let Some(context) = self.context.as_ref() {
+                // TODO: Display the status until the entire thread loads; this is hard because
+                // the thread's scroll position would jump.
+                OneOf4::A(thread(&mut self.avatars, show_context, context))
+            } else {
+                OneOf::B(prose("Loading thread"))
+            }
+        } else if !self.thread_statuses.is_empty() {
+            OneOf::C(timeline(&mut self.thread_statuses, &mut self.avatars))
         } else {
-            Either::B(timeline(&mut self.statuses, &mut self.avatars))
+            OneOf::D(prose("No statuses yet loaded"))
         }
     }
 }
@@ -107,6 +133,7 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
         (
             load_instance(app_state.mastodon.clone()),
             load_account(app_state.mastodon.clone()),
+            load_contexts(app_state.mastodon.clone()),
             app_state
                 .account
                 .as_ref()
@@ -117,6 +144,53 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
                 |app_state: &mut Placehero| &mut app_state.avatars,
             ),
         ),
+    )
+}
+
+fn load_contexts(
+    mastodon: Mastodon,
+) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
+    worker_raw(
+        move |result, mut recv: UnboundedReceiver<String>| {
+            let mastodon = mastodon.clone();
+            async move {
+                while let Some(req) = recv.recv().await {
+                    let mastodon = mastodon.clone();
+                    let result = result.clone();
+                    // TODO: Cancel the previous task?
+                    // There is probably some `select!`-adjacent helper for this?
+                    tokio::task::spawn(async move {
+                        // Note that error handling is deferred to the on_response handler
+                        let context_result = mastodon.get_status_context(req.clone(), None).await;
+                        // We choose not to handle the case where the event loop has ended
+                        drop(result.message((context_result, req)));
+                    });
+                }
+            }
+        },
+        |app_state: &mut Placehero, sender| app_state.context_sender = Some(sender),
+        |app_state: &mut Placehero, (event, id)| match event {
+            Ok(context)
+                if app_state
+                    .show_context
+                    .as_ref()
+                    .is_some_and(|it| it.id == id) =>
+            {
+                app_state.context = Some(context.json);
+            }
+            Ok(_) => {
+                tracing::warn!("Dropping context whose request was superseded.");
+            }
+            Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
+                todo!()
+            }
+            Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
+                todo!()
+            }
+            Err(e) => {
+                todo!("handle {e}")
+            }
+        },
     )
 }
 
@@ -201,7 +275,7 @@ fn load_statuses(
             }
         },
         |app_state: &mut Placehero, event| match event {
-            Ok(instance) => app_state.statuses = instance.json,
+            Ok(instance) => app_state.thread_statuses = instance.json,
             Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
                 todo!()
             }

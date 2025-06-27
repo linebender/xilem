@@ -4,14 +4,17 @@
 use megalodon::entities::Status;
 use xilem::FontWeight;
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, flex, flex_row,
-    inline_prose, label, prose,
+    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex,
+    flex_row, inline_prose, label, prose,
 };
 
 use crate::{Avatars, Placehero, status_html_to_plaintext};
 
 mod timeline;
 pub(crate) use timeline::timeline;
+
+mod thread;
+pub(crate) use thread::thread;
 
 /// Renders the key parts of a Status, in a shared way.
 ///
@@ -20,6 +23,8 @@ pub(crate) use timeline::timeline;
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
 fn base_status(avatars: &mut Avatars, status: &Status) -> impl FlexSequence<Placehero> + use<> {
+    // TODO: This really should be Arced or something.
+    let status_clone: Status = status.clone();
     // TODO: In theory, it's possible to reblog a reblog; it's not clear what happens in this case.
     debug_assert!(status.reblog.is_none(), "`base_status` can't show reblogs.");
     // We return a child list.
@@ -50,6 +55,16 @@ fn base_status(avatars: &mut Avatars, status: &Status) -> impl FlexSequence<Plac
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
+            button("🔗", move |state: &mut Placehero| {
+                state
+                    .context_sender
+                    .as_ref()
+                    .unwrap()
+                    .send(status_clone.id.clone())
+                    .unwrap();
+                state.show_context = Some(status_clone.clone());
+                state.context = None;
+            }),
         ))
         // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
         .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
