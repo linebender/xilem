@@ -1,3 +1,6 @@
+// Copyright 2025 the Xilem Authors
+// SPDX-License-Identifier: Apache-2.0
+
 use megalodon::entities::Status;
 use xilem::WidgetView;
 use xilem::palette::css;
