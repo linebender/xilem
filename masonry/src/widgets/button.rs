@@ -19,8 +19,9 @@ use crate::core::{
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, HoveredBorderColor, Padding,
+    ActiveBackground, ActiveBorderColor, Background, BorderColor, BorderWidth, BoxShadow,
+    CornerRadius, DisabledBackground, DisabledBorderColor, HoveredBackground, HoveredBorderColor,
+    Padding,
 };
 use crate::theme;
 use crate::util::{fill, stroke};
@@ -167,7 +168,10 @@ impl Widget for Button {
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         DisabledBackground::prop_changed(ctx, property_type);
         ActiveBackground::prop_changed(ctx, property_type);
+        HoveredBackground::prop_changed(ctx, property_type);
         Background::prop_changed(ctx, property_type);
+        DisabledBorderColor::prop_changed(ctx, property_type);
+        ActiveBorderColor::prop_changed(ctx, property_type);
         HoveredBorderColor::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
@@ -233,6 +237,8 @@ impl Widget for Button {
             &props.get::<DisabledBackground>().0
         } else if is_pressed {
             &props.get::<ActiveBackground>().0
+        } else if is_hovered {
+            &props.get::<HoveredBackground>().0
         } else {
             props.get::<Background>()
         };
@@ -240,7 +246,11 @@ impl Widget for Button {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let mut border_color = if is_hovered && !ctx.is_disabled() {
+        let mut border_color = if ctx.is_disabled() {
+            &props.get::<DisabledBorderColor>().0
+        } else if is_pressed {
+            &props.get::<ActiveBorderColor>().0
+        } else if is_hovered {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()
