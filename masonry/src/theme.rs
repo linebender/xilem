@@ -15,7 +15,6 @@ use crate::properties::{
 };
 use crate::widgets::{Button, Checkbox, Textbox};
 
-pub const BORDER_RADIUS: f64 = 6.;
 pub const BORDER_WIDTH: f64 = 1.;
 
 // Zync color variations from https://tailwindcss.com/docs/colors
@@ -49,9 +48,7 @@ pub fn default_property_set() -> DefaultProperties {
 
     // Button
     properties.insert::<Button, _>(Padding::from_vh(6., 16.));
-    properties.insert::<Button, _>(CornerRadius {
-        radius: BORDER_RADIUS,
-    });
+    properties.insert::<Button, _>(CornerRadius { radius: 6. });
     properties.insert::<Button, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -82,9 +79,7 @@ pub fn default_property_set() -> DefaultProperties {
 
     // Textbox
     properties.insert::<Textbox, _>(Padding::from_vh(6., 12.));
-    properties.insert::<Textbox, _>(CornerRadius {
-        radius: BORDER_RADIUS,
-    });
+    properties.insert::<Textbox, _>(CornerRadius { radius: 4. });
     properties.insert::<Textbox, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
