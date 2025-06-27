@@ -19,12 +19,13 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         .collect::<Vec<_>>();
 
     flex((
-        // Even if a `Vec` is used for the children, other widgets can be included by putting them in a
+        // Even when a `Vec` is used for the children, other widgets can be included by putting them in a
         // tuple of children alongside the vector.
         button("more", |appstate: &mut AppState| appstate.count += 1),
         list,
-    )) // we can controll alignment of the elements using the flexbox
+    ))
     .direction(Axis::Vertical) // Top to Bottom
+    // We can control alignment of the elements in the flexbox
     .main_axis_alignment(MainAxisAlignment::Start) // Aligned to the left
 }
 
