@@ -29,7 +29,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
         big_button("-", |data| {
             *data -= 1;
         }),
-        label(format!("count: {}", data)).text_size(32.),
+        label(format!("count: {data}")).text_size(32.),
         big_button("+", |data| {
             *data += 1;
         }),

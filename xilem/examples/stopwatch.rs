@@ -56,7 +56,7 @@ impl Stopwatch {
                 self.displayed_error = "".into();
             }
             Err(err) => {
-                self.displayed_error = format!("failed to calculate elapsed time: {}", err);
+                self.displayed_error = format!("failed to calculate elapsed time: {err}");
             }
         }
         self.last_start_time = None;
