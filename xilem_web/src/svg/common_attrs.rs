@@ -4,6 +4,7 @@
 use std::fmt::Write as _;
 use std::marker::PhantomData;
 
+use peniko::kurbo::Join;
 use peniko::{Brush, kurbo};
 
 use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
@@ -92,6 +93,14 @@ fn opacity_attr_modifier(attr: &'static str, brush: &Brush) -> AttributeModifier
     };
 
     (attr, opacity).into()
+}
+
+fn linejoin_to_attr(j: Join) -> Option<&'static str> {
+    match j {
+        Join::Miter => None,
+        Join::Round => Some("round"),
+        Join::Bevel => Some("bevel"),
+    }
 }
 
 impl<V, State, Action> ViewMarker for Fill<V, State, Action> {}
@@ -188,6 +197,11 @@ fn push_stroke_modifiers(
     let dash_offset = (stroke.dash_offset != 0.0).then_some(stroke.dash_offset);
     Attributes::push(&mut attrs, ("stroke-dashoffset", dash_offset));
     Attributes::push(&mut attrs, ("stroke-width", stroke.width));
+
+    Attributes::push(
+        &mut attrs,
+        ("stroke-linejoin", linejoin_to_attr(stroke.join)),
+    );
 }
 
 // This function is not inlined to avoid unnecessary monomorphization, which may result in a bigger binary.
@@ -231,6 +245,13 @@ fn update_stroke_modifiers(
         if next_stroke.width != prev_stroke.width {
             Attributes::mutate(&mut attrs, |m| {
                 *m = ("stroke-width", next_stroke.width).into();
+            });
+        } else {
+            Attributes::skip(&mut attrs, 1);
+        }
+        if next_stroke.join != prev_stroke.join {
+            Attributes::mutate(&mut attrs, |m| {
+                *m = ("stroke-linejoin", linejoin_to_attr(next_stroke.join)).into();
             });
         } else {
             Attributes::skip(&mut attrs, 1);
