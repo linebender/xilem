@@ -1,17 +1,16 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use xilem::core::one_of::Either;
 use xilem::core::{MessageProxy, NoElement, View};
 use xilem::palette::css;
 use xilem::style::{Gradient, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-
 use xilem::view::{image, sized_box, spinner, worker};
 use xilem::{Blob, Image, ImageFormat, ViewCtx, WidgetView, tokio};
-
-use std::collections::HashMap;
-use std::sync::Arc;
 
 #[derive(Debug)]
 struct AvatarRequest {
