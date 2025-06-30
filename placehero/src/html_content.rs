@@ -21,6 +21,10 @@ enum TagCloseBehaviour {
 /// 1) We convert HTML entities to their regular value (hopefully?)
 /// 2) We only handle the `p`, `br`, `span.invisible`, `span.ellipsis` cases
 /// 3) We don't handle `microformat` at all.
+///
+/// For certain error cases, this [`warn`](tracing::warn)s (or `error`s).
+/// For additional context, the app can be run with the environment variable
+/// `RUST_LOG` set to `"info,placehero::html_content=trace"`.
 // TODO: We know this code is not great (and probably way too imperative!)
 // We're deferring refactoring this until we want to handle more attributes.
 pub(crate) fn status_html_to_plaintext(content: &str) -> String {
@@ -57,10 +61,7 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                             start_tag.attributes
                         );
                     }
-                    if !start_tag.self_closing {
-                        tracing::error!("Expected <br/> to be self closing.");
-                        stack.push(TagCloseBehaviour::None);
-                    }
+                    // `br` is empty, so doesn't need handling of it closing.
                 }
                 b"span" => {
                     if let Some(class) = start_tag.attributes.remove(b"class".as_slice()) {
@@ -73,7 +74,12 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                             } else if class == "invisible" {
                                 has_invisible = true;
                             } else {
-                                tracing::warn!("Unhandled span class {class:?}.");
+                                tracing::warn!(?class, "Unhandled span class.");
+                                tracing::trace!(
+                                    ?class,
+                                    status = content,
+                                    "Context for unhandled span class."
+                                );
                             }
                         }
                         if start_tag.self_closing {
@@ -88,6 +94,10 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                                 (true, true) => {
                                     tracing::error!(
                                         "Unexpected mixing of invisible and ellipsis classes."
+                                    );
+                                    tracing::trace!(
+                                        status = content,
+                                        "Context for invisible ellipsis."
                                     );
                                     stack.push(TagCloseBehaviour::None);
                                 }
@@ -108,13 +118,20 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                     }
                 }
                 b"a" => {
-                    tracing::info!("Encountered intentionally unhandled <a> tag.");
+                    tracing::trace!("Encountered intentionally unhandled <a> tag.");
                     if !start_tag.self_closing {
                         stack.push(TagCloseBehaviour::None);
                     }
                 }
                 _ => {
-                    tracing::error!("Unhandled tag <{:?}>", start_tag.name);
+                    tracing::error!(
+                        tag = format_args!("<{:?}>", start_tag.name),
+                        "Unhandled tag."
+                    );
+                    tracing::trace!(
+                        status = format_args!("<{:?}>", start_tag.name),
+                        "Context for unhandled tag."
+                    );
                     if !start_tag.self_closing {
                         stack.push(TagCloseBehaviour::None);
                     }
@@ -125,7 +142,15 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                     TagCloseBehaviour::None => {}
                     TagCloseBehaviour::Hidden => {
                         if emit {
-                            tracing::error!("Nested `invisible` spans closed by {end_tag:?}.");
+                            tracing::error!(
+                                end_tag = format_args!("</{:?}>", end_tag.name),
+                                "Nested `invisible` spans."
+                            );
+                            tracing::trace!(
+                                end_tag = format_args!("</{:?}>", end_tag.name),
+                                status = content,
+                                "Context for nested `invisible` spans."
+                            );
                         }
                         emit = true;
                     }
@@ -135,9 +160,14 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                     TagCloseBehaviour::Paragraph => result.push_str("\n\n"),
                 },
                 None => {
-                    let end_tag = end_tag.name.as_slice();
-                    panic!(
-                        "Got unexpected extra closing tag {end_tag:?} ({end_tag:p}) in {content} ({content:p})."
+                    tracing::error!(
+                        end_tag = format_args!("</{:?}>", end_tag.name),
+                        "Got unexpected extra closing tag."
+                    );
+                    tracing::trace!(
+                        end_tag = format_args!("</{:?}>", end_tag.name),
+                        status = content,
+                        "Context for unexpected extra closing tag."
                     );
                 }
             },
@@ -154,12 +184,29 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                 tracing::warn!("Got HTML comment in post {html_string:?}; this is unexpected.");
             }
             html5gum::Token::Doctype(doctype) => {
-                tracing::error!("Got doctype in post {doctype:?}; this is unexpected.");
+                tracing::error!(?doctype, "Unexpected doctype in post.");
+                tracing::trace!(
+                    ?doctype,
+                    status = content,
+                    "Context for unexpected doctype."
+                );
             }
             html5gum::Token::Error(error) => {
-                tracing::error!("Got error token parsing post:\n{error}.");
+                tracing::error!(?error, "Got error parsing html token.");
+                tracing::trace!(?error, status = content, "Context for html parsing error.");
             }
         }
     }
+    if !stack.is_empty() {
+        tracing::error!("Non-empty stack after handling html content of status.");
+        tracing::trace!(
+            status = content,
+            ?stack,
+            "Context for non-empty stack error."
+        );
+    }
+    // Clear trailing whitespace.
+    let trimmed_len = result.trim_end().len();
+    result.truncate(trimmed_len);
     result
 }
