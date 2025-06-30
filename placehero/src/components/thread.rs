@@ -46,7 +46,7 @@ pub(crate) fn thread(
         flex((
             ancestor_views,
             base_status(avatars, root_status),
-            label("Replies:"),
+            label("Replies:").flex(CrossAxisAlignment::Start),
             descendant_views,
         ))
         .padding(Padding {
@@ -57,6 +57,10 @@ pub(crate) fn thread(
     )
 }
 
+/// The component for a single post in a thread.
+///
+/// These are rendered without a containing box, and with an adjoining "reply indicator"
+/// (which is currently known to be terrible!).
 fn thread_ancestor(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Placehero> + use<> {
     sized_box(
         flex_row((
