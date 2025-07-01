@@ -509,7 +509,7 @@ impl RenderRoot {
         Some(WidgetRef { ctx, widget })
     }
 
-    /// Checks if a Widget with the given id is in the tree.
+    /// Checks if a widget with the given id is in the tree.
     pub fn has_widget(&self, id: WidgetId) -> bool {
         self.widget_arena.has(id)
     }
