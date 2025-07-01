@@ -509,6 +509,11 @@ impl RenderRoot {
         Some(WidgetRef { ctx, widget })
     }
 
+    /// Checks if a widget with the given id is in the tree.
+    pub fn has_widget(&self, id: WidgetId) -> bool {
+        self.widget_arena.has(id)
+    }
+
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
@@ -670,10 +675,10 @@ impl RenderRoot {
     ///
     /// Returns false if the widget is not found in the tree or can't be focused.
     pub fn focus_on(&mut self, id: Option<WidgetId>) -> bool {
-        if let Some(id) = id {
-            if !self.is_still_interactive(id) {
-                return false;
-            }
+        if let Some(id) = id
+            && !self.is_still_interactive(id)
+        {
+            return false;
         }
         self.global_state.next_focused_widget = id;
         self.run_rewrite_passes();

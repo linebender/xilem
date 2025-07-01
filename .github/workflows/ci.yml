@@ -3,12 +3,12 @@ env:
   # version like 1.70. Note that we only specify MAJOR.MINOR and not PATCH so that bugfixes still
   # come automatically. If the version specified here is no longer the latest stable version,
   # then please feel free to submit a PR that adjusts it along with the potential clippy fixes.
-  RUST_STABLE_VER: "1.86" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
+  RUST_STABLE_VER: "1.88" # In quotes because otherwise (e.g.) 1.70 would be interpreted as 1.7
   # The purpose of checking with the minimum supported Rust toolchain is to detect its staleness.
   # If the compilation fails, then the version specified here needs to be bumped up to reality.
   # Be sure to also update the rust-version property in the workspace Cargo.toml file,
   # plus all the README.md files of the affected packages.
-  RUST_MIN_VER: "1.86"
+  RUST_MIN_VER: "1.88"
   # List of packages that can not target Wasm.
   NO_WASM_PKGS: "--exclude masonry_core --exclude masonry_testing --exclude masonry --exclude masonry_winit --exclude xilem --exclude placehero"
   # Only some of our examples support Android (primarily due to extra required boilerplate).

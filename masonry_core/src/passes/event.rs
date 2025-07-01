@@ -78,11 +78,11 @@ fn run_event_pass<E>(
 ) -> Handled {
     let mut pass_fn = pass_fn;
 
-    if let Some(id) = target {
-        if !root.widget_arena.has(id) {
-            debug_panic!("Cannot send event to non-existent widget {id}.");
-            return Handled::No;
-        }
+    if let Some(id) = target
+        && !root.has_widget(id)
+    {
+        debug_panic!("Cannot send event to non-existent widget {id}.");
+        return Handled::No;
     }
 
     let original_target = target;
