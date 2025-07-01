@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut};
+use masonry::core::{AnyWidget, FromDynWidget, WidgetId, WidgetMut};
 
 use crate::Pod;
 use crate::core::{AsyncCtx, RawProxy, ViewId, ViewPathTracker};
@@ -58,18 +58,18 @@ impl ViewCtx {
 
 #[expect(missing_docs, reason = "TODO - Document these items")]
 impl ViewCtx {
-    pub fn create_pod<W: Widget + FromDynWidget>(&mut self, widget: W) -> Pod<W> {
+    pub fn create_pod<W: AnyWidget + FromDynWidget>(&mut self, widget: W) -> Pod<W> {
         Pod::new(widget)
     }
 
-    pub fn with_leaf_action_widget<W: Widget + FromDynWidget + ?Sized>(
+    pub fn with_leaf_action_widget<W: AnyWidget + FromDynWidget + ?Sized>(
         &mut self,
         f: impl FnOnce(&mut Self) -> Pod<W>,
     ) -> (Pod<W>, ()) {
         (self.with_action_widget(f), ())
     }
 
-    pub fn with_action_widget<W: Widget + FromDynWidget + ?Sized>(
+    pub fn with_action_widget<W: AnyWidget + FromDynWidget + ?Sized>(
         &mut self,
         f: impl FnOnce(&mut Self) -> Pod<W>,
     ) -> Pod<W> {
@@ -92,7 +92,10 @@ impl ViewCtx {
         self.state_changed
     }
 
-    pub fn teardown_leaf<W: Widget + FromDynWidget + ?Sized>(&mut self, widget: WidgetMut<'_, W>) {
+    pub fn teardown_leaf<W: AnyWidget + FromDynWidget + ?Sized>(
+        &mut self,
+        widget: WidgetMut<'_, W>,
+    ) {
         self.widget_map.remove(&widget.ctx.widget_id());
     }
 

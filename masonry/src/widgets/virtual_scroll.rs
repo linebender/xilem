@@ -6,11 +6,12 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
+use masonry_core::core::AnyWidget;
 use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
@@ -18,7 +19,6 @@ use crate::debug_panic;
 
 /// The action type sent by the [`VirtualScroll`] widget.
 ///
-/// This will be sent to the driver as an [`Action::Other`].
 /// Before handling this action, you must call [`VirtualScroll::will_handle_action`] using it.
 ///
 /// Currently, this does not have utilities to produce the ranges which should be added and removed.
@@ -172,8 +172,8 @@ pub struct VirtualScrollAction {
 ///
 /// If the valid range is empty, i.e. the start and the end are equal, then there is jank which we haven't
 /// resolved. However, this case should not cause crashes.
-pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
-    // TODO: Should `W` be a generic, or just always be `dyn Widget`?
+pub struct VirtualScroll<W: AnyWidget + FromDynWidget + ?Sized> {
+    // TODO: Should `W` be a generic, or just always be `dyn AnyWidget`?
     /// The range of items in the "id" space which are able to be used.
     ///
     /// This is used to cap scrolling; items outside of this range will never be loaded[^1][^2][^3].
@@ -230,7 +230,7 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     missed_actions_count: u32,
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VirtualScroll")
             .field("valid_range", &self.valid_range)
@@ -247,7 +247,7 @@ impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Create a new virtual scrolling list.
     ///
     /// The item at `initial_anchor` will have its top aligned with the top of
@@ -301,7 +301,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 }
 
 // --- MARK: WIDGETMUT
-impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Indicates that `action` is about to be handled by the driver (which is calling this method).
     ///
     /// This is required because if multiple actions stack up, `VirtualScroll` would assume that they have all been handled.
@@ -471,12 +471,15 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 /// too few items, that will be sorted relatively quickly.
 const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 
-impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
+    type Action = VirtualScrollAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         match event {
             PointerEvent::Scroll { delta, .. } => {
@@ -497,6 +500,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         match event {
             TextEvent::Keyboard(key_event) => {
@@ -525,6 +529,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
         // TODO: Handle scroll-etc. eventss
     }
@@ -549,6 +554,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        emit: impl Fn(Self::Action),
     ) -> Size {
         let viewport_size = bc.max();
         ctx.set_clip_path(viewport_size.to_rect());
@@ -731,7 +737,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                         "Virtual Scrolling items in {:?} ({}) not dense.\n\
                         Expected to be dense in {:?}, but missing {idx}",
                         ctx.widget_id(),
-                        self.type_name(),
+                        Widget::type_name(self),
                         self.active_range,
                     );
                 }
@@ -793,10 +799,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             if self.active_range != target_range {
                 let previous_active = self.active_range.clone();
 
-                ctx.submit_action(Action::Other(Box::new(VirtualScrollAction {
+                emit(VirtualScrollAction {
                     old_active: previous_active,
                     target: target_range,
-                })));
+                });
                 self.action_handled = false;
             }
         }
@@ -919,12 +925,12 @@ mod tests {
     use std::collections::HashSet;
 
     use dpi::PhysicalPosition;
+    use masonry_core::core::AnyWidget;
     use parley::StyleProperty;
     use vello::kurbo::Size;
 
     use crate::core::{
-        Action, FromDynWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId,
-        WidgetMut, WidgetPod,
+        FromDynWidget, PointerEvent, PointerState, ScrollDelta, WidgetId, WidgetMut, WidgetPod,
     };
     use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
@@ -1323,7 +1329,7 @@ mod tests {
         }
     }
 
-    fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
+    fn drive_to_fixpoint<T: AnyWidget + FromDynWidget + ?Sized>(
         harness: &mut TestHarness,
         virtual_scroll_id: WidgetId,
         mut f: impl FnMut(VirtualScrollAction, WidgetMut<'_, VirtualScroll<T>>),
@@ -1335,17 +1341,13 @@ mod tests {
             if iteration > 1000 {
                 panic!("Took too long to reach fixpoint");
             }
-            let Some((action, id)) = harness.pop_action() else {
+            let Some((action, id)) = harness.pop_action_for::<VirtualScroll<T>>() else {
                 break;
             };
             assert_eq!(
                 id, virtual_scroll_id,
                 "Only widget in tree should give action"
             );
-            let Action::Other(action) = action else {
-                unreachable!()
-            };
-            let action = action.downcast::<VirtualScrollAction>().unwrap();
             if let Some(old_active) = old_active.take() {
                 assert_eq!(action.old_active, old_active);
             }
@@ -1357,7 +1359,7 @@ mod tests {
 
             harness.edit_widget(virtual_scroll_id, |mut portal| {
                 let scroll = portal.downcast::<VirtualScroll<T>>();
-                f(*action, scroll);
+                f(action, scroll);
             });
         }
     }

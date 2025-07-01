@@ -3,9 +3,9 @@
 
 use accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, AnyWidget, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
 use smallvec::{SmallVec, smallvec};
@@ -26,7 +26,7 @@ use crate::{Pod, ViewCtx};
 pub type AnyWidgetView<State, Action = ()> =
     dyn AnyView<State, Action, ViewCtx, Pod<DynWidget>> + Send + Sync;
 
-impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
         ctx.create_pod(DynWidget {
             inner: child.erased_widget_pod(),
@@ -47,7 +47,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<D
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
+impl<W: AnyWidget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
         DynWidget::replace_inner(&mut this, child.erased_widget_pod());
         this
@@ -57,11 +57,11 @@ impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<Dyn
 /// A widget whose only child can be dynamically replaced.
 #[allow(unnameable_types)] // This is an implementation detail of `AnyWidgetView`
 pub struct DynWidget {
-    inner: WidgetPod<dyn Widget>,
+    inner: WidgetPod<dyn AnyWidget>,
 }
 
 impl DynWidget {
-    pub(crate) fn replace_inner(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<dyn Widget>) {
+    pub(crate) fn replace_inner(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<dyn AnyWidget>) {
         let old_widget = std::mem::replace(&mut this.widget.inner, widget);
         this.ctx.remove_child(old_widget);
     }
@@ -69,11 +69,14 @@ impl DynWidget {
 
 /// Forward all events to the child widget.
 impl Widget for DynWidget {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_text_event(
@@ -81,6 +84,7 @@ impl Widget for DynWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_access_event(
@@ -88,6 +92,7 @@ impl Widget for DynWidget {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -100,6 +105,7 @@ impl Widget for DynWidget {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let size = ctx.run_layout(&mut self.inner, bc);
         ctx.place_child(&mut self.inner, Point::ORIGIN);

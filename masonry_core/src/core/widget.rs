@@ -4,9 +4,11 @@
 use std::any::{Any, TypeId};
 use std::fmt::Display;
 use std::num::NonZeroU64;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::{Node, Role};
+use any_debug::AnyDebug;
 use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
@@ -14,6 +16,7 @@ use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
+use crate::app::RenderRootSignal;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
@@ -52,49 +55,49 @@ impl WidgetId {
 
 /// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
 pub trait AsDynWidget {
-    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget>;
-    fn as_dyn(&self) -> &dyn Widget;
-    fn as_mut_dyn(&mut self) -> &mut dyn Widget;
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn AnyWidget>;
+    fn as_dyn(&self) -> &dyn AnyWidget;
+    fn as_mut_dyn(&mut self) -> &mut dyn AnyWidget;
 }
 
 impl<T: Widget> AsDynWidget for T {
-    fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget> {
+    fn as_box_dyn(self: Box<Self>) -> Box<dyn AnyWidget> {
         self
     }
 
-    fn as_dyn(&self) -> &dyn Widget {
-        self as &dyn Widget
+    fn as_dyn(&self) -> &dyn AnyWidget {
+        self as &dyn AnyWidget
     }
 
-    fn as_mut_dyn(&mut self) -> &mut dyn Widget {
-        self as &mut dyn Widget
+    fn as_mut_dyn(&mut self) -> &mut dyn AnyWidget {
+        self as &mut dyn AnyWidget
     }
 }
 
-/// A trait that lets functions either downcast to a `Sized` widget or keep a `dyn Widget`.
+/// A trait that lets functions either downcast to a `Sized` widget or keep a `dyn AnyWidget`.
 pub trait FromDynWidget {
     /// Downcast `widget` if `Self: Sized`, else return it as-is.
-    fn from_dyn(widget: &dyn Widget) -> Option<&Self>;
+    fn from_dyn(widget: &dyn AnyWidget) -> Option<&Self>;
     /// Downcast `widget` if `Self: Sized`, else return it as-is.
-    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self>;
+    fn from_dyn_mut(widget: &mut dyn AnyWidget) -> Option<&mut Self>;
 }
 
 impl<T: Widget> FromDynWidget for T {
-    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+    fn from_dyn(widget: &dyn AnyWidget) -> Option<&Self> {
         (widget as &dyn Any).downcast_ref()
     }
 
-    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+    fn from_dyn_mut(widget: &mut dyn AnyWidget) -> Option<&mut Self> {
         (widget as &mut dyn Any).downcast_mut()
     }
 }
 
-impl FromDynWidget for dyn Widget {
-    fn from_dyn(widget: &dyn Widget) -> Option<&Self> {
+impl FromDynWidget for dyn AnyWidget {
+    fn from_dyn(widget: &dyn AnyWidget) -> Option<&Self> {
         Some(widget)
     }
 
-    fn from_dyn_mut(widget: &mut dyn Widget) -> Option<&mut Self> {
+    fn from_dyn_mut(widget: &mut dyn AnyWidget) -> Option<&mut Self> {
         Some(widget)
     }
 }
@@ -125,6 +128,9 @@ impl FromDynWidget for dyn Widget {
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
 #[allow(unused_variables)]
 pub trait Widget: AsDynWidget + Any {
+    /// Type that can be emitted by the event handlers and the layout method.
+    type Action: AnyDebug;
+
     /// Handle a pointer event.
     ///
     /// Pointer events will target the widget under the pointer, and then the
@@ -134,6 +140,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -147,6 +154,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
+        emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -158,6 +166,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -240,6 +249,7 @@ pub trait Widget: AsDynWidget + Any {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        emit: impl Fn(Self::Action),
     ) -> Size;
 
     /// Runs after the widget's final transform has been computed.
@@ -362,7 +372,7 @@ pub trait Widget: AsDynWidget + Any {
         &'c self,
         ctx: QueryCtx<'c>,
         pos: Point,
-    ) -> Option<WidgetRef<'c, dyn Widget>> {
+    ) -> Option<WidgetRef<'c, dyn AnyWidget>> {
         find_widget_under_pointer(self.as_dyn(), ctx, pos)
     }
 
@@ -387,12 +397,242 @@ pub trait Widget: AsDynWidget + Any {
     }
 }
 
+pub struct ActionSink {
+    pub(crate) id: WidgetId,
+    pub(crate) signal_sink: Arc<dyn Fn(RenderRootSignal)>,
+}
+
+impl ActionSink {
+    pub fn emit(&self, signal: impl AnyDebug) {
+        (self.signal_sink)(RenderRootSignal::Action(Box::new(signal), self.id));
+    }
+}
+
+#[expect(
+    missing_docs,
+    reason = "Don't want to duplicate documentation of Widget trait."
+)]
+/// The dyn-compatible version of the [`Widget`] trait.
+///
+/// Every type implementing [`Widget`] automatically implements [`AnyWidget`] via a blanket implementation.
+pub trait AnyWidget: AsDynWidget + Any {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+        emit: ActionSink,
+    );
+
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+        emit: ActionSink,
+    );
+
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+        emit: ActionSink,
+    );
+
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    );
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
+
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update);
+
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId);
+
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+        sink: ActionSink,
+    ) -> Size;
+
+    fn compose(&mut self, _ctx: &mut ComposeCtx<'_>) {}
+
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene);
+
+    fn accessibility_role(&self) -> Role;
+
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    );
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
+
+    fn accepts_pointer_interaction(&self) -> bool;
+
+    fn accepts_focus(&self) -> bool;
+
+    fn accepts_text_input(&self) -> bool;
+
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span;
+
+    fn get_debug_text(&self) -> Option<String>;
+
+    fn get_cursor(&self, ctx: &QueryCtx<'_>, pos: Point) -> CursorIcon;
+
+    fn find_widget_under_pointer<'c>(
+        &'c self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn AnyWidget>>;
+
+    #[doc(hidden)]
+    fn type_name(&self) -> &'static str;
+
+    /// Get the (abridged) type name of the widget for debugging purposes.
+    /// You should not override this method.
+    #[doc(hidden)]
+    fn short_type_name(&self) -> &'static str;
+}
+
+impl<W: Widget> AnyWidget for W {
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+        sink: ActionSink,
+    ) {
+        self.on_pointer_event(ctx, props, event, |event| sink.emit(event));
+    }
+
+    fn on_text_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        event: &TextEvent,
+        sink: ActionSink,
+    ) {
+        self.on_text_event(ctx, props, event, |event| sink.emit(event));
+    }
+
+    fn on_access_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        event: &AccessEvent,
+        sink: ActionSink,
+    ) {
+        self.on_access_event(ctx, props, event, |event| sink.emit(event));
+    }
+
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+        self.on_anim_frame(ctx, props, interval);
+    }
+
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
+        self.register_children(ctx);
+    }
+
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update) {
+        self.update(ctx, props, event);
+    }
+
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        self.property_changed(ctx, property_type);
+    }
+
+    fn layout(
+        &mut self,
+        ctx: &mut LayoutCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+        sink: ActionSink,
+    ) -> Size {
+        self.layout(ctx, props, bc, |event| sink.emit(event))
+    }
+
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        self.paint(ctx, props, scene);
+    }
+
+    fn accessibility_role(&self) -> Role {
+        self.accessibility_role()
+    }
+
+    fn accessibility(
+        &mut self,
+        ctx: &mut AccessCtx<'_>,
+        props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
+        self.accessibility(ctx, props, node);
+    }
+
+    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+        self.children_ids()
+    }
+
+    fn accepts_pointer_interaction(&self) -> bool {
+        self.accepts_pointer_interaction()
+    }
+
+    fn accepts_focus(&self) -> bool {
+        self.accepts_focus()
+    }
+
+    fn accepts_text_input(&self) -> bool {
+        self.accepts_text_input()
+    }
+
+    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
+        self.make_trace_span(ctx)
+    }
+
+    fn get_debug_text(&self) -> Option<String> {
+        self.get_debug_text()
+    }
+
+    fn get_cursor(&self, ctx: &QueryCtx<'_>, pos: Point) -> CursorIcon {
+        self.get_cursor(ctx, pos)
+    }
+
+    fn find_widget_under_pointer<'c>(
+        &'c self,
+        ctx: QueryCtx<'c>,
+        pos: Point,
+    ) -> Option<WidgetRef<'c, dyn AnyWidget>> {
+        self.find_widget_under_pointer(ctx, pos)
+    }
+
+    fn type_name(&self) -> &'static str {
+        self.type_name()
+    }
+
+    fn short_type_name(&self) -> &'static str {
+        self.short_type_name()
+    }
+}
+
 /// See [`Widget::find_widget_under_pointer`] for more details.
 pub fn find_widget_under_pointer<'c>(
-    widget: &'c dyn Widget,
+    widget: &'c dyn AnyWidget,
     ctx: QueryCtx<'c>,
     pos: Point,
-) -> Option<WidgetRef<'c, dyn Widget>> {
+) -> Option<WidgetRef<'c, dyn AnyWidget>> {
     if !ctx.bounding_rect().contains(pos) {
         return None;
     }

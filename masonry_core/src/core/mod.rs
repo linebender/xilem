@@ -3,7 +3,6 @@
 
 //! Basic types and traits Masonry is built on.
 
-mod action;
 mod box_constraints;
 mod contexts;
 mod events;
@@ -17,7 +16,6 @@ mod widget_pod;
 mod widget_ref;
 mod widget_state;
 
-pub use action::Action;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
@@ -28,7 +26,7 @@ pub use object_fit::ObjectFit;
 pub use properties::{DefaultProperties, Properties, PropertiesMut, PropertiesRef, Property};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;
-pub use widget::{AllowRawMut, FromDynWidget, Widget, WidgetId};
+pub use widget::{AllowRawMut, AnyWidget, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
 pub use widget_pod::WidgetPod;
 pub use widget_ref::WidgetRef;
@@ -40,6 +38,7 @@ pub use ui_events::pointer::{
 };
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
+pub(crate) use widget::ActionSink;
 pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;

@@ -7,12 +7,12 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{Action, Properties, Widget, WidgetId, WidgetPod};
+use masonry::core::{Properties, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, Flex, Label, Portal, TextArea, Textbox};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry::widgets::{Button, Flex, Label, Portal, TextAction, TextArea, Textbox};
+use masonry_winit::app::{Action, AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
 const WIDGET_SPACING: f64 = 5.0;
@@ -32,25 +32,24 @@ impl AppDriver for Driver {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        match action {
-            Action::ButtonPressed(_) => {
-                ctx.render_root(window_id).edit_root_widget(|mut root| {
-                    let mut portal = root.downcast::<Portal<Flex>>();
-                    let mut flex = Portal::child_mut(&mut portal);
-                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+        if action.is::<<Button as Widget>::Action>() {
+            ctx.render_root(window_id).edit_root_widget(|mut root| {
+                let mut portal = root.downcast::<Portal<Flex>>();
+                let mut flex = Portal::child_mut(&mut portal);
+                Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
 
-                    let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
-                    let mut first_row = first_row.downcast::<Flex>();
-                    let mut textbox = Flex::child_mut(&mut first_row, 0).unwrap();
-                    let mut textbox = textbox.downcast::<Textbox>();
-                    let mut text_area = Textbox::text_mut(&mut textbox);
-                    TextArea::reset_text(&mut text_area, "");
-                });
-            }
-            Action::TextChanged(new_text) => {
+                let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
+                let mut first_row = first_row.downcast::<Flex>();
+                let mut textbox = Flex::child_mut(&mut first_row, 0).unwrap();
+                let mut textbox = textbox.downcast::<Textbox>();
+                let mut text_area = Textbox::text_mut(&mut textbox);
+                TextArea::reset_text(&mut text_area, "");
+            });
+        } else if action.is::<TextAction>() {
+            let action = action.downcast::<TextAction>().unwrap();
+            if let TextAction::Changed(new_text) = *action {
                 self.next_task = new_text.clone();
             }
-            _ => {}
         }
     }
 }

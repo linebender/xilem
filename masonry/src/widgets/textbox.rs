@@ -103,6 +103,8 @@ impl Textbox {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Textbox {
+    type Action = ();
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.text);
     }
@@ -130,6 +132,7 @@ impl Widget for Textbox {
         ctx: &mut LayoutCtx<'_>,
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();

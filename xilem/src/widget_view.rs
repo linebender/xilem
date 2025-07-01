@@ -3,7 +3,7 @@
 
 use masonry::kurbo::Affine;
 
-use masonry::core::{FromDynWidget, Widget};
+use masonry::core::{AnyWidget, FromDynWidget};
 
 use crate::core::{View, ViewSequence};
 use crate::view::{Transformed, transformed};
@@ -13,7 +13,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx};
 pub trait WidgetView<State, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::Widget>> + Send + Sync
 {
-    type Widget: Widget + FromDynWidget + ?Sized;
+    type Widget: AnyWidget + FromDynWidget + ?Sized;
 
     /// Returns a boxed type erased [`AnyWidgetView`]
     ///
@@ -51,7 +51,7 @@ pub trait WidgetView<State, Action = ()>:
 impl<V, State, Action, W> WidgetView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<W>> + Send + Sync,
-    W: Widget + FromDynWidget + ?Sized,
+    W: AnyWidget + FromDynWidget + ?Sized,
 {
     type Widget = W;
 }
@@ -71,11 +71,11 @@ where
 /// }
 /// ```
 pub trait WidgetViewSequence<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, Pod<dyn Widget>>
+    ViewSequence<State, Action, ViewCtx, Pod<dyn AnyWidget>>
 {
 }
 
 impl<Seq, State, Action> WidgetViewSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, Pod<dyn Widget>>
+    Seq: ViewSequence<State, Action, ViewCtx, Pod<dyn AnyWidget>>
 {
 }

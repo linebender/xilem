@@ -7,7 +7,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetId};
+use crate::core::{AnyWidget, PropertiesRef, Property, QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -21,7 +21,7 @@ use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetId};
 /// children, and their children, etc).
 ///
 /// This is only for shared access to widgets. For widget mutation, see [`WidgetMut`](crate::core::WidgetMut).
-pub struct WidgetRef<'w, W: Widget + ?Sized> {
+pub struct WidgetRef<'w, W: AnyWidget + ?Sized> {
     pub(crate) ctx: QueryCtx<'w>,
     pub(crate) widget: &'w W,
 }
@@ -29,15 +29,15 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 // --- MARK: TRAIT IMPLS
 
 #[allow(clippy::non_canonical_clone_impl)]
-impl<W: Widget + ?Sized> Clone for WidgetRef<'_, W> {
+impl<W: AnyWidget + ?Sized> Clone for WidgetRef<'_, W> {
     fn clone(&self) -> Self {
         Self { ..*self }
     }
 }
 
-impl<W: Widget + ?Sized> Copy for WidgetRef<'_, W> {}
+impl<W: AnyWidget + ?Sized> Copy for WidgetRef<'_, W> {}
 
-impl<W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'_, W> {
+impl<W: AnyWidget + ?Sized> std::fmt::Debug for WidgetRef<'_, W> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let widget_name = self.widget.short_type_name();
         let display_name = if let Some(debug_text) = self.widget.get_debug_text() {
@@ -60,7 +60,7 @@ impl<W: Widget + ?Sized> std::fmt::Debug for WidgetRef<'_, W> {
     }
 }
 
-impl<W: Widget + ?Sized> Deref for WidgetRef<'_, W> {
+impl<W: AnyWidget + ?Sized> Deref for WidgetRef<'_, W> {
     type Target = W;
 
     fn deref(&self) -> &Self::Target {
@@ -70,7 +70,7 @@ impl<W: Widget + ?Sized> Deref for WidgetRef<'_, W> {
 
 // --- MARK: IMPLS
 
-impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
+impl<'w, W: AnyWidget + ?Sized> WidgetRef<'w, W> {
     /// Get a [`QueryCtx`] with information about the current widget.
     pub fn ctx(&self) -> &'_ QueryCtx<'w> {
         &self.ctx
@@ -111,7 +111,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 
     /// Return widget's children.
-    pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn Widget>; 16]> {
+    pub fn children(&self) -> SmallVec<[WidgetRef<'w, dyn AnyWidget>; 16]> {
         let parent_id = self.ctx.widget_state.id;
         self.widget
             .children_ids()
@@ -136,12 +136,12 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                     );
                 };
 
-                // Box<dyn Widget> -> &dyn Widget
+                // Box<dyn AnyWidget> -> &dyn AnyWidget
                 // Without this step, the type of `WidgetRef::widget` would be
-                // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
+                // `&Box<dyn AnyWidget> as &dyn AnyWidget`, which would be an additional layer
                 // of indirection.
                 let widget = widget_ref.item;
-                let widget: &dyn Widget = &**widget;
+                let widget: &dyn AnyWidget = &**widget;
 
                 let ctx = QueryCtx {
                     global_state: self.ctx.global_state,
@@ -163,7 +163,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
 
 impl<'w, W: Widget> WidgetRef<'w, W> {
     /// Return a type-erased `WidgetRef`.
-    pub fn as_dyn(&self) -> WidgetRef<'w, dyn Widget> {
+    pub fn as_dyn(&self) -> WidgetRef<'w, dyn AnyWidget> {
         WidgetRef {
             ctx: self.ctx,
             widget: self.widget,
@@ -171,7 +171,7 @@ impl<'w, W: Widget> WidgetRef<'w, W> {
     }
 }
 
-impl WidgetRef<'_, dyn Widget> {
+impl WidgetRef<'_, dyn AnyWidget> {
     /// Recursively find child widget with given id.
     pub fn find_widget_by_id(&self, id: WidgetId) -> Option<Self> {
         if self.ctx.widget_state.id == id {

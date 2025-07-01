@@ -5,8 +5,8 @@
 
 use accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, AnyWidget, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
@@ -18,15 +18,15 @@ use crate::core::one_of::OneOf;
 use crate::{Pod, ViewCtx};
 
 impl<
-    A: Widget + FromDynWidget + ?Sized,
-    B: Widget + FromDynWidget + ?Sized,
-    C: Widget + FromDynWidget + ?Sized,
-    D: Widget + FromDynWidget + ?Sized,
-    E: Widget + FromDynWidget + ?Sized,
-    F: Widget + FromDynWidget + ?Sized,
-    G: Widget + FromDynWidget + ?Sized,
-    H: Widget + FromDynWidget + ?Sized,
-    I: Widget + FromDynWidget + ?Sized,
+    A: AnyWidget + FromDynWidget + ?Sized,
+    B: AnyWidget + FromDynWidget + ?Sized,
+    C: AnyWidget + FromDynWidget + ?Sized,
+    D: AnyWidget + FromDynWidget + ?Sized,
+    E: AnyWidget + FromDynWidget + ?Sized,
+    F: AnyWidget + FromDynWidget + ?Sized,
+    G: AnyWidget + FromDynWidget + ?Sized,
+    H: AnyWidget + FromDynWidget + ?Sized,
+    I: AnyWidget + FromDynWidget + ?Sized,
 >
     crate::core::one_of::OneOfCtx<
         Pod<A>,
@@ -145,7 +145,7 @@ impl<
 }
 
 impl crate::core::one_of::PhantomElementCtx for ViewCtx {
-    type PhantomElement = Pod<dyn Widget>;
+    type PhantomElement = Pod<dyn AnyWidget>;
 }
 
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
@@ -172,22 +172,25 @@ pub enum OneOfWidget<
 }
 
 impl<
-    A: Widget + FromDynWidget + ?Sized,
-    B: Widget + FromDynWidget + ?Sized,
-    C: Widget + FromDynWidget + ?Sized,
-    D: Widget + FromDynWidget + ?Sized,
-    E: Widget + FromDynWidget + ?Sized,
-    F: Widget + FromDynWidget + ?Sized,
-    G: Widget + FromDynWidget + ?Sized,
-    H: Widget + FromDynWidget + ?Sized,
-    I: Widget + FromDynWidget + ?Sized,
+    A: AnyWidget + FromDynWidget + ?Sized,
+    B: AnyWidget + FromDynWidget + ?Sized,
+    C: AnyWidget + FromDynWidget + ?Sized,
+    D: AnyWidget + FromDynWidget + ?Sized,
+    E: AnyWidget + FromDynWidget + ?Sized,
+    F: AnyWidget + FromDynWidget + ?Sized,
+    G: AnyWidget + FromDynWidget + ?Sized,
+    H: AnyWidget + FromDynWidget + ?Sized,
+    I: AnyWidget + FromDynWidget + ?Sized,
 > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
+    type Action = ();
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_text_event(
@@ -195,6 +198,7 @@ impl<
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
     fn on_access_event(
@@ -202,6 +206,7 @@ impl<
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -224,6 +229,7 @@ impl<
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         match self {
             Self::A(w) => {

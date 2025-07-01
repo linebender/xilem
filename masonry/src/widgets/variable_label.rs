@@ -178,6 +178,8 @@ impl VariableLabel {
 
 // --- MARK: IMPL WIDGET
 impl Widget for VariableLabel {
+    type Action = ();
+
     fn accepts_pointer_interaction(&self) -> bool {
         false
     }
@@ -227,6 +229,7 @@ impl Widget for VariableLabel {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let size = ctx.run_layout(&mut self.label, bc);
         ctx.place_child(&mut self.label, Point::ORIGIN);
