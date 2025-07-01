@@ -310,7 +310,7 @@ mod tests {
     use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, StyleProperty};
     use crate::testing::{TestHarness, TestWidgetExt, WrapperWidget, widget_ids};
-    use crate::theme::{PRIMARY_LIGHT, default_property_set};
+    use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams, SizedBox};
 
     #[test]
@@ -352,7 +352,7 @@ mod tests {
     fn edit_button() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_brush(PRIMARY_LIGHT)
+                .with_brush(ACCENT_COLOR)
                 .with_style(StyleProperty::FontSize(20.0));
             let button = Button::from_label(label);
 
@@ -379,7 +379,7 @@ mod tests {
                 Button::set_text(&mut button, "The quick brown fox jumps over the lazy dog");
 
                 let mut label = Button::label_mut(&mut button);
-                Label::set_brush(&mut label, PRIMARY_LIGHT);
+                Label::set_brush(&mut label, ACCENT_COLOR);
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 

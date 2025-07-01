@@ -236,9 +236,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the color of the splitter bar.
     fn bar_color(&self) -> Color {
         if self.draggable {
-            theme::BORDER_LIGHT
+            theme::ZYNC_500
         } else {
-            theme::BORDER_DARK
+            theme::ZYNC_700
         }
     }
 
