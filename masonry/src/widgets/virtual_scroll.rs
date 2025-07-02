@@ -10,9 +10,9 @@ use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, KeyboardEvent,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut, PropertiesRef,
+    RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::util::debug_panic;
 
@@ -524,10 +524,10 @@ impl Widget for VirtualScroll {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Scroll(s) => {
+            PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
-                let delta = match s.delta {
+                let delta = match delta {
                     ScrollDelta::PixelDelta(p) => -p.to_logical::<f64>(ctx.get_scale_factor()).y,
                     ScrollDelta::LineDelta(_, y) => -y as f64 * ctx.get_scale_factor() * 120.,
                     _ => 0.0,
@@ -545,23 +545,33 @@ impl Widget for VirtualScroll {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        match event {
-            TextEvent::Keyboard(key_event) => {
-                // To get to this state, you currently need to press "tab" to focus this widget in the example.
-                if matches!(key_event.state, KeyState::Down) {
-                    // We use an unreasonably large delta (logical pixels) here to allow testing that the case where the
-                    // scrolling "jumps" the area is handled correctly.
-                    // In future, this manual testing would be achieved through use of a scrollbar.
-                    let delta = 20000.;
-                    if matches!(key_event.key, Key::Named(NamedKey::PageDown)) {
-                        self.scroll_offset_from_anchor += delta;
-                        self.event_post_scroll(ctx);
-                    }
-                    if matches!(key_event.key, Key::Named(NamedKey::PageUp)) {
-                        self.scroll_offset_from_anchor -= delta;
-                        self.event_post_scroll(ctx);
-                    }
-                }
+        // We use an unreasonably large delta (logical pixels) here to allow testing that the case
+        // where the scrolling "jumps" the area is handled correctly.
+        // In future, this manual testing would be achieved through use of a scrollbar.
+        const DELTA: f64 = 20000.;
+
+        // To get to this state, you currently need to press "tab" to focus this widget in the
+        // example.
+        let TextEvent::Keyboard(keyboard_event) = event else {
+            return;
+        };
+
+        match keyboard_event {
+            KeyboardEvent {
+                state: KeyState::Down,
+                key: Key::Named(NamedKey::PageDown),
+                ..
+            } => {
+                self.scroll_offset_from_anchor += DELTA;
+                self.event_post_scroll(ctx);
+            }
+            KeyboardEvent {
+                state: KeyState::Down,
+                key: Key::Named(NamedKey::PageUp),
+                ..
+            } => {
+                self.scroll_offset_from_anchor -= DELTA;
+                self.event_post_scroll(ctx);
             }
             _ => {}
         }

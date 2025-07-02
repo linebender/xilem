@@ -4559,7 +4559,7 @@ dependencies = [
 [[package]]
 name = "ui-events"
 version = "0.1.0"
-source = "git+https://github.com/endoli/ui-events?rev=6382e63#6382e6394a008bc21ef1802e1825b507b4b822f1"
+source = "git+https://github.com/endoli/ui-events?rev=08c942c#08c942cfbce0e010d844683726ad811936dc12e0"
 dependencies = [
  "dpi",
  "keyboard-types",
@@ -4568,7 +4568,7 @@ dependencies = [
 [[package]]
 name = "ui-events-winit"
 version = "0.1.0"
-source = "git+https://github.com/endoli/ui-events?rev=6382e63#6382e6394a008bc21ef1802e1825b507b4b822f1"
+source = "git+https://github.com/endoli/ui-events?rev=08c942c#08c942cfbce0e010d844683726ad811936dc12e0"
 dependencies = [
  "ui-events",
  "web-time",

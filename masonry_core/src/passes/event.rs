@@ -6,8 +6,9 @@ use tracing::{debug, info_span, trace};
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessEvent, EventCtx, Handled, Ime, PointerButtonEvent, PointerEvent, PointerInfo,
-    PointerScrollEvent, PointerType, PointerUpdate, PropertiesMut, TextEvent, Widget, WidgetId,
+    AccessEvent, EventCtx, Handled, Ime, PointerButtonEvent, PointerEvent, PointerGestureEvent,
+    PointerInfo, PointerScrollEvent, PointerType, PointerUpdate, PropertiesMut, TextEvent, Widget,
+    WidgetId,
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
@@ -53,6 +54,7 @@ fn pointer_event_short_name(e: &PointerEvent) -> &'static str {
         PointerEvent::Leave(..) => "Leave",
         PointerEvent::Cancel(..) => "Cancel",
         PointerEvent::Scroll(..) => "Scroll",
+        PointerEvent::Gesture(..) => "Gesture",
     }
 }
 
@@ -62,7 +64,8 @@ fn try_event_position(event: &PointerEvent) -> Option<PhysicalPosition<f64>> {
         PointerEvent::Down(PointerButtonEvent { state, .. })
         | PointerEvent::Up(PointerButtonEvent { state, .. })
         | PointerEvent::Move(PointerUpdate { current: state, .. })
-        | PointerEvent::Scroll(PointerScrollEvent { state, .. }) => Some(state.position),
+        | PointerEvent::Scroll(PointerScrollEvent { state, .. })
+        | PointerEvent::Gesture(PointerGestureEvent { state, .. }) => Some(state.position),
         _ => None,
     }
 }
