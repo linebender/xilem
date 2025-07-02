@@ -15,8 +15,8 @@ use vello::peniko::Color;
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
@@ -97,7 +97,7 @@ impl Widget for Button {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { .. } => {
+            PointerEvent::Down(..) => {
                 if !ctx.is_disabled() {
                     ctx.capture_pointer();
                     // Changes in pointer capture impact appearance, but not accessibility node
@@ -105,7 +105,7 @@ impl Widget for Button {
                     trace!("Button {:?} pressed", ctx.widget_id());
                 }
             }
-            PointerEvent::Up { button, .. } => {
+            PointerEvent::Up(PointerButtonEvent { button, .. }) => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     ctx.submit_action(Action::ButtonPressed(*button));
                     trace!("Button {:?} released", ctx.widget_id());
