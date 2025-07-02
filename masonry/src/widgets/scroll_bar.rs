@@ -9,8 +9,8 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut,
+    PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::theme;
 use crate::util::{fill_color, stroke};
@@ -129,12 +129,12 @@ impl Widget for ScrollBar {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down(b) => {
+            PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                 let cursor_rect = self.get_cursor_rect(ctx.size(), cursor_min_length);
-                let mouse_pos = ctx.local_position(b.state.position);
+                let mouse_pos = ctx.local_position(state.position);
                 if cursor_rect.contains(mouse_pos) {
                     let (z0, z1) = self.axis.major_span(cursor_rect);
                     let mouse_major = self.axis.major_pos(mouse_pos);
@@ -147,14 +147,14 @@ impl Widget for ScrollBar {
                 };
                 ctx.request_render();
             }
-            PointerEvent::Move(u) => {
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if let Some(grab_anchor) = self.grab_anchor {
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     self.cursor_progress = self.progress_from_mouse_pos(
                         ctx.size(),
                         cursor_min_length,
                         grab_anchor,
-                        ctx.local_position(u.current.position),
+                        ctx.local_position(current.position),
                     );
                     self.moved = true;
                 }

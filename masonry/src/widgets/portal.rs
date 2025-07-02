@@ -12,8 +12,8 @@ use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Axis, ScrollBar};
 
@@ -274,8 +274,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let content_size = ctx.get_raw_ref(&mut self.child).ctx().size();
 
         match *event {
-            PointerEvent::Scroll(ref s) => {
-                let delta = match s.delta {
+            PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
+                let delta = match delta {
                     ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x, y }) => -Vec2 { x, y },
                     ScrollDelta::LineDelta(x, y) => {
                         -Vec2 {
