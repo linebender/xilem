@@ -15,8 +15,8 @@ mod padding;
 
 pub mod types;
 
-pub use background::{ActiveBackground, Background, DisabledBackground};
-pub use border_color::{BorderColor, HoveredBorderColor};
+pub use background::{ActiveBackground, Background, DisabledBackground, HoveredBackground};
+pub use border_color::{ActiveBorderColor, BorderColor, DisabledBorderColor, HoveredBorderColor};
 pub use border_width::BorderWidth;
 pub use box_shadow::BoxShadow;
 pub use checkmark::{CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor};

@@ -4,6 +4,7 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::Property;
+use masonry::properties::{ActiveBorderColor, DisabledBorderColor, HoveredBackground};
 use vello::peniko::Color;
 
 pub use masonry::properties::types::{Gradient, GradientShape};
@@ -56,6 +57,33 @@ pub trait Style: Sized {
         Self: HasProperty<Background>,
     {
         *self.property() = Some(Background::Gradient(gradient));
+        self
+    }
+
+    /// Set the element's background when hovered to a color/gradient.
+    fn hovered_background(mut self, background: Background) -> Self
+    where
+        Self: HasProperty<HoveredBackground>,
+    {
+        *self.property() = Some(HoveredBackground(background));
+        self
+    }
+
+    /// Set the element's background when hovered to a color.
+    fn hovered_background_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<HoveredBackground>,
+    {
+        *self.property() = Some(HoveredBackground(Background::Color(color)));
+        self
+    }
+
+    /// Set the element's background when hovered to a gradient.
+    fn hovered_background_gradient(mut self, gradient: Gradient) -> Self
+    where
+        Self: HasProperty<HoveredBackground>,
+    {
+        *self.property() = Some(HoveredBackground(Background::Gradient(gradient)));
         self
     }
 
@@ -139,6 +167,24 @@ pub trait Style: Sized {
         Self: HasProperty<HoveredBorderColor>,
     {
         *self.property() = Some(HoveredBorderColor(BorderColor { color }));
+        self
+    }
+
+    /// Set the element's border color when pressed.
+    fn active_border_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<ActiveBorderColor>,
+    {
+        *self.property() = Some(ActiveBorderColor(BorderColor { color }));
+        self
+    }
+
+    /// Set the element's border color when disabled.
+    fn disabled_border_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<DisabledBorderColor>,
+    {
+        *self.property() = Some(DisabledBorderColor(BorderColor { color }));
         self
     }
 

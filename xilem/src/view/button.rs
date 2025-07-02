@@ -3,8 +3,9 @@
 
 pub use masonry::core::PointerButton;
 use masonry::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, HoveredBorderColor, Padding,
+    ActiveBackground, ActiveBorderColor, Background, BorderColor, BorderWidth, BoxShadow,
+    CornerRadius, DisabledBackground, DisabledBorderColor, HoveredBackground, HoveredBorderColor,
+    Padding,
 };
 use masonry::widgets;
 use xilem_core::ViewPathTracker;
@@ -125,15 +126,18 @@ crate::declare_property_tuple!(
     ButtonProps;
     Button<F>;
 
-    Background, 0;
-    BorderColor, 1;
-    BorderWidth, 2;
-    BoxShadow, 3;
-    CornerRadius, 4;
-    Padding, 5;
-    ActiveBackground, 6;
-    DisabledBackground, 7;
-    HoveredBorderColor, 8;
+    DisabledBackground, 0;
+    ActiveBackground, 1;
+    HoveredBackground, 2;
+    Background, 3;
+    DisabledBorderColor, 4;
+    ActiveBorderColor, 5;
+    HoveredBorderColor, 6;
+    BorderColor, 7;
+    BorderWidth, 8;
+    BoxShadow, 9;
+    CornerRadius, 10;
+    Padding, 11;
 );
 
 impl<F> ViewMarker for Button<F> {}
