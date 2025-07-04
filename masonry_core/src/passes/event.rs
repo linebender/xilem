@@ -9,7 +9,7 @@ use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessEvent, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut, TextEvent,
-    Widget, WidgetId,
+    Update, UpdateCtx, Widget, WidgetId,
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
@@ -110,6 +110,7 @@ fn run_event_pass<E>(
                 target: original_target.unwrap(),
                 allow_pointer_capture,
                 is_handled: false,
+                posted_user_update: false,
             };
             let widget = widget_mut.item;
             if trace {
@@ -126,6 +127,16 @@ fn run_event_pass<E>(
             };
             pass_fn(&mut **widget, &mut ctx, &mut props, event);
             is_handled = ctx.is_handled;
+            if ctx.posted_user_update {
+                let mut ctx = UpdateCtx {
+                    global_state: ctx.global_state,
+                    widget_state: ctx.widget_state,
+                    widget_state_children: ctx.widget_state_children,
+                    widget_children: ctx.widget_children,
+                    properties_children: ctx.properties_children,
+                };
+                widget.update(&mut ctx, &mut props, &Update::UserUpdate);
+            }
         }
 
         merge_state_up(&mut root.widget_arena, widget_id);
@@ -358,6 +369,10 @@ pub(crate) fn run_on_access_event_pass(
         false,
         |widget, ctx, props, event| {
             widget.on_access_event(ctx, props, event);
+            if !ctx.is_handled() && event.action == accesskit::Action::ScrollIntoView {
+                ctx.request_scroll_to_this();
+                ctx.set_handled();
+            }
         },
         true,
     );

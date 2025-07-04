@@ -133,6 +133,11 @@ pub enum Update {
     ///
     /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
     ChildFocusChanged(bool),
+
+    /// Called when [`post_user_update`] is called by an event handler.
+    ///
+    /// [`post_user_update`]: crate::core::EventCtx::post_user_update
+    UserUpdate,
 }
 
 impl TextEvent {
@@ -260,6 +265,7 @@ impl Update {
             Self::ChildHoveredChanged(_) => "ChildHoveredChanged",
             Self::FocusChanged(_) => "FocusChanged",
             Self::ChildFocusChanged(_) => "ChildFocusChanged",
+            Self::UserUpdate => "UserUpdate",
         }
     }
 }

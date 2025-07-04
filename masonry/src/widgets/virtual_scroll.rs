@@ -428,7 +428,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
-    fn post_scroll(&mut self, ctx: &mut EventCtx<'_>) {
+    fn post_scroll(&mut self, ctx: &mut UpdateCtx<'_>) {
         // We only lock scrolling if we're *exactly* at the end of the range, because
         // if the valid range has changed "during" an active scroll, we still want to handle
         // that scroll (specifically, in case it happens to scroll us back into the active
@@ -486,7 +486,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     _ => 0.0,
                 };
                 self.scroll_offset_from_anchor += delta;
-                self.post_scroll(ctx);
+                ctx.post_user_update();
             }
             _ => (),
         }
@@ -508,11 +508,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     let delta = 20000.;
                     if matches!(key_event.key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
-                        self.post_scroll(ctx);
+                        ctx.post_user_update();
                     }
                     if matches!(key_event.key, Key::Named(NamedKey::PageUp)) {
                         self.scroll_offset_from_anchor -= delta;
-                        self.post_scroll(ctx);
+                        ctx.post_user_update();
                     }
                 }
             }
@@ -526,25 +526,25 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        if matches!(
-            event.action,
-            accesskit::Action::ScrollUp | accesskit::Action::ScrollDown
-        ) {
-            let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
-                *unit
-            } else {
-                accesskit::ScrollUnit::Item
-            };
-            let amount = match unit {
-                accesskit::ScrollUnit::Item => self.anchor_height,
-                accesskit::ScrollUnit::Page => ctx.size().height,
-            };
-            if event.action == accesskit::Action::ScrollUp {
-                self.scroll_offset_from_anchor -= amount;
-            } else {
-                self.scroll_offset_from_anchor += amount;
+        match event.action {
+            accesskit::Action::ScrollUp | accesskit::Action::ScrollDown => {
+                let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
+                    *unit
+                } else {
+                    accesskit::ScrollUnit::Item
+                };
+                let amount = match unit {
+                    accesskit::ScrollUnit::Item => self.anchor_height,
+                    accesskit::ScrollUnit::Page => ctx.size().height,
+                };
+                if event.action == accesskit::Action::ScrollUp {
+                    self.scroll_offset_from_anchor -= amount;
+                } else {
+                    self.scroll_offset_from_anchor += amount;
+                }
+                ctx.post_user_update();
             }
-            self.post_scroll(ctx);
+            _ => (),
         }
     }
 
@@ -555,12 +555,22 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         }
     }
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::RequestPanToChild(target) => {
+                let new_pos_y = super::portal::compute_pan_range(
+                    0.0..ctx.size().height,
+                    target.min_y()..target.max_y(),
+                )
+                .start;
+                self.scroll_offset_from_anchor += new_pos_y;
+                self.post_scroll(ctx);
+            }
+            Update::UserUpdate => {
+                self.post_scroll(ctx);
+            }
+            _ => (),
+        }
     }
 
     fn layout(
@@ -915,6 +925,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         if !at_end {
             node.add_action(accesskit::Action::ScrollDown);
         }
+        node.add_child_action(accesskit::Action::ScrollIntoView);
     }
 
     fn children_ids(&self) -> smallvec::SmallVec<[WidgetId; 16]> {
