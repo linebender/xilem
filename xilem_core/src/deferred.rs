@@ -6,14 +6,14 @@ use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{AnyMessage, DynMessage, NoElement, View, ViewId, ViewPathTracker};
+use crate::{AnyMessage, DynMessage, NoElement, SendMessage, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
 pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
     /// Get a [`RawProxy`] for this context.
     // TODO: Maybe store the current path within this Proxy?
-    fn proxy(&mut self) -> Arc<dyn RawProxy<Message>>;
+    fn proxy(&mut self) -> Arc<dyn RawProxy>;
 }
 
 /// A handle to a Xilem driver which can be used to queue a message for a View.
@@ -30,7 +30,7 @@ pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
 /// ## Lifetimes
 ///
 /// It is valid for a [`RawProxy`] to outlive the [`View`] it is associated with.
-pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
+pub trait RawProxy: Send + Sync + 'static {
     /// Send a `message` to the view at `path` in this driver.
     ///
     /// Note that it is only valid to send messages to views which expect
@@ -46,12 +46,12 @@ pub trait RawProxy<Message = DynMessage>: Send + Sync + 'static {
     // TODO: Do we want/need a way to asynchronously report errors back to the caller?
     //
     // e.g. an `Option<Arc<dyn FnMut(ProxyError, ProxyMessageId?)>>`?
-    fn send_message(&self, path: Arc<[ViewId]>, message: Message) -> Result<(), ProxyError>;
+    fn send_message(&self, path: Arc<[ViewId]>, message: SendMessage) -> Result<(), ProxyError>;
     /// Get the debug formatter for this proxy type.
     fn dyn_debug(&self) -> &dyn Debug;
 }
 
-impl<Message: 'static> Debug for dyn RawProxy<Message> {
+impl Debug for dyn RawProxy {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         self.dyn_debug().fmt(f)
     }
@@ -59,13 +59,13 @@ impl<Message: 'static> Debug for dyn RawProxy<Message> {
 
 /// A way to send a message of an expected type to a specific view.
 #[derive(Debug)]
-pub struct MessageProxy<M: AnyMessage> {
-    proxy: Arc<dyn RawProxy<DynMessage>>,
+pub struct MessageProxy<M: AnyMessage + Send> {
+    proxy: Arc<dyn RawProxy>,
     path: Arc<[ViewId]>,
     message: PhantomData<fn(M)>,
 }
 
-impl<M: AnyMessage> Clone for MessageProxy<M> {
+impl<M: AnyMessage + Send> Clone for MessageProxy<M> {
     fn clone(&self) -> Self {
         Self {
             proxy: self.proxy.clone(),
@@ -75,9 +75,9 @@ impl<M: AnyMessage> Clone for MessageProxy<M> {
     }
 }
 
-impl<M: AnyMessage> MessageProxy<M> {
+impl<M: AnyMessage + Send> MessageProxy<M> {
     /// Create a new `MessageProxy`
-    pub fn new(proxy: Arc<dyn RawProxy<DynMessage>>, path: Arc<[ViewId]>) -> Self {
+    pub fn new(proxy: Arc<dyn RawProxy>, path: Arc<[ViewId]>) -> Self {
         Self {
             proxy,
             path,
@@ -95,7 +95,7 @@ impl<M: AnyMessage> MessageProxy<M> {
     /// This method is currently not expected to return `ViewExpired`, as it does not block.
     pub fn message(&self, message: M) -> Result<(), ProxyError> {
         self.proxy
-            .send_message(self.path.clone(), DynMessage::new(message))
+            .send_message(self.path.clone(), SendMessage::new(message))
     }
 }
 
@@ -118,13 +118,13 @@ where
 #[derive(Debug)]
 pub enum ProxyError {
     /// The underlying driver (such as an event loop) is no longer running.
-    ///
-    /// TODO: Should this also support a source message?
-    DriverFinished(DynMessage),
+    // TODO: Should this also support returning the source path?
+    DriverFinished(SendMessage),
     /// The [`View`] the message was being routed to is no longer in the view tree.
     ///
     /// This likely requires async error handling to happen.
-    ViewExpired(DynMessage, Arc<[ViewId]>),
+    // See comment above `SendMessage` about possible future.
+    ViewExpired(SendMessage, Arc<[ViewId]>),
     /// An error specific to the driver being used.
     Other(Box<dyn core::error::Error + Send>),
 }

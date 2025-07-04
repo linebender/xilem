@@ -32,7 +32,7 @@ where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + 'static,
+    M: AnyMessage + Send + 'static,
 {
     const {
         assert!(
@@ -57,7 +57,7 @@ where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + 'static,
+    M: AnyMessage + Send + 'static,
 {
     Task {
         init_future,
@@ -78,7 +78,7 @@ where
     F: Fn(MessageProxy<M>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + 'static,
+    M: AnyMessage + Send + 'static,
 {
     type Element = NoElement;
 
