@@ -6,7 +6,9 @@ use std::{collections::HashMap, marker::PhantomData, ops::Range};
 use masonry::core::{FromDynWidget, Widget, WidgetPod};
 use masonry::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
-use xilem_core::{AsyncCtx, DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
+use xilem_core::{
+    AsyncCtx, DynMessage, MessageResult, SendMessage, View, ViewId, ViewMarker, ViewPathTracker,
+};
 
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -183,7 +185,7 @@ where
             proxy
                 .send_message(
                     view_state.my_path.clone(),
-                    DynMessage::new(UpdateVirtualChildren),
+                    SendMessage::new(UpdateVirtualChildren),
                 )
                 .unwrap();
             view_state.pending_children_update = true;

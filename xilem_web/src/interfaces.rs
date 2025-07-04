@@ -15,6 +15,7 @@
 use std::borrow::Cow;
 
 use wasm_bindgen::JsCast;
+use xilem_core::AnyMessage;
 
 use crate::modifiers::{Attr, Class, ClassIter, Rotate, Scale, ScaleValue, Style, StyleIter};
 use crate::props::{WithElementProps, WithHtmlInputElementProps};
@@ -118,7 +119,7 @@ pub trait Element<State, Action = ()>:
         Action: 'static,
         OA: OptionalAction<Action>,
         Callback: Fn(&mut State, Event) -> OA + 'static,
-        Event: JsCast + 'static + crate::Message,
+        Event: JsCast + 'static + AnyMessage,
     {
         events::OnEvent::new(self, event, handler)
     }
