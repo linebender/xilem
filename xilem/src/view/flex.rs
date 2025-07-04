@@ -69,6 +69,8 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         fill_major_axis: false,
         gap: None,
         properties: Default::default(),
+        // --- MARK: Modified ---
+        right_to_left: false,
         phantom: PhantomData,
     }
 }
@@ -95,6 +97,10 @@ pub struct Flex<Seq, State, Action = ()> {
     fill_major_axis: bool,
     gap: Option<f64>,
     properties: FlexProps,
+    // --- MARK: Modified ---
+    /// The direction of the app language. If it's right to left, and it's a row,
+    /// then the items will be placed from the right to left.
+    right_to_left: bool,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -146,6 +152,16 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
         }
         self
     }
+
+    // --- MARK: Modified ---
+    /// Set the right to left direction of the app.
+    /// 
+    /// This will influence whether the flex row items will be
+    /// position and placed from the right side to the left side.
+    pub fn with_rtl(mut self, right_to_left: bool) -> Self {
+        self.right_to_left = right_to_left;
+        self
+    }
 }
 
 impl<Seq, S, A> Style for Flex<Seq, S, A> {
@@ -184,7 +200,8 @@ where
             .raw_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
-            .main_axis_alignment(self.main_axis_alignment);
+            .main_axis_alignment(self.main_axis_alignment)
+            .with_rtl(self.right_to_left);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for child in elements.into_inner() {
             widget = match child {
