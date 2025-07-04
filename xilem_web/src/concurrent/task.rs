@@ -9,10 +9,11 @@ use futures::FutureExt;
 use futures::channel::oneshot;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
+use xilem_core::AnyMessage;
 
 use crate::context::MessageThunk;
 use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
-use crate::{DynMessage, Message, ViewCtx};
+use crate::{DynMessage, ViewCtx};
 
 /// Spawn an async task to update state asynchronously
 ///
@@ -29,7 +30,7 @@ where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message,
+    M: AnyMessage,
 {
     const {
         assert!(
@@ -119,7 +120,7 @@ pub struct TaskProxy {
 impl TaskProxy {
     pub fn send_message<M>(&self, message: M)
     where
-        M: Message,
+        M: AnyMessage,
     {
         let thunk = Rc::clone(&self.thunk);
         spawn_local(async move {
@@ -137,7 +138,7 @@ where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: Message,
+    M: AnyMessage,
 {
     type Element = NoElement;
 
