@@ -21,14 +21,12 @@ checksum = "c71b1793ee61086797f5c80b6efa2b8ffa6d5dd703f118545808a7f2e27f7046"
 [[package]]
 name = "accesskit"
 version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e25ae84c0260bdf5df07796d7cc4882460de26a2b406ec0e6c42461a723b271b"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#277c06ef354d16b553d2b0ea3d81a6b251fb9914"
 
 [[package]]
 name = "accesskit_atspi_common"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29bd41de2e54451a8ca0dd95ebf45b54d349d29ebceb7f20be264eee14e3d477"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#277c06ef354d16b553d2b0ea3d81a6b251fb9914"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -41,8 +39,7 @@ dependencies = [
 [[package]]
 name = "accesskit_consumer"
 version = "0.28.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bfae7c152994a31dc7d99b8eeac7784a919f71d1b306f4b83217e110fd3824c"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#277c06ef354d16b553d2b0ea3d81a6b251fb9914"
 dependencies = [
  "accesskit",
  "hashbrown",
@@ -51,8 +48,7 @@ dependencies = [
 [[package]]
 name = "accesskit_macos"
 version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "692dd318ff8a7a0ffda67271c4bd10cf32249656f4e49390db0b26ca92b095f2"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#277c06ef354d16b553d2b0ea3d81a6b251fb9914"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -65,8 +61,7 @@ dependencies = [
 [[package]]
 name = "accesskit_unix"
 version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5f7474c36606d0fe4f438291d667bae7042ea2760f506650ad2366926358fc8"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#277c06ef354d16b553d2b0ea3d81a6b251fb9914"
 dependencies = [
  "accesskit",
  "accesskit_atspi_common",
@@ -83,8 +78,7 @@ dependencies = [
 [[package]]
 name = "accesskit_windows"
 version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "70a042b62c9c05bf7b616f015515c17d2813f3ba89978d6f4fc369735d60700a"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#277c06ef354d16b553d2b0ea3d81a6b251fb9914"
 dependencies = [
  "accesskit",
  "accesskit_consumer",
@@ -97,8 +91,7 @@ dependencies = [
 [[package]]
 name = "accesskit_winit"
 version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c1f0d3d13113d8857542a4f8d1a1c24d1dc1527b77aee8426127f4901588708"
+source = "git+https://github.com/AccessKit/accesskit?branch=scrolling-wip#277c06ef354d16b553d2b0ea3d81a6b251fb9914"
 dependencies = [
  "accesskit",
  "accesskit_macos",
