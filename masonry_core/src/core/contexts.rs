@@ -80,7 +80,6 @@ pub struct EventCtx<'a> {
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
-    pub(crate) posted_user_update: bool,
 }
 
 /// A context provided to the [`Widget::register_children`] method.
@@ -449,11 +448,6 @@ impl EventCtx<'_> {
     /// This will be different from [`widget_id`](Self::widget_id) during event bubbling.
     pub fn target(&self) -> WidgetId {
         self.target
-    }
-
-    /// Enqueue an update event after the current event handler returns.
-    pub fn post_user_update(&mut self) {
-        self.posted_user_update = true;
     }
 
     /// Request [text focus].

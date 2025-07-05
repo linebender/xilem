@@ -300,6 +300,25 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     }
 }
 
+enum PostScrollResult {
+    Layout,
+    NoLayout,
+}
+
+macro_rules! post_scroll_wrappers {
+    ($(($name:ident, $ctx_ty:ty)),+) => {
+        $(fn $name(&mut self, ctx: $ctx_ty) {
+            match self.post_scroll(ctx.size()) {
+                PostScrollResult::Layout => {
+                    ctx.request_layout();
+                }
+                PostScrollResult::NoLayout => {}
+            }
+            ctx.request_compose();
+        })*
+    }
+}
+
 // --- MARK: WIDGETMUT
 impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Indicates that `action` is about to be handled by the driver (which is calling this method).
@@ -428,13 +447,13 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
-    fn post_scroll(&mut self, ctx: &mut UpdateCtx<'_>) {
+    fn post_scroll(&mut self, size: Size) -> PostScrollResult {
         // We only lock scrolling if we're *exactly* at the end of the range, because
         // if the valid range has changed "during" an active scroll, we still want to handle
         // that scroll (specifically, in case it happens to scroll us back into the active
         // range "naturally")
         if self.anchor_index + 1 == self.valid_range.end {
-            self.cap_scroll_range_down(self.anchor_height, ctx.size().height);
+            self.cap_scroll_range_down(self.anchor_height, size.height);
         }
         if self.anchor_index == self.valid_range.start {
             self.cap_scroll_range_up();
@@ -442,9 +461,15 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         if self.scroll_offset_from_anchor < 0.
             || self.scroll_offset_from_anchor >= self.anchor_height
         {
-            ctx.request_layout();
+            PostScrollResult::Layout
+        } else {
+            PostScrollResult::NoLayout
         }
-        ctx.request_compose();
+    }
+
+    post_scroll_wrappers! {
+        (event_post_scroll, &mut EventCtx<'_>),
+        (update_post_scroll, &mut UpdateCtx<'_>)
     }
 
     /// Lock scrolling so that:
@@ -486,7 +511,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     _ => 0.0,
                 };
                 self.scroll_offset_from_anchor += delta;
-                ctx.post_user_update();
+                self.event_post_scroll(ctx);
             }
             _ => (),
         }
@@ -508,11 +533,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     let delta = 20000.;
                     if matches!(key_event.key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
-                        ctx.post_user_update();
+                        self.event_post_scroll(ctx);
                     }
                     if matches!(key_event.key, Key::Named(NamedKey::PageUp)) {
                         self.scroll_offset_from_anchor -= delta;
-                        ctx.post_user_update();
+                        self.event_post_scroll(ctx);
                     }
                 }
             }
@@ -526,25 +551,25 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        match event.action {
-            accesskit::Action::ScrollUp | accesskit::Action::ScrollDown => {
-                let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
-                    *unit
-                } else {
-                    accesskit::ScrollUnit::Item
-                };
-                let amount = match unit {
-                    accesskit::ScrollUnit::Item => self.anchor_height,
-                    accesskit::ScrollUnit::Page => ctx.size().height,
-                };
-                if event.action == accesskit::Action::ScrollUp {
-                    self.scroll_offset_from_anchor -= amount;
-                } else {
-                    self.scroll_offset_from_anchor += amount;
-                }
-                ctx.post_user_update();
+        if matches!(
+            event.action,
+            accesskit::Action::ScrollUp | accesskit::Action::ScrollDown
+        ) {
+            let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
+                *unit
+            } else {
+                accesskit::ScrollUnit::Item
+            };
+            let amount = match unit {
+                accesskit::ScrollUnit::Item => self.anchor_height,
+                accesskit::ScrollUnit::Page => ctx.size().height,
+            };
+            if event.action == accesskit::Action::ScrollUp {
+                self.scroll_offset_from_anchor -= amount;
+            } else {
+                self.scroll_offset_from_anchor += amount;
             }
-            _ => (),
+            self.event_post_scroll(ctx);
         }
     }
 
@@ -564,12 +589,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 )
                 .start;
                 self.scroll_offset_from_anchor += new_pos_y;
-                self.post_scroll(ctx);
+                self.update_post_scroll(ctx);
             }
-            Update::UserUpdate => {
-                self.post_scroll(ctx);
-            }
-            _ => (),
+            _ => {}
         }
     }
 
