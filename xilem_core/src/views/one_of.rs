@@ -5,7 +5,9 @@
 
 use hidden::OneOfState;
 
-use crate::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker};
+use crate::{
+    DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+};
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used.
 ///
@@ -182,8 +184,8 @@ pub trait OneOfCtx<
 
 impl<A, B, C, D, E, F, G, H, I> ViewMarker for OneOf<A, B, C, D, E, F, G, H, I> {}
 /// The `OneOf` types and `Either` are [`View`]s if all of their possible types are themselves `View`s.
-impl<State, Action, Context, Message, A, B, C, D, E, F, G, H, I>
-    View<State, Action, Context, Message> for OneOf<A, B, C, D, E, F, G, H, I>
+impl<State, Action, Context, A, B, C, D, E, F, G, H, I> View<State, Action, Context>
+    for OneOf<A, B, C, D, E, F, G, H, I>
 where
     State: 'static,
     Action: 'static,
@@ -199,15 +201,15 @@ where
             H::Element,
             I::Element,
         >,
-    A: View<State, Action, Context, Message>,
-    B: View<State, Action, Context, Message>,
-    C: View<State, Action, Context, Message>,
-    D: View<State, Action, Context, Message>,
-    E: View<State, Action, Context, Message>,
-    F: View<State, Action, Context, Message>,
-    G: View<State, Action, Context, Message>,
-    H: View<State, Action, Context, Message>,
-    I: View<State, Action, Context, Message>,
+    A: View<State, Action, Context>,
+    B: View<State, Action, Context>,
+    C: View<State, Action, Context>,
+    D: View<State, Action, Context>,
+    E: View<State, Action, Context>,
+    F: View<State, Action, Context>,
+    G: View<State, Action, Context>,
+    H: View<State, Action, Context>,
+    I: View<State, Action, Context>,
 {
     #[doc(hidden)]
     type Element = Context::OneOfElement;
@@ -525,9 +527,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let (start, rest) = id_path
             .split_first()
             .expect("Id path has elements for OneOf");
@@ -554,16 +556,14 @@ where
 #[doc(hidden)]
 mod hidden {
     use super::PhantomElementCtx;
-    use crate::{View, ViewMarker};
+    use crate::{DynMessage, View, ViewMarker};
 
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     #[derive(Debug)]
     pub enum Never {}
 
     impl ViewMarker for Never {}
-    impl<State, Action, Context: PhantomElementCtx, Message> View<State, Action, Context, Message>
-        for Never
-    {
+    impl<State, Action, Context: PhantomElementCtx> View<State, Action, Context> for Never {
         type Element = Context::PhantomElement;
 
         type ViewState = Self;
@@ -597,9 +597,9 @@ mod hidden {
             &self,
             _: &mut Self::ViewState,
             _: &[crate::ViewId],
-            _: Message,
+            _: DynMessage,
             _: &mut State,
-        ) -> crate::MessageResult<Action, Message> {
+        ) -> crate::MessageResult<Action> {
             match *self {}
         }
     }

@@ -74,7 +74,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }

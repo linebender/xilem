@@ -11,7 +11,7 @@ use core::fmt::Debug;
 ///
 /// [`View::message`]: crate::View::message
 #[derive(Default, Debug)]
-pub enum MessageResult<Action, Message = DynMessage> {
+pub enum MessageResult<Action> {
     /// An action for a parent message handler to use
     ///
     /// This allows for sub-sections of your app to use an elm-like architecture
@@ -26,12 +26,12 @@ pub enum MessageResult<Action, Message = DynMessage> {
     /// does not require the element tree to be recreated.
     Nop,
     /// The view this message was being routed to no longer exists.
-    Stale(Message),
+    Stale(DynMessage),
 }
 
-impl<A, Message> MessageResult<A, Message> {
+impl<A> MessageResult<A> {
     /// Maps the action type `A` to `B`, i.e. [`MessageResult<A>`] to [`MessageResult<B>`]
-    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B, Message> {
+    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
         match self {
             Self::Action(a) => MessageResult::Action(f(a)),
             Self::RequestRebuild => MessageResult::RequestRebuild,

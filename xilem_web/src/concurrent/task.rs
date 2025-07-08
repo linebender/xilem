@@ -131,7 +131,7 @@ impl TaskProxy {
 
 impl<F, H, M> ViewMarker for Task<F, H, M> {}
 
-impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx, DynMessage> for Task<F, H, M>
+impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<F, H, M>
 where
     State: 'static,
     Action: 'static,
@@ -185,7 +185,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
             "id path should be empty in AsyncRepeat::message"

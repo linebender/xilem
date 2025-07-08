@@ -458,7 +458,7 @@ impl<E, S, T, A> Style<E, S, T, A> {
 }
 
 impl<E, S, State, Action> ViewMarker for Style<E, S, State, Action> {}
-impl<V, S, State, Action> View<State, Action, ViewCtx, DynMessage> for Style<V, S, State, Action>
+impl<V, S, State, Action> View<State, Action, ViewCtx> for Style<V, S, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -511,7 +511,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.el.message(view_state, id_path, message, app_state)
     }
 }
@@ -547,7 +547,7 @@ fn rotate_transform_modifier(transform: Option<&CowStr>, radians: &f64) -> Style
 }
 
 impl<V, State, Action> ViewMarker for Rotate<V, State, Action> {}
-impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Rotate<V, State, Action>
+impl<V, State, Action> View<State, Action, ViewCtx> for Rotate<V, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -607,7 +607,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.el.message(view_state, id_path, message, app_state)
     }
 }
@@ -673,7 +673,7 @@ fn scale_transform_modifier(transform: Option<&CowStr>, scale: &ScaleValue) -> S
 }
 
 impl<E, State, Action> ViewMarker for Scale<E, State, Action> {}
-impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Scale<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx> for Scale<V, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -733,7 +733,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.el.message(view_state, id_path, message, app_state)
     }
 }

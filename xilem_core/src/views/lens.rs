@@ -5,20 +5,20 @@ use core::any::type_name;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// The View for [`lens`].
 ///
 /// See its documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Lens<CF, V, F, ParentState, ChildState, Action, Context, Message> {
+pub struct Lens<CF, V, F, ParentState, ChildState, Action, Context> {
     access_state: F,
     child_component: CF,
-    phantom: PhantomData<fn(ParentState) -> (ChildState, Action, Context, Message, V)>,
+    phantom: PhantomData<fn(ParentState) -> (ChildState, Action, Context, V)>,
 }
 
-impl<CF, V, F, ParentState, ChildState, Action, Context, Message> Debug
-    for Lens<CF, V, F, ParentState, ChildState, Action, Context, Message>
+impl<CF, V, F, ParentState, ChildState, Action, Context> Debug
+    for Lens<CF, V, F, ParentState, ChildState, Action, Context>
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         f.debug_struct("Lens")
@@ -67,16 +67,16 @@ impl<CF, V, F, ParentState, ChildState, Action, Context, Message> Debug
 ///     available_flights: Vec<Flight>,
 /// }
 /// ```
-pub fn lens<OuterState, Action, Context, Message, InnerState, StateF, InnerView, Component>(
+pub fn lens<OuterState, Action, Context, InnerState, StateF, InnerView, Component>(
     component: Component,
     // This parameter ordering does run into https://github.com/rust-lang/rustfmt/issues/3605
     // Our general advice is to make sure that the lens arguments are short enough...
     access_state: StateF,
-) -> Lens<Component, InnerView, StateF, OuterState, InnerState, Action, Context, Message>
+) -> Lens<Component, InnerView, StateF, OuterState, InnerState, Action, Context>
 where
     StateF: Fn(&mut OuterState) -> &mut InnerState + Send + Sync + 'static,
     Component: Fn(&mut InnerState) -> InnerView,
-    InnerView: View<InnerState, Action, Context, Message>,
+    InnerView: View<InnerState, Action, Context>,
     Context: ViewPathTracker,
 {
     Lens {
@@ -86,22 +86,21 @@ where
     }
 }
 
-impl<Component, V, StateF, ParentState, ChildState, Action, Context, Message> ViewMarker
-    for Lens<Component, V, StateF, ParentState, ChildState, Action, Context, Message>
+impl<Component, V, StateF, ParentState, ChildState, Action, Context> ViewMarker
+    for Lens<Component, V, StateF, ParentState, ChildState, Action, Context>
 {
 }
-impl<Component, ParentState, ChildState, Action, Context, Message, V, StateF>
-    View<ParentState, Action, Context, Message>
-    for Lens<Component, V, StateF, ParentState, ChildState, Action, Context, Message>
+impl<Component, ParentState, ChildState, Action, Context, V, StateF>
+    View<ParentState, Action, Context>
+    for Lens<Component, V, StateF, ParentState, ChildState, Action, Context>
 where
     ParentState: 'static,
     ChildState: 'static,
-    V: View<ChildState, Action, Context, Message>,
+    V: View<ChildState, Action, Context>,
     Component: Fn(&mut ChildState) -> V + 'static,
     StateF: Fn(&mut ParentState) -> &mut ChildState + 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
-    Message: 'static,
 {
     type ViewState = (V, V::ViewState);
     type Element = V::Element;
@@ -146,9 +145,9 @@ where
         &self,
         (child, child_view_state): &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut ParentState,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         child.message(
             child_view_state,
             id_path,

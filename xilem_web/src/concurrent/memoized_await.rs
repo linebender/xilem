@@ -162,7 +162,7 @@ impl<State, Action, OA, InitFuture, Data, CB, F, FOut> ViewMarker
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 {
 }
-impl<State, Action, InitFuture, F, FOut, Data, CB, OA> View<State, Action, ViewCtx, DynMessage>
+impl<State, Action, InitFuture, F, FOut, Data, CB, OA> View<State, Action, ViewCtx>
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 where
     State: 'static,
@@ -248,7 +248,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         assert_eq!(id_path.len(), 1);
         if id_path[0].routing_id() == view_state.generation {
             match *message.downcast().unwrap_throw() {

@@ -116,7 +116,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.sequence
             .seq_message(view_state, id_path, message, app_state)
     }

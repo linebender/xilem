@@ -105,8 +105,7 @@ impl<State, Action, E, F> ViewMarker for AfterBuild<State, Action, E, F> {}
 impl<State, Action, E, F> ViewMarker for AfterRebuild<State, Action, E, F> {}
 impl<State, Action, E, F> ViewMarker for BeforeTeardown<State, Action, E, F> {}
 
-impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
-    for AfterBuild<State, Action, V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterBuild<State, Action, V, F>
 where
     State: 'static,
     Action: 'static,
@@ -152,14 +151,13 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.element
             .message(view_state, id_path, message, app_state)
     }
 }
 
-impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
-    for AfterRebuild<State, Action, V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterRebuild<State, Action, V, F>
 where
     State: 'static,
     Action: 'static,
@@ -209,14 +207,13 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.element
             .message(view_state, id_path, message, app_state)
     }
 }
 
-impl<State, Action, V, F> View<State, Action, ViewCtx, DynMessage>
-    for BeforeTeardown<State, Action, V, F>
+impl<State, Action, V, F> View<State, Action, ViewCtx> for BeforeTeardown<State, Action, V, F>
 where
     State: 'static,
     Action: 'static,
@@ -260,7 +257,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.element
             .message(view_state, id_path, message, app_state)
     }

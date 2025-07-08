@@ -13,7 +13,7 @@ use crate::{DomView, DynMessage, PodMut, ViewCtx};
 pub struct Templated<V>(Rc<V>);
 
 impl<V> ViewMarker for Templated<V> {}
-impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Templated<V>
+impl<State, Action, V> View<State, Action, ViewCtx> for Templated<V>
 where
     State: 'static,
     Action: 'static,
@@ -21,7 +21,7 @@ where
 {
     type Element = V::Element;
 
-    type ViewState = <Rc<V> as View<State, Action, ViewCtx, DynMessage>>::ViewState;
+    type ViewState = <Rc<V> as View<State, Action, ViewCtx>>::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let type_id = TypeId::of::<Self>();
@@ -80,7 +80,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.0.message(view_state, id_path, message, app_state)
     }
 }

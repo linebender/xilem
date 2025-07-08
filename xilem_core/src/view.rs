@@ -60,9 +60,7 @@ pub trait ViewMarker {}
 ///
 /// In order to support the default open-ended [`DynMessage`] type as `Message`, this trait requires an
 /// allocator to be available.
-pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
-    ViewMarker + 'static
-{
+pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     /// The element type which this view operates on.
     type Element: ViewElement;
     /// State that is used over the lifetime of the retained representation of the view.
@@ -105,9 +103,9 @@ pub trait View<State, Action, Context: ViewPathTracker, Message = DynMessage>:
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message>;
+    ) -> MessageResult<Action>;
 
     // fn debug_name?
 }
@@ -164,10 +162,10 @@ pub trait ViewPathTracker {
 }
 
 impl<V: ?Sized> ViewMarker for Box<V> {}
-impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Box<V>
+impl<State, Action, Context, V> View<State, Action, Context> for Box<V>
 where
     Context: ViewPathTracker,
-    V: View<State, Action, Context, Message> + ?Sized,
+    V: View<State, Action, Context> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = V::ViewState;
@@ -202,9 +200,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         self.deref()
             .message(view_state, id_path, message, app_state)
     }
@@ -223,10 +221,10 @@ pub struct RcState<ViewState> {
 
 impl<V: ?Sized> ViewMarker for Arc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
-impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Arc<V>
+impl<State, Action, Context, V> View<State, Action, Context> for Arc<V>
 where
     Context: ViewPathTracker,
-    V: View<State, Action, Context, Message> + ?Sized,
+    V: View<State, Action, Context> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = RcState<V::ViewState>;
@@ -272,9 +270,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let message_result =
             self.deref()
                 .message(&mut view_state.view_state, id_path, message, app_state);
@@ -287,10 +285,10 @@ where
 
 impl<V: ?Sized> ViewMarker for Rc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
-impl<State, Action, Context, Message, V> View<State, Action, Context, Message> for Rc<V>
+impl<State, Action, Context, V> View<State, Action, Context> for Rc<V>
 where
     Context: ViewPathTracker,
-    V: View<State, Action, Context, Message> + ?Sized,
+    V: View<State, Action, Context> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = RcState<V::ViewState>;
@@ -336,9 +334,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let message_result =
             self.deref()
                 .message(&mut view_state.view_state, id_path, message, app_state);

@@ -6,11 +6,11 @@ use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{AnyMessage, DynMessage, NoElement, SendMessage, View, ViewId, ViewPathTracker};
+use crate::{AnyMessage, NoElement, SendMessage, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
-pub trait AsyncCtx<Message = DynMessage>: ViewPathTracker {
+pub trait AsyncCtx: ViewPathTracker {
     /// Get a [`RawProxy`] for this context.
     // TODO: Maybe store the current path within this Proxy?
     fn proxy(&mut self) -> Arc<dyn RawProxy>;
@@ -100,16 +100,16 @@ impl<M: AnyMessage + Send> MessageProxy<M> {
 }
 
 /// A [`View`] which has no element type.
-pub trait PhantomView<State, Action, Context, Message = DynMessage>:
-    View<State, Action, Context, Message, Element = NoElement>
+pub trait PhantomView<State, Action, Context>:
+    View<State, Action, Context, Element = NoElement>
 where
     Context: ViewPathTracker,
 {
 }
 
-impl<State, Action, Context, Message, V> PhantomView<State, Action, Context, Message> for V
+impl<State, Action, Context, V> PhantomView<State, Action, Context> for V
 where
-    V: View<State, Action, Context, Message, Element = NoElement>,
+    V: View<State, Action, Context, Element = NoElement>,
     Context: ViewPathTracker,
 {
 }

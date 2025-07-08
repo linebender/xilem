@@ -3,7 +3,7 @@
 
 use core::fmt::Debug;
 
-use crate::{MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
+use crate::{DynMessage, MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
 
 /// A view which executes `once` exactly once.
 ///
@@ -84,12 +84,10 @@ impl<F> Debug for RunOnce<F> {
 }
 
 impl<F> ViewMarker for RunOnce<F> {}
-impl<F, State, Action, Context, Message> View<State, Action, Context, Message> for RunOnce<F>
+impl<F, State, Action, Context> View<State, Action, Context> for RunOnce<F>
 where
     Context: ViewPathTracker,
     F: Fn() + 'static,
-    // TODO: Work out what traits we want to require `Message`s to have
-    Message: Debug,
 {
     type Element = NoElement;
 
@@ -125,9 +123,9 @@ where
         &self,
         (): &mut Self::ViewState,
         _: &[crate::ViewId],
-        message: Message,
+        message: DynMessage,
         _: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         // Nothing to do
         panic!("Message should not have been sent to a `RunOnce` View: {message:?}");
     }

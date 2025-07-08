@@ -78,7 +78,7 @@ impl<T> Default for AppendVec<T> {
 ///  - Tuples of `ViewSequences` with up to 15 elements.
 ///    These can be nested if an ad-hoc sequence of more than 15 sequences is needed.
 ///
-pub trait ViewSequence<State, Action, Context, Element, Message = DynMessage>: 'static
+pub trait ViewSequence<State, Action, Context, Element>: 'static
 where
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -127,9 +127,9 @@ where
         &self,
         seq_state: &mut Self::SeqState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message>;
+    ) -> MessageResult<Action>;
 }
 
 /// A temporary "splice" to add, update and delete in an (ordered) sequence of elements.
@@ -150,11 +150,10 @@ pub trait ElementSplice<Element: ViewElement> {
     fn delete<R>(&mut self, f: impl FnOnce(Element::Mut<'_>) -> R) -> R;
 }
 
-impl<State, Action, Context, V, Element, Message>
-    ViewSequence<State, Action, Context, Element, Message> for V
+impl<State, Action, Context, V, Element> ViewSequence<State, Action, Context, Element> for V
 where
     Context: ViewPathTracker,
-    V: View<State, Action, Context, Message> + ViewMarker,
+    V: View<State, Action, Context> + ViewMarker,
     Element: SuperElement<V::Element, Context>,
     V::Element: ViewElement,
 {
@@ -203,9 +202,9 @@ where
         &self,
         seq_state: &mut Self::SeqState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         self.message(seq_state, id_path, message, app_state)
     }
 }
@@ -229,10 +228,10 @@ pub struct OptionSeqState<InnerState> {
 ///
 /// Will mark messages which were sent to a `Some` value if a `None` has since
 /// occurred as stale.
-impl<State, Action, Context, Element, Seq, Message>
-    ViewSequence<State, Action, Context, Element, Message> for Option<Seq>
+impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
+    for Option<Seq>
 where
-    Seq: ViewSequence<State, Action, Context, Element, Message>,
+    Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
 {
@@ -345,9 +344,9 @@ where
         &self,
         seq_state: &mut Self::SeqState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let (start, rest) = id_path
             .split_first()
             .expect("Id path has elements for Option<ViewSequence>");
@@ -410,10 +409,10 @@ fn view_id_to_index_generation(view_id: ViewId) -> (usize, u32) {
 ///
 /// Will mark messages which were sent to any index as stale if
 /// that index has been unused in the meantime.
-impl<State, Action, Context, Element, Seq, Message>
-    ViewSequence<State, Action, Context, Element, Message> for Vec<Seq>
+impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
+    for Vec<Seq>
 where
-    Seq: ViewSequence<State, Action, Context, Element, Message>,
+    Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
 {
@@ -553,9 +552,9 @@ where
         &self,
         seq_state: &mut Self::SeqState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let (start, rest) = id_path
             .split_first()
             .expect("Id path has elements for Vec<ViewSequence>");
@@ -571,10 +570,10 @@ where
     }
 }
 
-impl<State, Action, Context, Element, Seq, Message, const N: usize>
-    ViewSequence<State, Action, Context, Element, Message> for [Seq; N]
+impl<State, Action, Context, Element, Seq, const N: usize>
+    ViewSequence<State, Action, Context, Element> for [Seq; N]
 where
-    Seq: ViewSequence<State, Action, Context, Element, Message>,
+    Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
 {
@@ -624,9 +623,9 @@ where
         &self,
         seq_state: &mut Self::SeqState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let (start, rest) = id_path
             .split_first()
             .expect("Id path has elements for [ViewSequence; N]");
@@ -658,8 +657,7 @@ where
     }
 }
 
-impl<State, Action, Context, Element, Message>
-    ViewSequence<State, Action, Context, Element, Message> for ()
+impl<State, Action, Context, Element> ViewSequence<State, Action, Context, Element> for ()
 where
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -697,18 +695,17 @@ where
         &self,
         _: &mut Self::SeqState,
         _: &[ViewId],
-        _message: Message,
+        _message: DynMessage,
         _: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         unreachable!("Messages should never be dispatched to an empty tuple");
         // TODO add Debug trait bound because of this?: , got {message:?}
     }
 }
 
-impl<State, Action, Context, Element, Seq, Message>
-    ViewSequence<State, Action, Context, Element, Message> for (Seq,)
+impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element> for (Seq,)
 where
-    Seq: ViewSequence<State, Action, Context, Element, Message>,
+    Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
 {
@@ -749,9 +746,9 @@ where
         &self,
         seq_state: &mut Self::SeqState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         self.0.seq_message(seq_state, id_path, message, app_state)
     }
 }
@@ -767,9 +764,8 @@ macro_rules! impl_view_tuple {
                 Action,
                 Context: ViewPathTracker,
                 Element: ViewElement,
-                $($seq: ViewSequence<State, Action, Context, Element, Message>,)+
-                Message,
-            > ViewSequence<State, Action, Context, Element, Message> for ($($seq,)+)
+                $($seq: ViewSequence<State, Action, Context, Element>,)+
+            > ViewSequence<State, Action, Context, Element> for ($($seq,)+)
 
         {
             type SeqState = ($($seq::SeqState,)+);
@@ -820,9 +816,9 @@ macro_rules! impl_view_tuple {
                 &self,
                 seq_state: &mut Self::SeqState,
                 id_path: &[ViewId],
-                message: Message,
+                message: DynMessage,
                 app_state: &mut State,
-            ) -> MessageResult<Action, Message> {
+            ) -> MessageResult<Action> {
                 let (start, rest) = id_path
                     .split_first()
                     .expect("Id path has elements for tuple");
@@ -883,9 +879,9 @@ impl ElementSplice<NoElement> for NoElements {
 
 /// The [`ViewSequence`] for [`without_elements`], see its documentation for more context.
 #[derive(Debug)]
-pub struct WithoutElements<Seq, State, Action, Context, Message> {
+pub struct WithoutElements<Seq, State, Action, Context> {
     seq: Seq,
-    phantom: PhantomData<fn() -> (State, Action, Context, Message)>,
+    phantom: PhantomData<fn() -> (State, Action, Context)>,
 }
 
 /// An adapter which turns a [`ViewSequence`] containing any number of views with side effects, into a `ViewSequence` with any element type.
@@ -908,15 +904,14 @@ pub struct WithoutElements<Seq, State, Action, Context, Message> {
 ///
 /// # struct AppState;
 /// ```
-pub fn without_elements<State, Action, Context, Message, Seq>(
+pub fn without_elements<State, Action, Context, Seq>(
     seq: Seq,
-) -> WithoutElements<Seq, State, Action, Context, Message>
+) -> WithoutElements<Seq, State, Action, Context>
 where
     State: 'static,
     Action: 'static,
-    Message: 'static,
     Context: ViewPathTracker + 'static,
-    Seq: ViewSequence<State, Action, Context, NoElement, Message>,
+    Seq: ViewSequence<State, Action, Context, NoElement>,
 {
     WithoutElements {
         seq,
@@ -924,16 +919,14 @@ where
     }
 }
 
-impl<State, Action, Context, Element, Message, Seq>
-    ViewSequence<State, Action, Context, Element, Message>
-    for WithoutElements<Seq, State, Action, Context, Message>
+impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
+    for WithoutElements<Seq, State, Action, Context>
 where
     State: 'static,
     Action: 'static,
-    Message: 'static,
     Element: ViewElement,
     Context: ViewPathTracker + 'static,
-    Seq: ViewSequence<State, Action, Context, NoElement, Message>,
+    Seq: ViewSequence<State, Action, Context, NoElement>,
 {
     type SeqState = Seq::SeqState;
 
@@ -974,9 +967,9 @@ where
         &self,
         seq_state: &mut Self::SeqState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> crate::MessageResult<Action> {
         self.seq.seq_message(seq_state, id_path, message, app_state)
     }
 }

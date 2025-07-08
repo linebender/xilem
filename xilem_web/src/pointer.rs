@@ -133,7 +133,7 @@ fn build_event_listeners(
 }
 
 impl<V, State, Action, Callback> ViewMarker for Pointer<V, State, Action, Callback> {}
-impl<State, Action, Callback, V> View<State, Action, ViewCtx, DynMessage>
+impl<State, Action, Callback, V> View<State, Action, ViewCtx>
     for Pointer<V, State, Action, Callback>
 where
     State: 'static,
@@ -204,7 +204,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         let Some((first, remainder)) = id_path.split_first() else {
             throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
         };
