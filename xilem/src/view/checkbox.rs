@@ -79,15 +79,18 @@ crate::declare_property_tuple!(
 
     DisabledBackground, 0;
     ActiveBackground, 1;
-    Background, 2;
-    HoveredBorderColor, 3;
-    BorderColor, 4;
-    BorderWidth, 5;
-    CornerRadius, 6;
-    Padding, 7;
-    CheckmarkStrokeWidth, 8;
-    DisabledCheckmarkColor, 9;
-    CheckmarkColor, 10;
+    HoveredBackground, 2;
+    Background, 3;
+    DisabledBorderColor, 4;
+    ActiveBorderColor, 5;
+    HoveredBorderColor, 6;
+    BorderColor, 7;
+    BorderWidth, 8;
+    CornerRadius, 9;
+    Padding, 10;
+    CheckmarkStrokeWidth, 11;
+    DisabledCheckmarkColor, 12;
+    CheckmarkColor, 13;
 );
 
 impl<F> ViewMarker for Checkbox<F> {}
