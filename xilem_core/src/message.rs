@@ -55,7 +55,7 @@ impl<A, Message> MessageResult<A, Message> {
 ///
 /// If the message contains sensitive data, make sure this isn't output in its `Debug` implementation,
 /// as that may be called by the Xilem runtime (e.g. due to a bug meaning messages are redirected) or
-/// any parent views. That is, views do not need to be designed as if the Debug implementation
+/// any parent views. That is, views do not need to be designed as if the `Debug` implementation
 /// should only be logged securely, or shouldn't be sent to an anomaly reporting service.
 ///
 /// [`View`]: crate::View
