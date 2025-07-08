@@ -21,7 +21,7 @@ pub trait Message: 'static {
     /// Convert `self` into a [`Box<dyn Any>`].
     fn into_any(self: Box<Self>) -> Box<dyn Any>;
     /// Convert `self` into a [`Box<dyn Any>`].
-    fn as_any(&self) -> &(dyn Any);
+    fn as_any(&self) -> &dyn Any;
     /// Gets the debug representation of this message.
     fn dyn_debug(&self) -> &dyn Debug;
 }
