@@ -45,9 +45,6 @@ impl<A, Message> MessageResult<A, Message> {
 ///
 /// This is a thin wrapper around `Box<dyn Any>`, with added support for debug printing.
 /// It is used as the default message type in Xilem Core.
-/// The contained messages must also be [`Send`], which makes using this message type in a multithreaded context easier.
-/// [`View`] is generic over the message type, in case this requirement is too restrictive.
-/// Indeed, this functionality is used in Xilem Web.
 ///
 /// To convert a `DynMessage` into its concrete message type, you should use
 /// [`downcast`](Self::downcast).
@@ -58,7 +55,8 @@ impl<A, Message> MessageResult<A, Message> {
 ///
 /// If the message contains sensitive data, make sure this isn't output in its `Debug` implementation,
 /// as that may be called by the Xilem runtime (e.g. due to a bug meaning messages are redirected) or
-/// any parent views. (That is, views do not need to design themselves as if the Debug implementation is )
+/// any parent views. That is, views do not need to be designed as if the `Debug` implementation
+/// should only be logged securely, or shouldn't be sent to an anomaly reporting service.
 ///
 /// [`View`]: crate::View
 #[derive(Debug)]
@@ -75,7 +73,7 @@ impl DynMessage {
     /// ## Errors
     ///
     /// If the message contained within `self` is not of type `T`, returns `self`
-    /// (so that e.g. a different type can be used).
+    /// (so that e.g. a different type can be checked).
     ///
     /// In most cases, to handle this error, you will want to make an `error` log,
     /// and return this as [`MessageResult::Stale`]; this case indicates that a parent
@@ -90,15 +88,67 @@ impl DynMessage {
     }
 }
 
+// We could consider:
+// ```
+// enum DynMessage {
+//     Special(Box<dyn AnyMessage>),
+//     Send(SendMessage)
+// }
+// ```
+// to let "maybe-threaded" message handling. That would be especially useful for
+// handling stale messages (i.e. reporting them back to the task which failed).
+// Probably not worth it, but would be (reasonably) non-breaking, at least.
+// Alternatively, we could pass a `fn(DynMessage)->Result<SendMessage, DynMessage>` to the
+// main thread, which would assume/validate that the type hasn't changed. That is more
+// fragile, but potentially more correct.
+
+/// A dynamically typed message which can be sent between threads, for use in
+/// reporting the results of asynchronous computation.
+///
+/// As in [`DynMessage`], this is a thin wrapper around `Box<dyn Any>`, with added
+/// support for debug printing. It can be cheaply converted into a `DynMessage` using
+/// the `From` implementation, although the opposite operation is not possible
+/// (without knowing the underlying type). See also the warning in `DynMessage`'s
+/// docs about the security of Debug implementations.
+///
+/// To convert a `SendMessage` into its concrete message type, you should use
+/// [`downcast`](Self::downcast).
+#[derive(Debug)]
+pub struct SendMessage(pub Box<dyn AnyMessage + Send>);
+
+impl From<SendMessage> for DynMessage {
+    fn from(value: SendMessage) -> Self {
+        Self(value.0)
+    }
+}
+
+impl SendMessage {
+    /// Utility to make a `SendMessage` from a message value.
+    pub fn new(x: impl AnyMessage + Send) -> Self {
+        Self(Box::new(x))
+    }
+
+    /// Access the actual type of this [`SendMessage`].
+    ///
+    /// ## Errors
+    ///
+    /// If the message contained within `self` is not of type `T`, returns `self`
+    /// (so that e.g. a different type can be checked).
+    pub fn downcast<T: AnyMessage>(self) -> Result<Box<T>, Self> {
+        self.0.downcast().map_err(Self)
+    }
+
+    /// Returns `true` if the inner type is the same as `T`.
+    pub fn is<T: AnyMessage + Send>(&self) -> bool {
+        self.0.is::<T>()
+    }
+}
+
 /// Types which can be used in [`DynMessage`] (and so can be the messages for Xilem views).
 ///
 /// The `Debug` requirement allows inspecting messages which were sent to the wrong place.
-// TODO: Should/Could we remove the `Send` requirement here?
-// It's not like implementing message handling in parallel is a meaningful operation.
-// (If you need to send one, you can always use `dyn AnyMessage + Send`)
-// Making that change would mean we could make View no longer generic over the message type again.
-pub trait AnyMessage: Any + Debug + Send {}
-impl<T> AnyMessage for T where T: Any + Debug + Send {}
+pub trait AnyMessage: Any + Debug {}
+impl<T> AnyMessage for T where T: Any + Debug {}
 
 impl dyn AnyMessage {
     /// Access the actual type of this [`DynMessage`].
@@ -107,6 +157,29 @@ impl dyn AnyMessage {
     ///
     /// If the message contained within `self` is not of type `T`, returns `self`
     /// (so that e.g. a different type can be used)
+    pub fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
+        if self.is::<T>() {
+            Ok((self as Box<dyn Any>).downcast::<T>().unwrap())
+        } else {
+            Err(self)
+        }
+    }
+
+    /// Returns `true` if the inner type is the same as `T`.
+    pub fn is<T: AnyMessage>(&self) -> bool {
+        let this: &dyn Any = self;
+        this.is::<T>()
+    }
+}
+
+impl dyn AnyMessage + Send {
+    /// Access the actual type of this [`DynMessage`].
+    ///
+    /// ## Errors
+    ///
+    /// If the message contained within `self` is not of type `T`, returns `self`
+    /// (so that e.g. a different type can be used)
+    // We don't require Send here to mirror the standard library
     pub fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
         if self.is::<T>() {
             Ok((self as Box<dyn Any>).downcast::<T>().unwrap())

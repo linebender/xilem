@@ -11,7 +11,7 @@ use masonry::core::{Widget, WidgetId, WidgetPod};
 use masonry::peniko::Blob;
 use masonry_winit::app::{AppDriver, DriverCtx, MasonryState, MasonryUserEvent, WindowId};
 use winit::window::WindowAttributes;
-use xilem_core::{AnyViewState, RawProxy, View};
+use xilem_core::{AnyViewState, RawProxy, SendMessage, View};
 
 use crate::core::{DynMessage, MessageResult, ProxyError, ViewId};
 use crate::window_view::{CreateWindow, WindowView};
@@ -74,19 +74,19 @@ where
 pub const ASYNC_MARKER_WIDGET: WidgetId = WidgetId::reserved(0x1000);
 
 /// The action which should be used for async events.
-pub fn async_action(path: Arc<[ViewId]>, message: DynMessage) -> masonry::core::Action {
+pub fn async_action(path: Arc<[ViewId]>, message: SendMessage) -> masonry::core::Action {
     masonry::core::Action::Other(Box::<MessagePackage>::new((path, message)))
 }
 
 /// The type used to send a message for async events.
-type MessagePackage = (Arc<[ViewId]>, DynMessage);
+type MessagePackage = (Arc<[ViewId]>, SendMessage);
 
 impl MasonryProxy {
     fn send_message(
         &self,
         window_id: WindowId,
         path: Arc<[ViewId]>,
-        message: DynMessage,
+        message: SendMessage,
     ) -> Result<(), ProxyError> {
         match (self.0)(MasonryUserEvent::Action(
             window_id,
@@ -125,7 +125,7 @@ impl RawProxy for WindowProxy {
     fn send_message(
         &self,
         path: Arc<[ViewId]>,
-        message: xilem_core::DynMessage,
+        message: xilem_core::SendMessage,
     ) -> Result<(), xilem_core::ProxyError> {
         self.1.send_message(self.0, path, message)
     }
@@ -255,9 +255,12 @@ where
             };
             let (path, message) = *action.downcast::<MessagePackage>().unwrap();
             // Handle an async path
-            window
-                .view
-                .message(&mut window.view_state, &path, message, &mut self.state)
+            window.view.message(
+                &mut window.view_state,
+                &path,
+                message.into(),
+                &mut self.state,
+            )
         } else if let Some(id_path) = window.view_ctx.get_id_path(widget_id) {
             window.view.message(
                 &mut window.view_state,

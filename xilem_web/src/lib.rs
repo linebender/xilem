@@ -51,7 +51,6 @@ mod app;
 mod attribute_value;
 mod context;
 mod dom_helpers;
-mod message;
 mod one_of;
 mod optional_action;
 mod pod;
@@ -76,8 +75,8 @@ pub use self::after_update::{
 pub use self::app::App;
 pub use self::attribute_value::{AttributeValue, IntoAttributeValue};
 pub use self::context::{MessageThunk, ViewCtx};
+pub use self::core::DynMessage;
 pub use self::dom_helpers::{document, document_body, get_element_by_id, input_event_target_value};
-pub use self::message::{DynMessage, Message};
 pub use self::optional_action::{Action, OptionalAction};
 pub use self::pod::{AnyPod, Pod, PodFlags, PodMut};
 pub use self::pointer::{Pointer, PointerDetails, PointerMsg};
