@@ -2172,7 +2172,6 @@ dependencies = [
  "image",
  "masonry_core",
  "oxipng",
- "parley",
  "pollster",
  "profiling",
  "smallvec",
