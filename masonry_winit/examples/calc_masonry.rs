@@ -15,7 +15,7 @@ use std::str::FromStr;
 
 use masonry::accesskit;
 use masonry::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
     Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
     Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
@@ -28,7 +28,7 @@ use masonry::smallvec::{SmallVec, smallvec};
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, SizedBox};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{Action, AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace, trace_span};
 use winit::window::Window;
 
@@ -45,7 +45,7 @@ struct CalcState {
     window_id: WindowId,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum CalcAction {
     Digit(u8),
     Op(char),
@@ -161,11 +161,14 @@ impl CalcButton {
 }
 
 impl Widget for CalcButton {
+    type Action = CalcAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
+        emit: impl Fn(Self::Action),
     ) {
         match event {
             PointerEvent::Down { .. } => {
@@ -186,7 +189,7 @@ impl Widget for CalcButton {
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         inner.insert_prop(Background::Color(color));
                     });
-                    ctx.submit_action(Action::Other(Box::new(self.action)));
+                    emit(self.action);
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
             }
@@ -199,6 +202,7 @@ impl Widget for CalcButton {
         _ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
+        _emit: impl Fn(Self::Action),
     ) {
     }
 
@@ -207,11 +211,12 @@ impl Widget for CalcButton {
         ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
+        emit: impl Fn(Self::Action),
     ) {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::Other(Box::new(self.action)));
+                    emit(self.action);
                 }
                 _ => {}
             }
@@ -250,6 +255,7 @@ impl Widget for CalcButton {
         ctx: &mut LayoutCtx<'_>,
         _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
+        _emit: impl Fn(Self::Action),
     ) -> Size {
         let size = ctx.run_layout(&mut self.inner, bc);
         ctx.place_child(&mut self.inner, Point::ORIGIN);
@@ -297,12 +303,9 @@ impl AppDriver for CalcState {
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        match action {
-            Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {
-                CalcAction::Digit(digit) => self.digit(*digit),
-                CalcAction::Op(op) => self.op(*op),
-            },
-            _ => unreachable!(),
+        match *action.downcast::<CalcAction>().unwrap() {
+            CalcAction::Digit(digit) => self.digit(digit),
+            CalcAction::Op(op) => self.op(op),
         }
 
         ctx.render_root(window_id).edit_root_widget(|mut root| {

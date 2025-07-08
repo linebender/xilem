@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use accesskit::{ActionRequest, NodeId, TreeUpdate};
+use any_debug::AnyDebug;
 use cursor_icon::CursorIcon;
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
@@ -15,8 +16,8 @@ use vello::kurbo::{Rect, Size};
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
-    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    AccessEvent, AnyWidget, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef,
+    QueryCtx, ResizeDirection, TextEvent, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
     WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
@@ -51,7 +52,7 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
     /// Root of the widget tree.
-    pub(crate) root: WidgetPod<dyn Widget>,
+    pub(crate) root: WidgetPod<dyn AnyWidget>,
 
     pub(crate) window_node_id: NodeId,
 
@@ -84,7 +85,7 @@ pub struct RenderRoot {
 /// State shared between passes.
 pub(crate) struct RenderRootState {
     /// Sink for signals to be processed by the event loop.
-    signal_sink: Box<dyn FnMut(RenderRootSignal)>,
+    pub(crate) signal_sink: Arc<dyn Fn(RenderRootSignal)>,
 
     /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
@@ -149,7 +150,7 @@ pub(crate) struct RenderRootState {
 
 pub(crate) struct MutateCallback {
     pub(crate) id: WidgetId,
-    pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, dyn Widget>)>,
+    pub(crate) callback: Box<dyn FnOnce(WidgetMut<'_, dyn AnyWidget>)>,
 }
 
 /// Defines how a windows size should be determined
@@ -198,7 +199,7 @@ pub struct RenderRootOptions {
 #[derive(Debug)]
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
-    Action(Action, WidgetId),
+    Action(Box<dyn AnyDebug>, WidgetId),
     /// An IME session has been started.
     StartIme,
     /// The IME session has ended.
@@ -253,8 +254,8 @@ impl RenderRoot {
     /// The `masonry` crate doesn't provide a way to do that:
     /// look for `masonry_winit::app::run` instead.
     pub fn new(
-        root_widget: WidgetPod<dyn Widget>,
-        signal_sink: impl FnMut(RenderRootSignal) + 'static,
+        root_widget: WidgetPod<dyn AnyWidget>,
+        signal_sink: impl Fn(RenderRootSignal) + 'static,
         options: RenderRootOptions,
     ) -> Self {
         let RenderRootOptions {
@@ -274,7 +275,7 @@ impl RenderRoot {
             last_mouse_pos: None,
             default_properties,
             global_state: RenderRootState {
-                signal_sink: Box::new(signal_sink),
+                signal_sink: Arc::new(signal_sink),
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
@@ -452,7 +453,7 @@ impl RenderRoot {
 
     // --- MARK: ACCESS WIDGETS---
     /// Get a [`WidgetRef`] to the root widget.
-    pub fn get_root_widget(&self) -> WidgetRef<'_, dyn Widget> {
+    pub fn get_root_widget(&self) -> WidgetRef<'_, dyn AnyWidget> {
         let root_state_token = self.widget_arena.states.roots();
         let root_widget_token = self.widget_arena.widgets.roots();
         let root_properties_token = self.widget_arena.properties.roots();
@@ -481,7 +482,7 @@ impl RenderRoot {
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
-    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
+    pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn AnyWidget>> {
         let state_ref = self.widget_arena.states.find(id)?;
         let widget_ref = self
             .widget_arena
@@ -517,7 +518,7 @@ impl RenderRoot {
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
+    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) -> R) -> R {
         let res = mutate_widget(self, self.root.id(), f);
 
         self.run_rewrite_passes();
@@ -531,7 +532,7 @@ impl RenderRoot {
     pub fn edit_widget<R>(
         &mut self,
         id: WidgetId,
-        f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
+        f: impl FnOnce(WidgetMut<'_, dyn AnyWidget>) -> R,
     ) -> R {
         let res = mutate_widget(self, id, f);
 
@@ -622,7 +623,7 @@ impl RenderRoot {
 
     pub(crate) fn request_render_all(&mut self) {
         fn request_render_all_in(
-            mut widget: ArenaMut<'_, Box<dyn Widget>>,
+            mut widget: ArenaMut<'_, Box<dyn AnyWidget>>,
             state: ArenaMut<'_, WidgetState>,
             properties: ArenaMut<'_, AnyMap>,
         ) {

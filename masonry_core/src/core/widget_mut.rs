@@ -5,7 +5,10 @@ use std::any::TypeId;
 
 use vello::kurbo::Affine;
 
-use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
+use crate::core::{AnyWidget, FromDynWidget, MutateCtx, Property};
+
+#[cfg(doc)]
+use crate::core::Widget;
 
 /// A rich mutable reference to a [`Widget`].
 ///
@@ -24,14 +27,14 @@ use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
 #[non_exhaustive]
-pub struct WidgetMut<'a, W: Widget + ?Sized> {
+pub struct WidgetMut<'a, W: AnyWidget + ?Sized> {
     /// The widget we're mutating.
     pub widget: &'a mut W,
     /// A context handle that points to the widget state and other relevant data.
     pub ctx: MutateCtx<'a>,
 }
 
-impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
+impl<W: AnyWidget + ?Sized> Drop for WidgetMut<'_, W> {
     fn drop(&mut self) {
         // If this `WidgetMut` is a reborrow, a parent non-reborrow `WidgetMut`
         // still exists which will do the merge-up in `Drop`.
@@ -41,7 +44,7 @@ impl<W: Widget + ?Sized> Drop for WidgetMut<'_, W> {
     }
 }
 
-impl<W: Widget + ?Sized> WidgetMut<'_, W> {
+impl<W: AnyWidget + ?Sized> WidgetMut<'_, W> {
     /// Get a `WidgetMut` for the same underlying widget with a shorter lifetime.
     pub fn reborrow_mut(&mut self) -> WidgetMut<'_, W> {
         let widget = &mut self.widget;
@@ -99,7 +102,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     }
 
     /// Attempt to downcast to `WidgetMut` of concrete Widget type.
-    pub fn try_downcast<W2: Widget + FromDynWidget + ?Sized>(
+    pub fn try_downcast<W2: AnyWidget + FromDynWidget + ?Sized>(
         &mut self,
     ) -> Option<WidgetMut<'_, W2>> {
         Some(WidgetMut {
@@ -114,7 +117,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     ///
     /// Panics if the downcast fails, with an error message that shows the
     /// discrepancy between the expected and actual types.
-    pub fn downcast<W2: Widget + FromDynWidget + ?Sized>(&mut self) -> WidgetMut<'_, W2> {
+    pub fn downcast<W2: AnyWidget + FromDynWidget + ?Sized>(&mut self) -> WidgetMut<'_, W2> {
         let w1_name = self.widget.type_name();
         match W2::from_dyn_mut(self.widget.as_mut_dyn()) {
             Some(widget) => WidgetMut {
