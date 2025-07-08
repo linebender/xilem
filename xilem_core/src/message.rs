@@ -98,8 +98,9 @@ impl DynMessage {
 // to let "maybe-threaded" message handling. That would be especially useful for
 // handling stale messages (i.e. reporting them back to the task which failed).
 // Probably not worth it, but would be (reasonably) non-breaking, at least.
-// Ooh, we could pass a `fn(DynMessage)->Option<SendMessage>`, which would assume/validate that
-// the type hasn't changed.
+// Alternatively, we could pass a `fn(DynMessage)->Result<SendMessage, DynMessage>` to the
+// main thread, which would assume/validate that the type hasn't changed. That is more
+// fragile, but potentially more correct.
 
 /// A dynamically typed message which can be sent between threads, for use in
 /// reporting the results of asynchronous computation.
