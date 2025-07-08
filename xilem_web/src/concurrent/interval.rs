@@ -91,8 +91,7 @@ fn clear_interval(handle: i32) {
 
 impl<Callback, State, Action> ViewMarker for Interval<Callback, State, Action> {}
 
-impl<State, Action, Callback, OA> View<State, Action, ViewCtx>
-    for Interval<Callback, State, Action>
+impl<State, Action, Callback, OA> View<State, Action, ViewCtx> for Interval<Callback, State, Action>
 where
     State: 'static,
     Action: 'static,
