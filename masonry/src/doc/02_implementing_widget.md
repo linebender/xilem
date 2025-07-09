@@ -378,19 +378,19 @@ That is to say, even if you own a window, and even if that window holds a widget
 
 Instead, there are two ways to mutate `Label`:
 
-- Inside a Widget method. Most methods (`on_pointer_event`, `update`, `layout`, etc) take a `&mut self` argument.
+- Inside a `Widget` method. Most methods (`on_pointer_event`, `update`, `layout`, etc) take a `&mut self` argument.
 - Through a [`WidgetMut`] wrapper. So, to change your label's text, you will call [`Label::set_text()`], which takes a [`WidgetMut`] argument. This helps Masonry make sure that internal metadata is propagated after every widget change.
 
-As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to the Widget tree.
-Most Widgets will implement methods that let their users "project" a WidgetMut from a parent to its child.
+As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to the widget tree.
+Most widgets will implement methods that let their users "project" a `WidgetMut` from a parent to its child.
 For example, `WidgetMut<Portal<MyWidget>>` has a `get_child_mut()` method that returns a `WidgetMut<MyWidget>`.
 
-So far, we've seen one way to get a WidgetMut: the [`RenderRoot::edit_root_widget()`] method.
-This methods returns a WidgetMut to the root widget, which you can then project into a WidgetMut reference to its descendants.
+So far, we've seen one way to get a `WidgetMut`: the [`RenderRoot::edit_root_widget()`] method.
+This methods returns a `WidgetMut` to the root widget, which you can then project into a `WidgetMut` reference to its descendants.
 
-### Using WidgetMut in your custom Widget code
+### Using `WidgetMut` in your custom widget code
 
-The WidgetMut type only has two fields, both public:
+The `WidgetMut` type only has two fields, both public:
 
 ```rust,ignore
 pub struct WidgetMut<'a, W: Widget> {
@@ -401,7 +401,7 @@ pub struct WidgetMut<'a, W: Widget> {
 
 `W` is your widget type. `MutateCtx` is yet another context type, with methods that let you get information about your widget and report that it changed in some ways.
 
-If you want your widget to be mutable outside of its pass methods, you should write setter functions taking WidgetMut as a parameter.
+If you want your widget to be mutable outside of its pass methods, you should write setter functions taking `WidgetMut` as a parameter.
 
 These functions should modify the internal values of your widget, then set flags using `MutateCtx` depending on which values changed.
 For instance, a `set_padding()` function should probably call `ctx.request_layout()`, whereas a `set_background_color()` function should probably call `ctx.request_render()` or `ctx.request_paint_only()`.
@@ -430,7 +430,7 @@ impl ColorRectangle {
 }
 ```
 
-By making ColorRectangle's fields private, and making it so the only way to mutate them is through a WidgetMut, we make it "watertight".
+By making `ColorRectangle`'s fields private, and making it so the only way to mutate them is through a `WidgetMut`, we make it "watertight".
 Our users can never find themselves in a situation where they forget to propagate invalidation flags, and end up with confusing bugs.
 
 

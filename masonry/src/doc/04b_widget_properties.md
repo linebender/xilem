@@ -61,11 +61,11 @@ Properties should be defined to represent self-contained values that a widget ca
 Some examples:
 
 - `BackgroundColor`
-- BorderColor
-- Padding
-- TextFont
-- TextSize
-- TextWeight
+- `BorderColor`
+- `Padding`
+- `TextFont`
+- `TextSize`
+- `TextWeight`
 
 **TODO: Most of the properties cited above do *not* exist in Masonry's codebase. They should hopefully be added quickly.**
 

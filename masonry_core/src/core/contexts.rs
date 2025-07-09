@@ -1010,7 +1010,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
     /// Request a [`paint`](crate::core::Widget::paint) pass.
     ///
     /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::core::Widget::accessibility) pass.
-    /// Use request_render unless you're sure an accessibility pass is not needed.
+    /// Use `request_render` unless you're sure an accessibility pass is not needed.
     pub fn request_paint_only(&mut self) {
         trace!("request_paint");
         self.widget_state.request_paint = true;
