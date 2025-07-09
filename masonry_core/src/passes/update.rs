@@ -117,14 +117,7 @@ fn update_widget_tree(
     mut properties: ArenaMut<'_, AnyMap>,
 ) {
     let trace = global_state.trace.update_tree;
-    let _span = enter_span_if(
-        trace,
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span_if(trace, state.reborrow());
     let id = state.item.id;
 
     if !state.item.children_changed {
@@ -199,6 +192,23 @@ fn update_widget_tree(
         state.item.accepts_pointer_interaction = widget.item.accepts_pointer_interaction();
         state.item.accepts_focus = widget.item.accepts_focus();
         state.item.accepts_text_input = widget.item.accepts_text_input();
+        {
+            let ctx = QueryCtx {
+                global_state,
+                widget_state: state.item,
+                widget_state_children: state.children.reborrow(),
+                widget_children: widget.children.reborrow(),
+                properties: PropertiesRef {
+                    map: properties.item,
+                    default_map: default_properties.for_widget(widget.item.type_id()),
+                },
+                properties_children: properties.children.reborrow(),
+            };
+
+            // TODO - Should `make_trace_span` take QueryCtx?
+            // Building it adds a lot of boilerplate to this function.
+            state.item.trace_span = widget.item.make_trace_span(&ctx);
+        }
         state.item.is_new = false;
     }
 
@@ -262,13 +272,7 @@ fn update_disabled_for_widget(
     mut properties: ArenaMut<'_, AnyMap>,
     parent_disabled: bool,
 ) {
-    let _span = enter_span(
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span(state.reborrow());
     let id = state.item.id;
 
     let disabled = state.item.is_explicitly_disabled || parent_disabled;
@@ -354,13 +358,7 @@ fn update_stashed_for_widget(
     mut properties: ArenaMut<'_, AnyMap>,
     parent_stashed: bool,
 ) {
-    let _span = enter_span(
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span(state.reborrow());
     let id = state.item.id;
 
     let stashed = state.item.is_explicitly_stashed || parent_stashed;
@@ -447,19 +445,12 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
-    default_properties: &DefaultProperties,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    properties: ArenaMut<'_, AnyMap>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
-    let _span = enter_span(
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span(state.reborrow());
     let id = state.item.id;
 
     // Replace has_focused to check if the value changed in the meantime
@@ -482,7 +473,6 @@ fn update_focus_chain_for_widget(
             |widget, mut state, properties| {
                 update_focus_chain_for_widget(
                     global_state,
-                    default_properties,
                     widget,
                     state.reborrow_mut(),
                     properties,
@@ -514,7 +504,6 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
     let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
     update_focus_chain_for_widget(
         &mut root.global_state,
-        &root.default_properties,
         root_widget,
         root_state,
         root_properties,

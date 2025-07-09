@@ -18,14 +18,7 @@ fn update_anim_for_widget(
     mut properties: ArenaMut<'_, AnyMap>,
     elapsed_ns: u64,
 ) {
-    let _span = enter_span_if(
-        global_state.trace.anim,
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span_if(global_state.trace.anim, state.reborrow());
     if !state.item.needs_anim {
         return;
     }

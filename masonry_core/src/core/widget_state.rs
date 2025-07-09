@@ -1,6 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::core::WidgetId;
@@ -176,6 +177,7 @@ pub(crate) struct WidgetState {
     ///
     /// Used in some guard rails to provide richer error messages when a parent forgets
     /// to iterate over some children.
+    pub(crate) trace_span: Span,
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
 }
@@ -234,6 +236,7 @@ impl WidgetState {
             widget_name,
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
+            trace_span: Span::none(),
             transform: options.transform,
         }
     }

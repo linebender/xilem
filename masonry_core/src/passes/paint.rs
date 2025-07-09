@@ -22,18 +22,11 @@ fn paint_widget(
     scenes: &mut HashMap<WidgetId, Scene>,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    properties: ArenaMut<'_, AnyMap>,
     debug_paint: bool,
 ) {
     let trace = global_state.trace.paint;
-    let _span = enter_span_if(
-        trace,
-        global_state,
-        default_properties,
-        widget.reborrow(),
-        state.reborrow(),
-        properties.reborrow(),
-    );
+    let _span = enter_span_if(trace, state.reborrow());
 
     let id = state.item.id;
 
