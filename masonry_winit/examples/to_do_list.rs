@@ -11,7 +11,7 @@ use masonry::core::{Action, Properties, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, Flex, Label, Portal, TextArea, Textbox};
+use masonry::widgets::{Button, Flex, Label, Portal, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -41,9 +41,9 @@ impl AppDriver for Driver {
 
                     let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
                     let mut first_row = first_row.downcast::<Flex>();
-                    let mut textbox = Flex::child_mut(&mut first_row, 0).unwrap();
-                    let mut textbox = textbox.downcast::<Textbox>();
-                    let mut text_area = Textbox::text_mut(&mut textbox);
+                    let mut text_input = Flex::child_mut(&mut first_row, 0).unwrap();
+                    let mut text_input = text_input.downcast::<TextInput>();
+                    let mut text_area = TextInput::text_mut(&mut text_input);
                     TextArea::reset_text(&mut text_area, "");
                 });
             }
@@ -61,7 +61,7 @@ fn make_widget_tree() -> impl Widget {
             .with_child_pod(
                 WidgetPod::new_with_props(
                     Flex::row()
-                        .with_flex_child(Textbox::new(""), 1.0)
+                        .with_flex_child(TextInput::new(""), 1.0)
                         .with_child(Button::new("Add task")),
                     Properties::new().with(Padding::all(WIDGET_SPACING)),
                 )

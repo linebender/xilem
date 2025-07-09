@@ -13,7 +13,7 @@ use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
 };
-use crate::widgets::{Button, Checkbox, Textbox};
+use crate::widgets::{Button, Checkbox, TextInput};
 
 pub const BORDER_WIDTH: f64 = 1.;
 
@@ -77,14 +77,14 @@ pub fn default_property_set() -> DefaultProperties {
         color: DISABLED_TEXT_COLOR,
     }));
 
-    // Textbox
-    properties.insert::<Textbox, _>(Padding::from_vh(6., 12.));
-    properties.insert::<Textbox, _>(CornerRadius { radius: 4. });
-    properties.insert::<Textbox, _>(BorderWidth {
+    // TextInput
+    properties.insert::<TextInput, _>(Padding::from_vh(6., 12.));
+    properties.insert::<TextInput, _>(CornerRadius { radius: 4. });
+    properties.insert::<TextInput, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
 
-    properties.insert::<Textbox, _>(BorderColor { color: ZYNC_600 });
+    properties.insert::<TextInput, _>(BorderColor { color: ZYNC_600 });
 
     properties
 }

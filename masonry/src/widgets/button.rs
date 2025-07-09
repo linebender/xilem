@@ -200,8 +200,8 @@ impl Widget for Button {
         let (size, baseline) = border.layout_up(size, baseline);
 
         // TODO - Add MinimumSize property.
-        // HACK: to make sure we look okay at default sizes when beside a textbox,
-        // we make sure we will have at least the same height as the default textbox.
+        // HACK: to make sure we look okay at default sizes when beside a text input,
+        // we make sure we will have at least the same height as the default text input.
         let mut size = size;
         size.height = size.height.max(theme::BORDERED_WIDGET_HEIGHT);
 

@@ -24,7 +24,7 @@ We haven't used these arguments so far, and you can build a robust widget set wi
 
 In Masonry, **Properties** (often abbreviated to **props**) are values of arbitrary static types stored alongside each widget.
 
-In simpler terms, that means you can create any non-reference type (e.g. `struct RubberDuck(Color, String, Buoyancy);`), give it the [`Property`] marker trait, and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `Textbox`, etc) or your own custom widget (`ColorRectangle`).
+In simpler terms, that means you can create any non-reference type (e.g. `struct RubberDuck(Color, String, Buoyancy);`), give it the [`Property`] marker trait, and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `TextInput`, etc) or your own custom widget (`ColorRectangle`).
 
 Code accessing the property will look like:
 
@@ -52,7 +52,7 @@ We may reconsider this in the future.
 ### When to use Properties?
 
 <!-- TODO - Mention event handling -->
-<!-- I expect that properties will be used to share the same pointer event handling code between Button, SizedBox, Textbox, etc... -->
+<!-- I expect that properties will be used to share the same pointer event handling code between Button, SizedBox, TextInput, etc... -->
 
 In practice, properties should mostly be used for styling.
 

@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use winit::error::EventLoopError;
-use xilem::view::{button, flex, label, textbox};
+use xilem::view::{button, flex, label, text_input};
 use xilem::{
     AnyWidgetView, AppState, EventLoop, EventLoopBuilder, WidgetView, WindowId, WindowOptions,
     Xilem,
@@ -50,7 +50,7 @@ fn app_logic(
                     .map(|counter| (&counter.name, counter.value))
                     .collect::<BTreeMap<_, _>>()
             )),
-            textbox(
+            text_input(
                 state.new_counter_name.clone(),
                 |state: &mut State, new_name| {
                     state.new_counter_name = new_name;

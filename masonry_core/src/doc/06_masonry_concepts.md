@@ -55,7 +55,7 @@ Examples of use cases for pointer capture include selecting text, dragging a sli
 
 Focus marks whether a widget receives text events.
 
-To give a simple example, when you click a textbox, the textbox gets focus: anything you type on your keyboard will be sent to that textbox.
+To give a simple example, when you click a text input, the text input gets focus: anything you type on your keyboard will be sent to that text input.
 
 Focus will be changed:
 

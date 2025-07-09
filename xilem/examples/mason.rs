@@ -14,7 +14,7 @@ use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
-    flex_row, label, prose, task, textbox,
+    flex_row, label, prose, task, text_input,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
@@ -74,10 +74,10 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 // label("Disabled label").disabled(),
             )),
             flex(
-                textbox(
-                    data.textbox_contents.clone(),
+                text_input(
+                    data.text_input_contents.clone(),
                     |data: &mut AppData, new_value| {
-                        data.textbox_contents = new_value;
+                        data.text_input_contents = new_value;
                     },
                 )
                 .insert_newline(InsertNewline::OnEnter),
@@ -144,7 +144,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
 }
 
 struct AppData {
-    textbox_contents: String,
+    text_input_contents: String,
     count: i32,
     active: bool,
 }
@@ -152,7 +152,7 @@ struct AppData {
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = AppData {
         count: 0,
-        textbox_contents: "Not quite a placeholder".into(),
+        text_input_contents: "Not quite a placeholder".into(),
         active: false,
     };
 

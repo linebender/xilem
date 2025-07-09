@@ -45,13 +45,13 @@ Let's start with the `main()` function.
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widgets::{Button, Flex, Portal, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, TextInput};
 
     let main_widget = Portal::new(
         Flex::column()
             .with_child(
                 Flex::row()
-                    .with_flex_child(Textbox::new(""), 1.0)
+                    .with_flex_child(TextInput::new(""), 1.0)
                     .with_child(Button::new("Add task")),
             )
             .with_spacer(VERTICAL_WIDGET_SPACING),
@@ -69,7 +69,7 @@ fn main() {
 ```
 
 First we create our initial widget hierarchy.
-We're trying to build a simple to-do list app, so our root widget is a scrollable area ([`Portal`]) with a vertical list ([`Flex`]), whose first row is a horizontal list (`Flex` again) containing a text field ([`Textbox`]) and an "Add task" button ([`Button`]).
+We're trying to build a simple to-do list app, so our root widget is a scrollable area ([`Portal`]) with a vertical list ([`Flex`]), whose first row is a horizontal list (`Flex` again) containing a text field ([`TextInput`]) and an "Add task" button ([`Button`]).
 
 At the end of the main function, we pass the root widget to the `event_loop_runner::run` function.
 That function starts the main event loop, which runs until the user closes the window.
@@ -95,7 +95,7 @@ We create a `Driver` struct to store a very simple app's state, and we implement
 ```rust,ignore
 use masonry::core::{Action, WidgetId};
 use masonry::widgets::Label;
-# use masonry::widgets::{Button, Flex, Portal, Textbox};
+# use masonry::widgets::{Button, Flex, Portal, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx};
 
 struct Driver {
@@ -126,7 +126,7 @@ In `on_action`, we handle the two possible actions:
 - `TextChanged`: Update the text of the next task.
 - `ButtonPressed`: Add a task to the list.
 
-Because our widget tree only has one button and one textbox, there is no possible ambiguity as to which widget emitted the event, so we can ignore the `WidgetId` argument.
+Because our widget tree only has one button and one text input, there is no possible ambiguity as to which widget emitted the event, so we can ignore the `WidgetId` argument.
 
 When handling `ButtonPressed`:
 
@@ -187,13 +187,13 @@ Our complete program therefore looks like this:
 fn main() {
     const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
-    use masonry::widgets::{Button, Flex, Portal, Textbox};
+    use masonry::widgets::{Button, Flex, Portal, TextInput};
 
     let main_widget = Portal::new(
         Flex::column()
             .with_child(
                 Flex::row()
-                    .with_flex_child(Textbox::new(""), 1.0)
+                    .with_flex_child(TextInput::new(""), 1.0)
                     .with_child(Button::new("Add task")),
             )
             .with_spacer(VERTICAL_WIDGET_SPACING),
@@ -270,7 +270,7 @@ Most of this documentation is written to help developers trying to build such a 
 
 [`Portal`]: crate::widgets::Portal
 [`Flex`]: crate::widgets::Flex
-[`Textbox`]: crate::widgets::Textbox
+[`TextInput`]: crate::widgets::TextInput
 [`Button`]: crate::widgets::Button
 
 [`Action`]: crate::core::Action

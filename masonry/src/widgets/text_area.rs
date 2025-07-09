@@ -26,7 +26,7 @@ use crate::{palette, theme};
 
 /// `TextArea` implements the core of interactive text.
 ///
-/// It is used to implement [`Textbox`](super::Textbox) and [`Prose`](super::Prose).
+/// It is used to implement [`TextInput`](super::TextInput) and [`Prose`](super::Prose).
 /// It is rare that you will use a raw `TextArea` as a widget in your app; most users
 /// should prefer one of those wrappers.
 ///
@@ -35,7 +35,7 @@ use crate::{palette, theme};
 ///
 /// The `USER_EDITABLE` const generic parameter determines whether the text area's contents can be
 /// edited by the user of the app.
-/// This is true for `Textbox` and false for `Prose`.
+/// This is true for `TextInput` and false for `Prose`.
 ///
 /// This widget emits the following actions only when `USER_EDITABLE` is true:
 ///
@@ -45,7 +45,7 @@ use crate::{palette, theme};
 ///
 /// The exact semantics of how much horizontal space this widget takes up has not been determined.
 /// In particular, this has consequences when the alignment is set.
-// TODO: RichTextBox 👀
+// TODO: RichTextInput 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
 pub struct TextArea<const USER_EDITABLE: bool> {
     // TODO: Placeholder text?
@@ -96,7 +96,7 @@ pub struct TextArea<const USER_EDITABLE: bool> {
 impl TextArea<true> {
     /// Create a new `TextArea` which can be edited.
     ///
-    /// Useful for creating a styled [`Textbox`](super::Textbox).
+    /// Useful for creating a styled [`TextInput`](super::TextInput).
     // This is written out fully to appease rust-analyzer; StyleProperty is imported but not recognised.
     /// To change the font size, use `with_style`, setting [`StyleProperty::FontSize`](parley::StyleProperty::FontSize).
     pub fn new_editable(text: &str) -> Self {
@@ -700,7 +700,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     }
 
                     Key::Named(NamedKey::Tab) => {
-                        // Intentionally do nothing so that tabbing from a textbox/Prose works.
+                        // Intentionally do nothing so that tabbing from a TextInput/Prose works.
                         // Note that this doesn't allow input of the tab character; we need to be more clever here at some point
                         return;
                     }

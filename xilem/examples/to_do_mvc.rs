@@ -8,7 +8,7 @@
 
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{Axis, button, checkbox, flex, flex_row, textbox};
+use xilem::view::{Axis, button, checkbox, flex, flex_row, text_input};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
@@ -34,7 +34,7 @@ impl TaskList {
 }
 
 fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
-    let input_box = textbox(
+    let input_box = text_input(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {
             task_list.next_task = new_value;

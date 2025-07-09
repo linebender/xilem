@@ -182,7 +182,7 @@ impl DefaultProperties {
     /// Create an empty property map with no default values.
     ///
     /// A completely empty property map is probably not what you want.
-    /// It means buttons will be displayed without borders or backgrounds, textboxes won't
+    /// It means buttons will be displayed without borders or backgrounds, text inputs won't
     /// have default padding, etc.
     /// You should either add a thorough set of values to this, or start from an existing map.
     pub fn new() -> Self {

@@ -6,7 +6,7 @@ expression: harness.root_widget()
 Portal(
     Flex(
         Flex(
-            Textbox(
+            TextInput(
                 TextArea<>,
             ),
             Button(
