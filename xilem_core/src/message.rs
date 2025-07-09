@@ -49,10 +49,6 @@ impl<A> MessageResult<A> {
 /// To convert a `DynMessage` into its concrete message type, you should use
 /// [`downcast`](Self::downcast).
 ///
-/// This type is a struct rather than (say) a type alias, because type aliases are sometimes resolved by
-/// rust-analyzer when autofilling a trait, which can also lead to buggy behaviour (we've previously seen
-/// `Box<dyn Box<dyn Message>>` be generated).
-///
 /// If the message contains sensitive data, make sure this isn't output in its `Debug` implementation,
 /// as that may be called by the Xilem runtime (e.g. due to a bug meaning messages are redirected) or
 /// any parent views. That is, views do not need to be designed as if the `Debug` implementation
@@ -60,6 +56,8 @@ impl<A> MessageResult<A> {
 ///
 /// [`View`]: crate::View
 #[derive(Debug)]
+// This type is a struct rather than (say) a type alias, because type aliases are sometimes resolved by
+// rust-analyzer when autofilling a trait, and we want to always use a consistent name for this type.
 pub struct DynMessage(pub Box<dyn AnyMessage>);
 
 impl DynMessage {
