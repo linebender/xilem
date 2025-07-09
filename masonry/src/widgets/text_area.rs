@@ -946,7 +946,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Textbox", id = ctx.widget_id().trace())
+        trace_span!("TextArea", id = ctx.widget_id().trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {
