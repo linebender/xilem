@@ -8,8 +8,10 @@ use std::any::TypeId;
 use accesskit::{Node, Role, Toggled};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
+use ui_events::keyboard::Key;
 use vello::Scene;
 use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
+use vello::peniko::Color;
 
 use crate::core::{
     AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
@@ -105,10 +107,26 @@ impl Widget for Checkbox {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx<'_>,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
+        event: &TextEvent,
     ) {
+        match event {
+            TextEvent::Keyboard(event) if event.state.is_up() => {
+                if matches!(&event.key, Key::Character(c) if c == " ") {
+                    self.checked = !self.checked;
+                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    // Checked state impacts appearance and accessibility node
+                    ctx.request_render();
+                }
+            }
+            _ => (),
+        }
+    }
+
+    fn accepts_focus(&self) -> bool {
+        // Checkbox can be tab-focused...
+        true
     }
 
     fn on_access_event(
@@ -209,12 +227,17 @@ impl Widget for Checkbox {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let border_color = if is_hovered && !ctx.is_disabled() {
+        let mut border_color = if is_hovered && !ctx.is_disabled() {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()
         };
-
+        // FIXME - Handle this properly
+        if ctx.is_focus_target() {
+            border_color = &BorderColor {
+                color: Color::WHITE,
+            };
+        }
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
@@ -293,6 +316,8 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
 
+    use ui_events::keyboard::NamedKey;
+
     use super::*;
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
@@ -320,10 +345,21 @@ mod tests {
 
         assert_render_snapshot!(harness, "checkbox_hello_checked");
 
-        harness.mouse_click_on(checkbox_id);
+        harness.focus_on(None);
+        harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
+        assert_eq!(harness.focused_widget().map(|w| w.id()), Some(checkbox_id));
+
+        harness.process_text_event(TextEvent::key_down(Key::Character(" ".into())));
+        harness.process_text_event(TextEvent::key_up(Key::Character(" ".into())));
         assert_eq!(
             harness.pop_action(),
             Some((Action::CheckboxToggled(false), checkbox_id))
+        );
+
+        harness.mouse_click_on(checkbox_id);
+        assert_eq!(
+            harness.pop_action(),
+            Some((Action::CheckboxToggled(true), checkbox_id))
         );
     }
 
