@@ -196,7 +196,7 @@ We've seen how to deal with the children of a container widget once they're alre
 But how do we add them in the first place?
 
 Widgets will usually be added or removed through a [`WidgetMut`] wrapper.
-Let's write WidgetMut methods for our `VerticalStack`:
+Let's write `WidgetMut` methods for our `VerticalStack`:
 
 ```rust,ignore
 impl VerticalStack {
