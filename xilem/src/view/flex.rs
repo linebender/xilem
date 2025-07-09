@@ -104,12 +104,12 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
         self.axis = axis;
         self
     }
-    /// Set the childrens' [`CrossAxisAlignment`].
+    /// Set the children's [`CrossAxisAlignment`].
     pub fn cross_axis_alignment(mut self, axis: CrossAxisAlignment) -> Self {
         self.cross_axis_alignment = axis;
         self
     }
-    /// Set the childrens' [`MainAxisAlignment`].
+    /// Set the children's [`MainAxisAlignment`].
     pub fn main_axis_alignment(mut self, axis: MainAxisAlignment) -> Self {
         self.main_axis_alignment = axis;
         self

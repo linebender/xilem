@@ -152,13 +152,13 @@ impl Flex {
         Self::for_axis(Axis::Vertical)
     }
 
-    /// Builder-style method for specifying the childrens' [`CrossAxisAlignment`].
+    /// Builder-style method for specifying the children's [`CrossAxisAlignment`].
     pub fn cross_axis_alignment(mut self, alignment: CrossAxisAlignment) -> Self {
         self.cross_alignment = alignment;
         self
     }
 
-    /// Builder-style method for specifying the childrens' [`MainAxisAlignment`].
+    /// Builder-style method for specifying the children's [`MainAxisAlignment`].
     pub fn main_axis_alignment(mut self, alignment: MainAxisAlignment) -> Self {
         self.main_alignment = alignment;
         self
@@ -318,13 +318,13 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Set the childrens' [`CrossAxisAlignment`].
+    /// Set the children's [`CrossAxisAlignment`].
     pub fn set_cross_axis_alignment(this: &mut WidgetMut<'_, Self>, alignment: CrossAxisAlignment) {
         this.widget.cross_alignment = alignment;
         this.ctx.request_layout();
     }
 
-    /// Set the childrens' [`MainAxisAlignment`].
+    /// Set the children's [`MainAxisAlignment`].
     pub fn set_main_axis_alignment(this: &mut WidgetMut<'_, Self>, alignment: MainAxisAlignment) {
         this.widget.main_alignment = alignment;
         this.ctx.request_layout();
