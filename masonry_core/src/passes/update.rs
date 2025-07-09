@@ -684,7 +684,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 
 // --- MARK: SCROLL
 // This pass will update scroll positions in cases where a widget has requested to be
-// scrolled into view (usually a textbox getting text events).
+// scrolled into view (usually a text input getting text events).
 // Each parent that implements scrolling will update its scroll position to ensure the
 // child is visible. (If the target area is larger than the parent, the parent will try
 // to show the top left of that area.)

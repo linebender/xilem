@@ -14,19 +14,19 @@ use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
 use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
 
-// FIXME - A major problem of the current approach (always setting the textbox contents)
+// FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
-// the textbox will always be reset to the initial state. This will be very annoying for the user.
+// the text_input will always be reset to the initial state. This will be very annoying for the user.
 
 type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
 
 /// A view which displays editable text.
-pub fn textbox<F, State, Action>(contents: String, on_changed: F) -> Textbox<State, Action>
+pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInput<State, Action>
 where
     F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
 {
     // TODO: Allow setting a placeholder
-    Textbox {
+    TextInput {
         contents,
         on_changed: Box::new(on_changed),
         on_enter: None,
@@ -38,9 +38,9 @@ where
     }
 }
 
-/// The [`View`] created by [`textbox`].
+/// The [`View`] created by [`text_input`].
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Textbox<State, Action> {
+pub struct TextInput<State, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
@@ -48,11 +48,11 @@ pub struct Textbox<State, Action> {
     alignment: TextAlignment,
     insert_newline: InsertNewline,
     disabled: bool,
-    properties: TextboxProps,
-    // TODO: add more attributes of `masonry::widgets::TextBox`
+    properties: TextInputProps,
+    // TODO: add more attributes of `masonry::widgets::TextInput`
 }
 
-impl<State, Action> Textbox<State, Action> {
+impl<State, Action> TextInput<State, Action> {
     /// Set the brush used to paint the text.
     #[doc(alias = "color")]
     pub fn brush(mut self, color: impl Into<Brush>) -> Self {
@@ -88,8 +88,8 @@ impl<State, Action> Textbox<State, Action> {
     }
 }
 
-impl<S, A> Style for Textbox<S, A> {
-    type Props = TextboxProps;
+impl<S, A> Style for TextInput<S, A> {
+    type Props = TextInputProps;
 
     fn properties(&mut self) -> &mut Self::Props {
         &mut self.properties
@@ -97,8 +97,8 @@ impl<S, A> Style for Textbox<S, A> {
 }
 
 crate::declare_property_tuple!(
-    TextboxProps;
-    Textbox<S, A>;
+    TextInputProps;
+    TextInput<S, A>;
 
     Background, 0;
     DisabledBackground, 1;
@@ -109,9 +109,9 @@ crate::declare_property_tuple!(
     Padding, 6;
 );
 
-impl<State, Action> ViewMarker for Textbox<State, Action> {}
-impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<State, Action> {
-    type Element = Pod<widgets::Textbox>;
+impl<State, Action> ViewMarker for TextInput<State, Action> {}
+impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput<State, Action> {
+    type Element = Pod<widgets::TextInput>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
@@ -120,7 +120,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             .with_brush(self.text_brush.clone())
             .with_alignment(self.alignment)
             .with_insert_newline(self.insert_newline);
-        let textbox = widgets::Textbox::from_text_area_pod(WidgetPod::new_with_options(
+        let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with_options(
             text_area.into(),
             WidgetOptions {
                 disabled: self.disabled,
@@ -129,9 +129,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
         ));
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
-        let id = textbox.area_pod().id();
+        let id = text_input.area_pod().id();
         ctx.record_action(id);
-        let mut pod = ctx.create_pod(textbox);
+        let mut pod = ctx.create_pod(text_input);
         pod.properties = self.properties.build_properties();
         (pod, ())
     }
@@ -150,7 +150,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
             element.ctx.set_disabled(self.disabled);
         }
 
-        let mut text_area = widgets::Textbox::text_mut(&mut element);
+        let mut text_area = widgets::TextInput::text_mut(&mut element);
 
         // Unlike the other properties, we don't compare to the previous value;
         // instead, we compare directly to the element's text. This is to handle
@@ -193,7 +193,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
     ) -> MessageResult<Action> {
         debug_assert!(
             id_path.is_empty(),
-            "id path should be empty in Textbox::message"
+            "id path should be empty in TextInput::message"
         );
         match message.downcast::<masonry::core::Action>() {
             Ok(action) => match *action {
@@ -204,16 +204,16 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for Textbox<S
                     MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
                 }
                 masonry::core::Action::TextEntered(_) => {
-                    tracing::error!("Textbox::message: on_enter is not set");
+                    tracing::error!("TextInput::message: on_enter is not set");
                     MessageResult::Stale(DynMessage(action))
                 }
                 _ => {
-                    tracing::error!("Wrong action type in Textbox::message: {action:?}");
+                    tracing::error!("Wrong action type in TextInput::message: {action:?}");
                     MessageResult::Stale(DynMessage(action))
                 }
             },
             Err(message) => {
-                tracing::error!("Wrong message type in Textbox::message");
+                tracing::error!("Wrong message type in TextInput::message");
                 MessageResult::Stale(message)
             }
         }

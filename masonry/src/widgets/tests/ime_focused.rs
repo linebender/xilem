@@ -4,14 +4,14 @@
 use crate::core::{Ime, TextEvent, WidgetPod};
 use crate::testing::{TestHarness, widget_ids};
 use crate::theme::default_property_set;
-use crate::widgets::{Flex, TextArea, Textbox};
+use crate::widgets::{Flex, TextArea, TextInput};
 
 /// Tests that IME's interactions with focus are sensible.
 
 #[test]
 fn ime_on_remove() {
     let [text_area] = widget_ids();
-    let widget = Flex::column().with_child(Textbox::from_text_area_pod(WidgetPod::new_with_id(
+    let widget = Flex::column().with_child(TextInput::from_text_area_pod(WidgetPod::new_with_id(
         TextArea::new_editable("Simple input test"),
         text_area,
     )));

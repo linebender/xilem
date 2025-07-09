@@ -19,7 +19,7 @@ use crate::properties::{
 use crate::util::{fill, stroke};
 use crate::widgets::TextArea;
 
-/// The textbox widget displays text which can be edited by the user,
+/// The text input widget displays text which can be edited by the user,
 /// inside a surrounding box.
 ///
 /// This currently does not support newlines entered by the user,
@@ -30,23 +30,23 @@ use crate::widgets::TextArea;
 /// The ID of the child can be accessed using [`area_pod`](Self::area_pod).
 ///
 /// At runtime, most properties of the text will be set using [`text_mut`](Self::text_mut).
-/// This is because `Textbox` largely serves as a wrapper around a [`TextArea`].
-pub struct Textbox {
+/// This is because `TextInput` largely serves as a wrapper around a [`TextArea`].
+pub struct TextInput {
     text: WidgetPod<TextArea<true>>,
 
     /// Whether to clip the contained text.
     clip: bool,
 }
 
-impl Textbox {
-    /// Create a new `Textbox` with the given text.
+impl TextInput {
+    /// Create a new `TextInput` with the given text.
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
         Self::from_text_area(TextArea::new_editable(text))
     }
 
-    /// Create a new `Textbox` from a styled text area.
+    /// Create a new `TextInput` from a styled text area.
     pub fn from_text_area(text: TextArea<true>) -> Self {
         Self {
             text: WidgetPod::new(text),
@@ -54,9 +54,9 @@ impl Textbox {
         }
     }
 
-    /// Create a new `Textbox` from a styled text area in a [`WidgetPod`].
+    /// Create a new `TextInput` from a styled text area in a [`WidgetPod`].
     ///
-    /// Note that the default padding used for textbox will not apply.
+    /// Note that the default padding used for text input will not apply.
     pub fn from_text_area_pod(text: WidgetPod<TextArea<true>>) -> Self {
         Self { text, clip: false }
     }
@@ -66,7 +66,7 @@ impl Textbox {
     /// If this is set to true, it is recommended, but not required, that this
     /// wraps a text area with [word wrapping](TextArea::with_word_wrap) enabled.
     ///
-    /// To modify this on active textbox, use [`set_clip`](Self::set_clip).
+    /// To modify this on active text input, use [`set_clip`](Self::set_clip).
     pub fn with_clip(mut self, clip: bool) -> Self {
         self.clip = clip;
         self
@@ -74,14 +74,14 @@ impl Textbox {
 
     /// Read the underlying text area.
     ///
-    /// Useful for getting its ID, as most actions from the textbox will be sent by the child.
+    /// Useful for getting its ID, as most actions from the text input will be sent by the child.
     pub fn area_pod(&self) -> &WidgetPod<TextArea<true>> {
         &self.text
     }
 }
 
 // --- MARK: WIDGETMUT
-impl Textbox {
+impl TextInput {
     /// Edit the underlying text area.
     ///
     /// Used to modify most properties of the text.
@@ -102,7 +102,7 @@ impl Textbox {
 }
 
 // --- MARK: IMPL WIDGET
-impl Widget for Textbox {
+impl Widget for TextInput {
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.text);
     }
@@ -225,25 +225,28 @@ mod tests {
     use crate::widgets::TextArea;
 
     #[test]
-    fn textbox_outline() {
-        let textbox = Textbox::from_text_area(
-            TextArea::new_editable("Textbox contents").with_style(StyleProperty::FontSize(14.0)),
+    fn text_input_outline() {
+        let text_input = TextInput::from_text_area(
+            TextArea::new_editable("TextInput contents").with_style(StyleProperty::FontSize(14.0)),
         );
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), textbox, Size::new(150.0, 40.0));
+        let mut harness = TestHarness::create_with_size(
+            default_property_set(),
+            text_input,
+            Size::new(150.0, 40.0),
+        );
 
-        assert_render_snapshot!(harness, "textbox_outline");
+        assert_render_snapshot!(harness, "text_input_outline");
 
         let mut text_area_id = None;
-        harness.edit_root_widget(|mut textbox| {
-            let mut textbox = textbox.downcast::<Textbox>();
-            let mut textbox = Textbox::text_mut(&mut textbox);
-            text_area_id = Some(textbox.ctx.widget_id());
+        harness.edit_root_widget(|mut text_input| {
+            let mut text_input = text_input.downcast::<TextInput>();
+            let mut text_input = TextInput::text_mut(&mut text_input);
+            text_area_id = Some(text_input.ctx.widget_id());
 
-            TextArea::select_text(&mut textbox, "contents");
+            TextArea::select_text(&mut text_input, "contents");
         });
         harness.focus_on(text_area_id);
 
-        assert_render_snapshot!(harness, "textbox_selection");
+        assert_render_snapshot!(harness, "text_input_selection");
     }
 }

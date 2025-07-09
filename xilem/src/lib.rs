@@ -79,7 +79,7 @@
 //! * [`portal`][crate::view::portal]: a scrollable region
 //! * [`progress_bar`][crate::view::progress_bar]: progress bar element
 //! * [`prose`][crate::view::prose]: displays immutable, selectable text
-//! * [`textbox`][crate::view::textbox]: allows text to be edited by the user
+//! * [`text_input`][crate::view::text_input]: allows text to be edited by the user
 //! * [`task`][crate::view::task]: launch an async task which will run until the view is no longer in the tree
 //! * [`zstack`][crate::view::zstack]: an element that lays out its children on top of each other
 //!

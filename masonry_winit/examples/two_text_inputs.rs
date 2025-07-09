@@ -11,7 +11,7 @@ use masonry::core::{Action, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
-use masonry::widgets::{Flex, Textbox};
+use masonry::widgets::{Flex, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
 
@@ -34,13 +34,13 @@ fn main() {
     let main_widget = Flex::column()
         .gap(0.0)
         .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(Textbox::new(""))
+        .with_child(TextInput::new(""))
         .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(Textbox::new(""));
+        .with_child(TextInput::new(""));
 
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()
-        .with_title("Two textboxes")
+        .with_title("Two text inputs")
         .with_resizable(true)
         .with_min_inner_size(window_size);
 

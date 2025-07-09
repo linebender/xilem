@@ -42,8 +42,8 @@ pub use progress_bar::*;
 mod prose;
 pub use prose::*;
 
-mod textbox;
-pub use textbox::*;
+mod text_input;
+pub use text_input::*;
 
 mod virtual_scroll;
 pub use virtual_scroll::*;

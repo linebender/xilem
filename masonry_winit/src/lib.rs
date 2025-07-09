@@ -20,7 +20,7 @@
 //! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 //! use masonry::core::{Action, Widget, WidgetId, WidgetPod};
 //! use masonry::dpi::LogicalSize;
-//! use masonry::widgets::{Button, Flex, Label, Portal, Textbox};
+//! use masonry::widgets::{Button, Flex, Label, Portal, TextInput};
 //! use winit::window::Window;
 //!
 //! struct Driver {
@@ -61,7 +61,7 @@
 //!         Flex::column()
 //!             .with_child(
 //!                 Flex::row()
-//!                     .with_flex_child(Textbox::new(""), 1.0)
+//!                     .with_flex_child(TextInput::new(""), 1.0)
 //!                     .with_child(Button::new("Add task")),
 //!             )
 //!             .with_spacer(VERTICAL_WIDGET_SPACING),

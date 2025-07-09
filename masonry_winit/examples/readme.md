@@ -4,7 +4,7 @@
 
 Simplest possible Masonry app.
 
-## `two_textboxes`
+## `two_text_inputs`
 
 Example used to test text input and text focus.
 
