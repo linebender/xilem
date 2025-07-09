@@ -298,7 +298,7 @@ impl<V, State, Action> Attr<V, State, Action> {
 }
 
 impl<V, State, Action> ViewMarker for Attr<V, State, Action> {}
-impl<V, State, Action> View<State, Action, ViewCtx, DynMessage> for Attr<V, State, Action>
+impl<V, State, Action> View<State, Action, ViewCtx> for Attr<V, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -352,7 +352,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.inner.message(view_state, id_path, message, app_state)
     }
 }

@@ -277,7 +277,7 @@ where
         id_path: &[xilem_core::ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action, DynMessage> {
+    ) -> xilem_core::MessageResult<Action> {
         match id_path.split_first() {
             Some((&CHILD1_VIEW_ID, rest)) => {
                 self.child1

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker, ViewSequence,
+    AppendVec, DynMessage, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker, ViewSequence,
     sequence::NoElements,
 };
 
@@ -28,11 +28,11 @@ pub struct Fork<Active, Alongside> {
 }
 
 impl<Active, Alongside> ViewMarker for Fork<Active, Alongside> {}
-impl<State, Action, Context, Active, Alongside, Message> View<State, Action, Context, Message>
+impl<State, Action, Context, Active, Alongside> View<State, Action, Context>
     for Fork<Active, Alongside>
 where
-    Active: View<State, Action, Context, Message>,
-    Alongside: ViewSequence<State, Action, Context, NoElement, Message>,
+    Active: View<State, Action, Context>,
+    Alongside: ViewSequence<State, Action, Context, NoElement>,
     Context: ViewPathTracker,
 {
     type Element = Active::Element;
@@ -93,9 +93,9 @@ where
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action, Message> {
+    ) -> crate::MessageResult<Action> {
         let (first, id_path) = id_path
             .split_first()
             .expect("Id path has elements for Fork");

@@ -95,7 +95,7 @@ fn opacity_attr_modifier(attr: &'static str, brush: &Brush) -> AttributeModifier
 }
 
 impl<V, State, Action> ViewMarker for Fill<V, State, Action> {}
-impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Fill<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx> for Fill<V, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -169,7 +169,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.child.message(child_state, id_path, message, app_state)
     }
 }
@@ -239,7 +239,7 @@ fn update_stroke_modifiers(
 }
 
 impl<V, State, Action> ViewMarker for Stroke<V, State, Action> {}
-impl<State, Action, V> View<State, Action, ViewCtx, DynMessage> for Stroke<V, State, Action>
+impl<State, Action, V> View<State, Action, ViewCtx> for Stroke<V, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -298,7 +298,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.child.message(view_state, id_path, message, app_state)
     }
 }

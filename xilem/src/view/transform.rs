@@ -156,7 +156,7 @@ where
         id_path: &[xilem_core::ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action, DynMessage> {
+    ) -> xilem_core::MessageResult<Action> {
         self.child
             .message(&mut view_state.child, id_path, message, app_state)
     }

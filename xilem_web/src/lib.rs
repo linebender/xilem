@@ -108,11 +108,11 @@ pub trait DomNode: AnyNode {
 }
 
 /// A view which can have any [`DomView`] type, see [`AnyView`] for more details.
-pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod, DynMessage>;
+pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
 
 /// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
 pub trait DomView<State, Action = ()>:
-    View<State, Action, ViewCtx, DynMessage, Element = Pod<Self::DomNode>>
+    View<State, Action, ViewCtx, Element = Pod<Self::DomNode>>
 {
     type DomNode: DomNode;
 
@@ -172,7 +172,7 @@ pub trait DomView<State, Action = ()>:
     fn map_state<ParentState, F>(
         self,
         f: F,
-    ) -> MapState<Self, F, ParentState, State, Action, ViewCtx, DynMessage>
+    ) -> MapState<Self, F, ParentState, State, Action, ViewCtx>
     where
         State: 'static,
         ParentState: 'static,
@@ -192,12 +192,7 @@ pub trait DomView<State, Action = ()>:
         ParentAction,
         Action,
         ViewCtx,
-        DynMessage,
-        impl Fn(
-            &mut State,
-            MessageResult<Action, DynMessage>,
-        ) -> MessageResult<ParentAction, DynMessage>
-        + 'static,
+        impl Fn(&mut State, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
     >
     where
         State: 'static,
@@ -212,7 +207,7 @@ pub trait DomView<State, Action = ()>:
 
 impl<V, State, Action, N> DomView<State, Action> for V
 where
-    V: View<State, Action, ViewCtx, DynMessage, Element = Pod<N>>,
+    V: View<State, Action, ViewCtx, Element = Pod<N>>,
     N: DomNode,
 {
     type DomNode = N;
@@ -228,13 +223,10 @@ where
 ///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 /// }
 /// ```
-pub trait DomFragment<State, Action = ()>:
-    ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
-{
-}
+pub trait DomFragment<State, Action = ()>: ViewSequence<State, Action, ViewCtx, AnyPod> {}
 
 impl<V, State, Action> DomFragment<State, Action> for V where
-    V: ViewSequence<State, Action, ViewCtx, AnyPod, DynMessage>
+    V: ViewSequence<State, Action, ViewCtx, AnyPod>
 {
 }
 

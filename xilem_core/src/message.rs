@@ -11,7 +11,7 @@ use core::fmt::Debug;
 ///
 /// [`View::message`]: crate::View::message
 #[derive(Default, Debug)]
-pub enum MessageResult<Action, Message = DynMessage> {
+pub enum MessageResult<Action> {
     /// An action for a parent message handler to use
     ///
     /// This allows for sub-sections of your app to use an elm-like architecture
@@ -26,12 +26,12 @@ pub enum MessageResult<Action, Message = DynMessage> {
     /// does not require the element tree to be recreated.
     Nop,
     /// The view this message was being routed to no longer exists.
-    Stale(Message),
+    Stale(DynMessage),
 }
 
-impl<A, Message> MessageResult<A, Message> {
+impl<A> MessageResult<A> {
     /// Maps the action type `A` to `B`, i.e. [`MessageResult<A>`] to [`MessageResult<B>`]
-    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B, Message> {
+    pub fn map<B>(self, f: impl FnOnce(A) -> B) -> MessageResult<B> {
         match self {
             Self::Action(a) => MessageResult::Action(f(a)),
             Self::RequestRebuild => MessageResult::RequestRebuild,
@@ -49,10 +49,6 @@ impl<A, Message> MessageResult<A, Message> {
 /// To convert a `DynMessage` into its concrete message type, you should use
 /// [`downcast`](Self::downcast).
 ///
-/// This type is a struct rather than (say) a type alias, because type aliases are sometimes resolved by
-/// rust-analyzer when autofilling a trait, which can also lead to buggy behaviour (we've previously seen
-/// `Box<dyn Box<dyn Message>>` be generated).
-///
 /// If the message contains sensitive data, make sure this isn't output in its `Debug` implementation,
 /// as that may be called by the Xilem runtime (e.g. due to a bug meaning messages are redirected) or
 /// any parent views. That is, views do not need to be designed as if the `Debug` implementation
@@ -60,6 +56,8 @@ impl<A, Message> MessageResult<A, Message> {
 ///
 /// [`View`]: crate::View
 #[derive(Debug)]
+// This type is a struct rather than (say) a type alias, because type aliases are sometimes resolved by
+// rust-analyzer when autofilling a trait, and we want to always use a consistent name for this type.
 pub struct DynMessage(pub Box<dyn AnyMessage>);
 
 impl DynMessage {

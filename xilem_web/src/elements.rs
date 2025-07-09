@@ -62,7 +62,7 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage>;
+    ) -> MessageResult<Action>;
 }
 
 impl<State, Action, S> DomViewSequence<State, Action> for S
@@ -122,7 +122,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.seq_message(
             seq_state.downcast_mut().unwrap_throw(),
             id_path,
@@ -359,7 +359,7 @@ where
     }
 }
 impl<State, Action, Children> ViewMarker for CustomElement<Children, State, Action> {}
-impl<State, Action, Children> View<State, Action, ViewCtx, DynMessage>
+impl<State, Action, Children> View<State, Action, ViewCtx>
     for CustomElement<Children, State, Action>
 where
     Children: 'static,
@@ -424,7 +424,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.children
             .dyn_seq_message(&mut view_state.seq_state, id_path, message, app_state)
     }
@@ -453,7 +453,7 @@ macro_rules! define_element {
         }
 
         impl<Children, State, Action> ViewMarker for $ty_name<Children, State, Action> {}
-        impl<Children, State, Action> View<State, Action, ViewCtx, DynMessage>
+        impl<Children, State, Action> View<State, Action, ViewCtx>
             for $ty_name<Children, State, Action>
         where
             Children: 'static,
@@ -506,7 +506,7 @@ macro_rules! define_element {
                 id_path: &[ViewId],
                 message: DynMessage,
                 app_state: &mut State,
-            ) -> MessageResult<Action, DynMessage> {
+            ) -> MessageResult<Action> {
                 self.children.dyn_seq_message(
                     &mut view_state.seq_state,
                     id_path,

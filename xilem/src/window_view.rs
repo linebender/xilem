@@ -83,7 +83,7 @@ where
         id_path: &[xilem_core::ViewId],
         message: xilem_core::DynMessage,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<(), xilem_core::DynMessage> {
+    ) -> xilem_core::MessageResult<()> {
         self.root_widget_view
             .message(view_state, id_path, message, app_state)
     }

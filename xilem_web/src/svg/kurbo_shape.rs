@@ -25,7 +25,7 @@ fn create_element<R>(
     })
 }
 
-impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgLineElement>;
 
@@ -77,12 +77,12 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action, DynMessage
         _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }
 
-impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgRectElement>;
 
@@ -134,12 +134,12 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action, DynMessage
         _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }
 
-impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessage> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgCircleElement>;
 
@@ -189,12 +189,12 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action, DynMessa
         _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }
 
-impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMessage> for ViewCtx {
+impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for ViewCtx {
     type OrphanViewState = ();
     type OrphanElement = Pod<web_sys::SvgPathElement>;
 
@@ -246,7 +246,7 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action, DynMess
         _id_path: &[ViewId],
         message: DynMessage,
         _app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         MessageResult::Stale(message)
     }
 }

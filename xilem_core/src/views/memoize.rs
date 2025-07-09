@@ -5,21 +5,21 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
-use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///
 /// The story of Memoization in Xilem is still being worked out,
 /// so the details of this view might change.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Memoize<Data, InitView, State, Action, Context, Message> {
+pub struct Memoize<Data, InitView, State, Action, Context> {
     data: Data,
     init_view: InitView,
-    phantom: PhantomData<fn() -> (State, Action, Context, Message)>,
+    phantom: PhantomData<fn() -> (State, Action, Context)>,
 }
 
-impl<Data, InitView, State, Action, Context, Message> Debug
-    for Memoize<Data, InitView, State, Action, Context, Message>
+impl<Data, InitView, State, Action, Context> Debug
+    for Memoize<Data, InitView, State, Action, Context>
 where
     Data: Debug,
 {
@@ -52,15 +52,15 @@ It's not possible in Rust currently to check whether the (content of the) callba
 ///     )
 /// }
 /// ```
-pub fn memoize<State, Action, Context, Message, Data, V, InitView>(
+pub fn memoize<State, Action, Context, Data, V, InitView>(
     data: Data,
     init_view: InitView,
-) -> Memoize<Data, InitView, State, Action, Context, Message>
+) -> Memoize<Data, InitView, State, Action, Context>
 where
     Data: PartialEq + 'static,
     // TODO(DJMcNab): Also accept `&mut State` in this argument closure
     InitView: Fn(&Data) -> V + 'static,
-    V: View<State, Action, Context, Message>,
+    V: View<State, Action, Context>,
     Context: ViewPathTracker,
 {
     const {
@@ -81,19 +81,18 @@ pub struct MemoizeState<V, VState> {
     dirty: bool,
 }
 
-impl<Data, ViewFn, State, Action, Context, Message> ViewMarker
-    for Memoize<Data, ViewFn, State, Action, Context, Message>
+impl<Data, ViewFn, State, Action, Context> ViewMarker
+    for Memoize<Data, ViewFn, State, Action, Context>
 {
 }
-impl<State, Action, Context, Data, V, ViewFn, Message> View<State, Action, Context, Message>
-    for Memoize<Data, ViewFn, State, Action, Context, Message>
+impl<State, Action, Context, Data, V, ViewFn> View<State, Action, Context>
+    for Memoize<Data, ViewFn, State, Action, Context>
 where
     State: 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
-    Message: 'static,
     Data: PartialEq + 'static,
-    V: View<State, Action, Context, Message>,
+    V: View<State, Action, Context>,
     ViewFn: Fn(&Data) -> V + 'static,
 {
     type ViewState = MemoizeState<V, V::ViewState>;
@@ -136,9 +135,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let message_result =
             view_state
                 .view
@@ -186,14 +185,14 @@ impl<InitView, State, Action> Debug for Frozen<InitView, State, Action> {
 ///     frozen(|| button("doesn't access any external state", |count| { count += 1; })),
 /// }
 /// ```
-pub fn frozen<State, Action, Context, Message, V, InitView>(
+pub fn frozen<State, Action, Context, V, InitView>(
     init_view: InitView,
 ) -> Frozen<InitView, State, Action>
 where
     State: 'static,
     Action: 'static,
     Context: ViewPathTracker,
-    V: View<State, Action, Context, Message>,
+    V: View<State, Action, Context>,
     InitView: Fn() -> V,
 {
     const {
@@ -206,13 +205,13 @@ where
 }
 
 impl<InitView, State, Action> ViewMarker for Frozen<InitView, State, Action> {}
-impl<State, Action, Context, Message, V, InitView> View<State, Action, Context, Message>
+impl<State, Action, Context, V, InitView> View<State, Action, Context>
     for Frozen<InitView, State, Action>
 where
     State: 'static,
     Action: 'static,
     Context: ViewPathTracker,
-    V: View<State, Action, Context, Message>,
+    V: View<State, Action, Context>,
     InitView: Fn() -> V + 'static,
 {
     type Element = V::Element;
@@ -267,9 +266,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         let message_result =
             view_state
                 .view

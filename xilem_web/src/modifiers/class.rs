@@ -333,7 +333,7 @@ impl<E, C, T, A> Class<E, C, T, A> {
 }
 
 impl<V, C, State, Action> ViewMarker for Class<V, C, State, Action> {}
-impl<V, C, State, Action> View<State, Action, ViewCtx, DynMessage> for Class<V, C, State, Action>
+impl<V, C, State, Action> View<State, Action, ViewCtx> for Class<V, C, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -390,7 +390,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         self.el.message(view_state, id_path, message, app_state)
     }
 }

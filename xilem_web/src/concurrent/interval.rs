@@ -91,8 +91,7 @@ fn clear_interval(handle: i32) {
 
 impl<Callback, State, Action> ViewMarker for Interval<Callback, State, Action> {}
 
-impl<State, Action, Callback, OA> View<State, Action, ViewCtx, DynMessage>
-    for Interval<Callback, State, Action>
+impl<State, Action, Callback, OA> View<State, Action, ViewCtx> for Interval<Callback, State, Action>
 where
     State: 'static,
     Action: 'static,
@@ -144,7 +143,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         debug_assert!(id_path.is_empty());
         message.downcast::<()>().unwrap_throw();
         match (self.callback)(app_state).action() {

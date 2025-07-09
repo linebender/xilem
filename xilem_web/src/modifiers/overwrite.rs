@@ -177,8 +177,7 @@ macro_rules! overwrite_bool_modifier_view {
         }
 
         impl<V, State, Action> $crate::core::ViewMarker for $modifier<V, State, Action> {}
-        impl<V, State, Action>
-            $crate::core::View<State, Action, $crate::ViewCtx, $crate::DynMessage>
+        impl<V, State, Action> $crate::core::View<State, Action, $crate::ViewCtx>
             for $modifier<V, State, Action>
         where
             State: 'static,
@@ -244,7 +243,7 @@ macro_rules! overwrite_bool_modifier_view {
                 id_path: &[$crate::core::ViewId],
                 message: $crate::DynMessage,
                 app_state: &mut State,
-            ) -> $crate::core::MessageResult<Action, $crate::DynMessage> {
+            ) -> $crate::core::MessageResult<Action> {
                 self.inner.message(view_state, id_path, message, app_state)
             }
         }

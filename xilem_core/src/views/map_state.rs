@@ -4,20 +4,20 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 /// The View for [`map_state`].
 ///
 /// See its documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct MapState<V, F, ParentState, ChildState, Action, Context, Message> {
+pub struct MapState<V, F, ParentState, ChildState, Action, Context> {
     map_state: F,
     child: V,
-    phantom: PhantomData<fn(ParentState) -> (ChildState, Action, Context, Message)>,
+    phantom: PhantomData<fn(ParentState) -> (ChildState, Action, Context)>,
 }
 
-impl<V, F, ParentState, ChildState, Action, Context, Message> Debug
-    for MapState<V, F, ParentState, ChildState, Action, Context, Message>
+impl<V, F, ParentState, ChildState, Action, Context> Debug
+    for MapState<V, F, ParentState, ChildState, Action, Context>
 where
     V: Debug,
 {
@@ -56,14 +56,14 @@ where
 ///     map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
 /// }
 /// ```
-pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, Message, V, F>(
+pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F>(
     view: V,
     f: F,
-) -> MapState<V, F, ParentState, ChildState, Action, Context, Message>
+) -> MapState<V, F, ParentState, ChildState, Action, Context>
 where
     ParentState: 'static,
     ChildState: 'static,
-    V: View<ChildState, Action, Context, Message>,
+    V: View<ChildState, Action, Context>,
     F: Fn(&mut ParentState) -> &mut ChildState + 'static,
 {
     MapState {
@@ -73,21 +73,19 @@ where
     }
 }
 
-impl<V, F, ParentState, ChildState, Action, Context, Message> ViewMarker
-    for MapState<V, F, ParentState, ChildState, Action, Context, Message>
+impl<V, F, ParentState, ChildState, Action, Context> ViewMarker
+    for MapState<V, F, ParentState, ChildState, Action, Context>
 {
 }
-impl<ParentState, ChildState, Action, Context, Message, V, F>
-    View<ParentState, Action, Context, Message>
-    for MapState<V, F, ParentState, ChildState, Action, Context, Message>
+impl<ParentState, ChildState, Action, Context, V, F> View<ParentState, Action, Context>
+    for MapState<V, F, ParentState, ChildState, Action, Context>
 where
     ParentState: 'static,
     ChildState: 'static,
-    V: View<ChildState, Action, Context, Message>,
+    V: View<ChildState, Action, Context>,
     F: Fn(&mut ParentState) -> &mut ChildState + 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
-    Message: 'static,
 {
     type ViewState = V::ViewState;
     type Element = V::Element;
@@ -132,9 +130,9 @@ where
         &self,
         view_state: &mut Self::ViewState,
         id_path: &[ViewId],
-        message: Message,
+        message: DynMessage,
         app_state: &mut ParentState,
-    ) -> MessageResult<Action, Message> {
+    ) -> MessageResult<Action> {
         self.child
             .message(view_state, id_path, message, (self.map_state)(app_state))
     }

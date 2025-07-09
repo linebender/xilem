@@ -92,7 +92,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (label, ()) = ctx.with_id(ViewId::new(0), |ctx| {
-            View::<State, Action, _, _>::build(&self.label, ctx, app_state)
+            View::<State, Action, _>::build(&self.label, ctx, app_state)
         });
         let widget_pod = ctx.create_pod(
             widgets::VariableLabel::from_label_pod(label.into_widget_pod())
@@ -110,7 +110,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         app_state: &mut State,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
-            View::<State, Action, _, _>::rebuild(
+            View::<State, Action, _>::rebuild(
                 &self.label,
                 &prev.label,
                 &mut (),
@@ -137,7 +137,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         app_state: &mut State,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
-            View::<State, Action, _, _>::teardown(
+            View::<State, Action, _>::teardown(
                 &self.label,
                 &mut (),
                 ctx,

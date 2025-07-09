@@ -220,7 +220,7 @@ fn message_event_listener<State, Action, V, Event, OA, Callback>(
     message: DynMessage,
     app_state: &mut State,
     handler: &Callback,
-) -> MessageResult<Action, DynMessage>
+) -> MessageResult<Action>
 where
     State: 'static,
     Action: 'static,
@@ -247,7 +247,7 @@ where
 }
 
 impl<V, State, Action, Event, Callback> ViewMarker for OnEvent<V, State, Action, Event, Callback> {}
-impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx, DynMessage>
+impl<V, State, Action, Event, Callback, OA> View<State, Action, ViewCtx>
     for OnEvent<V, State, Action, Event, Callback>
 where
     State: 'static,
@@ -341,7 +341,7 @@ where
         id_path: &[ViewId],
         message: crate::DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         message_event_listener(
             &self.dom_view,
             view_state,
@@ -400,7 +400,7 @@ macro_rules! event_definitions {
         }
 
 
-        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx, DynMessage>
+        impl<V, State, Action, Callback, OA> View<State, Action, ViewCtx>
             for $ty_name<V, State, Action, Callback>
         where
             State: 'static,
@@ -463,7 +463,7 @@ macro_rules! event_definitions {
                 id_path: &[ViewId],
                 message: crate::DynMessage,
                 app_state: &mut State,
-            ) -> MessageResult<Action, DynMessage> {
+            ) -> MessageResult<Action> {
                 message_event_listener(&self.dom_view, view_state, id_path, message, app_state, &self.handler)
             }
         }
@@ -571,8 +571,8 @@ pub struct OnResizeState<VState> {
 }
 
 impl<V, State, Action, Callback> ViewMarker for OnResize<V, State, Action, Callback> {}
-impl<State, Action, OA, Callback, V: View<State, Action, ViewCtx, DynMessage>>
-    View<State, Action, ViewCtx, DynMessage> for OnResize<V, State, Action, Callback>
+impl<State, Action, OA, Callback, V: View<State, Action, ViewCtx>> View<State, Action, ViewCtx>
+    for OnResize<V, State, Action, Callback>
 where
     State: 'static,
     Action: 'static,
@@ -650,7 +650,7 @@ where
         id_path: &[ViewId],
         message: DynMessage,
         app_state: &mut State,
-    ) -> MessageResult<Action, DynMessage> {
+    ) -> MessageResult<Action> {
         let Some((first, remainder)) = id_path.split_first() else {
             throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
         };
