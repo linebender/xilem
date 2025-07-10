@@ -8,6 +8,7 @@ use alloc::rc::Rc;
 use alloc::sync::Arc;
 use core::ops::Deref;
 
+use crate::environment::Environment;
 use crate::message::MessageResult;
 use crate::{DynMessage, Mut, ViewElement};
 
@@ -144,6 +145,11 @@ impl ViewId {
 /// For example, this context could be used to store a mapping from the
 /// id of widget to view path, to enable event routing.
 pub trait ViewPathTracker {
+    /// Access the [`Environment`] associated with this context.
+    ///
+    /// I hope that we can remove the "context" generic entirely, and so this is here
+    /// on a temporary basis.
+    fn environment(&mut self) -> &mut Environment;
     /// Add `id` to the end of current view path
     fn push_id(&mut self, id: ViewId);
     /// Remove the most recently `push`ed id from the current view path

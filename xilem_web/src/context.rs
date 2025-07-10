@@ -5,6 +5,7 @@ use std::any::{Any, TypeId};
 use std::rc::Rc;
 
 use wasm_bindgen_futures::spawn_local;
+use xilem_core::environment::Environment;
 use xilem_core::{AnyMessage, DynMessage};
 
 use crate::app::{AppMessage, AppRunner};
@@ -55,6 +56,7 @@ pub struct ViewCtx {
     /// A stack containing modifier count size-hints for each element context, mostly to avoid unnecessary allocations.
     modifier_size_hints: Vec<VecMap<TypeId, usize>>,
     modifier_size_hint_stack_idx: usize,
+    environment: Environment,
 }
 
 impl Default for ViewCtx {
@@ -69,6 +71,7 @@ impl Default for ViewCtx {
             // One element for the root `DomFragment`. will be extended with `Self::push_size_hints`
             modifier_size_hints: vec![VecMap::default()],
             modifier_size_hint_stack_idx: 0,
+            environment: Environment::new(),
         }
     }
 }
@@ -108,6 +111,7 @@ impl ViewCtx {
             templates: std::mem::take(&mut self.templates),
             modifier_size_hints: std::mem::take(&mut self.modifier_size_hints),
             modifier_size_hint_stack_idx: self.modifier_size_hint_stack_idx,
+            environment: std::mem::take(&mut self.environment),
         };
         let (ctx, retval) = f(temporary_owned_ctx);
         self.id_path = ctx.id_path;
@@ -116,6 +120,7 @@ impl ViewCtx {
         self.templates = ctx.templates;
         self.modifier_size_hints = ctx.modifier_size_hints;
         self.modifier_size_hint_stack_idx = ctx.modifier_size_hint_stack_idx;
+        self.environment = ctx.environment;
         retval
     }
 
@@ -216,6 +221,9 @@ impl ViewCtx {
 }
 
 impl ViewPathTracker for ViewCtx {
+    fn environment(&mut self) -> &mut Environment {
+        &mut self.environment
+    }
     fn push_id(&mut self, id: ViewId) {
         self.id_path.push(id);
     }

@@ -8,6 +8,7 @@ use std::path::PathBuf;
 
 use xilem_core::{
     AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    environment::Environment,
 };
 
 #[derive(Debug)]
@@ -57,6 +58,7 @@ fn main() {
     let mut root_ctx = ViewCtx {
         current_folder_path: path.clone(),
         view_path: Vec::new(),
+        environment: Environment::new(),
     };
     let (mut element, mut initial_state) = previous.build(&mut root_ctx, &mut state);
     loop {
@@ -209,9 +211,13 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
 struct ViewCtx {
     view_path: Vec<ViewId>,
     current_folder_path: PathBuf,
+    environment: Environment,
 }
 
 impl ViewPathTracker for ViewCtx {
+    fn environment(&mut self) -> &mut Environment {
+        &mut self.environment
+    }
     fn push_id(&mut self, id: ViewId) {
         self.view_path.push(id);
     }

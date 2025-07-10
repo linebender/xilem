@@ -145,6 +145,7 @@ impl SendMessage {
 /// Types which can be used in [`DynMessage`] (and so can be the messages for Xilem views).
 ///
 /// The `Debug` requirement allows inspecting messages which were sent to the wrong place.
+// TODO: Rename to `AnyDebug`.
 pub trait AnyMessage: Any + Debug {}
 impl<T> AnyMessage for T where T: Any + Debug {}
 

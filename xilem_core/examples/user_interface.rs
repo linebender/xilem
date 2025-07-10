@@ -8,7 +8,7 @@ use core::any::Any;
 
 use xilem_core::{
     DynMessage, MessageResult, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker,
-    ViewPathTracker,
+    ViewPathTracker, environment::Environment,
 };
 
 fn app_logic(_: &mut u32) -> impl WidgetView<u32> + use<> {
@@ -18,7 +18,10 @@ fn app_logic(_: &mut u32) -> impl WidgetView<u32> + use<> {
 fn main() {
     let mut state = 10;
     let view = app_logic(&mut state);
-    let mut ctx = ViewCtx { path: vec![] };
+    let mut ctx = ViewCtx {
+        path: vec![],
+        environment: Environment::new(),
+    };
     let (_widget_tree, _state) = view.build(&mut ctx, &mut state);
     // TODO: dbg!(widget_tree);
 }
@@ -128,9 +131,13 @@ impl<W: Widget> SuperElement<WidgetBox<W>, ViewCtx> for WidgetBox<Box<dyn Widget
 
 struct ViewCtx {
     path: Vec<ViewId>,
+    environment: Environment,
 }
 
 impl ViewPathTracker for ViewCtx {
+    fn environment(&mut self) -> &mut Environment {
+        &mut self.environment
+    }
     fn push_id(&mut self, id: ViewId) {
         self.path.push(id);
     }
