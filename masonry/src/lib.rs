@@ -40,6 +40,7 @@ pub mod theme;
 pub mod widgets;
 
 pub use accesskit;
+pub use parley::{Alignment as TextAlign, AlignmentOptions as TextAlignOptions};
 pub use smallvec;
 pub use vello::peniko::color::palette;
 pub use vello::{kurbo, peniko};
