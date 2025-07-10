@@ -212,7 +212,7 @@ impl Label {
 // --- MARK: WIDGETMUT
 impl Label {
     // Note: These docs are lazy, but also have a decreased likelihood of going out of date.
-    /// The runtime requivalent of [`with_style`](Self::with_style).
+    /// The runtime equivalent of [`with_style`](Self::with_style).
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
     /// Use [`set_brush`](Self::set_brush) instead.
@@ -269,14 +269,14 @@ impl Label {
         this.ctx.request_layout();
     }
 
-    /// The runtime requivalent of [`with_line_break_mode`](Self::with_line_break_mode).
+    /// The runtime equivalent of [`with_line_break_mode`](Self::with_line_break_mode).
     pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
         this.widget.line_break_mode = line_break_mode;
         // We don't need to set an internal invalidation, as `max_advance` is always recalculated
         this.ctx.request_layout();
     }
 
-    /// The runtime requivalent of [`with_alignment`](Self::with_alignment).
+    /// The runtime equivalent of [`with_alignment`](Self::with_alignment).
     pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
         this.widget.alignment = alignment;
 
@@ -285,7 +285,7 @@ impl Label {
     }
 
     #[doc(alias = "set_color")]
-    /// The runtime requivalent of [`with_brush`](Self::with_brush).
+    /// The runtime equivalent of [`with_brush`](Self::with_brush).
     pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
         let brush = brush.into();
         this.widget.brush = brush;
@@ -296,7 +296,7 @@ impl Label {
         }
     }
 
-    /// The runtime requivalent of [`with_disabled_brush`](Self::with_disabled_brush).
+    /// The runtime equivalent of [`with_disabled_brush`](Self::with_disabled_brush).
     pub fn set_disabled_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
         let brush = brush.into();
         this.widget.disabled_brush = brush;
@@ -306,7 +306,7 @@ impl Label {
         }
     }
 
-    /// The runtime requivalent of [`with_hint`](Self::with_hint).
+    /// The runtime equivalent of [`with_hint`](Self::with_hint).
     pub fn set_hint(this: &mut WidgetMut<'_, Self>, hint: bool) {
         this.widget.hint = hint;
         this.ctx.request_paint_only();
@@ -526,7 +526,7 @@ mod tests {
     }
 
     #[test]
-    /// A wrapping label's alignment should be respected, regardkess of
+    /// A wrapping label's alignment should be respected, regardless of
     /// its parent's alignment.
     fn label_alignment_flex() {
         fn base_label() -> Label {

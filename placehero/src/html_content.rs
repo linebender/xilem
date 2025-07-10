@@ -7,7 +7,7 @@ enum TagCloseBehaviour {
     None,
     /// A `span.invisible` is ending (and so `emit` should be toggled back on)
     Hidden,
-    /// An ellipisis should be output at the end of this item.
+    /// An ellipsis should be output at the end of this item.
     Ellipsis,
     /// A paragraph.
     Paragraph,

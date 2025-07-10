@@ -90,7 +90,7 @@ impl Prose {
     /// If this is set to true, it is recommended, but not required, that this
     /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
     ///
-    /// The runtime requivalent of [`with_clip`](Self::with_clip).
+    /// The runtime equivalent of [`with_clip`](Self::with_clip).
     pub fn set_clip(this: &mut WidgetMut<'_, Self>, clip: bool) {
         this.widget.clip = clip;
         this.ctx.request_layout();
