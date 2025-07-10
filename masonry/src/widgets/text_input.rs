@@ -120,6 +120,8 @@ impl Widget for TextInput {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            // We check for `ChildFocusChanged` instead of `FocusChanged`
+            // because the actual widget that receives focus is the child `TextArea`
             Update::ChildFocusChanged(_) => {
                 ctx.request_paint_only();
             }
