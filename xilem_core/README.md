@@ -1,8 +1,4 @@
-<div align="center" class="rustdoc-hidden">
-
 # Xilem Core
-
-</div>
 
 <div align="center">
 
@@ -17,6 +13,21 @@
 [![Dependency staleness status.](https://deps.rs/crate/xilem_core/latest/status.svg)](https://deps.rs/crate/xilem_core)
 
 </div>
+
+<!-- We use cargo-rdme to update the README with the contents of lib.rs.
+To edit the following section, update it in lib.rs, then run:
+cargo rdme --workspace-project=xilem_core --heading-base-level=0
+Full documentation at https://github.com/orium/cargo-rdme -->
+
+<!-- Intra-doc links used in lib.rs should be evaluated here.
+See https://linebender.org/blog/doc-include/ for related discussion. -->
+
+[`alloc`]: https://doc.rust-lang.org/stable/alloc/
+[`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
+[`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html
+[Zulip]: #community
+
+<!-- cargo-rdme start -->
 
 Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit) and [Xilem Web][] (a web frontend framework).
 If you are using Xilem, [its documentation][xilem docs] will probably be more helpful for you. <!-- TODO: In the long-term, we probably also need a book? -->
@@ -37,12 +48,21 @@ The current proposal would split the application into two processes:
 
 ## Quickstart
 
+<!-- TODO? -->
+
 ## `no_std` support
 
 Xilem Core supports running with `#![no_std]`, but does use [`alloc`][] to be available.
 
 It is plausible that this reactivity pattern could be used without allocation being required, but that is not provided by this package.
-If you wish to use Xilem Core in environments where an allocator is not available, feel free to bring this up on [Zulip](#community).
+If you wish to use Xilem Core in environments where an allocator is not available, feel free to bring this up on [Zulip][Zulip].
+
+[Xilem]: https://crates.io/crates/xilem
+[Xilem Web]: https://crates.io/crates/xilem_web
+[xilem docs]: https://docs.rs/xilem/latest/xilem/
+[Zulip]: https://xi.zulipchat.com/#narrow/stream/354396-xilem
+
+<!-- cargo-rdme end -->
 
 ## Minimum supported Rust Version (MSRV)
 
@@ -61,6 +81,7 @@ If you encounter a compilation issue due to a dependency and don't want to upgra
 # Use the problematic dependency's name and version
 cargo update -p package_name --precise 0.1.1
 ```
+
 </details>
 
 <!-- We hide these elements when viewing in Rustdoc, because they're not expected to be present in crate level docs -->
@@ -81,12 +102,6 @@ Licensed under the Apache License, Version 2.0 ([LICENSE] or <http://www.apache.
 </div>
 
 [Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
-[Xilem]: https://crates.io/crates/xilem
-[Xilem Web]: https://crates.io/crates/xilem_web
-[xilem docs]: https://docs.rs/xilem/latest/xilem/
-[`alloc`]: https://doc.rust-lang.org/stable/alloc/
-[`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
-[`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html
 
 <!-- Needs to be defined here for rustdoc's benefit -->
 [LICENSE]: LICENSE
