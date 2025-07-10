@@ -8,6 +8,7 @@ use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
+use vello::peniko::Color;
 
 use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
@@ -117,12 +118,13 @@ impl Widget for TextInput {
         BoxShadow::prop_changed(ctx, property_type);
     }
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::ChildFocusChanged(_) => {
+                ctx.request_paint_only();
+            }
+            _ => {}
+        }
     }
 
     fn layout(
@@ -169,7 +171,7 @@ impl Widget for TextInput {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
         let shadow = props.get::<BoxShadow>();
-        let border_color = props.get::<BorderColor>();
+        let mut border_color = props.get::<BorderColor>();
 
         let bg = if ctx.is_disabled() {
             &props.get::<DisabledBackground>().0
@@ -179,6 +181,13 @@ impl Widget for TextInput {
 
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
+
+        // FIXME - Handle this properly
+        if ctx.has_focus_target() {
+            border_color = &BorderColor {
+                color: Color::WHITE,
+            };
+        }
 
         shadow.paint(scene, Affine::IDENTITY, bg_rect);
 
