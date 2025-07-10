@@ -18,7 +18,7 @@ pub(crate) use thread::thread;
 
 /// Renders the key parts of a Status, in a shared way.
 ///
-/// This is the shared funcitionality between a timeline and the list of views.
+/// This is the shared functionality between a timeline and the list of views.
 // TODO: Determine our UX for boosting/reblogging.
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
