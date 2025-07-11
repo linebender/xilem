@@ -20,6 +20,7 @@ use masonry::parley::layout::{Alignment, AlignmentOptions};
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
 use masonry::smallvec::SmallVec;
+use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace_span};
@@ -197,6 +198,7 @@ fn main() {
             WidgetPod::new(CustomWidget(my_string)).erased(),
         )],
         Driver,
+        default_property_set(),
     )
     .unwrap();
 }

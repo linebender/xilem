@@ -12,6 +12,7 @@ use masonry::dpi::LogicalSize;
 use masonry::parley::layout::Alignment;
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
+use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
@@ -149,6 +150,7 @@ fn main() {
             WidgetPod::new(main_widget).erased(),
         )],
         driver,
+        default_property_set(),
     )
     .unwrap();
 }

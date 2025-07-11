@@ -20,6 +20,7 @@
 //! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 //! use masonry::core::{Action, Widget, WidgetId, WidgetPod};
 //! use masonry::dpi::LogicalSize;
+//! use masonry::theme::default_property_set;
 //! use masonry::widgets::{Button, Flex, Label, Portal, TextInput};
 //! use winit::window::Window;
 //!
@@ -86,6 +87,7 @@
 //!             WidgetPod::new(main_widget).erased(),
 //!         )],
 //!         driver,
+//!         default_property_set(),
 //!     )
 //!     .unwrap();
 //! }

@@ -13,7 +13,6 @@ use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePo
 use masonry::core::{DefaultProperties, TextEvent, Widget, WidgetId, WidgetPod, WindowEvent};
 use masonry::kurbo::Affine;
 use masonry::peniko::Color;
-use masonry::theme::default_property_set;
 use masonry::util::Instant;
 use masonry::vello::util::{RenderContext, RenderSurface};
 use masonry::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -161,10 +160,11 @@ pub fn run(
     mut loop_builder: EventLoopBuilder,
     windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
     app_driver: impl AppDriver + 'static,
+    default_property_set: DefaultProperties,
 ) -> Result<(), EventLoopError> {
     let event_loop = loop_builder.build()?;
 
-    run_with(event_loop, windows, app_driver, default_property_set())
+    run_with(event_loop, windows, app_driver, default_property_set)
 }
 
 pub fn run_with(
