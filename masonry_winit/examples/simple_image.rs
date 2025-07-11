@@ -11,6 +11,7 @@
 use masonry::core::{Action, ObjectFit, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::{Image as ImageBuf, ImageFormat};
+use masonry::theme::default_property_set;
 use masonry::widgets::Image;
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
@@ -57,6 +58,7 @@ fn main() {
             WidgetPod::new(make_image()).erased(),
         )],
         Driver,
+        default_property_set(),
     )
     .unwrap();
 }

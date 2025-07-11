@@ -11,6 +11,7 @@
 
 use masonry::core::{Action, ArcStr, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
+use masonry::theme::default_property_set;
 use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use winit::window::Window;
@@ -107,6 +108,7 @@ fn main() {
         masonry_winit::app::EventLoop::with_user_event(),
         vec![(driver.window_id, window_attributes, main_widget)],
         driver,
+        default_property_set(),
     )
     .unwrap();
 }
