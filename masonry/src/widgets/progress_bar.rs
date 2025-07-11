@@ -10,7 +10,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
+    AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
     RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::theme;
@@ -184,8 +184,8 @@ impl Widget for ProgressBar {
         smallvec![self.label.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("ProgressBar", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("ProgressBar", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

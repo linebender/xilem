@@ -15,8 +15,8 @@ use vello::peniko::{BlendMode, Brush};
 
 use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, BrushIndex, LayoutCtx, PaintCtx, PropertiesMut,
-    PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, render_text,
+    PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, render_text,
 };
 use crate::debug_panic;
 use crate::theme;
@@ -454,8 +454,8 @@ impl Widget for Label {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Label", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Label", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

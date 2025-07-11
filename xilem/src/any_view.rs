@@ -4,7 +4,7 @@
 use accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
@@ -124,7 +124,7 @@ impl Widget for DynWidget {
         smallvec![self.inner.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("DynWidget", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("DynWidget", id = id.trace())
     }
 }

@@ -192,23 +192,7 @@ fn update_widget_tree(
         state.item.accepts_pointer_interaction = widget.item.accepts_pointer_interaction();
         state.item.accepts_focus = widget.item.accepts_focus();
         state.item.accepts_text_input = widget.item.accepts_text_input();
-        {
-            let ctx = QueryCtx {
-                global_state,
-                widget_state: state.item,
-                widget_state_children: state.children.reborrow(),
-                widget_children: widget.children.reborrow(),
-                properties: PropertiesRef {
-                    map: properties.item,
-                    default_map: default_properties.for_widget(widget.item.type_id()),
-                },
-                properties_children: properties.children.reborrow(),
-            };
-
-            // TODO - Should `make_trace_span` take QueryCtx?
-            // Building it adds a lot of boilerplate to this function.
-            state.item.trace_span = widget.item.make_trace_span(&ctx);
-        }
+        state.item.trace_span = widget.item.make_trace_span(state.item.id);
         state.item.is_new = false;
     }
 

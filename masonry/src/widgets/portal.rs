@@ -12,8 +12,8 @@ use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Axis, ScrollBar};
 
@@ -508,8 +508,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         ]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Portal", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Portal", id = id.trace())
     }
 }
 

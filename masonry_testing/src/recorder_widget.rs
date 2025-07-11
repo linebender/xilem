@@ -237,8 +237,8 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accepts_text_input()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
-        self.child.make_trace_span(ctx)
+    fn make_trace_span(&self, id: WidgetId) -> tracing::Span {
+        self.child.make_trace_span(id)
     }
 
     fn get_debug_text(&self) -> Option<String> {

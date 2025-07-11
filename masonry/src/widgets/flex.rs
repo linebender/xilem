@@ -14,8 +14,8 @@ use vello::kurbo::common::FloatExt;
 use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, UpdateCtx,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::debug_panic;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
@@ -1288,8 +1288,8 @@ impl Widget for Flex {
             .collect()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Flex", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Flex", id = id.trace())
     }
 }
 

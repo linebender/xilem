@@ -11,7 +11,7 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
@@ -181,8 +181,8 @@ impl Widget for CustomWidget {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("CustomWidget", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("CustomWidget", id = id.trace())
     }
 }
 
