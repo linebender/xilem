@@ -6,8 +6,8 @@ use std::hash::Hash;
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use masonry::app::RenderRoot;
-use masonry::core::{Action, Widget, WidgetId, WidgetPod};
+use masonry_core::app::RenderRoot;
+use masonry_core::core::{Action, Widget, WidgetId, WidgetPod};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes};

@@ -2182,6 +2182,7 @@ dependencies = [
  "accesskit_winit",
  "image",
  "masonry",
+ "masonry_core",
  "pollster",
  "profiling",
  "tracing",
