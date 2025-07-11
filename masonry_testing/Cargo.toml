@@ -26,7 +26,6 @@ masonry_core.workspace = true
 oxipng = { version = "9.1.5", default-features = false }
 pollster = "0.4.0"
 tracing = { workspace = true, features = ["default"] }
-wgpu.workspace = true
 
 [dev-dependencies]
 assert_matches = "1.5.0"

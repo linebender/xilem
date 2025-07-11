@@ -15,10 +15,10 @@ use masonry_core::kurbo::Affine;
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
 use masonry_core::vello::util::{RenderContext, RenderSurface};
+use masonry_core::vello::wgpu;
 use masonry_core::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use tracing::{debug, error, info, info_span};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
-use wgpu::PresentMode;
 use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
@@ -379,7 +379,7 @@ impl MasonryState<'_> {
             handle.clone(),
             size.width,
             size.height,
-            PresentMode::AutoVsync,
+            wgpu::PresentMode::AutoVsync,
         ))
         .unwrap();
         let scale_factor = handle.scale_factor();

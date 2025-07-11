@@ -12,10 +12,6 @@ use std::sync::{Arc, mpsc};
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
-use wgpu::{
-    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, TexelCopyBufferInfo,
-    TextureDescriptor, TextureFormat, TextureUsages,
-};
 
 use masonry_core::Handled;
 use masonry_core::app::{
@@ -34,6 +30,11 @@ use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
 use masonry_core::vello;
 use masonry_core::vello::util::{RenderContext, block_on_wgpu};
+use masonry_core::vello::wgpu::{
+    BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,
+    TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat,
+    TextureUsages, TextureViewDescriptor,
+};
 
 use crate::screenshots::get_image_diff;
 
@@ -419,12 +420,12 @@ impl TestHarness {
             size,
             mip_level_count: 1,
             sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
+            dimension: TextureDimension::D2,
             format: TextureFormat::Rgba8Unorm,
             usage: TextureUsages::STORAGE_BINDING | TextureUsages::COPY_SRC,
             view_formats: &[],
         });
-        let view = target.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = target.create_view(&TextureViewDescriptor::default());
         renderer
             .render_to_texture(device, queue, &scene, &view, &render_params)
             .expect("Got non-Send/Sync error from rendering");
@@ -443,7 +444,7 @@ impl TestHarness {
             target.as_image_copy(),
             TexelCopyBufferInfo {
                 buffer: &buffer,
-                layout: wgpu::TexelCopyBufferLayout {
+                layout: TexelCopyBufferLayout {
                     offset: 0,
                     bytes_per_row: Some(padded_byte_width),
                     rows_per_image: None,
@@ -456,7 +457,7 @@ impl TestHarness {
         let buf_slice = buffer.slice(..);
 
         let (sender, receiver) = futures_intrusive::channel::shared::oneshot_channel();
-        buf_slice.map_async(wgpu::MapMode::Read, move |v| sender.send(v).unwrap());
+        buf_slice.map_async(MapMode::Read, move |v| sender.send(v).unwrap());
         let recv_result = block_on_wgpu(device, receiver.receive()).expect("channel was closed");
         recv_result.expect("failed to map buffer");
 
