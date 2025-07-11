@@ -22,9 +22,9 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    Action, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
-    PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
-    WidgetRef, WindowEvent,
+    Action, DefaultProperties, Ime, PointerButton, PointerButtonEvent, PointerEvent, PointerId,
+    PointerInfo, PointerScrollEvent, PointerState, PointerType, PointerUpdate, ScrollDelta,
+    TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
 };
 use masonry_core::core::{Properties, WidgetPod};
 use masonry_core::cursor_icon::CursorIcon;
@@ -493,30 +493,30 @@ impl TestHarness {
     /// Send a [`Down`](PointerEvent::Down) event to the window.
     pub fn mouse_button_press(&mut self, button: PointerButton) {
         self.mouse_state.buttons.insert(button);
-        self.process_pointer_event(PointerEvent::Down {
+        self.process_pointer_event(PointerEvent::Down(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
             button: button.into(),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send an [`Up`](PointerEvent::Up) event to the window.
     pub fn mouse_button_release(&mut self, button: PointerButton) {
         self.mouse_state.buttons.remove(button);
-        self.process_pointer_event(PointerEvent::Up {
+        self.process_pointer_event(PointerEvent::Up(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
             button: button.into(),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send a [`Scroll`](PointerEvent::Scroll) event to the window.
     pub fn mouse_wheel(&mut self, Vec2 { x, y }: Vec2) {
-        self.process_pointer_event(PointerEvent::Scroll {
+        self.process_pointer_event(PointerEvent::Scroll(PointerScrollEvent {
             pointer: PRIMARY_MOUSE,
             delta: ScrollDelta::PixelDelta(PhysicalPosition { x, y }),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send events that lead to a given widget being clicked.

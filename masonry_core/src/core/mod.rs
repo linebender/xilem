@@ -36,7 +36,8 @@ pub use widget_state::WidgetOptions;
 
 pub use ui_events::keyboard::{KeyboardEvent, Modifiers};
 pub use ui_events::pointer::{
-    PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,
+    PointerButton, PointerButtonEvent, PointerEvent, PointerId, PointerInfo, PointerScrollEvent,
+    PointerState, PointerType, PointerUpdate,
 };
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
