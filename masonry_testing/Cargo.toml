@@ -19,19 +19,13 @@ targets = []
 default = []
 
 [dependencies]
-accesskit.workspace = true
 accesskit_consumer.workspace = true
-cursor-icon = "1.1.0"
-dpi.workspace = true
 futures-intrusive = "0.5.0"
 image = { workspace = true, features = ["png"] }
 masonry_core.workspace = true
 oxipng = { version = "9.1.5", default-features = false }
 pollster = "0.4.0"
-smallvec.workspace = true
 tracing = { workspace = true, features = ["default"] }
-ui-events.workspace = true
-vello.workspace = true
 wgpu.workspace = true
 
 [dev-dependencies]
