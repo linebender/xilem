@@ -9,13 +9,13 @@ use std::sync::mpsc::Sender;
 use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
-use masonry::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
-use masonry::core::{DefaultProperties, TextEvent, Widget, WidgetId, WidgetPod, WindowEvent};
-use masonry::kurbo::Affine;
-use masonry::peniko::Color;
-use masonry::util::Instant;
-use masonry::vello::util::{RenderContext, RenderSurface};
-use masonry::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
+use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
+use masonry_core::core::{DefaultProperties, TextEvent, Widget, WidgetId, WidgetPod, WindowEvent};
+use masonry_core::kurbo::Affine;
+use masonry_core::peniko::Color;
+use masonry_core::util::Instant;
+use masonry_core::vello::util::{RenderContext, RenderSurface};
+use masonry_core::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use tracing::{debug, error, info, info_span};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use wgpu::PresentMode;
@@ -32,7 +32,7 @@ use crate::app_driver::WindowId;
 pub enum MasonryUserEvent {
     AccessKit(HandleId, accesskit_winit::WindowEvent),
     // TODO: A more considered design here
-    Action(WindowId, masonry::core::Action, WidgetId),
+    Action(WindowId, masonry_core::core::Action, WidgetId),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {
@@ -177,7 +177,7 @@ pub fn run_with(
     // already been set, we get an error which we swallow.
     // By now, we're about to take control of the event loop. The user is unlikely
     // to try to set their own subscriber once the event loop has started.
-    let _ = masonry::app::try_init_tracing();
+    let _ = masonry_core::app::try_init_tracing();
 
     let mut main_state = MainState {
         masonry_state: MasonryState::new(event_loop.create_proxy(), windows, default_properties),

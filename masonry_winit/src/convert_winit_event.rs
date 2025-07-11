@@ -5,7 +5,7 @@
 // https://github.com/DioxusLabs/blitz/blob/main/packages/blitz-shell/src/convert_events.rs
 // Should be removed once https://github.com/rust-windowing/winit/pull/4026 is merged.
 
-use masonry::core::{Ime, ResizeDirection};
+use masonry_core::core::{Ime, ResizeDirection};
 use winit::event::Ime as WinitIme;
 use winit::window::ResizeDirection as WinitResizeDirection;
 

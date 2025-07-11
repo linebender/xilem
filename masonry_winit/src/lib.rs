@@ -93,7 +93,7 @@
 //! }
 //! ```
 //!
-//! For more information, see [the documentation module](masonry::doc).
+//! For more information, see [the Masonry documentation][Masonry].
 //!
 //! ### Crate feature flags
 //!
@@ -110,6 +110,7 @@
 //!
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
+//! [Masonry]: https://docs.rs/masonry
 //! [Xilem]: https://crates.io/crates/xilem
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
 // TODO: Add screenshot. This can't use include_screenshot as that doesn't work with cargo-rdme
