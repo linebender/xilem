@@ -1,7 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(missing_docs, reason = "Development")]
 //! Values accessible throughout the Xilem view tree.
 
 use core::{any::TypeId, marker::PhantomData};
@@ -11,6 +10,9 @@ use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use hashbrown::{HashMap, hash_map::Entry};
 
 #[derive(Debug)]
+/// A message sent to Views to instruct them to rebuild themselves.
+///
+/// This will be sent when a value in the environment value is modified.
 pub struct Rebuild;
 
 // --- MARK: Environment
@@ -30,6 +32,17 @@ struct Slot {
     // generation: u32,
 }
 
+/// A store of values which are accessible throughout the view tree.
+///
+/// Values can be made available to any child views using [`provides`],
+/// then read using [`with_context`].
+/// This type is the internal implementation detail of these views, and
+/// currently can only meaningfully be used directly by those types.
+///
+/// This type is owned by the Xilem driver, and so shouldn't be created by end users.
+/// This type must be made available by view contexts through the
+/// [`environment`](ViewPathTracker::environment)  method of `ViewPathTracker`, which
+/// they all implement.
 #[derive(Debug)]
 pub struct Environment {
     slots: Vec<Slot>,
@@ -41,6 +54,11 @@ pub struct Environment {
 }
 
 impl Environment {
+    /// Create a new `Environment`.
+    ///
+    /// End-users of Xilem do not need to use this function.
+    /// For driver implementers, there should only ever be one environment throughout
+    /// the lifecycle of your driver.
     pub fn new() -> Self {
         Self {
             slots: Vec::new(),
@@ -50,7 +68,7 @@ impl Environment {
         }
     }
 
-    // TODO: Better generic name here.
+    // TODO: Possibly reconsider the name here.
     fn create_slot_for_type<Context>(&mut self) -> u32
     where
         Context: Resource,
@@ -98,10 +116,30 @@ impl Default for Environment {
 }
 
 /// Marker trait for types usable as resources.
+///
+/// Types which implement this trait can be made available to child views
+/// using [`provides`], and then read using [`with_context`].
+///
+/// The preferred variable name for types bounded by this type is currently
+/// `Context`, based on the name used in React for their similar feature.
+// TODO: Make sure that these names make sense.
 pub trait Resource: AnyMessage {}
 
 // --- MARK: Provides
 
+/// View which makes a [`Resource`] value of a specific type available to all of its descendants.
+///
+/// The provided `initial_context` will be called as soon as the returned view is
+/// built, to get the initial value of the resource.
+/// This context value can be read using the [`with_context`] view with the same
+/// `Context` type parameter within child.
+///
+/// Note that it is not currently fully supported to mutate `Resource` values.
+/// In particular, if these values are read inside memoising views (such as
+/// [`memoize`](crate::memoize)), the values won't be correctly updated.
+/// We intend to address this limitation in the future.
+///
+/// This is analogous to `Context.Provider` in React.
 pub fn provides<State, Action, Context, InitialContext, ChildView, Ctx>(
     initial_context: InitialContext,
     child: ChildView,
@@ -121,14 +159,17 @@ where
 
 // TODO: This `Debug` impl is pretty stupid
 #[derive(Debug)]
+#[must_use = "View values do nothing unless provided to Xilem."]
+/// The View type for [`provides`]. See its documentation for details.
 pub struct Provides<State, Action, Context: Resource, InitialContext, ChildView> {
     initial_context: InitialContext,
     child: ChildView,
     phantom: PhantomData<fn(State, Context) -> Action>,
 }
 
-// TODO: This type shouldn't be public
+// TODO: This type should be made unnameable (i.e. we should work out the module split here)
 #[derive(Debug)]
+#[doc(hidden)]
 pub struct ProvidesState<ChildState> {
     child_state: ChildState,
     this_state: Option<EnvironmentItem>,
@@ -278,6 +319,24 @@ where
 }
 
 // --- MARK: WithContext
+
+/// View which gives access to a [`Resource`] value from its environment.
+///
+/// The provided `child` function will be called to create the view which represents the
+/// target state of this view's location in the tree.
+/// When it is called, `child` will be provided with the current app state, and the
+/// current value of type `Context` from the environment.
+/// This `Context` value can be inserted into the environment using [`provides`], which
+/// must be a parent view of this view.
+/// This view will read the resource value from the closest ancestor `provides`.
+/// If there is no such ancestor, this view will panic when it is built (or rebuilt).
+///
+/// Note that it is not currently fully supported to mutate `Resource` values.
+/// In particular, if these values are read inside memoising views (such as
+/// [`memoize`](crate::memoize)), the values won't be correctly updated.
+/// We intend to address this limitation in the future.
+///
+/// This is analogous to `Context.Consumer` in React.
 pub fn with_context<State, Action, Context, Child, ChildView, Ctx>(
     child: Child,
 ) -> WithContext<State, Action, Context, Child, ChildView>
@@ -294,6 +353,8 @@ where
 
 // TODO: This `Debug` impl is pretty stupid
 #[derive(Debug)]
+#[must_use = "View values do nothing unless provided to Xilem."]
+/// The View type for [`with_context`]. See its documentation for details.
 pub struct WithContext<State, Action, Context: Resource, Child, ChildView> {
     child: Child,
     phantom: PhantomData<fn(State, Context) -> (Action, ChildView)>,
@@ -301,6 +362,7 @@ pub struct WithContext<State, Action, Context: Resource, Child, ChildView> {
 
 // TODO: This type shouldn't be public
 #[derive(Debug)]
+#[doc(hidden)]
 pub struct WithContextState<ChildState, ChildView> {
     prev: ChildView,
     child_state: ChildState,

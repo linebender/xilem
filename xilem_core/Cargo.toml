@@ -18,18 +18,21 @@ targets = []
 cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
-default = ["hashbrown"]
 kurbo = ["dep:kurbo"]
 
+# Currently, we unconditionally use hashbrown for the environment for simplicity.
+# We can change this if someone complains.
+
+# default = ["hashbrown"]
 # # Use the standard library hashmap.
 # std = []
 # Use the hashmap from hashbrown.
-hashbrown = ["dep:hashbrown"]
+# hashbrown = ["dep:hashbrown"]
 
 [dependencies]
 tracing.workspace = true
 kurbo = { optional = true, workspace = true }
-hashbrown = { workspace = true, optional = true }
+hashbrown = { workspace = true }
 
 [lints]
 workspace = true
