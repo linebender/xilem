@@ -11,7 +11,7 @@ use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::{Point, Rect, Size};
 
-use crate::app::{RenderRoot, RenderRootSignal, RenderRootState, WindowSizePolicy};
+use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
@@ -87,7 +87,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         properties.children.reborrow_mut(),
         |widget, state, properties| {
             if state.item.is_stashed {
-                clear_layout_flags(parent_ctx.global_state, widget, state, properties);
+                clear_layout_flags(widget, state, properties);
             }
         },
     );
@@ -195,7 +195,6 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
 // This function is called on stashed widgets and their children
 // to set all layout flags to false.
 fn clear_layout_flags(
-    global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     state: ArenaMut<'_, WidgetState>,
     properties: ArenaMut<'_, AnyMap>,
@@ -210,7 +209,7 @@ fn clear_layout_flags(
         state.children,
         properties.children,
         |widget, state, properties| {
-            clear_layout_flags(global_state, widget, state, properties);
+            clear_layout_flags(widget, state, properties);
         },
     );
 }
