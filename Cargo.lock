@@ -2163,21 +2163,15 @@ dependencies = [
 name = "masonry_testing"
 version = "0.3.0"
 dependencies = [
- "accesskit",
  "accesskit_consumer",
  "assert_matches",
- "cursor-icon",
- "dpi",
  "futures-intrusive",
  "image",
  "masonry_core",
  "oxipng",
  "pollster",
  "profiling",
- "smallvec",
  "tracing",
- "ui-events",
- "vello",
  "wgpu",
 ]
 

@@ -37,6 +37,9 @@
 )]
 // TODO - Add logo
 
+pub use vello::{kurbo, peniko, peniko::color::palette};
+pub use {accesskit, cursor_icon, dpi, parley, smallvec, ui_events, vello};
+
 // TODO - re-add #[doc(hidden)]
 pub mod doc;
 
@@ -50,6 +53,3 @@ pub mod core;
 
 // TODO - Move to core?
 pub use util::{Handled, UnitPoint};
-
-// TODO - Remove re-exports
-pub(crate) use {::dpi, ::vello, vello::peniko};

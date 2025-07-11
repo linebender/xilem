@@ -13,17 +13,16 @@ use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::rc::Rc;
 
-use accesskit::{Node, Role};
-use cursor_icon::CursorIcon;
-use smallvec::SmallVec;
-use vello::Scene;
-use vello::kurbo::{Point, Size};
-
+use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef,
 };
+use masonry_core::cursor_icon::CursorIcon;
+use masonry_core::kurbo::{Point, Size};
+use masonry_core::smallvec::SmallVec;
+use masonry_core::vello::Scene;
 
 // TODO - Re-enable doc test.
 // Doc test is currently disabled because it depends on a parent crate.

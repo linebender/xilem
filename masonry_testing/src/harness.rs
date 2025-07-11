@@ -9,16 +9,9 @@ use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
-use cursor_icon::CursorIcon;
-use dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use masonry_core::core::{Properties, WidgetPod};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
-use vello::RendererOptions;
-use vello::kurbo::{Point, Size, Vec2};
-use vello::peniko::{Blob, Color};
-use vello::util::{RenderContext, block_on_wgpu};
 use wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, TexelCopyBufferInfo,
     TextureDescriptor, TextureFormat, TextureUsages,
@@ -33,7 +26,14 @@ use masonry_core::core::{
     PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
+use masonry_core::core::{Properties, WidgetPod};
+use masonry_core::cursor_icon::CursorIcon;
+use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
+use masonry_core::kurbo::{Point, Size, Vec2};
+use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
+use masonry_core::vello;
+use masonry_core::vello::util::{RenderContext, block_on_wgpu};
 
 use crate::screenshots::get_image_diff;
 
@@ -389,7 +389,7 @@ impl TestHarness {
         let queue = &device_handle.queue;
         let mut renderer = vello::Renderer::new(
             device,
-            RendererOptions {
+            vello::RendererOptions {
                 // TODO - Examine this value
                 use_cpu: true,
                 num_init_threads: NonZeroUsize::new(1),
