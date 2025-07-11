@@ -39,7 +39,7 @@ fn paint_widget(
         widget_children: widget.children.reborrow_mut(),
         debug_paint,
     };
-    if ctx.widget_state.request_paint {
+    if ctx.widget_state.request_paint && !ctx.widget_state.is_stashed {
         if trace {
             trace!("Painting widget '{}' {}", widget.item.short_type_name(), id);
         }
@@ -78,15 +78,11 @@ fn paint_widget(
         state.children,
         properties.children,
         |widget, mut state, properties| {
-            // TODO - We skip painting stashed items.
-            // This may lead to zombie flags in rare cases, we need to fix this.
-            if state.item.is_stashed {
-                return;
-            }
             // TODO: We could skip painting children outside the parent clip path.
             // There's a few things to consider if we do:
             // - Some widgets can paint outside of their layout box.
             // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
+            // - We still want to reset needs_paint and request_paint flags.
             paint_widget(
                 global_state,
                 default_properties,

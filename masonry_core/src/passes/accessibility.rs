@@ -72,8 +72,6 @@ fn build_accessibility_tree(
         state.children,
         properties.children,
         |widget, mut state, properties| {
-            // TODO - We don't skip updating stashed items because doing so
-            // is error-prone. We may want to revisit that decision.
             build_accessibility_tree(
                 global_state,
                 default_properties,
