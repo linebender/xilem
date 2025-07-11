@@ -185,18 +185,18 @@ impl Widget for Prose {
 #[cfg(test)]
 mod tests {
     use parley::StyleProperty;
-    use parley::layout::Alignment;
     use vello::kurbo::Size;
 
     use super::*;
+    use crate::TextAlign;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
     use crate::theme::default_property_set;
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox, TextArea};
 
     #[test]
-    /// A wrapping prose's alignment should be respected, regardless of
-    /// its parent's alignment.
+    /// A wrapping prose's text alignment should be respected, regardless of
+    /// its parent's text alignment.
     fn prose_clipping() {
         let prose = Prose::from_text_area(
             TextArea::new_immutable("Truncated text - you should not see this")
@@ -220,21 +220,21 @@ mod tests {
     /// A wrapping prose's alignment should be respected, regardless of
     /// its parent's alignment.
     fn prose_alignment_flex() {
-        fn base_prose(alignment: Alignment) -> Prose {
+        fn base_prose(text_alignment: TextAlign) -> Prose {
             // Trailing whitespace is displayed when laying out prose.
             Prose::from_text_area(
                 TextArea::new_immutable("Hello  ")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_alignment(alignment)
+                    .with_text_alignment(text_alignment)
                     .with_word_wrap(true),
             )
         }
-        let prose1 = base_prose(Alignment::Start);
-        let prose2 = base_prose(Alignment::Middle);
-        let prose3 = base_prose(Alignment::End);
-        let prose4 = base_prose(Alignment::Start);
-        let prose5 = base_prose(Alignment::Middle);
-        let prose6 = base_prose(Alignment::End);
+        let prose1 = base_prose(TextAlign::Start);
+        let prose2 = base_prose(TextAlign::Middle);
+        let prose3 = base_prose(TextAlign::End);
+        let prose4 = base_prose(TextAlign::Start);
+        let prose5 = base_prose(TextAlign::Middle);
+        let prose6 = base_prose(TextAlign::End);
         let flex = Flex::column()
             .with_flex_child(prose1, CrossAxisAlignment::Start)
             .with_flex_child(prose2, CrossAxisAlignment::Start)

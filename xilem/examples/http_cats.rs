@@ -21,9 +21,7 @@ use xilem::view::{
     FlexSpacer, ZStackExt, button, flex, flex_row, image, inline_prose, portal, prose, sized_box,
     spinner, split, worker, zstack,
 };
-use xilem::{
-    EventLoop, EventLoopBuilder, TextAlignment, WidgetView, WindowOptions, Xilem, palette,
-};
+use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 
 /// The main state of the application.
 struct HttpCats {
@@ -73,14 +71,14 @@ impl HttpCats {
                     prose(format!(
                         "Status code {selected_code} selected, but this was not found."
                     ))
-                    .alignment(TextAlignment::Middle)
+                    .text_alignment(TextAlign::Middle)
                     .brush(palette::css::YELLOW),
                 )
             }
         } else {
             OneOf3::C(
                 prose("No selection yet made. Select an item from the sidebar to continue.")
-                    .alignment(TextAlignment::Middle),
+                    .text_alignment(TextAlign::Middle),
             )
         };
 
@@ -176,7 +174,7 @@ impl Status {
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")
-                    .alignment(TextAlignment::Middle),
+                    .text_alignment(TextAlign::Middle),
             ),
             ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.).height(80.)),
             // TODO: Alt text?
@@ -185,7 +183,7 @@ impl Status {
                     sized_box(
                         prose("Copyright ©️ https://http.cat")
                             .line_break_mode(LineBreaking::Clip)
-                            .alignment(TextAlignment::End),
+                            .text_alignment(TextAlign::End),
                     )
                     .padding(4.)
                     .corner_radius(4.)
@@ -204,10 +202,10 @@ impl Status {
             }
         };
         flex((
-            prose(format!("HTTP Status Code: {}", self.code)).alignment(TextAlignment::Middle),
+            prose(format!("HTTP Status Code: {}", self.code)).text_alignment(TextAlign::Middle),
             prose(self.message)
                 .text_size(20.)
-                .alignment(TextAlignment::Middle),
+                .text_alignment(TextAlign::Middle),
             FlexSpacer::Fixed(10.),
             image,
         ))

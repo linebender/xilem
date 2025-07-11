@@ -9,7 +9,7 @@ use masonry::widgets::{
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 
 /// A non-interactive text element.
 /// # Example
@@ -17,12 +17,12 @@ use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
 /// ```ignore
 /// use xilem::palette;
 /// use xilem::view::label;
-/// use masonry::TextAlignment;
+/// use masonry::TextAlign;
 /// use masonry::parley::fontique;
 ///
 /// label("Text example.")
 ///     .brush(palette::css::RED)
-///     .alignment(TextAlignment::Middle)
+///     .text_alignment(TextAlign::Middle)
 ///     .text_size(24.0)
 ///     .weight(FontWeight::BOLD)
 ///     .with_font(fontique::GenericFamily::Serif)
@@ -31,7 +31,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
         label: label.into(),
         text_brush: Color::WHITE.into(),
-        alignment: TextAlignment::default(),
+        text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
@@ -46,7 +46,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 pub struct Label {
     label: ArcStr,
     text_brush: Brush,
-    alignment: TextAlignment,
+    text_alignment: TextAlign,
     text_size: f32,
     weight: FontWeight,
     font: FontStack<'static>,
@@ -62,8 +62,8 @@ impl Label {
     }
 
     /// Sets text alignment: `Start`, `Middle`, `End` or `Justified`.
-    pub fn alignment(mut self, alignment: TextAlignment) -> Self {
-        self.alignment = alignment;
+    pub fn text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.text_alignment = text_alignment;
         self
     }
 
@@ -114,7 +114,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         let widget_pod = ctx.create_pod(
             widgets::Label::new(self.label.clone())
                 .with_brush(self.text_brush.clone())
-                .with_alignment(self.alignment)
+                .with_text_alignment(self.text_alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
                 .with_style(StyleProperty::FontStack(self.font.clone()))
@@ -137,8 +137,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         if prev.text_brush != self.text_brush {
             widgets::Label::set_brush(&mut element, self.text_brush.clone());
         }
-        if prev.alignment != self.alignment {
-            widgets::Label::set_alignment(&mut element, self.alignment);
+        if prev.text_alignment != self.text_alignment {
+            widgets::Label::set_text_alignment(&mut element, self.text_alignment);
         }
         if prev.text_size != self.text_size {
             widgets::Label::insert_style(&mut element, StyleProperty::FontSize(self.text_size));

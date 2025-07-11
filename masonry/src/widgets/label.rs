@@ -6,7 +6,6 @@
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
-use parley::layout::{Alignment, AlignmentOptions};
 use parley::{Layout, LayoutAccessibility};
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
@@ -22,6 +21,7 @@ use crate::core::{
 use crate::debug_panic;
 use crate::theme;
 use crate::theme::default_text_styles;
+use crate::{TextAlign, TextAlignOptions};
 
 // TODO - Replace with Padding property.
 /// Added padding between each horizontal edge of the widget
@@ -57,9 +57,9 @@ pub struct Label {
     styles_changed: bool,
 
     line_break_mode: LineBreaking,
-    alignment: Alignment,
-    /// Whether the alignment needs to be re-computed.
-    needs_alignment: bool,
+    text_alignment: TextAlign,
+    /// Whether the text alignment needs to be re-computed.
+    needs_text_alignment: bool,
     /// How much width was available during last layout.
     last_available_width: Option<f32>,
     /// The value of `max_advance` when this layout was last calculated.
@@ -99,8 +99,8 @@ impl Label {
             styles,
             styles_changed: true,
             line_break_mode: LineBreaking::Overflow,
-            alignment: Alignment::Start,
-            needs_alignment: true,
+            text_alignment: TextAlign::Start,
+            needs_text_alignment: true,
             last_available_width: None,
             last_max_advance: None,
             brush: theme::TEXT_COLOR.into(),
@@ -149,9 +149,9 @@ impl Label {
     /// Set the alignment of the text.
     ///
     /// Text alignment might have unexpected results when the label has no horizontal constraints.
-    /// To modify this on an active label, use [`set_alignment`](Self::set_alignment).
-    pub fn with_alignment(mut self, alignment: Alignment) -> Self {
-        self.alignment = alignment;
+    /// To modify this on an active label, use [`set_text_alignment`](Self::set_text_alignment).
+    pub fn with_text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.text_alignment = text_alignment;
         self
     }
 
@@ -276,11 +276,11 @@ impl Label {
         this.ctx.request_layout();
     }
 
-    /// The runtime equivalent of [`with_alignment`](Self::with_alignment).
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
-        this.widget.alignment = alignment;
+    /// The runtime equivalent of [`with_text_alignment`](Self::with_text_alignment).
+    pub fn set_text_alignment(this: &mut WidgetMut<'_, Self>, text_alignment: TextAlign) {
+        this.widget.text_alignment = text_alignment;
 
-        this.widget.needs_alignment = true;
+        this.widget.needs_text_alignment = true;
         this.ctx.request_layout();
     }
 
@@ -345,7 +345,7 @@ impl Widget for Label {
         };
         if available_width != self.last_available_width {
             self.last_available_width = available_width;
-            self.needs_alignment = true;
+            self.needs_text_alignment = true;
         }
 
         let max_advance = if self.line_break_mode == LineBreaking::WordWrap {
@@ -368,10 +368,10 @@ impl Widget for Label {
         if max_advance != self.last_max_advance || styles_changed {
             self.text_layout.break_all_lines(max_advance);
             self.last_max_advance = max_advance;
-            self.needs_alignment = true;
+            self.needs_text_alignment = true;
         }
 
-        let alignment_width = if self.alignment == Alignment::Start {
+        let alignment_width = if self.text_alignment == TextAlign::Start {
             self.text_layout.width()
         } else if let Some(width) = available_width {
             // We use the full available space to calculate text alignment and therefore
@@ -391,13 +391,13 @@ impl Widget for Label {
             // TODO: Warn on the rising edge of entering this state for this widget?
             self.text_layout.width()
         };
-        if self.needs_alignment {
+        if self.needs_text_alignment {
             self.text_layout.align(
                 Some(alignment_width),
-                self.alignment,
-                AlignmentOptions::default(),
+                self.text_alignment,
+                TextAlignOptions::default(),
             );
-            self.needs_alignment = false;
+            self.needs_text_alignment = false;
         }
         let text_size = Size::new(alignment_width.into(), self.text_layout.height().into());
 
@@ -493,7 +493,7 @@ mod tests {
             .with_style(FontFamily::Generic(GenericFamily::Monospace))
             .with_style(StyleProperty::FontSize(20.0))
             .with_line_break_mode(LineBreaking::WordWrap)
-            .with_alignment(Alignment::Middle);
+            .with_text_alignment(TextAlign::Middle);
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), label, Size::new(200.0, 200.0));
@@ -526,20 +526,20 @@ mod tests {
     }
 
     #[test]
-    /// A wrapping label's alignment should be respected, regardless of
-    /// its parent's alignment.
-    fn label_alignment_flex() {
+    /// A wrapping label's text alignment should be respected, regardless of
+    /// its parent's text alignment.
+    fn label_text_alignment_flex() {
         fn base_label() -> Label {
             Label::new("Hello")
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
         }
-        let label1 = base_label().with_alignment(Alignment::Start);
-        let label2 = base_label().with_alignment(Alignment::Middle);
-        let label3 = base_label().with_alignment(Alignment::End);
-        let label4 = base_label().with_alignment(Alignment::Start);
-        let label5 = base_label().with_alignment(Alignment::Middle);
-        let label6 = base_label().with_alignment(Alignment::End);
+        let label1 = base_label().with_text_alignment(TextAlign::Start);
+        let label2 = base_label().with_text_alignment(TextAlign::Middle);
+        let label3 = base_label().with_text_alignment(TextAlign::End);
+        let label4 = base_label().with_text_alignment(TextAlign::Start);
+        let label5 = base_label().with_text_alignment(TextAlign::Middle);
+        let label6 = base_label().with_text_alignment(TextAlign::End);
         let flex = Flex::column()
             .with_flex_child(label1, CrossAxisAlignment::Start)
             .with_flex_child(label2, CrossAxisAlignment::Start)
@@ -599,7 +599,7 @@ mod tests {
                 .with_style(FontFamily::Generic(GenericFamily::Monospace))
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
-                .with_alignment(Alignment::Middle);
+                .with_text_alignment(TextAlign::Middle);
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
@@ -622,7 +622,7 @@ mod tests {
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
                 Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);
-                Label::set_alignment(&mut label, Alignment::Middle);
+                Label::set_text_alignment(&mut label, TextAlign::Middle);
             });
 
             harness.render()

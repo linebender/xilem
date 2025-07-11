@@ -16,12 +16,12 @@ use masonry::core::{
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
-use masonry::parley::layout::{Alignment, AlignmentOptions};
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
 use masonry::smallvec::SmallVec;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
+use masonry::{TextAlign, TextAlignOptions};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use tracing::{Span, trace_span};
 use winit::window::Window;
@@ -143,7 +143,7 @@ impl Widget for CustomWidget {
 
         let mut text_layout = text_layout_builder.build(&self.0);
         text_layout.break_all_lines(None);
-        text_layout.align(None, Alignment::Start, AlignmentOptions::default());
+        text_layout.align(None, TextAlign::Start, TextAlignOptions::default());
 
         // We can pass a transform matrix to rotate the text we render
         masonry::core::render_text(

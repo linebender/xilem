@@ -12,7 +12,7 @@ use vello::peniko::Brush;
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
-use crate::{Color, InsertNewline, MessageResult, Pod, TextAlignment, ViewCtx, ViewId};
+use crate::{Color, InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -31,7 +31,7 @@ where
         on_changed: Box::new(on_changed),
         on_enter: None,
         text_brush: Color::WHITE.into(),
-        alignment: TextAlignment::default(),
+        text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
         properties: Default::default(),
@@ -45,7 +45,7 @@ pub struct TextInput<State, Action> {
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
     text_brush: Brush,
-    alignment: TextAlignment,
+    text_alignment: TextAlign,
     insert_newline: InsertNewline,
     disabled: bool,
     properties: TextInputProps,
@@ -60,9 +60,9 @@ impl<State, Action> TextInput<State, Action> {
         self
     }
 
-    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
-    pub fn alignment(mut self, alignment: TextAlignment) -> Self {
-        self.alignment = alignment;
+    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    pub fn text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.text_alignment = text_alignment;
         self
     }
 
@@ -118,7 +118,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
             .with_brush(self.text_brush.clone())
-            .with_alignment(self.alignment)
+            .with_text_alignment(self.text_alignment)
             .with_insert_newline(self.insert_newline);
         let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with_options(
             text_area.into(),
@@ -166,8 +166,8 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         if prev.text_brush != self.text_brush {
             widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
-        if prev.alignment != self.alignment {
-            widgets::TextArea::set_alignment(&mut text_area, self.alignment);
+        if prev.text_alignment != self.text_alignment {
+            widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);
         }
         if prev.insert_newline != self.insert_newline {
             widgets::TextArea::set_insert_newline(&mut text_area, self.insert_newline);

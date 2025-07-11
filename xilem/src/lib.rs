@@ -130,7 +130,7 @@
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 pub use masonry::kurbo::{Affine, Vec2};
-pub use masonry::parley::Alignment as TextAlignment;
+pub use masonry::parley::Alignment as TextAlign;
 pub use masonry::parley::style::FontWeight;
 pub use masonry::peniko::{Blob, Color, Image, ImageFormat};
 pub use masonry::widgets::{InsertNewline, LineBreaking};

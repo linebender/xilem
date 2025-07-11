@@ -9,14 +9,14 @@ use masonry::widgets::{
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlignment, View, ViewCtx, ViewId};
+use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 
 /// A view which displays selectable text.
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
         content: content.into(),
         text_brush: Color::WHITE.into(),
-        alignment: TextAlignment::default(),
+        text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
         weight: FontWeight::NORMAL,
@@ -26,7 +26,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
 /// A version of [`prose`] suitable for including in the same line
 /// as other content.
 ///
-/// Note that setting [`alignment`](Prose::alignment) on the result
+/// Note that setting [`text_alignment`](Prose::text_alignment) on the result
 /// will be meaningless.
 #[doc(alias = "span")]
 pub fn inline_prose(content: impl Into<ArcStr>) -> Prose {
@@ -39,7 +39,7 @@ pub struct Prose {
     content: ArcStr,
 
     text_brush: Brush,
-    alignment: TextAlignment,
+    text_alignment: TextAlign,
     text_size: f32,
     line_break_mode: LineBreaking,
     weight: FontWeight,
@@ -55,9 +55,9 @@ impl Prose {
         self
     }
 
-    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
-    pub fn alignment(mut self, alignment: TextAlignment) -> Self {
-        self.alignment = alignment;
+    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    pub fn text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.text_alignment = text_alignment;
         self
     }
 
@@ -93,7 +93,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let text_area = widgets::TextArea::new_immutable(&self.content)
             .with_brush(self.text_brush.clone())
-            .with_alignment(self.alignment)
+            .with_text_alignment(self.text_alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
@@ -119,8 +119,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         if prev.text_brush != self.text_brush {
             widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
-        if prev.alignment != self.alignment {
-            widgets::TextArea::set_alignment(&mut text_area, self.alignment);
+        if prev.text_alignment != self.text_alignment {
+            widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);
         }
         if prev.text_size != self.text_size {
             widgets::TextArea::insert_style(

@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::ArcStr;
-use masonry::parley::Alignment as TextAlignment;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
 use vello::peniko::Brush;
@@ -10,7 +9,7 @@ use xilem_core::ViewPathTracker;
 
 use super::{Label, label};
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
@@ -71,9 +70,9 @@ impl VariableLabel {
         self
     }
 
-    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
-    pub fn alignment(mut self, alignment: TextAlignment) -> Self {
-        self.label = self.label.alignment(alignment);
+    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    pub fn text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.label = self.label.text_alignment(text_alignment);
         self
     }
 
