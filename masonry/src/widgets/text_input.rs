@@ -11,8 +11,8 @@ use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::Color;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
@@ -214,8 +214,8 @@ impl Widget for TextInput {
         smallvec![self.text.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Prose", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Prose", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

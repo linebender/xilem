@@ -16,8 +16,8 @@ use std::str::FromStr;
 use masonry::accesskit;
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -282,8 +282,8 @@ impl Widget for CalcButton {
         smallvec![self.inner.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("CalcButton", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("CalcButton", id = id.trace())
     }
 }
 

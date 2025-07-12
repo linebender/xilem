@@ -352,8 +352,8 @@ impl<S: 'static> Widget for ModularWidget<S> {
         self.accepts_text_input
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
-        trace_span!("ModularWidget", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> tracing::Span {
+        trace_span!("ModularWidget", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

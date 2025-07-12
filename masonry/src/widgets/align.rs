@@ -15,8 +15,8 @@ use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
+    Widget, WidgetId, WidgetPod,
 };
 use crate::util::UnitPoint;
 
@@ -154,8 +154,8 @@ impl Widget for Align {
         smallvec![self.child.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Align", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Align", id = id.trace())
     }
 }
 
