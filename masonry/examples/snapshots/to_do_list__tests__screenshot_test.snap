@@ -1,5 +1,5 @@
 ---
-source: masonry_winit/examples/to_do_list.rs
+source: masonry/examples/to_do_list.rs
 assertion_line: 90
 expression: harness.root_widget()
 ---

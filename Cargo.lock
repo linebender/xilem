@@ -2119,6 +2119,7 @@ dependencies = [
  "insta",
  "masonry_core",
  "masonry_testing",
+ "masonry_winit",
  "parley",
  "profiling",
  "smallvec",
@@ -2174,12 +2175,8 @@ name = "masonry_winit"
 version = "0.3.0"
 dependencies = [
  "accesskit_winit",
- "image",
- "masonry",
  "masonry_core",
- "masonry_testing",
  "pollster",
- "profiling",
  "tracing",
  "tracing-tracy",
  "ui-events-winit",
