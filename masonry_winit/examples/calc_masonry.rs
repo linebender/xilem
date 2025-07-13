@@ -29,8 +29,8 @@ use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, SizedBox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::winit::window::Window;
 use tracing::{Span, trace, trace_span};
-use winit::window::Window;
 
 // TODO - Rewrite this example to be simpler,
 // use properties directly and remove the CalcButton widget.

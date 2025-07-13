@@ -15,7 +15,7 @@ use masonry::properties::{BorderColor, BorderWidth};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use winit::window::Window;
+use masonry_winit::winit::window::Window;
 
 struct Driver {
     grid_spacing: f64,

@@ -41,11 +41,11 @@ The to-do-list example looks like this:
 
 ```rust
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::winit::window::Window;
 use masonry::core::{Action, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Flex, Label, Portal, TextInput};
-use winit::window::Window;
 
 struct Driver {
     next_task: String,
