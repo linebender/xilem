@@ -3,14 +3,14 @@
 
 //! Statically typed alternatives to the type-erased [`AnyWidgetView`](`crate::any_view::AnyWidgetView`).
 
-use accesskit::{Node, Role};
+use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
-use smallvec::{SmallVec, smallvec};
+use masonry::smallvec::{SmallVec, smallvec};
 use vello::Scene;
 
 use crate::core::Mut;

@@ -38,8 +38,6 @@ masonry_winit.workspace = true
 winit.workspace = true
 tracing.workspace = true
 vello.workspace = true
-smallvec.workspace = true
-accesskit.workspace = true
 tokio = { version = "1.45.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
 [dev-dependencies]
