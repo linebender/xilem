@@ -121,7 +121,7 @@ impl TimeZone {
             flex_row((
                 inline_prose(self.region),
                 FlexSpacer::Flex(1.),
-                label(format!("UTC{}", self.offset)).brush(
+                label(format!("UTC{}", self.offset)).text_color(
                     if data.local_offset.is_ok_and(|it| it == self.offset) {
                         // TODO: Consider accessibility here.
                         palette::css::ORANGE

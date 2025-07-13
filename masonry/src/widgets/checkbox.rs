@@ -51,6 +51,13 @@ impl Checkbox {
             label: WidgetPod::new(label),
         }
     }
+
+    /// Create a new `Checkbox` with the provided label with a predetermined id.
+    ///
+    /// This constructor is useful for toolkits which use Masonry (such as Xilem).
+    pub fn from_label_pod(checked: bool, label: WidgetPod<Label>) -> Self {
+        Self { checked, label }
+    }
 }
 
 // --- MARK: WIDGETMUT
@@ -316,11 +323,13 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
 
+    use masonry_core::core::Properties;
     use ui_events::keyboard::NamedKey;
 
     use super::*;
     use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
+    use crate::properties::TextColor;
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
 
@@ -366,12 +375,13 @@ mod tests {
     #[test]
     fn edit_checkbox() {
         let image_1 = {
-            let checkbox = Checkbox::from_label(
-                true,
-                Label::new("The quick brown fox jumps over the lazy dog")
-                    .with_brush(ACCENT_COLOR)
-                    .with_style(StyleProperty::FontSize(20.0)),
+            let label = Label::new("The quick brown fox jumps over the lazy dog")
+                .with_style(StyleProperty::FontSize(20.0));
+            let label = WidgetPod::new_with_props(
+                label,
+                Properties::new().with(TextColor::new(ACCENT_COLOR)),
             );
+            let checkbox = Checkbox::from_label_pod(true, label);
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -400,7 +410,7 @@ mod tests {
                 );
 
                 let mut label = Checkbox::label_mut(&mut checkbox);
-                Label::set_brush(&mut label, ACCENT_COLOR);
+                label.insert_prop(TextColor::new(ACCENT_COLOR));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 

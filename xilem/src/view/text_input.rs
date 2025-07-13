@@ -1,9 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{WidgetOptions, WidgetPod};
+use masonry::core::{Properties, WidgetId, WidgetOptions, WidgetPod};
 use masonry::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground,
+    DisabledTextColor, Padding, TextColor,
 };
 use masonry::widgets;
 use vello::kurbo::Affine;
@@ -107,6 +108,9 @@ crate::declare_property_tuple!(
     BoxShadow, 4;
     CornerRadius, 5;
     Padding, 6;
+
+    TextColor, 7;
+    DisabledTextColor, 8;
 );
 
 impl<State, Action> ViewMarker for TextInput<State, Action> {}
@@ -117,15 +121,26 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
-            .with_brush(self.text_brush.clone())
             .with_text_alignment(self.text_alignment)
             .with_insert_newline(self.insert_newline);
-        let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with_options(
-            text_area.into(),
+
+        // TODO - Handle more elegantly
+        let mut props = Properties::new();
+        if let Some(prop) = self.properties.7 {
+            props.insert::<TextColor>(prop);
+        }
+        if let Some(prop) = self.properties.8 {
+            props.insert::<DisabledTextColor>(prop);
+        }
+
+        let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with(
+            Box::new(text_area),
+            WidgetId::next(),
             WidgetOptions {
                 disabled: self.disabled,
                 transform: Affine::default(),
             },
+            props,
         ));
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
@@ -146,6 +161,23 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
+
+        // TODO - Handle more elegantly
+        if self.properties.7 != prev.properties.7 {
+            if let Some(prop) = self.properties.7 {
+                element.insert_prop::<TextColor>(prop);
+            } else {
+                element.remove_prop::<TextColor>();
+            }
+        }
+        if self.properties.8 != prev.properties.8 {
+            if let Some(prop) = self.properties.8 {
+                element.insert_prop::<DisabledTextColor>(prop);
+            } else {
+                element.remove_prop::<DisabledTextColor>();
+            }
+        }
+
         if element.ctx.is_disabled() != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }
@@ -163,9 +195,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             widgets::TextArea::reset_text(&mut text_area, &self.contents);
         }
 
-        if prev.text_brush != self.text_brush {
-            widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
-        }
         if prev.text_alignment != self.text_alignment {
             widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);
         }

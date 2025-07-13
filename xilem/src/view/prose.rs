@@ -1,15 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, StyleProperty};
+use masonry::core::{ArcStr, StyleProperty, WidgetPod};
 use masonry::parley::FontWeight;
+use masonry::properties::{DisabledTextColor, TextColor};
 use masonry::widgets::{
     LineBreaking, {self},
 };
 use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
+use crate::style::Style;
+use crate::{Color, MessageResult, Pod, PropertyTuple as _, TextAlign, View, ViewCtx, ViewId};
 
 /// A view which displays selectable text.
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
@@ -20,6 +22,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
         weight: FontWeight::NORMAL,
+        properties: Default::default(),
     }
 }
 
@@ -43,6 +46,7 @@ pub struct Prose {
     text_size: f32,
     line_break_mode: LineBreaking,
     weight: FontWeight,
+    properties: ProseProps,
     // TODO: disabled: bool,
     // TODO: add more attributes of `masonry::widgets::Prose`
 }
@@ -85,6 +89,22 @@ fn line_break_clips(linebreaking: LineBreaking) -> bool {
     matches!(linebreaking, LineBreaking::Clip | LineBreaking::WordWrap)
 }
 
+impl Style for Prose {
+    type Props = ProseProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    ProseProps;
+    Prose;
+
+    TextColor, 0;
+    DisabledTextColor, 1;
+);
+
 impl ViewMarker for Prose {}
 impl<State, Action> View<State, Action, ViewCtx> for Prose {
     type Element = Pod<widgets::Prose>;
@@ -92,16 +112,19 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let text_area = widgets::TextArea::new_immutable(&self.content)
-            .with_brush(self.text_brush.clone())
             .with_text_alignment(self.text_alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
-        let widget_pod = ctx.create_pod(
-            widgets::Prose::from_text_area(text_area)
+
+        // TODO - Handle more elegantly
+        let text_area = WidgetPod::new_with_props(text_area, self.properties.build_properties());
+
+        let pod = ctx.create_pod(
+            widgets::Prose::from_text_area_pod(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );
-        (widget_pod, ())
+        (pod, ())
     }
 
     fn rebuild(
@@ -113,11 +136,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _: &mut State,
     ) {
         let mut text_area = widgets::Prose::text_mut(&mut element);
+        self.properties
+            .rebuild_properties(&prev.properties, &mut text_area);
         if prev.content != self.content {
             widgets::TextArea::reset_text(&mut text_area, &self.content);
-        }
-        if prev.text_brush != self.text_brush {
-            widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
         if prev.text_alignment != self.text_alignment {
             widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);

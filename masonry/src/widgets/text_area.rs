@@ -1,6 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
@@ -11,7 +12,7 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
-use vello::peniko::{Brush, Fill};
+use vello::peniko::Fill;
 
 use crate::TextAlign;
 use crate::core::keyboard::{Key, KeyState, NamedKey};
@@ -21,6 +22,7 @@ use crate::core::{
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
 use crate::debug_panic;
+use crate::properties::{DisabledTextColor, TextColor};
 use crate::theme::default_text_styles;
 use crate::{palette, theme};
 
@@ -69,17 +71,6 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// width when `word_wrap` is re-enabled.
     last_available_width: Option<f32>,
 
-    /// The brush for drawing this label's text.
-    ///
-    /// Requires a new paint if edited whilst `disabled_brush` is not being used.
-    /// Can be set using [`set_brush`](Self::set_brush).
-    brush: Brush,
-    /// The brush to use whilst this widget is disabled.
-    ///
-    /// When this is `None`, `brush` will be used.
-    /// Requires a new paint if edited whilst this widget is disabled.
-    /// /// Can be set using [`set_disabled_brush`](Self::set_disabled_brush).
-    disabled_brush: Option<Brush>,
     /// Whether to hint whilst drawing the text.
     ///
     /// Should be disabled whilst an animation involving this text is ongoing.
@@ -129,8 +120,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             rendered_generation: Generation::default(),
             word_wrap: true,
             last_available_width: None,
-            brush: theme::TEXT_COLOR.into(),
-            disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
             hint: true,
             insert_newline: InsertNewline::default(),
         }
@@ -154,7 +143,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// support inline rich text.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`set_brush`](Self::set_brush) instead.
+    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
     /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
     /// instead overwrites any previous font stack.
     ///
@@ -199,28 +188,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     // TODO: Document behaviour based on provided minimum constraint?
     pub fn with_text_alignment(mut self, text_alignment: TextAlign) -> Self {
         self.editor.set_alignment(text_alignment);
-        self
-    }
-
-    /// Set the brush used to paint the text in this text area.
-    ///
-    /// In most cases, this will be the text's color, but gradients and images are also supported.
-    ///
-    /// To modify this on an active text area, use [`set_brush`](Self::set_brush).
-    #[doc(alias = "with_color")]
-    pub fn with_brush(mut self, brush: impl Into<Brush>) -> Self {
-        self.brush = brush.into();
-        self
-    }
-
-    /// Set the brush which will be used to paint this text area whilst it is disabled.
-    ///
-    /// If this is `None`, the [normal brush](Self::with_brush) will be used.
-    ///
-    /// To modify this on an active text area, use [`set_disabled_brush`](Self::set_disabled_brush).
-    #[doc(alias = "with_color")]
-    pub fn with_disabled_brush(mut self, disabled_brush: impl Into<Option<Brush>>) -> Self {
-        self.disabled_brush = disabled_brush.into();
         self
     }
 
@@ -293,7 +260,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// support inline rich text.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`set_brush`](Self::set_brush) instead.
+    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
     /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
     /// instead overwrites any previous font stack.
     ///
@@ -397,36 +364,6 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     pub fn set_insert_newline(this: &mut WidgetMut<'_, Self>, insert_newline: InsertNewline) {
         this.widget.insert_newline = insert_newline;
         this.ctx.request_accessibility_update();
-    }
-
-    #[doc(alias = "set_color")]
-    /// Set the brush used to paint the text in this text area.
-    ///
-    /// In most cases, this will be the text's color, but gradients and images are also supported.
-    ///
-    /// The runtime equivalent of [`with_brush`](Self::with_brush).
-    pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
-        let brush = brush.into();
-        this.widget.brush = brush;
-
-        // We need to repaint unless the disabled brush is currently being used.
-        if this.widget.disabled_brush.is_none() || !this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
-        }
-    }
-
-    /// Set the brush used to paint this text area whilst it is disabled.
-    ///
-    /// If this is `None`, the [normal brush](Self::set_brush) will be used.
-    ///
-    /// The runtime equivalent of [`with_disabled_brush`](Self::with_disabled_brush).
-    pub fn set_disabled_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
-        let brush = brush.into();
-        this.widget.disabled_brush = brush;
-
-        if this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
-        }
     }
 
     /// Set whether [hinting](https://en.wikipedia.org/wiki/Font_hinting) will be used for this text area.
@@ -809,6 +746,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        TextColor::prop_changed(ctx, property_type);
+        DisabledTextColor::prop_changed(ctx, property_type);
+    }
+
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::FocusChanged(_) => {
@@ -862,7 +804,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         bc.constrain(area_size)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let layout = if let Some(layout) = self.editor.try_layout() {
             layout
         } else {
@@ -896,14 +838,19 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             };
         }
 
-        let brush = if ctx.is_disabled() {
-            self.disabled_brush
-                .clone()
-                .unwrap_or_else(|| self.brush.clone())
+        let text_color = if ctx.is_disabled() {
+            &props.get::<DisabledTextColor>().0
         } else {
-            self.brush.clone()
+            props.get::<TextColor>()
         };
-        render_text(scene, Affine::IDENTITY, layout, &[brush], self.hint);
+
+        render_text(
+            scene,
+            Affine::IDENTITY,
+            layout,
+            &[text_color.color.into()],
+            self.hint,
+        );
     }
 
     fn get_cursor(&self, _ctx: &QueryCtx<'_>, _pos: Point) -> CursorIcon {
@@ -974,6 +921,8 @@ pub enum InsertNewline {
 
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::Properties;
+    use masonry_testing::WrapperWidget;
     use vello::kurbo::Size;
 
     use super::*;
@@ -1030,7 +979,8 @@ mod tests {
     #[test]
     fn edit_textarea() {
         let base_target = {
-            let area = TextArea::new_immutable("Test string").with_brush(palette::css::AZURE);
+            let area = TextArea::new_immutable("Test string")
+                .with_props(Properties::new().with(TextColor::new(palette::css::AZURE)));
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
@@ -1039,13 +989,16 @@ mod tests {
         };
 
         {
-            let area = TextArea::new_immutable("Different string").with_brush(palette::css::AZURE);
+            let area = TextArea::new_immutable("Different string")
+                .with_props(Properties::new().with(TextColor::new(palette::css::AZURE)));
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
 
             harness.edit_root_widget(|mut root| {
-                let mut area = root.downcast::<TextArea<false>>();
+                let mut root = root.downcast::<WrapperWidget>();
+                let mut area = WrapperWidget::child_mut(&mut root);
+                let mut area = area.downcast::<TextArea<false>>();
                 TextArea::reset_text(&mut area, "Test string");
             });
 
@@ -1058,8 +1011,10 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut root| {
-                let mut area = root.downcast::<TextArea<false>>();
-                TextArea::set_brush(&mut area, palette::css::BROWN);
+                let mut root = root.downcast::<WrapperWidget>();
+                let mut area = WrapperWidget::child_mut(&mut root);
+                let mut area = area.downcast::<TextArea<false>>();
+                area.insert_prop(TextColor::new(palette::css::BROWN));
             });
 
             let with_updated_brush = harness.render();
