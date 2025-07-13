@@ -33,7 +33,6 @@ This means you should add some dependencies to your project:
 ```sh
 cargo add masonry
 cargo add masonry_winit
-cargo add winit
 ```
 
 
