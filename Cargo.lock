@@ -2182,6 +2182,7 @@ dependencies = [
  "image",
  "masonry",
  "masonry_core",
+ "masonry_testing",
  "pollster",
  "profiling",
  "tracing",

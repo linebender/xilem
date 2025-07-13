@@ -220,9 +220,8 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
     use masonry::theme::default_property_set;
+    use masonry_testing::{TestHarness, assert_render_snapshot};
 
     use super::*;
 

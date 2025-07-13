@@ -101,8 +101,7 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
+    use masonry_testing::{TestHarness, assert_render_snapshot};
 
     use super::*;
 
