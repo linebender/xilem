@@ -4,10 +4,6 @@
 
 Simplest possible Masonry app.
 
-## `two_text_inputs`
-
-Example used to test text input and text focus.
-
 
 ## `calc_masonry`
 
