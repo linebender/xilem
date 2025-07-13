@@ -4,7 +4,7 @@
 //! Traits and types of the Masonry toolkit.
 //! See [Masonry's documentation] for more details, examples and resources.
 //!
-//! [Masonry's documentation]: https://docs.rs/masonry_winit/latest/
+//! [Masonry's documentation]: https://docs.rs/masonry/latest/
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/

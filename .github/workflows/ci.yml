@@ -108,6 +108,9 @@ jobs:
       - name: Run cargo rdme (masonry)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry
 
+      - name: Run cargo rdme (masonry_core)
+        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_core
+
       - name: Run cargo rdme (masonry_winit)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_winit
     
