@@ -14,6 +14,8 @@ all-features = true
 # There are no platform specific docs.
 default-target = "x86_64-unknown-linux-gnu"
 targets = []
+# rustdoc-scrape-examples tracking issue https://github.com/rust-lang/rust/issues/88791
+cargo-args = ["-Zunstable-options", "-Zrustdoc-scrape-examples"]
 
 [features]
 default = []
@@ -38,9 +40,16 @@ float-cmp = { version = "0.10.0", features = ["std"], default-features = false }
 image = { workspace = true, features = ["png"] }
 insta = { version = "1.43.1" }
 masonry_testing = { workspace = true }
+masonry_winit = { workspace = true }
 
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.16", features = ["profile-with-tracing"] }
 
 [lints]
 workspace = true
+
+[[example]]
+name = "calc_masonry"
+# This actually enables scraping for all examples, not just this one.
+# However it is possible to set doc-scrape-examples to false for other specific examples.
+doc-scrape-examples = true

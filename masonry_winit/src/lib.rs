@@ -126,13 +126,6 @@
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![cfg_attr(
-    test,
-    expect(
-        unused_crate_dependencies,
-        reason = "False-positive with dev-dependencies only used in examples"
-    )
-)]
 #![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 
