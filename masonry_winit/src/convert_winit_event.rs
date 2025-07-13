@@ -1,10 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// Most of this file is copy-pasted directly from
-// https://github.com/DioxusLabs/blitz/blob/main/packages/blitz-shell/src/convert_events.rs
-// Should be removed once https://github.com/rust-windowing/winit/pull/4026 is merged.
-
 use masonry_core::core::{Ime, ResizeDirection};
 use winit::event::Ime as WinitIme;
 use winit::window::ResizeDirection as WinitResizeDirection;
