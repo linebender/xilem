@@ -165,7 +165,7 @@ The last step is to create our Winit window and start our main loop.
 
 ```rust,ignore
     use masonry::dpi::LogicalSize;
-    use winit::window::Window;
+    use masonry_winit::winit::window::Window;
 
     let window_attributes = Window::default_attributes()
         .with_title("To-do list")
@@ -230,7 +230,7 @@ fn main() {
     };
 
     use masonry::dpi::LogicalSize;
-    use winit::window::Window;
+    use masonry_winit::winit::window::Window;
 
     let window_attributes = Window::default_attributes()
         .with_title("To-do list")

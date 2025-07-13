@@ -14,7 +14,7 @@ use masonry::peniko::{Image as ImageBuf, ImageFormat};
 use masonry::theme::default_property_set;
 use masonry::widgets::Image;
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use winit::window::Window;
+use masonry_winit::winit::window::Window;
 
 struct Driver;
 

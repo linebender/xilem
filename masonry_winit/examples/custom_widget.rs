@@ -23,8 +23,8 @@ use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::{TextAlign, TextAlignOptions};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::winit::window::Window;
 use tracing::{Span, trace_span};
-use winit::window::Window;
 
 struct Driver;
 

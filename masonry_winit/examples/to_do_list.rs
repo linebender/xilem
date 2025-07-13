@@ -13,7 +13,7 @@ use masonry::properties::Padding;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Flex, Label, Portal, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use winit::window::Window;
+use masonry_winit::winit::window::Window;
 
 const WIDGET_SPACING: f64 = 5.0;
 
