@@ -129,6 +129,7 @@
 // https://github.com/rust-lang/rust/pull/130025
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
+pub use masonry;
 pub use masonry::kurbo::{Affine, Vec2};
 pub use masonry::parley::Alignment as TextAlign;
 pub use masonry::parley::style::FontWeight;
