@@ -603,8 +603,8 @@ where
         smallvec![self.child1.id(), self.child2.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Split", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Split", id = id.trace())
     }
 }
 

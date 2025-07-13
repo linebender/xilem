@@ -22,8 +22,7 @@ use xilem::view::{
     ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{
-    EventLoop, EventLoopBuilder, LineBreaking, TextAlignment, WidgetView, WindowOptions, Xilem,
-    palette,
+    EventLoop, EventLoopBuilder, LineBreaking, TextAlign, WidgetView, WindowOptions, Xilem, palette,
 };
 use xilem_core::one_of::Either;
 
@@ -100,7 +99,7 @@ impl VirtualCats {
                 sized_box(
                     prose("Copyright ©️ https://http.cat")
                         .line_break_mode(LineBreaking::Clip)
-                        .alignment(TextAlignment::End),
+                        .text_alignment(TextAlign::End),
                 )
                 .padding(4.)
                 .corner_radius(4.)

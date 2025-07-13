@@ -109,6 +109,22 @@ impl BoxConstraints {
         self.max.height.is_finite()
     }
 
+    /// Return the max in each axis if bounded, else the value given in `size`.
+    pub fn bounded_or(&self, size: Size) -> Size {
+        Size {
+            width: if self.is_width_bounded() {
+                self.max.width
+            } else {
+                size.width
+            },
+            height: if self.is_height_bounded() {
+                self.max.height
+            } else {
+                size.height
+            },
+        }
+    }
+
     /// Check to see if these constraints are legit.
     ///
     /// In Debug mode, logs a warning if `BoxConstraints` are invalid.

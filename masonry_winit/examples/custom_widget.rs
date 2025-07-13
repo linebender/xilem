@@ -11,19 +11,20 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
-use masonry::parley::layout::{Alignment, AlignmentOptions};
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
 use masonry::smallvec::SmallVec;
+use masonry::theme::default_property_set;
 use masonry::vello::Scene;
+use masonry::{TextAlign, TextAlignOptions};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::winit::window::Window;
 use tracing::{Span, trace_span};
-use winit::window::Window;
 
 struct Driver;
 
@@ -142,7 +143,7 @@ impl Widget for CustomWidget {
 
         let mut text_layout = text_layout_builder.build(&self.0);
         text_layout.break_all_lines(None);
-        text_layout.align(None, Alignment::Start, AlignmentOptions::default());
+        text_layout.align(None, TextAlign::Start, TextAlignOptions::default());
 
         // We can pass a transform matrix to rotate the text we render
         masonry::core::render_text(
@@ -180,8 +181,8 @@ impl Widget for CustomWidget {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("CustomWidget", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("CustomWidget", id = id.trace())
     }
 }
 
@@ -197,6 +198,7 @@ fn main() {
             WidgetPod::new(CustomWidget(my_string)).erased(),
         )],
         Driver,
+        default_property_set(),
     )
     .unwrap();
 }
@@ -218,9 +220,8 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
     use masonry::theme::default_property_set;
+    use masonry_testing::{TestHarness, assert_render_snapshot};
 
     use super::*;
 

@@ -3,18 +3,18 @@
 
 use std::any::TypeId;
 
-use accesskit::{Node, Role};
-use cursor_icon::CursorIcon;
-use smallvec::SmallVec;
 use tracing::trace_span;
-use vello::Scene;
-use vello::kurbo::{Point, Size};
 
+use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
 };
+use masonry_core::cursor_icon::CursorIcon;
+use masonry_core::kurbo::{Point, Size};
+use masonry_core::smallvec::SmallVec;
+use masonry_core::vello::Scene;
 
 pub type PointerEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &PointerEvent);
@@ -352,8 +352,8 @@ impl<S: 'static> Widget for ModularWidget<S> {
         self.accepts_text_input
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> tracing::Span {
-        trace_span!("ModularWidget", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> tracing::Span {
+        trace_span!("ModularWidget", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

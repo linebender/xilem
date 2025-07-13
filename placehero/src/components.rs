@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use megalodon::entities::Status;
-use xilem::FontWeight;
 use xilem::view::{
     CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex,
     flex_row, inline_prose, label, prose,
 };
+use xilem::{FontWeight, TextAlign};
 
 use crate::{Avatars, Placehero, status_html_to_plaintext};
 
@@ -18,7 +18,7 @@ pub(crate) use thread::thread;
 
 /// Renders the key parts of a Status, in a shared way.
 ///
-/// This is the shared funcitionality between a timeline and the list of views.
+/// This is the shared functionality between a timeline and the list of views.
 // TODO: Determine our UX for boosting/reblogging.
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
@@ -35,19 +35,19 @@ fn base_status(avatars: &mut Avatars, status: &Status) -> impl FlexSequence<Plac
             flex((
                 inline_prose(status.account.display_name.as_str())
                     .weight(FontWeight::SEMI_BOLD)
-                    .alignment(xilem::TextAlignment::Start)
+                    .text_alignment(TextAlign::Start)
                     .text_size(20.)
                     .flex(CrossAxisAlignment::Start),
                 inline_prose(status.account.username.as_str())
                     .weight(FontWeight::SEMI_LIGHT)
-                    .alignment(xilem::TextAlignment::Start)
+                    .text_alignment(TextAlign::Start)
                     .flex(CrossAxisAlignment::Start),
             ))
             .main_axis_alignment(MainAxisAlignment::Start)
             .gap(1.),
             FlexSpacer::Flex(1.0),
             inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
-                .alignment(xilem::TextAlignment::End),
+                .text_alignment(TextAlign::End),
         ))
         .must_fill_major_axis(true),
         prose(status_html_to_plaintext(status.content.as_str())),

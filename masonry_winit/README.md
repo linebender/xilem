@@ -41,10 +41,11 @@ The to-do-list example looks like this:
 
 ```rust
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::winit::window::Window;
 use masonry::core::{Action, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
+use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Flex, Label, Portal, TextInput};
-use winit::window::Window;
 
 struct Driver {
     next_task: String,
@@ -108,12 +109,13 @@ fn main() {
             WidgetPod::new(main_widget).erased(),
         )],
         driver,
+        default_property_set(),
     )
     .unwrap();
 }
 ```
 
-For more information, see [the documentation module](masonry::doc).
+For more information, see [the Masonry documentation][Masonry].
 
 ### Crate feature flags
 
@@ -130,6 +132,7 @@ Masonry apps currently ship with two debugging features built in:
 
 [winit]: https://crates.io/crates/winit
 [Druid]: https://crates.io/crates/druid
+[Masonry]: https://docs.rs/masonry
 [Xilem]: https://crates.io/crates/xilem
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
 

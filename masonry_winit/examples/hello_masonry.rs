@@ -10,9 +10,10 @@
 use masonry::core::{Action, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
+use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Flex, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use winit::window::Window;
+use masonry_winit::winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
 
@@ -72,6 +73,7 @@ fn main() {
             WidgetPod::new(main_widget).erased(),
         )],
         driver,
+        default_property_set(),
     )
     .unwrap();
 }

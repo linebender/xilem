@@ -5,16 +5,17 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
+use masonry::TextAlign;
 use masonry::core::{
     Action, PointerButton, Properties, StyleProperty, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
-use masonry::parley::layout::Alignment;
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
+use masonry::theme::default_property_set;
 use masonry::widgets::{Button, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-use winit::window::Window;
+use masonry_winit::winit::window::Window;
 
 struct Driver {
     grid_spacing: f64,
@@ -57,7 +58,7 @@ fn make_grid(grid_spacing: f64) -> Grid {
     let label = Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
-            .with_alignment(Alignment::Middle),
+            .with_text_alignment(TextAlign::Middle),
     );
     let label = SizedBox::new(label);
 
@@ -149,6 +150,7 @@ fn main() {
             WidgetPod::new(main_widget).erased(),
         )],
         driver,
+        default_property_set(),
     )
     .unwrap();
 }
@@ -156,9 +158,8 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::TestHarness;
     use masonry::theme::default_property_set;
+    use masonry_testing::{TestHarness, assert_render_snapshot};
 
     use super::*;
 

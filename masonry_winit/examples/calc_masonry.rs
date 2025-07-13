@@ -16,8 +16,8 @@ use std::str::FromStr;
 use masonry::accesskit;
 use masonry::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -29,8 +29,8 @@ use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, SizedBox};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::winit::window::Window;
 use tracing::{Span, trace, trace_span};
-use winit::window::Window;
 
 // TODO - Rewrite this example to be simpler,
 // use properties directly and remove the CalcButton widget.
@@ -282,8 +282,8 @@ impl Widget for CalcButton {
         smallvec![self.inner.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("CalcButton", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("CalcButton", id = id.trace())
     }
 }
 
@@ -473,8 +473,7 @@ fn main() {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry::assert_render_snapshot;
-    use masonry::testing::{TestHarness, TestHarnessParams};
+    use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
 
     use super::*;
 

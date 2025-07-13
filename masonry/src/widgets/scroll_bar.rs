@@ -9,8 +9,8 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut,
 };
 use crate::theme;
 use crate::util::{fill_color, stroke};
@@ -252,8 +252,8 @@ impl Widget for ScrollBar {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("ScrollBar", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("ScrollBar", id = id.trace())
     }
 }
 

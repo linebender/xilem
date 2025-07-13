@@ -318,12 +318,8 @@ pub trait Widget: AsDynWidget + Any {
     /// As methods recurse through the widget tree, trace spans are added for each child
     /// widget visited, and popped when control flow goes back to the parent. This method
     /// returns a static span (that you can use to filter traces and logs).
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!(
-            "Widget",
-            r#type = self.short_type_name(),
-            id = ctx.widget_id().trace()
-        )
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Widget", r#type = self.short_type_name(), id = id.trace())
     }
 
     /// Return a small string representing important info about this widget instance.

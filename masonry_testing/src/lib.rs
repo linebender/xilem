@@ -15,12 +15,11 @@ mod screenshots;
 mod wrapper_widget;
 
 pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};
-use masonry_core::core::{Properties, WidgetOptions};
 pub use modular_widget::ModularWidget;
 pub use recorder_widget::{Record, Recorder, Recording};
 pub use wrapper_widget::WrapperWidget;
 
-use masonry_core::core::{Widget, WidgetId, WidgetPod};
+use masonry_core::core::{Properties, Widget, WidgetId, WidgetOptions, WidgetPod};
 
 // TODO - Split off into separate file
 

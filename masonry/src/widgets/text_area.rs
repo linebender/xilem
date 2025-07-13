@@ -7,13 +7,13 @@ use accesskit::{Node, NodeId, Role};
 use cursor_icon::CursorIcon;
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
-use parley::layout::Alignment;
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::{Brush, Fill};
 
+use crate::TextAlign;
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, Action, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
@@ -44,7 +44,7 @@ use crate::{palette, theme};
 /// - `TextChanged`, which is sent whenever the text is changed
 ///
 /// The exact semantics of how much horizontal space this widget takes up has not been determined.
-/// In particular, this has consequences when the alignment is set.
+/// In particular, this has consequences when the text alignment is set.
 // TODO: RichTextInput 👀
 // TODO: Support for links - https://github.com/linebender/xilem/issues/360
 pub struct TextArea<const USER_EDITABLE: bool> {
@@ -191,14 +191,14 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self
     }
 
-    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     ///
     /// Text alignment might have unexpected results when the text area has no horizontal constraints.
     ///
-    /// To modify this on an active text area, use [`set_alignment`](Self::set_alignment).
+    /// To modify this on an active text area, use [`set_text_alignment`](Self::set_text_alignment).
     // TODO: Document behaviour based on provided minimum constraint?
-    pub fn with_alignment(mut self, alignment: Alignment) -> Self {
-        self.editor.set_alignment(alignment);
+    pub fn with_text_alignment(mut self, text_alignment: TextAlign) -> Self {
+        self.editor.set_alignment(text_alignment);
         self
     }
 
@@ -382,13 +382,13 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         this.ctx.request_layout();
     }
 
-    /// Set the [alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
+    /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     ///
     /// Text alignment might have unexpected results when the text area has no horizontal constraints.
     ///
-    /// The runtime equivalent of [`with_alignment`](Self::with_alignment).
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: Alignment) {
-        this.widget.editor.set_alignment(alignment);
+    /// The runtime equivalent of [`with_text_alignment`](Self::with_text_alignment).
+    pub fn set_text_alignment(this: &mut WidgetMut<'_, Self>, text_alignment: TextAlign) {
+        this.widget.editor.set_alignment(text_alignment);
 
         this.ctx.request_layout();
     }
@@ -945,8 +945,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         SmallVec::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("TextArea", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("TextArea", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {

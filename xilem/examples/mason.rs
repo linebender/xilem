@@ -17,8 +17,8 @@ use xilem::view::{
     flex_row, label, prose, task, text_input,
 };
 use xilem::{
-    EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlignment, WidgetView,
-    WindowOptions, Xilem, palette,
+    EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView, WindowOptions,
+    Xilem, palette,
 };
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -84,7 +84,9 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
             )
             // Manually adding a direction is equivalent to using flex_row
             .direction(Axis::Horizontal),
-            prose(LOREM).alignment(TextAlignment::Middle).text_size(18.),
+            prose(LOREM)
+                .text_alignment(TextAlign::Middle)
+                .text_size(18.),
             button_any_pointer(button_label, |data: &mut AppData, button| match button {
                 None => {
                     // Usually this is a touch.

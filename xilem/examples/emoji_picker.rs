@@ -9,7 +9,9 @@ use xilem::style::Style as _;
 use xilem::view::{
     Axis, FlexExt, FlexSpacer, GridExt, button, flex, flex_row, grid, label, prose, sized_box,
 };
-use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
+use xilem::{
+    Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
+};
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     flex((
@@ -61,17 +63,15 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
                     },
                 ))
                 .expand_width(),
-                sized_box(
-                    prose(emoji.name)
-                        .alignment(xilem::TextAlignment::Middle)
-                        .brush(if data.last_selected.is_some_and(|it| it == idx) {
-                            // TODO: Ensure this selection indicator color is accessible
-                            // TODO: Expose selected state to accessibility tree
-                            palette::css::BLUE
-                        } else {
-                            Color::WHITE
-                        }),
-                )
+                sized_box(prose(emoji.name).text_alignment(TextAlign::Middle).brush(
+                    if data.last_selected.is_some_and(|it| it == idx) {
+                        // TODO: Ensure this selection indicator color is accessible
+                        // TODO: Expose selected state to accessibility tree
+                        palette::css::BLUE
+                    } else {
+                        Color::WHITE
+                    },
+                ))
                 .expand_width(),
             ))
             .must_fill_major_axis(true);

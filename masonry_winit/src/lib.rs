@@ -18,10 +18,11 @@
 //!
 //! ```rust
 //! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+//! use masonry_winit::winit::window::Window;
 //! use masonry::core::{Action, Widget, WidgetId, WidgetPod};
 //! use masonry::dpi::LogicalSize;
+//! use masonry::theme::default_property_set;
 //! use masonry::widgets::{Button, Flex, Label, Portal, TextInput};
-//! use winit::window::Window;
 //!
 //! struct Driver {
 //!     next_task: String,
@@ -86,12 +87,13 @@
 //!             WidgetPod::new(main_widget).erased(),
 //!         )],
 //!         driver,
+//!         default_property_set(),
 //!     )
 //!     .unwrap();
 //! }
 //! ```
 //!
-//! For more information, see [the documentation module](masonry::doc).
+//! For more information, see [the Masonry documentation][Masonry].
 //!
 //! ### Crate feature flags
 //!
@@ -108,6 +110,7 @@
 //!
 //! [winit]: https://crates.io/crates/winit
 //! [Druid]: https://crates.io/crates/druid
+//! [Masonry]: https://docs.rs/masonry
 //! [Xilem]: https://crates.io/crates/xilem
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
 // TODO: Add screenshot. This can't use include_screenshot as that doesn't work with cargo-rdme
@@ -138,6 +141,8 @@
 mod app_driver;
 mod convert_winit_event;
 mod event_loop_runner;
+
+pub use winit;
 
 /// Types needed for running a Masonry app.
 pub mod app {

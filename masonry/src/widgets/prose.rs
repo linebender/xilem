@@ -9,8 +9,8 @@ use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::widgets::TextArea;
 
@@ -90,7 +90,7 @@ impl Prose {
     /// If this is set to true, it is recommended, but not required, that this
     /// wraps a text area with [word wrapping](TextArea::set_word_wrap) enabled.
     ///
-    /// The runtime requivalent of [`with_clip`](Self::with_clip).
+    /// The runtime equivalent of [`with_clip`](Self::with_clip).
     pub fn set_clip(this: &mut WidgetMut<'_, Self>, clip: bool) {
         this.widget.clip = clip;
         this.ctx.request_layout();
@@ -172,8 +172,8 @@ impl Widget for Prose {
         smallvec![self.text.id()]
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Prose", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, id: WidgetId) -> Span {
+        trace_span!("Prose", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {
@@ -185,18 +185,18 @@ impl Widget for Prose {
 #[cfg(test)]
 mod tests {
     use parley::StyleProperty;
-    use parley::layout::Alignment;
     use vello::kurbo::Size;
 
     use super::*;
+    use crate::TextAlign;
     use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
     use crate::theme::default_property_set;
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox, TextArea};
 
     #[test]
-    /// A wrapping prose's alignment should be respected, regardless of
-    /// its parent's alignment.
+    /// A wrapping prose's text alignment should be respected, regardless of
+    /// its parent's text alignment.
     fn prose_clipping() {
         let prose = Prose::from_text_area(
             TextArea::new_immutable("Truncated text - you should not see this")
@@ -220,21 +220,21 @@ mod tests {
     /// A wrapping prose's alignment should be respected, regardless of
     /// its parent's alignment.
     fn prose_alignment_flex() {
-        fn base_prose(alignment: Alignment) -> Prose {
+        fn base_prose(text_alignment: TextAlign) -> Prose {
             // Trailing whitespace is displayed when laying out prose.
             Prose::from_text_area(
                 TextArea::new_immutable("Hello  ")
                     .with_style(StyleProperty::FontSize(14.0))
-                    .with_alignment(alignment)
+                    .with_text_alignment(text_alignment)
                     .with_word_wrap(true),
             )
         }
-        let prose1 = base_prose(Alignment::Start);
-        let prose2 = base_prose(Alignment::Middle);
-        let prose3 = base_prose(Alignment::End);
-        let prose4 = base_prose(Alignment::Start);
-        let prose5 = base_prose(Alignment::Middle);
-        let prose6 = base_prose(Alignment::End);
+        let prose1 = base_prose(TextAlign::Start);
+        let prose2 = base_prose(TextAlign::Middle);
+        let prose3 = base_prose(TextAlign::End);
+        let prose4 = base_prose(TextAlign::Start);
+        let prose5 = base_prose(TextAlign::Middle);
+        let prose6 = base_prose(TextAlign::End);
         let flex = Flex::column()
             .with_flex_child(prose1, CrossAxisAlignment::Start)
             .with_flex_child(prose2, CrossAxisAlignment::Start)
