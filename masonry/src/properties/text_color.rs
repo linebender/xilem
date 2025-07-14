@@ -8,8 +8,8 @@ use crate::peniko::color::{AlphaColor, Srgb};
 
 /// The color of a widget's text and text decorations.
 ///
-/// **IMPORTANT:** This property is only defined for Label and TextArea, *not*
-/// for widgets embedding them such as Button, Checkbox, TextEdit, Prose, etc.
+/// **IMPORTANT:** This property is only defined for `Label` and `TextArea`, *not*
+/// for widgets embedding them such as `Button`, `Checkbox`, `TextEdit`, `Prose`, etc.
 #[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TextColor {

@@ -66,7 +66,8 @@ impl VariableLabel {
 
     /// Set the color used to paint the text.
     pub fn color(mut self, color: Color) -> Self {
-        // TODO - Rewrite more elegantly
+        // TODO - Replace this with properties on the VariableLabel view
+        // once we implement property inheritance or something like it.
         self.label = self.label.text_color(color);
         self
     }

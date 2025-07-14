@@ -8,12 +8,12 @@ use masonry::properties::{
 };
 use masonry::widgets;
 use vello::kurbo::Affine;
-use vello::peniko::Brush;
+use vello::peniko::Color;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
-use crate::{Color, InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, ViewId};
+use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -31,7 +31,8 @@ where
         contents,
         on_changed: Box::new(on_changed),
         on_enter: None,
-        text_brush: Color::WHITE.into(),
+        text_color: None,
+        disabled_text_color: None,
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
@@ -45,7 +46,8 @@ pub struct TextInput<State, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
-    text_brush: Brush,
+    text_color: Option<Color>,
+    disabled_text_color: Option<Color>,
     text_alignment: TextAlign,
     insert_newline: InsertNewline,
     disabled: bool,
@@ -54,10 +56,19 @@ pub struct TextInput<State, Action> {
 }
 
 impl<State, Action> TextInput<State, Action> {
-    /// Set the brush used to paint the text.
-    #[doc(alias = "color")]
-    pub fn brush(mut self, color: impl Into<Brush>) -> Self {
-        self.text_brush = color.into();
+    /// Set the text's color.
+    ///
+    /// This overwrites the default `TextColor` property for the inner `TextArea` widget.
+    pub fn text_color(mut self, color: Color) -> Self {
+        self.text_color = Some(color);
+        self
+    }
+
+    /// Set the text's color when the text input is disabled.
+    ///
+    /// This overwrites the default `DisabledTextColor` property for the inner `TextArea` widget.
+    pub fn disabled_text_color(mut self, color: Color) -> Self {
+        self.disabled_text_color = Some(color);
         self
     }
 
@@ -108,9 +119,6 @@ crate::declare_property_tuple!(
     BoxShadow, 4;
     CornerRadius, 5;
     Padding, 6;
-
-    TextColor, 7;
-    DisabledTextColor, 8;
 );
 
 impl<State, Action> ViewMarker for TextInput<State, Action> {}
@@ -124,13 +132,14 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             .with_text_alignment(self.text_alignment)
             .with_insert_newline(self.insert_newline);
 
-        // TODO - Handle more elegantly
+        // TODO - Replace this with properties on the TextInput view
+        // once we implement property inheritance or something like it.
         let mut props = Properties::new();
-        if let Some(prop) = self.properties.7 {
-            props.insert::<TextColor>(prop);
+        if let Some(color) = self.text_color {
+            props.insert(TextColor { color });
         }
-        if let Some(prop) = self.properties.8 {
-            props.insert::<DisabledTextColor>(prop);
+        if let Some(color) = self.disabled_text_color {
+            props.insert(DisabledTextColor(TextColor { color }));
         }
 
         let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with(
@@ -162,17 +171,17 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
 
-        // TODO - Handle more elegantly
-        if self.properties.7 != prev.properties.7 {
-            if let Some(prop) = self.properties.7 {
-                element.insert_prop::<TextColor>(prop);
+        // TODO - Replace this with properties on the TextInput view
+        if self.text_color != prev.text_color {
+            if let Some(color) = self.text_color {
+                element.insert_prop(TextColor { color });
             } else {
                 element.remove_prop::<TextColor>();
             }
         }
-        if self.properties.8 != prev.properties.8 {
-            if let Some(prop) = self.properties.8 {
-                element.insert_prop::<DisabledTextColor>(prop);
+        if self.disabled_text_color != prev.disabled_text_color {
+            if let Some(color) = self.disabled_text_color {
+                element.insert_prop(DisabledTextColor(TextColor { color }));
             } else {
                 element.remove_prop::<DisabledTextColor>();
             }

@@ -42,7 +42,7 @@ pub trait Style: Sized {
         self
     }
 
-    /// Set the element's text color.
+    /// Set the element's text color when disabled.
     fn disabled_text_color(mut self, color: Color) -> Self
     where
         Self: HasProperty<DisabledTextColor>,
