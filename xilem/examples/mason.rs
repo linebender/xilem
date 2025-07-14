@@ -29,6 +29,9 @@ Phasellus in viverra dolor, vitae facilisis est. Maecenas malesuada massa vel ul
 struct SomeContext(u32);
 impl Resource for SomeContext {}
 
+/// A test for using resources.
+///
+/// Requires the `SomeContext` resource to be [provided](provides).
 fn env_using() -> impl WidgetView<AppData> + use<> {
     with_context(|context: &mut SomeContext, _: &mut AppData| {
         button(format!("Context: {}", context.0), |_: &mut AppData| {
