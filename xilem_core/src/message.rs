@@ -145,11 +145,24 @@ impl SendMessage {
 /// Types which can be used in [`DynMessage`] (and so can be the messages for Xilem views).
 ///
 /// The `Debug` requirement allows inspecting messages which were sent to the wrong place.
+// TODO: Rename to `AnyDebug`.
 pub trait AnyMessage: Any + Debug {}
 impl<T> AnyMessage for T where T: Any + Debug {}
 
 impl dyn AnyMessage {
-    /// Access the actual type of this [`DynMessage`].
+    /// Returns some reference to the inner value if it is of type `T`, or
+    /// `None` if it isn't.
+    pub fn downcast_ref<T: AnyMessage>(&self) -> Option<&T> {
+        (self as &dyn Any).downcast_ref::<T>()
+    }
+
+    /// Returns some reference to the inner value if it is of type `T`, or
+    /// `None` if it isn't.
+    pub fn downcast_mut<T: AnyMessage>(&mut self) -> Option<&mut T> {
+        (self as &mut dyn Any).downcast_mut::<T>()
+    }
+
+    /// Access the actual type of this [`AnyMessage`].
     ///
     /// ## Errors
     ///
@@ -171,7 +184,19 @@ impl dyn AnyMessage {
 }
 
 impl dyn AnyMessage + Send {
-    /// Access the actual type of this [`DynMessage`].
+    /// Returns some reference to the inner value if it is of type `T`, or
+    /// `None` if it isn't.
+    pub fn downcast_ref<T: AnyMessage>(&self) -> Option<&T> {
+        (self as &dyn Any).downcast_ref::<T>()
+    }
+
+    /// Returns some reference to the inner value if it is of type `T`, or
+    /// `None` if it isn't.
+    pub fn downcast_mut<T: AnyMessage>(&mut self) -> Option<&mut T> {
+        (self as &mut dyn Any).downcast_mut::<T>()
+    }
+
+    /// Access the actual type of this [`AnyMessage`].
     ///
     /// ## Errors
     ///

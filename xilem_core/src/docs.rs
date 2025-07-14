@@ -42,6 +42,9 @@ use crate::{NoElement, View, ViewPathTracker, ViewSequence, run_once};
 pub enum Fake {}
 
 impl ViewPathTracker for Fake {
+    fn environment(&mut self) -> &mut crate::environment::Environment {
+        match *self {}
+    }
     fn push_id(&mut self, _: crate::ViewId) {
         match *self {}
     }

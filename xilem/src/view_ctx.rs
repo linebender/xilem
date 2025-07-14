@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut};
+use xilem_core::environment::Environment;
 
 use crate::Pod;
 use crate::core::{AsyncCtx, RawProxy, ViewId, ViewPathTracker};
@@ -19,6 +20,7 @@ pub struct ViewCtx {
     proxy: Arc<dyn RawProxy>,
     runtime: Arc<tokio::runtime::Runtime>,
     state_changed: bool,
+    environment: Environment,
 }
 
 impl ViewPathTracker for ViewCtx {
@@ -33,6 +35,10 @@ impl ViewPathTracker for ViewCtx {
     fn view_path(&mut self) -> &[ViewId] {
         &self.id_path
     }
+
+    fn environment(&mut self) -> &mut Environment {
+        &mut self.environment
+    }
 }
 
 // Private items
@@ -44,6 +50,7 @@ impl ViewCtx {
             proxy,
             runtime,
             state_changed: true,
+            environment: Environment::new(),
         }
     }
 
