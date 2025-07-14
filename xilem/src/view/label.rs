@@ -36,7 +36,7 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         line_break_mode: LineBreaking::Overflow,
-        properties: Default::default(),
+        properties: LabelProps::default(),
     }
 }
 
