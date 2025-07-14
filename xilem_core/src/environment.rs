@@ -399,7 +399,7 @@ where
             let Some(pos) = pos else {
                 panic!(
                     // TODO: Track caller for this view?
-                    "Xilem: Tried to get context for {}, but it hasn't been `Provided`.",
+                    "Xilem: Tried to get context for {}, but it hasn't been provided. Did you forget to wrap this view with `xilem_core::environment::provides`?",
                     core::any::type_name::<Context>()
                 );
             };
