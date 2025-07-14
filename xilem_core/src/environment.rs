@@ -341,6 +341,7 @@ pub fn with_context<State, Action, Context, Child, ChildView, Ctx>(
     child: Child,
 ) -> WithContext<State, Action, Context, Child, ChildView>
 where
+    Child: Fn(&mut Context, &mut State) -> ChildView,
     ChildView: View<State, Action, Ctx>,
     Ctx: ViewPathTracker,
     Context: Resource,
