@@ -83,9 +83,17 @@ macro_rules! __declare_property_tuple_loop {
         )+
     ) => {
 
-        #[expect(missing_docs)]
+        /// Properties used by the
+        #[doc = stringify!($Self)]
+        /// view.
+        ///
+        /// This type implements the `PropertyTuple` trait.
+        /// Its methods should be used when writing `View::build()`
+        /// and `View::rebuild()` methods.
         pub struct $Props($(Option<$Type>,)+);
 
+        // We implement Default directly instead of calling `#[derive(Default)]`.
+        // The code should compile slightly faster this way.
         impl ::std::default::Default for $Props {
             fn default() -> Self {
                 $Props {
