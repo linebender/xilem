@@ -22,7 +22,7 @@ use crate::{MessageResult, Pod, PropertyTuple as _, TextAlign, View, ViewCtx, Vi
 /// use masonry::parley::fontique;
 ///
 /// label("Text example.")
-///     .brush(palette::css::RED)
+///     .text_color(palette::css::RED)
 ///     .text_alignment(TextAlign::Middle)
 ///     .text_size(24.0)
 ///     .weight(FontWeight::BOLD)

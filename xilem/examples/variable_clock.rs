@@ -79,7 +79,7 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         (
             Some(
                 prose("Could not determine local UTC offset, using UTC")
-                    .brush(palette::css::ORANGE_RED),
+                    .text_color(palette::css::ORANGE_RED),
             ),
             UtcOffset::UTC,
         )
