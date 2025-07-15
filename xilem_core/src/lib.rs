@@ -55,8 +55,12 @@ extern crate alloc;
 extern crate std;
 
 mod deferred;
-pub mod environment;
 pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
+
+mod environment;
+pub use environment::{
+    Environment, Provides, Rebuild, Resource, WithContext, provides, with_context,
+};
 
 mod view;
 pub use view::{View, ViewId, ViewMarker, ViewPathTracker};

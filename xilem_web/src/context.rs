@@ -5,7 +5,7 @@ use std::any::{Any, TypeId};
 use std::rc::Rc;
 
 use wasm_bindgen_futures::spawn_local;
-use xilem_core::environment::Environment;
+use xilem_core::Environment;
 use xilem_core::{AnyMessage, DynMessage};
 
 use crate::app::{AppMessage, AppRunner};

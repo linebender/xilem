@@ -5,10 +5,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use masonry::core::{FromDynWidget, Widget, WidgetId, WidgetMut};
-use xilem_core::environment::Environment;
 
 use crate::Pod;
-use crate::core::{AsyncCtx, RawProxy, ViewId, ViewPathTracker};
+use crate::core::{AsyncCtx, Environment, RawProxy, ViewId, ViewPathTracker};
 
 /// A context type passed to various methods of Xilem traits.
 pub struct ViewCtx {

@@ -167,9 +167,11 @@ pub struct Provides<State, Action, Context: Resource, InitialContext, ChildView>
     phantom: PhantomData<fn(State, Context) -> Action>,
 }
 
-// TODO: This type should be made unnameable (i.e. we should work out the module split here)
 #[derive(Debug)]
-#[doc(hidden)]
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct ProvidesState<ChildState> {
     child_state: ChildState,
     this_state: Option<EnvironmentItem>,
@@ -361,9 +363,11 @@ pub struct WithContext<State, Action, Context: Resource, Child, ChildView> {
     phantom: PhantomData<fn(State, Context) -> (Action, ChildView)>,
 }
 
-// TODO: This type shouldn't be public
 #[derive(Debug)]
-#[doc(hidden)]
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub struct WithContextState<ChildState, ChildView> {
     prev: ChildView,
     child_state: ChildState,

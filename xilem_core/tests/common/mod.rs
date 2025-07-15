@@ -9,13 +9,13 @@
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
-use xilem_core::{environment::Environment, *};
+use xilem_core::*;
 
 #[derive(Default)]
 pub(super) struct TestCtx(Vec<ViewId>, Environment);
 
 impl ViewPathTracker for TestCtx {
-    fn environment(&mut self) -> &mut environment::Environment {
+    fn environment(&mut self) -> &mut Environment {
         &mut self.1
     }
     fn push_id(&mut self, id: ViewId) {
