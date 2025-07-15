@@ -30,6 +30,9 @@ pub use spinner::*;
 mod image;
 pub use image::*;
 
+mod indexed_stack;
+pub use indexed_stack::*;
+
 mod label;
 pub use label::*;
 
