@@ -8,7 +8,7 @@ use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, button, checkbox, flex, flex_item, flex_row, progress_bar, sized_box,
+    FlexSpacer, button, checkbox, flex, flex_row, indexed_stack, progress_bar, sized_box,
 };
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::lens;
@@ -19,8 +19,16 @@ const SPACER_WIDTH: f64 = 10.;
 ///
 /// This is owned by Xilem, used to construct the view tree, and updated by event handlers.
 struct WidgetGallery {
+    tab: GalleryTab,
     progress: Option<f64>,
     checked: bool,
+}
+
+#[repr(usize)]
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum GalleryTab {
+    Progress = 0,
+    Checkbox,
 }
 
 fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
@@ -65,18 +73,31 @@ fn border_box<State: 'static, Action: 'static>(
 }
 
 /// Top-level view
-fn app_logic(_data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
+fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
-        flex_row((
-            lens(
-                |progress| flex_item(border_box(progress_bar_view(*progress)), 1.),
-                |data: &mut WidgetGallery| &mut data.progress,
-            ),
-            lens(
-                |checked| flex_item(border_box(checkbox_view(*checked)), 1.),
-                |data: &mut WidgetGallery| &mut data.checked,
-            ),
+        flex((
+            flex_row((
+                button("Progress", |data: &mut WidgetGallery| {
+                    data.tab = GalleryTab::Progress;
+                })
+                .disabled(data.tab == GalleryTab::Progress),
+                button("Checkbox", |data: &mut WidgetGallery| {
+                    data.tab = GalleryTab::Checkbox;
+                })
+                .disabled(data.tab == GalleryTab::Checkbox),
+            )),
+            indexed_stack((
+                lens(
+                    |progress| border_box(progress_bar_view(*progress)),
+                    |data: &mut WidgetGallery| &mut data.progress,
+                ),
+                lens(
+                    |checked| border_box(checkbox_view(*checked)),
+                    |data: &mut WidgetGallery| &mut data.checked,
+                ),
+            ))
+            .active(data.tab as usize),
         ))
         .gap(SPACER_WIDTH),
     )
@@ -86,6 +107,7 @@ fn app_logic(_data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     // Set up the initial state of the app
     let data = WidgetGallery {
+        tab: GalleryTab::Progress,
         progress: Some(0.5),
         checked: false,
     };
