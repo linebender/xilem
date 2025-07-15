@@ -162,7 +162,6 @@ impl IndexedStack {
         let child = this.widget.children.remove(idx);
         if idx == this.widget.active_child {
             this.ctx.remove_child(child);
-            // TODO: should this be smarter, i.e. select the nearest neighbor?
             this.widget.active_child = 0;
             this.ctx.children_changed();
         } else if this.widget.active_child > idx {
@@ -176,9 +175,6 @@ impl IndexedStack {
 // --- MARK: IMPL WIDGET ---
 impl Widget for IndexedStack {
     fn register_children(&mut self, ctx: &mut masonry_core::core::RegisterCtx<'_>) {
-        // if let Some(child) = self.children.get_mut(self.active_child) {
-        //     ctx.register_child(child);
-        // }
         for child in self.children.iter_mut() {
             ctx.register_child(child);
         }
@@ -278,11 +274,6 @@ impl Widget for IndexedStack {
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        // if let Some(child) = self.children.get(self.active_child) {
-        //     smallvec![child.id()]
-        // } else {
-        //     smallvec![]
-        // }
         self.children.iter().map(WidgetPod::id).collect()
     }
 
