@@ -3,11 +3,13 @@
 
 //! Values accessible throughout the Xilem view tree.
 
-use core::{any::TypeId, marker::PhantomData};
-
-use crate::{AnyMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
-use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use anymore::AnyDebug;
 use hashbrown::{HashMap, hash_map::Entry};
+
+use crate::{MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
+
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use core::{any::TypeId, marker::PhantomData};
 
 #[derive(Debug)]
 /// A message sent to Views to instruct them to rebuild themselves.
@@ -19,7 +21,7 @@ pub struct Rebuild;
 
 #[derive(Debug)]
 struct EnvironmentItem {
-    value: Box<dyn AnyMessage>,
+    value: Box<dyn AnyDebug>,
     // TODO: Can we/do we want to make these share an allocation?
     // TODO: How do we GC this?
     change_listeners: Vec<Option<Arc<[ViewId]>>>,
@@ -123,7 +125,7 @@ impl Default for Environment {
 /// The preferred variable name for types bounded by this type is currently
 /// `Context`, based on the name used in React for their similar feature.
 // TODO: Make sure that these names make sense.
-pub trait Resource: AnyMessage {}
+pub trait Resource: AnyDebug {}
 
 // --- MARK: Provides
 

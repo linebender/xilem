@@ -11,8 +11,9 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::JoinHandle;
 
 use crate::ViewCtx;
+use crate::core::anymore::AnyDebug;
 use crate::core::{
-    AnyMessage, DynMessage, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+    DynMessage, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
     ViewPathTracker,
 };
 
@@ -38,7 +39,7 @@ where
     Fut: Future<Output = ()> + Send + 'static,
     S: Fn(&mut State, UnboundedSender<V>),
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + Send + 'static,
+    M: AnyDebug + Send + 'static,
 {
     const {
         assert!(
@@ -70,7 +71,7 @@ where
     Fut: Future<Output = ()> + Send + 'static,
     S: Fn(&mut State, UnboundedSender<V>),
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + Send + 'static,
+    M: AnyDebug + Send + 'static,
 {
     Worker {
         init_future,
@@ -96,7 +97,7 @@ where
     Fut: Future<Output = ()> + Send + 'static,
     S: Fn(&mut State, UnboundedSender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage + Send + 'static,
+    M: AnyDebug + Send + 'static,
 {
     type Element = NoElement;
 

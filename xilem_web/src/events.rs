@@ -7,8 +7,8 @@ use std::marker::PhantomData;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::{AddEventListenerOptions, js_sys};
-use xilem_core::AnyMessage;
 
+use crate::core::anymore::AnyDebug;
 use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{DomView, DynMessage, OptionalAction, ViewCtx};
 
@@ -67,7 +67,7 @@ where
     }
 }
 
-fn create_event_listener<Event: JsCast + AnyMessage>(
+fn create_event_listener<Event: JsCast + AnyDebug>(
     target: &web_sys::EventTarget,
     event: &str,
     // TODO options
@@ -139,7 +139,7 @@ where
     State: 'static,
     Action: 'static,
     V: DomView<State, Action>,
-    Event: JsCast + 'static + AnyMessage,
+    Event: JsCast + 'static + AnyDebug,
 {
     // we use a placeholder id here, the id can never change, so we don't need to store it anywhere
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
@@ -170,7 +170,7 @@ fn rebuild_event_listener<State, Action, V, Event>(
     State: 'static,
     Action: 'static,
     V: DomView<State, Action>,
-    Event: JsCast + 'static + AnyMessage,
+    Event: JsCast + 'static + AnyDebug,
 {
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
         element_view.rebuild(
@@ -225,7 +225,7 @@ where
     State: 'static,
     Action: 'static,
     V: DomView<State, Action>,
-    Event: JsCast + 'static + AnyMessage,
+    Event: JsCast + 'static + AnyDebug,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
 {
@@ -255,7 +255,7 @@ where
     V: DomView<State, Action>,
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
-    Event: JsCast + 'static + AnyMessage,
+    Event: JsCast + 'static + AnyDebug,
 {
     type ViewState = OnEventState<V::ViewState>;
 

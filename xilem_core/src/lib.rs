@@ -54,6 +54,8 @@ extern crate alloc;
 #[cfg(test)]
 extern crate std;
 
+pub use anymore;
+
 mod deferred;
 pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 
@@ -72,7 +74,7 @@ pub use views::{
 };
 
 mod message;
-pub use message::{AnyMessage, DynMessage, MessageResult, SendMessage};
+pub use message::{DynMessage, MessageResult, SendMessage};
 
 mod element;
 pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};

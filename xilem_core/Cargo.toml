@@ -33,6 +33,7 @@ kurbo = ["dep:kurbo"]
 tracing.workspace = true
 kurbo = { optional = true, workspace = true }
 hashbrown = { workspace = true }
+anymore = { workspace = true }
 
 [lints]
 workspace = true
