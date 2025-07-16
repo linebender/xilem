@@ -74,7 +74,7 @@ impl IndexedStack {
 
 // --- MARK: IMPL WIDGETMUT ---
 impl IndexedStack {
-    /// Add a child widget.
+    /// Add a child widget to the end of the stack.
     ///
     /// See also [`with_child`](IndexedStack::with_child).
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
@@ -82,7 +82,7 @@ impl IndexedStack {
         Self::add_child_pod(this, child_pod);
     }
 
-    /// Add a child widget with a pre-assigned id.
+    /// Add a child widget with a pre-assigned id to the end of the stack.
     ///
     /// See also [`with_child_id`](IndexedStack::with_child_id).
     pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
@@ -90,7 +90,7 @@ impl IndexedStack {
         Self::add_child_pod(this, child_pod);
     }
 
-    /// Add a child widget already wrapped in a [`WidgetPod`].
+    /// Add a child widget already wrapped in a [`WidgetPod`] to the end of the stack.
     ///
     /// See also [`with_child_pod`](IndexedStack::with_child_pod).
     pub fn add_child_pod(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<dyn Widget>) {
