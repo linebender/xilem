@@ -30,7 +30,7 @@ pub struct IndexedStack {
 
 // --- MARK: IMPL INDEXEDSTACK ---
 impl IndexedStack {
-    /// Create a new stack with no children
+    /// Create a new stack with no children.
     pub fn new() -> Self {
         Self::default()
     }
@@ -51,7 +51,7 @@ impl IndexedStack {
         self
     }
 
-    /// Builder-style method to set the active child
+    /// Builder-style method to set the active child.
     ///
     /// Index must be a valid index into the stack's children, or 0
     /// if there are no children.
@@ -61,12 +61,12 @@ impl IndexedStack {
         self
     }
 
-    /// Returns the number of children in this stack
+    /// Returns the number of children in this stack.
     pub fn len(&self) -> usize {
         self.children.len()
     }
 
-    /// Returns true if there are no children in this stack
+    /// Returns true if there are no children in this stack.
     pub fn is_empty(&self) -> bool {
         self.children.is_empty()
     }
@@ -131,7 +131,7 @@ impl IndexedStack {
         this.ctx.request_layout();
     }
 
-    /// Change the active child
+    /// Change the active child.
     ///
     /// Index must be a valid index into the children of this stack, or 0
     /// if there are no children.

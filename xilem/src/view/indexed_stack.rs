@@ -74,7 +74,7 @@ pub struct IndexedStack<Seq, State, Action = ()> {
 
     /// Used to associate the State and Action in the call to `.indexed_stack()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
-    /// Action to be inferred properly
+    /// Action to be inferred properly.
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
