@@ -1,7 +1,7 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
+use anymore::AnyDebug;
 
 use crate::core::PointerButton;
 
@@ -28,7 +28,7 @@ pub enum Action {
     CheckboxToggled(bool),
     // FIXME - This is a huge hack
     /// Other.
-    Other(Box<dyn Any + Send>),
+    Other(Box<dyn AnyDebug + Send>),
 }
 
 impl PartialEq for Action {

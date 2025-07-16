@@ -45,7 +45,7 @@ struct CalcState {
     window_id: WindowId,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 enum CalcAction {
     Digit(u8),
     Op(char),

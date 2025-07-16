@@ -2144,6 +2144,7 @@ version = "0.3.0"
 dependencies = [
  "accesskit",
  "anymap3",
+ "anymore",
  "assert_matches",
  "cursor-icon",
  "dpi",

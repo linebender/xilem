@@ -24,6 +24,7 @@ tracy = ["dep:tracing-tracy", "tracing-tracy/enable", "vello/wgpu-profiler"]
 [dependencies]
 accesskit.workspace = true
 anymap3 = "1.0.1"
+anymore.workspace = true
 cursor-icon = "1.1.0"
 dpi.workspace = true
 parley.workspace = true
