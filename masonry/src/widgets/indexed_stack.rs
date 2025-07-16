@@ -135,7 +135,6 @@ impl IndexedStack {
     pub fn set_active_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         assert!(this.widget.children.is_empty() || idx < this.widget.children.len());
         this.widget.active_child = idx;
-        this.ctx.children_changed();
         this.ctx.request_layout();
     }
 
@@ -161,13 +160,13 @@ impl IndexedStack {
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         if idx == this.widget.active_child {
-            this.ctx.remove_child(child);
             this.widget.active_child = 0;
-            this.ctx.children_changed();
         } else if this.widget.active_child > idx {
             // correct the index to prevent the active element changing
             this.widget.active_child -= 1;
         }
+        this.ctx.remove_child(child);
+        this.ctx.children_changed();
         this.ctx.request_layout();
     }
 }
@@ -224,6 +223,8 @@ impl Widget for IndexedStack {
                 child_size = ctx.run_layout(child, &child_bc);
                 ctx.place_child(child, origin);
             } else {
+                // TODO: move set_stashed to a different layout pass when possible,
+                // and remove skip_layout.
                 ctx.set_stashed(child, true);
                 ctx.skip_layout(child);
             }
