@@ -309,7 +309,7 @@ mod tests {
     #[test]
     fn test_indexed_stack_basics() {
         let widget = IndexedStack::new();
-        let window_size = Size::new(200.0, 200.0);
+        let window_size = Size::new(50.0, 50.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
@@ -327,7 +327,7 @@ mod tests {
             IndexedStack::add_child(&mut stack, button::Button::new("C"));
             IndexedStack::add_child(&mut stack, button::Button::new("D"));
         });
-        assert_render_snapshot!(harness, "indexed_stack_many_0");
+        assert_render_snapshot!(harness, "indexed_stack_single"); // the active child should not change
 
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
@@ -343,7 +343,7 @@ mod tests {
             .with_child(button::Button::new("B"))
             .with_child(button::Button::new("C"))
             .with_active_child(1);
-        let window_size = Size::new(200.0, 200.0);
+        let window_size = Size::new(50.0, 50.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
         // Snapshot with the single widget.
