@@ -7,8 +7,8 @@ use std::io::stdin;
 use std::path::PathBuf;
 
 use xilem_core::{
-    AnyElement, AnyView, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
-    environment::Environment,
+    AnyElement, AnyView, Environment, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker,
+    ViewPathTracker,
 };
 
 #[derive(Debug)]

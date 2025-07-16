@@ -7,8 +7,8 @@
 use core::any::Any;
 
 use xilem_core::{
-    DynMessage, MessageResult, Mut, SuperElement, View, ViewElement, ViewId, ViewMarker,
-    ViewPathTracker, environment::Environment,
+    DynMessage, Environment, MessageResult, Mut, SuperElement, View, ViewElement, ViewId,
+    ViewMarker, ViewPathTracker,
 };
 
 fn app_logic(_: &mut u32) -> impl WidgetView<u32> + use<> {
