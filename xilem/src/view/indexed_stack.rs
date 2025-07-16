@@ -152,7 +152,7 @@ where
 
         // set the active child after updating the sequence to
         // ensure the index remains consistent with the children list
-        if prev.active_child != self.active_child {
+        if self.active_child != element.widget.active_child_index() {
             widgets::IndexedStack::set_active_child(&mut element, self.active_child);
         }
     }

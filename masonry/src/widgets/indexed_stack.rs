@@ -70,6 +70,11 @@ impl IndexedStack {
     pub fn is_empty(&self) -> bool {
         self.children.is_empty()
     }
+
+    /// Returns the index of the currently active child.
+    pub fn active_child_index(&self) -> usize {
+        self.active_child
+    }
 }
 
 // --- MARK: IMPL WIDGETMUT ---
