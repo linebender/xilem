@@ -24,6 +24,7 @@ use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padd
 #[derive(Default)]
 pub struct IndexedStack {
     children: Vec<WidgetPod<dyn Widget>>,
+    // Note: active_child must be 0 if there are no children
     active_child: usize,
 }
 
@@ -52,9 +53,10 @@ impl IndexedStack {
 
     /// Builder-style method to set the active child
     ///
-    /// Index must be a valid index into the stack's children
+    /// Index must be a valid index into the stack's children, or 0
+    /// if there are no children.
     pub fn with_active_child(mut self, idx: usize) -> Self {
-        assert!(self.children.is_empty() || idx < self.children.len());
+        assert!((self.children.is_empty() && idx == 0) || idx < self.children.len());
         self.active_child = idx;
         self
     }
@@ -131,9 +133,10 @@ impl IndexedStack {
 
     /// Change the active child
     ///
-    /// Index must be a valid index into the children of this stack
+    /// Index must be a valid index into the children of this stack, or 0
+    /// if there are no children.
     pub fn set_active_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        assert!(this.widget.children.is_empty() || idx < this.widget.children.len());
+        assert!((this.widget.children.is_empty() && idx == 0) || idx < this.widget.children.len());
         this.widget.active_child = idx;
         this.ctx.request_layout();
     }
@@ -160,6 +163,8 @@ impl IndexedStack {
     pub fn remove_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
         let child = this.widget.children.remove(idx);
         if idx == this.widget.active_child {
+            // This is valid even if we are removing the last child,
+            // since `active_child` must be 0 in that case
             this.widget.active_child = 0;
         } else if this.widget.active_child > idx {
             // correct the index to prevent the active element changing
@@ -208,7 +213,9 @@ impl Widget for IndexedStack {
         let origin = border.place_down(origin);
         let origin = padding.place_down(origin);
 
-        if !self.children.is_empty() && self.active_child >= self.children.len() {
+        if !(self.children.is_empty() && self.active_child == 0)
+            && self.active_child >= self.children.len()
+        {
             debug_panic!(
                 "IndexedStack active child index ({}) is not within the children vector (len {})",
                 self.active_child,

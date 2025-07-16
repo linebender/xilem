@@ -123,11 +123,11 @@ where
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::IndexedStack::new();
-        widget = widget.with_active_child(self.active_child);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.into_inner() {
             widget = widget.with_child_pod(element.child.erased_widget_pod());
         }
+        widget = widget.with_active_child(self.active_child);
         let mut pod = ctx.create_pod(widget);
         pod.properties = self.properties.build_properties();
         (pod, seq_state)
