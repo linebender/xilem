@@ -345,6 +345,10 @@ pub(crate) fn run_on_access_event_pass(
         false,
         |widget, ctx, props, event| {
             widget.on_access_event(ctx, props, event);
+            if !ctx.is_handled() && event.action == accesskit::Action::ScrollIntoView {
+                ctx.request_scroll_to_this();
+                ctx.set_handled();
+            }
         },
         true,
     );
