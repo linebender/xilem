@@ -107,7 +107,7 @@ impl<W: Widget + ?Sized> Portal<W> {
     }
 }
 
-fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64> {
+pub(crate) fn compute_pan_range(mut viewport: Range<f64>, target: Range<f64>) -> Range<f64> {
     // if either range contains the other, the viewport doesn't move
     if target.start <= viewport.start && viewport.end <= target.end {
         return viewport;
