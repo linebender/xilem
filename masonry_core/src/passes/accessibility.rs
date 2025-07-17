@@ -155,8 +155,8 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         focus: root
             .global_state
             .focused_widget
-            .unwrap_or(root.root.id())
-            .into(),
+            .map(Into::into)
+            .unwrap_or(root.window_node_id),
     };
 
     let (root_widget, root_state, root_properties) = {
