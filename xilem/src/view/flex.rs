@@ -67,7 +67,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
-        gap: None,
+        gap: masonry::theme::WIDGET_PADDING,
         properties: FlexProps::default(),
         phantom: PhantomData,
     }
@@ -93,7 +93,7 @@ pub struct Flex<Seq, State, Action = ()> {
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    gap: Option<f64>,
+    gap: f64,
     properties: FlexProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
@@ -139,7 +139,7 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     #[track_caller]
     pub fn gap(mut self, gap: f64) -> Self {
         if gap.is_finite() && gap >= 0.0 {
-            self.gap = Some(gap);
+            self.gap = gap;
         } else {
             // TODO: Don't panic here, for future editor scenarios.
             panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
@@ -181,7 +181,7 @@ where
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
-            .raw_gap(self.gap)
+            .gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
@@ -223,7 +223,7 @@ where
             widgets::Flex::set_must_fill_main_axis(&mut element, self.fill_major_axis);
         }
         if prev.gap != self.gap {
-            widgets::Flex::set_raw_gap(&mut element, self.gap);
+            widgets::Flex::set_gap(&mut element, self.gap);
         }
         // TODO: Re-use scratch space?
         let mut splice = FlexSplice::new(element);
