@@ -63,7 +63,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
                     },
                 ))
                 .expand_width(),
-                sized_box(prose(emoji.name).text_alignment(TextAlign::Middle).brush(
+                sized_box(prose(emoji.name).text_alignment(TextAlign::Center).brush(
                     if data.last_selected.is_some_and(|it| it == idx) {
                         // TODO: Ensure this selection indicator color is accessible
                         // TODO: Expose selected state to accessibility tree
