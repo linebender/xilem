@@ -1090,7 +1090,7 @@ dependencies = [
 [[package]]
 name = "fontique"
 version = "0.5.0"
-source = "git+https://github.com/linebender/parley#587b7634ae8601c10de7f0361bfd56085a5b7b4e"
+source = "git+https://github.com/linebender/parley?rev=587b7634ae8601c10de7f0361bfd56085a5b7b4e#587b7634ae8601c10de7f0361bfd56085a5b7b4e"
 dependencies = [
  "bytemuck",
  "hashbrown",
@@ -2818,7 +2818,7 @@ dependencies = [
 [[package]]
 name = "parley"
 version = "0.5.0"
-source = "git+https://github.com/linebender/parley#587b7634ae8601c10de7f0361bfd56085a5b7b4e"
+source = "git+https://github.com/linebender/parley?rev=587b7634ae8601c10de7f0361bfd56085a5b7b4e#587b7634ae8601c10de7f0361bfd56085a5b7b4e"
 dependencies = [
  "accesskit",
  "fontique",
