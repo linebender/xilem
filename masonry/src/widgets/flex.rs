@@ -32,7 +32,7 @@ pub struct Flex {
     fill_major_axis: bool,
     children: Vec<Child>,
     old_bc: BoxConstraints,
-    gap: Option<f64>,
+    gap: f64,
 }
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
@@ -119,7 +119,7 @@ impl Flex {
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
             old_bc: BoxConstraints::tight(Size::ZERO),
-            gap: None,
+            gap: crate::theme::WIDGET_PADDING,
         }
     }
 
@@ -171,34 +171,11 @@ impl Flex {
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     // TODO: Semantics - should this include fixed spacers?
-    pub fn gap(mut self, gap: f64) -> Self {
-        if gap.is_finite() && gap >= 0.0 {
-            self.gap = Some(gap);
-        } else {
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+    pub fn gap(mut self, mut gap: f64) -> Self {
+        if !gap.is_finite() || gap < 0.0 {
+            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
+            gap = 0.0;
         }
-        self
-    }
-
-    /// Builder-style method to use the default gap value.
-    ///
-    /// This is [`WIDGET_PADDING_VERTICAL`] for a flex column and
-    /// [`WIDGET_PADDING_HORIZONTAL`] for flex row.
-    ///
-    /// See also [`gap`](Self::gap)
-    ///
-    /// [`WIDGET_PADDING_VERTICAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    /// [`WIDGET_PADDING_HORIZONTAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    pub fn default_gap(mut self) -> Self {
-        self.gap = None;
-        self
-    }
-
-    /// Equivalent to [`gap`](Self::gap) if `gap` is `Some`, or
-    /// [`default_gap`](Self::default_gap) otherwise.
-    ///
-    /// Does not perform validation of the provided value.
-    pub fn raw_gap(mut self, gap: Option<f64>) -> Self {
         self.gap = gap;
         self
     }
@@ -335,34 +312,11 @@ impl Flex {
     /// If `gap` is not a non-negative finite value.
     ///
     /// See also [`use_default_gap`](Self::use_default_gap).
-    pub fn set_gap(this: &mut WidgetMut<'_, Self>, gap: f64) {
-        if gap.is_finite() && gap >= 0.0 {
-            this.widget.gap = Some(gap);
-        } else {
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+    pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {
+        if !gap.is_finite() || gap < 0.0 {
+            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
+            gap = 0.0;
         }
-        this.ctx.request_layout();
-    }
-
-    /// Use the default gap value.
-    ///
-    /// This is [`WIDGET_PADDING_VERTICAL`] for a flex column and
-    /// [`WIDGET_PADDING_HORIZONTAL`] for flex row.
-    ///
-    /// See also [`set_gap`](Self::set_gap)
-    ///
-    /// [`WIDGET_PADDING_VERTICAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    /// [`WIDGET_PADDING_HORIZONTAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    pub fn use_default_gap(this: &mut WidgetMut<'_, Self>) {
-        this.widget.gap = None;
-        this.ctx.request_layout();
-    }
-
-    /// Equivalent to [`set_gap`](Self::set_gap) if `gap` is `Some`, or
-    /// [`use_default_gap`](Self::use_default_gap) otherwise.
-    ///
-    /// Does not perform validation of the provided value.
-    pub fn set_raw_gap(this: &mut WidgetMut<'_, Self>, gap: Option<f64>) {
         this.widget.gap = gap;
         this.ctx.request_layout();
     }
@@ -895,7 +849,7 @@ impl Widget for Flex {
 
         let mut any_changed = bc_changed || ctx.needs_layout();
 
-        let gap = self.gap.unwrap_or(crate::theme::WIDGET_PADDING);
+        let gap = self.gap;
         // The gaps are only between the items, so 2 children means 1 gap.
         let total_gap = self.children.len().saturating_sub(1) as f64 * gap;
         // Measure non-flex children.

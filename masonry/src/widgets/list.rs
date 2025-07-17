@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::debug_panic;
 use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -22,9 +23,6 @@ use crate::util::{fill, stroke};
 /// A non-flex container with either horizontal or vertical layout.
 pub struct List {
     direction: Axis,
-    //cross_alignment: CrossAxisAlignment, - Center
-    //main_alignment: MainAxisAlignment, - Center
-    //fill_major_axis: bool, - false
     children: Vec<WidgetPod<dyn Widget>>,
     gap: f64,
 }
@@ -56,12 +54,12 @@ impl List {
     }
 
     /// Builder-style variant of [`List::set_gap`].
-    pub fn gap(mut self, gap: f64) -> Self {
-        if gap.is_finite() && gap >= 0.0 {
-            self.gap = gap;
-        } else {
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+    pub fn gap(mut self, mut gap: f64) -> Self {
+        if !gap.is_finite() || gap < 0.0 {
+            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
+            gap = 0.0;
         }
+        self.gap = gap;
         self
     }
 
@@ -107,12 +105,12 @@ impl List {
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
-    pub fn set_gap(this: &mut WidgetMut<'_, Self>, gap: f64) {
-        if gap.is_finite() && gap >= 0.0 {
-            this.widget.gap = gap;
-        } else {
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+    pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {
+        if !gap.is_finite() || gap < 0.0 {
+            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
+            gap = 0.0;
         }
+        this.widget.gap = gap;
         this.ctx.request_layout();
     }
 
