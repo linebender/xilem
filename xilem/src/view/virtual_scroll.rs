@@ -348,35 +348,20 @@ where
                 return MessageResult::Stale(message);
             }
         }
-        if message.is::<masonry::core::Action>() {
-            let action = message.downcast::<masonry::core::Action>().unwrap();
-            if let masonry::core::Action::Other(action) = *action {
-                if !action.is::<VirtualScrollAction>() {
-                    tracing::error!("Wrong action type in VirtualScroll::message: {action:?}");
-                    // Ideally we'd avoid this extra box, but it's not easy to write this kind of code in a clean way
-                    return MessageResult::Stale(DynMessage::new(masonry::core::Action::Other(
-                        action,
-                    )));
-                }
-                // We check then unwrap to avoid unwrapping a box (also, it makes the check path an early-exit)
-                let action = action.downcast::<VirtualScrollAction>().unwrap();
-
-                view_state.current_updated = true;
-                // We know that the `current_views` have not been applied, so we can just brute force overwrite them.
-                view_state.current_views.clear();
-                for new_targets in action.target.clone() {
-                    // TODO: Ideally, we'd avoid updating the already existing items
-                    // Doing so however dramatically increases the complexity in `rebuild`
-                    view_state
-                        .current_views
-                        .insert(new_targets, (self.func)(app_state, new_targets));
-                }
-                view_state.pending_action = Some(*action);
-                MessageResult::RequestRebuild
-            } else {
-                tracing::error!("Wrong action type in VirtualScroll::message: {action:?}");
-                MessageResult::Stale(DynMessage(action))
+        if message.is::<VirtualScrollAction>() {
+            let action = message.downcast::<VirtualScrollAction>().unwrap();
+            view_state.current_updated = true;
+            // We know that the `current_views` have not been applied, so we can just brute force overwrite them.
+            view_state.current_views.clear();
+            for new_targets in action.target.clone() {
+                // TODO: Ideally, we'd avoid updating the already existing items
+                // Doing so however dramatically increases the complexity in `rebuild`
+                view_state
+                    .current_views
+                    .insert(new_targets, (self.func)(app_state, new_targets));
             }
+            view_state.pending_action = Some(*action);
+            MessageResult::RequestRebuild
         } else if message.is::<UpdateVirtualChildren>() {
             view_state.current_updated = true;
             view_state.current_views.clear();
