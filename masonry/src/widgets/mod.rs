@@ -13,6 +13,7 @@ mod flex;
 mod grid;
 mod image;
 mod label;
+mod list;
 mod portal;
 mod progress_bar;
 mod prose;
@@ -26,13 +27,17 @@ mod variable_label;
 mod virtual_scroll;
 mod zstack;
 
+// TODO - remove
+pub use masonry_core::core::Axis;
+
 pub use self::align::Align;
 pub use self::button::Button;
 pub use self::checkbox::Checkbox;
-pub use self::flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
+pub use self::flex::{CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
 pub use self::grid::{Grid, GridParams};
 pub use self::image::Image;
 pub use self::label::{Label, LineBreaking};
+pub use self::list::List;
 pub use self::portal::Portal;
 pub use self::progress_bar::ProgressBar;
 pub use self::prose::Prose;

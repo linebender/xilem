@@ -126,16 +126,14 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     /// Equivalent to the css [gap] property.
     /// This gap is also present between spacers.
     ///
-    /// Leave unset to use the default spacing, which is [`WIDGET_PADDING_VERTICAL`] for a flex
-    /// column and [`WIDGET_PADDING_HORIZONTAL`] for flex row.
+    /// Leave unset to use the default spacing, which is [`WIDGET_PADDING`].
     ///
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    /// [`WIDGET_PADDING_VERTICAL`]: masonry::theme::WIDGET_PADDING_VERTICAL
-    /// [`WIDGET_PADDING_HORIZONTAL`]: masonry::theme::WIDGET_PADDING_VERTICAL
+    /// [`WIDGET_PADDING`]: masonry::theme::WIDGET_PADDING
     #[track_caller]
     pub fn gap(mut self, gap: f64) -> Self {
         if gap.is_finite() && gap >= 0.0 {
