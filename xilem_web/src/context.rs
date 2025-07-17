@@ -5,11 +5,10 @@ use std::any::{Any, TypeId};
 use std::rc::Rc;
 
 use wasm_bindgen_futures::spawn_local;
-use xilem_core::Environment;
-use xilem_core::{AnyMessage, DynMessage};
 
 use crate::app::{AppMessage, AppRunner};
-use crate::core::{ViewId, ViewPathTracker};
+use crate::core::anymore::AnyDebug;
+use crate::core::{DynMessage, Environment, ViewId, ViewPathTracker};
 use crate::vecmap::VecMap;
 
 /// A thunk to send messages to the views, it's being used for example in event callbacks
@@ -26,7 +25,7 @@ impl MessageThunk {
     ///
     /// When this is called synchronously (i.e. not via an event callback or by enqueuing it in the event loop with e.g. [`spawn_local`](`wasm_bindgen_futures::spawn_local`).
     /// Use [`MessageThunk::enqueue_message`] instead in this case.
-    pub fn push_message(&self, message_body: impl AnyMessage) {
+    pub fn push_message(&self, message_body: impl AnyDebug) {
         let message = AppMessage {
             id_path: Rc::clone(&self.id_path),
             body: DynMessage::new(message_body),
@@ -35,7 +34,7 @@ impl MessageThunk {
     }
 
     /// Sends a message to the [`View`](`crate::core::View`) this thunk was being created in. This is similar as [`MessageThunk::push_message`] but enqueues the message as next microtask.
-    pub fn enqueue_message(&self, message_body: impl AnyMessage) {
+    pub fn enqueue_message(&self, message_body: impl AnyDebug) {
         let message = AppMessage {
             id_path: Rc::clone(&self.id_path),
             body: DynMessage::new(message_body),

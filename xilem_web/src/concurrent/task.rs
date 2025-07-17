@@ -9,9 +9,9 @@ use futures::FutureExt;
 use futures::channel::oneshot;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
-use xilem_core::AnyMessage;
 
 use crate::context::MessageThunk;
+use crate::core::anymore::AnyDebug;
 use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
 use crate::{DynMessage, ViewCtx};
 
@@ -30,7 +30,7 @@ where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage,
+    M: AnyDebug,
 {
     const {
         assert!(
@@ -120,7 +120,7 @@ pub struct TaskProxy {
 impl TaskProxy {
     pub fn send_message<M>(&self, message: M)
     where
-        M: AnyMessage,
+        M: AnyDebug,
     {
         let thunk = Rc::clone(&self.thunk);
         spawn_local(async move {
@@ -138,7 +138,7 @@ where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
-    M: AnyMessage,
+    M: AnyDebug,
 {
     type Element = NoElement;
 

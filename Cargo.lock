@@ -215,6 +215,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "170433209e817da6aae2c51aa0dd443009a613425dd041ebfb2492d1c4c11a25"
 
 [[package]]
+name = "anymore"
+version = "0.1.0"
+source = "git+https://github.com/linebender/anymore?rev=3537bdc3aa03c92e380f106d18b7957b934c9eb5#3537bdc3aa03c92e380f106d18b7957b934c9eb5"
+
+[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2139,6 +2144,7 @@ version = "0.3.0"
 dependencies = [
  "accesskit",
  "anymap3",
+ "anymore",
  "assert_matches",
  "cursor-icon",
  "dpi",
@@ -5654,6 +5660,7 @@ dependencies = [
 name = "xilem_core"
 version = "0.3.0"
 dependencies = [
+ "anymore",
  "hashbrown",
  "kurbo",
  "tracing",

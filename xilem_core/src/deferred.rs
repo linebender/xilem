@@ -1,12 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use anymore::AnyDebug;
+
 use alloc::boxed::Box;
 use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{AnyMessage, NoElement, SendMessage, View, ViewId, ViewPathTracker};
+use crate::{NoElement, SendMessage, View, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
@@ -59,13 +61,13 @@ impl Debug for dyn RawProxy {
 
 /// A way to send a message of an expected type to a specific view.
 #[derive(Debug)]
-pub struct MessageProxy<M: AnyMessage + Send> {
+pub struct MessageProxy<M: AnyDebug + Send> {
     proxy: Arc<dyn RawProxy>,
     path: Arc<[ViewId]>,
     message: PhantomData<fn(M)>,
 }
 
-impl<M: AnyMessage + Send> Clone for MessageProxy<M> {
+impl<M: AnyDebug + Send> Clone for MessageProxy<M> {
     fn clone(&self) -> Self {
         Self {
             proxy: self.proxy.clone(),
@@ -75,7 +77,7 @@ impl<M: AnyMessage + Send> Clone for MessageProxy<M> {
     }
 }
 
-impl<M: AnyMessage + Send> MessageProxy<M> {
+impl<M: AnyDebug + Send> MessageProxy<M> {
     /// Create a new `MessageProxy`
     pub fn new(proxy: Arc<dyn RawProxy>, path: Arc<[ViewId]>) -> Self {
         Self {

@@ -3,8 +3,9 @@
 
 //! Message routing and type erasure primitives.
 
+use anymore::AnyDebug;
+
 use alloc::boxed::Box;
-use core::any::Any;
 use core::fmt::Debug;
 
 /// The possible outcomes from a [`View::message`]
@@ -58,11 +59,11 @@ impl<A> MessageResult<A> {
 #[derive(Debug)]
 // This type is a struct rather than (say) a type alias, because type aliases are sometimes resolved by
 // rust-analyzer when autofilling a trait, and we want to always use a consistent name for this type.
-pub struct DynMessage(pub Box<dyn AnyMessage>);
+pub struct DynMessage(pub Box<dyn AnyDebug>);
 
 impl DynMessage {
     /// Utility to make a `DynMessage` from a message value.
-    pub fn new(x: impl AnyMessage) -> Self {
+    pub fn new(x: impl AnyDebug) -> Self {
         Self(Box::new(x))
     }
 
@@ -76,12 +77,12 @@ impl DynMessage {
     /// In most cases, to handle this error, you will want to make an `error` log,
     /// and return this as [`MessageResult::Stale`]; this case indicates that a parent
     /// view has routed things incorrectly, but it's reasonable to be robust.
-    pub fn downcast<T: AnyMessage>(self) -> Result<Box<T>, Self> {
+    pub fn downcast<T: AnyDebug>(self) -> Result<Box<T>, Self> {
         self.0.downcast().map_err(Self)
     }
 
     /// Returns `true` if the inner type is the same as `T`.
-    pub fn is<T: AnyMessage>(&self) -> bool {
+    pub fn is<T: AnyDebug>(&self) -> bool {
         self.0.is::<T>()
     }
 }
@@ -89,7 +90,7 @@ impl DynMessage {
 // We could consider:
 // ```
 // enum DynMessage {
-//     Special(Box<dyn AnyMessage>),
+//     Special(Box<dyn AnyDebug>),
 //     Send(SendMessage)
 // }
 // ```
@@ -112,7 +113,7 @@ impl DynMessage {
 /// To convert a `SendMessage` into its concrete message type, you should use
 /// [`downcast`](Self::downcast).
 #[derive(Debug)]
-pub struct SendMessage(pub Box<dyn AnyMessage + Send>);
+pub struct SendMessage(pub Box<dyn AnyDebug + Send>);
 
 impl From<SendMessage> for DynMessage {
     fn from(value: SendMessage) -> Self {
@@ -122,7 +123,7 @@ impl From<SendMessage> for DynMessage {
 
 impl SendMessage {
     /// Utility to make a `SendMessage` from a message value.
-    pub fn new(x: impl AnyMessage + Send) -> Self {
+    pub fn new(x: impl AnyDebug + Send) -> Self {
         Self(Box::new(x))
     }
 
@@ -132,89 +133,13 @@ impl SendMessage {
     ///
     /// If the message contained within `self` is not of type `T`, returns `self`
     /// (so that e.g. a different type can be checked).
-    pub fn downcast<T: AnyMessage>(self) -> Result<Box<T>, Self> {
+    pub fn downcast<T: AnyDebug>(self) -> Result<Box<T>, Self> {
         self.0.downcast().map_err(Self)
     }
 
     /// Returns `true` if the inner type is the same as `T`.
-    pub fn is<T: AnyMessage + Send>(&self) -> bool {
+    pub fn is<T: AnyDebug + Send>(&self) -> bool {
         self.0.is::<T>()
-    }
-}
-
-/// Types which can be used in [`DynMessage`] (and so can be the messages for Xilem views).
-///
-/// The `Debug` requirement allows inspecting messages which were sent to the wrong place.
-// TODO: Rename to `AnyDebug`.
-pub trait AnyMessage: Any + Debug {}
-impl<T> AnyMessage for T where T: Any + Debug {}
-
-impl dyn AnyMessage {
-    /// Returns some reference to the inner value if it is of type `T`, or
-    /// `None` if it isn't.
-    pub fn downcast_ref<T: AnyMessage>(&self) -> Option<&T> {
-        (self as &dyn Any).downcast_ref::<T>()
-    }
-
-    /// Returns some reference to the inner value if it is of type `T`, or
-    /// `None` if it isn't.
-    pub fn downcast_mut<T: AnyMessage>(&mut self) -> Option<&mut T> {
-        (self as &mut dyn Any).downcast_mut::<T>()
-    }
-
-    /// Access the actual type of this [`AnyMessage`].
-    ///
-    /// ## Errors
-    ///
-    /// If the message contained within `self` is not of type `T`, returns `self`
-    /// (so that e.g. a different type can be used)
-    pub fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        if self.is::<T>() {
-            Ok((self as Box<dyn Any>).downcast::<T>().unwrap())
-        } else {
-            Err(self)
-        }
-    }
-
-    /// Returns `true` if the inner type is the same as `T`.
-    pub fn is<T: AnyMessage>(&self) -> bool {
-        let this: &dyn Any = self;
-        this.is::<T>()
-    }
-}
-
-impl dyn AnyMessage + Send {
-    /// Returns some reference to the inner value if it is of type `T`, or
-    /// `None` if it isn't.
-    pub fn downcast_ref<T: AnyMessage>(&self) -> Option<&T> {
-        (self as &dyn Any).downcast_ref::<T>()
-    }
-
-    /// Returns some reference to the inner value if it is of type `T`, or
-    /// `None` if it isn't.
-    pub fn downcast_mut<T: AnyMessage>(&mut self) -> Option<&mut T> {
-        (self as &mut dyn Any).downcast_mut::<T>()
-    }
-
-    /// Access the actual type of this [`AnyMessage`].
-    ///
-    /// ## Errors
-    ///
-    /// If the message contained within `self` is not of type `T`, returns `self`
-    /// (so that e.g. a different type can be used)
-    // We don't require Send here to mirror the standard library
-    pub fn downcast<T: AnyMessage>(self: Box<Self>) -> Result<Box<T>, Box<Self>> {
-        if self.is::<T>() {
-            Ok((self as Box<dyn Any>).downcast::<T>().unwrap())
-        } else {
-            Err(self)
-        }
-    }
-
-    /// Returns `true` if the inner type is the same as `T`.
-    pub fn is<T: AnyMessage>(&self) -> bool {
-        let this: &dyn Any = self;
-        this.is::<T>()
     }
 }
 
@@ -256,7 +181,8 @@ mod tests {
     }
 
     #[test]
-    /// `DynMessage`'s debug should pass through the debug implementation of.
+    /// `DynMessage`'s debug should pass through the debug implementation of
+    /// the contained item.
     fn message_debug() {
         let message = DynMessage::new(MyMessage("".to_string()));
         let debug_result = format!("{message:?}");
