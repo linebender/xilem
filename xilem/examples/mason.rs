@@ -104,7 +104,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 // Manually adding a direction is equivalent to using flex_row
                 .direction(Axis::Horizontal),
                 prose(LOREM)
-                    .text_alignment(TextAlign::Middle)
+                    .text_alignment(TextAlign::Center)
                     .text_size(18.),
                 button_any_pointer(button_label, |data: &mut AppData, button| match button {
                     None => {

@@ -58,7 +58,7 @@ fn make_grid(grid_spacing: f64) -> Grid {
     let label = Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
-            .with_text_alignment(TextAlign::Middle),
+            .with_text_alignment(TextAlign::Center),
     );
     let label = SizedBox::new(label);
 

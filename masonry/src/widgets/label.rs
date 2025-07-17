@@ -493,7 +493,7 @@ mod tests {
             .with_style(FontFamily::Generic(GenericFamily::Monospace))
             .with_style(StyleProperty::FontSize(20.0))
             .with_line_break_mode(LineBreaking::WordWrap)
-            .with_text_alignment(TextAlign::Middle);
+            .with_text_alignment(TextAlign::Center);
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), label, Size::new(200.0, 200.0));
@@ -535,10 +535,10 @@ mod tests {
                 .with_line_break_mode(LineBreaking::WordWrap)
         }
         let label1 = base_label().with_text_alignment(TextAlign::Start);
-        let label2 = base_label().with_text_alignment(TextAlign::Middle);
+        let label2 = base_label().with_text_alignment(TextAlign::Center);
         let label3 = base_label().with_text_alignment(TextAlign::End);
         let label4 = base_label().with_text_alignment(TextAlign::Start);
-        let label5 = base_label().with_text_alignment(TextAlign::Middle);
+        let label5 = base_label().with_text_alignment(TextAlign::Center);
         let label6 = base_label().with_text_alignment(TextAlign::End);
         let flex = Flex::column()
             .with_flex_child(label1, CrossAxisAlignment::Start)
@@ -599,7 +599,7 @@ mod tests {
                 .with_style(FontFamily::Generic(GenericFamily::Monospace))
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
-                .with_text_alignment(TextAlign::Middle);
+                .with_text_alignment(TextAlign::Center);
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
@@ -622,7 +622,7 @@ mod tests {
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
                 Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);
-                Label::set_text_alignment(&mut label, TextAlign::Middle);
+                Label::set_text_alignment(&mut label, TextAlign::Center);
             });
 
             harness.render()

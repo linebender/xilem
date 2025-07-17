@@ -230,10 +230,10 @@ mod tests {
             )
         }
         let prose1 = base_prose(TextAlign::Start);
-        let prose2 = base_prose(TextAlign::Middle);
+        let prose2 = base_prose(TextAlign::Center);
         let prose3 = base_prose(TextAlign::End);
         let prose4 = base_prose(TextAlign::Start);
-        let prose5 = base_prose(TextAlign::Middle);
+        let prose5 = base_prose(TextAlign::Center);
         let prose6 = base_prose(TextAlign::End);
         let flex = Flex::column()
             .with_flex_child(prose1, CrossAxisAlignment::Start)

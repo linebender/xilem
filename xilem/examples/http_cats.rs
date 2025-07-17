@@ -71,14 +71,14 @@ impl HttpCats {
                     prose(format!(
                         "Status code {selected_code} selected, but this was not found."
                     ))
-                    .text_alignment(TextAlign::Middle)
+                    .text_alignment(TextAlign::Center)
                     .brush(palette::css::YELLOW),
                 )
             }
         } else {
             OneOf3::C(
                 prose("No selection yet made. Select an item from the sidebar to continue.")
-                    .text_alignment(TextAlign::Middle),
+                    .text_alignment(TextAlign::Center),
             )
         };
 
@@ -174,7 +174,7 @@ impl Status {
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")
-                    .text_alignment(TextAlign::Middle),
+                    .text_alignment(TextAlign::Center),
             ),
             ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.).height(80.)),
             // TODO: Alt text?
@@ -202,10 +202,10 @@ impl Status {
             }
         };
         flex((
-            prose(format!("HTTP Status Code: {}", self.code)).text_alignment(TextAlign::Middle),
+            prose(format!("HTTP Status Code: {}", self.code)).text_alignment(TextAlign::Center),
             prose(self.message)
                 .text_size(20.)
-                .text_alignment(TextAlign::Middle),
+                .text_alignment(TextAlign::Center),
             FlexSpacer::Fixed(10.),
             image,
         ))
