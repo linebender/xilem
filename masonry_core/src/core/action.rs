@@ -9,10 +9,11 @@ use crate::core::PointerButton;
 // See https://github.com/linebender/xilem/issues/664
 
 // TODO - TextCursor changed, ImeChanged, EnterKey, MouseEnter
-#[non_exhaustive]
 /// Events from UI elements.
 ///
 /// Note: Actions are still a WIP feature.
+#[non_exhaustive]
+#[derive(Debug)]
 pub enum Action {
     /// A button was pressed.
     ///
@@ -41,18 +42,6 @@ impl PartialEq for Action {
             // FIXME
             // (Self::Other(val_l), Self::Other(val_r)) => false,
             _ => false,
-        }
-    }
-}
-
-impl std::fmt::Debug for Action {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::ButtonPressed(button) => f.debug_tuple("ButtonPressed").field(button).finish(),
-            Self::TextChanged(text) => f.debug_tuple("TextChanged").field(text).finish(),
-            Self::TextEntered(text) => f.debug_tuple("TextEntered").field(text).finish(),
-            Self::CheckboxToggled(b) => f.debug_tuple("CheckboxChecked").field(b).finish(),
-            Self::Other(_) => write!(f, "Other(...)"),
         }
     }
 }
