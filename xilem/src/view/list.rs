@@ -39,9 +39,7 @@ pub fn v_list<State, Action, Seq: ListSequence<State, Action>>(
     }
 }
 
-/// The [`View`] created by [`flex`] from a sequence.
-///
-/// See `flex` documentation for more context.
+/// The [`View`] created by [`v_list`] or [`h_list`] from a sequence.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct List<Seq, State, Action = ()> {
     sequence: Seq,
@@ -270,21 +268,8 @@ impl ElementSplice<ListElement> for ListSplice<'_> {
     }
 }
 
-/// An ordered sequence of views for a [`Flex`] view.
+/// An ordered sequence of views for a [`List`] view.
 /// See [`ViewSequence`] for more technical details.
-///
-/// # Examples
-///
-/// ```
-/// use xilem::view::{label, ListSequence, FlexExt as _};
-///
-/// fn label_sequence<State: 'static>(
-///     labels: impl Iterator<Item = &'static str>,
-///     flex: f64,
-/// ) -> impl ListSequence<State> {
-///     labels.map(|l| label(l).flex(flex)).collect::<Vec<_>>()
-/// }
-/// ```
 pub trait ListSequence<State, Action = ()>:
     ViewSequence<State, Action, ViewCtx, ListElement>
 {

@@ -163,8 +163,6 @@ impl Flex {
     /// Equivalent to the css [gap] property.
     /// This gap is also present between spacers.
     ///
-    /// See also [`default_gap`](Self::default_gap).
-    ///
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
@@ -310,8 +308,6 @@ impl Flex {
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
-    ///
-    /// See also [`use_default_gap`](Self::use_default_gap).
     pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {
         if !gap.is_finite() || gap < 0.0 {
             debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
