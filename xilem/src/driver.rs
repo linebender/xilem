@@ -262,10 +262,14 @@ where
                 &mut self.state,
             )
         } else if let Some(id_path) = window.view_ctx.get_id_path(widget_id) {
+            let action = match action {
+                masonry::core::Action::Other(other) => other,
+                action => Box::new(action),
+            };
             window.view.message(
                 &mut window.view_state,
                 id_path.as_slice(),
-                DynMessage::new(action),
+                DynMessage(action),
                 &mut self.state,
             )
         } else {
