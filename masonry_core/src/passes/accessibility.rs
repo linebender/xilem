@@ -7,7 +7,7 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetState};
+use crate::core::{AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetId, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
@@ -29,7 +29,7 @@ fn build_accessibility_tree(
         return;
     }
 
-    if rebuild_all || state.item.request_accessibility {
+    if (rebuild_all || state.item.request_accessibility) && !state.item.is_stashed {
         if global_state.trace.access {
             trace!(
                 "Building accessibility node for widget '{}' {}",
@@ -106,22 +106,32 @@ fn build_access_node(
     }
     node.set_transform(accesskit::Affine::new(local_transform.as_coeffs()));
 
+    fn is_child_stashed(ctx: &mut AccessCtx<'_>, id: WidgetId) -> bool {
+        ctx.widget_state_children
+            .find(id)
+            .expect("is_child_stashed: child not found")
+            .item
+            .is_stashed
+    }
+
     node.set_children(
         widget
             .children_ids()
             .iter()
             .copied()
+            .filter(|id| !is_child_stashed(ctx, *id))
             .map(|id| id.into())
             .collect::<Vec<NodeId>>(),
     );
+
+    if ctx.is_stashed() {
+        debug_panic!("build_access_node called for stashed widget");
+    }
 
     // Note - The values returned by these methods can be modified by other passes.
     // When that happens, the other pass should set flags to request an accessibility pass.
     if ctx.is_disabled() {
         node.set_disabled();
-    }
-    if ctx.is_stashed() {
-        node.set_hidden();
     }
     if ctx.widget_state.clip_path.is_some() {
         node.set_clips_children();
