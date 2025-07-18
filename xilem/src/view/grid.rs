@@ -58,7 +58,7 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
         spacing: 0.0,
         height,
         width,
-        properties: Default::default(),
+        properties: GridProps::default(),
         phantom: PhantomData,
     }
 }
@@ -102,7 +102,7 @@ impl<Seq, S, A> Style for Grid<Seq, S, A> {
 }
 
 crate::declare_property_tuple!(
-    GridProps;
+    pub GridProps;
     Grid<Seq, S, A>;
 
     Background, 0;

@@ -71,7 +71,7 @@ pub fn button<State, Action>(
             _ => MessageResult::Nop,
         },
         disabled: false,
-        properties: Default::default(),
+        properties: ButtonProps::default(),
     }
 }
 
@@ -86,7 +86,7 @@ pub fn button_any_pointer<State, Action>(
         label: label.into(),
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
         disabled: false,
-        properties: Default::default(),
+        properties: ButtonProps::default(),
     }
 }
 
@@ -122,7 +122,7 @@ impl<F> Style for Button<F> {
 }
 
 crate::declare_property_tuple!(
-    ButtonProps;
+    pub ButtonProps;
     Button<F>;
 
     Background, 0;

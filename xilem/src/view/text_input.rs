@@ -36,7 +36,7 @@ where
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
-        properties: Default::default(),
+        properties: TextInputProps::default(),
     }
 }
 
@@ -109,7 +109,7 @@ impl<S, A> Style for TextInput<S, A> {
 }
 
 crate::declare_property_tuple!(
-    TextInputProps;
+    pub TextInputProps;
     TextInput<S, A>;
 
     Background, 0;

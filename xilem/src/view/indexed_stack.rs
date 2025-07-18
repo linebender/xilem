@@ -58,7 +58,7 @@ pub fn indexed_stack<State, Action, Seq: IndexedStackSequence<State, Action>>(
     IndexedStack {
         sequence,
         active_child: 0,
-        properties: Default::default(),
+        properties: IndexedStackProps::default(),
         phantom: PhantomData,
     }
 }
@@ -98,7 +98,7 @@ impl<Seq, S, A> Style for IndexedStack<Seq, S, A> {
 }
 
 crate::declare_property_tuple!(
-    IndexedStackProps;
+    pub IndexedStackProps;
     IndexedStack<Seq, S, A>;
 
     Background, 0;

@@ -41,7 +41,7 @@ where
         callback,
         checked,
         disabled: false,
-        properties: Default::default(),
+        properties: CheckboxProps::default(),
     }
 }
 
@@ -74,7 +74,7 @@ impl<F> Style for Checkbox<F> {
 }
 
 crate::declare_property_tuple!(
-    CheckboxProps;
+    pub CheckboxProps;
     Checkbox<F>;
 
     DisabledBackground, 0;
