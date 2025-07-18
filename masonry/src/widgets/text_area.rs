@@ -887,15 +887,20 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         if !EDITABLE {
             node.set_read_only();
         }
-        self.editor
-            .try_accessibility(
-                ctx.tree_update(),
-                node,
-                || NodeId::from(WidgetId::next()),
-                0.,
-                0.,
-            )
-            .expect("We just performed a layout");
+        let updated = self.editor.try_accessibility(
+            ctx.tree_update(),
+            node,
+            || NodeId::from(WidgetId::next()),
+            0.,
+            0.,
+        );
+
+        let Some(()) = updated else {
+            // FIXME - We should be able to panic here.
+            // The accessibility pass should always run after a layout pass.
+            // See https://github.com/linebender/xilem/issues/1119
+            return;
+        };
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

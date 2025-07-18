@@ -367,17 +367,20 @@ fn update_stashed_for_widget(
             .update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
         state.item.is_stashed = stashed;
         state.item.needs_update_focus_chain = true;
-        // Note: We don't need request_repaint because stashing doesn't actually change
-        // how widgets are painted, only how the Scenes they create are composed.
-        state.item.needs_paint = true;
+
+        // Stashing doesn't stop the accessibility node from being generated or updated
+        // but it changes an accessibility flag.
         state.item.needs_accessibility = true;
-        // TODO - Remove once accessibility can be composed, same as above.
         state.item.request_accessibility = true;
-        // A stashed child doesn't need layout. We assumed that a child that just got
-        // un-stashed will need relayout.
-        // TODO - Handle this interaction more elegantly.
-        state.item.needs_layout = !stashed;
-        state.item.request_layout = !stashed;
+
+        // Items may have been changed while they were stashed in ways that require a
+        // relayout and a repaint.
+        if !stashed {
+            state.item.request_paint = true;
+            state.item.needs_paint = true;
+            state.item.needs_layout = true;
+            state.item.request_layout = true;
+        }
     }
 
     state.item.needs_update_stashed = false;
