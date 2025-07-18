@@ -124,6 +124,10 @@ fn build_access_node(
             .collect::<Vec<NodeId>>(),
     );
 
+    if ctx.is_stashed() {
+        debug_panic!("build_access_node called for stashed widget");
+    }
+
     // Note - The values returned by these methods can be modified by other passes.
     // When that happens, the other pass should set flags to request an accessibility pass.
     if ctx.is_disabled() {
