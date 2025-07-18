@@ -71,9 +71,6 @@ This version of Xilem Core has been verified to compile with **Rust 1.88** and l
 Future versions of Xilem Core might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
 
-<!-- We hide these elements when viewing in Rustdoc, because they're not expected to be present in crate level docs -->
-<div class="rustdoc-hidden">
-
 ## Community
 
 Discussion of Xilem Core development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
@@ -85,8 +82,6 @@ The [Rust code of conduct] applies.
 ## License
 
 Licensed under the Apache License, Version 2.0 ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
-
-</div>
 
 [Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
 
