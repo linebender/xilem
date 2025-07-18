@@ -151,7 +151,7 @@ impl GridParams {
     }
 }
 
-// --- MARK: WIDGETMUT---
+// --- MARK: WIDGETMUT
 impl Grid {
     /// Add a child widget.
     ///
@@ -285,7 +285,7 @@ impl Grid {
     }
 }
 
-// --- MARK: IMPL WIDGET---
+// --- MARK: IMPL WIDGET
 impl Widget for Grid {
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut() {
