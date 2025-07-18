@@ -446,7 +446,7 @@ mod tests {
 
     #[test]
     fn styled_label() {
-        let label =  Label::new("The quick brown fox jumps over the lazy dog")
+        let label = Label::new("The quick brown fox jumps over the lazy dog")
             .with_style(FontFamily::Generic(GenericFamily::Monospace))
             .with_style(StyleProperty::FontSize(20.0))
             .with_line_break_mode(LineBreaking::WordWrap)
@@ -487,32 +487,32 @@ mod tests {
     /// A wrapping label's text alignment should be respected, regardless of
     /// its parent's text alignment.
     fn label_text_alignment_flex() {
-    fn base_label() -> Label {
-        Label::new("Hello")
-            .with_style(StyleProperty::FontSize(20.0))
-            .with_line_break_mode(LineBreaking::WordWrap)
+        fn base_label() -> Label {
+            Label::new("Hello")
+                .with_style(StyleProperty::FontSize(20.0))
+                .with_line_break_mode(LineBreaking::WordWrap)
+        }
+        let label1 = base_label().with_text_alignment(TextAlign::Start);
+        let label2 = base_label().with_text_alignment(TextAlign::Center);
+        let label3 = base_label().with_text_alignment(TextAlign::End);
+        let label4 = base_label().with_text_alignment(TextAlign::Start);
+        let label5 = base_label().with_text_alignment(TextAlign::Center);
+        let label6 = base_label().with_text_alignment(TextAlign::End);
+        let flex = Flex::column()
+            .with_flex_child(label1, CrossAxisAlignment::Start)
+            .with_flex_child(label2, CrossAxisAlignment::Start)
+            .with_flex_child(label3, CrossAxisAlignment::Start)
+            // Text alignment start is "overwritten" by CrossAxisAlignment::Center.
+            .with_flex_child(label4, CrossAxisAlignment::Center)
+            .with_flex_child(label5, CrossAxisAlignment::Center)
+            .with_flex_child(label6, CrossAxisAlignment::Center)
+            .gap(0.0);
+
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 200.0));
+
+        assert_render_snapshot!(harness, "label_label_alignment_flex");
     }
-    let label1 = base_label().with_text_alignment(TextAlign::Start);
-    let label2 = base_label().with_text_alignment(TextAlign::Center);
-    let label3 = base_label().with_text_alignment(TextAlign::End);
-    let label4 = base_label().with_text_alignment(TextAlign::Start);
-    let label5 = base_label().with_text_alignment(TextAlign::Center);
-    let label6 = base_label().with_text_alignment(TextAlign::End);
-    let flex = Flex::column()
-        .with_flex_child(label1, CrossAxisAlignment::Start)
-        .with_flex_child(label2, CrossAxisAlignment::Start)
-        .with_flex_child(label3, CrossAxisAlignment::Start)
-        // Text alignment start is "overwritten" by CrossAxisAlignment::Center.
-        .with_flex_child(label4, CrossAxisAlignment::Center)
-        .with_flex_child(label5, CrossAxisAlignment::Center)
-        .with_flex_child(label6, CrossAxisAlignment::Center)
-        .gap(0.0);
-
-    let mut harness =
-        TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 200.0));
-
-    assert_render_snapshot!(harness, "label_label_alignment_flex");
-}
 
     #[test]
     fn line_break_modes() {
@@ -552,7 +552,7 @@ mod tests {
     #[test]
     fn edit_label() {
         let image_1 = {
-            let label =  Label::new("The quick brown fox jumps over the lazy dog")
+            let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(FontFamily::Generic(GenericFamily::Monospace))
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
