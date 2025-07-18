@@ -177,8 +177,6 @@ impl Flex {
     /// Equivalent to the css [gap] property.
     /// This gap is also present between spacers.
     ///
-    /// See also [`default_gap`](Self::default_gap).
-    ///
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
@@ -237,21 +235,7 @@ impl Flex {
         self
     }
 
-    /// Builder-style method to add a spacer widget with a standard size.
-    ///
-    /// The actual value of this spacer depends on whether this container is
-    /// a row or column, as well as theme settings.
-    pub fn with_default_spacer(self) -> Self {
-        let key = crate::theme::WIDGET_PADDING;
-        self.with_spacer(key)
-    }
-
     /// Builder-style method for adding a fixed-size spacer to the container.
-    ///
-    /// If you are laying out standard controls in this container, you should
-    /// generally prefer to use [`add_default_spacer`].
-    ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
     pub fn with_spacer(mut self, mut len: f64) -> Self {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -324,8 +308,6 @@ impl Flex {
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
-    ///
-    /// See also [`use_default_gap`](Self::use_default_gap).
     pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {
         if !gap.is_finite() || gap < 0.0 {
             debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
@@ -376,22 +358,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Add a spacer widget with a standard size.
-    ///
-    /// The actual value of this spacer depends on whether this container is
-    /// a row or column, as well as theme settings.
-    pub fn add_default_spacer(this: &mut WidgetMut<'_, Self>) {
-        let key = crate::theme::WIDGET_PADDING;
-        Self::add_spacer(this, key);
-        this.ctx.request_layout();
-    }
-
     /// Add an empty spacer widget with the given size.
-    ///
-    /// If you are laying out standard controls in this container, you should
-    /// generally prefer to use [`add_default_spacer`].
-    ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
     pub fn add_spacer(this: &mut WidgetMut<'_, Self>, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -473,27 +440,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    // TODO - remove
-    /// Insert a spacer widget with a standard size at the given index.
-    ///
-    /// The actual value of this spacer depends on whether this container is
-    /// a row or column, as well as theme settings.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_default_spacer(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        let key = crate::theme::WIDGET_PADDING;
-        Self::insert_spacer(this, idx, key);
-        this.ctx.request_layout();
-    }
-
     /// Insert an empty spacer widget with the given size at the given index.
-    ///
-    /// If you are laying out standard controls in this container, you should
-    /// generally prefer to use [`add_default_spacer`].
-    ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
     ///
     /// # Panics
     ///
@@ -1575,21 +1522,18 @@ mod tests {
                 // -> acdx
                 Flex::add_flex_child(&mut flex, Label::new("y"), 2.0);
                 // -> acdxy
-                Flex::add_default_spacer(&mut flex);
-                // -> acdxy_
                 Flex::add_spacer(&mut flex, 5.0);
-                // -> acdxy__
+                // -> acdxy_
                 Flex::add_flex_spacer(&mut flex, 1.0);
-                // -> acdxy___
+                // -> acdxy__
                 Flex::insert_child(&mut flex, 2, Label::new("i"));
-                // -> acidxy___
+                // -> acidxy__
                 Flex::insert_flex_child(&mut flex, 2, Label::new("j"), 2.0);
-                // -> acjidxy___
-                Flex::insert_default_spacer(&mut flex, 2);
-                // -> ac_jidxy___
+                // -> acjidxy__
                 Flex::insert_spacer(&mut flex, 2, 5.0);
-                // -> ac__jidxy___
+                // -> ac_jidxy__
                 Flex::insert_flex_spacer(&mut flex, 2, 1.0);
+                // -> ac__jidxy__
             });
 
             harness.render()
@@ -1601,13 +1545,11 @@ mod tests {
                 .with_child(Label::new("c"))
                 .with_flex_spacer(1.0)
                 .with_spacer(5.0)
-                .with_default_spacer()
                 .with_flex_child(Label::new("j"), 2.0)
                 .with_child(Label::new("i"))
                 .with_child(Label::new("d"))
                 .with_child(Label::new("x"))
                 .with_flex_child(Label::new("y"), 2.0)
-                .with_default_spacer()
                 .with_spacer(5.0)
                 .with_flex_spacer(1.0);
 
