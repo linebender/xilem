@@ -69,6 +69,8 @@ pub struct Label {
     /// If it has changed, we need to re-perform line-breaking.
     last_max_advance: Option<f32>,
 
+    /// Whether to hint whilst drawing the text.
+    ///
     /// Should be disabled whilst an animation involving this label is ongoing.
     // TODO: What classes of animations?
     hint: bool,
