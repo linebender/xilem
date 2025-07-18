@@ -86,14 +86,17 @@ First we implement event methods:
 
 ```rust,ignore
 use masonry::core::{
-    AccessEvent, Action, EventCtx, PointerButton, PointerEvent, PropertiesMut, TextEvent, Widget
+    AccessEvent, EventCtx, PointerButton, PointerEvent, PropertiesMut, TextEvent, Widget
 };
+
+#[derive(Debug)]
+struct ButtonPress(Option<PointerButton>);
 
 impl Widget for ColorRectangle {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
         match event {
             PointerEvent::Down { button: Some(PointerButton::Primary), .. } => {
-                ctx.submit_action(Action::ButtonPressed(Some(PointerButton::Primary)));
+                ctx.submit_action(ButtonPress(Some(PointerButton::Primary)));
             }
             _ => {},
         }
@@ -104,7 +107,7 @@ impl Widget for ColorRectangle {
     fn on_access_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::ButtonPressed(Some(PointerButton::Primary)));
+                    ctx.submit_action(ButtonPress(Some(PointerButton::Primary)));
                 }
                 _ => {}
             }
@@ -217,7 +220,7 @@ Returning [`Role::Button`] means that screen readers will report our widget as a
 
 In `accessibility`, we're given a mutable reference to a node from the accessibility tree representing the current widget, pre-filled with some information about it.
 
-We edit that node to mark that our widget accepts the `accesskit::Action::Click` event.
+We edit that node to mark that our widget accepts the `accesskit::Action::Click` event in `on_access_event`.
 
 #### Writing accessibility code
 
@@ -443,8 +446,6 @@ The next one is about creating a container widgets, and the complications it add
 [`Widget`]: crate::core::Widget
 [`WidgetMut`]: crate::core::WidgetMut
 [`PaintCtx::size()`]: crate::core::PaintCtx::size
-[`UpdateCtx::request_paint_only()`]: crate::core::UpdateCtx::request_paint_only
-[`ButtonPressed`]: crate::core::Action::ButtonPressed
 [`vello::Scene`]: vello::Scene
 [`Role::Button`]: accesskit::Role::Button
 [`RenderRoot::edit_root_widget()`]: crate::app::RenderRoot::edit_root_widget

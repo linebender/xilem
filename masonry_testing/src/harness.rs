@@ -694,7 +694,7 @@ impl TestHarness {
         ret
     }
 
-    /// Pop the oldest [`Action`] emitted by the widget tree, downcasting it to `T`.
+    /// Pop the oldest [`ErasedAction`] emitted by the widget tree, downcasting it to `T`.
     ///
     /// # Panics
     ///
@@ -712,7 +712,7 @@ impl TestHarness {
         Some((*action, widget))
     }
 
-    /// Pop the oldest [`Action`] emitted by the widget tree.
+    /// Pop the oldest [`ErasedAction`] emitted by the widget tree.
     pub fn pop_action_erased(&mut self) -> Option<(ErasedAction, WidgetId)> {
         self.action_queue.pop_front()
     }

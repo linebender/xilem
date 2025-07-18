@@ -1178,12 +1178,18 @@ impl_context_method!(
             self.global_state.mutate_callbacks.push(callback);
         }
 
-        /// Submit an [`Action`].
+        /// Submit an Action, which indicates that this widget requires something be handled
+        /// by the application, such as user input.
+        ///
+        /// For further details see [`ErasedAction`].
+        /// If you have an already boxed action, prefer `submit_erased_action`.s
         pub fn submit_action(&mut self, action: impl AnyDebug + Send) {
             self.submit_erased_action(Box::new(action));
         }
 
         /// Submit an already boxed action.
+        ///
+        /// See `submit_action` for more details.
         pub fn submit_erased_action(&mut self, action: ErasedAction) {
             trace!("submit_action");
             self.global_state

@@ -190,8 +190,8 @@ Since our `WidgetRectangle` doesn't emit actions, let's look at a unit test for 
 
         harness.mouse_click_on(button_id);
         assert_eq!(
-            harness.pop_action(),
-            Some((Action::ButtonPressed(Some(PointerButton::Primary)), button_id))
+            harness.pop_action::<ButtonPress>(),
+            Some((ButtonPress(Some(PointerButton::Primary)), button_id))
         );
     }
 ```
@@ -203,7 +203,6 @@ In general, `TestHarness` tries to implement methods matching every kind of beha
 Read the [`TestHarness`] documentation for a full overview of its API.
 
 [`Button`]: crate::widgets::Button
-[`SizedBox`]: crate::widgets::SizedBox
 [`TestHarness`]: crate::testing::TestHarness
 [`WrapperWidget`]: crate::testing::TestHarness
 [`WidgetRef`]: crate::core::WidgetRef

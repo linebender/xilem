@@ -18,17 +18,16 @@ use crate::debug_panic;
 
 /// The action type sent by the [`VirtualScroll`] widget.
 ///
-/// This will be sent to the driver as an [`Action::Other`].
 /// Before handling this action, you must call [`VirtualScroll::will_handle_action`] using it.
 ///
 /// Currently, this does not have utilities to produce the ranges which should be added and removed.
 /// The recommended approach is just to use the two loops, as the ranges are expected to be relatively small:
 ///
 /// ```rust
-/// # use masonry::core::Action;
+/// # use masonry::core::ErasedAction;
 /// # use masonry::widgets::{VirtualScrollAction, Label};
 /// # use core::marker::PhantomData;
-/// # let action: Action = Action::Other(Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 }));
+/// # let action: ErasedAction = Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 });
 /// # struct WidgetPod<W>(W);
 /// # impl<W> WidgetPod<W> { fn new(val: W) -> Self { Self(val) } }
 /// # // A fake VirtualScroll, as setting up a full Masonry context for this example would also be very verbose
@@ -39,7 +38,6 @@ use crate::debug_panic;
 /// #    fn will_handle_action(&mut self, action: &VirtualScrollAction) {}
 /// # }
 /// # let mut scroll = VirtualScroll::<Label>(PhantomData);
-/// let Action::Other(action) = action else { unreachable!() };
 /// let action = action.downcast::<VirtualScrollAction>().unwrap();
 /// // We tell the scroll area which action we're about to handle
 /// VirtualScroll::will_handle_action(&mut scroll, &action);

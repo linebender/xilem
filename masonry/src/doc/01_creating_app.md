@@ -74,18 +74,19 @@ At the end of the main function, we pass the root widget to the `event_loop_runn
 That function starts the main event loop, which runs until the user closes the window.
 During the course of the event loop, the widget tree will be displayed, and updated as the user interacts with the app.
 
-
 ## The `Driver`
 
 To handle user interactions, we need to implement the `AppDriver` trait:
 
 ```rust,ignore
 trait AppDriver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: Action);
+    fn on_action(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_>, widget_id: WidgetId, action: ErasedAction);
 }
 ```
 
-Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), an [`Action`] is emitted, and the `on_action` method is called.
+Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), the widget the user interacted with will emit an action, and the framework will call `on_action` method is called.
+These actions are type-erased in the [`ErasedAction`] type.
+Each widget documents which action types it will emit, and in which circumstances.
 
 That method gives our app a `DriverCtx` context, which we can use to access the root widget, and a [`WidgetId`] identifying the widget that emitted the action.
 
@@ -103,18 +104,18 @@ struct Driver {
 
 impl AppDriver for Driver {
     fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
-        match action {
-            Action::ButtonPressed(_) => {
-                ctx.render_root().edit_root_widget(|mut root| {
-                    let mut portal = root.downcast::<Portal<Flex>>();
-                    let mut flex = Portal::child_mut(&mut portal);
-                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
-                });
+        if action.is::<ButtonPress>() {
+            ctx.render_root(window_id).edit_root_widget(|mut root| {
+                let mut portal = root.downcast::<Portal<Flex>>();
+                let mut flex = Portal::child_mut(&mut portal);
+                Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+            });
+        } else if action.is::<TextAction>() {
+            let action: TextAction = *action.downcast().unwrap();
+            match action {
+                TextAction::Changed(new_text) => self.next_task = new_text.clone(),
+                _ => {}
             }
-            Action::TextChanged(new_text) => {
-                self.next_task = new_text.clone();
-            }
-            _ => {}
         }
     }
 }
@@ -122,12 +123,12 @@ impl AppDriver for Driver {
 
 In `on_action`, we handle the two possible actions:
 
-- `TextChanged`: Update the text of the next task.
-- `ButtonPressed`: Add a task to the list.
+- `TextAction::Changed`: Update the text of the next task.
+- `ButtonPress`: Add a task to the list.
 
 Because our widget tree only has one button and one text input, there is no possible ambiguity as to which widget emitted the event, so we can ignore the `WidgetId` argument.
 
-When handling `ButtonPressed`:
+When handling `ButtonPress`:
 
 - `ctx.render_root()` returns a reference to the `RenderRoot`, which owns the widget tree and all the associated visual state.
 - `RenderRoot::edit_root_widget()` takes a closure; that closure takes a `WidgetMut<dyn Widget>` which we call `root`. Once the closure returns, `RenderRoot` runs some passes to update the app's internal states.
@@ -198,7 +199,7 @@ fn main() {
             .with_spacer(VERTICAL_WIDGET_SPACING),
     );
 
-    use masonry::core::{Action, WidgetId};
+    use masonry::core::{ErasedAction, WidgetId};
     use masonry::widgets::Label;
     use masonry_winit::app::{AppDriver, DriverCtx};
 
@@ -207,19 +208,19 @@ fn main() {
     }
 
     impl AppDriver for Driver {
-        fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
-            match action {
-                Action::ButtonPressed(_) => {
-                    ctx.render_root().edit_root_widget(|mut root| {
-                        let mut portal = root.downcast::<Portal<Flex>>();
-                        let mut flex = Portal::child_mut(&mut portal);
-                        Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
-                    });
+        fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: ErasedAction) {
+            if action.is::<ButtonPress>() {
+                ctx.render_root(window_id).edit_root_widget(|mut root| {
+                    let mut portal = root.downcast::<Portal<Flex>>();
+                    let mut flex = Portal::child_mut(&mut portal);
+                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                });
+            } else if action.is::<TextAction>() {
+                let action: TextAction = *action.downcast().unwrap();
+                match action {
+                    TextAction::Changed(new_text) => self.next_task = new_text.clone(),
+                    _ => {}
                 }
-                Action::TextChanged(new_text) => {
-                    self.next_task = new_text.clone();
-                }
-                _ => {}
             }
         }
     }
@@ -272,7 +273,7 @@ Most of this documentation is written to help developers trying to build such a 
 [`TextInput`]: crate::widgets::TextInput
 [`Button`]: crate::widgets::Button
 
-[`Action`]: crate::core::Action
+[`ErasedAction`]: crate::core::ErasedAction
 [`WidgetId`]: crate::core::WidgetId
 [`WidgetMut`]: crate::core::WidgetMut
 [add_child]: crate::widgets::Flex::add_child
