@@ -7,11 +7,11 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::core::{Action, StyleProperty, WidgetId, WidgetPod};
+use masonry::core::{ErasedAction, StyleProperty, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, Flex, Label};
+use masonry::widgets::{Button, ButtonPress, Flex, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -27,17 +27,15 @@ impl AppDriver for Driver {
         window_id: WindowId,
         _ctx: &mut DriverCtx<'_, '_>,
         _widget_id: WidgetId,
-        action: Action,
+        action: ErasedAction,
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        match action {
-            Action::ButtonPressed(_) => {
-                println!("Hello");
-            }
-            action => {
-                eprintln!("Unexpected action {action:?}");
-            }
+        if action.is::<ButtonPress>() {
+            println!("Hello");
+        } else {
+            // TODO: tracing::error?
+            eprintln!("Unexpected action {action:?}");
         }
     }
 }

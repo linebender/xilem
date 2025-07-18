@@ -3,7 +3,6 @@
 
 //! Basic types and traits Masonry is built on.
 
-mod action;
 mod box_constraints;
 mod contexts;
 mod events;
@@ -17,7 +16,7 @@ mod widget_pod;
 mod widget_ref;
 mod widget_state;
 
-pub use action::Action;
+use anymore::AnyDebug;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
@@ -43,3 +42,16 @@ pub use ui_events::{ScrollDelta, keyboard, pointer};
 pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
+
+/// Actions are emitted by Masonry Widgets when a user input needs to be handled by the application.
+///
+/// The concrete action type can be accessed from this type using [`downcast`](anymore::AnyDebug#method.downcast-1).
+// N.b. We would like to use a true intra-doc link here, but it's not feasible to do so to `dyn Trait` items.
+// see https://github.com/rust-lang/rust/issues/74563
+///
+/// Widget implementation can create actions using the [`submit_action`](EventCtx::submit_action) method
+/// on context types. In Masonry Winit, they are passed to the application through the `on_action` method
+/// on `AppDriver`.
+///
+/// In tests, you can access these using the `pop_action` method on `TestHarness`.
+pub type ErasedAction = Box<dyn AnyDebug + Send>;

@@ -10,7 +10,9 @@ use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
 use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
-use masonry_core::core::{DefaultProperties, TextEvent, Widget, WidgetId, WidgetPod, WindowEvent};
+use masonry_core::core::{
+    DefaultProperties, ErasedAction, TextEvent, Widget, WidgetId, WidgetPod, WindowEvent,
+};
 use masonry_core::kurbo::Affine;
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
@@ -32,7 +34,7 @@ use crate::app_driver::WindowId;
 pub enum MasonryUserEvent {
     AccessKit(HandleId, accesskit_winit::WindowEvent),
     // TODO: A more considered design here
-    Action(WindowId, masonry_core::core::Action, WidgetId),
+    Action(WindowId, ErasedAction, WidgetId),
 }
 
 impl From<accesskit_winit::Event> for MasonryUserEvent {

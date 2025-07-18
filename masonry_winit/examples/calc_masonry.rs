@@ -15,9 +15,9 @@ use std::str::FromStr;
 
 use masonry::accesskit;
 use masonry::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ErasedAction, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -46,11 +46,15 @@ struct CalcState {
 }
 
 #[derive(Clone, Copy, Debug)]
+/// The Action type for `CalcButton`
 enum CalcAction {
     Digit(u8),
     Op(char),
 }
 
+/// A custom Widget which acts like a button.
+///
+/// Emits the [`CalcAction`] action when pressed.
 struct CalcButton {
     inner: WidgetPod<SizedBox>,
     action: CalcAction,
@@ -186,7 +190,7 @@ impl Widget for CalcButton {
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
                         inner.insert_prop(Background::Color(color));
                     });
-                    ctx.submit_action(Action::Other(Box::new(self.action)));
+                    ctx.submit_action(self.action);
                     trace!("CalcButton {:?} released", ctx.widget_id());
                 }
             }
@@ -211,7 +215,7 @@ impl Widget for CalcButton {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::Other(Box::new(self.action)));
+                    ctx.submit_action(self.action);
                 }
                 _ => {}
             }
@@ -293,16 +297,13 @@ impl AppDriver for CalcState {
         window_id: WindowId,
         ctx: &mut DriverCtx<'_, '_>,
         _widget_id: WidgetId,
-        action: Action,
+        action: ErasedAction,
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        match action {
-            Action::Other(payload) => match payload.downcast_ref::<CalcAction>().unwrap() {
-                CalcAction::Digit(digit) => self.digit(*digit),
-                CalcAction::Op(op) => self.op(*op),
-            },
-            _ => unreachable!(),
+        match action.downcast_ref::<CalcAction>().unwrap() {
+            CalcAction::Digit(digit) => self.digit(*digit),
+            CalcAction::Op(op) => self.op(*op),
         }
 
         ctx.render_root(window_id).edit_root_widget(|mut root| {

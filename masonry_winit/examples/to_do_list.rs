@@ -7,11 +7,11 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{Action, Properties, Widget, WidgetId, WidgetPod};
+use masonry::core::{ErasedAction, Properties, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, Flex, Label, Portal, TextArea, TextInput};
+use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -28,29 +28,31 @@ impl AppDriver for Driver {
         window_id: WindowId,
         ctx: &mut DriverCtx<'_, '_>,
         _widget_id: WidgetId,
-        action: Action,
+        action: ErasedAction,
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        match action {
-            Action::ButtonPressed(_) => {
-                ctx.render_root(window_id).edit_root_widget(|mut root| {
-                    let mut portal = root.downcast::<Portal<Flex>>();
-                    let mut flex = Portal::child_mut(&mut portal);
-                    Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+        if action.is::<ButtonPress>() {
+            ctx.render_root(window_id).edit_root_widget(|mut root| {
+                let mut portal = root.downcast::<Portal<Flex>>();
+                let mut flex = Portal::child_mut(&mut portal);
+                Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
 
-                    let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
-                    let mut first_row = first_row.downcast::<Flex>();
-                    let mut text_input = Flex::child_mut(&mut first_row, 0).unwrap();
-                    let mut text_input = text_input.downcast::<TextInput>();
-                    let mut text_area = TextInput::text_mut(&mut text_input);
-                    TextArea::reset_text(&mut text_area, "");
-                });
+                let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
+                let mut first_row = first_row.downcast::<Flex>();
+                let mut text_input = Flex::child_mut(&mut first_row, 0).unwrap();
+                let mut text_input = text_input.downcast::<TextInput>();
+                let mut text_area = TextInput::text_mut(&mut text_input);
+                TextArea::reset_text(&mut text_area, "");
+            });
+        } else if action.is::<TextAction>() {
+            let action = action.downcast::<TextAction>().unwrap();
+            match *action {
+                TextAction::Changed(new_text) => {
+                    self.next_task = new_text.clone();
+                }
+                TextAction::Entered(_) => {}
             }
-            Action::TextChanged(new_text) => {
-                self.next_task = new_text.clone();
-            }
-            _ => {}
         }
     }
 }

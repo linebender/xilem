@@ -6,7 +6,7 @@ use masonry::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground,
     DisabledTextColor, Padding, TextColor,
 };
-use masonry::widgets;
+use masonry::widgets::{self, TextAction};
 use vello::kurbo::Affine;
 use vello::peniko::Color;
 
@@ -233,25 +233,22 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             id_path.is_empty(),
             "id path should be empty in TextInput::message"
         );
-        match message.downcast::<masonry::core::Action>() {
+        match message.downcast::<TextAction>() {
             Ok(action) => match *action {
-                masonry::core::Action::TextChanged(text) => {
+                TextAction::Changed(text) => {
                     MessageResult::Action((self.on_changed)(app_state, text))
                 }
-                masonry::core::Action::TextEntered(text) if self.on_enter.is_some() => {
+                TextAction::Entered(text) if self.on_enter.is_some() => {
                     MessageResult::Action((self.on_enter.as_ref().unwrap())(app_state, text))
                 }
-                masonry::core::Action::TextEntered(_) => {
-                    tracing::error!("TextInput::message: on_enter is not set");
-                    MessageResult::Stale(DynMessage(action))
-                }
-                _ => {
-                    tracing::error!("Wrong action type in TextInput::message: {action:?}");
+
+                TextAction::Entered(_) => {
+                    tracing::error!("Textbox::message: on_enter is not set");
                     MessageResult::Stale(DynMessage(action))
                 }
             },
             Err(message) => {
-                tracing::error!("Wrong message type in TextInput::message");
+                tracing::error!("Wrong message type in TextInput::message: {message:?}.");
                 MessageResult::Stale(message)
             }
         }

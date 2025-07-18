@@ -15,9 +15,9 @@ use vello::kurbo::{Rect, Size};
 
 use crate::Handled;
 use crate::core::{
-    AccessEvent, Action, BrushIndex, DefaultProperties, Ime, PointerEvent, PropertiesRef, QueryCtx,
-    ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod, WidgetRef,
-    WidgetState, WindowEvent,
+    AccessEvent, BrushIndex, DefaultProperties, ErasedAction, Ime, PointerEvent, PropertiesRef,
+    QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod,
+    WidgetRef, WidgetState, WindowEvent,
 };
 use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
@@ -198,7 +198,7 @@ pub struct RenderRootOptions {
 #[derive(Debug)]
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
-    Action(Action, WidgetId),
+    Action(ErasedAction, WidgetId),
     /// An IME session has been started.
     StartIme,
     /// The IME session has ended.

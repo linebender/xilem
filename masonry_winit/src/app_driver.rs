@@ -7,7 +7,7 @@ use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
-use masonry_core::core::{Action, Widget, WidgetId, WidgetPod};
+use masonry_core::core::{ErasedAction, Widget, WidgetId, WidgetPod};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes};
@@ -59,13 +59,16 @@ impl<'a, 's> DriverCtx<'a, 's> {
 /// a type that implements this trait.
 #[expect(unused_variables, reason = "Default impls doesn't use arguments")]
 pub trait AppDriver {
-    /// A hook which will be executed when a widget emits an [`Action`].
+    /// A hook which will be executed when a widget emits an `action`.
+    ///
+    /// This action is type-erased, and the type of action emitted will depend on.
+    /// Each widget should document which types of action it might emit.
     fn on_action(
         &mut self,
         window_id: WindowId,
         ctx: &mut DriverCtx<'_, '_>,
         widget_id: WidgetId,
-        action: Action,
+        action: ErasedAction,
     );
 
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.

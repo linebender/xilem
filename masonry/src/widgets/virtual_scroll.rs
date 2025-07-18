@@ -10,7 +10,7 @@ use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
@@ -18,17 +18,16 @@ use crate::debug_panic;
 
 /// The action type sent by the [`VirtualScroll`] widget.
 ///
-/// This will be sent to the driver as an [`Action::Other`].
 /// Before handling this action, you must call [`VirtualScroll::will_handle_action`] using it.
 ///
 /// Currently, this does not have utilities to produce the ranges which should be added and removed.
 /// The recommended approach is just to use the two loops, as the ranges are expected to be relatively small:
 ///
 /// ```rust
-/// # use masonry::core::Action;
+/// # use masonry::core::ErasedAction;
 /// # use masonry::widgets::{VirtualScrollAction, Label};
 /// # use core::marker::PhantomData;
-/// # let action: Action = Action::Other(Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 }));
+/// # let action: ErasedAction = Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 });
 /// # struct WidgetPod<W>(W);
 /// # impl<W> WidgetPod<W> { fn new(val: W) -> Self { Self(val) } }
 /// # // A fake VirtualScroll, as setting up a full Masonry context for this example would also be very verbose
@@ -39,7 +38,6 @@ use crate::debug_panic;
 /// #    fn will_handle_action(&mut self, action: &VirtualScrollAction) {}
 /// # }
 /// # let mut scroll = VirtualScroll::<Label>(PhantomData);
-/// let Action::Other(action) = action else { unreachable!() };
 /// let action = action.downcast::<VirtualScrollAction>().unwrap();
 /// // We tell the scroll area which action we're about to handle
 /// VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -793,10 +791,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             if self.active_range != target_range {
                 let previous_active = self.active_range.clone();
 
-                ctx.submit_action(Action::Other(Box::new(VirtualScrollAction {
+                ctx.submit_action(VirtualScrollAction {
                     old_active: previous_active,
                     target: target_range,
-                })));
+                });
                 self.action_handled = false;
             }
         }
@@ -923,8 +921,8 @@ mod tests {
     use vello::kurbo::Size;
 
     use crate::core::{
-        Action, FromDynWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId,
-        WidgetMut, WidgetPod,
+        FromDynWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId, WidgetMut,
+        WidgetPod,
     };
     use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
@@ -1335,17 +1333,13 @@ mod tests {
             if iteration > 1000 {
                 panic!("Took too long to reach fixpoint");
             }
-            let Some((action, id)) = harness.pop_action() else {
+            let Some((action, id)) = harness.pop_action::<VirtualScrollAction>() else {
                 break;
             };
             assert_eq!(
                 id, virtual_scroll_id,
                 "Only widget in tree should give action"
             );
-            let Action::Other(action) = action else {
-                unreachable!()
-            };
-            let action = action.downcast::<VirtualScrollAction>().unwrap();
             if let Some(old_active) = old_active.take() {
                 assert_eq!(action.old_active, old_active);
             }
@@ -1357,7 +1351,7 @@ mod tests {
 
             harness.edit_widget(virtual_scroll_id, |mut portal| {
                 let scroll = portal.downcast::<VirtualScroll<T>>();
-                f(*action, scroll);
+                f(action, scroll);
             });
         }
     }

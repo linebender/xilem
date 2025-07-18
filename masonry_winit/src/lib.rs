@@ -17,12 +17,12 @@
 //! The to-do-list example looks like this:
 //!
 //! ```rust
-//! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
-//! use masonry_winit::winit::window::Window;
-//! use masonry::core::{Action, Widget, WidgetId, WidgetPod};
+//! use masonry::core::{ErasedAction, Widget, WidgetId, WidgetPod};
 //! use masonry::dpi::LogicalSize;
 //! use masonry::theme::default_property_set;
-//! use masonry::widgets::{Button, Flex, Label, Portal, TextInput};
+//! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextInput};
+//! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+//! use masonry_winit::winit::window::Window;
 //!
 //! struct Driver {
 //!     next_task: String,
@@ -35,22 +35,22 @@
 //!         window_id: WindowId,
 //!         ctx: &mut DriverCtx<'_, '_>,
 //!         _widget_id: WidgetId,
-//!         action: Action,
+//!         action: ErasedAction,
 //!     ) {
 //!         debug_assert_eq!(window_id, self.window_id, "unknown window");
 //!
-//!         match action {
-//!             Action::ButtonPressed(_) => {
-//!                 ctx.render_root(window_id).edit_root_widget(|mut root| {
-//!                     let mut portal = root.downcast::<Portal<Flex>>();
-//!                     let mut flex = Portal::child_mut(&mut portal);
-//!                     Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
-//!                 });
+//!         if action.is::<ButtonPress>() {
+//!             ctx.render_root(window_id).edit_root_widget(|mut root| {
+//!                 let mut portal = root.downcast::<Portal<Flex>>();
+//!                 let mut flex = Portal::child_mut(&mut portal);
+//!                 Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+//!             });
+//!         } else if action.is::<TextAction>() {
+//!             let action: TextAction = *action.downcast().unwrap();
+//!             match action {
+//!                 TextAction::Changed(new_text) => self.next_task = new_text.clone(),
+//!                 _ => {}
 //!             }
-//!             Action::TextChanged(new_text) => {
-//!                 self.next_task = new_text.clone();
-//!             }
-//!             _ => {}
 //!         }
 //!     }
 //! }

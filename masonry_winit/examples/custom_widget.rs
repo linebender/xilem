@@ -10,7 +10,7 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ErasedAction, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
@@ -34,7 +34,7 @@ impl AppDriver for Driver {
         _window_id: WindowId,
         _ctx: &mut DriverCtx<'_, '_>,
         _widget_id: WidgetId,
-        _action: Action,
+        _action: ErasedAction,
     ) {
     }
 }

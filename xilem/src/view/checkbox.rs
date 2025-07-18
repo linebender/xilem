@@ -8,7 +8,7 @@ use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
 
 use masonry::core::ArcStr;
 use masonry::properties::*;
-use masonry::widgets;
+use masonry::widgets::{self, CheckboxToggled};
 
 /// An element which can be in checked and unchecked state.
 ///
@@ -149,17 +149,10 @@ where
             id_path.is_empty(),
             "id path should be empty in Checkbox::message"
         );
-        match message.downcast::<masonry::core::Action>() {
-            Ok(action) => {
-                if let masonry::core::Action::CheckboxToggled(checked) = *action {
-                    MessageResult::Action((self.callback)(app_state, checked))
-                } else {
-                    tracing::error!("Wrong action type in Checkbox::message: {action:?}");
-                    MessageResult::Stale(DynMessage(action))
-                }
-            }
+        match message.downcast::<CheckboxToggled>() {
+            Ok(checked) => MessageResult::Action((self.callback)(app_state, checked.0)),
             Err(message) => {
-                tracing::error!("Wrong message type in Checkbox::message");
+                tracing::error!("Wrong message type in Checkbox::message, got {message:?}.");
                 MessageResult::Stale(message)
             }
         }

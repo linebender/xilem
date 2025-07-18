@@ -17,7 +17,7 @@ use vello::peniko::Fill;
 use crate::TextAlign;
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, Action, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
@@ -39,11 +39,7 @@ use crate::{palette, theme};
 /// edited by the user of the app.
 /// This is true for `TextInput` and false for `Prose`.
 ///
-/// This widget emits the following actions only when `USER_EDITABLE` is true:
-///
-/// - `TextEntered`, which is sent when the enter key is pressed (this can be
-///   configured using [`with_insert_newline`](Self::with_insert_newline))
-/// - `TextChanged`, which is sent whenever the text is changed
+/// This widget emits [`TextAction`] only when `USER_EDITABLE` is true.
 ///
 /// The exact semantics of how much horizontal space this widget takes up has not been determined.
 /// In particular, this has consequences when the text alignment is set.
@@ -79,7 +75,7 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     hint: bool,
 
     /// What key combination should trigger a newline insertion.
-    /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a `TextEntered` event.
+    /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a [`TextAction::Entered`] event.
     insert_newline: InsertNewline,
 }
 
@@ -401,6 +397,20 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     }
 }
 
+/// Text in a text area has been changed or submitted with enter.
+#[derive(PartialEq, Debug)]
+// TODO: Should this be two different structs?
+pub enum TextAction {
+    /// The text has been changed.
+    Changed(String),
+    /// The text has been submitted with the enter key.
+    ///
+    /// Whether this action gets emitted depends on the [`InsertNewline`] setting
+    /// and with [`InsertNewline::OnShiftEnter`] also on if the shift key is pressed.
+    Entered(String),
+    // TODO: TextCursor changed, ImeChanged
+}
+
 // --- MARK: IMPL WIDGET
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn on_pointer_event(
@@ -632,7 +642,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                                 .insert_or_replace_selection("\n");
                             edited = true;
                         } else {
-                            ctx.submit_action(Action::TextEntered(self.text().to_string()));
+                            ctx.submit_action(TextAction::Entered(self.text().to_string()));
                         }
                     }
 
@@ -656,7 +666,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     if edited {
-                        ctx.submit_action(Action::TextChanged(self.text().into_iter().collect()));
+                        ctx.submit_action(TextAction::Changed(self.text().into_iter().collect()));
                         ctx.request_layout();
                     } else {
                         ctx.request_render();
@@ -698,7 +708,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.set_handled();
                 if edited {
                     let text = self.text().into_iter().collect();
-                    ctx.submit_action(Action::TextChanged(text));
+                    ctx.submit_action(TextAction::Changed(text));
                 }
 
                 let new_generation = self.editor.generation();
@@ -906,7 +916,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 pub enum InsertNewline {
     /// Insert a newline when the user presses Enter.
     ///
-    /// Note that if this is enabled, then the text area will never emit a `TextEntered` event.
+    /// Note that if this is enabled, then the text area will never emit a [`TextAction::Entered`] event.
     OnEnter,
     /// Insert a newline when the user presses Shift+Enter.
     OnShiftEnter,
@@ -926,7 +936,7 @@ mod tests {
     use vello::kurbo::Size;
 
     use super::*;
-    use crate::core::{Action, KeyboardEvent, Modifiers};
+    use crate::core::{KeyboardEvent, Modifiers};
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.
@@ -1090,18 +1100,18 @@ mod tests {
             let widget = harness.try_get_widget(text_id).unwrap();
             let area = widget.downcast::<TextArea<true>>().unwrap();
             let text = area.text().to_string();
-            let (action, widget_id) = harness.pop_action().unwrap();
+            let (action, widget_id) = harness.pop_action::<TextAction>().unwrap();
             assert_eq!(widget_id, text_id);
 
             // Check that only the one action was emitted so we don't miss an error case
-            // where TextEntered _and_ TextChanged actions are emitted
-            assert!(harness.pop_action().is_none());
+            // where Entered _and_ Changed actions are emitted
+            assert!(harness.pop_action_erased().is_none());
 
             if scenario.expect_text_entered_event {
-                assert_eq!(action, Action::TextEntered("hello world".to_string()));
+                assert_eq!(action, TextAction::Entered("hello world".to_string()));
                 assert_eq!(text, "hello world");
             } else {
-                assert_eq!(action, Action::TextChanged("\nhello world".to_string()));
+                assert_eq!(action, TextAction::Changed("\nhello world".to_string()));
                 assert_eq!(text, "\nhello world");
             }
         }

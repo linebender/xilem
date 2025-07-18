@@ -6,6 +6,7 @@
 use std::any::Any;
 
 use accesskit::TreeUpdate;
+use anymore::AnyDebug;
 use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
@@ -14,7 +15,7 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    Action, AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties,
+    AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties, ErasedAction,
     FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut,
     WidgetPod, WidgetRef, WidgetState,
 };
@@ -1177,10 +1178,19 @@ impl_context_method!(
             self.global_state.mutate_callbacks.push(callback);
         }
 
-        /// Submit an [`Action`].
+        /// Submit an Action, which indicates that this widget requires something be handled
+        /// by the application, such as user input.
         ///
-        /// Note: Actions are still a WIP feature.
-        pub fn submit_action(&mut self, action: Action) {
+        /// For further details see [`ErasedAction`].
+        /// If you have an already boxed action, prefer `submit_erased_action`.s
+        pub fn submit_action(&mut self, action: impl AnyDebug + Send) {
+            self.submit_erased_action(Box::new(action));
+        }
+
+        /// Submit an already boxed action.
+        ///
+        /// See `submit_action` for more details.
+        pub fn submit_erased_action(&mut self, action: ErasedAction) {
             trace!("submit_action");
             self.global_state
                 .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));

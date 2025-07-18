@@ -7,13 +7,13 @@
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 use masonry::TextAlign;
 use masonry::core::{
-    Action, PointerButton, Properties, StyleProperty, WidgetId, WidgetOptions, WidgetPod,
+    ErasedAction, PointerButton, Properties, StyleProperty, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, Grid, GridParams, Prose, SizedBox, TextArea};
+use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -28,11 +28,12 @@ impl AppDriver for Driver {
         window_id: WindowId,
         ctx: &mut DriverCtx<'_, '_>,
         _widget_id: WidgetId,
-        action: Action,
+        action: ErasedAction,
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        if let Action::ButtonPressed(button) = action {
+        if action.is::<ButtonPress>() {
+            let button = action.downcast::<ButtonPress>().unwrap().button;
             self.grid_spacing += match button {
                 Some(PointerButton::Primary) => 1.0,
                 Some(PointerButton::Secondary) => -1.0,
