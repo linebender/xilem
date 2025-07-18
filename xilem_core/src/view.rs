@@ -112,7 +112,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-/// An identifier used to differentiation between the direct children of a [`View`].
+/// An identifier used to differentiate between the direct children of a [`View`].
 ///
 /// These are [`u64`] backed identifiers, which will be added to the "view path" in
 /// [`View::build`] and [`View::rebuild`] (and their [`ViewSequence`](crate::ViewSequence) counterparts),
