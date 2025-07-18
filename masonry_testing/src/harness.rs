@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
+use masonry_core::anymore::AnyDebug;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -18,7 +19,7 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    Action, DefaultProperties, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
+    DefaultProperties, ErasedAction, Ime, PointerButton, PointerEvent, PointerId, PointerInfo,
     PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut,
     WidgetRef, WindowEvent,
 };
@@ -134,7 +135,7 @@ pub struct TestHarness {
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
-    action_queue: VecDeque<(Action, WidgetId)>,
+    action_queue: VecDeque<(ErasedAction, WidgetId)>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
     title: String,
@@ -693,8 +694,26 @@ impl TestHarness {
         ret
     }
 
+    /// Pop the oldest [`Action`] emitted by the widget tree, downcasting it to `T`.
+    ///
+    /// # Panics
+    ///
+    /// If there is an action, but it is not of type `T`.
+    #[track_caller]
+    pub fn pop_action<T: AnyDebug>(&mut self) -> Option<(T, WidgetId)> {
+        let (action, widget) = self.pop_action_erased()?;
+        let action = action.downcast().unwrap_or_else(|action| {
+            panic!(
+                "Expected Action to be of type {}, but got a value of type {} ({action:?}).",
+                std::any::type_name::<T>(),
+                (*action).type_name()
+            )
+        });
+        Some((*action, widget))
+    }
+
     /// Pop the oldest [`Action`] emitted by the widget tree.
-    pub fn pop_action(&mut self) -> Option<(Action, WidgetId)> {
+    pub fn pop_action_erased(&mut self) -> Option<(ErasedAction, WidgetId)> {
         self.action_queue.pop_front()
     }
 

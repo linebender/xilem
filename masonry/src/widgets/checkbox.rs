@@ -14,9 +14,9 @@ use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
 use vello::peniko::Color;
 
 use crate::core::{
-    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
@@ -29,6 +29,8 @@ use crate::widgets::Label;
 /// A checkbox that can be toggled.
 ///
 #[doc = crate::include_screenshot!("checkbox_hello_checked.png", "Checkbox with checked state.")]
+///
+/// Emits [`CheckboxToggled`] when toggled.
 pub struct Checkbox {
     checked: bool,
     // FIXME - Remove label child, have this widget only be a box with a checkmark.
@@ -75,6 +77,12 @@ impl Checkbox {
     }
 }
 
+/// The action type emitted by [`Checkbox`] when it is toggled.
+///
+/// The field is the toggle state (i.e. true is "checked").
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct CheckboxToggled(pub bool);
+
 // --- MARK: IMPL WIDGET
 impl Widget for Checkbox {
     fn on_pointer_event(
@@ -95,7 +103,7 @@ impl Widget for Checkbox {
             PointerEvent::Up { .. } => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    ctx.submit_action(CheckboxToggled(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 // Checked state impacts appearance and accessibility node
@@ -115,7 +123,7 @@ impl Widget for Checkbox {
             TextEvent::Keyboard(event) if event.state.is_up() => {
                 if matches!(&event.key, Key::Character(c) if c == " ") {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    ctx.submit_action(CheckboxToggled(self.checked));
                     // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                 }
@@ -139,7 +147,7 @@ impl Widget for Checkbox {
             match event.action {
                 accesskit::Action::Click => {
                     self.checked = !self.checked;
-                    ctx.submit_action(Action::CheckboxToggled(self.checked));
+                    ctx.submit_action(CheckboxToggled(self.checked));
                     // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                 }
@@ -335,12 +343,12 @@ mod tests {
 
         assert_render_snapshot!(harness, "checkbox_hello_unchecked");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(checkbox_id);
         assert_eq!(
-            harness.pop_action(),
-            Some((Action::CheckboxToggled(true), checkbox_id))
+            harness.pop_action::<CheckboxToggled>(),
+            Some((CheckboxToggled(true), checkbox_id))
         );
 
         assert_render_snapshot!(harness, "checkbox_hello_checked");
@@ -352,14 +360,8 @@ mod tests {
         harness.process_text_event(TextEvent::key_down(Key::Character(" ".into())));
         harness.process_text_event(TextEvent::key_up(Key::Character(" ".into())));
         assert_eq!(
-            harness.pop_action(),
-            Some((Action::CheckboxToggled(false), checkbox_id))
-        );
-
-        harness.mouse_click_on(checkbox_id);
-        assert_eq!(
-            harness.pop_action(),
-            Some((Action::CheckboxToggled(true), checkbox_id))
+            harness.pop_action::<CheckboxToggled>(),
+            Some((CheckboxToggled(false), checkbox_id))
         );
     }
 

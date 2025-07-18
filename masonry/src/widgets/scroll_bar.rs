@@ -279,11 +279,11 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_default");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(scrollbar_id);
         // TODO - Scroll action?
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action_erased().is_none());
 
         assert_render_snapshot!(harness, "scrollbar_middle");
 
@@ -306,11 +306,11 @@ mod tests {
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(scrollbar_id);
         // TODO - Scroll action?
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action_erased().is_none());
 
         assert_render_snapshot!(harness, "scrollbar_horizontal_middle");
     }

@@ -3,7 +3,6 @@
 
 //! Basic types and traits Masonry is built on.
 
-mod action;
 mod box_constraints;
 mod contexts;
 mod events;
@@ -17,7 +16,7 @@ mod widget_pod;
 mod widget_ref;
 mod widget_state;
 
-pub use action::Action;
+use anymore::AnyDebug;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
@@ -43,3 +42,8 @@ pub use ui_events::{ScrollDelta, keyboard, pointer};
 pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
+
+/// Actions are emitted by Masonry Widgets to inform the.
+///
+/// This type is used internally in Masonry for.
+pub type ErasedAction = Box<dyn AnyDebug + Send>;

@@ -350,6 +350,7 @@ where
         }
         if message.is::<VirtualScrollAction>() {
             let action = message.downcast::<VirtualScrollAction>().unwrap();
+
             view_state.current_updated = true;
             // We know that the `current_views` have not been applied, so we can just brute force overwrite them.
             view_state.current_views.clear();

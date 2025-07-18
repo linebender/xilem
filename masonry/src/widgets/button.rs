@@ -8,15 +8,16 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
+use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Color;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, Action, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
+    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
@@ -28,7 +29,7 @@ use crate::widgets::Label;
 
 /// A button with a text label.
 ///
-/// Emits [`Action::ButtonPressed`] when pressed.
+/// Emits [`ButtonPress`] when pressed.
 ///
 #[doc = crate::include_screenshot!("button_hello.png", "Button with text label.")]
 pub struct Button {
@@ -88,6 +89,15 @@ impl Button {
     }
 }
 
+/// A button was pressed.
+#[derive(PartialEq, Debug)]
+pub struct ButtonPress {
+    /// The pointer button that has been pressed.
+    ///
+    /// Can be `None` when using for example the keyboard or a touch screen.
+    pub button: Option<PointerButton>,
+}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Button {
     fn on_pointer_event(
@@ -107,7 +117,7 @@ impl Widget for Button {
             }
             PointerEvent::Up { button, .. } => {
                 if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
-                    ctx.submit_action(Action::ButtonPressed(*button));
+                    ctx.submit_action(ButtonPress { button: *button });
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 // Changes in pointer capture impact appearance, but not accessibility node
@@ -128,7 +138,7 @@ impl Widget for Button {
                 if matches!(&event.key, Key::Character(c) if c == " ")
                     || event.key == Key::Named(NamedKey::Enter)
                 {
-                    ctx.submit_action(Action::ButtonPressed(None));
+                    ctx.submit_action(ButtonPress { button: None });
                 }
             }
             _ => (),
@@ -144,7 +154,7 @@ impl Widget for Button {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(Action::ButtonPressed(None));
+                    ctx.submit_action(ButtonPress { button: None });
                 }
                 _ => {}
             }
@@ -324,13 +334,15 @@ mod tests {
 
         assert_render_snapshot!(harness, "button_hello");
 
-        assert_eq!(harness.pop_action(), None);
+        assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(button_id);
         assert_eq!(
-            harness.pop_action(),
+            harness.pop_action::<ButtonPress>(),
             Some((
-                Action::ButtonPressed(Some(PointerButton::Primary)),
+                ButtonPress {
+                    button: Some(PointerButton::Primary)
+                },
                 button_id
             ))
         );
@@ -344,7 +356,7 @@ mod tests {
         harness.process_text_event(TextEvent::key_up(Key::Character(" ".into())));
         assert_eq!(
             harness.pop_action(),
-            Some((Action::ButtonPressed(None), button_id))
+            Some((ButtonPress { button: None }, button_id))
         );
     }
 

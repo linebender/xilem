@@ -7,7 +7,7 @@ use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
-use masonry_core::core::{Action, Widget, WidgetId, WidgetPod};
+use masonry_core::core::{ErasedAction, Widget, WidgetId, WidgetPod};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes};
@@ -65,7 +65,7 @@ pub trait AppDriver {
         window_id: WindowId,
         ctx: &mut DriverCtx<'_, '_>,
         widget_id: WidgetId,
-        action: Action,
+        action: ErasedAction,
     );
 
     /// A hook which will be executed when the application starts, to allow initial configuration of the `MasonryState`.
