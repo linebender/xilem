@@ -218,7 +218,7 @@ impl ZStack {
     }
 }
 
-// --- MARK: WIDGETMUT---
+// --- MARK: WIDGETMUT
 impl ZStack {
     /// Add a child widget to the `ZStack`.
     /// The child are placed back to front, in the order they are added.
@@ -294,7 +294,7 @@ impl ZStack {
     }
 }
 
-// --- MARK: IMPL WIDGET---
+// --- MARK: IMPL WIDGET
 impl Widget for ZStack {
     fn layout(
         &mut self,

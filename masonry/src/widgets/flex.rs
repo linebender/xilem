@@ -310,7 +310,7 @@ impl Flex {
     }
 }
 
-// --- MARK: WIDGETMUT---
+// --- MARK: WIDGETMUT
 impl Flex {
     /// Set the flex direction (see [`Axis`]).
     pub fn set_direction(this: &mut WidgetMut<'_, Self>, direction: Axis) {
@@ -682,7 +682,7 @@ impl Flex {
     }
 }
 
-// --- MARK: OTHER IMPLS---
+// --- MARK: OTHER IMPLS
 impl Axis {
     /// Get the axis perpendicular to this one.
     pub fn cross(self) -> Self {
@@ -963,7 +963,7 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
     }
 }
 
-// --- MARK: IMPL WIDGET---
+// --- MARK: IMPL WIDGET
 impl Widget for Flex {
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {

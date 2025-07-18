@@ -102,7 +102,7 @@ pub struct ArenaMapMut<'arena> {
     parents_map: &'arena mut HashMap<NodeId, Option<NodeId>>,
 }
 
-// -- MARK: IMPLS ---
+// -- MARK: IMPLS
 
 impl<T> Clone for ArenaRef<'_, T> {
     fn clone(&self) -> Self {

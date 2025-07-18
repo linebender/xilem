@@ -28,7 +28,7 @@ pub struct IndexedStack {
     active_child: usize,
 }
 
-// --- MARK: IMPL INDEXEDSTACK ---
+// --- MARK: IMPL INDEXEDSTACK
 impl IndexedStack {
     /// Create a new stack with no children.
     pub fn new() -> Self {
@@ -77,7 +77,7 @@ impl IndexedStack {
     }
 }
 
-// --- MARK: IMPL WIDGETMUT ---
+// --- MARK: IMPL WIDGETMUT
 impl IndexedStack {
     /// Add a child widget to the end of the stack.
     ///
@@ -181,7 +181,7 @@ impl IndexedStack {
     }
 }
 
-// --- MARK: IMPL WIDGET ---
+// --- MARK: IMPL WIDGET
 impl Widget for IndexedStack {
     fn register_children(&mut self, ctx: &mut masonry_core::core::RegisterCtx<'_>) {
         for child in self.children.iter_mut() {

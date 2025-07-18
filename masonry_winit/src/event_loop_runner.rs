@@ -440,7 +440,7 @@ impl MasonryState<'_> {
         self.surfaces.clear();
     }
 
-    // --- MARK: RENDER ---
+    // --- MARK: RENDER
     fn render(
         surface: &mut RenderSurface<'_>,
         window: &mut Window,
