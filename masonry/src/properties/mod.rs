@@ -23,4 +23,4 @@ pub use box_shadow::BoxShadow;
 pub use checkmark::{CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor};
 pub use corner_radius::CornerRadius;
 pub use padding::Padding;
-pub use text_color::*;
+pub use text_color::{DisabledTextColor, TextColor};
