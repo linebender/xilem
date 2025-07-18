@@ -4,6 +4,7 @@
 //! Basic types and traits Masonry is built on.
 
 mod action;
+mod axis;
 mod box_constraints;
 mod contexts;
 mod events;
@@ -18,6 +19,7 @@ mod widget_ref;
 mod widget_state;
 
 pub use action::Action;
+pub use axis::Axis;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, IsContext, LayoutCtx, MutateCtx, PaintCtx, QueryCtx,
