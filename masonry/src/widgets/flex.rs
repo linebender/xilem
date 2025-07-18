@@ -236,9 +236,11 @@ impl Flex {
     }
 
     /// Builder-style method for adding a fixed-size spacer to the container.
+    ///
+    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
     pub fn with_spacer(mut self, mut len: f64) -> Self {
         if len < 0.0 {
-            tracing::warn!("add_spacer called with negative length: {}", len);
+            tracing::warn!("with_spacer called with negative length: {}", len);
         }
         len = len.clamp(0.0, f64::MAX);
 
@@ -359,6 +361,8 @@ impl Flex {
     }
 
     /// Add an empty spacer widget with the given size.
+    ///
+    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
     pub fn add_spacer(this: &mut WidgetMut<'_, Self>, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -441,6 +445,8 @@ impl Flex {
     }
 
     /// Insert an empty spacer widget with the given size at the given index.
+    ///
+    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
     ///
     /// # Panics
     ///
