@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{Properties, Property, Widget, WidgetMut};
+use masonry::core::{Properties, Widget, WidgetMut};
 
 /// Helper trait implemented for all tuples of `Option<SomeProperty>` up to 12 items.
 pub trait PropertyTuple {
@@ -15,78 +15,6 @@ pub trait PropertyTuple {
     /// Check if any property has changed, and if so, applies it to the given widget.
     fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<'_, impl Widget>);
 }
-
-impl<P0: Property + Eq + Clone> PropertyTuple for (Option<P0>,) {
-    fn build_properties(&self) -> Properties {
-        let mut props = Properties::new();
-        if let Some(prop) = self.0.clone() {
-            props.insert(prop);
-        }
-        props
-    }
-
-    fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<'_, impl Widget>) {
-        if self.0 != prev.0 {
-            if let Some(prop) = self.0.clone() {
-                target.insert_prop(prop);
-            } else {
-                target.remove_prop::<P0>();
-            }
-        }
-    }
-}
-
-// We expect to use the ${index} metavariable here once it's stable
-// https://veykril.github.io/tlborm/decl-macros/minutiae/metavar-expr.html
-macro_rules! impl_property_tuple {
-    ($($Type: ident, $idx: tt);+) => {
-
-        impl<$($Type,)+> PropertyTuple for ($(Option<$Type>,)+)
-            where $($Type: Property + PartialEq + Clone,)+
-        {
-            fn build_properties(&self) -> Properties {
-                let mut props = Properties::new();
-                $(
-                    if let Some(prop) = self.$idx.clone() {
-                        props.insert(prop);
-                    }
-                )+
-                props
-            }
-
-            fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<'_, impl Widget>) {
-                $(
-                    if self.$idx != prev.$idx {
-                        if let Some(prop) = self.$idx.clone() {
-                            target.insert_prop(prop);
-                        } else {
-                            target.remove_prop::<$Type>();
-                        }
-                    }
-                )+
-            }
-
-        }
-
-    };
-}
-
-// The (P0,) one-view tuple case is covered outside the macro,
-// for easier code editing.
-
-impl_property_tuple!(P0, 0; P1, 1);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9; P10, 10);
-impl_property_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9; P10, 10; P11, 11);
-
-// ---
 
 // We expect to use the ${index} metavariable here once it's stable
 // https://veykril.github.io/tlborm/decl-macros/minutiae/metavar-expr.html
@@ -154,7 +82,53 @@ macro_rules! __declare_property_tuple_loop {
             $Type: ident, $idx: tt;
         )+
     ) => {
-        type $Props = ($(Option<$Type>,)+);
+
+        /// Properties used by the
+        #[doc = stringify!($Self)]
+        /// view.
+        ///
+        /// This type implements the `PropertyTuple` trait.
+        /// Its methods should be used when writing `View::build()`
+        /// and `View::rebuild()` methods.
+        pub struct $Props($(Option<$Type>,)+);
+
+        // We implement Default directly instead of calling `#[derive(Default)]`.
+        // The code should compile slightly faster this way.
+        impl ::std::default::Default for $Props {
+            fn default() -> Self {
+                $Props {
+                    $(
+                        $idx: ::std::default::Default::default(),
+                    )+
+                }
+            }
+        }
+
+        impl $crate::property_tuple::PropertyTuple for $Props
+        {
+            fn build_properties(&self) -> $crate::masonry::core::Properties {
+                let mut props = $crate::masonry::core::Properties::new();
+                $(
+                    if let Some(prop) = self.$idx.clone() {
+                        props.insert(prop);
+                    }
+                )+
+                props
+            }
+
+            fn rebuild_properties(&self, prev: &Self, target: &mut $crate::masonry::core::WidgetMut<'_, impl $crate::masonry::core::Widget>) {
+                $(
+                    if self.$idx != prev.$idx {
+                        if let Some(prop) = self.$idx.clone() {
+                            target.insert_prop(prop);
+                        } else {
+                            target.remove_prop::<$Type>();
+                        }
+                    }
+                )+
+            }
+        }
+
 
         $(
             $crate::__declare_property_tuple_inner!($Self; $Type; $idx;);
@@ -180,4 +154,26 @@ macro_rules! __declare_property_tuple_inner {
             }
         }
     };
+}
+
+// Example impl for code editing
+#[cfg(false)]
+impl<P0: Property + Eq + Clone> PropertyTuple for (Option<P0>,) {
+    fn build_properties(&self) -> Properties {
+        let mut props = Properties::new();
+        if let Some(prop) = self.0.clone() {
+            props.insert(prop);
+        }
+        props
+    }
+
+    fn rebuild_properties(&self, prev: &Self, target: &mut WidgetMut<'_, impl Widget>) {
+        if self.0 != prev.0 {
+            if let Some(prop) = self.0.clone() {
+                target.insert_prop(prop);
+            } else {
+                target.remove_prop::<P0>();
+            }
+        }
+    }
 }
