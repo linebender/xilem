@@ -108,7 +108,7 @@ impl Style for Label {
 }
 
 crate::declare_property_tuple!(
-    LabelProps;
+    pub LabelProps;
     Label;
 
     TextColor, 0;

@@ -40,7 +40,7 @@ where
         inner,
         height: None,
         width: None,
-        properties: Default::default(),
+        properties: SizedBoxProps::default(),
         phantom: PhantomData,
     }
 }
@@ -110,7 +110,7 @@ impl<V, S, A> Style for SizedBox<V, S, A> {
 }
 
 crate::declare_property_tuple!(
-    SizedBoxProps;
+    pub SizedBoxProps;
     SizedBox<V, S, A>;
 
     Background, 0;

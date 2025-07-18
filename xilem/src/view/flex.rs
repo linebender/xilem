@@ -68,7 +68,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
         gap: None,
-        properties: Default::default(),
+        properties: FlexProps::default(),
         phantom: PhantomData,
     }
 }
@@ -157,7 +157,7 @@ impl<Seq, S, A> Style for Flex<Seq, S, A> {
 }
 
 crate::declare_property_tuple!(
-    FlexProps;
+    pub FlexProps;
     Flex<Seq, S, A>;
 
     Background, 0;

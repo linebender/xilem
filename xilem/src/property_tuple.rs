@@ -58,6 +58,7 @@ pub trait PropertyTuple {
 #[macro_export]
 macro_rules! declare_property_tuple {
     (
+        $vis: vis
         $Props: ident ;
         $Self:ident $( < $($Args:ident),* > )? ;
 
@@ -66,7 +67,7 @@ macro_rules! declare_property_tuple {
         )+
     ) => {
         $crate::__declare_property_tuple_loop!(
-            $Props; ( $Self $( <$($Args),*> )? ); $($Type, $idx;)+
+            $vis $Props; ( $Self $( <$($Args),*> )? ); $($Type, $idx;)+
         );
     }
 }
@@ -75,6 +76,7 @@ macro_rules! declare_property_tuple {
 #[macro_export]
 macro_rules! __declare_property_tuple_loop {
     (
+        $vis: vis
         $Props: ident ;
         $Self:tt;
 
@@ -90,7 +92,7 @@ macro_rules! __declare_property_tuple_loop {
         /// This type implements the `PropertyTuple` trait.
         /// Its methods should be used when writing `View::build()`
         /// and `View::rebuild()` methods.
-        pub struct $Props($(Option<$Type>,)+);
+        $vis struct $Props($(Option<$Type>,)+);
 
         // We implement Default directly instead of calling `#[derive(Default)]`.
         // The code should compile slightly faster this way.
