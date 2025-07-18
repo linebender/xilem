@@ -467,7 +467,7 @@ fn update_focus_chain_for_widget(
         );
     }
 
-    if !state.item.is_disabled {
+    if !state.item.is_disabled && !state.item.is_stashed {
         parent_focus_chain.extend(&state.item.focus_chain);
     }
 
