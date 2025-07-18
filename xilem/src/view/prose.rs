@@ -1,12 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, StyleProperty};
+use masonry::core::{ArcStr, Properties, StyleProperty, WidgetPod};
 use masonry::parley::FontWeight;
+use masonry::properties::{DisabledTextColor, TextColor};
 use masonry::widgets::{
     LineBreaking, {self},
 };
-use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
@@ -15,7 +15,8 @@ use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
     Prose {
         content: content.into(),
-        text_brush: Color::WHITE.into(),
+        text_color: None,
+        disabled_text_color: None,
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
@@ -38,7 +39,8 @@ pub fn inline_prose(content: impl Into<ArcStr>) -> Prose {
 pub struct Prose {
     content: ArcStr,
 
-    text_brush: Brush,
+    text_color: Option<Color>,
+    disabled_text_color: Option<Color>,
     text_alignment: TextAlign,
     text_size: f32,
     line_break_mode: LineBreaking,
@@ -48,10 +50,19 @@ pub struct Prose {
 }
 
 impl Prose {
-    /// Set the brush used to paint the text.
-    #[doc(alias = "color")]
-    pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
-        self.text_brush = brush.into();
+    /// Set the text's color.
+    ///
+    /// This overwrites the default `TextColor` property for the inner `TextArea` widget.
+    pub fn text_color(mut self, color: Color) -> Self {
+        self.text_color = Some(color);
+        self
+    }
+
+    /// Set the text's color when the text input is disabled.
+    ///
+    /// This overwrites the default `DisabledTextColor` property for the inner `TextArea` widget.
+    pub fn disabled_text_color(mut self, color: Color) -> Self {
+        self.disabled_text_color = Some(color);
         self
     }
 
@@ -92,16 +103,27 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         let text_area = widgets::TextArea::new_immutable(&self.content)
-            .with_brush(self.text_brush.clone())
             .with_text_alignment(self.text_alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
             .with_word_wrap(self.line_break_mode == LineBreaking::WordWrap);
-        let widget_pod = ctx.create_pod(
-            widgets::Prose::from_text_area(text_area)
+
+        // TODO - Replace this with properties on the Prose view
+        // once we implement property inheritance or something like it.
+        let mut props = Properties::new();
+        if let Some(color) = self.text_color {
+            props.insert(TextColor { color });
+        }
+        if let Some(color) = self.disabled_text_color {
+            props.insert(DisabledTextColor(TextColor { color }));
+        }
+        let text_area = WidgetPod::new_with_props(text_area, props);
+
+        let pod = ctx.create_pod(
+            widgets::Prose::from_text_area_pod(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );
-        (widget_pod, ())
+        (pod, ())
     }
 
     fn rebuild(
@@ -113,11 +135,25 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _: &mut State,
     ) {
         let mut text_area = widgets::Prose::text_mut(&mut element);
+
+        // TODO - Replace this with properties on the Prose view
+        if self.text_color != prev.text_color {
+            if let Some(color) = self.text_color {
+                text_area.insert_prop(TextColor { color });
+            } else {
+                text_area.remove_prop::<TextColor>();
+            }
+        }
+        if self.disabled_text_color != prev.disabled_text_color {
+            if let Some(color) = self.disabled_text_color {
+                text_area.insert_prop(DisabledTextColor(TextColor { color }));
+            } else {
+                text_area.remove_prop::<DisabledTextColor>();
+            }
+        }
+
         if prev.content != self.content {
             widgets::TextArea::reset_text(&mut text_area, &self.content);
-        }
-        if prev.text_brush != self.text_brush {
-            widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
         }
         if prev.text_alignment != self.text_alignment {
             widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);

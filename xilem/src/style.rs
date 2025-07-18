@@ -4,6 +4,7 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::Property;
+use masonry::properties::{DisabledTextColor, TextColor};
 use vello::peniko::Color;
 
 pub use masonry::properties::types::{Gradient, GradientShape};
@@ -31,6 +32,24 @@ pub trait Style: Sized {
 
     /// Return a mutable reference to the element's property storage.
     fn properties(&mut self) -> &mut Self::Props;
+
+    /// Set the element's text color.
+    fn text_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<TextColor>,
+    {
+        *self.property() = Some(TextColor { color });
+        self
+    }
+
+    /// Set the element's text color when disabled.
+    fn disabled_text_color(mut self, color: Color) -> Self
+    where
+        Self: HasProperty<DisabledTextColor>,
+    {
+        *self.property() = Some(DisabledTextColor(TextColor { color }));
+        self
+    }
 
     /// Set the element's background to a color/gradient.
     fn background(mut self, background: Background) -> Self

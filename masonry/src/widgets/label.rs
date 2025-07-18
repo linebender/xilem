@@ -3,6 +3,7 @@
 
 //! A label widget.
 
+use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
@@ -11,7 +12,7 @@ use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
-use vello::peniko::{BlendMode, Brush};
+use vello::peniko::BlendMode;
 
 use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, BrushIndex, LayoutCtx, PaintCtx, PropertiesMut,
@@ -19,6 +20,7 @@ use crate::core::{
     WidgetMut, render_text,
 };
 use crate::debug_panic;
+use crate::properties::{DisabledTextColor, TextColor};
 use crate::theme;
 use crate::theme::default_text_styles;
 use crate::{TextAlign, TextAlignOptions};
@@ -67,15 +69,6 @@ pub struct Label {
     /// If it has changed, we need to re-perform line-breaking.
     last_max_advance: Option<f32>,
 
-    /// The brush for drawing this label's text.
-    ///
-    /// Requires a new paint if edited whilst `disabled_brush` is not being used.
-    brush: Brush,
-    /// The brush to use whilst this widget is disabled.
-    ///
-    /// When this is `None`, `brush` will be used.
-    /// Requires a new paint if edited whilst this widget is disabled.
-    disabled_brush: Option<Brush>,
     /// Whether to hint whilst drawing the text.
     ///
     /// Should be disabled whilst an animation involving this label is ongoing.
@@ -103,8 +96,6 @@ impl Label {
             needs_text_alignment: true,
             last_available_width: None,
             last_max_advance: None,
-            brush: theme::TEXT_COLOR.into(),
-            disabled_brush: Some(theme::DISABLED_TEXT_COLOR.into()),
             hint: true,
         }
     }
@@ -119,7 +110,7 @@ impl Label {
     /// Set a style property for the new label.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use `with_brush` instead.
+    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
     ///
     /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
@@ -152,27 +143,6 @@ impl Label {
     /// To modify this on an active label, use [`set_text_alignment`](Self::set_text_alignment).
     pub fn with_text_alignment(mut self, text_alignment: TextAlign) -> Self {
         self.text_alignment = text_alignment;
-        self
-    }
-
-    /// Set the brush used to paint this label.
-    ///
-    /// In most cases, this will be the text's color, but gradients and images are also supported.
-    ///
-    /// To modify this on an active label, use [`set_brush`](Self::set_brush).
-    #[doc(alias = "with_color")]
-    pub fn with_brush(mut self, brush: impl Into<Brush>) -> Self {
-        self.brush = brush.into();
-        self
-    }
-
-    /// Set the brush which will be used to paint this label whilst it is disabled.
-    ///
-    /// If this is `None`, the [normal brush](Self::with_brush) will be used.
-    /// To modify this on an active label, use [`set_disabled_brush`](Self::set_disabled_brush).
-    #[doc(alias = "with_color")]
-    pub fn with_disabled_brush(mut self, disabled_brush: impl Into<Option<Brush>>) -> Self {
-        self.disabled_brush = disabled_brush.into();
         self
     }
 
@@ -215,7 +185,7 @@ impl Label {
     /// The runtime equivalent of [`with_style`](Self::with_style).
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`set_brush`](Self::set_brush) instead.
+    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
@@ -284,28 +254,6 @@ impl Label {
         this.ctx.request_layout();
     }
 
-    #[doc(alias = "set_color")]
-    /// The runtime equivalent of [`with_brush`](Self::with_brush).
-    pub fn set_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Brush>) {
-        let brush = brush.into();
-        this.widget.brush = brush;
-
-        // We need to repaint unless the disabled brush is currently being used.
-        if this.widget.disabled_brush.is_none() || this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
-        }
-    }
-
-    /// The runtime equivalent of [`with_disabled_brush`](Self::with_disabled_brush).
-    pub fn set_disabled_brush(this: &mut WidgetMut<'_, Self>, brush: impl Into<Option<Brush>>) {
-        let brush = brush.into();
-        this.widget.disabled_brush = brush;
-
-        if this.ctx.is_disabled() {
-            this.ctx.request_paint_only();
-        }
-    }
-
     /// The runtime equivalent of [`with_hint`](Self::with_hint).
     pub fn set_hint(this: &mut WidgetMut<'_, Self>, hint: bool) {
         this.widget.hint = hint;
@@ -321,12 +269,15 @@ impl Widget for Label {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        TextColor::prop_changed(ctx, property_type);
+        DisabledTextColor::prop_changed(ctx, property_type);
+    }
+
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
             Update::DisabledChanged(_) => {
-                if self.disabled_brush.is_some() {
-                    ctx.request_paint_only();
-                }
+                ctx.request_paint_only();
             }
             _ => {}
         }
@@ -408,21 +359,26 @@ impl Widget for Label {
         bc.constrain(label_size)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         if self.line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
         let transform = Affine::translate((LABEL_X_PADDING, 0.));
 
-        let brush = if ctx.is_disabled() {
-            self.disabled_brush
-                .clone()
-                .unwrap_or_else(|| self.brush.clone())
+        let text_color = if ctx.is_disabled() {
+            &props.get::<DisabledTextColor>().0
         } else {
-            self.brush.clone()
+            props.get::<TextColor>()
         };
-        render_text(scene, transform, &self.text_layout, &[brush], self.hint);
+
+        render_text(
+            scene,
+            transform,
+            &self.text_layout,
+            &[text_color.color.into()],
+            self.hint,
+        );
 
         if self.line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
@@ -467,6 +423,8 @@ impl Widget for Label {
 #[cfg(test)]
 mod tests {
 
+    use masonry_core::core::Properties;
+    use masonry_testing::TestWidgetExt as _;
     use parley::style::GenericFamily;
     use parley::{FontFamily, StyleProperty};
 
@@ -489,11 +447,11 @@ mod tests {
     #[test]
     fn styled_label() {
         let label = Label::new("The quick brown fox jumps over the lazy dog")
-            .with_brush(ACCENT_COLOR)
             .with_style(FontFamily::Generic(GenericFamily::Monospace))
             .with_style(StyleProperty::FontSize(20.0))
             .with_line_break_mode(LineBreaking::WordWrap)
-            .with_text_alignment(TextAlign::Center);
+            .with_text_alignment(TextAlign::Center)
+            .with_props(Properties::new().with(TextColor::new(ACCENT_COLOR)));
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), label, Size::new(200.0, 200.0));
@@ -595,11 +553,11 @@ mod tests {
     fn edit_label() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_brush(ACCENT_COLOR)
                 .with_style(FontFamily::Generic(GenericFamily::Monospace))
                 .with_style(StyleProperty::FontSize(20.0))
                 .with_line_break_mode(LineBreaking::WordWrap)
-                .with_text_alignment(TextAlign::Center);
+                .with_text_alignment(TextAlign::Center)
+                .with_props(Properties::new().with(TextColor::new(ACCENT_COLOR)));
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
@@ -608,17 +566,15 @@ mod tests {
         };
 
         let image_2 = {
-            let label = Label::new("Hello world")
-                .with_brush(ACCENT_COLOR)
-                .with_style(StyleProperty::FontSize(40.0));
+            let label = Label::new("Hello world").with_style(StyleProperty::FontSize(40.0));
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
                 let mut label = label.downcast::<Label>();
+                label.insert_prop(TextColor::new(ACCENT_COLOR));
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
-                Label::set_brush(&mut label, ACCENT_COLOR);
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
                 Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);

@@ -1,18 +1,19 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{WidgetOptions, WidgetPod};
+use masonry::core::{Properties, WidgetId, WidgetOptions, WidgetPod};
 use masonry::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
+    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground,
+    DisabledTextColor, Padding, TextColor,
 };
 use masonry::widgets;
 use vello::kurbo::Affine;
-use vello::peniko::Brush;
+use vello::peniko::Color;
 
 use crate::core::{DynMessage, Mut, View, ViewMarker};
 use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
-use crate::{Color, InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, ViewId};
+use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, ViewId};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -30,7 +31,8 @@ where
         contents,
         on_changed: Box::new(on_changed),
         on_enter: None,
-        text_brush: Color::WHITE.into(),
+        text_color: None,
+        disabled_text_color: None,
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
@@ -44,7 +46,8 @@ pub struct TextInput<State, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
-    text_brush: Brush,
+    text_color: Option<Color>,
+    disabled_text_color: Option<Color>,
     text_alignment: TextAlign,
     insert_newline: InsertNewline,
     disabled: bool,
@@ -53,10 +56,19 @@ pub struct TextInput<State, Action> {
 }
 
 impl<State, Action> TextInput<State, Action> {
-    /// Set the brush used to paint the text.
-    #[doc(alias = "color")]
-    pub fn brush(mut self, color: impl Into<Brush>) -> Self {
-        self.text_brush = color.into();
+    /// Set the text's color.
+    ///
+    /// This overwrites the default `TextColor` property for the inner `TextArea` widget.
+    pub fn text_color(mut self, color: Color) -> Self {
+        self.text_color = Some(color);
+        self
+    }
+
+    /// Set the text's color when the text input is disabled.
+    ///
+    /// This overwrites the default `DisabledTextColor` property for the inner `TextArea` widget.
+    pub fn disabled_text_color(mut self, color: Color) -> Self {
+        self.disabled_text_color = Some(color);
         self
     }
 
@@ -117,15 +129,27 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
-            .with_brush(self.text_brush.clone())
             .with_text_alignment(self.text_alignment)
             .with_insert_newline(self.insert_newline);
-        let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with_options(
-            text_area.into(),
+
+        // TODO - Replace this with properties on the TextInput view
+        // once we implement property inheritance or something like it.
+        let mut props = Properties::new();
+        if let Some(color) = self.text_color {
+            props.insert(TextColor { color });
+        }
+        if let Some(color) = self.disabled_text_color {
+            props.insert(DisabledTextColor(TextColor { color }));
+        }
+
+        let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with(
+            Box::new(text_area),
+            WidgetId::next(),
             WidgetOptions {
                 disabled: self.disabled,
                 transform: Affine::default(),
             },
+            props,
         ));
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
@@ -146,6 +170,23 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
+
+        // TODO - Replace this with properties on the TextInput view
+        if self.text_color != prev.text_color {
+            if let Some(color) = self.text_color {
+                element.insert_prop(TextColor { color });
+            } else {
+                element.remove_prop::<TextColor>();
+            }
+        }
+        if self.disabled_text_color != prev.disabled_text_color {
+            if let Some(color) = self.disabled_text_color {
+                element.insert_prop(DisabledTextColor(TextColor { color }));
+            } else {
+                element.remove_prop::<DisabledTextColor>();
+            }
+        }
+
         if element.ctx.is_disabled() != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }
@@ -163,9 +204,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             widgets::TextArea::reset_text(&mut text_area, &self.contents);
         }
 
-        if prev.text_brush != self.text_brush {
-            widgets::TextArea::set_brush(&mut text_area, self.text_brush.clone());
-        }
         if prev.text_alignment != self.text_alignment {
             widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);
         }

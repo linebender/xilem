@@ -55,10 +55,11 @@ impl Button {
     /// # Examples
     ///
     /// ```
+    /// use masonry::core::StyleProperty;
     /// use masonry::peniko::Color;
     /// use masonry::widgets::{Button, Label};
     ///
-    /// let label = Label::new("Increment").with_brush(Color::new([0.5, 0.5, 0.5, 1.0]));
+    /// let label = Label::new("Increment").with_style(StyleProperty::FontSize(20.0));
     /// let button = Button::from_label(label);
     /// ```
     pub fn from_label(label: Label) -> Self {
@@ -309,6 +310,7 @@ mod tests {
     use crate::assert_render_snapshot;
     use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, StyleProperty};
+    use crate::properties::TextColor;
     use crate::testing::{TestHarness, TestWidgetExt, WrapperWidget, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams, SizedBox};
@@ -352,9 +354,13 @@ mod tests {
     fn edit_button() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
-                .with_brush(ACCENT_COLOR)
                 .with_style(StyleProperty::FontSize(20.0));
-            let button = Button::from_label(label);
+            let label = WidgetPod::new_with_props(
+                label,
+                Properties::new().with(TextColor::new(ACCENT_COLOR)),
+            );
+
+            let button = Button::from_label_pod(label);
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -379,7 +385,7 @@ mod tests {
                 Button::set_text(&mut button, "The quick brown fox jumps over the lazy dog");
 
                 let mut label = Button::label_mut(&mut button);
-                Label::set_brush(&mut label, ACCENT_COLOR);
+                label.insert_prop(TextColor::new(ACCENT_COLOR));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 
@@ -408,7 +414,7 @@ mod tests {
             button.insert_prop(Padding::from_vh(3., 8.));
 
             let mut label = Button::label_mut(&mut button);
-            Label::set_brush(&mut label, red);
+            label.insert_prop(TextColor::new(red));
         });
 
         assert_render_snapshot!(harness, "button_set_properties");

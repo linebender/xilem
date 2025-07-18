@@ -3,13 +3,14 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
+use masonry::properties::{DisabledTextColor, TextColor};
 use masonry::widgets::{
     LineBreaking, {self},
 };
-use vello::peniko::Brush;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
+use crate::style::Style;
+use crate::{MessageResult, Pod, PropertyTuple as _, TextAlign, View, ViewCtx, ViewId};
 
 /// A non-interactive text element.
 /// # Example
@@ -21,7 +22,7 @@ use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 /// use masonry::parley::fontique;
 ///
 /// label("Text example.")
-///     .brush(palette::css::RED)
+///     .text_color(palette::css::RED)
 ///     .text_alignment(TextAlign::Middle)
 ///     .text_size(24.0)
 ///     .weight(FontWeight::BOLD)
@@ -30,12 +31,12 @@ use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
         label: label.into(),
-        text_brush: Color::WHITE.into(),
         text_alignment: TextAlign::default(),
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         line_break_mode: LineBreaking::Overflow,
+        properties: LabelProps::default(),
     }
 }
 
@@ -45,22 +46,15 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Label {
     label: ArcStr,
-    text_brush: Brush,
     text_alignment: TextAlign,
     text_size: f32,
     weight: FontWeight,
     font: FontStack<'static>,
     line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widgets::Label`
+    properties: LabelProps,
 }
 
 impl Label {
-    /// In most cases brush sets text color, but gradients and images are also supported.
-    #[doc(alias = "color")]
-    pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
-        self.text_brush = brush.into();
-        self
-    }
-
     /// Sets text alignment: `Start`, `Middle`, `End` or `Justified`.
     pub fn text_alignment(mut self, text_alignment: TextAlign) -> Self {
         self.text_alignment = text_alignment;
@@ -105,22 +99,38 @@ where
     }
 }
 
+impl Style for Label {
+    type Props = LabelProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    LabelProps;
+    Label;
+
+    TextColor, 0;
+    DisabledTextColor, 1;
+);
+
 impl ViewMarker for Label {}
 impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widgets::Label>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        let widget_pod = ctx.create_pod(
+        let mut pod = ctx.create_pod(
             widgets::Label::new(self.label.clone())
-                .with_brush(self.text_brush.clone())
                 .with_text_alignment(self.text_alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
                 .with_style(StyleProperty::FontStack(self.font.clone()))
                 .with_line_break_mode(self.line_break_mode),
         );
-        (widget_pod, ())
+        pod.properties = self.properties.build_properties();
+        (pod, ())
     }
 
     fn rebuild(
@@ -131,11 +141,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         mut element: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if prev.label != self.label {
             widgets::Label::set_text(&mut element, self.label.clone());
-        }
-        if prev.text_brush != self.text_brush {
-            widgets::Label::set_brush(&mut element, self.text_brush.clone());
         }
         if prev.text_alignment != self.text_alignment {
             widgets::Label::set_text_alignment(&mut element, self.text_alignment);

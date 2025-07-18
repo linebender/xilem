@@ -4,11 +4,12 @@
 use masonry::core::ArcStr;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
-use vello::peniko::Brush;
+use vello::peniko::Color;
 use xilem_core::ViewPathTracker;
 
 use super::{Label, label};
 use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::style::Style as _;
 use crate::{MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
@@ -63,10 +64,11 @@ impl VariableLabel {
         self
     }
 
-    /// Set the brush used to paint the text.
-    #[doc(alias = "color")]
-    pub fn brush(mut self, brush: impl Into<Brush>) -> Self {
-        self.label = self.label.brush(brush);
+    /// Set the color used to paint the text.
+    pub fn color(mut self, color: Color) -> Self {
+        // TODO - Replace this with properties on the VariableLabel view
+        // once we implement property inheritance or something like it.
+        self.label = self.label.text_color(color);
         self
     }
 

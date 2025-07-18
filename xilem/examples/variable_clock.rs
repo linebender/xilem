@@ -79,7 +79,7 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         (
             Some(
                 prose("Could not determine local UTC offset, using UTC")
-                    .brush(palette::css::ORANGE_RED),
+                    .text_color(palette::css::ORANGE_RED),
             ),
             UtcOffset::UTC,
         )
@@ -121,7 +121,7 @@ impl TimeZone {
             flex_row((
                 inline_prose(self.region),
                 FlexSpacer::Flex(1.),
-                label(format!("UTC{}", self.offset)).brush(
+                label(format!("UTC{}", self.offset)).text_color(
                     if data.local_offset.is_ok_and(|it| it == self.offset) {
                         // TODO: Consider accessibility here.
                         palette::css::ORANGE

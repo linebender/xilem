@@ -72,7 +72,7 @@ impl HttpCats {
                         "Status code {selected_code} selected, but this was not found."
                     ))
                     .text_alignment(TextAlign::Center)
-                    .brush(palette::css::YELLOW),
+                    .text_color(palette::css::YELLOW),
                 )
             }
         } else {
