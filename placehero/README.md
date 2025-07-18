@@ -34,19 +34,6 @@ This version of Placehero has been verified to compile with **Rust 1.88** and la
 Future versions of Placehero might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
 
-<details>
-<summary>Click here if compiling fails.</summary>
-
-As time has passed, some of Placehero's dependencies could have released versions with a higher Rust requirement.
-If you encounter a compilation issue due to a dependency and don't want to upgrade your Rust toolchain, then you could downgrade the dependency.
-
-```sh
-# Use the problematic dependency's name and version
-cargo update -p package_name --precise 0.1.1
-```
-
-</details>
-
 ## Community
 
 Discussion of Placehero development happens in the [Linebender Zulip](https://xi.zulipchat.com/), specifically the [#xilem channel](https://xi.zulipchat.com/#narrow/stream/354396-xilem).
