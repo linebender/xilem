@@ -109,6 +109,9 @@ pub(crate) struct RenderRootState {
     /// List of ancestors of the currently hovered widget.
     pub(crate) hovered_path: Vec<WidgetId>,
 
+    /// List of ancestors of the currently active widget.
+    pub(crate) active_path: Vec<WidgetId>,
+
     /// Widget that currently has pointer capture.
     pub(crate) pointer_capture_target: Option<WidgetId>,
 
@@ -282,6 +285,7 @@ impl RenderRoot {
                 window_focused: true,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
+                active_path: Vec::new(),
                 pointer_capture_target: None,
                 cursor_icon: CursorIcon::Default,
                 font_context: FontContext {

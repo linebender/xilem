@@ -108,7 +108,7 @@ impl Widget for Checkbox {
                 }
             }
             PointerEvent::Up { .. } => {
-                if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
+                if ctx.is_active() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
                     ctx.submit_action(CheckboxToggled(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
@@ -222,7 +222,7 @@ impl Widget for Checkbox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_pressed = ctx.is_pointer_capture_target() && !ctx.is_disabled();
+        let is_pressed = ctx.is_active() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
 
         let check_size = theme::BASIC_WIDGET_HEIGHT;

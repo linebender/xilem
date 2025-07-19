@@ -22,6 +22,7 @@ Widget statuses are "things" managed by Masonry that affect how widgets are pres
 Statuses include:
 
 - Being hovered.
+- Being active.
 - Having pointer capture.
 - Having active text focus.
 - Having inactive text focus.
@@ -49,6 +50,15 @@ Masonry should guarantee that pointers can only be captured by one widget at a t
 Masonry should force the widget to lose pointer capture when some events occur; not just "mouse leave", but also `Tab` being pressed, the window losing focus, the widget being disabled, etc.
 
 Examples of use cases for pointer capture include selecting text, dragging a slider, or long-pressing a button.
+
+
+## Active
+
+An "active" widget is one that the user is currently interacting with.
+
+Currently, a widget is determined to be active when it has pointer capture, though that definition could change.
+
+Interactive widgets (e.g. buttons) should have a way to indicate when they are active.
 
 
 ## Text focus

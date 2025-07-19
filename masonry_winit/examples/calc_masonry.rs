@@ -184,7 +184,7 @@ impl Widget for CalcButton {
                 }
             }
             PointerEvent::Up { .. } => {
-                if ctx.is_pointer_capture_target() && !ctx.is_disabled() {
+                if ctx.is_active() && !ctx.is_disabled() {
                     let color = self.base_color;
                     // See `update` for why we use `mutate_later` here.
                     ctx.mutate_later(&mut self.inner, move |mut inner| {
