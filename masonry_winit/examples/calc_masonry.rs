@@ -52,7 +52,7 @@ enum CalcAction {
     Op(char),
 }
 
-/// A custom Widget which acts like a button.
+/// A custom widget which acts like a button.
 ///
 /// Emits the [`CalcAction`] action when pressed.
 struct CalcButton {

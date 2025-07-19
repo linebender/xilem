@@ -43,7 +43,7 @@ Conversely, no other widget can get events from the pointer (outside of bubbling
 - The "hovered" status of other widgets won't be updated even if the pointer is over them.
 The hovered status of the capturing widget will be updated, meaning a widget that captured a pointer can still lose the "hovered" status.
 - The pointer's cursor icon will be updated as if the pointer stayed over the capturing widget.
-- If the widget loses pointer capture for some reason (e.g. the pointer is disconnected), the Widget will get a [`Cancel`] event.
+- If the widget loses pointer capture for some reason (e.g. the pointer is disconnected), the widget will get a [`Cancel`] event.
 
 Masonry should guarantee that pointers can only be captured by one widget at a time.
 Masonry should force the widget to lose pointer capture when some events occur; not just "mouse leave", but also `Tab` being pressed, the window losing focus, the widget being disabled, etc.
