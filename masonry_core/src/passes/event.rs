@@ -4,12 +4,11 @@
 use tracing::{debug, info_span, trace};
 use ui_events::pointer::PointerType;
 
-use crate::Handled;
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessEvent, EventCtx, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut, TextEvent,
-    Widget, WidgetId,
+    AccessEvent, EventCtx, Handled, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut,
+    TextEvent, Widget, WidgetId,
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};

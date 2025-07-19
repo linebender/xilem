@@ -4,10 +4,9 @@
 //! Miscellaneous utility functions.
 
 use std::any::Any;
-use std::hash::Hash;
 
 use vello::Scene;
-use vello::kurbo::{Affine, Join, Point, Rect, Shape, Stroke};
+use vello::kurbo::{Affine, Join, Shape, Stroke};
 use vello::peniko::{BrushRef, Color, Fill};
 
 /// Panic in debug and `tracing::error` in release mode.
@@ -40,41 +39,7 @@ pub use crate::debug_panic;
 
 pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
 
-// ---
-
-/// An enum for specifying whether an event was handled.
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub enum Handled {
-    /// An event was already handled, and shouldn't be propagated to other event handlers.
-    Yes,
-    /// An event has not yet been handled.
-    No,
-}
-
-impl Handled {
-    /// Has the event been handled yet?
-    pub fn is_handled(self) -> bool {
-        self == Self::Yes
-    }
-}
-
-impl From<bool> for Handled {
-    /// Returns `Handled::Yes` if `handled` is true, and `Handled::No` otherwise.
-    fn from(handled: bool) -> Self {
-        if handled { Self::Yes } else { Self::No }
-    }
-}
-
 // --- MARK: PAINT HELPERS
-
-#[derive(Debug, Clone, Copy)]
-/// A point with coordinates in the range [0.0, 1.0].
-///
-/// This is useful for specifying points in a normalized space, such as a gradient.
-pub struct UnitPoint {
-    u: f64,
-    v: f64,
-}
 
 #[expect(
     single_use_lifetimes,
@@ -100,43 +65,6 @@ pub fn stroke<'b>(
         ..Default::default()
     };
     scene.stroke(&style, Affine::IDENTITY, brush, None, path);
-}
-
-impl UnitPoint {
-    /// `(0.0, 0.0)`
-    pub const TOP_LEFT: Self = Self::new(0.0, 0.0);
-    /// `(0.5, 0.0)`
-    pub const TOP: Self = Self::new(0.5, 0.0);
-    /// `(1.0, 0.0)`
-    pub const TOP_RIGHT: Self = Self::new(1.0, 0.0);
-    /// `(0.0, 0.5)`
-    pub const LEFT: Self = Self::new(0.0, 0.5);
-    /// `(0.5, 0.5)`
-    pub const CENTER: Self = Self::new(0.5, 0.5);
-    /// `(1.0, 0.5)`
-    pub const RIGHT: Self = Self::new(1.0, 0.5);
-    /// `(0.0, 1.0)`
-    pub const BOTTOM_LEFT: Self = Self::new(0.0, 1.0);
-    /// `(0.5, 1.0)`
-    pub const BOTTOM: Self = Self::new(0.5, 1.0);
-    /// `(1.0, 1.0)`
-    pub const BOTTOM_RIGHT: Self = Self::new(1.0, 1.0);
-
-    /// Create a new `UnitPoint`.
-    ///
-    /// The `u` and `v` coordinates describe the point, with (0.0, 0.0) being
-    /// the top-left, and (1.0, 1.0) being the bottom-right.
-    pub const fn new(u: f64, v: f64) -> Self {
-        Self { u, v }
-    }
-
-    /// Given a rectangle, resolve the point within the rectangle.
-    pub fn resolve(self, rect: Rect) -> Point {
-        Point::new(
-            rect.x0 + self.u * (rect.x1 - rect.x0),
-            rect.y0 + self.v * (rect.y1 - rect.y0),
-        )
-    }
 }
 
 #[expect(
