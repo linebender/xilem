@@ -8,38 +8,30 @@
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Point, Rect, Size};
+use vello::kurbo::{Rect, Size};
 
+use crate::app::RenderRootState;
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
+use crate::core::DefaultProperties;
 use crate::core::{
-    BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, Widget, WidgetArenaMut, WidgetPod,
-    WidgetState,
+    BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, Widget, WidgetArenaMut, WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
 // --- MARK: RUN LAYOUT
-/// Run [`Widget::layout`] method on the widget contained in `pod`.
+/// Run [`Widget::layout`] method on the given widget.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
-pub(crate) fn run_layout_on<W: Widget + ?Sized>(
-    parent_ctx: &mut LayoutCtx<'_>,
-    pod: &mut WidgetPod<W>,
+pub(crate) fn run_layout_on(
+    global_state: &mut RenderRootState,
+    default_properties: &DefaultProperties,
+    widget: ArenaMut<'_, Box<dyn Widget>>,
+    mut state: ArenaMut<'_, WidgetState>,
+    properties: ArenaMut<'_, AnyMap>,
     bc: &BoxConstraints,
 ) -> Size {
-    let id = pod.id();
-    let widget = parent_ctx.children.widget_children.item_mut(id).unwrap();
-    let mut state = parent_ctx
-        .children
-        .widget_state_children
-        .item_mut(id)
-        .unwrap();
-    let properties = parent_ctx
-        .children
-        .properties_children
-        .item_mut(id)
-        .unwrap();
-    let trace = parent_ctx.global_state.trace.layout;
+    let trace = global_state.trace.layout;
     let _span = enter_span_if(trace, state.reborrow());
 
     let mut children = WidgetArenaMut {
@@ -51,6 +43,8 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     let widget = &mut **widget.item;
     let state = state.item;
     let properties = properties.item;
+
+    let id = state.id;
 
     let mut children_ids = ChildrenIds::new();
     if cfg!(debug_assertions) {
@@ -80,7 +74,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         debug_panic!(
             "Error in '{}' {}: trying to compute layout of stashed widget.",
             widget.short_type_name(),
-            pod.id(),
+            id,
         );
         state.size = Size::ZERO;
         return Size::ZERO;
@@ -104,7 +98,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     // If children are stashed, the layout pass will not recurse over them.
     // We reset need_layout and request_layout to false directly instead.
     recurse_on_children(
-        pod.id(),
+        id,
         widget,
         children.reborrow_mut(),
         |widget, state, properties| {
@@ -118,8 +112,8 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         let mut inner_ctx = LayoutCtx {
             widget_state: state,
             children: children.reborrow_mut(),
-            default_properties: parent_ctx.default_properties,
-            global_state: parent_ctx.global_state,
+            default_properties,
+            global_state,
         };
 
         // TODO - If constraints are the same and request_layout isn't set,
@@ -127,7 +121,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         inner_ctx.widget_state.request_layout = false;
         let mut props = PropertiesMut {
             map: properties,
-            default_map: parent_ctx.default_properties.for_widget(widget.type_id()),
+            default_map: default_properties.for_widget(widget.type_id()),
         };
         widget.layout(&mut inner_ctx, &mut props, bc)
     };
@@ -135,7 +129,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
         debug_panic!(
             "Error in '{}' {}: layout request flag was set during layout pass",
             widget.short_type_name(),
-            pod.id(),
+            id,
         );
     }
     if trace {
@@ -170,7 +164,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
                 debug_panic!(
                     "Error in '{}' {}: LayoutCtx::run_layout() was not called with child widget '{}' {}.",
                     name,
-                    pod.id(),
+                    id,
                     child_state.widget_name,
                     child_state.id,
                 );
@@ -180,7 +174,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
                 debug_panic!(
                     "Error in '{}' {}: LayoutCtx::place_child() was not called with child widget '{}' {}.",
                     name,
-                    pod.id(),
+                    id,
                     child_state.widget_name,
                     child_state.id,
                 );
@@ -192,27 +186,16 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
             debug_panic!(
                 "Error in '{}' {}: children changed during layout pass",
                 name,
-                pod.id(),
+                id,
             );
         }
 
         if !new_size.width.is_finite() || !new_size.height.is_finite() {
-            debug_panic!(
-                "Error in '{}' {}: invalid size {}",
-                name,
-                pod.id(),
-                new_size
-            );
+            debug_panic!("Error in '{}' {}: invalid size {}", name, id, new_size);
         }
     }
 
-    let state_mut = parent_ctx
-        .children
-        .widget_state_children
-        .item_mut(id)
-        .unwrap();
-    parent_ctx.widget_state.merge_up(state_mut.item);
-    state_mut.item.size = new_size;
+    state.size = new_size;
     new_size
 }
 
@@ -258,24 +241,35 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
     };
 
-    let mut dummy_state = WidgetState::synthetic(root.root.id(), root.get_kurbo_size());
-    let root_state_token = root.widget_arena.states.roots_mut();
-    let root_widget_token = root.widget_arena.widgets.roots_mut();
-    let root_properties_token = root.widget_arena.properties.roots_mut();
-
-    let mut ctx = LayoutCtx {
-        global_state: &mut root.global_state,
-        widget_state: &mut dummy_state,
-        children: WidgetArenaMut {
-            widget_state_children: root_state_token,
-            widget_children: root_widget_token,
-            properties_children: root_properties_token,
-        },
-        default_properties: &root.default_properties,
+    let (root_widget, mut root_state, root_properties) = {
+        let widget_id = root.root.id();
+        let widget = root
+            .widget_arena
+            .widgets
+            .find_mut(widget_id)
+            .expect("run_layout_pass: root not in widget tree");
+        let state = root
+            .widget_arena
+            .states
+            .find_mut(widget_id)
+            .expect("run_layout_pass: root state not in widget tree");
+        let properties = root
+            .widget_arena
+            .properties
+            .find_mut(widget_id)
+            .expect("run_layout_pass: root properties not in widget tree");
+        (widget, state, properties)
     };
 
-    let size = run_layout_on(&mut ctx, &mut root.root, &bc);
-    ctx.place_child(&mut root.root, Point::ORIGIN);
+    let size = run_layout_on(
+        &mut root.global_state,
+        &root.default_properties,
+        root_widget,
+        root_state.reborrow_mut(),
+        root_properties,
+        &bc,
+    );
+    root_state.item.is_expecting_place_child_call = false;
 
     if let WindowSizePolicy::Content = root.size_policy {
         let new_size =
