@@ -896,9 +896,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         );
 
         let Some(()) = updated else {
-            // FIXME - We should be able to panic here.
-            // The accessibility pass should always run after a layout pass.
-            // See https://github.com/linebender/xilem/issues/1119
+            // We always perform layout before accessibility, so this panic should be unreachable.
+            debug_panic!("Could not generate accessibility nodes for text area");
             return;
         };
     }
