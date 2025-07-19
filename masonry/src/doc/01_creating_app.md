@@ -84,11 +84,11 @@ trait AppDriver {
 }
 ```
 
-Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), the widget the user interacted with will emit an action, and the framework will call `on_action` method is called.
+Every time the user interacts with the app in a meaningful way (clicking a button, entering text, etc), the widget the user interacted with will emit an action, and the framework will call `AppDriver::on_action()`.
 These actions are type-erased in the [`ErasedAction`] type.
 Each widget documents which action types it will emit, and in which circumstances.
 
-That method gives our app a `DriverCtx` context, which we can use to access the root widget, and a [`WidgetId`] identifying the widget that emitted the action.
+That method gives our app a `DriverCtx` context and a window id, which we can use to access the widget tree, and a [`WidgetId`] identifying the widget that emitted the action.
 
 We create a `Driver` struct to store a very simple app's state, and we implement the `AppDriver` trait for it:
 
@@ -103,7 +103,13 @@ struct Driver {
 }
 
 impl AppDriver for Driver {
-    fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: Action) {
+    fn on_action(
+        &mut self,
+        window_id: WindowId,
+        ctx: &mut DriverCtx<'_, '_>,
+        _widget_id: WidgetId,
+        action: ErasedAction,
+    ) {
         if action.is::<ButtonPress>() {
             ctx.render_root(window_id).edit_root_widget(|mut root| {
                 let mut portal = root.downcast::<Portal<Flex>>();
@@ -208,7 +214,13 @@ fn main() {
     }
 
     impl AppDriver for Driver {
-        fn on_action(&mut self, ctx: &mut DriverCtx<'_>, _widget_id: WidgetId, action: ErasedAction) {
+        fn on_action(
+            &mut self,
+            window_id: WindowId,
+            ctx: &mut DriverCtx<'_, '_>,
+            _widget_id: WidgetId,
+            action: ErasedAction,
+        ) {
             if action.is::<ButtonPress>() {
                 ctx.render_root(window_id).edit_root_widget(|mut root| {
                     let mut portal = root.downcast::<Portal<Flex>>();
