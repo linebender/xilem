@@ -368,18 +368,15 @@ fn update_stashed_for_widget(
         state.item.is_stashed = stashed;
         state.item.needs_update_focus_chain = true;
 
-        // Stashing doesn't stop the accessibility node from being generated or updated
-        // but it changes an accessibility flag.
-        state.item.needs_accessibility = true;
-        state.item.request_accessibility = true;
-
         // Items may have been changed while they were stashed in ways that require a
-        // relayout and a repaint.
+        // relayout and a re-render.
         if !stashed {
-            state.item.request_paint = true;
-            state.item.needs_paint = true;
             state.item.needs_layout = true;
             state.item.request_layout = true;
+            state.item.request_paint = true;
+            state.item.needs_paint = true;
+            state.item.needs_accessibility = true;
+            state.item.request_accessibility = true;
         }
     }
 
