@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use accesskit::{ActionRequest, NodeId, TreeUpdate};
 use cursor_icon::CursorIcon;
+use dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
@@ -13,13 +14,11 @@ use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
-use crate::Handled;
 use crate::core::{
-    AccessEvent, BrushIndex, DefaultProperties, ErasedAction, Ime, PointerEvent, PropertiesRef,
-    QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut, WidgetPod,
-    WidgetRef, WidgetState, WindowEvent,
+    AccessEvent, BrushIndex, DefaultProperties, ErasedAction, Handled, Ime, PointerEvent,
+    PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut,
+    WidgetPod, WidgetRef, WidgetState, WindowEvent,
 };
-use crate::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
 use crate::passes::compose::run_compose_pass;
