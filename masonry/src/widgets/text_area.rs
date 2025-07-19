@@ -474,7 +474,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 if key_event.state != KeyState::Down || self.editor.is_composing() {
                     return;
                 }
-                #[allow(unused)]
                 let (shift, action_mod) = (
                     key_event.modifiers.shift(),
                     if cfg!(target_os = "macos") {
