@@ -9,10 +9,9 @@ use masonry_core::core::Properties;
 use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
-use crate::assert_render_snapshot;
 use crate::core::{PointerButton, Widget, WidgetOptions, WidgetPod};
 use crate::properties::{Background, BorderColor, BorderWidth};
-use crate::testing::{TestHarness, TestWidgetExt};
+use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::default_property_set;
 use crate::widgets::{Alignment, Button, ChildAlignment, Label, SizedBox, ZStack};
 

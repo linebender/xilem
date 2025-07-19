@@ -23,12 +23,12 @@ use crate::properties::{
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, stroke};
+use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::Label;
 
 /// A checkbox that can be toggled.
 ///
-#[doc = crate::include_screenshot!("checkbox_hello_checked.png", "Checkbox with checked state.")]
+#[doc = include_screenshot!("checkbox_hello_checked.png", "Checkbox with checked state.")]
 ///
 /// Emits [`CheckboxToggled`] when toggled.
 pub struct Checkbox {
@@ -335,10 +335,9 @@ mod tests {
     use ui_events::keyboard::NamedKey;
 
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::core::StyleProperty;
     use crate::properties::TextColor;
-    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
 
     #[test]

@@ -14,17 +14,16 @@ use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::Fill;
 
-use crate::TextAlign;
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
     PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
-use crate::debug_panic;
 use crate::properties::{DisabledTextColor, TextColor};
 use crate::theme::default_text_styles;
-use crate::{palette, theme};
+use crate::util::debug_panic;
+use crate::{TextAlign, palette, theme};
 
 /// `TextArea` implements the core of interactive text.
 ///

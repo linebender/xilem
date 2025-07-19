@@ -11,6 +11,7 @@ use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
     Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::util::include_screenshot;
 
 struct Child {
     widget: WidgetPod<dyn Widget>,
@@ -31,7 +32,7 @@ pub enum ChildAlignment {
 /// The alignment of how the children are placed can be specified globally using [`with_alignment`][Self::with_alignment].
 /// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
 ///
-#[doc = crate::include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
+#[doc = include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
 #[derive(Default)]
 pub struct ZStack {
     children: Vec<Child>,
@@ -384,9 +385,8 @@ mod tests {
     use vello::peniko::color::palette;
 
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::properties::{Background, BorderColor, BorderWidth};
-    use crate::testing::{TestHarness, TestWidgetExt as _};
+    use crate::testing::{TestHarness, TestWidgetExt as _, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::{Label, SizedBox};
 
