@@ -148,7 +148,10 @@ impl crate::core::one_of::PhantomElementCtx for ViewCtx {
     type PhantomElement = Pod<dyn Widget>;
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[allow(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 pub enum OneOfWidget<
     A: ?Sized,
     B: ?Sized,

@@ -722,12 +722,17 @@ mod hidden {
     use super::FlexItem;
     use crate::core::View;
     use crate::{AnyWidgetView, ViewCtx};
-    #[doc(hidden)] // Implementation detail, public because of trait visibility rules
-    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    #[doc(hidden)]
+    #[allow(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
     pub struct AnyFlexChildState<State: 'static, Action: 'static> {
         /// Just the optional view state of the flex item view
-        #[allow(clippy::type_complexity)]
-        // reason: There's no reasonable other way to avoid this.
+        #[allow(
+            clippy::type_complexity,
+            reason = "There's no way to avoid spelling out this type."
+        )]
         pub(crate) inner: Option<
             <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
                 State,
