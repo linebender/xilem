@@ -758,7 +758,7 @@ impl TestHarness {
 
     /// Method used by [`assert_render_snapshot`] and [`assert_failing_render_snapshot`]. Use these macros, not this method.
     ///
-    /// Renders the current Widget tree to a pixmap, and compares the pixmap against the
+    /// Renders the current widget tree to a pixmap, and compares the pixmap against the
     /// snapshot stored in `<CRATE ROOT>/screenshots/<test_name>.png`.
     ///
     /// * `manifest_dir`: directory where `Cargo.toml` can be found.

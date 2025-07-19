@@ -71,7 +71,7 @@ pub struct QueryCtx<'a> {
     pub(crate) properties_children: ArenaRefList<'a, AnyMap>,
 }
 
-/// A context provided to Widget event-handling methods.
+/// A context provided to event-handling [`Widget`] methods.
 pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,

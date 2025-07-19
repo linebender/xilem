@@ -6,8 +6,8 @@
 //! This module includes a series of articles documenting the crate:
 //!
 //! - **Building a "To-Do List" app:** Tutorial to get started with Masonry.
-//! - **Creating a new Widget:** Introduces the Widget trait.
-//! - **Creating a container Widget:** Expands on the Widget trait for container Widgets.
+//! - **Creating a new widget:** Introduces the `Widget` trait.
+//! - **Creating a container widget:** Expands on the `Widget` trait for container widgets.
 //! - **Testing widgets in Masonry:** Describes how to test your Masonry widgets in CI.
 //! - **Masonry pass system:** Deep dive into Masonry internals.
 //! - **Concepts and definitions:** Glossary of concepts used in Masonry APIs and internals.

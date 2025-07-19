@@ -98,7 +98,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         self.ctx.set_transform(transform);
     }
 
-    /// Attempt to downcast to `WidgetMut` of concrete Widget type.
+    /// Attempt to downcast to `WidgetMut` of concrete widget type.
     pub fn try_downcast<W2: Widget + FromDynWidget + ?Sized>(
         &mut self,
     ) -> Option<WidgetMut<'_, W2>> {
@@ -108,7 +108,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
         })
     }
 
-    /// Downcasts to `WidgetMut` of concrete Widget type.
+    /// Downcasts to `WidgetMut` of concrete widget type.
     ///
     /// ## Panics
     ///

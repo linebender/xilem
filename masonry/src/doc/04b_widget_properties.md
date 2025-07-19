@@ -16,7 +16,7 @@
 
 **TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
-Throughout the previous chapters, you may have noticed that most Widget methods take a `props: &PropertiesRef<'_>` or `props: &mut PropertiesMut<'_>` argument.
+Throughout the previous chapters, you may have noticed that most widget methods take a `props: &PropertiesRef<'_>` or `props: &mut PropertiesMut<'_>` argument.
 We haven't used these arguments so far, and you can build a robust widget set without them, but they're helpful for making your widgets more customizable and modular.
 
 
@@ -36,7 +36,7 @@ let RubberDuck(color, name, buoyancy) = ducky;
 
 ### Properties are only data
 
-Properties are a way for Widgets to store arbitrary state; they do not encode *behavior*.
+Properties are a way for widgets to store arbitrary state; they do not encode *behavior*.
 For those familiar, properties are similar to the "Component" part of ECS.
 
 In other words, adding a property to a widget will not change anything about how that widget is rendered *unless that widget has code specifically reading that property*.
