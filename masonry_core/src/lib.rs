@@ -27,7 +27,6 @@
 #![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
-#![expect(unreachable_pub, reason = "Potentially controversial code style")]
 // TODO - Add logo
 
 pub use anymore;

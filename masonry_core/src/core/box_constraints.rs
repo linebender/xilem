@@ -1,8 +1,6 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-pub use crate::debug_panic;
-
 use vello::kurbo::Size;
 
 /// Constraints for layout.
