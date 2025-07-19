@@ -3,6 +3,8 @@
 
 //! A label with support for animated variable font properties
 
+#![expect(unreachable_pub, reason = "We don't expose the animation types yet")]
+
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
