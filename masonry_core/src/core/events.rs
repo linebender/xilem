@@ -100,14 +100,14 @@ pub enum Update {
 
     /// Called when the [hovered] status of the current widget changes.
     ///
-    /// [hovered]: crate::doc::doc_06_masonry_concepts#widget-status
+    /// [hovered]: crate::doc::internals_02_masonry_concepts#widget-status
     HoveredChanged(bool),
 
     /// Called when the [hovered] status of the current widget or a descendant changes.
     ///
     /// This is sent before [`Update::HoveredChanged`].
     ///
-    /// [hovered]: crate::doc::doc_06_masonry_concepts#widget-status
+    /// [hovered]: crate::doc::internals_02_masonry_concepts#widget-status
     ChildHoveredChanged(bool),
 
     /// Called when the [active] status of the current widget changes.
@@ -124,14 +124,14 @@ pub enum Update {
 
     /// Called when the [focused] status of the current widget changes.
     ///
-    /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
+    /// [focused]: crate::doc::internals_02_masonry_concepts#text-focus
     FocusChanged(bool),
 
     /// Called when the [focused] status of the current widget or a descendant changes.
     ///
     /// This is sent before [`Update::FocusChanged`].
     ///
-    /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
+    /// [focused]: crate::doc::internals_02_masonry_concepts#text-focus
     ChildFocusChanged(bool),
 }
 

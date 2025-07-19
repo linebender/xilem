@@ -667,17 +667,17 @@ impl RenderRoot {
         !state.item.is_stashed && !state.item.is_disabled
     }
 
-    /// Return the [`WidgetId`] of the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
+    /// Return the [`WidgetId`] of the [focused widget](crate::doc::internals_02_masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetId> {
         self.global_state.focused_widget
     }
 
-    /// Return the [`WidgetId`] of the widget which [captures pointer events](crate::doc::doc_06_masonry_concepts#pointer-capture).
+    /// Return the [`WidgetId`] of the widget which [captures pointer events](crate::doc::internals_02_masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetId> {
         self.global_state.pointer_capture_target
     }
 
-    /// Sets the [focused widget](crate::doc::doc_06_masonry_concepts#text-focus).
+    /// Sets the [focused widget](crate::doc::internals_02_masonry_concepts#text-focus).
     ///
     /// Returns false if the widget is not found in the tree or can't be focused.
     pub fn focus_on(&mut self, id: Option<WidgetId>) -> bool {

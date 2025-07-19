@@ -371,7 +371,7 @@ impl Widget for ColorRectangle {
 Most of the methods we've listed take a `props: &mut PropertiesMut<'_>` argument.
 
 We won't cover properties in this chapter.
-See [Reading widget properties](crate::doc::doc_04b_widget_properties) for more info.
+See [Reading widget properties](crate::doc::doc_05_widget_properties) for more info.
 
 
 ## Widget mutation
