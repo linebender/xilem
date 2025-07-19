@@ -208,10 +208,10 @@ impl BoxConstraints {
     /// Panics if `aspect_ratio` or `width` are NaN, infinite or negative.
     #[track_caller]
     pub fn constrain_aspect_ratio(&self, aspect_ratio: f64, width: f64) -> Size {
-        assert!(aspect_ratio.is_finite());
-        assert!(width.is_finite());
-        assert!(aspect_ratio >= 0.0);
-        assert!(width >= 0.0);
+        assert!(aspect_ratio.is_finite(), "invalid aspect_ratio");
+        assert!(width.is_finite(), "invalid width");
+        assert!(aspect_ratio >= 0.0, "invalid aspect_ratio");
+        assert!(width >= 0.0, "invalid width");
 
         // Minimizing/maximizing based on aspect ratio seems complicated, but in reality everything
         // is linear, so the amount of work to do is low.
