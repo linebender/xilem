@@ -65,7 +65,7 @@ fn try_init_layered_tracing(default_level: LevelFilter) -> Result<(), SetGlobalD
             .with_ansi(false);
         // Note that this layer does not use the provided filter, and instead logs all events.
 
-        #[allow(clippy::print_stderr)]
+        #[allow(clippy::print_stderr, reason = "Can only use stderr")]
         {
             // We print this message to stderr (rather than through `tracing`), because:
             // 1) Tracing hasn't been set up yet

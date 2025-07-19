@@ -123,7 +123,7 @@ impl FromDynWidget for dyn Widget {
 /// Generally speaking, widgets aren't used directly. They are stored by Masonry and accessed
 /// through [`WidgetPod`](crate::core::WidgetPod)s. Widget methods are called by Masonry, and a
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
-#[allow(unused_variables)]
+#[allow(unused_variables, reason = "Default impls don't use method arguments")]
 pub trait Widget: AsDynWidget + Any {
     /// Handle a pointer event.
     ///
@@ -132,7 +132,7 @@ pub trait Widget: AsDynWidget + Any {
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
     }
@@ -145,7 +145,7 @@ pub trait Widget: AsDynWidget + Any {
     fn on_text_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
     }
@@ -156,7 +156,7 @@ pub trait Widget: AsDynWidget + Any {
     fn on_access_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
     }
@@ -183,7 +183,7 @@ pub trait Widget: AsDynWidget + Any {
     fn on_anim_frame(
         &mut self,
         ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
     }
@@ -204,7 +204,7 @@ pub trait Widget: AsDynWidget + Any {
     /// This method is called to notify your widget of certain special events,
     /// (available in the [`Update`] enum) that are generally related to
     /// changes in the widget graph or in the state of your specific widget.
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {}
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update) {}
 
     // TODO - Remove default implementation
     /// Handle a property being added, changed, or removed.
@@ -238,7 +238,7 @@ pub trait Widget: AsDynWidget + Any {
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size;
 
