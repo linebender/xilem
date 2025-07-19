@@ -551,7 +551,24 @@ impl LayoutCtx<'_> {
         child: &mut WidgetPod<impl Widget + ?Sized>,
         bc: &BoxConstraints,
     ) -> Size {
-        run_layout_on(self, child, bc)
+        let id = child.id();
+        let widget = self.widget_children.item_mut(id).unwrap();
+        let state = self.widget_state_children.item_mut(id).unwrap();
+        let properties = self.properties_children.item_mut(id).unwrap();
+
+        let new_size = run_layout_on(
+            self.global_state,
+            self.default_properties,
+            widget,
+            state,
+            properties,
+            bc,
+        );
+
+        let state_mut = self.widget_state_children.item_mut(id).unwrap();
+        self.widget_state.merge_up(state_mut.item);
+
+        new_size
     }
 
     /// Set the position of a child widget, in the parent's coordinate space.
