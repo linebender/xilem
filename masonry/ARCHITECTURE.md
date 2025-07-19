@@ -2,7 +2,7 @@
 
 Masonry is a framework that aims to provide the foundation for Rust GUI libraries.
 
-Developers trying to write immediate-mode GUIs, Elm-architecture GUIs, functional reactive GUIs, etc, can import Masonry and get a platform to create windows (using Winit as a backend) each with a tree of widgets. Each widget has to implement the Widget trait that Masonry provides.
+Developers trying to write immediate-mode GUIs, Elm-architecture GUIs, functional reactive GUIs, etc, can import Masonry and get a platform to create windows (using Winit as a backend) each with a tree of widgets. Each widget has to implement the `Widget` trait that Masonry provides.
 
 
 ## High-level goals
@@ -20,14 +20,14 @@ Masonry has some opinionated design goals:
 
 ### `src/core/`
 
-Most widget-related code, including the Widget trait, its context types, event types, and the WidgetRef, WidgetMut, and WidgetPod types.
+Most widget-related code, including the `Widget` trait, its context types, event types, and the `WidgetRef`, `WidgetMut`, and `WidgetPod` types.
 
 #### `src/core/widget_state.rs`
 
 Contains the WidgetState type, around which a lot of internal code is based.
 
-WidgetState is one of the most important internal types in Masonry.
-Understanding Masonry pass code will likely be easier if you read WidgetState documentation first.
+`WidgetState` is one of the most important internal types in Masonry.
+Understanding Masonry pass code will likely be easier if you read `WidgetState` documentation first.
 
 ### `src/app/`
 

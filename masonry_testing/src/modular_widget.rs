@@ -86,7 +86,7 @@ impl<S> ModularWidget<S> {
 
 /// Builder methods.
 ///
-/// Each method takes a flag which is then returned by the matching Widget method.
+/// Each method takes a flag which is then returned by the matching [`Widget`] method.
 impl<S> ModularWidget<S> {
     /// See [`Widget::accepts_pointer_interaction`]
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
@@ -109,7 +109,7 @@ impl<S> ModularWidget<S> {
 
 /// Builder methods.
 ///
-/// Each method takes a callback that matches the behavior of the matching Widget method.
+/// Each method takes a callback that matches the behavior of the matching [`Widget`] method.
 impl<S> ModularWidget<S> {
     /// See [`Widget::on_pointer_event`]
     pub fn pointer_event_fn(

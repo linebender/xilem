@@ -65,7 +65,7 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 - **compose:** Assigns transforms to widgets.
 - **update_pointer:** Updates the hovered status of widgets and the current cursor icon.
 
-The layout and compose passes have methods with matching names in the Widget trait.
+The layout and compose passes have methods with matching names in the [`Widget`] trait.
 The update_xxx passes call the widgets' update method.
 
 By default, each of these passes completes without doing any work, unless pass-dependent invalidation flags are set.
@@ -175,6 +175,7 @@ They can access the layout of children if they have already been laid out.
 - [`RegisterCtx`] can't do anything except register children.
 - [`QueryCtx`] provides read-only information about the widget.
 
+[`Widget`]: crate::core::Widget
 [`LayoutCtx::place_child`]: crate::core::LayoutCtx::place_child
 [`LayoutCtx::run_layout`]: crate::core::LayoutCtx::run_layout
 [`WidgetMut`]: crate::core::WidgetMut

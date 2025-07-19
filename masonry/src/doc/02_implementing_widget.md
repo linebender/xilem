@@ -1,4 +1,4 @@
-# Creating a new Widget
+# Creating a new widget
 
 <!-- Copyright 2024 the Xilem Authors -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
@@ -19,7 +19,7 @@ If you're building your own GUI framework on top of Masonry, or even a GUI app w
 This tutorial explains how to create a simple leaf widget.
 
 
-## The Widget trait
+## The `Widget` trait
 
 Widgets are types which implement the [`Widget`] trait:
 
@@ -371,7 +371,7 @@ impl Widget for ColorRectangle {
 Most of the methods we've listed take a `props: &mut PropertiesMut<'_>` argument.
 
 We won't cover properties in this chapter.
-See [Reading Widget Properties](crate::doc::doc_04b_widget_properties) for more info.
+See [Reading widget Properties](crate::doc::doc_04b_widget_properties) for more info.
 
 
 ## Widget mutation

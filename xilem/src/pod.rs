@@ -14,7 +14,7 @@ use crate::core::{Mut, SuperElement, ViewElement};
 /// This exists for two reasons:
 /// 1) The nearest equivalent type in Masonry, [`WidgetPod`], can't have
 ///    [Xilem Core](xilem_core) traits implemented on it due to Rust's orphan rules.
-/// 2) `WidgetPod` is also used during a Widget's lifetime to contain its children,
+/// 2) `WidgetPod` is also used during a widget's lifetime to contain its children,
 ///    and so might not actually own the underlying widget value.
 ///    When creating widgets in Xilem, layered views all want access to the - using
 ///    `WidgetPod` for this purpose would require fallible unwrapping.

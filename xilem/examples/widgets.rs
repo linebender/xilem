@@ -118,7 +118,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let app = Xilem::new_simple(
         data,
         app_logic,
-        WindowOptions::new("Xilem Widgets")
+        WindowOptions::new("Xilem widgets")
             .with_min_inner_size(min_window_size)
             .with_initial_inner_size(window_size),
     );

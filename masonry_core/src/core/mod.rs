@@ -43,7 +43,7 @@ pub(crate) use widget_arena::WidgetArena;
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
 
-/// Actions are emitted by Masonry Widgets when a user input needs to be handled by the application.
+/// Actions are emitted by Masonry widgets when a user input needs to be handled by the application.
 ///
 /// The concrete action type can be accessed from this type using [`downcast`](anymore::AnyDebug#method.downcast-1).
 // N.b. We would like to use a true intra-doc link here, but it's not feasible to do so to `dyn Trait` items.
