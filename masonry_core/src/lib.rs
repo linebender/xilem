@@ -28,10 +28,6 @@
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
-#![expect(
-    unnameable_types,
-    reason = "Requires lint_reasons rustc feature for exceptions"
-)]
 // TODO - Add logo
 
 pub use anymore;
