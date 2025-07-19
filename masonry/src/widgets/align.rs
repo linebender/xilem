@@ -18,13 +18,13 @@ use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
     Widget, WidgetId, WidgetPod,
 };
-use crate::util::UnitPoint;
+use crate::util::{UnitPoint, include_screenshot};
 
 // TODO - Have child widget type as generic argument
 
 /// A widget that aligns its child.
 ///
-#[doc = crate::include_screenshot!("align_right.png", "Right-aligned label.")]
+#[doc = include_screenshot!("align_right.png", "Right-aligned label.")]
 pub struct Align {
     align: UnitPoint,
     child: WidgetPod<dyn Widget>,
@@ -173,8 +173,7 @@ fn log_size_warnings(size: Size) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Label;
 

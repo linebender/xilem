@@ -517,8 +517,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::{TestHarness, widget_ids};
+    use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
     use crate::widgets::{Button, Flex, SizedBox};
 

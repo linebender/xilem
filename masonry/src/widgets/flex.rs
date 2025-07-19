@@ -17,15 +17,14 @@ use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, UpdateCtx,
     Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::debug_panic;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{fill, stroke};
+use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
 /// A container with either horizontal or vertical layout.
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
 ///
-#[doc = crate::include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
+#[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
     direction: Axis,
     cross_alignment: CrossAxisAlignment,
@@ -1196,8 +1195,7 @@ impl Widget for Flex {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Label;
 

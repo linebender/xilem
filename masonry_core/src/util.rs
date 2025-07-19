@@ -34,6 +34,8 @@ macro_rules! debug_panic {
     };
 }
 
+pub use crate::debug_panic;
+
 // ---
 
 pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
@@ -195,6 +197,8 @@ pub fn get_debug_color(id: u64) -> Color {
 // FIXME - We're essentially completely disabling screenshots, period.
 // Hopefully we'll be able to re-enable them soon.
 // See https://github.com/linebender/xilem/issues/851
+
+pub use crate::include_screenshot;
 
 #[doc(hidden)]
 #[macro_export]

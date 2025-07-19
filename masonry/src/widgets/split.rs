@@ -17,12 +17,12 @@ use crate::core::{
 };
 use crate::peniko::Color;
 use crate::theme;
-use crate::util::{fill_color, stroke};
+use crate::util::{fill_color, include_screenshot, stroke};
 use crate::widgets::flex::Axis;
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
-#[doc = crate::include_screenshot!("split_columns.png", "Split panel with two labels.")]
+#[doc = include_screenshot!("split_columns.png", "Split panel with two labels.")]
 pub struct Split<ChildA, ChildB>
 where
     ChildA: Widget + ?Sized,
@@ -612,8 +612,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Label;
 

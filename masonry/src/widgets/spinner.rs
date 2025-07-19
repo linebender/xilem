@@ -17,6 +17,7 @@ use crate::core::{
 };
 use crate::peniko::Color;
 use crate::theme;
+use crate::util::include_screenshot;
 
 /// An animated spinner widget for showing a loading state.
 ///
@@ -25,7 +26,7 @@ use crate::theme;
 ///
 /// [`SizedBox`]: crate::widgets::SizedBox
 ///
-#[doc = crate::include_screenshot!("spinner_init.png", "Spinner frame.")]
+#[doc = include_screenshot!("spinner_init.png", "Spinner frame.")]
 pub struct Spinner {
     t: f64,
     color: Color,
