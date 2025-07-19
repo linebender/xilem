@@ -506,7 +506,7 @@ mod tests {
             .with_flex_child(label4, CrossAxisAlignment::Center)
             .with_flex_child(label5, CrossAxisAlignment::Center)
             .with_flex_child(label6, CrossAxisAlignment::Center)
-            .gap(0.0);
+            .with_gap(0.0);
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 200.0));

@@ -179,7 +179,7 @@ where
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Flex::for_axis(self.axis)
-            .gap(self.gap)
+            .with_gap(self.gap)
             .cross_axis_alignment(self.cross_axis_alignment)
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);

@@ -183,7 +183,7 @@ impl Flex {
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     // TODO: Semantics - should this include fixed spacers?
-    pub fn gap(mut self, mut gap: f64) -> Self {
+    pub fn with_gap(mut self, mut gap: f64) -> Self {
         if !gap.is_finite() || gap < 0.0 {
             debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
             gap = 0.0;

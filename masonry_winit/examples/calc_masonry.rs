@@ -364,7 +364,7 @@ fn flex_row(
     w4: impl Widget + 'static,
 ) -> impl Widget {
     Flex::row()
-        .gap(0.0)
+        .with_gap(0.0)
         .with_flex_child(w1, 1.0)
         .with_spacer(1.0)
         .with_flex_child(w2, 1.0)
@@ -377,7 +377,7 @@ fn flex_row(
 fn build_calc() -> impl Widget {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
     Flex::column()
-        .gap(0.0)
+        .with_gap(0.0)
         .with_flex_spacer(0.2)
         .with_child(display)
         .with_flex_spacer(0.2)
