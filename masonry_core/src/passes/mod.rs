@@ -8,9 +8,9 @@
 //! This file includes utility functions used by multiple passes.
 
 use tracing::span::EnteredSpan;
-use tree_arena::{ArenaMut, ArenaMutList, ArenaRef};
+use tree_arena::{ArenaMut, ArenaRef};
 
-use crate::core::{Widget, WidgetArena, WidgetId, WidgetState};
+use crate::core::{Widget, WidgetArena, WidgetArenaMut, WidgetId, WidgetState};
 use crate::util::AnyMap;
 
 pub(crate) mod accessibility;
@@ -37,30 +37,29 @@ pub(crate) fn enter_span(state: ArenaRef<'_, WidgetState>) -> EnteredSpan {
 
 pub(crate) fn recurse_on_children(
     id: WidgetId,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMutList<'_, WidgetState>,
-    mut properties: ArenaMutList<'_, AnyMap>,
+    widget: &mut dyn Widget,
+    mut children: WidgetArenaMut<'_>,
     mut callback: impl FnMut(
         ArenaMut<'_, Box<dyn Widget>>,
         ArenaMut<'_, WidgetState>,
         ArenaMut<'_, AnyMap>,
     ),
 ) {
-    let parent_name = widget.item.short_type_name();
+    let parent_name = widget.short_type_name();
     let parent_id = id;
 
-    for child_id in widget.item.children_ids() {
-        let widget = widget.children.item_mut(child_id).unwrap_or_else(|| {
+    for child_id in widget.children_ids() {
+        let widget = children.widget_children.item_mut(child_id).unwrap_or_else(|| {
             panic!(
                 "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
             )
         });
-        let state = state.item_mut(child_id).unwrap_or_else(|| {
+        let state = children.widget_state_children.item_mut(child_id).unwrap_or_else(|| {
             panic!(
                 "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
             )
         });
-        let properties = properties.item_mut(child_id).unwrap_or_else(|| {
+        let properties = children.properties_children.item_mut(child_id).unwrap_or_else(|| {
             panic!(
                 "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
             )

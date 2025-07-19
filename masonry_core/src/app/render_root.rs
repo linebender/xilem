@@ -16,8 +16,8 @@ use vello::kurbo::{Rect, Size};
 
 use crate::core::{
     AccessEvent, BrushIndex, DefaultProperties, ErasedAction, Handled, Ime, PointerEvent,
-    PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState, WindowEvent,
+    PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaMut,
+    WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
@@ -459,31 +459,8 @@ impl RenderRoot {
     // --- MARK: ACCESS WIDGETS
     /// Get a [`WidgetRef`] to the root widget.
     pub fn get_root_widget(&self) -> WidgetRef<'_, dyn Widget> {
-        let root_state_token = self.widget_arena.states.roots();
-        let root_widget_token = self.widget_arena.widgets.roots();
-        let root_properties_token = self.widget_arena.properties.roots();
-        let state_ref = root_state_token
-            .into_item(self.root.id())
-            .expect("root widget not in widget tree");
-        let widget_ref = root_widget_token
-            .into_item(self.root.id())
-            .expect("root widget not in widget tree");
-        let properties_ref = root_properties_token
-            .into_item(self.root.id())
-            .expect("root widget not in widget tree");
-        let widget = &**widget_ref.item;
-        let ctx = QueryCtx {
-            global_state: &self.global_state,
-            widget_state_children: state_ref.children,
-            widget_children: widget_ref.children,
-            widget_state: state_ref.item,
-            properties: PropertiesRef {
-                map: properties_ref.item,
-                default_map: self.default_properties.for_widget(widget.type_id()),
-            },
-            properties_children: properties_ref.children,
-        };
-        WidgetRef { ctx, widget }
+        self.get_widget(self.root.id())
+            .expect("root widget not in widget tree")
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
@@ -500,17 +477,23 @@ impl RenderRoot {
             .find(id)
             .expect("found state but not properties");
 
+        let children = WidgetArenaRef {
+            widget_children: widget_ref.children,
+            widget_state_children: state_ref.children,
+            properties_children: properties_ref.children,
+        };
         let widget = &**widget_ref.item;
+        let state = state_ref.item;
+        let properties = properties_ref.item;
+
         let ctx = QueryCtx {
             global_state: &self.global_state,
-            widget_state_children: state_ref.children,
-            widget_children: widget_ref.children,
-            widget_state: state_ref.item,
+            widget_state: state,
             properties: PropertiesRef {
-                map: properties_ref.item,
+                map: properties,
                 default_map: self.default_properties.for_widget(widget.type_id()),
             },
-            properties_children: properties_ref.children,
+            children,
         };
         Some(WidgetRef { ctx, widget })
     }
@@ -628,25 +611,27 @@ impl RenderRoot {
 
     pub(crate) fn request_render_all(&mut self) {
         fn request_render_all_in(
-            mut widget: ArenaMut<'_, Box<dyn Widget>>,
+            widget: ArenaMut<'_, Box<dyn Widget>>,
             state: ArenaMut<'_, WidgetState>,
             properties: ArenaMut<'_, AnyMap>,
         ) {
-            state.item.needs_paint = true;
-            state.item.needs_accessibility = true;
-            state.item.request_paint = true;
-            state.item.request_accessibility = true;
+            let children = WidgetArenaMut {
+                widget_children: widget.children,
+                widget_state_children: state.children,
+                properties_children: properties.children,
+            };
+            let widget = &mut **widget.item;
+            let state = state.item;
 
-            let id = state.item.id;
-            recurse_on_children(
-                id,
-                widget.reborrow_mut(),
-                state.children,
-                properties.children,
-                |widget, state, properties| {
-                    request_render_all_in(widget, state, properties);
-                },
-            );
+            state.needs_paint = true;
+            state.needs_accessibility = true;
+            state.request_paint = true;
+            state.request_accessibility = true;
+
+            let id = state.id;
+            recurse_on_children(id, widget, children, |widget, state, properties| {
+                request_render_all_in(widget, state, properties);
+            });
         }
 
         let (root_widget, root_state, root_properties) =

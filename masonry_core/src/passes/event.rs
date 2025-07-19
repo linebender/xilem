@@ -8,7 +8,7 @@ use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessEvent, EventCtx, Handled, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut,
-    TextEvent, Widget, WidgetId,
+    TextEvent, Widget, WidgetArenaMut, WidgetId,
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
@@ -94,12 +94,15 @@ fn run_event_pass<E>(
 
         if !is_handled {
             let _span = enter_span(state_mut.reborrow());
+            let children = WidgetArenaMut {
+                widget_children: widget_mut.children,
+                widget_state_children: state_mut.children,
+                properties_children: properties_mut.children.reborrow_mut(),
+            };
             let mut ctx = EventCtx {
                 global_state: &mut root.global_state,
                 widget_state: state_mut.item,
-                widget_state_children: state_mut.children,
-                widget_children: widget_mut.children,
-                properties_children: properties_mut.children.reborrow_mut(),
+                children,
                 target: original_target.unwrap(),
                 allow_pointer_capture,
                 is_handled: false,

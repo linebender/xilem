@@ -6,81 +6,81 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{ComposeCtx, Widget, WidgetState};
+use crate::core::{ComposeCtx, Widget, WidgetArenaMut, WidgetState};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
 // --- MARK: RECURSE
 fn compose_widget(
     global_state: &mut RenderRootState,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     properties: ArenaMut<'_, AnyMap>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {
     let _span = enter_span_if(global_state.trace.compose, state.reborrow());
+    let mut children = WidgetArenaMut {
+        widget_children: widget.children,
+        widget_state_children: state.children,
+        properties_children: properties.children,
+    };
+    let widget = &mut **widget.item;
+    let state = state.item;
 
-    let transformed = parent_transformed || state.item.transform_changed;
+    let transformed = parent_transformed || state.transform_changed;
 
-    if !transformed && !state.item.needs_compose {
+    if !transformed && !state.needs_compose {
         return;
     }
 
     // the translation needs to be applied *after* applying the transform, as translation by scrolling should be within the transformed coordinate space. Same is true for the (layout) origin, to behave similar as in CSS.
-    let local_translation = state.item.scroll_translation + state.item.origin.to_vec2();
+    let local_translation = state.scroll_translation + state.origin.to_vec2();
 
-    state.item.window_transform =
-        parent_window_transform * state.item.transform.then_translate(local_translation);
+    state.window_transform =
+        parent_window_transform * state.transform.then_translate(local_translation);
 
-    let local_rect = state.item.size.to_rect() + state.item.paint_insets;
-    state.item.bounding_rect = state.item.window_transform.transform_rect_bbox(local_rect);
+    let local_rect = state.size.to_rect() + state.paint_insets;
+    state.bounding_rect = state.window_transform.transform_rect_bbox(local_rect);
 
     let mut ctx = ComposeCtx {
         global_state,
-        widget_state: state.item,
-        widget_state_children: state.children.reborrow_mut(),
-        widget_children: widget.children.reborrow_mut(),
+        widget_state: state,
+        children: children.reborrow_mut(),
     };
     if ctx.widget_state.request_compose {
-        widget.item.compose(&mut ctx);
+        widget.compose(&mut ctx);
     }
 
     // We need to update the accessibility node's coordinates and repaint it at the new position.
-    state.item.request_accessibility = true;
-    state.item.needs_accessibility = true;
-    state.item.needs_paint = true;
+    state.request_accessibility = true;
+    state.needs_accessibility = true;
+    state.needs_paint = true;
 
-    state.item.needs_compose = false;
-    state.item.request_compose = false;
-    state.item.transform_changed = false;
+    state.needs_compose = false;
+    state.request_compose = false;
+    state.transform_changed = false;
 
-    let id = state.item.id;
-    let parent_transform = state.item.window_transform;
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            compose_widget(
-                global_state,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                transformed,
-                parent_transform,
-            );
-            let parent_bounding_rect = parent_state.bounding_rect;
+    let id = state.id;
+    let parent_transform = state.window_transform;
+    let parent_state = state;
+    recurse_on_children(id, widget, children, |widget, mut state, properties| {
+        compose_widget(
+            global_state,
+            widget,
+            state.reborrow_mut(),
+            properties,
+            transformed,
+            parent_transform,
+        );
+        let parent_bounding_rect = parent_state.bounding_rect;
 
-            if let Some(child_bounding_rect) = parent_state.clip_child(state.item.bounding_rect) {
-                parent_state.bounding_rect = parent_bounding_rect.union(child_bounding_rect);
-            }
+        if let Some(child_bounding_rect) = parent_state.clip_child(state.item.bounding_rect) {
+            parent_state.bounding_rect = parent_bounding_rect.union(child_bounding_rect);
+        }
 
-            parent_state.merge_up(state.item);
-        },
-    );
+        parent_state.merge_up(state.item);
+    });
 }
 
 // --- MARK: ROOT

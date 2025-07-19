@@ -7,7 +7,9 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetId, WidgetState};
+use crate::core::{
+    AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetArenaMut, WidgetId, WidgetState,
+};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::AnyMap;
 
@@ -16,43 +18,49 @@ fn build_accessibility_tree(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     tree_update: &mut TreeUpdate,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    properties: ArenaMut<'_, AnyMap>,
     rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {
     let _span = enter_span_if(global_state.trace.access, state.reborrow());
     let id = state.item.id;
+    let mut children = WidgetArenaMut {
+        widget_children: widget.children,
+        widget_state_children: state.children,
+        properties_children: properties.children,
+    };
+    let widget = &mut **widget.item;
+    let state = state.item;
+    let properties = properties.item;
 
-    if !rebuild_all && !state.item.needs_accessibility {
+    if !rebuild_all && !state.needs_accessibility {
         return;
     }
 
-    if (rebuild_all || state.item.request_accessibility) && !state.item.is_stashed {
+    if (rebuild_all || state.request_accessibility) && !state.is_stashed {
         if global_state.trace.access {
             trace!(
                 "Building accessibility node for widget '{}' {}",
-                widget.item.short_type_name(),
+                widget.short_type_name(),
                 id,
             );
         }
 
         let mut ctx = AccessCtx {
             global_state,
-            widget_state: state.item,
-            widget_state_children: state.children.reborrow_mut(),
-            widget_children: widget.children.reborrow_mut(),
-            properties_children: properties.children.reborrow_mut(),
+            widget_state: state,
+            children: children.reborrow_mut(),
             tree_update,
             rebuild_all,
         };
-        let mut node = build_access_node(&mut **widget.item, &mut ctx, scale_factor);
+        let mut node = build_access_node(widget, &mut ctx, scale_factor);
         let props = PropertiesRef {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
+            map: properties,
+            default_map: default_properties.for_widget(widget.type_id()),
         };
-        widget.item.accessibility(&mut ctx, &props, &mut node);
+        widget.accessibility(&mut ctx, &props, &mut node);
 
         let id: NodeId = ctx.widget_state.id.into();
         if ctx.global_state.trace.access {
@@ -61,30 +69,23 @@ fn build_accessibility_tree(
         ctx.tree_update.nodes.push((id, node));
     }
 
-    state.item.request_accessibility = false;
-    state.item.needs_accessibility = false;
+    state.request_accessibility = false;
+    state.needs_accessibility = false;
 
-    let id = state.item.id;
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            build_accessibility_tree(
-                global_state,
-                default_properties,
-                tree_update,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                rebuild_all,
-                None,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+    let parent_state = state;
+    recurse_on_children(id, widget, children, |widget, mut state, properties| {
+        build_accessibility_tree(
+            global_state,
+            default_properties,
+            tree_update,
+            widget,
+            state.reborrow_mut(),
+            properties,
+            rebuild_all,
+            None,
+        );
+        parent_state.merge_up(state.item);
+    });
 }
 
 // --- MARK: BUILD NODE
@@ -105,7 +106,8 @@ fn build_access_node(
     node.set_transform(accesskit::Affine::new(local_transform.as_coeffs()));
 
     fn is_child_stashed(ctx: &mut AccessCtx<'_>, id: WidgetId) -> bool {
-        ctx.widget_state_children
+        ctx.children
+            .widget_state_children
             .find(id)
             .expect("is_child_stashed: child not found")
             .item
