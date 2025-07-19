@@ -298,6 +298,25 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     }
 }
 
+enum PostScrollResult {
+    Layout,
+    NoLayout,
+}
+
+macro_rules! post_scroll_wrappers {
+    ($(($name:ident, $ctx_ty:ty)),+) => {
+        $(fn $name(&mut self, ctx: $ctx_ty) {
+            match self.post_scroll(ctx.size()) {
+                PostScrollResult::Layout => {
+                    ctx.request_layout();
+                }
+                PostScrollResult::NoLayout => {}
+            }
+            ctx.request_compose();
+        })*
+    }
+}
+
 // --- MARK: WIDGETMUT
 impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Indicates that `action` is about to be handled by the driver (which is calling this method).
@@ -426,13 +445,13 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
-    fn post_scroll(&mut self, ctx: &mut EventCtx<'_>) {
+    fn post_scroll(&mut self, size: Size) -> PostScrollResult {
         // We only lock scrolling if we're *exactly* at the end of the range, because
         // if the valid range has changed "during" an active scroll, we still want to handle
         // that scroll (specifically, in case it happens to scroll us back into the active
         // range "naturally")
         if self.anchor_index + 1 == self.valid_range.end {
-            self.cap_scroll_range_down(self.anchor_height, ctx.size().height);
+            self.cap_scroll_range_down(self.anchor_height, size.height);
         }
         if self.anchor_index == self.valid_range.start {
             self.cap_scroll_range_up();
@@ -440,9 +459,15 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         if self.scroll_offset_from_anchor < 0.
             || self.scroll_offset_from_anchor >= self.anchor_height
         {
-            ctx.request_layout();
+            PostScrollResult::Layout
+        } else {
+            PostScrollResult::NoLayout
         }
-        ctx.request_compose();
+    }
+
+    post_scroll_wrappers! {
+        (event_post_scroll, &mut EventCtx<'_>),
+        (update_post_scroll, &mut UpdateCtx<'_>)
     }
 
     /// Lock scrolling so that:
@@ -484,7 +509,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     _ => 0.0,
                 };
                 self.scroll_offset_from_anchor += delta;
-                self.post_scroll(ctx);
+                self.event_post_scroll(ctx);
             }
             _ => (),
         }
@@ -506,11 +531,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                     let delta = 20000.;
                     if matches!(key_event.key, Key::Named(NamedKey::PageDown)) {
                         self.scroll_offset_from_anchor += delta;
-                        self.post_scroll(ctx);
+                        self.event_post_scroll(ctx);
                     }
                     if matches!(key_event.key, Key::Named(NamedKey::PageUp)) {
                         self.scroll_offset_from_anchor -= delta;
-                        self.post_scroll(ctx);
+                        self.event_post_scroll(ctx);
                     }
                 }
             }
@@ -520,11 +545,30 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx<'_>,
+        ctx: &mut EventCtx<'_>,
         _props: &mut PropertiesMut<'_>,
-        _event: &AccessEvent,
+        event: &AccessEvent,
     ) {
-        // TODO: Handle scroll-etc. eventss
+        if matches!(
+            event.action,
+            accesskit::Action::ScrollUp | accesskit::Action::ScrollDown
+        ) {
+            let unit = if let Some(accesskit::ActionData::ScrollUnit(unit)) = &event.data {
+                *unit
+            } else {
+                accesskit::ScrollUnit::Item
+            };
+            let amount = match unit {
+                accesskit::ScrollUnit::Item => self.anchor_height,
+                accesskit::ScrollUnit::Page => ctx.size().height,
+            };
+            if event.action == accesskit::Action::ScrollUp {
+                self.scroll_offset_from_anchor -= amount;
+            } else {
+                self.scroll_offset_from_anchor += amount;
+            }
+            self.event_post_scroll(ctx);
+        }
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
@@ -534,12 +578,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         }
     }
 
-    fn update(
-        &mut self,
-        _ctx: &mut UpdateCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &Update,
-    ) {
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::RequestPanToChild(target) => {
+                let new_pos_y = super::portal::compute_pan_range(
+                    0.0..ctx.size().height,
+                    target.min_y()..target.max_y(),
+                )
+                .start;
+                self.scroll_offset_from_anchor += new_pos_y;
+                self.update_post_scroll(ctx);
+            }
+            _ => {}
+        }
     }
 
     fn layout(
@@ -848,23 +899,63 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     }
 
     fn accessibility_role(&self) -> accesskit::Role {
-        // TODO: accesskit::Role::ScrollView ?
-        accesskit::Role::GenericContainer
+        accesskit::Role::ScrollView
     }
 
     fn accessibility(
         &mut self,
-        _ctx: &mut AccessCtx<'_>,
+        ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         node: &mut accesskit::Node,
     ) {
-        // TODO: Better virtual scrolling accessibility
-        // Intended as a follow-up collaboration with Matt
         node.set_clips_children();
+        node.set_orientation(accesskit::Orientation::Vertical);
+        if self.valid_range.start == i64::MIN {
+            // Even when we support infinite scroll in both directions, we need
+            // to set scroll_y somehow, so the platform adapter can know when
+            // scrolling happened and fire the appropriate platform event;
+            // this is particularly important on Android. Here, we assume that
+            // in practice, the anchor index is in range for an f64.
+            // TBD: Is there a better way to do this?
+            if self.anchor_index != i64::MIN && self.anchor_index != i64::MAX {
+                let y = (self.anchor_index as f64) * self.mean_item_height
+                    + self.scroll_offset_from_anchor;
+                node.set_scroll_y(y);
+            }
+        } else {
+            node.set_scroll_y_min(0.0);
+            let y = (((self.anchor_index - self.valid_range.start) as f64) * self.mean_item_height
+                + self.scroll_offset_from_anchor)
+                .max(0.);
+            node.set_scroll_y(y);
+            if self.valid_range.end != i64::MAX {
+                let y_max = (((self.valid_range.end - self.valid_range.start) as f64)
+                    * self.mean_item_height)
+                    .max(0.);
+                node.set_scroll_y_max(y_max);
+            }
+        }
+        if self.anchor_index != self.valid_range.start || self.scroll_offset_from_anchor > 0. {
+            node.add_action(accesskit::Action::ScrollUp);
+        }
+        let at_end = self.anchor_index + 1 == self.valid_range.end && {
+            let max_scroll = (self.anchor_height - ctx.size().height / 2.).max(0.0);
+            self.scroll_offset_from_anchor >= max_scroll
+        };
+        if !at_end {
+            node.add_action(accesskit::Action::ScrollDown);
+        }
+        node.add_child_action(accesskit::Action::ScrollIntoView);
     }
 
     fn children_ids(&self) -> smallvec::SmallVec<[WidgetId; 16]> {
-        self.items.values().map(|pod| pod.id()).collect()
+        let mut items = self
+            .items
+            .iter()
+            .map(|(index, pod)| (*index, pod.id()))
+            .collect::<smallvec::SmallVec<[(i64, WidgetId); 10]>>();
+        items.sort_unstable_by_key(|(index, _)| *index);
+        items.into_iter().map(|(_, id)| id).collect()
     }
 
     fn accepts_text_input(&self) -> bool {
