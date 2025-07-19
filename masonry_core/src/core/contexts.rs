@@ -893,18 +893,13 @@ impl_context_method!(
     PaintCtx<'_>,
     AccessCtx<'_>,
     {
-        // TODO - Update once we introduce the is_hovered/has_hovered distinction.
         /// The "hovered" status of a widget.
         ///
         /// A widget is "hovered" when a pointer is hovering over it. Widgets will
         /// often change their appearance as a visual indication that they
         /// will respond to pointer (usually mouse) interaction.
         ///
-        /// The hovered status is computed from the widget's layout rect. In a
-        /// container hierarchy, the innermost widget with a layout rect containing
-        /// the pointer position has hovered status.
-        ///
-        /// If the pointer is [captured], then only that widget can have hovered
+        /// If the pointer is [captured], then only the capturing widget can have hovered
         /// status. If the pointer is captured but not hovering over the captured
         /// widget, then no widget has the hovered status.
         ///
@@ -918,6 +913,23 @@ impl_context_method!(
         /// To check if only this specific widget is hovered use [`is_hovered`](Self::is_hovered).
         pub fn has_hovered(&self) -> bool {
             self.widget_state.has_hovered
+        }
+
+        /// The "active" status of a widget.
+        ///
+        /// A widget is "active" when the user is "actively" interacting with it.
+        /// Currently, a widget is determined to be active when it has [captured] a pointer.
+        ///
+        /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
+        pub fn is_active(&self) -> bool {
+            self.widget_state.is_active
+        }
+
+        /// Whether this widget or any of its descendants are active.
+        ///
+        /// To check if only this specific widget is active use [`is_active`](Self::is_active).
+        pub fn has_active(&self) -> bool {
+            self.widget_state.has_active
         }
 
         /// Whether a pointer is [captured] by this widget.
