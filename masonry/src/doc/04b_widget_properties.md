@@ -29,10 +29,9 @@ In simpler terms, that means you can create any non-reference type (e.g. `struct
 Code accessing the property will look like:
 
 ```rust,ignore
-if let Some(ducky) = props.get::<RubberDuck>() {
-    let (color, name, buoyancy) = ducky;
-    // ...
-}
+let ducky = props.get::<RubberDuck>();
+let RubberDuck(color, name, buoyancy) = ducky;
+// ...
 ```
 
 ### Properties are only data
@@ -60,14 +59,11 @@ Properties should be defined to represent self-contained values that a widget ca
 
 Some examples:
 
-- `BackgroundColor`
-- `BorderColor`
-- `Padding`
-- `TextFont`
-- `TextSize`
-- `TextWeight`
-
-**TODO: Most of the properties cited above do *not* exist in Masonry's codebase. They should hopefully be added quickly.**
+- [`Background`]
+- [`BorderColor`]
+- [`BorderWidth`]
+- [`Padding`]
+- [`TextColor`]
 
 Properties should *not* be used to represent an individual widget's state. The following should *not* be properties:
 
@@ -89,7 +85,7 @@ impl Widget for ColorRectangle {
     // ...
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let color = props.get::<BackgroundColor>().unwrap_or(masonry::palette::css::WHITE);
+        let color = props.get::<BackgroundColor>();
         let rect = ctx.size().to_rect();
         scene.fill(
             Fill::NonZero,
@@ -126,3 +122,8 @@ But setting a property to a given value doesn't change anything by default, unle
 <!-- TODO - Mention "transform" property. -->
 
 [`Property`]: crate::core::Property
+[`Background`]: crate::properties::Background
+[`BorderColor`]: crate::properties::BorderColor
+[`BorderWidth`]: crate::properties::BorderWidth
+[`Padding`]: crate::properties::Padding
+[`TextColor`]: crate::properties::TextColor
