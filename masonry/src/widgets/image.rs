@@ -5,15 +5,14 @@
 //! Please consider using SVG and the SVG widget as it scales much better.
 
 use accesskit::{Node, Role};
-use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, ObjectFit, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, ObjectFit, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
@@ -139,8 +138,8 @@ impl Widget for Image {
         // TODO - Handle alt text and such.
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

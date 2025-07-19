@@ -5,15 +5,14 @@
 
 use accesskit::{Node, Role};
 use cursor_icon::CursorIcon;
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 use vello::kurbo::{Line, Point, Rect, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
 use crate::theme;
@@ -599,8 +598,8 @@ where
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.child1.id(), self.child2.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.child1.id(), self.child2.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

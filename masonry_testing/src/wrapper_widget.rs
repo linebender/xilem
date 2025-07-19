@@ -5,12 +5,11 @@ use std::any::TypeId;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    WidgetMut, WidgetPod,
 };
 use masonry_core::kurbo::{Point, Size};
-use masonry_core::smallvec::{SmallVec, smallvec};
 use masonry_core::vello::Scene;
 
 /// A basic wrapper widget that can replace its child.
@@ -121,7 +120,7 @@ impl Widget for WrapperWidget {
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.child.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.child.id()])
     }
 }
