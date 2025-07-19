@@ -250,6 +250,11 @@ impl TestHarness {
         params: TestHarnessParams,
     ) -> Self {
         let mouse_state = PointerState::default();
+        // TODO - Change params.window_size type and remove this step
+        #[allow(
+            clippy::cast_possible_truncation,
+            reason = "If sizes are large enough to overflow a u32, we have other problems"
+        )]
         let window_size = PhysicalSize::new(
             params.window_size.width as _,
             params.window_size.height as _,

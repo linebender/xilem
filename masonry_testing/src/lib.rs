@@ -5,7 +5,6 @@
 
 // TODO: Remove any items listed as "Deferred"
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
-#![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(unreachable_pub, reason = "Potentially controversial code style")]
 
 mod harness;
