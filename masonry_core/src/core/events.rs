@@ -13,6 +13,8 @@ use crate::util::Duration;
 // TODO - winit ActivationTokenDone thing
 // TODO - Suspended/Resume/NewEvents/MemoryWarning
 
+// --- MARK: TYPES
+
 /// A global event.
 #[derive(Debug, Clone)]
 pub enum WindowEvent {
@@ -134,6 +136,17 @@ pub enum Update {
     /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
     ChildFocusChanged(bool),
 }
+
+/// An enum for specifying whether an event was handled.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum Handled {
+    /// An event was already handled, and shouldn't be propagated to other event handlers.
+    Yes,
+    /// An event has not yet been handled.
+    No,
+}
+
+// --- MARK: IMPLS
 
 impl TextEvent {
     /// Constructor for Keyboard events with [`KeyState::Down`].
@@ -263,6 +276,22 @@ impl Update {
         }
     }
 }
+
+impl Handled {
+    /// Has the event been handled yet?
+    pub fn is_handled(self) -> bool {
+        self == Self::Yes
+    }
+}
+
+impl From<bool> for Handled {
+    /// Returns `Handled::Yes` if `handled` is true, and `Handled::No` otherwise.
+    fn from(handled: bool) -> Self {
+        if handled { Self::Yes } else { Self::No }
+    }
+}
+
+// --- MARK: WINIT EXPIES
 
 /// Describes [input method](https://en.wikipedia.org/wiki/Input_method) events.
 ///
