@@ -54,7 +54,7 @@ trait Widget {
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>);
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>);
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
+    fn children_ids(&self) -> ChildrenIds;
 }
 ```
 
@@ -178,7 +178,7 @@ Not doing so is a logical bug, and may also trigger debug assertions.
 impl Widget for VerticalStack {
     // ...
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         self.children.iter().map(|child| child.id()).collect()
     }
 }

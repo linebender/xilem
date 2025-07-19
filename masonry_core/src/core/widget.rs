@@ -100,6 +100,11 @@ impl FromDynWidget for dyn Widget {
     }
 }
 
+/// Alias for the type returned by [`Widget::children_ids`].
+///
+/// Essentially an optimization for `Vec<WidgetId>`.
+pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
+
 /// The trait implemented by all widgets.
 ///
 /// For details on how to implement this trait, see the [tutorials](crate::doc).
@@ -281,7 +286,7 @@ pub trait Widget: AsDynWidget + Any {
     /// consistent. If children are added or removed, the parent widget should call
     /// `children_changed` on one of the Ctx parameters. Container widgets are
     /// responsible for visiting all their children during `layout` and `register_children`.
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
+    fn children_ids(&self) -> ChildrenIds;
 
     /// Whether this widget gets pointer events and hovered status. True by default.
     ///

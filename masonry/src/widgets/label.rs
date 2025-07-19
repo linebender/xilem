@@ -8,14 +8,13 @@ use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
 use parley::{Layout, LayoutAccessibility};
-use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::BlendMode;
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, BrushIndex, LayoutCtx, PaintCtx, PropertiesMut,
+    AccessCtx, ArcStr, BoxConstraints, BrushIndex, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, render_text,
 };
@@ -405,8 +404,8 @@ impl Widget for Label {
         );
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

@@ -10,15 +10,14 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ErasedAction, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
-    WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
+    ObjectFit, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
+    Widget, WidgetId, WidgetPod,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
-use masonry::smallvec::SmallVec;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::{TextAlign, TextAlignOptions};
@@ -177,8 +176,8 @@ impl Widget for CustomWidget {
         );
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

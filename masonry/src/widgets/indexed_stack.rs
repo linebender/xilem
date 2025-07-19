@@ -3,11 +3,10 @@
 
 use accesskit::{Node, Role};
 use masonry_core::core::WidgetMut;
-use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::kurbo::{Affine, Line, Point, Stroke};
 
-use crate::core::{AccessCtx, PropertiesRef, Widget, WidgetId, WidgetPod};
+use crate::core::{AccessCtx, ChildrenIds, PropertiesRef, Widget, WidgetId, WidgetPod};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -308,7 +307,7 @@ impl Widget for IndexedStack {
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         self.children.iter().map(WidgetPod::id).collect()
     }
 

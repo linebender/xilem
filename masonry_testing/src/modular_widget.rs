@@ -7,7 +7,7 @@ use tracing::trace_span;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
 };
@@ -33,7 +33,7 @@ pub(crate) type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
 pub(crate) type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene);
 pub(crate) type RoleFn<S> = dyn Fn(&S) -> Role;
 pub(crate) type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx<'_>, &PropertiesRef<'_>, &mut Node);
-pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
+pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> ChildrenIds;
 
 /// A widget that can be constructed from individual functions, builder-style.
 ///
@@ -217,10 +217,7 @@ impl<S> ModularWidget<S> {
     }
 
     /// See [`Widget::children_ids`]
-    pub fn children_fn(
-        mut self,
-        children: impl Fn(&S) -> SmallVec<[WidgetId; 16]> + 'static,
-    ) -> Self {
+    pub fn children_fn(mut self, children: impl Fn(&S) -> ChildrenIds + 'static) -> Self {
         self.children = Some(Box::new(children));
         self
     }
@@ -334,7 +331,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         }
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         if let Some(f) = self.children.as_ref() {
             f(&self.state)
         } else {

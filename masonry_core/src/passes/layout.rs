@@ -6,14 +6,14 @@
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
 
 use dpi::LogicalSize;
-use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::core::{
-    BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetArenaMut, WidgetPod, WidgetState,
+    BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, Widget, WidgetArenaMut, WidgetPod,
+    WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
@@ -52,7 +52,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     let state = state.item;
     let properties = properties.item;
 
-    let mut children_ids = SmallVec::new();
+    let mut children_ids = ChildrenIds::new();
     if cfg!(debug_assertions) {
         children_ids = widget.children_ids();
 

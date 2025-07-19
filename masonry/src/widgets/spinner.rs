@@ -6,14 +6,13 @@
 use std::f64::consts::PI;
 
 use accesskit::{Node, Role};
-use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
+    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::peniko::Color;
 use crate::theme;
@@ -151,8 +150,8 @@ impl Widget for Spinner {
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
