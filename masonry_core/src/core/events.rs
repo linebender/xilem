@@ -197,19 +197,6 @@ impl TextEvent {
             Self::WindowFocusChange(_) => "WindowFocusChange",
         }
     }
-
-    /// Returns `true` if the event is likely to occur every frame.
-    ///
-    /// Developers should avoid logging during high-density events to avoid
-    /// cluttering the console.
-    pub fn is_high_density(&self) -> bool {
-        match self {
-            Self::Keyboard(..) => false,
-            Self::Ime(_) => false,
-            // Basically every mouse click/scroll event seems to produce a modifier change event.
-            Self::WindowFocusChange(_) => false,
-        }
-    }
 }
 
 impl AccessEvent {
