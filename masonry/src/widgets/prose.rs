@@ -12,6 +12,7 @@ use crate::core::{
     PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, WidgetPod,
 };
+use crate::util::include_screenshot;
 use crate::widgets::TextArea;
 
 /// The prose widget displays immutable text which can be
@@ -28,7 +29,7 @@ use crate::widgets::TextArea;
 ///
 /// This widget has no actions.
 ///
-#[doc = crate::include_screenshot!("prose_alignment_flex.png", "Multiple lines with different alignments.")]
+#[doc = include_screenshot!("prose_alignment_flex.png", "Multiple lines with different alignments.")]
 pub struct Prose {
     text: WidgetPod<TextArea<false>>,
 
@@ -189,8 +190,7 @@ mod tests {
 
     use super::*;
     use crate::TextAlign;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox, TextArea};
 

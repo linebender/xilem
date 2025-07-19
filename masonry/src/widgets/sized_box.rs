@@ -17,7 +17,7 @@ use crate::core::{
     UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::stroke;
+use crate::util::{include_screenshot, stroke};
 
 /// A widget with predefined size.
 ///
@@ -29,7 +29,7 @@ use crate::util::stroke;
 /// and width as possible given the parent's constraints. If height or width is not set,
 /// it will be treated as zero.
 ///
-#[doc = crate::include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
+#[doc = include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
 pub struct SizedBox {
     child: Option<WidgetPod<dyn Widget>>,
     width: Option<f64>,

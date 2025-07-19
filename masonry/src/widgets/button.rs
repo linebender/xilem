@@ -24,14 +24,14 @@ use crate::properties::{
     DisabledBackground, HoveredBorderColor, Padding,
 };
 use crate::theme;
-use crate::util::{fill, stroke};
+use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::Label;
 
 /// A button with a text label.
 ///
 /// Emits [`ButtonPress`] when pressed.
 ///
-#[doc = crate::include_screenshot!("button_hello.png", "Button with text label.")]
+#[doc = include_screenshot!("button_hello.png", "Button with text label.")]
 pub struct Button {
     label: WidgetPod<Label>,
 }
@@ -317,11 +317,12 @@ mod tests {
     use masonry_core::core::Properties;
 
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, StyleProperty};
     use crate::properties::TextColor;
-    use crate::testing::{TestHarness, TestWidgetExt, WrapperWidget, widget_ids};
+    use crate::testing::{
+        TestHarness, TestWidgetExt, WrapperWidget, assert_render_snapshot, widget_ids,
+    };
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams, SizedBox};
 

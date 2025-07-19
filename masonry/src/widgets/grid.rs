@@ -14,13 +14,12 @@ use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
     Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::debug_panic;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{fill, stroke};
+use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
 /// A widget that arranges its children in a grid.
 ///
-#[doc = crate::include_screenshot!("grid_with_changed_spacing.png", "Grid with buttons of various sizes.")]
+#[doc = include_screenshot!("grid_with_changed_spacing.png", "Grid with buttons of various sizes.")]
 pub struct Grid {
     children: Vec<Child>,
     grid_width: i32,
@@ -397,8 +396,7 @@ impl Widget for Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::button;
 
