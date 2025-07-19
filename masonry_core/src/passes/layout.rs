@@ -6,12 +6,13 @@
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
 
 use dpi::LogicalSize;
-use smallvec::SmallVec;
 use tracing::{info_span, trace};
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
+use crate::core::{
+    BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState,
+};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
 
@@ -31,7 +32,7 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     let trace = parent_ctx.global_state.trace.layout;
     let _span = enter_span_if(trace, state.reborrow());
 
-    let mut children_ids = SmallVec::new();
+    let mut children_ids = ChildrenIds::new();
     if cfg!(debug_assertions) {
         children_ids = widget.item.children_ids();
 

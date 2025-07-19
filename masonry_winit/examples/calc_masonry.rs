@@ -15,16 +15,15 @@ use std::str::FromStr;
 
 use masonry::accesskit;
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ErasedAction, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
+    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
 use masonry::properties::{Background, BorderColor, BorderWidth, Padding};
-use masonry::smallvec::{SmallVec, smallvec};
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, SizedBox};
@@ -282,8 +281,8 @@ impl Widget for CalcButton {
         node.add_action(accesskit::Action::Click);
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.inner.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.inner.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

@@ -4,15 +4,14 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::Color;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
+    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
@@ -210,8 +209,8 @@ impl Widget for TextInput {
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.text.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.text.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
