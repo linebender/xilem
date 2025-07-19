@@ -77,7 +77,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 
     /// Get the actual referenced `Widget`.
-    pub fn deref(self) -> &'w W {
+    pub fn inner(self) -> &'w W {
         self.widget
     }
 
