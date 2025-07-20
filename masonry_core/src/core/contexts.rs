@@ -918,7 +918,8 @@ impl_context_method!(
         /// The "active" status of a widget.
         ///
         /// A widget is "active" when the user is "actively" interacting with it.
-        /// Currently, a widget is determined to be active when it has [captured] a pointer.
+        /// Currently, a widget is determined to be active when it has [captured] a pointer,
+        /// but this may change in the future to account for e.g. keyboard interactions.
         ///
         /// [captured]: crate::doc::doc_06_masonry_concepts#pointer-capture
         pub fn is_active(&self) -> bool {
