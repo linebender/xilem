@@ -85,6 +85,11 @@ pub fn stroke<'b>(
     brush: impl Into<BrushRef<'b>>,
     stroke_width: f64,
 ) {
+    // Avoid drawing when the stroke width is zero.
+    if stroke_width == 0.0 {
+        return;
+    }
+
     // Using Join::Miter avoids rounding corners when a widget has a wide border.
     let style = Stroke {
         width: stroke_width,
