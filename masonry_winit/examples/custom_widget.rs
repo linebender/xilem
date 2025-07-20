@@ -11,13 +11,14 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
-    NewWidget, NoAction, ObjectFit, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    RegisterCtx, TextEvent, Widget, WidgetId,
+    NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    TextEvent, Widget, WidgetId,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
+use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::{TextAlign, TextAlignOptions};

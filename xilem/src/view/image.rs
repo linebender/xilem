@@ -3,12 +3,14 @@
 
 //! The bitmap image widget.
 
-use masonry::widgets;
+use masonry::core::Properties;
+use masonry::widgets::{self};
 
 use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx};
 
-pub use masonry::core::ObjectFit;
+pub use masonry::properties::ObjectFit;
+
 /// Displays the bitmap `image`.
 ///
 /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
@@ -25,7 +27,7 @@ pub fn image(image: &vello::peniko::Image) -> Image {
         // We take by reference as we expect all users of this API will need to clone, and it's
         // easier than documenting that cloning is cheap.
         image: image.clone(),
-        object_fit: ObjectFit::default(),
+        object_fit: None,
     }
 }
 
@@ -35,13 +37,13 @@ pub fn image(image: &vello::peniko::Image) -> Image {
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Image {
     image: vello::peniko::Image,
-    object_fit: ObjectFit,
+    object_fit: Option<ObjectFit>,
 }
 
 impl Image {
     /// Specify the object fit.
     pub fn fit(mut self, fill: ObjectFit) -> Self {
-        self.object_fit = fill;
+        self.object_fit = Some(fill);
         self
     }
 }
@@ -52,7 +54,15 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.create_pod(widgets::Image::new(self.image.clone()));
+        // TODO - Replace this with properties on the Imagge view
+        // if we add other properties
+        let mut props = Properties::new();
+        if let Some(fill) = self.object_fit {
+            props.insert(fill);
+        }
+
+        let mut pod = ctx.create_pod(widgets::Image::new(self.image.clone()));
+        pod.properties = props;
         (pod, ())
     }
 
@@ -65,7 +75,11 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         _: &mut State,
     ) {
         if prev.object_fit != self.object_fit {
-            widgets::Image::set_fit_mode(&mut element, self.object_fit);
+            if let Some(fill) = self.object_fit {
+                element.insert_prop(fill);
+            } else {
+                element.remove_prop::<ObjectFit>();
+            }
         }
         if prev.image != self.image {
             widgets::Image::set_image_data(&mut element, self.image.clone());
