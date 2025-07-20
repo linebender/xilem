@@ -136,6 +136,8 @@ pub(crate) struct RenderRootState {
 
     /// Scene cache for the widget tree.
     pub(crate) scenes: HashMap<WidgetId, Scene>,
+    /// Second scene cache, used for `post_paint()` calls.
+    pub(crate) postfix_scenes: HashMap<WidgetId, Scene>,
 
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
@@ -317,6 +319,7 @@ impl RenderRoot {
                 is_ime_active: false,
                 last_sent_ime_area: INVALID_IME_AREA,
                 scenes: HashMap::new(),
+                postfix_scenes: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
                 inspector_state: InspectorState {
