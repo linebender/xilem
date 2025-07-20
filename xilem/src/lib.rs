@@ -131,7 +131,7 @@ pub use masonry::kurbo::{Affine, Vec2};
 pub use masonry::parley::Alignment as TextAlign;
 pub use masonry::parley::style::FontWeight;
 pub use masonry::peniko::{Blob, Color, Image, ImageFormat};
-pub use masonry::widgets::{InsertNewline, LineBreaking};
+pub use masonry::widgets::InsertNewline;
 pub use masonry::{dpi, palette};
 pub use masonry_winit::app::{EventLoop, EventLoopBuilder, WindowId};
 pub use window_options::WindowOptions;

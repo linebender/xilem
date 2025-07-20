@@ -3,13 +3,10 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::properties::{DisabledTextColor, TextColor};
-use masonry::widgets::{
-    LineBreaking, {self},
-};
-use xilem_core::MessageContext;
+use masonry::properties::{DisabledTextColor, LineBreaking, TextColor};
+use masonry::widgets::{self};
 
-use crate::core::{Mut, ViewMarker};
+use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::style::Style;
 use crate::{MessageResult, Pod, PropertyTuple as _, TextAlign, View, ViewCtx};
 
@@ -36,7 +33,6 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
-        line_break_mode: LineBreaking::Overflow,
         properties: LabelProps::default(),
     }
 }
@@ -51,7 +47,7 @@ pub struct Label {
     text_size: f32,
     weight: FontWeight,
     font: FontStack<'static>,
-    line_break_mode: LineBreaking, // TODO: add more attributes of `masonry::widgets::Label`
+    // TODO: add more attributes of `masonry::widgets::Label`
     properties: LabelProps,
 }
 
@@ -83,12 +79,6 @@ impl Label {
         self.font = font.into();
         self
     }
-
-    /// Set how line breaks will be handled by this label (i.e. if there is insufficient horizontal space).
-    pub fn line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
-        self.line_break_mode = line_break_mode;
-        self
-    }
 }
 
 impl<T> From<T> for Label
@@ -114,6 +104,7 @@ crate::declare_property_tuple!(
 
     TextColor, 0;
     DisabledTextColor, 1;
+    LineBreaking, 2;
 );
 
 impl ViewMarker for Label {}
@@ -127,8 +118,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
                 .with_text_alignment(self.text_alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
-                .with_style(StyleProperty::FontStack(self.font.clone()))
-                .with_line_break_mode(self.line_break_mode),
+                .with_style(StyleProperty::FontStack(self.font.clone())),
         );
         pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
@@ -158,9 +148,6 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         }
         if prev.font != self.font {
             widgets::Label::insert_style(&mut element, StyleProperty::FontStack(self.font.clone()));
-        }
-        if prev.line_break_mode != self.line_break_mode {
-            widgets::Label::set_line_break_mode(&mut element, self.line_break_mode);
         }
     }
 
