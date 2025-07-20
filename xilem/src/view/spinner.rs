@@ -1,7 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::core::Properties;
 use masonry::peniko::Color;
+use masonry::properties::SpinnerColor;
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
@@ -58,11 +60,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        let mut spinner = widgets::Spinner::new();
+        let mut props = Properties::new();
         if let Some(color) = self.color {
-            spinner = spinner.with_color(color);
+            props.insert(SpinnerColor(color));
         }
-        let pod = ctx.create_pod(spinner);
+
+        let spinner = widgets::Spinner::new();
+        let mut pod = ctx.create_pod(spinner);
+        pod.properties = props;
         (pod, ())
     }
 
@@ -75,10 +80,11 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         _: &mut State,
     ) {
         if prev.color != self.color {
-            match self.color {
-                Some(color) => widgets::Spinner::set_color(&mut element, color),
-                None => widgets::Spinner::reset_color(&mut element),
-            };
+            if let Some(color) = self.color {
+                element.insert_prop(SpinnerColor(color));
+            } else {
+                element.remove_prop::<SpinnerColor>();
+            }
         }
     }
 

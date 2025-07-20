@@ -15,6 +15,7 @@ mod line_breaking;
 mod object_fit;
 mod padding;
 mod progress_bar;
+mod spinner_color;
 mod text_color;
 
 pub mod types;
@@ -29,4 +30,5 @@ pub use line_breaking::LineBreaking;
 pub use object_fit::ObjectFit;
 pub use padding::Padding;
 pub use progress_bar::BarColor;
+pub use spinner_color::SpinnerColor;
 pub use text_color::{DisabledTextColor, TextColor};
