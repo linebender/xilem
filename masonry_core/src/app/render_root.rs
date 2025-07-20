@@ -53,6 +53,9 @@ pub struct RenderRoot {
     /// Root of the widget tree.
     pub(crate) root: WidgetPod<dyn Widget>,
 
+    /// The accessibility pass creates a wrapper node for the app with `Role::Window`.
+    ///
+    /// This is the id of that node.
     pub(crate) window_node_id: NodeId,
 
     /// Whether the window size should be determined by the content or the user.
