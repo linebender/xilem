@@ -21,7 +21,7 @@ use crate::widgets::{Label, LineBreaking};
 
 /// A progress bar.
 ///
-#[doc = crate::include_screenshot!("progress_bar_25_percent_progressbar.png", "25% progress bar.")]
+#[doc = crate::include_screenshot!("progress_bar_25_percent.png", "25% progress bar.")]
 pub struct ProgressBar {
     /// A value in the range `[0, 1]` inclusive, where 0 is 0% and 1 is 100% complete.
     ///
@@ -210,7 +210,7 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_render_snapshot!(harness, "progress_bar_indeterminate_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_indeterminate");
     }
 
     #[test]
@@ -222,7 +222,7 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_render_snapshot!(harness, "progress_bar_0_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_0_percent");
     }
 
     #[test]
@@ -234,7 +234,7 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_render_snapshot!(harness, "progress_bar_25_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_25_percent");
     }
 
     #[test]
@@ -246,7 +246,7 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_render_snapshot!(harness, "progress_bar_50_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_50_percent");
     }
 
     #[test]
@@ -258,7 +258,7 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_render_snapshot!(harness, "progress_bar_75_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_75_percent");
     }
 
     #[test]
@@ -270,7 +270,7 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
-        assert_render_snapshot!(harness, "progress_bar_100_percent_progressbar");
+        assert_render_snapshot!(harness, "progress_bar_100_percent");
     }
 
     #[test]
