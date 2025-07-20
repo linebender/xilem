@@ -42,7 +42,7 @@ pub enum GradientShape {
     /// Gradient that transitions between two or more colors that rotate around a center
     /// point.
     ///
-    /// This is similar to [`conic-gradient()`] in CSS **but the values are intepreted differently**.
+    /// This is similar to [`conic-gradient()`] in CSS **but the values are interpreted differently**.
     ///
     /// [`conic-gradient()`]: https://drafts.csswg.org/css-images-4/#conic-gradient-syntax
     Sweep {
