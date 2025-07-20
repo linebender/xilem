@@ -15,7 +15,7 @@ fn compose_widget(
     global_state: &mut RenderRootState,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
+    mut properties: ArenaMut<'_, AnyMap>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {
@@ -41,6 +41,7 @@ fn compose_widget(
         widget_state: state.item,
         widget_state_children: state.children.reborrow_mut(),
         widget_children: widget.children.reborrow_mut(),
+        properties_children: properties.children.reborrow_mut(),
     };
     if ctx.widget_state.request_compose {
         widget.item.compose(&mut ctx);
