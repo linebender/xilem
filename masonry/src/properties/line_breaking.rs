@@ -18,13 +18,13 @@ pub enum LineBreaking {
 
 impl Property for LineBreaking {
     fn static_default() -> &'static Self {
-        &LineBreaking::Overflow
+        &Self::Overflow
     }
 }
 
 impl Default for LineBreaking {
     fn default() -> Self {
-        LineBreaking::Overflow
+        *Self::static_default()
     }
 }
 

@@ -202,7 +202,7 @@ pub trait Style: Sized {
     where
         Self: HasProperty<LineBreaking>,
     {
-        *self.property() = Some(line_break_mode.into());
+        *self.property() = Some(line_break_mode);
         self
     }
 }
