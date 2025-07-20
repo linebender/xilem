@@ -120,7 +120,7 @@
     )
 )]
 // TODO: Remove any items listed as "Deferred"
-#![cfg_attr(not(debug_assertions), allow(unused))]
+#![cfg_attr(not(debug_assertions), expect(unused, reason = "Deferred: Noisy"))]
 #![expect(
     missing_debug_implementations,
     reason = "Deferred: Noisy. Requires same lint to be addressed in Masonry"
