@@ -10,7 +10,7 @@ use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use ui_events::keyboard::Key;
 use vello::Scene;
-use vello::kurbo::{Affine, BezPath, Cap, Join, Size, Stroke};
+use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Size, Stroke};
 use vello::peniko::Color;
 
 use crate::core::{
@@ -269,7 +269,7 @@ impl Widget for Checkbox {
                 miter_limit: 10.0,
                 start_cap: Cap::Round,
                 end_cap: Cap::Round,
-                dash_pattern: SmallVec::new(),
+                dash_pattern: Dashes::default(),
                 dash_offset: 0.0,
             };
             scene.stroke(&style, Affine::IDENTITY, brush.color, None, &path);
