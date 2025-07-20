@@ -51,7 +51,7 @@ impl WidgetId {
 }
 
 #[doc(hidden)]
-/// A trait to access a `Widget` as trait object. It is implemented for all types that implement `Widget`.
+/// A trait to access a [`Widget`] value as a trait object. It is implemented for all types that implement `Widget`.
 pub trait AsDynWidget {
     fn as_box_dyn(self: Box<Self>) -> Box<dyn Widget>;
     fn as_dyn(&self) -> &dyn Widget;
@@ -425,10 +425,10 @@ pub fn find_widget_under_pointer<'c>(
     }
 }
 
-/// Marker trait for Widgets whose parents can get a raw mutable reference to them.
+/// Marker trait for widgets whose parents can get a raw mutable reference to them.
 ///
 /// "Raw mut" means using a mutable reference (eg `&mut MyWidget`) to the data
-/// structure, instead of going through the Widget trait methods
+/// structure, instead of going through the [`Widget`] trait methods
 /// (`on_text_event`, `update`, `layout`, etc) or through `WidgetMut`.
 ///
 /// A parent widget can use [`EventCtx::get_raw_mut`], [`UpdateCtx::get_raw_mut`],

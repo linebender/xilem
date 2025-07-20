@@ -20,7 +20,7 @@ use crate::core::{Property, UpdateCtx};
 // a "spread radius" value. We should implement it and add a `spread_radius` value.
 // - Corner radius: Right now take our widget's corner radii, and average them to draw a shadow with a single corner radius. Ideally we'd like to match individual values.
 
-/// The drop shadow of a Widget.
+/// The drop shadow of a widget.
 ///
 /// Will be invisible if default values are kept.
 #[derive(Clone, Copy, Debug, PartialEq)]

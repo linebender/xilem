@@ -1,4 +1,4 @@
-# Reading Widget Properties
+# Reading widget properties
 
 <!-- Copyright 2024 the Xilem Authors -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
@@ -16,13 +16,13 @@
 
 **TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
-Throughout the previous chapters, you may have noticed that most Widget methods take a `props: &PropertiesRef<'_>` or `props: &mut PropertiesMut<'_>` argument.
+Throughout the previous chapters, you may have noticed that most widget methods take a `props: &PropertiesRef<'_>` or `props: &mut PropertiesMut<'_>` argument.
 We haven't used these arguments so far, and you can build a robust widget set without them, but they're helpful for making your widgets more customizable and modular.
 
 
-## What are Properties?
+## What are properties?
 
-In Masonry, **Properties** (often abbreviated to **props**) are values of arbitrary static types stored alongside each widget.
+In Masonry, **properties** (often abbreviated to **props**) are values of arbitrary static types stored alongside each widget.
 
 In simpler terms, that means you can create any non-reference type (e.g. `struct RubberDuck(Color, String, Buoyancy);`), give it the [`Property`] marker trait, and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `TextInput`, etc) or your own custom widget (`ColorRectangle`).
 
@@ -36,7 +36,7 @@ let RubberDuck(color, name, buoyancy) = ducky;
 
 ### Properties are only data
 
-Properties are a way for Widgets to store arbitrary state; they do not encode *behavior*.
+Properties are a way for widgets to store arbitrary state; they do not encode *behavior*.
 For those familiar, properties are similar to the "Component" part of ECS.
 
 In other words, adding a property to a widget will not change anything about how that widget is rendered *unless that widget has code specifically reading that property*.
@@ -48,7 +48,7 @@ We acknowledge that this may be a footgun in some cases, though we consider it a
 We may reconsider this in the future.
 
 
-### When to use Properties?
+### When to use properties?
 
 <!-- TODO - Mention event handling -->
 <!-- I expect that properties will be used to share the same pointer event handling code between Button, SizedBox, TextInput, etc... -->

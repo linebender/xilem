@@ -1,4 +1,4 @@
-# Creating a container Widget
+# Creating a container widget
 
 <!-- Copyright 2024 the Xilem Authors -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->

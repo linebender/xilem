@@ -36,7 +36,7 @@ cargo add masonry_winit
 ```
 
 
-## The Widget tree
+## The widget tree
 
 Let's start with the `main()` function.
 
@@ -267,7 +267,7 @@ All the Masonry examples follow this structure:
 - A struct implementing `AppDriver` to handle user interactions.
 - A Winit window and event loop.
 
-Some examples also define custom Widgets, but you can build an interactive app with Masonry's base widget set, though it's not Masonry's intended use.
+Some examples also define custom widgets, but you can build an interactive app with Masonry's base widget set, though it's not Masonry's intended use.
 
 
 ## Higher layers

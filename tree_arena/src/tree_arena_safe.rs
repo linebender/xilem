@@ -420,7 +420,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             .map(|child| child.arena_mut(self.parent_id, self.parents_map.parents_map))
     }
 
-    // TODO - Remove the child_id argument once creation of Widgets is figured out.
+    // TODO - Remove the child_id argument once creation of widgets is figured out.
     // Return the id instead.
     // TODO - Add #[must_use]
     /// Insert a child into the tree under the common parent of this list's items.

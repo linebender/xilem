@@ -102,7 +102,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
         self.ctx.properties.get::<T>()
     }
 
-    /// Attempt to downcast to `WidgetRef` of concrete Widget type.
+    /// Attempt to downcast to `WidgetRef` of concrete widget type.
     pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
             ctx: self.ctx,

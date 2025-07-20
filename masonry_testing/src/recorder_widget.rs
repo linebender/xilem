@@ -59,7 +59,7 @@ pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 
 /// A recording of a method call on a widget.
 ///
-/// Each member of the enum corresponds to one of the methods on `Widget`.
+/// Each member of the enum corresponds to one of the [`Widget`] trait methods.
 #[derive(Debug, Clone)]
 pub enum Record {
     /// Pointer event.
