@@ -249,14 +249,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 
     let _span = info_span!("dispatch_text_event").entered();
 
-    if event.is_high_density() {
-        // We still want to record that this pass occurred in the debug file log.
-        // However, we choose not record any other tracing for this event,
-        // as that would have a lot of noise.
-        trace!("Running ON_TEXT_EVENT pass with {}", event.short_name());
-    } else {
-        debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
-    }
+    debug!("Running ON_TEXT_EVENT pass with {}", event.short_name());
 
     if let TextEvent::WindowFocusChange(focused) = event {
         root.global_state.window_focused = *focused;
@@ -287,7 +280,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         |widget, ctx, props, event| {
             widget.on_text_event(ctx, props, event);
         },
-        !event.is_high_density(),
+        true,
     );
 
     if let TextEvent::Keyboard(key) = event {
@@ -324,13 +317,11 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         }
     }
 
-    if !event.is_high_density() {
-        debug!(
-            focused_widget = root.global_state.focused_widget.map(|id| id.0),
-            handled = handled.is_handled(),
-            "ON_TEXT_EVENT finished",
-        );
-    }
+    debug!(
+        focused_widget = root.global_state.focused_widget.map(|id| id.0),
+        handled = handled.is_handled(),
+        "ON_TEXT_EVENT finished",
+    );
 
     handled
 }
