@@ -22,6 +22,7 @@ fn paint_widget(
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
+    postfix_scenes: &mut HashMap<WidgetId, Scene>,
     widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     properties: ArenaMut<'_, AnyMap>,
@@ -46,6 +47,8 @@ fn paint_widget(
     let state = state.item;
     let properties = properties.item;
 
+    // TODO - Check different flags for paint and post_paint.
+
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
     let mut ctx = PaintCtx {
@@ -62,12 +65,15 @@ fn paint_widget(
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
         let scene = scenes.entry(id).or_default();
+        let postfix_scene = postfix_scenes.entry(id).or_default();
         scene.reset();
+        postfix_scene.reset();
         let props = PropertiesRef {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
         widget.paint(&mut ctx, &props, scene);
+        widget.post_paint(&mut ctx, &props, postfix_scene);
     }
 
     state.request_paint = false;
@@ -85,9 +91,7 @@ fn paint_widget(
         complete_scene.append(scene, Some(transform));
     }
 
-    let bounding_rect = state.bounding_rect;
-    let parent_state = state;
-
+    let parent_state = &mut *state;
     recurse_on_children(id, widget, children, |widget, mut state, properties| {
         // TODO: We could skip painting children outside the parent clip path.
         // There's a few things to consider if we do:
@@ -99,6 +103,7 @@ fn paint_widget(
             default_properties,
             complete_scene,
             scenes,
+            postfix_scenes,
             widget,
             state.reborrow_mut(),
             properties,
@@ -108,6 +113,9 @@ fn paint_widget(
     });
 
     if !is_stashed {
+        let transform = state.window_transform;
+        let bounding_rect = state.bounding_rect;
+
         // draw the global axis aligned bounding rect of the widget
         if debug_paint {
             const BORDER_WIDTH: f64 = 1.0;
@@ -119,6 +127,9 @@ fn paint_widget(
         if has_clip {
             complete_scene.pop_layer();
         }
+
+        let postfix_scene = postfix_scenes.get(&id).unwrap();
+        complete_scene.append(postfix_scene, Some(transform));
     }
 }
 
@@ -154,12 +165,14 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
     // This should be removed once remove_child is exclusive to MutateCtx.
     let mut scenes = std::mem::take(&mut root.global_state.scenes);
+    let mut postfix_scenes = std::mem::take(&mut root.global_state.postfix_scenes);
 
     paint_widget(
         &mut root.global_state,
         &root.default_properties,
         &mut complete_scene,
         &mut scenes,
+        &mut postfix_scenes,
         root_widget,
         root_state,
         root_properties,
