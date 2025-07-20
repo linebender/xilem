@@ -1,5 +1,5 @@
 ---
-source: masonry_winit/examples/grid_masonry.rs
+source: masonry/examples/grid_masonry.rs
 assertion_line: 142
 expression: harness.root_widget()
 ---
