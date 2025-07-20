@@ -34,7 +34,7 @@ pub use self::flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignme
 pub use self::grid::{Grid, GridParams};
 pub use self::image::Image;
 pub use self::indexed_stack::IndexedStack;
-pub use self::label::{Label, LineBreaking};
+pub use self::label::Label;
 pub use self::portal::Portal;
 pub use self::progress_bar::ProgressBar;
 pub use self::prose::Prose;

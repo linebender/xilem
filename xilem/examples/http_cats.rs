@@ -8,8 +8,8 @@
 
 use std::sync::Arc;
 
-use masonry::properties::Padding;
-use masonry::widgets::{Alignment, LineBreaking};
+use masonry::properties::{LineBreaking, Padding};
+use masonry::widgets::Alignment;
 use tokio::sync::mpsc::UnboundedSender;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;

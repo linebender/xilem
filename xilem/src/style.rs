@@ -4,7 +4,7 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::Property;
-use masonry::properties::{DisabledTextColor, TextColor};
+use masonry::properties::{DisabledTextColor, LineBreaking, TextColor};
 use vello::peniko::Color;
 
 pub use masonry::properties::types::{Gradient, GradientShape};
@@ -194,6 +194,15 @@ pub trait Style: Sized {
         Self: HasProperty<Padding>,
     {
         *self.property() = Some(padding.into());
+        self
+    }
+
+    /// Set how line breaks will be handled when text overflows the available space.
+    fn line_break_mode(mut self, line_break_mode: LineBreaking) -> Self
+    where
+        Self: HasProperty<LineBreaking>,
+    {
+        *self.property() = Some(line_break_mode.into());
         self
     }
 }

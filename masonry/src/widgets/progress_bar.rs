@@ -4,6 +4,7 @@
 //! A progress bar widget.
 
 use accesskit::{Node, Role};
+use masonry_core::core::Properties;
 use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -13,9 +14,10 @@ use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
     RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::LineBreaking;
 use crate::theme;
 use crate::util::{fill, stroke};
-use crate::widgets::{Label, LineBreaking};
+use crate::widgets::Label;
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
 
@@ -39,9 +41,8 @@ impl ProgressBar {
     /// A `None` value (or NaN) will show an indeterminate progress bar.
     pub fn new(progress: Option<f64>) -> Self {
         let progress = clamp_progress(progress);
-        let label = WidgetPod::new(
-            Label::new(Self::value(progress)).with_line_break_mode(LineBreaking::Overflow),
-        );
+        let label_props = Properties::one(LineBreaking::Overflow);
+        let label = WidgetPod::new_with_props(Label::new(Self::value(progress)), label_props);
         Self { progress, label }
     }
 
