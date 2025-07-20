@@ -145,6 +145,17 @@ To install the remaining packages on Debian or Ubuntu, run:
 sudo apt-get install clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 ```
 
+There's a Nix flake in `docs/` which may be used for developing on NixOS:
+
+```sh
+# For all crates within this repo
+nix develop ./docs
+# For a specific crate
+nix develop ./docs#xilem
+nix develop ./docs#masonry
+nix develop ./docs#xilem_web
+```
+
 ## Recommended Cargo Config
 
 The Xilem repository includes a lot of projects and examples, most of them pulling a lot of dependencies.
