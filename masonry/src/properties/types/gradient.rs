@@ -176,7 +176,7 @@ impl Gradient {
     /// [conic gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/conic-gradient#composition_of_a_conic_gradient).
     /// We may change how these values are interpreted in the future.
     ///
-    /// See also [`Self::new_sweep_full`].
+    /// See also [`Self::new_full_sweep`].
     pub fn new_sweep(center: UnitPoint, start_angle: f64, end_angle: f64) -> Self {
         let shape = GradientShape::Sweep {
             center,
