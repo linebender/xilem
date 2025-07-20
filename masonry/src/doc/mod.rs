@@ -15,6 +15,11 @@
 // These docs all use the .rustdoc-hidden trick described in
 // https://linebender.org/blog/doc-include/
 
+/// Contains the items implemented in "Creating a new widget" and other tutorials.
+pub mod color_rectangle;
+
+// TODO - Add vertical_stack module.
+
 #[doc = include_str!("./creating_app.md")]
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_01_creating_app {}

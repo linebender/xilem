@@ -30,18 +30,18 @@ First, let's write a test module with a first unit test:
 // We place this block at the end of the file where we implemented ColorRectangle
 #[cfg(test)]
 mod tests {
+    use super::*;
     use insta::assert_debug_snapshot;
     use masonry::testing::{widget_ids, TestHarness, TestWidgetExt};
     use masonry::theme::default_property_set;
 
-    use super::*;
-
     #[test]
     fn simple_rect() {
+        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
         let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
 
-        let harness = TestHarness::create(default_property_set(), widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
         assert_debug_snapshot!(harness.root_widget());
 
@@ -78,7 +78,7 @@ Let's add a visual test:
 
 ```rust,ignore
     // ...
-    use masonry::assert_render_snapshot;
+    use masonry::testing::assert_render_snapshot;
 
     #[test]
     fn simple_rect() {
@@ -113,10 +113,11 @@ Let's create another snapshot test to check that our widget correctly changes co
 
     #[test]
     fn hovered() {
+        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
         let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
@@ -138,19 +139,6 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
 
 ```rust,ignore
     // ...
-
-    #[test]
-    fn hovered() {
-        let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
-
-        let mut harness = TestHarness::create(widget);
-
-        // Computes the rect's layout and sends an PointerEvent
-        // placing the mouse at its center.
-        harness.mouse_move_to(rect_id);
-        assert_render_snapshot!(harness, "rect_hovered_rectangle");
-    }
 
     #[test]
     fn edit_rect() {
@@ -179,20 +167,21 @@ The `TestHarness` is also capable of reading actions emitted by our widget with 
 Since our `WidgetRectangle` doesn't emit actions, let's look at a unit test for the [`Button`] widget instead:
 
 ```rust
+    // ...
+
     #[test]
-    fn simple_button() {
-        let [button_id] = widget_ids();
-        let widget = Button::new("Hello").with_id(button_id);
+    fn on_click() {
+        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
+        let [rect_id] = widget_ids();
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
-        // ...
-
-        harness.mouse_click_on(button_id);
-        assert_eq!(
-            harness.pop_action::<ButtonPress>(),
-            Some((ButtonPress(Some(PointerButton::Primary)), button_id))
-        );
+        harness.mouse_click_on(rect_id);
+        assert!(matches!(
+            harness.pop_action::<ColorRectanglePress>(),
+            Some((ColorRectanglePress, _))
+        ));
     }
 ```
 

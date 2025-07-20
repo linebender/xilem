@@ -53,8 +53,6 @@ In the course of a frame, Masonry will run a series of passes over the widget tr
 
 ## Our example widget: `ColorRectangle`
 
-<!-- TODO - Create color_rectangle.rs file as a template for this. -->
-
 Let's implement a very simple widget named `ColorRectangle`.
 This widget has a size, a color, and will notify Masonry when the user left-clicks on it (on mouse press; we'll ignore mouse release).
 
@@ -85,9 +83,11 @@ Note that we store a size, and not a position: our widget's position is managed 
 First we implement event methods:
 
 ```rust,ignore
+// ...
 use masonry::core::{
     AccessEvent, EventCtx, PointerButton, PointerEvent, PropertiesMut, TextEvent, Widget
 };
+// ...
 
 #[derive(Debug)]
 struct ColorRectanglePress;
@@ -132,15 +132,27 @@ We don't handle any text events.
 Since our widget isn't animated and doesn't react to changes in status, we can leave the `on_anim_frame` and `update` implementations empty:
 
 ```rust,ignore
-use masonry::core::{
-    PropertiesMut, UpdateCtx, Update, Widget
-};
+// ...
+use masonry::core::{Update, UpdateCtx};
+// ...
 
 impl Widget for ColorRectangle {
     // ...
 
-    fn on_anim_frame(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, _interval: u64) {}
-    fn update(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+    fn on_anim_frame(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _interval: u64,
+    ) {
+    }
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+    }
 
     // ...
 }
@@ -159,7 +171,12 @@ use masonry::kurbo::Size;
 impl Widget for ColorRectangle {
     // ...
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         bc.constrain(self.size)
     }
 
@@ -177,13 +194,13 @@ We return our stored size, clamped between the min and max constraints.
 Next we write our render methods:
 
 ```rust,ignore
+// ...
 use masonry::accesskit::{Node, Role};
-use masonry::core::{
-    AccessCtx, PaintCtx, PropertiesRef, Widget
-};
+use masonry::core::{AccessCtx, PaintCtx, PropertiesRef};
 use masonry::kurbo::Affine;
 use masonry::peniko::Fill;
 use masonry::vello::Scene;
+// ...
 
 impl Widget for ColorRectangle {
     // ...
@@ -203,7 +220,12 @@ impl Widget for ColorRectangle {
         Role::Button
     }
 
-    fn accessibility(&mut self, ctx: &mut AccessCtx<'_>, _props: &PropertiesRef<'_>, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         node.add_action(accesskit::Action::Click);
     }
 
@@ -245,8 +267,10 @@ Pragmatically, if you're not sure about what a certain value means or how to imp
 We also write a `make_trace_span()` method, which is useful for debugging with the [tracing](https://docs.rs/tracing/latest/tracing/) framework.
 
 ```rust,ignore
-use masonry::core::{QueryCtx, Widget};
-use tracing::{trace_span, Span};
+// ...
+use masonry::core::WidgetId;
+use tracing::{Span, trace_span};
+// ...
 
 impl Widget for ColorRectangle {
     // ...
@@ -262,9 +286,9 @@ impl Widget for ColorRectangle {
 And last, we stub in some additional methods:
 
 ```rust,ignore
-use masonry::core::{
-    RegisterCtx, Widget, WidgetId
-};
+// ...
+use masonry::core::{RegisterCtx, ChildrenIds};
+// ...
 
 impl Widget for ColorRectangle {
     // ...
@@ -414,10 +438,9 @@ For instance, a `set_padding()` function should probably call `ctx.request_layou
 Let's define some setters for `ColorRectangle`:
 
 ```rust,ignore
-struct ColorRectangle {
-    size: Size,
-    color: Color,
-}
+// ...
+use masonry::core::WidgetMut;
+// ...
 
 impl ColorRectangle {
     pub fn set_color(this: &mut WidgetMut<'_, Self>, color: Color) {
