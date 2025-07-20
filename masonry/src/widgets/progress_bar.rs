@@ -196,7 +196,6 @@ impl Widget for ProgressBar {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-
     use super::*;
     use crate::assert_render_snapshot;
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
