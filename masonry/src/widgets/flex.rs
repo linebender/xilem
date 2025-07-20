@@ -33,7 +33,7 @@ pub struct Flex {
     fill_major_axis: bool,
     children: Vec<Child>,
     old_bc: BoxConstraints,
-    gap: Option<f64>,
+    gap: f64,
 }
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
@@ -133,7 +133,7 @@ impl Flex {
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
             old_bc: BoxConstraints::tight(Size::ZERO),
-            gap: None,
+            gap: crate::theme::WIDGET_PADDING,
         }
     }
 
@@ -177,42 +177,17 @@ impl Flex {
     /// Equivalent to the css [gap] property.
     /// This gap is also present between spacers.
     ///
-    /// See also [`default_gap`](Self::default_gap).
-    ///
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     // TODO: Semantics - should this include fixed spacers?
-    pub fn gap(mut self, gap: f64) -> Self {
-        if gap.is_finite() && gap >= 0.0 {
-            self.gap = Some(gap);
-        } else {
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+    pub fn with_gap(mut self, mut gap: f64) -> Self {
+        if !gap.is_finite() || gap < 0.0 {
+            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
+            gap = 0.0;
         }
-        self
-    }
-
-    /// Builder-style method to use the default gap value.
-    ///
-    /// This is [`WIDGET_PADDING_VERTICAL`] for a flex column and
-    /// [`WIDGET_PADDING_HORIZONTAL`] for flex row.
-    ///
-    /// See also [`gap`](Self::gap)
-    ///
-    /// [`WIDGET_PADDING_VERTICAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    /// [`WIDGET_PADDING_HORIZONTAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    pub fn default_gap(mut self) -> Self {
-        self.gap = None;
-        self
-    }
-
-    /// Equivalent to [`gap`](Self::gap) if `gap` is `Some`, or
-    /// [`default_gap`](Self::default_gap) otherwise.
-    ///
-    /// Does not perform validation of the provided value.
-    pub fn raw_gap(mut self, gap: Option<f64>) -> Self {
         self.gap = gap;
         self
     }
@@ -260,24 +235,12 @@ impl Flex {
         self
     }
 
-    /// Builder-style method to add a spacer widget with a standard size.
-    ///
-    /// The actual value of this spacer depends on whether this container is
-    /// a row or column, as well as theme settings.
-    pub fn with_default_spacer(self) -> Self {
-        let key = axis_default_spacer(self.direction);
-        self.with_spacer(key)
-    }
-
     /// Builder-style method for adding a fixed-size spacer to the container.
     ///
-    /// If you are laying out standard controls in this container, you should
-    /// generally prefer to use [`add_default_spacer`].
-    ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
+    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
     pub fn with_spacer(mut self, mut len: f64) -> Self {
         if len < 0.0 {
-            tracing::warn!("add_spacer called with negative length: {}", len);
+            tracing::warn!("with_spacer called with negative length: {}", len);
         }
         len = len.clamp(0.0, f64::MAX);
 
@@ -347,36 +310,11 @@ impl Flex {
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
-    ///
-    /// See also [`use_default_gap`](Self::use_default_gap).
-    pub fn set_gap(this: &mut WidgetMut<'_, Self>, gap: f64) {
-        if gap.is_finite() && gap >= 0.0 {
-            this.widget.gap = Some(gap);
-        } else {
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
+    pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {
+        if !gap.is_finite() || gap < 0.0 {
+            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
+            gap = 0.0;
         }
-        this.ctx.request_layout();
-    }
-
-    /// Use the default gap value.
-    ///
-    /// This is [`WIDGET_PADDING_VERTICAL`] for a flex column and
-    /// [`WIDGET_PADDING_HORIZONTAL`] for flex row.
-    ///
-    /// See also [`set_gap`](Self::set_gap)
-    ///
-    /// [`WIDGET_PADDING_VERTICAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    /// [`WIDGET_PADDING_HORIZONTAL`]: crate::theme::WIDGET_PADDING_VERTICAL
-    pub fn use_default_gap(this: &mut WidgetMut<'_, Self>) {
-        this.widget.gap = None;
-        this.ctx.request_layout();
-    }
-
-    /// Equivalent to [`set_gap`](Self::set_gap) if `gap` is `Some`, or
-    /// [`use_default_gap`](Self::use_default_gap) otherwise.
-    ///
-    /// Does not perform validation of the provided value.
-    pub fn set_raw_gap(this: &mut WidgetMut<'_, Self>, gap: Option<f64>) {
         this.widget.gap = gap;
         this.ctx.request_layout();
     }
@@ -422,22 +360,9 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Add a spacer widget with a standard size.
-    ///
-    /// The actual value of this spacer depends on whether this container is
-    /// a row or column, as well as theme settings.
-    pub fn add_default_spacer(this: &mut WidgetMut<'_, Self>) {
-        let key = axis_default_spacer(this.widget.direction);
-        Self::add_spacer(this, key);
-        this.ctx.request_layout();
-    }
-
     /// Add an empty spacer widget with the given size.
     ///
-    /// If you are laying out standard controls in this container, you should
-    /// generally prefer to use [`add_default_spacer`].
-    ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
+    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
     pub fn add_spacer(this: &mut WidgetMut<'_, Self>, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -519,27 +444,9 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    // TODO - remove
-    /// Insert a spacer widget with a standard size at the given index.
-    ///
-    /// The actual value of this spacer depends on whether this container is
-    /// a row or column, as well as theme settings.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_default_spacer(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        let key = axis_default_spacer(this.widget.direction);
-        Self::insert_spacer(this, idx, key);
-        this.ctx.request_layout();
-    }
-
     /// Insert an empty spacer widget with the given size at the given index.
     ///
-    /// If you are laying out standard controls in this container, you should
-    /// generally prefer to use [`add_default_spacer`].
-    ///
-    /// [`add_default_spacer`]: Flex::add_default_spacer
+    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
     ///
     /// # Panics
     ///
@@ -930,14 +837,6 @@ impl Child {
     }
 }
 
-/// The size in logical pixels of the default spacer for an axis.
-fn axis_default_spacer(axis: Axis) -> f64 {
-    match axis {
-        Axis::Vertical => crate::theme::WIDGET_PADDING_VERTICAL,
-        Axis::Horizontal => crate::theme::WIDGET_PADDING_HORIZONTAL,
-    }
-}
-
 fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
     if let Some(flex) = params.flex {
         if flex.is_normal() && flex > 0.0 {
@@ -1009,7 +908,7 @@ impl Widget for Flex {
 
         let mut any_changed = bc_changed || ctx.needs_layout();
 
-        let gap = self.gap.unwrap_or(axis_default_spacer(self.direction));
+        let gap = self.gap;
         // The gaps are only between the items, so 2 children means 1 gap.
         let total_gap = self.children.len().saturating_sub(1) as f64 * gap;
         // Measure non-flex children.
@@ -1629,21 +1528,18 @@ mod tests {
                 // -> acdx
                 Flex::add_flex_child(&mut flex, Label::new("y"), 2.0);
                 // -> acdxy
-                Flex::add_default_spacer(&mut flex);
-                // -> acdxy_
                 Flex::add_spacer(&mut flex, 5.0);
-                // -> acdxy__
+                // -> acdxy_
                 Flex::add_flex_spacer(&mut flex, 1.0);
-                // -> acdxy___
+                // -> acdxy__
                 Flex::insert_child(&mut flex, 2, Label::new("i"));
-                // -> acidxy___
+                // -> acidxy__
                 Flex::insert_flex_child(&mut flex, 2, Label::new("j"), 2.0);
-                // -> acjidxy___
-                Flex::insert_default_spacer(&mut flex, 2);
-                // -> ac_jidxy___
+                // -> acjidxy__
                 Flex::insert_spacer(&mut flex, 2, 5.0);
-                // -> ac__jidxy___
+                // -> ac_jidxy__
                 Flex::insert_flex_spacer(&mut flex, 2, 1.0);
+                // -> ac__jidxy__
             });
 
             harness.render()
@@ -1655,13 +1551,11 @@ mod tests {
                 .with_child(Label::new("c"))
                 .with_flex_spacer(1.0)
                 .with_spacer(5.0)
-                .with_default_spacer()
                 .with_flex_child(Label::new("j"), 2.0)
                 .with_child(Label::new("i"))
                 .with_child(Label::new("d"))
                 .with_child(Label::new("x"))
                 .with_flex_child(Label::new("y"), 2.0)
-                .with_default_spacer()
                 .with_spacer(5.0)
                 .with_flex_spacer(1.0);
 
