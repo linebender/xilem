@@ -1222,14 +1222,14 @@ impl_context_method!(
                 .expect("get_raw: child not found");
             let child_ctx = RawCtx {
                 global_state: self.global_state,
-                parent_widget_state: &mut self.widget_state,
+                parent_widget_state: self.widget_state,
                 widget_state: child_state_mut.item,
                 widget_state_children: child_state_mut.children,
                 widget_children: child_mut.children,
                 properties_children: child_properties.children,
             };
 
-            let widget = Child::from_dyn(&mut **child_mut.item).unwrap();
+            let widget = Child::from_dyn(&**child_mut.item).unwrap();
 
             (widget, child_ctx)
         }
@@ -1259,7 +1259,7 @@ impl_context_method!(
                 .expect("get_raw_mut: child not found");
             let child_ctx = RawCtx {
                 global_state: self.global_state,
-                parent_widget_state: &mut self.widget_state,
+                parent_widget_state: self.widget_state,
                 widget_state: child_state_mut.item,
                 widget_state_children: child_state_mut.children,
                 widget_children: child_mut.children,
