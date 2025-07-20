@@ -12,9 +12,9 @@ use crate::peniko::Color;
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
     CornerRadius, DisabledBackground, DisabledCheckmarkColor, DisabledTextColor,
-    HoveredBorderColor, Padding, TextColor,
+    HoveredBorderColor, Padding, SpinnerColor, TextColor,
 };
-use crate::widgets::{Button, Checkbox, Label, TextArea, TextInput};
+use crate::widgets::{Button, Checkbox, Label, Spinner, TextArea, TextInput};
 
 pub const BORDER_WIDTH: f64 = 1.;
 
@@ -95,6 +95,9 @@ pub fn default_property_set() -> DefaultProperties {
     // Label
     properties.insert::<Label, _>(TextColor::new(TEXT_COLOR));
     properties.insert::<Label, _>(DisabledTextColor(TextColor::new(DISABLED_TEXT_COLOR)));
+
+    // Spinner
+    properties.insert::<Spinner, _>(SpinnerColor(TEXT_COLOR));
 
     properties
 }

@@ -14,6 +14,7 @@ mod corner_radius;
 mod line_breaking;
 mod object_fit;
 mod padding;
+mod spinner_color;
 mod text_color;
 
 pub mod types;
@@ -27,4 +28,5 @@ pub use corner_radius::CornerRadius;
 pub use line_breaking::LineBreaking;
 pub use object_fit::ObjectFit;
 pub use padding::Padding;
+pub use spinner_color::SpinnerColor;
 pub use text_color::{DisabledTextColor, TextColor};

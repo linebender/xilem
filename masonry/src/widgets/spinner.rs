@@ -3,6 +3,7 @@
 
 //! An animated spinner widget.
 
+use std::any::TypeId;
 use std::f64::consts::PI;
 
 use accesskit::{Node, Role};
@@ -13,9 +14,9 @@ use vello::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
 
 use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    Update, UpdateCtx, Widget, WidgetId,
 };
-use crate::peniko::Color;
+use crate::properties::SpinnerColor;
 use crate::theme;
 
 /// An animated spinner widget for showing a loading state.
@@ -28,7 +29,6 @@ use crate::theme;
 #[doc = crate::include_screenshot!("spinner_init.png", "Spinner frame.")]
 pub struct Spinner {
     t: f64,
-    color: Color,
 }
 
 // --- MARK: BUILDERS
@@ -37,36 +37,11 @@ impl Spinner {
     pub fn new() -> Self {
         Self::default()
     }
-
-    /// Builder-style method for setting the spinner's color.
-    pub fn with_color(mut self, color: impl Into<Color>) -> Self {
-        self.color = color.into();
-        self
-    }
 }
-
-const DEFAULT_SPINNER_COLOR: Color = theme::TEXT_COLOR;
 
 impl Default for Spinner {
     fn default() -> Self {
-        Self {
-            t: 0.0,
-            color: DEFAULT_SPINNER_COLOR,
-        }
-    }
-}
-
-// --- MARK: WIDGETMUT
-impl Spinner {
-    /// Set the spinner's color.
-    pub fn set_color(this: &mut WidgetMut<'_, Self>, color: impl Into<Color>) {
-        this.widget.color = color.into();
-        this.ctx.request_paint_only();
-    }
-
-    /// Reset the spinner's color to its default value.
-    pub fn reset_color(this: &mut WidgetMut<'_, Self>) {
-        Self::set_color(this, DEFAULT_SPINNER_COLOR);
+        Self { t: 0.0 }
     }
 }
 
@@ -87,6 +62,10 @@ impl Widget for Spinner {
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
+
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        SpinnerColor::prop_changed(ctx, property_type);
+    }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
@@ -113,7 +92,9 @@ impl Widget for Spinner {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let color = props.get::<SpinnerColor>();
+
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
         let center = Point::new(width / 2.0, height / 2.0);
@@ -126,7 +107,7 @@ impl Widget for Spinner {
             let angle = Vec2::from_angle((step / 12.0) * -2.0 * PI);
             let ambit_start = center + (10.0 * scale_factor * angle);
             let ambit_end = center + (20.0 * scale_factor * angle);
-            let color = self.color.multiply_alpha(fade as f32);
+            let color = color.0.multiply_alpha(fade as f32);
 
             scene.stroke(
                 &Stroke::new(3.0 * scale_factor).with_caps(Cap::Square),
@@ -162,6 +143,9 @@ impl Widget for Spinner {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::Properties;
+    use masonry_testing::TestWidgetExt;
+
     use super::*;
     use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -186,7 +170,8 @@ mod tests {
     #[test]
     fn edit_spinner() {
         let image_1 = {
-            let spinner = Spinner::new().with_color(palette::css::PURPLE);
+            let spinner =
+                Spinner::new().with_props(Properties::one(SpinnerColor(palette::css::PURPLE)));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -207,7 +192,7 @@ mod tests {
 
             harness.edit_root_widget(|mut spinner| {
                 let mut spinner = spinner.downcast::<Spinner>();
-                Spinner::set_color(&mut spinner, palette::css::PURPLE);
+                spinner.insert_prop(SpinnerColor(palette::css::PURPLE));
             });
 
             harness.render()
