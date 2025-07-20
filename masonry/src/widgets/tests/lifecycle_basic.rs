@@ -1,7 +1,7 @@
 // Copyright 2021 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(unused_imports)]
+#![expect(unused_imports, reason = "Lots of code cfg-ed out")]
 
 use insta::assert_debug_snapshot;
 
