@@ -15,9 +15,9 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget,
-    NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId,
-    WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, FromDynWidget, NewWidget,
+    PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut,
+    WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
@@ -1260,20 +1260,23 @@ impl_context_method!(
             (widget, child_ctx)
         }
 
-        /// Submit an Action, which indicates that this widget requires something be handled
+        /// Submit an action, which indicates that this widget requires something be handled
         /// by the application, such as user input.
         ///
-        /// For further details see [`ErasedAction`].
-        /// If you have an already boxed action, prefer `submit_erased_action`.s
-        pub fn submit_action(&mut self, action: impl AnyDebug + Send) {
-            self.submit_erased_action(Box::new(action));
-        }
-
-        /// Submit an already boxed action.
+        /// The `Action` type parameter should always be the `Self::Action` associated type
+        /// of the widget you're calling this method from.
         ///
-        /// See `submit_action` for more details.
-        pub fn submit_erased_action(&mut self, action: ErasedAction) {
+        /// For further details see [`ErasedAction`](crate::core::ErasedAction).
+        pub fn submit_action<Action: AnyDebug + Send>(&mut self, action: impl Into<Action>) {
             trace!("submit_action");
+            let action = Box::new(action.into());
+            if action.type_id() != self.widget_state.action_type {
+                debug_panic!(
+                    "Trying to emit action of incorrect type {}. Type should always be `<Self as Widget>::Action",
+                    action.type_name(),
+                );
+                return;
+            }
             self.global_state
                 .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
         }
@@ -1365,6 +1368,7 @@ impl RegisterCtx<'_> {
             id,
             options,
             properties,
+            action_type,
         }) = child.take_inner()
         else {
             return;
@@ -1375,7 +1379,7 @@ impl RegisterCtx<'_> {
             self.registered_ids.push(id);
         }
 
-        let state = WidgetState::new(id, widget.short_type_name(), options);
+        let state = WidgetState::new(id, widget.short_type_name(), options, action_type);
 
         let node = WidgetArenaNode {
             widget: widget.as_box_dyn(),

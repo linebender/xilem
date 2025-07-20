@@ -5,6 +5,7 @@
 
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
+
 use masonry::TextAlign;
 use masonry::core::{
     ErasedAction, NewWidget, PointerButton, Properties, StyleProperty, Widget as _, WidgetId,

@@ -84,6 +84,8 @@ pub struct CheckboxToggled(pub bool);
 
 // --- MARK: IMPL WIDGET
 impl Widget for Checkbox {
+    type Action = CheckboxToggled;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -102,7 +104,7 @@ impl Widget for Checkbox {
             PointerEvent::Up { .. } => {
                 if ctx.is_active() && ctx.is_hovered() && !ctx.is_disabled() {
                     self.checked = !self.checked;
-                    ctx.submit_action(CheckboxToggled(self.checked));
+                    ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
                 // Checked state impacts appearance and accessibility node
@@ -122,7 +124,7 @@ impl Widget for Checkbox {
             TextEvent::Keyboard(event) if event.state.is_up() => {
                 if matches!(&event.key, Key::Character(c) if c == " ") {
                     self.checked = !self.checked;
-                    ctx.submit_action(CheckboxToggled(self.checked));
+                    ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
                     // Checked state impacts appearance and accessibility node
                     ctx.request_render();
                 }
@@ -145,7 +147,7 @@ impl Widget for Checkbox {
         match event.action {
             accesskit::Action::Click => {
                 self.checked = !self.checked;
-                ctx.submit_action(CheckboxToggled(self.checked));
+                ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
                 // Checked state impacts appearance and accessibility node
                 ctx.request_render();
             }

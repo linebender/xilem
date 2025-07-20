@@ -96,7 +96,7 @@ impl Widget for ColorRectangle {
     fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
         match event {
             PointerEvent::Down { button: Some(PointerButton::Primary), .. } => {
-                ctx.submit_action(ColorRectanglePress);
+                ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {},
         }
@@ -107,7 +107,7 @@ impl Widget for ColorRectangle {
     fn on_access_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(ColorRectanglePress);
+                    ctx.submit_action::<Self::Action>(ColorRectanglePress);
                 }
                 _ => {}
             }

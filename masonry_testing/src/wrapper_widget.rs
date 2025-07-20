@@ -6,8 +6,8 @@ use std::any::TypeId;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
-    Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
@@ -51,6 +51,8 @@ impl WrapperWidget {
 }
 
 impl Widget for WrapperWidget {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,

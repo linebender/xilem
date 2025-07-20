@@ -1,6 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
 use vello::kurbo::Affine;
 
 use crate::core::{Properties, Widget, WidgetId};
@@ -28,6 +29,7 @@ pub struct NewWidget<W: ?Sized> {
     /// The widget we're going to add.
     pub widget: Box<W>,
     pub(crate) id: WidgetId,
+    pub(crate) action_type: TypeId,
 
     /// The options the widget will be created with.
     pub options: WidgetOptions,
@@ -69,6 +71,7 @@ impl<W: Widget> NewWidget<W> {
         Self {
             widget: Box::new(inner),
             id,
+            action_type: TypeId::of::<W>(),
             options: WidgetOptions::default(),
             properties: Properties::default(),
         }
@@ -96,6 +99,7 @@ impl<W: Widget> NewWidget<W> {
         Self {
             widget: Box::new(inner),
             id,
+            action_type: TypeId::of::<W>(),
             options,
             properties: props,
         }
@@ -111,6 +115,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         NewWidget {
             widget: self.widget.as_box_dyn(),
             id: self.id,
+            action_type: self.action_type,
             options: self.options,
             properties: self.properties,
         }

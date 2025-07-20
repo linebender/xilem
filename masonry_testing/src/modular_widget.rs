@@ -8,9 +8,9 @@ use tracing::trace_span;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
-    LayoutCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
-    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions,
-    WidgetRef, find_widget_under_pointer,
+    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
+    PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetOptions, WidgetRef, find_widget_under_pointer,
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
@@ -224,6 +224,8 @@ impl<S> ModularWidget<S> {
 
 #[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,

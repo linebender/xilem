@@ -11,8 +11,8 @@ use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
@@ -652,6 +652,8 @@ fn new_flex_child(params: FlexParams, child: WidgetPod<dyn Widget>) -> Child {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Flex {
+    type Action = NoAction;
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);

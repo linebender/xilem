@@ -8,6 +8,7 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
+use masonry_core::core::NoAction;
 use parley::style::FontWeight;
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -170,6 +171,8 @@ impl VariableLabel {
 
 // --- MARK: IMPL WIDGET
 impl Widget for VariableLabel {
+    type Action = NoAction;
+
     fn accepts_pointer_interaction(&self) -> bool {
         false
     }

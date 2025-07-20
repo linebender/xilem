@@ -6,7 +6,7 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
+    NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
     WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
@@ -212,6 +212,8 @@ impl<
     I: Widget + FromDynWidget + ?Sized,
 > Widget for OneOfWidget<A, B, C, D, E, F, G, H, I>
 {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,

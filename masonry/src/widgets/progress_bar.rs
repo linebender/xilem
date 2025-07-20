@@ -11,7 +11,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BarColor, BorderColor, BorderWidth, CornerRadius};
@@ -97,6 +97,8 @@ fn clamp_progress(progress: Option<f64>) -> Option<f64> {
 
 // --- MARK: IMPL WIDGET
 impl Widget for ProgressBar {
+    type Action = NoAction;
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.label);
     }

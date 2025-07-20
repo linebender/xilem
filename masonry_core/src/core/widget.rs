@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::{Any, TypeId};
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -134,6 +134,13 @@ pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
 #[allow(unused_variables, reason = "Default impls don't use method arguments")]
 pub trait Widget: AsDynWidget + Any {
+    /// The action type that will widget will submit.
+    ///
+    /// If this widget never submits action, this can be an empty type.
+    type Action: Any + Debug
+    where
+        Self: Sized;
+
     /// Handle a pointer event.
     ///
     /// Pointer events will target the widget under the pointer, and then the
