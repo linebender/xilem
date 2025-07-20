@@ -11,8 +11,8 @@ use vello::Scene;
 use vello::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::peniko::Color;
 use crate::theme;
@@ -72,6 +72,8 @@ impl Spinner {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Spinner {
+    type Action = NoAction;
+
     fn on_anim_frame(
         &mut self,
         ctx: &mut UpdateCtx<'_>,

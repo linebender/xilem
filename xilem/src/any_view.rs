@@ -4,8 +4,8 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
-    Widget, WidgetId, WidgetMut, WidgetPod,
+    NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
 use tracing::{Span, trace_span};
@@ -71,6 +71,8 @@ impl DynWidget {
 
 /// Forward all events to the child widget.
 impl Widget for DynWidget {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,

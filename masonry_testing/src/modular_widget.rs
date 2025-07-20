@@ -8,7 +8,7 @@ use tracing::trace_span;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
-    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
+    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
     find_widget_under_pointer,
 };
@@ -224,6 +224,8 @@ impl<S> ModularWidget<S> {
 
 #[warn(clippy::missing_trait_methods)]
 impl<S: 'static> Widget for ModularWidget<S> {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,

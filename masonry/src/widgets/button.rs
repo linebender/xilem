@@ -93,6 +93,8 @@ pub struct ButtonPress {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Button {
+    type Action = ButtonPress;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -110,7 +112,7 @@ impl Widget for Button {
             }
             PointerEvent::Up { button, .. } => {
                 if ctx.is_active() && ctx.is_hovered() && !ctx.is_disabled() {
-                    ctx.submit_action(ButtonPress { button: *button });
+                    ctx.submit_action::<Self::Action>(ButtonPress { button: *button });
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 // Changes in pointer capture impact appearance, but not accessibility node
@@ -131,7 +133,7 @@ impl Widget for Button {
                 if matches!(&event.key, Key::Character(c) if c == " ")
                     || event.key == Key::Named(NamedKey::Enter)
                 {
-                    ctx.submit_action(ButtonPress { button: None });
+                    ctx.submit_action::<Self::Action>(ButtonPress { button: None });
                 }
             }
             _ => (),
@@ -147,7 +149,7 @@ impl Widget for Button {
         if ctx.target() == ctx.widget_id() {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(ButtonPress { button: None });
+                    ctx.submit_action::<Self::Action>(ButtonPress { button: None });
                 }
                 _ => {}
             }
