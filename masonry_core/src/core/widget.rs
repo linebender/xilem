@@ -340,7 +340,7 @@ pub trait Widget: AsDynWidget + Any {
 
     /// Return a small string representing important info about this widget instance.
     ///
-    /// When using [`WidgetRef`]'s [`Debug`](std::fmt::Debug) implementation, widgets
+    /// When using [`WidgetRef`]'s [`Debug`] implementation, widgets
     /// will be displayed as a tree of values. Widgets which return a non-null value in
     /// `get_debug_text` will appear with that text next to their type name. This can
     /// be eg a label's text, or whether a checkbox is checked.
