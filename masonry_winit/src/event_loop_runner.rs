@@ -619,7 +619,9 @@ impl MasonryState<'_> {
                 );
                 #[cfg(feature = "tracy")]
                 drop(self.frame.take());
-                window.accesskit_adapter.update_if_active(|| tree_update);
+                if let Some(tree_update) = tree_update {
+                    window.accesskit_adapter.update_if_active(|| tree_update);
+                }
             }
             WinitWindowEvent::CloseRequested => {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
@@ -688,12 +690,16 @@ impl MasonryState<'_> {
                     accesskit_winit::WindowEvent::InitialTreeRequested => {
                         state
                             .render_root
-                            .handle_window_event(WindowEvent::RebuildAccessTree);
+                            .handle_window_event(WindowEvent::EnableAccessTree);
                     }
                     accesskit_winit::WindowEvent::ActionRequested(action_request) => {
                         state.render_root.handle_access_event(action_request);
                     }
-                    accesskit_winit::WindowEvent::AccessibilityDeactivated => {}
+                    accesskit_winit::WindowEvent::AccessibilityDeactivated => {
+                        state
+                            .render_root
+                            .handle_window_event(WindowEvent::DisableAccessTree);
+                    }
                 }
             }
             // TODO - Not sure what the use-case for this is.
@@ -830,7 +836,10 @@ impl MasonryState<'_> {
             #[cfg(feature = "tracy")]
             drop(self.frame.take());
 
-            window.accesskit_adapter.update_if_active(|| tree_update);
+            if let Some(tree_update) = tree_update {
+                window.accesskit_adapter.update_if_active(|| tree_update);
+            }
+
             window.handle.set_visible(true);
         }
 
