@@ -56,6 +56,8 @@ Examples of use cases for pointer capture include selecting text, dragging a sli
 
 An "active" widget is one that the user is currently interacting with.
 
+This is similar to the `:active` CSS pseudo-class, though Masonry doesn't guarantee it behaves the same.
+
 Currently, a widget is determined to be active when it has pointer capture, though that definition may change in the future, either by making active status and pointer capture orthogonal, or by adding some pointer-agnostic interactions that will make a widget active, such as keyboard selection or accessibility inputs.
 
 Interactive widgets (e.g. buttons) should have a way to indicate when they are active.
