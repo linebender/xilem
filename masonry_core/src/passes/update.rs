@@ -253,7 +253,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE DISABLED
+// --- MARK: DISABLED
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 /// See the [disabled status documentation](../doc/06_masonry_concepts.md#disabled).
 fn update_disabled_for_widget(
@@ -338,7 +338,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 // *Stashed* is for widgets that are no longer "part of the graph". So they can't get keyboard events, don't get painted, etc, but should keep some state.
 // Scrolled-out widgets are *not* stashed.
 
-// --- MARK: UPDATE STASHED
+// --- MARK: STASHED
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 /// See the [stashed status documentation](../doc/06_masonry_concepts.md#stashed).
 fn update_stashed_for_widget(
@@ -505,7 +505,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE FOCUS
+// --- MARK: FOCUS
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 /// See the [focus status documentation](../doc/06_masonry_concepts.md#text-focus).
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
@@ -694,7 +694,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: UPDATE POINTER
+// --- MARK: POINTER
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if !root.global_state.needs_pointer_pass {
