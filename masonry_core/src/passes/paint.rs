@@ -73,7 +73,8 @@ fn paint_widget(
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
         let transform = state.window_transform;
-        let scene = scenes.get(&id).unwrap();
+        // let scene = scenes.get(&id).unwrap();
+        let scene = scenes.entry(id).or_default();
 
         if let Some(clip) = state.clip_path {
             complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
@@ -117,7 +118,8 @@ fn paint_widget(
             complete_scene.pop_layer();
         }
 
-        let postfix_scene = postfix_scenes.get(&id).unwrap();
+        // let postfix_scene = postfix_scenes.get(&id).unwrap();
+        let postfix_scene = postfix_scenes.entry(id).or_default();
         complete_scene.append(postfix_scene, Some(transform));
     }
 }
