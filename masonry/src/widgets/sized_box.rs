@@ -322,7 +322,7 @@ mod tests {
 
     use super::*;
     use crate::palette;
-    use crate::properties::types::Gradient;
+    use crate::properties::types::{Gradient, UnitPoint};
     use crate::testing::{
         TestHarness, TestWidgetExt, assert_failing_render_snapshot, assert_render_snapshot,
     };
@@ -464,7 +464,33 @@ mod tests {
         assert_render_snapshot!(harness, "sized_box_empty_box_with_gradient_background");
     }
 
-    // TODO - Test other gradient types.
+    #[test]
+    fn radial_gradient_background() {
+        let mut box_props = Properties::new();
+
+        let gradient = Gradient::new_radial(UnitPoint::CENTER).with_stops([
+            palette::css::WHITE,
+            palette::css::BLACK,
+            palette::css::RED,
+            palette::css::GREEN,
+            palette::css::WHITE,
+        ]);
+        box_props.insert(Background::Gradient(gradient));
+        box_props.insert(BorderColor::new(palette::css::LIGHT_SKY_BLUE));
+        box_props.insert(BorderWidth::all(5.0));
+        box_props.insert(CornerRadius::all(10.0));
+
+        let widget = SizedBox::empty()
+            .width(20.)
+            .height(20.)
+            .with_props(box_props);
+
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
+
+        assert_render_snapshot!(harness, "sized_box_radial_gradient_background");
+    }
 
     #[test]
     fn label_box_with_padding_and_background() {

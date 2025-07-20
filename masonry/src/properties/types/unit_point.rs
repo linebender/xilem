@@ -3,7 +3,7 @@
 
 use vello::kurbo::{Point, Rect};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 /// A point with coordinates in the range [0.0, 1.0].
 ///
 /// This is useful for specifying points in a normalized space, such as a gradient.
