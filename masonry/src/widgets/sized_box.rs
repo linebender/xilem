@@ -493,6 +493,34 @@ mod tests {
     }
 
     #[test]
+    fn sweep_gradient_background() {
+        let mut box_props = Properties::new();
+
+        let gradient = Gradient::new_full_sweep(UnitPoint::CENTER, 0.).with_stops([
+            palette::css::WHITE,
+            palette::css::BLACK,
+            palette::css::RED,
+            palette::css::GREEN,
+            palette::css::WHITE,
+        ]);
+        box_props.insert(Background::Gradient(gradient));
+        box_props.insert(BorderColor::new(palette::css::LIGHT_SKY_BLUE));
+        box_props.insert(BorderWidth::all(5.0));
+        box_props.insert(CornerRadius::all(10.0));
+
+        let widget = SizedBox::empty()
+            .width(20.)
+            .height(20.)
+            .with_props(box_props);
+
+        let window_size = Size::new(100.0, 100.0);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
+
+        assert_render_snapshot!(harness, "sized_box_sweep_gradient_background");
+    }
+
+    #[test]
     fn label_box_with_padding_and_background() {
         let mut box_props = Properties::new();
         box_props.insert(Background::Color(palette::css::PLUM));

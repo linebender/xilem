@@ -1,6 +1,8 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::f64::consts::TAU;
+
 use vello::kurbo::{Point, Rect};
 
 use crate::peniko::color::{ColorSpaceTag, HueDirection};
@@ -37,7 +39,22 @@ pub enum GradientShape {
         /// The shape and size of the gradient.
         shape: RadialGradientShape,
     },
-    // TODO - Add Sweep shape
+    /// Gradient that transitions between two or more colors that rotate around a center
+    /// point.
+    ///
+    /// This is similar to [`conic-gradient()`] in CSS **but the values are intepreted differently**.
+    ///
+    /// [`conic-gradient()`]: https://drafts.csswg.org/css-images-4/#conic-gradient-syntax
+    Sweep {
+        /// The center of the gradient, relative to the widget's bounding box.
+        center: UnitPoint,
+        /// Start angle of the sweep, in radians.
+        /// Zero points upwards and positive angles represent clockwise rotation.
+        start_angle: f64,
+        /// End angle of the sweep, in radians.
+        /// Zero points upwards and positive angles represent clockwise rotation.
+        end_angle: f64,
+    },
 }
 
 /// Definition of a gradient that transitions between two or more colors.
@@ -150,6 +167,44 @@ impl Gradient {
         Self::new(shape)
     }
 
+    /// Creates a [`Sweep`](GradientShape::Sweep) gradient.
+    ///
+    /// `start_angle` and `end_angle` are in radians, with zero pointing to the right,
+    /// and higher values rotating the gradient counter-clockwise.
+    ///
+    /// **Warning:** This doesn't match the values CSS uses for
+    /// [conic gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/conic-gradient#composition_of_a_conic_gradient).
+    /// We may change how these values are interpreted in the future.
+    ///
+    /// See also [`Self::new_sweep_full`].
+    pub fn new_sweep(center: UnitPoint, start_angle: f64, end_angle: f64) -> Self {
+        let shape = GradientShape::Sweep {
+            center,
+            start_angle,
+            end_angle,
+        };
+        Self::new(shape)
+    }
+
+    /// Creates a [`Sweep`](GradientShape::Sweep) gradient doing a full circle.
+    ///
+    /// `angle` is in radians, with zero pointing to the right,
+    /// and higher values rotating the gradient counter-clockwise.
+    ///
+    /// **Warning:** This doesn't match the values CSS uses for
+    /// [conic gradients](https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/conic-gradient#composition_of_a_conic_gradient).
+    /// We may change how these values are interpreted in the future.
+    pub fn new_full_sweep(center: UnitPoint, angle: f64) -> Self {
+        let start_angle = angle;
+        let end_angle = angle + TAU;
+        let shape = GradientShape::Sweep {
+            center,
+            start_angle,
+            end_angle,
+        };
+        Self::new(shape)
+    }
+
     /// Builder method to set color stops on the gradient.
     pub fn with_stops(mut self, stops: impl ColorStopsSource) -> Self {
         self.stops.clear();
@@ -171,6 +226,10 @@ impl Gradient {
     }
 }
 
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "no other way to go from f64 to f32"
+)]
 impl GradientShape {
     /// Returns gradient coordinates for a gradient covering the given Rect.
     ///
@@ -181,6 +240,11 @@ impl GradientShape {
             Self::Radial { center, shape } => {
                 Self::get_peniko_radial_for_rect(*center, *shape, rect)
             }
+            Self::Sweep {
+                center,
+                start_angle,
+                end_angle,
+            } => Self::get_peniko_sweep_for_rect(*center, *start_angle, *end_angle, rect),
         }
     }
 
@@ -204,10 +268,6 @@ impl GradientShape {
         crate::peniko::GradientKind::Linear { start, end }
     }
 
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "no other way to go from f64 to f32"
-    )]
     fn get_peniko_radial_for_rect(
         center: UnitPoint,
         shape: RadialGradientShape,
@@ -254,6 +314,32 @@ impl GradientShape {
                 dist_to_corners.into_iter().reduce(f64::max).unwrap()
             }
             RadialGradientShape::FixedCircle(radius) => radius,
+        }
+    }
+
+    fn get_peniko_sweep_for_rect(
+        center: UnitPoint,
+        start_angle: f64,
+        end_angle: f64,
+        rect: Rect,
+    ) -> crate::peniko::GradientKind {
+        let center = center.resolve(rect);
+
+        // TODO: We'd like to write:
+        #[cfg(false)]
+        crate::peniko::GradientKind::Sweep {
+            center,
+            start_angle: (-start_angle - FRAC_PI_2) as f32,
+            end_angle: (-end_angle - FRAC_PI_2) as f32,
+        };
+        // but Vello currently doesn't let us do this kind of gradient
+        // offsetting.
+        // Giving Vello angles outside the 0..2*PI range just culls the displayed gradient.
+
+        crate::peniko::GradientKind::Sweep {
+            center,
+            start_angle: start_angle as f32,
+            end_angle: end_angle as f32,
         }
     }
 }
