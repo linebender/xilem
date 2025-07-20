@@ -3,7 +3,12 @@
 
 // TODO - See https://github.com/linebender/xilem/issues/336
 
-#![allow(clippy::print_stdout, clippy::print_stderr, clippy::dbg_macro)]
+#![expect(
+    clippy::print_stdout,
+    clippy::print_stderr,
+    clippy::dbg_macro,
+    reason = "Deferred: Tests need to be refactored"
+)]
 
 mod ime_focused;
 mod layout;

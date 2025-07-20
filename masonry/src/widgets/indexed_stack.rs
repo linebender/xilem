@@ -56,7 +56,18 @@ impl IndexedStack {
     /// Index must be a valid index into the stack's children, or 0
     /// if there are no children.
     pub fn with_active_child(mut self, idx: usize) -> Self {
-        assert!((self.children.is_empty() && idx == 0) || idx < self.children.len());
+        if self.children.is_empty() {
+            assert!(
+                idx == 0,
+                "Called set_active_child on empty IndexedStack with non-zero index {idx}"
+            );
+        } else {
+            assert!(
+                idx < self.children.len(),
+                "Called set_active_child with invalid index {idx}"
+            );
+        }
+
         self.active_child = idx;
         self
     }
@@ -138,10 +149,22 @@ impl IndexedStack {
 
     /// Change the active child.
     ///
-    /// Index must be a valid index into the children of this stack, or 0
-    /// if there are no children.
+    /// # Panics
+    ///
+    /// Panics if the index is larger than the number of children.
+    /// If there are no children, the index 0 is accepted.
     pub fn set_active_child(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        assert!((this.widget.children.is_empty() && idx == 0) || idx < this.widget.children.len());
+        if this.widget.children.is_empty() {
+            assert!(
+                idx == 0,
+                "Called set_active_child on empty IndexedStack with non-zero index {idx}"
+            );
+        } else {
+            assert!(
+                idx < this.widget.children.len(),
+                "Called set_active_child with invalid index {idx}"
+            );
+        }
         this.widget.active_child = idx;
         this.ctx.request_layout();
     }

@@ -3,6 +3,8 @@
 
 //! A label with support for animated variable font properties
 
+#![expect(unreachable_pub, reason = "We don't expose the animation types yet")]
+
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
@@ -33,7 +35,7 @@ pub struct AnimatedF32 {
 impl AnimatedF32 {
     /// Create a value which is not changing.
     pub fn stable(value: f32) -> Self {
-        assert!(value.is_finite());
+        assert!(value.is_finite(), "invalid animated value");
         Self {
             target: value,
             value,
@@ -50,7 +52,8 @@ impl AnimatedF32 {
     ///
     /// If `target` is not a finite value.
     pub fn move_to(&mut self, target: f32, over_millis: f32) {
-        assert!(target.is_finite());
+        assert!(target.is_finite(), "invalid target value");
+        assert!(over_millis.is_finite(), "invalid delay value");
         self.target = target;
         match over_millis.partial_cmp(&0.) {
             Some(Ordering::Equal) => self.value = target,
@@ -75,11 +78,7 @@ impl AnimatedF32 {
     ///
     /// Returns the status of the animation after this advancement.
     pub fn advance(&mut self, by_millis: f32) -> AnimationStatus {
-        if !self.value.is_finite() {
-            tracing::error!("Got unexpected non-finite value {}", self.value);
-            debug_assert!(self.target.is_finite());
-            self.value = self.target;
-        }
+        assert!(by_millis.is_finite(), "invalid timestep value");
 
         let original_side = self
             .value

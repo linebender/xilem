@@ -16,22 +16,24 @@ use masonry_core::kurbo::{Point, Size};
 use masonry_core::smallvec::SmallVec;
 use masonry_core::vello::Scene;
 
-pub type PointerEventFn<S> =
+pub(crate) type PointerEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &PointerEvent);
-pub type TextEventFn<S> = dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &TextEvent);
-pub type AccessEventFn<S> =
+pub(crate) type TextEventFn<S> =
+    dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &TextEvent);
+pub(crate) type AccessEventFn<S> =
     dyn FnMut(&mut S, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &AccessEvent);
-pub type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, u64);
-pub type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx<'_>);
-pub type UpdateFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, &Update);
-pub type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, TypeId);
-pub type LayoutFn<S> =
+pub(crate) type AnimFrameFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, u64);
+pub(crate) type RegisterChildrenFn<S> = dyn FnMut(&mut S, &mut RegisterCtx<'_>);
+pub(crate) type UpdateFn<S> =
+    dyn FnMut(&mut S, &mut UpdateCtx<'_>, &mut PropertiesMut<'_>, &Update);
+pub(crate) type PropertyChangeFn<S> = dyn FnMut(&mut S, &mut UpdateCtx<'_>, TypeId);
+pub(crate) type LayoutFn<S> =
     dyn FnMut(&mut S, &mut LayoutCtx<'_>, &mut PropertiesMut<'_>, &BoxConstraints) -> Size;
-pub type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
-pub type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene);
-pub type RoleFn<S> = dyn Fn(&S) -> Role;
-pub type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx<'_>, &PropertiesRef<'_>, &mut Node);
-pub type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
+pub(crate) type ComposeFn<S> = dyn FnMut(&mut S, &mut ComposeCtx<'_>);
+pub(crate) type PaintFn<S> = dyn FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene);
+pub(crate) type RoleFn<S> = dyn Fn(&S) -> Role;
+pub(crate) type AccessFn<S> = dyn FnMut(&mut S, &mut AccessCtx<'_>, &PropertiesRef<'_>, &mut Node);
+pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> SmallVec<[WidgetId; 16]>;
 
 /// A widget that can be constructed from individual functions, builder-style.
 ///

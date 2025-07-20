@@ -76,7 +76,7 @@ impl WidgetArena {
         (widget, state, properties)
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "might be useful later")]
     #[track_caller]
     pub(crate) fn get_widget(&self, widget_id: WidgetId) -> ArenaRef<'_, Box<dyn Widget>> {
         self.widgets
@@ -84,7 +84,7 @@ impl WidgetArena {
             .expect("get_widget: widget not in widget tree")
     }
 
-    #[allow(dead_code)]
+    #[allow(dead_code, reason = "might be useful later")]
     #[track_caller]
     pub(crate) fn get_widget_mut(&mut self, widget_id: WidgetId) -> ArenaMut<'_, Box<dyn Widget>> {
         self.widgets

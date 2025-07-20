@@ -285,13 +285,13 @@ impl WidgetState {
     }
 
     /// The paint region for this widget.
-    pub fn paint_rect(&self) -> Rect {
+    pub(crate) fn paint_rect(&self) -> Rect {
         self.local_paint_rect + self.origin.to_vec2()
     }
 
     // TODO - Remove
     /// The rectangle used when calculating layout with other widgets.
-    pub fn layout_rect(&self) -> Rect {
+    pub(crate) fn layout_rect(&self) -> Rect {
         Rect::from_origin_size(self.origin, self.size)
     }
 
@@ -299,7 +299,7 @@ impl WidgetState {
     ///
     /// This might not map to a visible area of the screen, eg if the widget is scrolled
     /// away.
-    pub fn bounding_rect(&self) -> Rect {
+    pub(crate) fn bounding_rect(&self) -> Rect {
         self.bounding_rect
     }
 

@@ -23,12 +23,9 @@
         reason = "False-positive with dev-dependencies only used in examples"
     )
 )]
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 // TODO: Remove any items listed as "Deferred"
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
-#![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
-#![expect(unreachable_pub, reason = "Potentially controversial code style")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
 
 // TODO - re-add #[doc(hidden)]

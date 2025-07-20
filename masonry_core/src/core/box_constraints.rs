@@ -1,8 +1,6 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-pub use crate::debug_panic;
-
 use vello::kurbo::Size;
 
 /// Constraints for layout.
@@ -208,10 +206,13 @@ impl BoxConstraints {
     /// Panics if `aspect_ratio` or `width` are NaN, infinite or negative.
     #[track_caller]
     pub fn constrain_aspect_ratio(&self, aspect_ratio: f64, width: f64) -> Size {
-        assert!(aspect_ratio.is_finite());
-        assert!(width.is_finite());
-        assert!(aspect_ratio >= 0.0);
-        assert!(width >= 0.0);
+        assert!(
+            aspect_ratio.is_finite(),
+            "aspect_ratio must be a finite value"
+        );
+        assert!(width.is_finite(), "width must be finite value");
+        assert!(aspect_ratio >= 0.0, "aspect_ratio must be 0.0 or greater");
+        assert!(width >= 0.0, "width must be 0.0 or greater");
 
         // Minimizing/maximizing based on aspect ratio seems complicated, but in reality everything
         // is linear, so the amount of work to do is low.

@@ -28,7 +28,7 @@ pub struct WidgetRef<'w, W: Widget + ?Sized> {
 
 // --- MARK: TRAIT IMPLS
 
-#[allow(clippy::non_canonical_clone_impl)]
+#[allow(clippy::non_canonical_clone_impl, reason = "We don't need `W: Clone`")]
 impl<W: Widget + ?Sized> Clone for WidgetRef<'_, W> {
     fn clone(&self) -> Self {
         Self { ..*self }
@@ -77,7 +77,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 
     /// Get the actual referenced `Widget`.
-    pub fn deref(self) -> &'w W {
+    pub fn inner(self) -> &'w W {
         self.widget
     }
 

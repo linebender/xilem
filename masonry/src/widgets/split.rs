@@ -99,8 +99,8 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
     pub fn min_size(mut self, first: f64, second: f64) -> Self {
-        assert!(first >= 0.0);
-        assert!(second >= 0.0);
+        assert!(first >= 0.0, "minimum size must be 0.0 or greater");
+        assert!(second >= 0.0, "minimum size must be 0.0 or greater");
         self.min_size = (first.ceil(), second.ceil());
         self
     }
@@ -111,7 +111,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
     pub fn bar_size(mut self, bar_size: f64) -> Self {
-        assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater!");
+        assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater");
         self.bar_size = bar_size.ceil();
         self
     }
@@ -129,7 +129,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
     pub fn min_bar_area(mut self, min_bar_area: f64) -> Self {
-        assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater!");
+        assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater");
         self.min_bar_area = min_bar_area.ceil();
         self
     }
@@ -338,8 +338,8 @@ where
     /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
     pub fn set_min_size(this: &mut WidgetMut<'_, Self>, first: f64, second: f64) {
-        assert!(first >= 0.0);
-        assert!(second >= 0.0);
+        assert!(first >= 0.0, "minimum size must be 0.0 or greater");
+        assert!(second >= 0.0, "minimum size must be 0.0 or greater");
         this.widget.min_size = (first.ceil(), second.ceil());
         this.ctx.request_layout();
     }
@@ -350,7 +350,7 @@ where
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
     pub fn set_bar_size(this: &mut WidgetMut<'_, Self>, bar_size: f64) {
-        assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater!");
+        assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater");
         this.widget.bar_size = bar_size.ceil();
         this.ctx.request_layout();
     }
@@ -368,7 +368,7 @@ where
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
     pub fn set_min_bar_area(this: &mut WidgetMut<'_, Self>, min_bar_area: f64) {
-        assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater!");
+        assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater");
         this.widget.min_bar_area = min_bar_area.ceil();
         this.ctx.request_layout();
     }

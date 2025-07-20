@@ -1,7 +1,7 @@
 // Copyright 2021 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![allow(unused)]
+#![expect(unused, reason = "Lots of code cfg-ed out")]
 
 use std::cell::Cell;
 use std::rc::Rc;

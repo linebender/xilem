@@ -1343,7 +1343,10 @@ macro_rules! impl_get_raw {
                     .properties_children
                     .item_mut(child.id())
                     .expect("get_raw_ref: child not found");
-                #[allow(clippy::needless_update)]
+                #[allow(
+                    clippy::needless_update,
+                    reason = "May be needless in some macro invocations"
+                )]
                 let child_ctx = $SomeCtx {
                     widget_state: child_state_mut.item,
                     widget_state_children: child_state_mut.children,
@@ -1381,7 +1384,10 @@ macro_rules! impl_get_raw {
                     .properties_children
                     .item_mut(child.id())
                     .expect("get_raw_mut: child not found");
-                #[allow(clippy::needless_update)]
+                #[allow(
+                    clippy::needless_update,
+                    reason = "May be needless in some macro invocations"
+                )]
                 let child_ctx = $SomeCtx {
                     widget_state: child_state_mut.item,
                     widget_state_children: child_state_mut.children,
