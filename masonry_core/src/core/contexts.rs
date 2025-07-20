@@ -1170,7 +1170,7 @@ impl_context_method!(
         /// In general, you should avoid setting the flags of a pass that runs before the
         /// pass you're currently in.
         ///
-        /// See [pass documentation](crate::doc::05_pass_system) for the pass order.
+        /// See [pass documentation](crate::doc::doc_05_pass_system) for the pass order.
         pub fn get_raw<Child: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<Child>,
@@ -1197,7 +1197,7 @@ impl_context_method!(
         /// In general, you should avoid setting the flags of a pass that runs before the
         /// pass you're currently in.
         ///
-        /// See [pass documentation](crate::doc::05_pass_system) for the pass order.
+        /// See [pass documentation](crate::doc::doc_05_pass_system) for the pass order.
         pub fn get_raw_mut<Child: Widget + FromDynWidget + AllowRawMut + ?Sized>(
             &mut self,
             child: &mut WidgetPod<Child>,
