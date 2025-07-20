@@ -1,14 +1,16 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
+use masonry_core::core::{Property, UpdateCtx};
 use vello::kurbo::{Affine, Size};
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
 /// Strategies for inscribing a rectangle inside another rectangle.
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum ObjectFit {
     /// As large as possible without changing aspect ratio of image and all of image shown
-    #[default]
     Contain,
     /// As large as possible with no dead space so that some of the image may be clipped
     Cover,
@@ -24,9 +26,29 @@ pub enum ObjectFit {
     ScaleDown,
 }
 
+impl Property for ObjectFit {
+    fn static_default() -> &'static Self {
+        &Self::Contain
+    }
+}
+
+impl Default for ObjectFit {
+    fn default() -> Self {
+        Self::Contain
+    }
+}
+
 // TODO - Need to write tests for this, in a way that's relatively easy to visualize.
 
 impl ObjectFit {
+    /// Helper function to be called in [`Widget::property_changed`](crate::core::Widget::property_changed).
+    pub fn prop_changed(ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        if property_type != TypeId::of::<Self>() {
+            return;
+        }
+        ctx.request_layout();
+    }
+
     /// Calculate an origin and scale for an image with a given `ObjectFit`.
     ///
     /// This takes some properties of a widget and an object fit and returns an affine matrix
