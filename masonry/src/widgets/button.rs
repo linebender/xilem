@@ -270,18 +270,10 @@ impl Widget for Button {
 
     fn accessibility(
         &mut self,
-        ctx: &mut AccessCtx<'_>,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
-        // IMPORTANT: We don't want to merge this code in practice, because
-        // the child label already has a 'name' property.
-        // This is more of a proof of concept of `get_raw_ref()`.
-        if false {
-            let label = ctx.get_raw_ref(&self.label);
-            let name = label.widget().text().as_ref().to_string();
-            node.set_value(name);
-        }
         node.add_action(accesskit::Action::Click);
     }
 
