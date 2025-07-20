@@ -12,8 +12,8 @@ use crate::util::AnyMap;
 ///
 /// Properties are arbitrary values that are stored alongside a widget.
 ///
-/// Note that if a type `Foobar` implements Property, that tells you that Foobar is meant
-/// to be a property of *some* widget, but it doesn't tell you *which* widget accepts Foobar
+/// Note that if a type `Foobar` implements `Property`, that tells you that `Foobar` is meant
+/// to be a property of *some* widget, but it doesn't tell you *which* widget accepts `Foobar`
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.

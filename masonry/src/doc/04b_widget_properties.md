@@ -1,4 +1,4 @@
-# Reading Widget Properties
+# Reading widget properties
 
 <!-- Copyright 2024 the Xilem Authors -->
 <!-- SPDX-License-Identifier: Apache-2.0 -->
@@ -20,9 +20,9 @@ Throughout the previous chapters, you may have noticed that most widget methods 
 We haven't used these arguments so far, and you can build a robust widget set without them, but they're helpful for making your widgets more customizable and modular.
 
 
-## What are Properties?
+## What are properties?
 
-In Masonry, **Properties** (often abbreviated to **props**) are values of arbitrary static types stored alongside each widget.
+In Masonry, **properties** (often abbreviated to **props**) are values of arbitrary static types stored alongside each widget.
 
 In simpler terms, that means you can create any non-reference type (e.g. `struct RubberDuck(Color, String, Buoyancy);`), give it the [`Property`] marker trait, and associate a value of that type to any widget, including widgets of existing types (`Button`, `Checkbox`, `TextInput`, etc) or your own custom widget (`ColorRectangle`).
 
@@ -48,7 +48,7 @@ We acknowledge that this may be a footgun in some cases, though we consider it a
 We may reconsider this in the future.
 
 
-### When to use Properties?
+### When to use properties?
 
 <!-- TODO - Mention event handling -->
 <!-- I expect that properties will be used to share the same pointer event handling code between Button, SizedBox, TextInput, etc... -->
