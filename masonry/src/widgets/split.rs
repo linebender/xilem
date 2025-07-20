@@ -100,7 +100,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// The value will be rounded up to the nearest integer.
     pub fn min_size(mut self, first: f64, second: f64) -> Self {
         assert!(first >= 0.0, "minimum size must be 0.0 or greater");
-        assert!(second >= 0.0, "minimum size must be 0.0 or");
+        assert!(second >= 0.0, "minimum size must be 0.0 or greater");
         self.min_size = (first.ceil(), second.ceil());
         self
     }
