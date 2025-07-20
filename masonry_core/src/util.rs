@@ -85,7 +85,8 @@ pub fn stroke<'b>(
     brush: impl Into<BrushRef<'b>>,
     stroke_width: f64,
 ) {
-    // Avoid drawing when the stroke width is zero.
+    // TODO - Remove that check once we depend on a Vello release that fixes
+    // https://github.com/linebender/vello/issues/662
     if stroke_width == 0.0 {
         return;
     }
