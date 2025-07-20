@@ -3,10 +3,8 @@
 
 use masonry::core::{ArcStr, NewWidget, Properties, StyleProperty};
 use masonry::parley::FontWeight;
-use masonry::properties::{DisabledTextColor, TextColor};
-use masonry::widgets::{
-    LineBreaking, {self},
-};
+use masonry::properties::{DisabledTextColor, LineBreaking, TextColor};
+use masonry::widgets::{self};
 
 use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx};

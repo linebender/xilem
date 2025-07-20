@@ -19,7 +19,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, render_text,
 };
-use crate::properties::{DisabledTextColor, TextColor};
+use crate::properties::{DisabledTextColor, LineBreaking, TextColor};
 use crate::theme::default_text_styles;
 use crate::util::{debug_panic, include_screenshot};
 use crate::{TextAlign, TextAlignOptions, theme};
@@ -28,17 +28,6 @@ use crate::{TextAlign, TextAlignOptions, theme};
 /// Added padding between each horizontal edge of the widget
 /// and the text in logical pixels.
 const LABEL_X_PADDING: f64 = 2.0;
-
-/// Options for handling lines that are too wide for the label.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum LineBreaking {
-    /// Lines are broken at word boundaries.
-    WordWrap,
-    /// Lines are truncated to the width of the label.
-    Clip,
-    /// Lines overflow the label.
-    Overflow,
-}
 
 /// A widget displaying non-interactive text.
 ///
@@ -57,7 +46,6 @@ pub struct Label {
     /// If they have, the layout needs to be recreated.
     styles_changed: bool,
 
-    line_break_mode: LineBreaking,
     text_alignment: TextAlign,
     /// Whether the text alignment needs to be re-computed.
     needs_text_alignment: bool,
@@ -90,7 +78,6 @@ impl Label {
             text: text.into(),
             styles,
             styles_changed: true,
-            line_break_mode: LineBreaking::Overflow,
             text_alignment: TextAlign::Start,
             needs_text_alignment: true,
             last_available_width: None,
@@ -126,14 +113,6 @@ impl Label {
     ) -> (Self, Option<StyleProperty>) {
         let old = self.insert_style_inner(property.into());
         (self, old)
-    }
-
-    /// Set how line breaks will be handled by this label.
-    ///
-    /// To modify this on an active label, use [`set_line_break_mode`](Self::set_line_break_mode).
-    pub fn with_line_break_mode(mut self, line_break_mode: LineBreaking) -> Self {
-        self.line_break_mode = line_break_mode;
-        self
     }
 
     /// Set the alignment of the text.
@@ -238,13 +217,6 @@ impl Label {
         this.ctx.request_layout();
     }
 
-    /// The runtime equivalent of [`with_line_break_mode`](Self::with_line_break_mode).
-    pub fn set_line_break_mode(this: &mut WidgetMut<'_, Self>, line_break_mode: LineBreaking) {
-        this.widget.line_break_mode = line_break_mode;
-        // We don't need to set an internal invalidation, as `max_advance` is always recalculated
-        this.ctx.request_layout();
-    }
-
     /// The runtime equivalent of [`with_text_alignment`](Self::with_text_alignment).
     pub fn set_text_alignment(this: &mut WidgetMut<'_, Self>, text_alignment: TextAlign) {
         this.widget.text_alignment = text_alignment;
@@ -271,6 +243,7 @@ impl Widget for Label {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        LineBreaking::prop_changed(ctx, property_type);
         TextColor::prop_changed(ctx, property_type);
         DisabledTextColor::prop_changed(ctx, property_type);
     }
@@ -287,7 +260,7 @@ impl Widget for Label {
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
         let available_width = if bc.max().width.is_finite() {
@@ -300,7 +273,9 @@ impl Widget for Label {
             self.needs_text_alignment = true;
         }
 
-        let max_advance = if self.line_break_mode == LineBreaking::WordWrap {
+        let line_break_mode = *props.get::<LineBreaking>();
+
+        let max_advance = if line_break_mode == LineBreaking::WordWrap {
             available_width
         } else {
             None
@@ -362,7 +337,9 @@ impl Widget for Label {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        if self.line_break_mode == LineBreaking::Clip {
+        let line_break_mode = *props.get::<LineBreaking>();
+
+        if line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
@@ -382,7 +359,7 @@ impl Widget for Label {
             self.hint,
         );
 
-        if self.line_break_mode == LineBreaking::Clip {
+        if line_break_mode == LineBreaking::Clip {
             scene.pop_layer();
         }
     }
@@ -449,9 +426,12 @@ mod tests {
         let label = Label::new("The quick brown fox jumps over the lazy dog")
             .with_style(FontFamily::Generic(GenericFamily::Monospace))
             .with_style(StyleProperty::FontSize(20.0))
-            .with_line_break_mode(LineBreaking::WordWrap)
             .with_text_alignment(TextAlign::Center)
-            .with_props(Properties::new().with(TextColor::new(ACCENT_COLOR)));
+            .with_props(
+                Properties::new()
+                    .with(TextColor::new(ACCENT_COLOR))
+                    .with(LineBreaking::WordWrap),
+            );
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), label, Size::new(200.0, 200.0));
@@ -462,9 +442,8 @@ mod tests {
     #[test]
     fn underline_label() {
         let label = Label::new("Emphasis")
-            .with_line_break_mode(LineBreaking::WordWrap)
             .with_style(StyleProperty::Underline(true))
-            .with_auto_id();
+            .with_props(Properties::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
@@ -474,10 +453,9 @@ mod tests {
     #[test]
     fn strikethrough_label() {
         let label = Label::new("Tpyo")
-            .with_line_break_mode(LineBreaking::WordWrap)
             .with_style(StyleProperty::Strikethrough(true))
             .with_style(StyleProperty::StrikethroughSize(Some(4.)))
-            .with_auto_id();
+            .with_props(Properties::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
@@ -490,9 +468,8 @@ mod tests {
     /// its parent's text alignment.
     fn label_text_alignment_flex() {
         fn base_label() -> Label {
-            Label::new("Hello")
-                .with_style(StyleProperty::FontSize(20.0))
-                .with_line_break_mode(LineBreaking::WordWrap)
+            Label::new("Hello").with_style(StyleProperty::FontSize(20.0))
+            //.with_props(Properties::new().with(LineBreaking::WordWrap))
         }
         let label1 = base_label().with_text_alignment(TextAlign::Start);
         let label2 = base_label().with_text_alignment(TextAlign::Center);
@@ -524,8 +501,7 @@ mod tests {
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_line_break_mode(LineBreaking::WordWrap)
-                        .with_auto_id(),
+                        .with_props(Properties::new().with(LineBreaking::WordWrap)),
                 )
                 .width(180.0)
                 .with_auto_id(),
@@ -534,8 +510,7 @@ mod tests {
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_line_break_mode(LineBreaking::Clip)
-                        .with_auto_id(),
+                        .with_props(Properties::new().with(LineBreaking::Clip)),
                 )
                 .width(180.0)
                 .with_auto_id(),
@@ -544,8 +519,7 @@ mod tests {
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_line_break_mode(LineBreaking::Overflow)
-                        .with_auto_id(),
+                        .with_props(Properties::new().with(LineBreaking::Overflow)),
                 )
                 .width(180.0)
                 .with_auto_id(),
@@ -565,9 +539,12 @@ mod tests {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(FontFamily::Generic(GenericFamily::Monospace))
                 .with_style(StyleProperty::FontSize(20.0))
-                .with_line_break_mode(LineBreaking::WordWrap)
                 .with_text_alignment(TextAlign::Center)
-                .with_props(Properties::new().with(TextColor::new(ACCENT_COLOR)));
+                .with_props(
+                    Properties::new()
+                        .with(TextColor::new(ACCENT_COLOR))
+                        .with(LineBreaking::WordWrap),
+                );
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
@@ -585,10 +562,10 @@ mod tests {
 
             harness.edit_root_widget(|mut label| {
                 label.insert_prop(TextColor::new(ACCENT_COLOR));
+                label.insert_prop(LineBreaking::WordWrap);
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
-                Label::set_line_break_mode(&mut label, LineBreaking::WordWrap);
                 Label::set_text_alignment(&mut label, TextAlign::Center);
             });
 

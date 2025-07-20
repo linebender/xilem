@@ -10,6 +10,8 @@ use std::sync::Arc;
 
 use masonry::properties::Padding;
 use masonry::properties::types::UnitPoint;
+use masonry::properties::{LineBreaking, Padding};
+use masonry::widgets::Alignment;
 use masonry::widgets::LineBreaking;
 use tokio::sync::mpsc::UnboundedSender;
 use vello::peniko::{Blob, Image};
