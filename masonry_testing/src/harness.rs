@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
+use masonry_core::accesskit::{Action, ActionRequest};
 use masonry_core::anymore::AnyDebug;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
@@ -574,6 +575,23 @@ impl TestHarness {
         }
 
         self.mouse_move(widget_center);
+    }
+
+    /// Try to get the target widget into the viewport.
+    ///
+    /// This will send an accesskit [`ScrollIntoView`] action to the widget,
+    /// which will usually send [`RequestPanToChild`] events to the widget's parents.
+    /// If the widget is hidden because it's "scrolled away", this should make it visible again.
+    ///
+    /// [`RequestPanToChild`]: masonry_core::core::Update::RequestPanToChild
+    /// [`ScrollIntoView`]: masonry_core::accesskit::Action::ScrollIntoView
+    #[track_caller]
+    pub fn scroll_into_view(&mut self, id: WidgetId) {
+        self.render_root.handle_access_event(ActionRequest {
+            action: Action::ScrollIntoView,
+            target: id.to_raw().into(),
+            data: None,
+        });
     }
 
     // TODO - Handle complicated IME
