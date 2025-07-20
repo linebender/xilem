@@ -18,7 +18,7 @@ fn build_accessibility_tree(
     tree_update: &mut TreeUpdate,
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
-    mut properties: ArenaMut<'_, AnyMap>,
+    properties: ArenaMut<'_, AnyMap>,
     rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {
@@ -43,9 +43,7 @@ fn build_accessibility_tree(
             widget_state: state.item,
             widget_state_children: state.children.reborrow_mut(),
             widget_children: widget.children.reborrow_mut(),
-            properties_children: properties.children.reborrow_mut(),
             tree_update,
-            rebuild_all,
         };
         let mut node = build_access_node(&mut **widget.item, &mut ctx, scale_factor);
         let props = PropertiesRef {
