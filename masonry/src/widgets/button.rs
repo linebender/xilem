@@ -164,7 +164,10 @@ impl Widget for Button {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
-            Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
+            Update::HoveredChanged(_)
+            | Update::ActiveChanged(_)
+            | Update::FocusChanged(_)
+            | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
             }
             _ => {}

@@ -396,6 +396,7 @@ impl EventCtx<'_> {
         }
         // TODO: plumb pointer capture through to platform (through winit)
         self.global_state.pointer_capture_target = Some(id);
+        self.global_state.needs_pointer_pass = true;
     }
 
     /// Release the pointer previously [captured] through [`capture_pointer`].
@@ -413,6 +414,7 @@ impl EventCtx<'_> {
             return;
         }
         self.global_state.pointer_capture_target = None;
+        self.global_state.needs_pointer_pass = true;
     }
 
     /// Send a signal to parent widgets to scroll this widget into view.

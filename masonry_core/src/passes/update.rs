@@ -917,4 +917,5 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     root.global_state.cursor_icon = new_icon;
     root.global_state.hovered_path = next_hovered_path;
+    root.global_state.active_path = next_active_path;
 }
