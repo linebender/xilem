@@ -263,7 +263,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         event: &PointerEvent,
     ) {
         let portal_size = ctx.size();
-        let content_size = ctx.child_size(&mut self.child);
+        let content_size = ctx.child_size(&self.child);
 
         match *event {
             PointerEvent::Scroll { delta, .. } => {
@@ -356,7 +356,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         match event {
             Update::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
-                let content_size = ctx.child_size(&mut self.child);
+                let content_size = ctx.child_size(&self.child);
 
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
                 ctx.request_compose();
