@@ -76,6 +76,11 @@ impl Properties {
         Self { map: AnyMap::new() }
     }
 
+    /// Create a collection with a single property.
+    pub fn one<P: Property>(value: P) -> Self {
+        Self::new().with(value)
+    }
+
     /// Builder-style method to add a property `P` with the given value.
     ///
     /// If the value was already set, it's discarded and replaced with the new value.
