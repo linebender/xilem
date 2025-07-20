@@ -1269,7 +1269,7 @@ impl_context_method!(
         /// For further details see [`ErasedAction`](crate::core::ErasedAction).
         pub fn submit_action<Action: AnyDebug + Send>(&mut self, action: impl Into<Action>) {
             trace!("submit_action");
-            let action = Box::new(action.into());
+            let action = action.into();
             if action.type_id() != self.widget_state.action_type {
                 debug_panic!(
                     "Trying to emit action of incorrect type {}. Type should always be `<Self as Widget>::Action",
@@ -1277,8 +1277,10 @@ impl_context_method!(
                 );
                 return;
             }
-            self.global_state
-                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
+            self.global_state.emit_signal(RenderRootSignal::Action(
+                Box::new(action),
+                self.widget_state.id,
+            ));
         }
 
         /// Set the IME cursor area.
