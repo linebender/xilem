@@ -13,9 +13,13 @@ use crate::widgets::{Flex, TextArea, TextInput};
 #[test]
 fn ime_on_remove() {
     let [text_area] = widget_ids();
-    let widget = Flex::column().with_child(TextInput::from_text_area_pod(
-        NewWidget::new_with_id(TextArea::new_editable("Simple input test"), text_area).to_pod(),
-    ));
+    let widget = Flex::column().with_child(
+        TextInput::from_text_area(NewWidget::new_with_id(
+            TextArea::new_editable("Simple input test"),
+            text_area,
+        ))
+        .into(),
+    );
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     harness.focus_on(Some(text_area));

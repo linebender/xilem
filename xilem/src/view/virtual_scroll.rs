@@ -279,11 +279,7 @@ where
                         debug_assert!(used_action);
                         // Otherwise, build the first version of this view.
                         let (new_child, child_state) = child.build(ctx, app_state);
-                        widgets::VirtualScroll::add_child(
-                            &mut element,
-                            idx,
-                            new_child.into_widget_pod(),
-                        );
+                        widgets::VirtualScroll::add_child(&mut element, idx, new_child.new_widget);
 
                         view_state.previous_views.insert(idx, child);
                         view_state.view_states.insert(

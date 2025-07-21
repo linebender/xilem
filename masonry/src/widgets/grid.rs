@@ -64,25 +64,9 @@ impl Grid {
         self
     }
 
-    /// Builder-style method to add a child widget.
-    pub fn with_child(self, child: impl Widget, params: GridParams) -> Self {
-        self.with_child_pod(NewWidget::new(child).erased().to_pod(), params)
-    }
-
-    /// Builder-style method to add a child widget with a pre-assigned id.
-    pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: GridParams) -> Self {
-        self.with_child_pod(NewWidget::new_with_id(child, id).erased().to_pod(), params)
-    }
-
     /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
-    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>, params: GridParams) -> Self {
-        let child = Child {
-            widget,
-            x: params.x,
-            y: params.y,
-            width: params.width,
-            height: params.height,
-        };
+    pub fn with_child(mut self, child: NewWidget<impl Widget + ?Sized>, params: GridParams) -> Self {
+        let child = new_grid_child(params, child);
         self.children.push(child);
         self
     }
@@ -98,9 +82,9 @@ impl Child {
     }
 }
 
-fn new_grid_child(params: GridParams, widget: WidgetPod<dyn Widget>) -> Child {
+fn new_grid_child(params: GridParams, child: NewWidget<impl Widget + ?Sized>) -> Child {
     Child {
-        widget,
+        widget: child.erased().to_pod(),
         x: params.x,
         y: params.y,
         width: params.width,
@@ -150,56 +134,18 @@ impl GridParams {
 
 // --- MARK: WIDGETMUT
 impl Grid {
-    /// Add a child widget.
-    ///
-    /// See also [`with_child`](Grid::with_child).
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
-        let child_pod: WidgetPod<dyn Widget> = NewWidget::new(child).erased().to_pod();
-        Self::add_child_pod(this, child_pod, params);
-    }
-
-    /// Add a child widget with a pre-assigned id.
-    ///
-    /// See also [`with_child_id`](Grid::with_child_id).
-    pub fn add_child_id(
-        this: &mut WidgetMut<'_, Self>,
-        child: impl Widget,
-        id: WidgetId,
-        params: GridParams,
-    ) {
-        let child_pod: WidgetPod<dyn Widget> = NewWidget::new_with_id(child, id).erased().to_pod();
-        Self::add_child_pod(this, child_pod, params);
-    }
-
     /// Add a child widget already wrapped in a [`WidgetPod`].
     ///
-    /// See also [`with_child_pod`](Grid::with_child_pod).
-    pub fn add_child_pod(
+    /// See also [`with_child`](Grid::with_child).
+    pub fn add_child(
         this: &mut WidgetMut<'_, Self>,
-        widget: WidgetPod<dyn Widget>,
+        child: NewWidget<impl Widget + ?Sized>,
         params: GridParams,
     ) {
-        let child = new_grid_child(params, widget);
+        let child = new_grid_child(params, child);
         this.widget.children.push(child);
         this.ctx.children_changed();
         this.ctx.request_layout();
-    }
-
-    /// Insert a child widget at the given index.
-    ///
-    /// This lets you control the order in which the children are drawn. Children are
-    /// drawn in index order (i.e. each child is drawn on top of the children with lower indices).
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_grid_child_at(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: impl Widget,
-        params: impl Into<GridParams>,
-    ) {
-        Self::insert_grid_child_pod(this, idx, NewWidget::new(child).erased().to_pod(), params);
     }
 
     /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.
@@ -210,10 +156,10 @@ impl Grid {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_grid_child_pod(
+    pub fn insert_grid_child_at(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: WidgetPod<dyn Widget>,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<GridParams>,
     ) {
         let child = new_grid_child(params.into(), child);
@@ -402,7 +348,7 @@ mod tests {
     fn test_grid_basics() {
         // Start with a 1x1 grid
         let widget = Grid::with_dimensions(1, 1)
-            .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
+            .with_child(button::Button::new("A").into(), GridParams::new(0, 0, 1, 1));
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -427,7 +373,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B"),
+                button::Button::new("B").into(),
                 GridParams::new(1, 0, 3, 1),
             );
         });
@@ -438,7 +384,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("C"),
+                button::Button::new("C").into(),
                 GridParams::new(0, 1, 1, 3),
             );
         });
@@ -449,7 +395,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("D"),
+                button::Button::new("D").into(),
                 GridParams::new(1, 1, 2, 2),
             );
         });
@@ -473,7 +419,7 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = Grid::with_dimensions(2, 2)
-            .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
+            .with_child(button::Button::new("A").into(), GridParams::new(0, 0, 1, 1));
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -492,7 +438,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("A"),
+                button::Button::new("A").into(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -516,7 +462,7 @@ mod tests {
     #[test]
     fn test_widget_order() {
         let widget = Grid::with_dimensions(2, 2)
-            .with_child(button::Button::new("A"), GridParams::new(0, 0, 1, 1));
+            .with_child(button::Button::new("A").into(), GridParams::new(0, 0, 1, 1));
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -528,7 +474,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B"),
+                button::Button::new("B").into(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -541,7 +487,7 @@ mod tests {
             Grid::insert_grid_child_at(
                 &mut grid,
                 0,
-                button::Button::new("C"),
+                button::Button::new("C").into(),
                 GridParams::new(0, 0, 2, 1),
             );
         });

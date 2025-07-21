@@ -39,45 +39,45 @@ impl Align {
     /// Note that the `align` parameter is specified as a `UnitPoint` in
     /// terms of left and right. This is inadequate for bidi-aware layout
     /// and thus the API will change when Masonry gains bidi capability.
-    pub fn new(align: UnitPoint, child: impl Widget + 'static) -> Self {
+    pub fn new(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             align,
-            child: NewWidget::new(child).erased().to_pod(),
+            child: child.erased().to_pod(),
             width_factor: None,
             height_factor: None,
         }
     }
 
     /// Create centered widget.
-    pub fn centered(child: impl Widget + 'static) -> Self {
+    pub fn centered(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self::new(UnitPoint::CENTER, child)
     }
 
     /// Create right-aligned widget.
-    pub fn right(child: impl Widget + 'static) -> Self {
+    pub fn right(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self::new(UnitPoint::RIGHT, child)
     }
 
     /// Create left-aligned widget.
-    pub fn left(child: impl Widget + 'static) -> Self {
+    pub fn left(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self::new(UnitPoint::LEFT, child)
     }
 
     /// Align only in the horizontal axis, keeping the child's size in the vertical.
-    pub fn horizontal(align: UnitPoint, child: impl Widget + 'static) -> Self {
+    pub fn horizontal(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             align,
-            child: NewWidget::new(child).erased().to_pod(),
+            child: child.erased().to_pod(),
             width_factor: None,
             height_factor: Some(1.0),
         }
     }
 
     /// Align only in the vertical axis, keeping the child's size in the horizontal.
-    pub fn vertical(align: UnitPoint, child: impl Widget + 'static) -> Self {
+    pub fn vertical(align: UnitPoint, child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             align,
-            child: NewWidget::new(child).erased().to_pod(),
+            child: child.erased().to_pod(),
             width_factor: Some(1.0),
             height_factor: None,
         }
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn centered() {
-        let widget = Align::centered(Label::new("hello"));
+        let widget = Align::centered(Label::new("hello").into());
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn right() {
-        let widget = Align::right(Label::new("hello"));
+        let widget = Align::right(Label::new("hello").into());
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -199,7 +199,7 @@ mod tests {
 
     #[test]
     fn left() {
-        let widget = Align::left(Label::new("hello"));
+        let widget = Align::left(Label::new("hello").into());
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 

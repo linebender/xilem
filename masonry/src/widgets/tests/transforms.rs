@@ -21,7 +21,7 @@ fn blue_box(inner: impl Widget) -> impl Widget {
     box_props.insert(BorderColor::new(palette::css::TEAL));
     box_props.insert(BorderWidth::all(2.0));
 
-    SizedBox::new(inner)
+    SizedBox::new(inner.into())
         .width(200.)
         .height(100.)
         .with_props(box_props)
@@ -40,10 +40,8 @@ fn transforms_translation_rotation() {
                 .then_translate(translation),
             ..Default::default()
         },
-    )
-    .erased()
-    .to_pod();
-    let widget = ZStack::new().with_child_pod(transformed_widget, ChildAlignment::ParentAligned);
+    );
+    let widget = ZStack::new().with_child(transformed_widget, ChildAlignment::ParentAligned);
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     assert_render_snapshot!(harness, "transforms_translation_rotation");
@@ -52,17 +50,16 @@ fn transforms_translation_rotation() {
 #[test]
 fn transforms_pointer_events() {
     let transformed_widget = NewWidget::new_with_options(
-        blue_box(
-            ZStack::new().with_child(Button::new("Should be pressed"), Alignment::BottomRight),
-        ),
+        blue_box(ZStack::new().with_child(
+            Button::new("Should be pressed").into(),
+            Alignment::BottomRight,
+        )),
         WidgetOptions {
             transform: Affine::rotate(PI * 0.125).then_translate(Vec2::new(100.0, 50.0)),
             ..Default::default()
         },
-    )
-    .erased()
-    .to_pod();
-    let widget = ZStack::new().with_child_pod(transformed_widget, ChildAlignment::ParentAligned);
+    );
+    let widget = ZStack::new().with_child(transformed_widget, ChildAlignment::ParentAligned);
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move((335.0, 350.0)); // Should hit the last "d" of the button text

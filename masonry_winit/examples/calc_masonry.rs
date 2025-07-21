@@ -316,13 +316,18 @@ impl AppDriver for CalcState {
 
 // ---
 
-fn op_button_with_label(op: char, label: String) -> CalcButton {
+fn op_button_with_label(op: char, label: String) -> NewWidget<CalcButton> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
-    let sized_box = SizedBox::new(Align::centered(
-        Label::new(label).with_style(StyleProperty::FontSize(24.)),
-    ))
+    let sized_box = SizedBox::new(
+        Align::centered(
+            Label::new(label)
+                .with_style(StyleProperty::FontSize(24.))
+                .into(),
+        )
+        .into(),
+    )
     .expand();
     let sized_box = NewWidget::new_with(
         sized_box,
@@ -332,20 +337,30 @@ fn op_button_with_label(op: char, label: String) -> CalcButton {
     )
     .to_pod();
 
-    CalcButton::new(sized_box, CalcAction::Op(op), BLUE, LIGHT_BLUE)
+    NewWidget::new(CalcButton::new(
+        sized_box,
+        CalcAction::Op(op),
+        BLUE,
+        LIGHT_BLUE,
+    ))
 }
 
-fn op_button(op: char) -> CalcButton {
+fn op_button(op: char) -> NewWidget<CalcButton> {
     op_button_with_label(op, op.to_string())
 }
 
-fn digit_button(digit: u8) -> CalcButton {
+fn digit_button(digit: u8) -> NewWidget<CalcButton> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
     const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
 
-    let sized_box = SizedBox::new(Align::centered(
-        Label::new(format!("{digit}")).with_style(StyleProperty::FontSize(24.)),
-    ))
+    let sized_box = SizedBox::new(
+        Align::centered(
+            Label::new(format!("{digit}"))
+                .with_style(StyleProperty::FontSize(24.))
+                .into(),
+        )
+        .into(),
+    )
     .expand();
     let sized_box = NewWidget::new_with(
         sized_box,
@@ -355,24 +370,31 @@ fn digit_button(digit: u8) -> CalcButton {
     )
     .to_pod();
 
-    CalcButton::new(sized_box, CalcAction::Digit(digit), GRAY, LIGHT_GRAY)
+    NewWidget::new(CalcButton::new(
+        sized_box,
+        CalcAction::Digit(digit),
+        GRAY,
+        LIGHT_GRAY,
+    ))
 }
 
 fn flex_row(
-    w1: impl Widget + 'static,
-    w2: impl Widget + 'static,
-    w3: impl Widget + 'static,
-    w4: impl Widget + 'static,
-) -> impl Widget {
-    Flex::row()
-        .with_gap(0.0)
-        .with_flex_child(w1, 1.0)
-        .with_spacer(1.0)
-        .with_flex_child(w2, 1.0)
-        .with_spacer(1.0)
-        .with_flex_child(w3, 1.0)
-        .with_spacer(1.0)
-        .with_flex_child(w4, 1.0)
+    w1: NewWidget<impl Widget>,
+    w2: NewWidget<impl Widget>,
+    w3: NewWidget<impl Widget>,
+    w4: NewWidget<impl Widget>,
+) -> NewWidget<impl Widget> {
+    NewWidget::new(
+        Flex::row()
+            .with_gap(0.0)
+            .with_flex_child(w1, 1.0)
+            .with_spacer(1.0)
+            .with_flex_child(w2, 1.0)
+            .with_spacer(1.0)
+            .with_flex_child(w3, 1.0)
+            .with_spacer(1.0)
+            .with_flex_child(w4, 1.0),
+    )
 }
 
 fn build_calc() -> impl Widget {
@@ -380,7 +402,7 @@ fn build_calc() -> impl Widget {
     Flex::column()
         .with_gap(0.0)
         .with_flex_spacer(0.2)
-        .with_child(display)
+        .with_child(display.into())
         .with_flex_spacer(0.2)
         .cross_axis_alignment(CrossAxisAlignment::End)
         .with_flex_child(

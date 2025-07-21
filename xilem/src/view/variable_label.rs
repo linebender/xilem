@@ -96,7 +96,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
             View::<State, Action, _>::build(&self.label, ctx, app_state)
         });
         let widget_pod = ctx.create_pod(
-            widgets::VariableLabel::from_label_pod(label.into_widget_pod())
+            widgets::VariableLabel::from_label(label.new_widget)
                 .with_initial_weight(self.target_weight.value()),
         );
         (widget_pod, ())

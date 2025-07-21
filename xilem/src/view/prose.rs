@@ -120,7 +120,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         let text_area = NewWidget::new_with_props(text_area, props);
 
         let pod = ctx.create_pod(
-            widgets::Prose::from_text_area_pod(text_area.to_pod())
+            widgets::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );
         (pod, ())

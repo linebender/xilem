@@ -4,8 +4,8 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
+    Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
 use tracing::{Span, trace_span};
@@ -48,7 +48,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<D
 
 impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn replace_inner(mut this: Self::Mut<'_>, child: Pod<W>) -> Self::Mut<'_> {
-        DynWidget::replace_inner(&mut this, child.erased_widget_pod());
+        DynWidget::replace_inner(&mut this, child.new_widget.erased());
         this
     }
 }
@@ -63,8 +63,8 @@ pub struct DynWidget {
 }
 
 impl DynWidget {
-    pub(crate) fn replace_inner(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<dyn Widget>) {
-        let old_widget = std::mem::replace(&mut this.widget.inner, widget);
+    pub(crate) fn replace_inner(this: &mut WidgetMut<'_, Self>, widget: NewWidget<dyn Widget>) {
+        let old_widget = std::mem::replace(&mut this.widget.inner, widget.to_pod());
         this.ctx.remove_child(old_widget);
     }
 }

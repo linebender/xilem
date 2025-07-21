@@ -45,6 +45,12 @@ enum WidgetPodInner<W: ?Sized> {
     Inserted,
 }
 
+impl<W: Widget> From<W> for NewWidget<W> {
+    fn from(value: W) -> Self {
+        Self::new(value)
+    }
+}
+
 impl<W: Widget> NewWidget<W> {
     /// Create a new widget.
     pub fn new(inner: W) -> Self {

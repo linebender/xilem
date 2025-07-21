@@ -3,6 +3,7 @@
 
 //! Tests related to layout.
 
+use masonry_core::core::NewWidget;
 use vello::kurbo::{Insets, Size};
 
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt, widget_ids};
@@ -18,9 +19,16 @@ fn layout_simple() {
     let widget = Flex::column()
         .with_child(
             Flex::row()
-                .with_child_id(SizedBox::empty().width(BOX_WIDTH).height(BOX_WIDTH), id_1)
-                .with_child_id(SizedBox::empty().width(BOX_WIDTH).height(BOX_WIDTH), id_2)
-                .with_flex_spacer(1.0),
+                .with_child(NewWidget::new_with_id(
+                    SizedBox::empty().width(BOX_WIDTH).height(BOX_WIDTH),
+                    id_1,
+                ))
+                .with_child(NewWidget::new_with_id(
+                    SizedBox::empty().width(BOX_WIDTH).height(BOX_WIDTH),
+                    id_2,
+                ))
+                .with_flex_spacer(1.0)
+                .into(),
         )
         .with_flex_spacer(1.0);
 
@@ -52,7 +60,8 @@ fn layout_insets() {
         Size::new(BOX_WIDTH, BOX_WIDTH)
     });
 
-    let parent_widget = SizedBox::new_with_id(child_widget, child_id).with_id(parent_id);
+    let parent_widget =
+        SizedBox::new(NewWidget::new_with_id(child_widget, child_id)).with_id(parent_id);
 
     let harness = TestHarness::create(default_property_set(), parent_widget);
 

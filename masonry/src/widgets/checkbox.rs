@@ -13,9 +13,9 @@ use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Size, Stroke};
 use vello::peniko::Color;
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
@@ -46,18 +46,11 @@ impl Checkbox {
     }
 
     /// Create a new `Checkbox` with the given label.
-    pub fn from_label(checked: bool, label: Label) -> Self {
+    pub fn from_label(checked: bool, label: NewWidget<Label>) -> Self {
         Self {
             checked,
-            label: WidgetPod::new(label),
+            label: label.to_pod(),
         }
-    }
-
-    /// Create a new `Checkbox` with the provided label with a predetermined id.
-    ///
-    /// This constructor is useful for toolkits which use Masonry (such as Xilem).
-    pub fn from_label_pod(checked: bool, label: WidgetPod<Label>) -> Self {
-        Self { checked, label }
     }
 }
 
@@ -332,12 +325,10 @@ impl Widget for Checkbox {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-
-    use masonry_core::core::{NewWidget, Properties};
     use ui_events::keyboard::NamedKey;
 
     use super::*;
-    use crate::core::StyleProperty;
+    use crate::core::{Properties, StyleProperty};
     use crate::properties::TextColor;
     use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
@@ -383,9 +374,8 @@ mod tests {
             let label = NewWidget::new_with_props(
                 label,
                 Properties::new().with(TextColor::new(ACCENT_COLOR)),
-            )
-            .to_pod();
-            let checkbox = Checkbox::from_label_pod(true, label);
+            );
+            let checkbox = Checkbox::from_label(true, label);
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),

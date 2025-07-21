@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
+use masonry_core::core::NewWidget;
 use vello::kurbo::Vec2;
 
 use crate::core::{PointerButton, PointerEvent, Update, WidgetId};
@@ -51,15 +52,21 @@ fn propagate_hovered() {
     let button_rec = Recording::default();
 
     let widget = Flex::column()
-        .with_child_id(SizedBox::empty().width(10.0).height(10.0), empty)
-        .with_child_id(
+        .with_child(NewWidget::new_with_id(
+            SizedBox::empty().width(10.0).height(10.0),
+            empty,
+        ))
+        .with_child(NewWidget::new_with_id(
             Flex::column()
                 .with_spacer(100.0)
-                .with_child_id(Button::new("hovered").record(&button_rec), button)
+                .with_child(NewWidget::new_with_id(
+                    Button::new("hovered").record(&button_rec),
+                    button,
+                ))
                 .with_spacer(10.0)
                 .record(&padding_rec),
             pad,
-        )
+        ))
         .record(&root_rec)
         .with_id(root);
 
@@ -229,9 +236,18 @@ fn get_pointer_events_while_active() {
     let button_rec = Recording::default();
 
     let widget = Flex::column()
-        .with_child_id(SizedBox::empty().width(10.0).height(10.0), empty)
-        .with_child_id(SizedBox::empty().width(10.0).height(10.0), empty_2)
-        .with_child_id(Button::new("hello").record(&button_rec), button)
+        .with_child(NewWidget::new_with_id(
+            SizedBox::empty().width(10.0).height(10.0),
+            empty,
+        ))
+        .with_child(NewWidget::new_with_id(
+            SizedBox::empty().width(10.0).height(10.0),
+            empty_2,
+        ))
+        .with_child(NewWidget::new_with_id(
+            Button::new("hello").record(&button_rec),
+            button,
+        ))
         .with_id(root);
 
     let mut harness = TestHarness::create(default_property_set(), widget);
@@ -304,8 +320,14 @@ fn automatically_lose_pointer_on_pointer_lost() {
     let button_rec = Recording::default();
 
     let widget = Flex::column()
-        .with_child_id(SizedBox::empty().width(10.0).height(10.0), empty)
-        .with_child_id(Button::new("hello").record(&button_rec), button)
+        .with_child(NewWidget::new_with_id(
+            SizedBox::empty().width(10.0).height(10.0),
+            empty,
+        ))
+        .with_child(NewWidget::new_with_id(
+            Button::new("hello").record(&button_rec),
+            button,
+        ))
         .with_id(root);
 
     let mut harness = TestHarness::create(default_property_set(), widget);

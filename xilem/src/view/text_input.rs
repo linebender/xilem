@@ -142,18 +142,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             props.insert(DisabledTextColor(TextColor { color }));
         }
 
-        let text_input = widgets::TextInput::from_text_area_pod(
-            NewWidget::new_with(
-                text_area,
-                WidgetId::next(),
-                WidgetOptions {
-                    disabled: self.disabled,
-                    transform: Affine::default(),
-                },
-                props,
-            )
-            .to_pod(),
-        );
+        let text_input = widgets::TextInput::from_text_area(NewWidget::new_with(
+            text_area,
+            WidgetId::next(),
+            WidgetOptions {
+                disabled: self.disabled,
+                transform: Affine::default(),
+            },
+            props,
+        ));
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();

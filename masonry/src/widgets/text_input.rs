@@ -10,8 +10,8 @@ use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::Color;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
@@ -43,22 +43,15 @@ impl TextInput {
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_area(TextArea::new_editable(text))
+        Self::from_text_area(TextArea::new_editable(text).into())
     }
 
     /// Create a new `TextInput` from a styled text area.
-    pub fn from_text_area(text: TextArea<true>) -> Self {
+    pub fn from_text_area(text: NewWidget<TextArea<true>>) -> Self {
         Self {
-            text: WidgetPod::new(text),
+            text: text.to_pod(),
             clip: false,
         }
-    }
-
-    /// Create a new `TextInput` from a styled text area in a [`WidgetPod`].
-    ///
-    /// Note that the default padding used for text input will not apply.
-    pub fn from_text_area_pod(text: WidgetPod<TextArea<true>>) -> Self {
-        Self { text, clip: false }
     }
 
     /// Whether to clip the text to the drawn boundaries.
@@ -236,7 +229,9 @@ mod tests {
     #[test]
     fn text_input_outline() {
         let text_input = TextInput::from_text_area(
-            TextArea::new_editable("TextInput contents").with_style(StyleProperty::FontSize(14.0)),
+            TextArea::new_editable("TextInput contents")
+                .with_style(StyleProperty::FontSize(14.0))
+                .into(),
         );
         let mut harness = TestHarness::create_with_size(
             default_property_set(),

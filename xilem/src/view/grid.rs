@@ -130,7 +130,7 @@ where
         widget = widget.with_spacing(self.spacing);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.into_inner() {
-            widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
+            widget = widget.with_child(element.child.new_widget, element.params);
         }
         let mut pod = ctx.create_pod(widget);
         pod.new_widget.properties = self.properties.build_properties();
@@ -248,10 +248,10 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {
-            widgets::Grid::insert_grid_child_pod(
+            widgets::Grid::insert_grid_child_at(
                 &mut self.element,
                 self.idx,
-                element.child.erased_widget_pod(),
+                element.child.new_widget,
                 element.params,
             );
             self.idx += 1;
@@ -260,10 +260,10 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
     }
 
     fn insert(&mut self, element: GridElement) {
-        widgets::Grid::insert_grid_child_pod(
+        widgets::Grid::insert_grid_child_at(
             &mut self.element,
             self.idx,
-            element.child.erased_widget_pod(),
+            element.child.new_widget,
             element.params,
         );
         self.idx += 1;

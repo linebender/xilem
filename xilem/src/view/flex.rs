@@ -187,7 +187,7 @@ where
         for child in elements.into_inner() {
             widget = match child {
                 FlexElement::Child(child, params) => {
-                    widget.with_flex_child_pod(child.erased_widget_pod(), params)
+                    widget.with_flex_child(child.new_widget, params)
                 }
                 FlexElement::FixedSpacer(size) => widget.with_spacer(size),
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
@@ -336,10 +336,10 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     fn insert(&mut self, element: FlexElement) {
         match element {
             FlexElement::Child(child, params) => {
-                widgets::Flex::insert_flex_child_pod(
+                widgets::Flex::insert_flex_child(
                     &mut self.element,
                     self.idx,
-                    child.erased_widget_pod(),
+                    child.new_widget,
                     params,
                 );
             }
@@ -358,10 +358,10 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
         for element in self.scratch.drain() {
             match element {
                 FlexElement::Child(child, params) => {
-                    widgets::Flex::insert_flex_child_pod(
+                    widgets::Flex::insert_flex_child(
                         &mut self.element,
                         self.idx,
-                        child.erased_widget_pod(),
+                        child.new_widget,
                         params,
                     );
                 }
@@ -857,10 +857,10 @@ where
                     });
                 view_state.inner = Some(child_state);
                 if let FlexElement::Child(child, params) = flex_item_element {
-                    widgets::Flex::insert_flex_child_pod(
+                    widgets::Flex::insert_flex_child(
                         &mut element.parent,
                         element.idx,
-                        child.erased_widget_pod(),
+                        child.new_widget,
                         params,
                     );
                 } else {

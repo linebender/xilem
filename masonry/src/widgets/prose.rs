@@ -7,7 +7,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut, WidgetPod,
 };
@@ -41,20 +41,15 @@ impl Prose {
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_area(TextArea::new_immutable(text))
+        Self::from_text_area(TextArea::new_immutable(text).into())
     }
 
     /// Create a new `Prose` from a styled text area.
-    pub fn from_text_area(text: TextArea<false>) -> Self {
+    pub fn from_text_area(text: NewWidget<TextArea<false>>) -> Self {
         Self {
-            text: WidgetPod::new(text),
+            text: text.to_pod(),
             clip: false,
         }
-    }
-
-    /// Create a new `Prose` from a styled text area in a [`WidgetPod`].
-    pub fn from_text_area_pod(text: WidgetPod<TextArea<false>>) -> Self {
-        Self { text, clip: false }
     }
 
     /// Whether to clip the text to the available space.
@@ -200,11 +195,12 @@ mod tests {
         let prose = Prose::from_text_area(
             TextArea::new_immutable("Truncated text - you should not see this")
                 .with_style(StyleProperty::FontSize(14.0))
-                .with_word_wrap(false),
+                .with_word_wrap(false)
+                .into(),
         )
         .with_clip(true);
 
-        let root_widget = Flex::row().with_child(SizedBox::new(prose).width(60.));
+        let root_widget = Flex::row().with_child(SizedBox::new(prose.into()).width(60.).into());
 
         let mut harness = TestHarness::create_with_size(
             default_property_set(),
@@ -225,7 +221,8 @@ mod tests {
                 TextArea::new_immutable("Hello  ")
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_text_alignment(text_alignment)
-                    .with_word_wrap(true),
+                    .with_word_wrap(true)
+                    .into(),
             )
         }
         let prose1 = base_prose(TextAlign::Start);
@@ -235,12 +232,12 @@ mod tests {
         let prose5 = base_prose(TextAlign::Center);
         let prose6 = base_prose(TextAlign::End);
         let flex = Flex::column()
-            .with_flex_child(prose1, CrossAxisAlignment::Start)
-            .with_flex_child(prose2, CrossAxisAlignment::Start)
-            .with_flex_child(prose3, CrossAxisAlignment::Start)
-            .with_flex_child(prose4, CrossAxisAlignment::Center)
-            .with_flex_child(prose5, CrossAxisAlignment::Center)
-            .with_flex_child(prose6, CrossAxisAlignment::Center)
+            .with_flex_child(prose1.into(), CrossAxisAlignment::Start)
+            .with_flex_child(prose2.into(), CrossAxisAlignment::Start)
+            .with_flex_child(prose3.into(), CrossAxisAlignment::Start)
+            .with_flex_child(prose4.into(), CrossAxisAlignment::Center)
+            .with_flex_child(prose5.into(), CrossAxisAlignment::Center)
+            .with_flex_child(prose6.into(), CrossAxisAlignment::Center)
             .with_gap(0.0);
 
         let mut harness =

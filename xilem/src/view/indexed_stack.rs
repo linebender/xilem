@@ -125,7 +125,7 @@ where
         let mut widget = widgets::IndexedStack::new();
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.into_inner() {
-            widget = widget.with_child_pod(element.child.erased_widget_pod());
+            widget = widget.with_child(element.child.new_widget);
         }
         widget = widget.with_active_child(self.active_child);
         let mut pod = ctx.create_pod(widget);
@@ -235,10 +235,10 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<IndexedStackElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {
-            widgets::IndexedStack::insert_stack_child_pod(
+            widgets::IndexedStack::insert_child(
                 &mut self.element,
                 self.idx,
-                element.child.erased_widget_pod(),
+                element.child.new_widget,
             );
             self.idx += 1;
         }
@@ -246,11 +246,7 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_> {
     }
 
     fn insert(&mut self, element: IndexedStackElement) {
-        widgets::IndexedStack::insert_stack_child_pod(
-            &mut self.element,
-            self.idx,
-            element.child.erased_widget_pod(),
-        );
+        widgets::IndexedStack::insert_child(&mut self.element, self.idx, element.child.new_widget);
         self.idx += 1;
     }
 

@@ -11,8 +11,8 @@ use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
-    LayoutCtx, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Axis, ScrollBar};
 
@@ -40,18 +40,11 @@ pub struct Portal<W: Widget + ?Sized> {
 }
 
 // --- MARK: BUILDERS
-impl<W: Widget> Portal<W> {
-    #[expect(missing_docs, reason = "TODO")]
-    pub fn new(child: W) -> Self {
-        Self::new_pod(WidgetPod::new(child))
-    }
-}
-
 impl<W: Widget + ?Sized> Portal<W> {
     #[expect(missing_docs, reason = "TODO")]
-    pub fn new_pod(child: WidgetPod<W>) -> Self {
+    pub fn new(child: NewWidget<W>) -> Self {
         Self {
-            child,
+            child: child.to_pod(),
             viewport_pos: Point::ORIGIN,
             constrain_horizontal: false,
             constrain_vertical: false,
@@ -515,13 +508,17 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::NewWidget;
+
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
     use crate::widgets::{Button, Flex, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {
-        SizedBox::new(Button::new(text)).width(70.0).height(40.0)
+        SizedBox::new(Button::new(text).into())
+            .width(70.0)
+            .height(40.0)
     }
 
     // TODO - This test takes too long right now
@@ -530,37 +527,37 @@ mod tests {
     fn button_list() {
         let [item_3_id, item_13_id] = widget_ids();
 
-        let widget = Portal::new(
+        let widget = Portal::new(NewWidget::new(
             Flex::column()
-                .with_child(button("Item 1"))
+                .with_child(button("Item 1").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 2"))
+                .with_child(button("Item 2").into())
                 .with_spacer(10.0)
-                .with_child_id(button("Item 3"), item_3_id)
+                .with_child(NewWidget::new_with_id(button("Item 3"), item_3_id))
                 .with_spacer(10.0)
-                .with_child(button("Item 4"))
+                .with_child(button("Item 4").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 5"))
+                .with_child(button("Item 5").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 6"))
+                .with_child(button("Item 6").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 7"))
+                .with_child(button("Item 7").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 8"))
+                .with_child(button("Item 8").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 9"))
+                .with_child(button("Item 9").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 10"))
+                .with_child(button("Item 10").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 11"))
+                .with_child(button("Item 11").into())
                 .with_spacer(10.0)
-                .with_child(button("Item 12"))
+                .with_child(button("Item 12").into())
                 .with_spacer(10.0)
-                .with_child_id(button("Item 13"), item_13_id)
+                .with_child(NewWidget::new_with_id(button("Item 13"), item_13_id))
                 .with_spacer(10.0)
-                .with_child(button("Item 14"))
+                .with_child(button("Item 14").into())
                 .with_spacer(10.0),
-        );
+        ));
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(400., 400.));

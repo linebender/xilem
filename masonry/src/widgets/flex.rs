@@ -193,21 +193,9 @@ impl Flex {
     /// Builder-style variant of [`Flex::add_child`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(self, child: impl Widget) -> Self {
-        self.with_child_pod(NewWidget::new(child).erased().to_pod())
-    }
-
-    /// Builder-style variant of [`Flex::add_child`], that takes the id that the child will have.
-    ///
-    /// Useful for unit tests.
-    pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
-        self.with_child_pod(NewWidget::new_with_id(child, id).erased().to_pod())
-    }
-
-    /// Builder-style method for [adding](Flex::add_child) a type-erased child to this.
-    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>) -> Self {
+    pub fn with_child(mut self, child: NewWidget<impl Widget + ?Sized>) -> Self {
         let child = Child::Fixed {
-            widget,
+            widget: child.erased().to_pod(),
             alignment: None,
         };
         self.children.push(child);
@@ -215,20 +203,13 @@ impl Flex {
     }
 
     /// Builder-style method to add a flexible child to the container.
-    pub fn with_flex_child(self, child: impl Widget, params: impl Into<FlexParams>) -> Self {
-        self.with_flex_child_pod(NewWidget::new(child).erased().to_pod(), params)
-    }
-
-    /// Builder-style method to add a flexible child to the container.
-    pub fn with_flex_child_pod(
+    pub fn with_flex_child(
         mut self,
-        widget: WidgetPod<dyn Widget>,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
     ) -> Self {
-        // TODO - dedup?
-        let params: FlexParams = params.into();
-
-        let child = new_flex_child(params, widget);
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
         self.children.push(child);
         self
     }
@@ -322,23 +303,9 @@ impl Flex {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Flex::with_child
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let child = Child::Fixed {
-            widget: NewWidget::new(child).erased().to_pod(),
-            alignment: None,
-        };
-        this.widget.children.push(child);
-        this.ctx.children_changed();
-    }
-
-    /// Add a non-flex child widget with a pre-assigned id.
-    ///
-    /// See also [`with_child_id`].
-    ///
-    /// [`with_child_id`]: Flex::with_child_id
-    pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
-        let child = Child::Fixed {
-            widget: NewWidget::new_with_id(child, id).erased().to_pod(),
+            widget: child.erased().to_pod(),
             alignment: None,
         };
         this.widget.children.push(child);
@@ -348,11 +315,11 @@ impl Flex {
     /// Add a flexible child widget.
     pub fn add_flex_child(
         this: &mut WidgetMut<'_, Self>,
-        child: impl Widget,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
     ) {
-        let params = params.into();
-        let child = new_flex_child(params, NewWidget::new(child).erased().to_pod());
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
 
         this.widget.children.push(child);
         this.ctx.children_changed();
@@ -385,45 +352,18 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Insert a non-flex child widget at the given index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_child(this: &mut WidgetMut<'_, Self>, idx: usize, child: impl Widget) {
-        Self::insert_child_pod(this, idx, NewWidget::new(child).erased().to_pod());
-    }
-
     /// Insert a non-flex child widget wrapped in a [`WidgetPod`] at the given index.
     ///
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_child_pod(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        widget: WidgetPod<dyn Widget>,
-    ) {
+    pub fn insert_child(this: &mut WidgetMut<'_, Self>, idx: usize, child: NewWidget<impl Widget + ?Sized>) {
         let child = Child::Fixed {
-            widget,
+            widget: child.erased().to_pod(),
             alignment: None,
         };
         this.widget.children.insert(idx, child);
         this.ctx.children_changed();
-    }
-
-    /// Insert a flex child widget at the given index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_flex_child(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: impl Widget,
-        params: impl Into<FlexParams>,
-    ) {
-        Self::insert_flex_child_pod(this, idx, NewWidget::new(child).erased().to_pod(), params);
     }
 
     /// Insert a flex child widget wrapped in a [`WidgetPod`] at the given index.
@@ -431,12 +371,13 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_flex_child_pod(
+    pub fn insert_flex_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: WidgetPod<dyn Widget>,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
     ) {
+        let child = child.erased().to_pod();
         let child = new_flex_child(params.into(), child);
         this.widget.children.insert(idx, child);
         this.ctx.children_changed();
@@ -835,11 +776,11 @@ impl Child {
     }
 }
 
-fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
+fn new_flex_child(params: FlexParams, child: WidgetPod<dyn Widget>) -> Child {
     if let Some(flex) = params.flex {
         if flex.is_normal() && flex > 0.0 {
             Child::Flex {
-                widget,
+                widget: child,
                 alignment: params.alignment,
                 flex,
             }
@@ -848,13 +789,13 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
                 "Flex value should be > 0.0 (was {flex}). See the docs for masonry::widgets::Flex for more information"
             );
             Child::Fixed {
-                widget,
+                widget: child,
                 alignment: params.alignment,
             }
         }
     } else {
         Child::Fixed {
-            widget,
+            widget: child,
             alignment: params.alignment,
         }
     }
@@ -1286,11 +1227,11 @@ mod tests {
     #[test]
     fn flex_row_cross_axis_snapshots() {
         let widget = Flex::row()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").into())
+            .with_flex_child(Label::new("world").into(), 1.0)
+            .with_child(Label::new("foo").into())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").into(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1332,11 +1273,11 @@ mod tests {
     #[test]
     fn flex_row_main_axis_snapshots() {
         let widget = Flex::row()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").into())
+            .with_flex_child(Label::new("world").into(), 1.0)
+            .with_child(Label::new("foo").into())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").into(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1395,11 +1336,11 @@ mod tests {
     #[test]
     fn flex_col_cross_axis_snapshots() {
         let widget = Flex::column()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").into())
+            .with_flex_child(Label::new("world").into(), 1.0)
+            .with_child(Label::new("foo").into())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").into(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1441,11 +1382,11 @@ mod tests {
     #[test]
     fn flex_col_main_axis_snapshots() {
         let widget = Flex::column()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").into())
+            .with_flex_child(Label::new("world").into(), 1.0)
+            .with_child(Label::new("foo").into())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").into(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1505,10 +1446,10 @@ mod tests {
     fn edit_flex_container() {
         let image_1 = {
             let widget = Flex::column()
-                .with_child(Label::new("a"))
-                .with_child(Label::new("b"))
-                .with_child(Label::new("c"))
-                .with_child(Label::new("d"));
+                .with_child(Label::new("a").into())
+                .with_child(Label::new("b").into())
+                .with_child(Label::new("c").into())
+                .with_child(Label::new("d").into());
             // -> abcd
 
             let window_size = Size::new(200.0, 150.0);
@@ -1520,17 +1461,17 @@ mod tests {
 
                 Flex::remove_child(&mut flex, 1);
                 // -> acd
-                Flex::add_child(&mut flex, Label::new("x"));
+                Flex::add_child(&mut flex, Label::new("x").into());
                 // -> acdx
-                Flex::add_flex_child(&mut flex, Label::new("y"), 2.0);
+                Flex::add_flex_child(&mut flex, Label::new("y").into(), 2.0);
                 // -> acdxy
                 Flex::add_spacer(&mut flex, 5.0);
                 // -> acdxy_
                 Flex::add_flex_spacer(&mut flex, 1.0);
                 // -> acdxy__
-                Flex::insert_child(&mut flex, 2, Label::new("i"));
+                Flex::insert_child(&mut flex, 2, Label::new("i").into());
                 // -> acidxy__
-                Flex::insert_flex_child(&mut flex, 2, Label::new("j"), 2.0);
+                Flex::insert_flex_child(&mut flex, 2, Label::new("j").into(), 2.0);
                 // -> acjidxy__
                 Flex::insert_spacer(&mut flex, 2, 5.0);
                 // -> ac_jidxy__
@@ -1543,15 +1484,15 @@ mod tests {
 
         let image_2 = {
             let widget = Flex::column()
-                .with_child(Label::new("a"))
-                .with_child(Label::new("c"))
+                .with_child(Label::new("a").into())
+                .with_child(Label::new("c").into())
                 .with_flex_spacer(1.0)
                 .with_spacer(5.0)
-                .with_flex_child(Label::new("j"), 2.0)
-                .with_child(Label::new("i"))
-                .with_child(Label::new("d"))
-                .with_child(Label::new("x"))
-                .with_flex_child(Label::new("y"), 2.0)
+                .with_flex_child(Label::new("j").into(), 2.0)
+                .with_child(Label::new("i").into())
+                .with_child(Label::new("d").into())
+                .with_child(Label::new("x").into())
+                .with_flex_child(Label::new("y").into(), 2.0)
                 .with_spacer(5.0)
                 .with_flex_spacer(1.0);
 
@@ -1568,8 +1509,8 @@ mod tests {
     #[test]
     fn get_flex_child() {
         let widget = Flex::column()
-            .with_child(Label::new("hello"))
-            .with_child(Label::new("world"))
+            .with_child(Label::new("hello").into())
+            .with_child(Label::new("world").into())
             .with_spacer(1.0);
 
         let window_size = Size::new(200.0, 150.0);
