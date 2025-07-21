@@ -220,11 +220,11 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
 // This function is called on stashed widgets and their children
 // to set all layout flags to false.
 fn clear_layout_flags(
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    widget: ArenaMut<'_, Box<dyn Widget>>,
     state: ArenaMut<'_, WidgetState>,
     properties: ArenaMut<'_, AnyMap>,
 ) {
-    let mut children = WidgetArenaMut {
+    let children = WidgetArenaMut {
         widget_children: widget.children,
         widget_state_children: state.children,
         properties_children: properties.children,
@@ -232,7 +232,6 @@ fn clear_layout_flags(
 
     let widget = &mut **widget.item;
     let state = state.item;
-    let properties = properties.item;
 
     state.needs_layout = false;
     state.request_layout = false;
