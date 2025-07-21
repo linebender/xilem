@@ -28,7 +28,7 @@ pub type AnyWidgetView<State, Action = ()> =
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<DynWidget> {
     fn upcast(ctx: &mut ViewCtx, child: Pod<W>) -> Self {
         ctx.create_pod(DynWidget {
-            inner: child.erased_widget_pod(),
+            inner: child.new_widget.erased().to_pod(),
         })
     }
 

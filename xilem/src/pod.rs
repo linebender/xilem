@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{FromDynWidget, NewWidget, Widget, WidgetMut, WidgetPod};
+use masonry::core::{FromDynWidget, NewWidget, Widget, WidgetMut};
 
 use crate::ViewCtx;
 use crate::core::{Mut, SuperElement, ViewElement};
@@ -41,7 +41,6 @@ impl<W: Widget + FromDynWidget> Pod<W> {
     }
 }
 
-// TODO - Remove most of these methods.
 impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
     /// Type-erase the contained widget.
     ///
@@ -51,28 +50,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Pod<W> {
         Pod {
             new_widget: self.new_widget.erased(),
         }
-    }
-
-    /// Finalise this `Pod`, converting into a [`WidgetPod`].
-    ///
-    /// In most cases, you will use the return value when creating a
-    /// widget with a single child.
-    /// For example, button widgets have a label child.
-    ///
-    /// If you're adding the widget to a layout container widget,
-    /// which can contain heterogenous widgets, you will probably
-    /// prefer to use [`Self::erased_widget_pod`].
-    pub fn into_widget_pod(self) -> WidgetPod<W> {
-        self.new_widget.to_pod()
-    }
-
-    /// Finalise this `Pod` into a type-erased [`WidgetPod`].
-    ///
-    /// In most cases, you will use the return value for adding to a layout
-    /// widget which supports heterogenous widgets.
-    /// For example, [`Flex`](masonry::widgets::Flex) accepts type-erased widget pods.
-    pub fn erased_widget_pod(self) -> WidgetPod<dyn Widget> {
-        self.new_widget.erased().to_pod()
     }
 }
 
