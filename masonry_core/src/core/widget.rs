@@ -100,6 +100,15 @@ impl FromDynWidget for dyn Widget {
     }
 }
 
+/// A collection of widget ids, to be returned from [`Widget::children_ids`].
+///
+/// Internally, this uses a small vector optimisation, but you should treat it as an append-only `Vec<WidgetId>`.
+/// You can use `ChildrenIds::from_slice` with an array to make a list of children ids of known size,
+/// or use `ChildrenIds::new` then `push` to it.
+/// This type also implements [`FromIterator<WidgetId>`](core::iter::FromIterator).
+// TODO: Consider making our own wrapper type here, to make future breaking changes easier.?
+pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
+
 /// The trait implemented by all widgets.
 ///
 /// For details on how to implement this trait, see the [tutorials](crate::doc).
@@ -281,7 +290,7 @@ pub trait Widget: AsDynWidget + Any {
     /// consistent. If children are added or removed, the parent widget should call
     /// `children_changed` on one of the Ctx parameters. Container widgets are
     /// responsible for visiting all their children during `layout` and `register_children`.
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]>;
+    fn children_ids(&self) -> ChildrenIds;
 
     /// Whether this widget gets pointer events and hovered status. True by default.
     ///

@@ -31,7 +31,7 @@
 
 pub use anymore;
 pub use vello::{kurbo, peniko, peniko::color::palette};
-pub use {accesskit, cursor_icon, dpi, parley, smallvec, ui_events, vello};
+pub use {accesskit, cursor_icon, dpi, parley, ui_events, vello};
 
 // TODO - re-add #[doc(hidden)]
 pub mod doc;

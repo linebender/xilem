@@ -15,13 +15,12 @@ use std::rc::Rc;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::kurbo::{Point, Size};
-use masonry_core::smallvec::SmallVec;
 use masonry_core::vello::Scene;
 
 // TODO - Re-enable doc test.
@@ -221,7 +220,7 @@ impl<W: Widget> Widget for Recorder<W> {
         self.child.accessibility(ctx, props, node);
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         self.child.children_ids()
     }
 

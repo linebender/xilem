@@ -9,14 +9,14 @@ use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
 use parley::style::FontWeight;
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::widgets::Label;
 
@@ -246,8 +246,8 @@ impl Widget for VariableLabel {
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.label.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.label.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

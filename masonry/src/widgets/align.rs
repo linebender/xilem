@@ -9,14 +9,13 @@
 // its computed size. See https://github.com/linebender/xilem/issues/378
 
 use accesskit::{Node, Role};
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    Widget, WidgetId, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
+    RegisterCtx, Widget, WidgetId, WidgetPod,
 };
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
@@ -151,8 +150,8 @@ impl Widget for Align {
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.child.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.child.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

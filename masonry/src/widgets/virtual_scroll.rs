@@ -10,9 +10,9 @@ use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
+    LayoutCtx, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
+    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::util::debug_panic;
 
@@ -954,12 +954,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
         node.add_child_action(accesskit::Action::ScrollIntoView);
     }
 
-    fn children_ids(&self) -> smallvec::SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         let mut items = self
             .items
             .iter()
             .map(|(index, pod)| (*index, pod.id()))
-            .collect::<smallvec::SmallVec<[(i64, WidgetId); 10]>>();
+            .collect::<Vec<_>>();
         items.sort_unstable_by_key(|(index, _)| *index);
         items.into_iter().map(|(_, id)| id).collect()
     }

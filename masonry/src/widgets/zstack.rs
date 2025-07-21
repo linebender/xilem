@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
-use smallvec::SmallVec;
 use tracing::trace_span;
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
+    RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::util::include_screenshot;
 
@@ -353,7 +352,7 @@ impl Widget for ZStack {
         }
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         self.children
             .iter()
             .map(|child| &child.widget)

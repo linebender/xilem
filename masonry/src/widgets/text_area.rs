@@ -8,7 +8,6 @@ use accesskit::{Node, NodeId, Role};
 use cursor_icon::CursorIcon;
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
-use smallvec::SmallVec;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
@@ -16,8 +15,8 @@ use vello::peniko::Fill;
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, EventCtx, Ime, LayoutCtx, PaintCtx,
-    PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, ChildrenIds, EventCtx, Ime, LayoutCtx,
+    PaintCtx, PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
     StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
 use crate::properties::{DisabledTextColor, TextColor};
@@ -900,8 +899,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         };
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

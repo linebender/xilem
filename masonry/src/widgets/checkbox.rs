@@ -6,7 +6,6 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role, Toggled};
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace, trace_span};
 use ui_events::keyboard::Key;
 use vello::Scene;
@@ -14,9 +13,9 @@ use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Size, Stroke};
 use vello::peniko::Color;
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, EventCtx, LayoutCtx, PaintCtx, PointerEvent,
-    PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
@@ -313,8 +312,8 @@ impl Widget for Checkbox {
         }
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.label.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.label.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

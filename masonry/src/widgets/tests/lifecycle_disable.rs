@@ -6,8 +6,6 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use smallvec::smallvec;
-
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt as _, widget_ids};
 use crate::widgets::Flex;
 use crate::*;
@@ -98,7 +96,7 @@ fn disable_tree() {
                 ctx.place_child(child, Point::ZERO);
                 size
             })
-            .children_fn(|child| smallvec![child.id()])
+            .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
             .with_id(id)
     }
 

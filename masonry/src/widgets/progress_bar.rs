@@ -4,14 +4,13 @@
 //! A progress bar widget.
 
 use accesskit::{Node, Role};
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
@@ -180,8 +179,8 @@ impl Widget for ProgressBar {
         }
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![self.label.id()]
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[self.label.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {

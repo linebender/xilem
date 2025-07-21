@@ -265,14 +265,13 @@ And last, we stub in some additional methods:
 use masonry::core::{
     RegisterCtx, Widget, WidgetId
 };
-use masonry::smallvec::SmallVec;
 
 impl Widget for ColorRectangle {
     // ...
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 }
 ```

@@ -7,14 +7,13 @@ use std::any::TypeId;
 
 use accesskit::{Node, Role};
 use masonry_core::util::fill;
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
+    RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{include_screenshot, stroke};
@@ -302,11 +301,11 @@ impl Widget for SizedBox {
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         if let Some(child) = &self.child {
-            smallvec![child.id()]
+            ChildrenIds::from_slice(&[child.id()])
         } else {
-            smallvec![]
+            ChildrenIds::from_slice(&[])
         }
     }
 

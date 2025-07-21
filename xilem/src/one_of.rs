@@ -5,12 +5,11 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, EventCtx, FromDynWidget, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget,
     WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
-use masonry::smallvec::{SmallVec, smallvec};
 use vello::Scene;
 
 use crate::core::Mut;
@@ -291,17 +290,17 @@ impl<
     ) {
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
+    fn children_ids(&self) -> ChildrenIds {
         match self {
-            Self::A(w) => smallvec![w.id()],
-            Self::B(w) => smallvec![w.id()],
-            Self::C(w) => smallvec![w.id()],
-            Self::D(w) => smallvec![w.id()],
-            Self::E(w) => smallvec![w.id()],
-            Self::F(w) => smallvec![w.id()],
-            Self::G(w) => smallvec![w.id()],
-            Self::H(w) => smallvec![w.id()],
-            Self::I(w) => smallvec![w.id()],
+            Self::A(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::B(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::C(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::D(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::E(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::F(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::G(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::H(w) => ChildrenIds::from_slice(&[w.id()]),
+            Self::I(w) => ChildrenIds::from_slice(&[w.id()]),
         }
     }
 }

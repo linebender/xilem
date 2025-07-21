@@ -5,15 +5,14 @@ use std::ops::Range;
 
 use accesskit::{Node, Role};
 use dpi::PhysicalPosition;
-use smallvec::{SmallVec, smallvec};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
-    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
+    LayoutCtx, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::widgets::{Axis, ScrollBar};
 
@@ -500,12 +499,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         node.set_clips_children();
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        smallvec![
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::from_slice(&[
             self.child.id(),
             self.scrollbar_vertical.id(),
             self.scrollbar_horizontal.id(),
-        ]
+        ])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
