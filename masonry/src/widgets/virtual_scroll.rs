@@ -303,20 +303,6 @@ enum PostScrollResult {
     NoLayout,
 }
 
-macro_rules! post_scroll_wrappers {
-    ($(($name:ident, $ctx_ty:ty)),+) => {
-        $(fn $name(&mut self, ctx: $ctx_ty) {
-            match self.post_scroll(ctx.size()) {
-                PostScrollResult::Layout => {
-                    ctx.request_layout();
-                }
-                PostScrollResult::NoLayout => {}
-            }
-            ctx.request_compose();
-        })*
-    }
-}
-
 // --- MARK: WIDGETMUT
 impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// Indicates that `action` is about to be handled by the driver (which is calling this method).
@@ -445,6 +431,9 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         this.ctx.request_layout();
     }
 
+    /// Ensure that the correct follow-up passes are requested after the scroll position changes.
+    ///
+    /// `size` is the current viewport's size.
     fn post_scroll(&mut self, size: Size) -> PostScrollResult {
         // We only lock scrolling if we're *exactly* at the end of the range, because
         // if the valid range has changed "during" an active scroll, we still want to handle
@@ -465,9 +454,26 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         }
     }
 
-    post_scroll_wrappers! {
-        (event_post_scroll, &mut EventCtx<'_>),
-        (update_post_scroll, &mut UpdateCtx<'_>)
+    /// A wrapper to use [`post_scroll`] in event methods.
+    fn event_post_scroll(&mut self, ctx: &mut EventCtx<'_>) {
+        match self.post_scroll(ctx.size()) {
+            PostScrollResult::Layout => {
+                ctx.request_layout();
+            }
+            PostScrollResult::NoLayout => {}
+        }
+        ctx.request_compose();
+    }
+
+    /// A wrapper to use [`post_scroll`] in update methods.
+    fn update_post_scroll(&mut self, ctx: &mut UpdateCtx<'_>) {
+        match self.post_scroll(ctx.size()) {
+            PostScrollResult::Layout => {
+                ctx.request_layout();
+            }
+            PostScrollResult::NoLayout => {}
+        }
+        ctx.request_compose();
     }
 
     /// Lock scrolling so that:
