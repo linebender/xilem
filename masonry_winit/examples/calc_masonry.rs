@@ -397,9 +397,9 @@ fn flex_row(
     )
 }
 
-fn build_calc() -> impl Widget {
+fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
-    Flex::column()
+    let root_widget = Flex::column()
         .with_gap(0.0)
         .with_flex_spacer(0.2)
         .with_child(display.with_next_id())
@@ -453,13 +453,14 @@ fn build_calc() -> impl Widget {
                 op_button('='),
             ),
             1.0,
-        )
-}
+        );
 
-fn root_props() -> Properties {
-    Properties::new()
-        .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
-        .with(Padding::all(2.0))
+    NewWidget::new_with_props(
+        root_widget,
+        Properties::new()
+            .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
+            .with(Padding::all(2.0)),
+    )
 }
 
 fn main() {
@@ -486,9 +487,7 @@ fn main() {
         vec![(
             calc_state.window_id,
             window_attributes,
-            NewWidget::new_with_props(build_calc(), root_props())
-                .erased()
-                .to_pod(),
+            build_calc().erased(),
         )],
         calc_state,
         default_property_set(),
@@ -508,7 +507,6 @@ mod tests {
         let mut harness = TestHarness::create_with(
             default_property_set(),
             build_calc(),
-            root_props(),
             TestHarnessParams::default(),
         );
         assert_render_snapshot!(harness, "example_calc_masonry_initial");

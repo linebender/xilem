@@ -68,7 +68,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            NewWidget::new(main_widget).erased().to_pod(),
+            NewWidget::new(main_widget).erased(),
         )],
         driver,
         default_property_set(),

@@ -7,7 +7,7 @@ use masonry_winit::app::{EventLoopBuilder, WindowId};
 use std::iter::Once;
 use std::sync::Arc;
 
-use masonry::core::{DefaultProperties, Widget, WidgetPod};
+use masonry::core::{DefaultProperties, NewWidget, Widget};
 use masonry::theme::default_property_set;
 use masonry_winit::app::MasonryUserEvent;
 use winit::error::EventLoopError;
@@ -168,7 +168,7 @@ where
         proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
     ) -> (
         MasonryDriver<State, Logic>,
-        Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+        Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
     ) {
         MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts)
     }

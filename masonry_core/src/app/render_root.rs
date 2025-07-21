@@ -15,9 +15,10 @@ use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessEvent, BrushIndex, DefaultProperties, ErasedAction, Handled, Ime, PointerEvent,
-    PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena, WidgetArenaMut,
-    WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
+    AccessEvent, BrushIndex, DefaultProperties, ErasedAction, Handled, Ime, NewWidget,
+    PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena,
+    WidgetArenaMut, WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
@@ -258,7 +259,7 @@ impl RenderRoot {
     /// The `masonry` crate doesn't provide a way to do that:
     /// look for `masonry_winit::app::run` instead.
     pub fn new(
-        root_widget: WidgetPod<dyn Widget>,
+        root_widget: NewWidget<impl Widget + ?Sized>,
         signal_sink: impl FnMut(RenderRootSignal) + 'static,
         options: RenderRootOptions,
     ) -> Self {
@@ -272,7 +273,7 @@ impl RenderRoot {
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
         let mut root = Self {
-            root: root_widget,
+            root: root_widget.erased().to_pod(),
             window_node_id: WidgetId::next().into(),
             size_policy,
             size: PhysicalSize::new(0, 0),

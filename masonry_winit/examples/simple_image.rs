@@ -55,7 +55,7 @@ fn main() {
         vec![(
             WindowId::next(),
             window_attributes,
-            NewWidget::new(make_image()).erased().to_pod(),
+            NewWidget::new(make_image()).erased(),
         )],
         Driver,
         default_property_set(),

@@ -90,9 +90,10 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    let main_widget = NewWidget::new(init()).erased().to_pod();
+    let scroll_id = WidgetId::next();
+    let main_widget = NewWidget::new_with_id(init(), scroll_id).erased();
     let driver = Driver {
-        scroll_id: main_widget.id(),
+        scroll_id,
         fizz: "Fizz".into(),
         buzz: "Buzz".into(),
         fizzbuzz: "FizzBuzz".into(),

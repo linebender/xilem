@@ -90,7 +90,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            NewWidget::new(make_widget_tree()).erased().to_pod(),
+            NewWidget::new(make_widget_tree()).erased(),
         )],
         driver,
         default_property_set(),

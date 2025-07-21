@@ -194,7 +194,7 @@ fn main() {
         vec![(
             WindowId::next(),
             window_attributes,
-            NewWidget::new(CustomWidget(my_string)).erased().to_pod(),
+            NewWidget::new(CustomWidget(my_string)).erased(),
         )],
         Driver,
         default_property_set(),

@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{Widget, WidgetPod};
+use masonry::core::{NewWidget, Widget};
 use winit::window::{Window, WindowAttributes};
 use xilem_core::{AnyViewState, View, ViewElement, ViewMarker};
 
@@ -25,7 +25,7 @@ impl<State> WindowView<State> {
     }
 }
 
-pub(crate) struct CreateWindow(pub WindowAttributes, pub WidgetPod<dyn Widget>);
+pub(crate) struct CreateWindow(pub WindowAttributes, pub NewWidget<dyn Widget>);
 
 impl ViewElement for CreateWindow {
     type Mut<'a> = (&'a Window, &'a mut RenderRoot);
@@ -45,7 +45,7 @@ where
         let (root_widget, view_state) = self.root_widget_view.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
         (
-            CreateWindow(initial_attributes, root_widget.erased_widget_pod()),
+            CreateWindow(initial_attributes, root_widget.new_widget.erased()),
             view_state,
         )
     }
