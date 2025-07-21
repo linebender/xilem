@@ -9,15 +9,10 @@ use crate::core::{Mut, SuperElement, ViewElement};
 /// A container for a yet to be inserted [Masonry](masonry) widget
 /// to be used with Xilem.
 ///
-/// This exists for two reasons:
-/// 1) The nearest equivalent type in Masonry, [`WidgetPod`], can't have
-///    [Xilem Core](xilem_core) traits implemented on it due to Rust's orphan rules.
-/// 2) `WidgetPod` is also used during a widget's lifetime to contain its children,
-///    and so might not actually own the underlying widget value.
-///    When creating widgets in Xilem, layered views all want access to the - using
-///    `WidgetPod` for this purpose would require fallible unwrapping.
+/// This exists because the nearest equivalent type in Masonry, [`NewWidget`], can't have
+/// [Xilem Core](xilem_core) traits implemented on it due to Rust's orphan rules.
 ///
-/// If changing transforms of widgets, prefer to use [`transformed`]
+/// If changing transforms of widgets, make sure to use [`transformed`]
 /// (or [`WidgetView::transform`]).
 /// This has a protocol to ensure that multiple views changing the
 /// transform interoperate successfully.
