@@ -8,7 +8,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{ErasedAction, ObjectFit, WidgetId, WidgetPod};
+use masonry::core::{ErasedAction, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::peniko::{Image as ImageBuf, ImageFormat};
 use masonry::theme::default_property_set;
@@ -40,7 +40,7 @@ fn make_image() -> Image {
         height,
     );
 
-    Image::new(png_data).fit_mode(ObjectFit::Contain)
+    Image::new(png_data)
 }
 
 fn main() {

@@ -10,7 +10,7 @@
 
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ErasedAction, EventCtx, LayoutCtx, ObjectFit, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ErasedAction, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Widget, WidgetId,
     WidgetPod,
 };
@@ -18,6 +18,7 @@ use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
 use masonry::peniko::{Color, Fill, Image, ImageFormat};
+use masonry::properties::ObjectFit;
 use masonry::smallvec::SmallVec;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
