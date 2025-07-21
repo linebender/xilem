@@ -271,7 +271,7 @@ impl Widget for ColorRectangle {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
     fn children_ids(&self) -> ChildrenIds {
-        SmallVec::new()
+        ChildrenIds::new()
     }
 }
 ```
