@@ -27,6 +27,8 @@ use crate::properties::ObjectFit;
 /// This currently uses bilinear interpolation, which falls down when the image is
 /// larger than its layout size (e.g. it is in a [sized box](super::SizedBox) smaller
 /// than the image size).
+///
+/// You change change the sizing of the image with the [`ObjectFit`] property.
 pub struct Image {
     image_data: ImageBuf,
 }
