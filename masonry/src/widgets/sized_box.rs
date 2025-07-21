@@ -6,18 +6,16 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::NewWidget;
-use masonry_core::util::fill;
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{include_screenshot, stroke};
+use crate::util::{fill, include_screenshot, stroke};
 
 /// A widget with predefined size.
 ///

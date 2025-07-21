@@ -1,9 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry_core::core::NewWidget;
-
-use crate::core::{Ime, TextEvent, Widget as _};
+use crate::core::{Ime, NewWidget, TextEvent, Widget as _};
 use crate::testing::{TestHarness, widget_ids};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, TextArea, TextInput};

@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_core::core::NewWidget;
 use vello::kurbo::Vec2;
 
-use crate::core::{PointerButton, PointerEvent, Update, WidgetId};
+use crate::core::{NewWidget, PointerButton, PointerEvent, Update, WidgetId};
 use crate::testing::{
     PRIMARY_MOUSE, Record, Recording, TestHarness, TestWidgetExt as _, widget_ids,
 };

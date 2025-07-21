@@ -8,14 +8,13 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
-use masonry_core::core::NewWidget;
 use parley::style::FontWeight;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };

@@ -508,8 +508,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::NewWidget;
-
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;

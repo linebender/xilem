@@ -6,15 +6,14 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{NewWidget, RegisterCtx};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::common::FloatExt;
 use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};

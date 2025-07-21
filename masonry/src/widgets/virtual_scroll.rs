@@ -6,14 +6,13 @@
 use std::collections::HashMap;
 use std::ops::Range;
 
-use masonry_core::core::NewWidget;
 use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
-    LayoutCtx, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::util::debug_panic;
 
@@ -1015,12 +1014,12 @@ mod tests {
     use std::collections::HashSet;
 
     use dpi::PhysicalPosition;
-    use masonry_core::core::NewWidget;
     use parley::StyleProperty;
     use vello::kurbo::Size;
 
     use crate::core::{
-        FromDynWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId, WidgetMut,
+        FromDynWidget, NewWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId,
+        WidgetMut,
     };
     use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
