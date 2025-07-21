@@ -120,15 +120,8 @@ impl WidgetArena {
     }
 }
 
-#[cfg(false)]
-impl<'a> WidgetArenaRef<'a> {
-    pub(crate) fn child(&self, id: WidgetId) -> Option<WidgetArenaRef<'_>> {
-        todo!()
-    }
-}
-
 impl<'a> WidgetArenaMut<'a> {
-    #[allow(unused)]
+    #[allow(unused, reason = "May be used later")]
     pub(crate) fn reborrow(&self) -> WidgetArenaRef<'_> {
         WidgetArenaRef {
             widget_state_children: self.widget_state_children.reborrow(),
