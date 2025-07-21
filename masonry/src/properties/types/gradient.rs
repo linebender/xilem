@@ -43,16 +43,17 @@ pub enum GradientShape {
     /// point.
     ///
     /// This is similar to [`conic-gradient()`] in CSS **but the values are interpreted differently**.
+    /// (Specifically, angle zero points to the right and positive angles rotate counter-clockwise.)
     ///
     /// [`conic-gradient()`]: https://drafts.csswg.org/css-images-4/#conic-gradient-syntax
     Sweep {
         /// The center of the gradient, relative to the widget's bounding box.
         center: UnitPoint,
         /// Start angle of the sweep, in radians.
-        /// Zero points upwards and positive angles represent clockwise rotation.
+        /// Zero points to the right and positive angles represent counter-clockwise rotation.
         start_angle: f64,
         /// End angle of the sweep, in radians.
-        /// Zero points upwards and positive angles represent clockwise rotation.
+        /// Zero points to the right and positive angles represent counter-clockwise rotation.
         end_angle: f64,
     },
 }
