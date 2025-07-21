@@ -46,4 +46,4 @@ pub use self::text_area::{InsertNewline, TextAction, TextArea};
 pub use self::text_input::TextInput;
 pub use self::variable_label::VariableLabel;
 pub use self::virtual_scroll::{VirtualScroll, VirtualScrollAction};
-pub use self::zstack::{Alignment, ChildAlignment, HorizontalAlignment, VerticalAlignment, ZStack};
+pub use self::zstack::{ChildAlignment, ZStack};
