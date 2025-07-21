@@ -156,8 +156,7 @@ mod tests {
     use vello::peniko::ImageFormat;
 
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
 
     /// Painting an empty image shouldn't crash.

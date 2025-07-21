@@ -14,14 +14,14 @@ use crate::core::{
     RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::theme;
-use crate::util::{fill, stroke};
+use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::{Label, LineBreaking};
 
 // TODO - NaN probably shouldn't be a meaningful value in our API.
 
 /// A progress bar.
 ///
-#[doc = crate::include_screenshot!("progress_bar_25_percent.png", "25% progress bar.")]
+#[doc = include_screenshot!("progress_bar_25_percent.png", "25% progress bar.")]
 pub struct ProgressBar {
     /// A value in the range `[0, 1]` inclusive, where 0 is 0% and 1 is 100% complete.
     ///
@@ -197,8 +197,7 @@ impl Widget for ProgressBar {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
 
     #[test]

@@ -13,7 +13,7 @@ use crate::core::{
     WidgetId, WidgetMut,
 };
 use crate::theme;
-use crate::util::{fill_color, stroke};
+use crate::util::{fill_color, include_screenshot, stroke};
 use crate::widgets::Axis;
 
 // TODO
@@ -25,7 +25,7 @@ use crate::widgets::Axis;
 
 /// A scrollbar.
 ///
-#[doc = crate::include_screenshot!("scrollbar_default.png", "Vertical scrollbar.")]
+#[doc = include_screenshot!("scrollbar_default.png", "Vertical scrollbar.")]
 pub struct ScrollBar {
     axis: Axis,
     pub(crate) cursor_progress: f64,
@@ -263,9 +263,8 @@ impl AllowRawMut for ScrollBar {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::core::PointerButton;
-    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
 
     #[test]

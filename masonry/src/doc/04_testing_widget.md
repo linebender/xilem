@@ -206,4 +206,4 @@ Read the [`TestHarness`] documentation for a full overview of its API.
 [`TestHarness`]: crate::testing::TestHarness
 [`WrapperWidget`]: crate::testing::TestHarness
 [`WidgetRef`]: crate::core::WidgetRef
-[`assert_render_snapshot!`]: crate::assert_render_snapshot
+[`assert_render_snapshot!`]: crate::testing::assert_render_snapshot

@@ -1,8 +1,6 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::debug_panic;
-use crate::util::{fill, stroke};
 use accesskit::{Node, Role};
 use masonry_core::core::WidgetMut;
 use smallvec::SmallVec;
@@ -11,6 +9,7 @@ use vello::kurbo::{Affine, Line, Point, Stroke};
 
 use crate::core::{AccessCtx, PropertiesRef, Widget, WidgetId, WidgetPod};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
 /// A widget that displays only one of its children at a time.
 ///
@@ -20,7 +19,7 @@ use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padd
 /// The indexed stack acts as a simple container around the active child.
 /// If there is no active child, it acts like a leaf node, and takes up
 /// the minimum space.
-#[doc = crate::include_screenshot!("indexed_stack_builder_new_widget.png", "Indexed stack element showing only the fourth element in its children.")]
+#[doc = include_screenshot!("indexed_stack_builder_new_widget.png", "Indexed stack element showing only the fourth element in its children.")]
 #[derive(Default)]
 pub struct IndexedStack {
     children: Vec<WidgetPod<dyn Widget>>,
@@ -324,8 +323,7 @@ mod tests {
     use vello::kurbo::Size;
 
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::button;
 

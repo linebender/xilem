@@ -19,11 +19,10 @@ use crate::core::{
     PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, render_text,
 };
-use crate::debug_panic;
 use crate::properties::{DisabledTextColor, TextColor};
-use crate::theme;
 use crate::theme::default_text_styles;
-use crate::{TextAlign, TextAlignOptions};
+use crate::util::{debug_panic, include_screenshot};
+use crate::{TextAlign, TextAlignOptions, theme};
 
 // TODO - Replace with Padding property.
 /// Added padding between each horizontal edge of the widget
@@ -46,7 +45,7 @@ pub enum LineBreaking {
 /// This is useful for creating interactive widgets which internally
 /// need support for displaying text, such as a button.
 ///
-#[doc = crate::include_screenshot!("label_styled_label.png", "Styled label.")]
+#[doc = include_screenshot!("label_styled_label.png", "Styled label.")]
 pub struct Label {
     text_layout: Layout<BrushIndex>,
     accessibility: LayoutAccessibility,
@@ -429,8 +428,7 @@ mod tests {
     use parley::{FontFamily, StyleProperty};
 
     use super::*;
-    use crate::assert_render_snapshot;
-    use crate::testing::TestHarness;
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox};
 

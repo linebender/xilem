@@ -14,7 +14,7 @@ use crate::core::{
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta, TextEvent,
     Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::debug_panic;
+use crate::util::debug_panic;
 
 /// The action type sent by the [`VirtualScroll`] widget.
 ///
