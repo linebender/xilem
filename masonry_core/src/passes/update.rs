@@ -564,8 +564,8 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let prev_focused_path = std::mem::take(&mut root.global_state.focused_path);
     let next_focused_path = get_id_path(root, next_focused);
 
-    // We don't just compare `prev_focused` and `next_focused` they could be the same widget
-    // but one of their ancestors could have been reparented.
+    // We don't just compare `prev_focused` and `next_focused` because
+    // they could be the same widget but one of their ancestors could have been reparented.
     // (assuming we ever implement reparenting)
     if prev_focused_path != next_focused_path {
         let mut focused_set = HashSet::new();
@@ -717,7 +717,82 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         }
     }
 
-    // -- UPDATE HOVERED WIDGETS --
+    // -- UPDATE ACTIVE --
+    // TODO - There's a lot of duplication between this, UPDATE HOVERED
+    // and UPDATE FOCUS. It would be nice to find ways to de-duplicate it without making
+    // the code overly abstract.
+
+    // "Active path" means the widget which is considered active, and all its parents.
+    let prev_active_path = std::mem::take(&mut root.global_state.active_path);
+    let prev_active_widget = prev_active_path.first().copied();
+    let next_active_widget = root.global_state.pointer_capture_target;
+    let next_active_path = get_id_path(root, next_active_widget);
+
+    // We don't just compare `prev_active_widget` and `next_active_widget` because
+    // they could be the same widget but one of their ancestors could have been reparented.
+    // (assuming we ever implement reparenting)
+    if prev_active_path != next_active_path {
+        let mut active_set = HashSet::new();
+        for widget_id in &next_active_path {
+            active_set.insert(*widget_id);
+        }
+
+        trace!("prev_active_path: {:?}", prev_active_path);
+        trace!("next_active_path: {:?}", next_active_path);
+
+        // This algorithm is written to be resilient to future changes like reparenting and multiple
+        // cursors. In theory it's O(Depth² * CursorCount) in the worst case, which isn't too bad
+        // (cursor count is usually 1 or 2, depth is usually small), but in practice it's virtually
+        // always O(Depth * CursorCount) because we only need to update the active status of the
+        // widgets that changed.
+        // The above assumes that accessing the widget tree is O(1) for simplicity.
+
+        fn update_active_status_of(
+            root: &mut RenderRoot,
+            widget_id: WidgetId,
+            active_set: &HashSet<WidgetId>,
+        ) {
+            run_targeted_update_pass(root, Some(widget_id), |widget, ctx, props| {
+                let has_active = active_set.contains(&ctx.widget_id());
+
+                if ctx.widget_state.has_active != has_active {
+                    widget.update(ctx, props, &Update::ChildActiveChanged(has_active));
+                }
+                ctx.widget_state.has_active = has_active;
+            });
+        }
+
+        // TODO - Add unit test to check items are iterated from the bottom up.
+        for widget_id in prev_active_path.iter().copied() {
+            if root.widget_arena.has(widget_id)
+                && root.widget_arena.get_state_mut(widget_id).item.is_active
+                    != active_set.contains(&widget_id)
+            {
+                update_active_status_of(root, widget_id, &active_set);
+            }
+        }
+        for widget_id in next_active_path.iter().copied() {
+            if root.widget_arena.has(widget_id)
+                && root.widget_arena.get_state_mut(widget_id).item.is_active
+                    != active_set.contains(&widget_id)
+            {
+                update_active_status_of(root, widget_id, &active_set);
+            }
+        }
+    }
+
+    if prev_active_widget != next_active_widget {
+        run_single_update_pass(root, prev_active_widget, |widget, ctx, props| {
+            ctx.widget_state.is_active = false;
+            widget.update(ctx, props, &Update::ActiveChanged(false));
+        });
+        run_single_update_pass(root, next_active_widget, |widget, ctx, props| {
+            ctx.widget_state.is_active = true;
+            widget.update(ctx, props, &Update::ActiveChanged(true));
+        });
+    }
+
+    // -- UPDATE HOVERED --
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
         // TODO - Apply scale?
         root.get_root_widget()
@@ -738,8 +813,8 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     let next_hovered_path = get_id_path(root, next_hovered_widget);
     let prev_hovered_widget = prev_hovered_path.first().copied();
 
-    // We don't just compare `prev_focused` and `next_focused` they could be the same widget
-    // but one of their ancestors could have been reparented.
+    // We don't just compare `prev_hovered_widget` and `next_hovered_widget`, because
+    // they could be the same widget but one of their ancestors could have been reparented.
     // (assuming we ever implement reparenting)
     if prev_hovered_path != next_hovered_path {
         let mut hovered_set = HashSet::new();
@@ -842,4 +917,5 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     root.global_state.cursor_icon = new_icon;
     root.global_state.hovered_path = next_hovered_path;
+    root.global_state.active_path = next_active_path;
 }

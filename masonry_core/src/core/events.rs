@@ -108,6 +108,18 @@ pub enum Update {
     /// [hovered]: crate::doc::doc_06_masonry_concepts#widget-status
     ChildHoveredChanged(bool),
 
+    /// Called when the [active] status of the current widget changes.
+    ///
+    /// [active]: crate::doc::doc_06_masonry_concepts#widget-status
+    ActiveChanged(bool),
+
+    /// Called when the [active] status of the current widget or a descendant changes.
+    ///
+    /// This is sent before [`Update::ActiveChanged`].
+    ///
+    /// [active]: crate::doc::doc_06_masonry_concepts#widget-status
+    ChildActiveChanged(bool),
+
     /// Called when the [focused] status of the current widget changes.
     ///
     /// [focused]: crate::doc::doc_06_masonry_concepts#text-focus
@@ -231,6 +243,8 @@ impl Update {
             Self::RequestPanToChild(_) => "RequestPanToChild",
             Self::HoveredChanged(_) => "HoveredChanged",
             Self::ChildHoveredChanged(_) => "ChildHoveredChanged",
+            Self::ActiveChanged(_) => "ActiveChanged",
+            Self::ChildActiveChanged(_) => "ChildActiveChanged",
             Self::FocusChanged(_) => "FocusChanged",
             Self::ChildFocusChanged(_) => "ChildFocusChanged",
         }

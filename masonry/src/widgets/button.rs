@@ -117,7 +117,7 @@ impl Widget for Button {
                 }
             }
             PointerEvent::Up { button, .. } => {
-                if ctx.is_pointer_capture_target() && ctx.is_hovered() && !ctx.is_disabled() {
+                if ctx.is_active() && ctx.is_hovered() && !ctx.is_disabled() {
                     ctx.submit_action(ButtonPress { button: *button });
                     trace!("Button {:?} released", ctx.widget_id());
                 }
@@ -164,7 +164,10 @@ impl Widget for Button {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
-            Update::HoveredChanged(_) | Update::FocusChanged(_) | Update::DisabledChanged(_) => {
+            Update::HoveredChanged(_)
+            | Update::ActiveChanged(_)
+            | Update::FocusChanged(_)
+            | Update::DisabledChanged(_) => {
                 ctx.request_paint_only();
             }
             _ => {}
@@ -232,7 +235,7 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_pressed = ctx.is_pointer_capture_target() && !ctx.is_disabled();
+        let is_pressed = ctx.is_active() && !ctx.is_disabled();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
 

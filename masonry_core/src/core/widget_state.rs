@@ -168,6 +168,12 @@ pub(crate) struct WidgetState {
     /// This specific widget is hovered.
     pub(crate) is_hovered: bool,
 
+    /// In the active path, starting from window and ending at the active widget.
+    /// Descendants of the active widget are not in the active path.
+    pub(crate) has_active: bool,
+    /// This specific widget is active.
+    pub(crate) is_active: bool,
+
     /// In the focused path, starting from window and ending at the focused widget.
     /// Descendants of the focused widget are not in the focused path.
     pub(crate) has_focus_target: bool,
@@ -216,6 +222,8 @@ impl WidgetState {
             is_new: true,
             has_hovered: false,
             is_hovered: false,
+            has_active: false,
+            is_active: false,
             request_layout: true,
             needs_layout: true,
             request_compose: true,

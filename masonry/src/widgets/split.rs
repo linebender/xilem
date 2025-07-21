@@ -418,7 +418,7 @@ where
                     }
                 }
                 PointerEvent::Move(u) => {
-                    if ctx.is_pointer_capture_target() {
+                    if ctx.is_active() {
                         let pos = ctx.local_position(u.current.position);
                         // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
@@ -577,7 +577,7 @@ where
         let local_mouse_pos = pos - ctx.window_origin().to_vec2();
         let is_bar_hovered = self.bar_hit_test(ctx.size(), local_mouse_pos);
 
-        if self.draggable && (ctx.is_pointer_capture_target() || is_bar_hovered) {
+        if self.draggable && (ctx.is_active() || is_bar_hovered) {
             match self.split_axis {
                 Axis::Horizontal => CursorIcon::EwResize,
                 Axis::Vertical => CursorIcon::NsResize,
