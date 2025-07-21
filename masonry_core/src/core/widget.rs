@@ -136,7 +136,8 @@ pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 pub trait Widget: AsDynWidget + Any {
     /// The action type that will widget will submit.
     ///
-    /// If this widget never submits action, this can be an empty type.
+    /// If this widget never submits action, this can be an empty type
+    /// such as [`NoAction`](crate::core::NoAction).
     type Action: Any + Debug
     where
         Self: Sized;
