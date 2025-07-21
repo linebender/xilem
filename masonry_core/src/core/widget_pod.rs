@@ -51,7 +51,7 @@ impl<W: Widget> NewWidget<W> {
         Self::new_with_id(inner, WidgetId::next())
     }
 
-    /// Create a new widget with fixed id.
+    /// Create a new widget with pre-determined id.
     pub fn new_with_id(inner: W, id: WidgetId) -> Self {
         Self {
             widget: Box::new(inner),
@@ -61,7 +61,7 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
-    /// Create a new widget with properties.
+    /// Create a new widget with custom [`Properties`].
     pub fn new_with_props(inner: W, props: Properties) -> Self {
         Self {
             widget: Box::new(inner),
@@ -71,7 +71,7 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
-    /// Create a new widget with custom options.
+    /// Create a new widget with custom [`WidgetOptions`].
     pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
         Self {
             widget: Box::new(inner),
@@ -81,7 +81,7 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
-    /// Create a new widget with custom options and custom [`Properties`].
+    /// Create a new widget with custom [`WidgetOptions`] and custom [`Properties`].
     pub fn new_with(inner: W, id: WidgetId, options: WidgetOptions, props: Properties) -> Self {
         Self {
             widget: Box::new(inner),
