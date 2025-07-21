@@ -28,6 +28,7 @@ use crate::passes::event::{
 use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::run_paint_pass;
+use crate::passes::query::run_query;
 use crate::passes::update::{
     run_update_disabled_pass, run_update_focus_chain_pass, run_update_focus_pass,
     run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
@@ -527,6 +528,17 @@ impl RenderRoot {
         self.run_rewrite_passes();
 
         res
+    }
+
+    /// Goes through the entire widget tree until we find a widget that matches the given predicate.
+    ///
+    /// Returns the widget's id if found.
+    // TODO - Take &self instead
+    pub fn query_entire_tree(
+        &mut self,
+        pred: impl FnMut(&dyn Widget, QueryCtx<'_>) -> bool,
+    ) -> Option<WidgetId> {
+        run_query(self, pred)
     }
 
     pub(crate) fn get_kurbo_size(&self) -> Size {
