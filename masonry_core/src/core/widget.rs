@@ -100,9 +100,13 @@ impl FromDynWidget for dyn Widget {
     }
 }
 
-/// Alias for the type returned by [`Widget::children_ids`].
+/// A collection of widget ids, to be returned from [`Widget::children_ids`].
 ///
-/// Essentially an optimization for `Vec<WidgetId>`.
+/// Internally, this uses a small vector optimisation, but you should treat it as an append-only `Vec<WidgetId>`.
+/// You can use `ChildrenIds::from_slice` with an array to make a list of children ids of known size, 
+/// or use `ChildrenIds::new` then `push` to it.
+/// This type also implements [`FromIterator<WidgetId>`](core::iter::FromIterator).
+// TODO: Consider making our own wrapper type here, to make future breaking changes easier.?
 pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 
 /// The trait implemented by all widgets.
