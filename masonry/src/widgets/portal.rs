@@ -593,8 +593,12 @@ mod tests {
         let widget = Portal::new(
             Flex::column()
                 .with_spacer(500.0)
-                .with_child_id(Button::new("Fully visible"), button_id)
-                .with_spacer(500.0),
+                .with_child(NewWidget::new_with_id(
+                    Button::new("Fully visible"),
+                    button_id,
+                ))
+                .with_spacer(500.0)
+                .with_next_id(),
         );
 
         let mut harness =
