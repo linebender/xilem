@@ -43,7 +43,7 @@
 //!             ctx.render_root(window_id).edit_root_widget(|mut root| {
 //!                 let mut portal = root.downcast::<Portal<Flex>>();
 //!                 let mut flex = Portal::child_mut(&mut portal);
-//!                 Flex::add_child(&mut flex, Label::new(self.next_task.clone()).into());
+//!                 Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_next_id());
 //!             });
 //!         } else if action.is::<TextAction>() {
 //!             let action = *action.downcast::<TextAction>().unwrap();
@@ -64,11 +64,11 @@
 //!         Flex::column()
 //!             .with_child(NewWidget::new(
 //!                 Flex::row()
-//!                     .with_flex_child(TextInput::new("").into(), 1.0)
-//!                     .with_child(Button::new("Add task").into()),
+//!                     .with_flex_child(TextInput::new("").with_next_id(), 1.0)
+//!                     .with_child(Button::new("Add task").with_next_id()),
 //!             ))
 //!             .with_spacer(WIDGET_SPACING)
-//!             .into(),
+//!             .with_next_id(),
 //!     );
 //!
 //!     let window_size = LogicalSize::new(400.0, 400.0);
@@ -90,7 +90,7 @@
 //!         vec![(
 //!             driver.window_id,
 //!             window_attributes,
-//!             NewWidget::new(main_widget).erased().to_pod(),
+//!             NewWidget::new(main_widget).erased(),
 //!         )],
 //!         driver,
 //!         default_property_set(),

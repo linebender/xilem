@@ -55,12 +55,12 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use masonry::core::StyleProperty;
+    /// use masonry::core::{StyleProperty, Widget as _};
     /// use masonry::peniko::Color;
     /// use masonry::widgets::{Button, Label};
     ///
     /// let label = Label::new("Increment").with_style(StyleProperty::FontSize(20.0));
-    /// let button = Button::from_label(label.into());
+    /// let button = Button::from_label(label.with_next_id());
     /// ```
     pub fn from_label(label: NewWidget<Label>) -> Self {
         Self {
