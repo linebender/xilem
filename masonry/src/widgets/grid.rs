@@ -65,7 +65,11 @@ impl Grid {
     }
 
     /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
-    pub fn with_child(mut self, child: NewWidget<impl Widget + ?Sized>, params: GridParams) -> Self {
+    pub fn with_child(
+        mut self,
+        child: NewWidget<impl Widget + ?Sized>,
+        params: GridParams,
+    ) -> Self {
         let child = new_grid_child(params, child);
         self.children.push(child);
         self
@@ -347,8 +351,10 @@ mod tests {
     #[test]
     fn test_grid_basics() {
         // Start with a 1x1 grid
-        let widget = Grid::with_dimensions(1, 1)
-            .with_child(button::Button::new("A").into(), GridParams::new(0, 0, 1, 1));
+        let widget = Grid::with_dimensions(1, 1).with_child(
+            button::Button::new("A").with_next_id(),
+            GridParams::new(0, 0, 1, 1),
+        );
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -373,7 +379,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B").into(),
+                button::Button::new("B").with_next_id(),
                 GridParams::new(1, 0, 3, 1),
             );
         });
@@ -384,7 +390,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("C").into(),
+                button::Button::new("C").with_next_id(),
                 GridParams::new(0, 1, 1, 3),
             );
         });
@@ -395,7 +401,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("D").into(),
+                button::Button::new("D").with_next_id(),
                 GridParams::new(1, 1, 2, 2),
             );
         });
@@ -418,8 +424,10 @@ mod tests {
 
     #[test]
     fn test_widget_removal_and_modification() {
-        let widget = Grid::with_dimensions(2, 2)
-            .with_child(button::Button::new("A").into(), GridParams::new(0, 0, 1, 1));
+        let widget = Grid::with_dimensions(2, 2).with_child(
+            button::Button::new("A").with_next_id(),
+            GridParams::new(0, 0, 1, 1),
+        );
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -438,7 +446,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("A").into(),
+                button::Button::new("A").with_next_id(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -461,8 +469,10 @@ mod tests {
 
     #[test]
     fn test_widget_order() {
-        let widget = Grid::with_dimensions(2, 2)
-            .with_child(button::Button::new("A").into(), GridParams::new(0, 0, 1, 1));
+        let widget = Grid::with_dimensions(2, 2).with_child(
+            button::Button::new("A").with_next_id(),
+            GridParams::new(0, 0, 1, 1),
+        );
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -474,7 +484,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B").into(),
+                button::Button::new("B").with_next_id(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -487,7 +497,7 @@ mod tests {
             Grid::insert_grid_child_at(
                 &mut grid,
                 0,
-                button::Button::new("C").into(),
+                button::Button::new("C").with_next_id(),
                 GridParams::new(0, 0, 2, 1),
             );
         });

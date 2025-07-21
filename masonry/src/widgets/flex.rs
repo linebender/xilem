@@ -1227,11 +1227,11 @@ mod tests {
     #[test]
     fn flex_row_cross_axis_snapshots() {
         let widget = Flex::row()
-            .with_child(Label::new("hello").into())
-            .with_flex_child(Label::new("world").into(), 1.0)
-            .with_child(Label::new("foo").into())
+            .with_child(Label::new("hello").with_next_id())
+            .with_flex_child(Label::new("world").with_next_id(), 1.0)
+            .with_child(Label::new("foo").with_next_id())
             .with_flex_child(
-                Label::new("bar").into(),
+                Label::new("bar").with_next_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1273,11 +1273,11 @@ mod tests {
     #[test]
     fn flex_row_main_axis_snapshots() {
         let widget = Flex::row()
-            .with_child(Label::new("hello").into())
-            .with_flex_child(Label::new("world").into(), 1.0)
-            .with_child(Label::new("foo").into())
+            .with_child(Label::new("hello").with_next_id())
+            .with_flex_child(Label::new("world").with_next_id(), 1.0)
+            .with_child(Label::new("foo").with_next_id())
             .with_flex_child(
-                Label::new("bar").into(),
+                Label::new("bar").with_next_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1336,11 +1336,11 @@ mod tests {
     #[test]
     fn flex_col_cross_axis_snapshots() {
         let widget = Flex::column()
-            .with_child(Label::new("hello").into())
-            .with_flex_child(Label::new("world").into(), 1.0)
-            .with_child(Label::new("foo").into())
+            .with_child(Label::new("hello").with_next_id())
+            .with_flex_child(Label::new("world").with_next_id(), 1.0)
+            .with_child(Label::new("foo").with_next_id())
             .with_flex_child(
-                Label::new("bar").into(),
+                Label::new("bar").with_next_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1382,11 +1382,11 @@ mod tests {
     #[test]
     fn flex_col_main_axis_snapshots() {
         let widget = Flex::column()
-            .with_child(Label::new("hello").into())
-            .with_flex_child(Label::new("world").into(), 1.0)
-            .with_child(Label::new("foo").into())
+            .with_child(Label::new("hello").with_next_id())
+            .with_flex_child(Label::new("world").with_next_id(), 1.0)
+            .with_child(Label::new("foo").with_next_id())
             .with_flex_child(
-                Label::new("bar").into(),
+                Label::new("bar").with_next_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1446,10 +1446,10 @@ mod tests {
     fn edit_flex_container() {
         let image_1 = {
             let widget = Flex::column()
-                .with_child(Label::new("a").into())
-                .with_child(Label::new("b").into())
-                .with_child(Label::new("c").into())
-                .with_child(Label::new("d").into());
+                .with_child(Label::new("a").with_next_id())
+                .with_child(Label::new("b").with_next_id())
+                .with_child(Label::new("c").with_next_id())
+                .with_child(Label::new("d").with_next_id());
             // -> abcd
 
             let window_size = Size::new(200.0, 150.0);
@@ -1461,17 +1461,17 @@ mod tests {
 
                 Flex::remove_child(&mut flex, 1);
                 // -> acd
-                Flex::add_child(&mut flex, Label::new("x").into());
+                Flex::add_child(&mut flex, Label::new("x").with_next_id());
                 // -> acdx
-                Flex::add_flex_child(&mut flex, Label::new("y").into(), 2.0);
+                Flex::add_flex_child(&mut flex, Label::new("y").with_next_id(), 2.0);
                 // -> acdxy
                 Flex::add_spacer(&mut flex, 5.0);
                 // -> acdxy_
                 Flex::add_flex_spacer(&mut flex, 1.0);
                 // -> acdxy__
-                Flex::insert_child(&mut flex, 2, Label::new("i").into());
+                Flex::insert_child(&mut flex, 2, Label::new("i").with_next_id());
                 // -> acidxy__
-                Flex::insert_flex_child(&mut flex, 2, Label::new("j").into(), 2.0);
+                Flex::insert_flex_child(&mut flex, 2, Label::new("j").with_next_id(), 2.0);
                 // -> acjidxy__
                 Flex::insert_spacer(&mut flex, 2, 5.0);
                 // -> ac_jidxy__
@@ -1484,15 +1484,15 @@ mod tests {
 
         let image_2 = {
             let widget = Flex::column()
-                .with_child(Label::new("a").into())
-                .with_child(Label::new("c").into())
+                .with_child(Label::new("a").with_next_id())
+                .with_child(Label::new("c").with_next_id())
                 .with_flex_spacer(1.0)
                 .with_spacer(5.0)
-                .with_flex_child(Label::new("j").into(), 2.0)
-                .with_child(Label::new("i").into())
-                .with_child(Label::new("d").into())
-                .with_child(Label::new("x").into())
-                .with_flex_child(Label::new("y").into(), 2.0)
+                .with_flex_child(Label::new("j").with_next_id(), 2.0)
+                .with_child(Label::new("i").with_next_id())
+                .with_child(Label::new("d").with_next_id())
+                .with_child(Label::new("x").with_next_id())
+                .with_flex_child(Label::new("y").with_next_id(), 2.0)
                 .with_spacer(5.0)
                 .with_flex_spacer(1.0);
 
@@ -1509,8 +1509,8 @@ mod tests {
     #[test]
     fn get_flex_child() {
         let widget = Flex::column()
-            .with_child(Label::new("hello").into())
-            .with_child(Label::new("world").into())
+            .with_child(Label::new("hello").with_next_id())
+            .with_child(Label::new("world").with_next_id())
             .with_spacer(1.0);
 
         let window_size = Size::new(200.0, 150.0);

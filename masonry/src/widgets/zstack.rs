@@ -365,7 +365,7 @@ mod tests {
         let widget = ZStack::new()
             .with_child(
                 NewWidget::new_with_props(
-                    SizedBox::new(Label::new("Background").into())
+                    SizedBox::new(Label::new("Background").with_next_id())
                         .width(200.)
                         .height(100.),
                     bg_props,
@@ -373,7 +373,7 @@ mod tests {
                 ChildAlignment::ParentAligned,
             )
             .with_child(
-                NewWidget::new_with_props(SizedBox::new(Label::new("Foreground").into()), fg_props),
+                NewWidget::new_with_props(SizedBox::new(Label::new("Foreground").with_next_id()), fg_props),
                 ChildAlignment::ParentAligned,
             );
 
@@ -413,13 +413,13 @@ mod tests {
         let widget = ZStack::new()
             .with_alignment(Alignment::Center)
             .with_child(
-                Label::new("ParentAligned").into(),
+                Label::new("ParentAligned").with_next_id(),
                 ChildAlignment::ParentAligned,
             )
-            .with_child(Label::new("TopLeft").into(), Alignment::TopLeft)
-            .with_child(Label::new("TopRight").into(), Alignment::TopRight)
-            .with_child(Label::new("BottomLeft").into(), Alignment::BottomLeft)
-            .with_child(Label::new("BottomRight").into(), Alignment::BottomRight);
+            .with_child(Label::new("TopLeft").with_next_id(), Alignment::TopLeft)
+            .with_child(Label::new("TopRight").with_next_id(), Alignment::TopRight)
+            .with_child(Label::new("BottomLeft").with_next_id(), Alignment::BottomLeft)
+            .with_child(Label::new("BottomRight").with_next_id(), Alignment::BottomRight);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignments_self_aligned");

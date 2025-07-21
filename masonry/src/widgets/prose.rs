@@ -41,7 +41,7 @@ impl Prose {
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_area(TextArea::new_immutable(text).into())
+        Self::from_text_area(TextArea::new_immutable(text).with_next_id())
     }
 
     /// Create a new `Prose` from a styled text area.
@@ -196,11 +196,15 @@ mod tests {
             TextArea::new_immutable("Truncated text - you should not see this")
                 .with_style(StyleProperty::FontSize(14.0))
                 .with_word_wrap(false)
-                .into(),
+                .with_next_id(),
         )
         .with_clip(true);
 
-        let root_widget = Flex::row().with_child(SizedBox::new(prose.into()).width(60.).into());
+        let root_widget = Flex::row().with_child(
+            SizedBox::new(prose.with_next_id())
+                .width(60.)
+                .with_next_id(),
+        );
 
         let mut harness = TestHarness::create_with_size(
             default_property_set(),
@@ -222,7 +226,7 @@ mod tests {
                     .with_style(StyleProperty::FontSize(14.0))
                     .with_text_alignment(text_alignment)
                     .with_word_wrap(true)
-                    .into(),
+                    .with_next_id(),
             )
         }
         let prose1 = base_prose(TextAlign::Start);
@@ -232,12 +236,12 @@ mod tests {
         let prose5 = base_prose(TextAlign::Center);
         let prose6 = base_prose(TextAlign::End);
         let flex = Flex::column()
-            .with_flex_child(prose1.into(), CrossAxisAlignment::Start)
-            .with_flex_child(prose2.into(), CrossAxisAlignment::Start)
-            .with_flex_child(prose3.into(), CrossAxisAlignment::Start)
-            .with_flex_child(prose4.into(), CrossAxisAlignment::Center)
-            .with_flex_child(prose5.into(), CrossAxisAlignment::Center)
-            .with_flex_child(prose6.into(), CrossAxisAlignment::Center)
+            .with_flex_child(prose1.with_next_id(), CrossAxisAlignment::Start)
+            .with_flex_child(prose2.with_next_id(), CrossAxisAlignment::Start)
+            .with_flex_child(prose3.with_next_id(), CrossAxisAlignment::Start)
+            .with_flex_child(prose4.with_next_id(), CrossAxisAlignment::Center)
+            .with_flex_child(prose5.with_next_id(), CrossAxisAlignment::Center)
+            .with_flex_child(prose6.with_next_id(), CrossAxisAlignment::Center)
             .with_gap(0.0);
 
         let mut harness =

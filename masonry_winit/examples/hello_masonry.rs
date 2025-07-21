@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::core::{ErasedAction, NewWidget, StyleProperty, WidgetId};
+use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget as _, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
 use masonry::theme::default_property_set;
@@ -49,9 +49,9 @@ fn main() {
 
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
-        .with_child(label.into())
+        .with_child(label.with_next_id())
         .with_spacer(VERTICAL_WIDGET_SPACING)
-        .with_child(button.into());
+        .with_child(button.with_next_id());
 
     let window_size = LogicalSize::new(400.0, 400.0);
     let window_attributes = Window::default_attributes()

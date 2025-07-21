@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use insta::assert_debug_snapshot;
-use masonry_core::core::NewWidget;
 
+use crate::core::{NewWidget, Widget as _};
 use crate::testing::{TestHarness, widget_ids};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, Label};
@@ -18,9 +18,9 @@ fn access_grandchild_widget() {
                 .with_child(
                     Flex::row()
                         .with_child(NewWidget::new_with_id(Label::new("Old text"), id_label))
-                        .into(),
+                        .with_next_id(),
                 )
-                .into(),
+                .with_next_id(),
         )
         .with_flex_spacer(1.0);
 

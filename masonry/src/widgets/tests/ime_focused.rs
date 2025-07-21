@@ -3,7 +3,7 @@
 
 use masonry_core::core::NewWidget;
 
-use crate::core::{Ime, TextEvent};
+use crate::core::{Ime, TextEvent, Widget as _};
 use crate::testing::{TestHarness, widget_ids};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, TextArea, TextInput};
@@ -18,7 +18,7 @@ fn ime_on_remove() {
             TextArea::new_editable("Simple input test"),
             text_area,
         ))
-        .into(),
+        .with_next_id(),
     );
 
     let mut harness = TestHarness::create(default_property_set(), widget);

@@ -15,7 +15,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, NewWidget, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, WidgetRef,
 };
@@ -390,6 +390,22 @@ pub trait Widget: AsDynWidget + Any {
             .split("::")
             .last()
             .unwrap_or(name)
+    }
+
+    /// Convenience method to create a `NewWidget` from this.
+    fn with_next_id(self) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new(self)
+    }
+
+    /// Convenience method to create a `NewWidget` from this.
+    fn with_next_id2(self) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new(self)
     }
 }
 

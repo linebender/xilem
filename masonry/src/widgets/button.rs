@@ -47,7 +47,7 @@ impl Button {
     /// let button = Button::new("Increment");
     /// ```
     pub fn new(text: impl Into<ArcStr>) -> Self {
-        Self::from_label(Label::new(text).into())
+        Self::from_label(Label::new(text).with_next_id())
     }
 
     /// Create a new button with the provided [`Label`].
@@ -432,13 +432,13 @@ mod tests {
 
         let grid = Grid::with_dimensions(2, 2)
             .with_spacing(40.0)
-            .with_child(Button::new("A").into(), GridParams::new(0, 0, 1, 1))
-            .with_child(Button::new("B").into(), GridParams::new(1, 0, 1, 1))
-            .with_child(Button::new("C").into(), GridParams::new(0, 1, 1, 1))
-            .with_child(Button::new("D").into(), GridParams::new(1, 1, 1, 1));
+            .with_child(Button::new("A").with_next_id(), GridParams::new(0, 0, 1, 1))
+            .with_child(Button::new("B").with_next_id(), GridParams::new(1, 0, 1, 1))
+            .with_child(Button::new("C").with_next_id(), GridParams::new(0, 1, 1, 1))
+            .with_child(Button::new("D").with_next_id(), GridParams::new(1, 1, 1, 1));
 
-        let root_widget =
-            SizedBox::new(grid.into()).with_props(Properties::new().with(Padding::all(20.0)));
+        let root_widget = SizedBox::new(grid.with_next_id())
+            .with_props(Properties::new().with(Padding::all(20.0)));
 
         let window_size = Size::new(300.0, 300.0);
         let mut harness =

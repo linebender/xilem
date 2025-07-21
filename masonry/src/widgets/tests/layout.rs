@@ -3,9 +3,9 @@
 
 //! Tests related to layout.
 
-use masonry_core::core::NewWidget;
 use vello::kurbo::{Insets, Size};
 
+use crate::core::{NewWidget, Widget as _};
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt, widget_ids};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, SizedBox};
@@ -28,7 +28,7 @@ fn layout_simple() {
                     id_2,
                 ))
                 .with_flex_spacer(1.0)
-                .into(),
+                .with_next_id(),
         )
         .with_flex_spacer(1.0);
 
