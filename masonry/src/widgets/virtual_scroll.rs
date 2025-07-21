@@ -454,7 +454,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         }
     }
 
-    /// A wrapper to use [`post_scroll`] in event methods.
+    /// A wrapper to use [`post_scroll`](Self::post_scroll) in event methods.
     fn event_post_scroll(&mut self, ctx: &mut EventCtx<'_>) {
         match self.post_scroll(ctx.size()) {
             PostScrollResult::Layout => {
@@ -465,7 +465,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
         ctx.request_compose();
     }
 
-    /// A wrapper to use [`post_scroll`] in update methods.
+    /// A wrapper to use [`post_scroll`](Self::post_scroll) in update methods.
     fn update_post_scroll(&mut self, ctx: &mut UpdateCtx<'_>) {
         match self.post_scroll(ctx.size()) {
             PostScrollResult::Layout => {
