@@ -3,7 +3,7 @@
 
 use vello::kurbo::Affine;
 
-use crate::core::{Properties, Widget, WidgetId};
+use crate::core::{Properties, Widget, WidgetId, WidgetTag};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -33,6 +33,8 @@ pub struct NewWidget<W: ?Sized> {
     pub options: WidgetOptions,
     /// The properties the widget will be created with.
     pub properties: Properties,
+
+    pub(crate) tag: &'static str,
 }
 
 // TODO - Remove this and merge it into NewWidget?
@@ -71,6 +73,18 @@ impl<W: Widget> NewWidget<W> {
             id,
             options: WidgetOptions::default(),
             properties: Properties::default(),
+            tag: "",
+        }
+    }
+
+    /// Create a new widget with a [`WidgetTag`].
+    pub fn new_with_tag(inner: W, tag: WidgetTag<W>) -> Self {
+        Self {
+            widget: Box::new(inner),
+            id: WidgetId::next(),
+            options: WidgetOptions::default(),
+            properties: Properties::default(),
+            tag: tag.name,
         }
     }
 
@@ -98,6 +112,7 @@ impl<W: Widget> NewWidget<W> {
             id,
             options,
             properties: props,
+            tag: "",
         }
     }
 }
@@ -113,6 +128,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
             id: self.id,
             options: self.options,
             properties: self.properties,
+            tag: self.tag,
         }
     }
 

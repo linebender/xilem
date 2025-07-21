@@ -16,6 +16,7 @@ mod widget_mut;
 mod widget_pod;
 mod widget_ref;
 mod widget_state;
+mod widget_tag;
 
 use anymore::AnyDebug;
 pub use box_constraints::BoxConstraints;
@@ -34,6 +35,7 @@ pub use widget::{AllowRawMut, AsDynWidget, ChildrenIds, FromDynWidget, Widget, W
 pub use widget_mut::WidgetMut;
 pub use widget_pod::{NewWidget, WidgetOptions, WidgetPod};
 pub use widget_ref::WidgetRef;
+pub use widget_tag::WidgetTag;
 
 pub use cursor_icon::CursorIcon;
 
