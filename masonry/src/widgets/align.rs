@@ -18,7 +18,8 @@ use crate::core::{
     AccessCtx, BoxConstraints, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef, RegisterCtx,
     Widget, WidgetId, WidgetPod,
 };
-use crate::util::{UnitPoint, include_screenshot};
+use crate::properties::types::UnitPoint;
+use crate::util::include_screenshot;
 
 // TODO - Have child widget type as generic argument
 

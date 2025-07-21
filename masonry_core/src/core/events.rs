@@ -9,6 +9,8 @@ use vello::kurbo::Rect;
 use crate::dpi::PhysicalSize;
 use crate::util::Duration;
 
+// --- MARK: TYPES
+
 /// A global event.
 #[derive(Debug, Clone)]
 pub enum WindowEvent {
@@ -133,6 +135,17 @@ pub enum Update {
     ChildFocusChanged(bool),
 }
 
+/// An enum for specifying whether an event was handled.
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum Handled {
+    /// An event was already handled, and shouldn't be propagated to other event handlers.
+    Yes,
+    /// An event has not yet been handled.
+    No,
+}
+
+// --- MARK: IMPLS
+
 impl TextEvent {
     /// Constructor for keyboard events with [`KeyState::Down`].
     ///
@@ -250,6 +263,22 @@ impl Update {
         }
     }
 }
+
+impl Handled {
+    /// Has the event been handled yet?
+    pub fn is_handled(self) -> bool {
+        self == Self::Yes
+    }
+}
+
+impl From<bool> for Handled {
+    /// Returns `Handled::Yes` if `handled` is true, and `Handled::No` otherwise.
+    fn from(handled: bool) -> Self {
+        if handled { Self::Yes } else { Self::No }
+    }
+}
+
+// --- MARK: WINIT EXPIES
 
 /// Describes [input method](https://en.wikipedia.org/wiki/Input_method) events.
 ///
