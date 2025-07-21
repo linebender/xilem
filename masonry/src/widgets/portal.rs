@@ -592,6 +592,24 @@ mod tests {
         assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_13");
     }
 
+    #[test]
+    fn scroll_into_view() {
+        let [button_id] = widget_ids();
+
+        let widget = Portal::new(
+            Flex::column()
+                .with_spacer(500.0)
+                .with_child_id(Button::new("Fully visible"), button_id)
+                .with_spacer(500.0),
+        );
+
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, Size::new(200., 200.));
+
+        harness.scroll_into_view(button_id);
+        assert_render_snapshot!(harness, "portal_scrolled_button_into_view");
+    }
+
     // Helper function for panning tests
     fn make_range(repr: &str) -> Range<f64> {
         let repr = &repr[repr.find('_').unwrap()..];

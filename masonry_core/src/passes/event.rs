@@ -363,6 +363,14 @@ pub(crate) fn run_on_access_event_pass(
                 handled = Handled::Yes;
             }
         }
+        accesskit::Action::ScrollIntoView if !handled.is_handled() => {
+            let widget_state = root.widget_arena.get_state(target);
+            let rect = widget_state.item.layout_rect();
+            root.global_state
+                .scroll_request_targets
+                .push((target, rect));
+            handled = Handled::Yes;
+        }
         _ => {}
     }
 
