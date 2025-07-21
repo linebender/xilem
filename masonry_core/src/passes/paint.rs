@@ -29,6 +29,11 @@ fn paint_widget(
     let _span = enter_span_if(trace, state.reborrow());
 
     let id = state.item.id;
+    let is_stashed = state.item.is_stashed;
+
+    // Note: At this point we could short-circuit if is_stashed is true,
+    // but we deliberately avoid doing that to avoid creating zombie flags.
+    // (See WidgetState doc.)
 
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
@@ -39,7 +44,7 @@ fn paint_widget(
         widget_children: widget.children.reborrow_mut(),
         debug_paint,
     };
-    if ctx.widget_state.request_paint {
+    if ctx.widget_state.request_paint && !is_stashed {
         if trace {
             trace!("Painting widget '{}' {}", widget.item.short_type_name(), id);
         }
@@ -58,16 +63,17 @@ fn paint_widget(
     state.item.request_paint = false;
     state.item.needs_paint = false;
 
-    let clip = state.item.clip_path;
-    let has_clip = clip.is_some();
-    let transform = state.item.window_transform;
-    let scene = scenes.get(&id).unwrap();
+    let has_clip = state.item.clip_path.is_some();
+    if !is_stashed {
+        let transform = state.item.window_transform;
+        let scene = scenes.get(&id).unwrap();
 
-    if let Some(clip) = clip {
-        complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
+        if let Some(clip) = state.item.clip_path {
+            complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
+        }
+
+        complete_scene.append(scene, Some(transform));
     }
-
-    complete_scene.append(scene, Some(transform));
 
     let id = state.item.id;
     let bounding_rect = state.item.bounding_rect;
@@ -78,15 +84,11 @@ fn paint_widget(
         state.children,
         properties.children,
         |widget, mut state, properties| {
-            // TODO - We skip painting stashed items.
-            // This may lead to zombie flags in rare cases, we need to fix this.
-            if state.item.is_stashed {
-                return;
-            }
             // TODO: We could skip painting children outside the parent clip path.
             // There's a few things to consider if we do:
             // - Some widgets can paint outside of their layout box.
             // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
+            // - We still want to reset needs_paint and request_paint flags.
             paint_widget(
                 global_state,
                 default_properties,
@@ -101,16 +103,18 @@ fn paint_widget(
         },
     );
 
-    // draw the global axis aligned bounding rect of the widget
-    if debug_paint {
-        const BORDER_WIDTH: f64 = 1.0;
-        let color = get_debug_color(id.to_raw());
-        let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
-        stroke(complete_scene, &rect, color, BORDER_WIDTH);
-    }
+    if !is_stashed {
+        // draw the global axis aligned bounding rect of the widget
+        if debug_paint {
+            const BORDER_WIDTH: f64 = 1.0;
+            let color = get_debug_color(id.to_raw());
+            let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
+            stroke(complete_scene, &rect, color, BORDER_WIDTH);
+        }
 
-    if has_clip {
-        complete_scene.pop_layer();
+        if has_clip {
+            complete_scene.pop_layer();
+        }
     }
 }
 

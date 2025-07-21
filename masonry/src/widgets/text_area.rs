@@ -885,15 +885,19 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         if !EDITABLE {
             node.set_read_only();
         }
-        self.editor
-            .try_accessibility(
-                ctx.tree_update(),
-                node,
-                || NodeId::from(WidgetId::next()),
-                0.,
-                0.,
-            )
-            .expect("We just performed a layout");
+        let updated = self.editor.try_accessibility(
+            ctx.tree_update(),
+            node,
+            || NodeId::from(WidgetId::next()),
+            0.,
+            0.,
+        );
+
+        let Some(()) = updated else {
+            // We always perform layout before accessibility, so this panic should be unreachable.
+            debug_panic!("Could not generate accessibility nodes for text area");
+            return;
+        };
     }
 
     fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {

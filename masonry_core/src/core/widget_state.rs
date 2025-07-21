@@ -50,6 +50,17 @@ use crate::core::WidgetId;
 /// other pass, which means the widget tree will keep requesting the same passes over
 /// and over. Zombie flags are terrible for performance and power-efficiency.
 ///
+/// For example, in previous versions, stashing widgets could sometimes produce zombie
+/// flags, because passes such as paint or layout would not run on stashed widgets, but
+/// the `needs_paint` and `needs_layout` flags would still propagate up to the parent.
+///
+/// To avoid zombie flags, all passes should *always* recurse over all children and *never*
+/// exit before recursing. The only short-circuit should be the `if !needs_foobar { return }`
+/// block at the beginning of the pass. Flags can be used to skip work in the middle of the
+/// pass function, but never to skip the `recurse_on_children` call.
+///
+/// (The exception is the layout pass, which can't recurse on stashed children.)
+///
 /// [`WidgetMut`]: crate::core::WidgetMut
 #[derive(Clone, Debug)]
 pub(crate) struct WidgetState {

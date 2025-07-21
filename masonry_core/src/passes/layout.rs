@@ -8,12 +8,14 @@
 use dpi::LogicalSize;
 use smallvec::SmallVec;
 use tracing::{info_span, trace};
+use tree_arena::ArenaMut;
 use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
 use crate::core::{BoxConstraints, LayoutCtx, PropertiesMut, Widget, WidgetPod, WidgetState};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
+use crate::util::AnyMap;
 
 // --- MARK: RUN LAYOUT
 /// Run [`Widget::layout`] method on the widget contained in `pod`.
@@ -76,18 +78,16 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
 
     state.item.local_paint_rect = Rect::ZERO;
 
-    // TODO - Handle more elegantly
-    // We suppress need_layout and request_layout for stashed children
-    // to avoid unnecessary relayouts in corner cases.
+    // If children are stashed, the layout pass will not recurse over them.
+    // We reset need_layout and request_layout to false directly instead.
     recurse_on_children(
         pod.id(),
         widget.reborrow_mut(),
         state.children.reborrow_mut(),
         properties.children.reborrow_mut(),
-        |_, state, _| {
+        |widget, state, properties| {
             if state.item.is_stashed {
-                state.item.needs_layout = false;
-                state.item.request_layout = false;
+                clear_layout_flags(widget, state, properties);
             }
         },
     );
@@ -189,6 +189,29 @@ pub(crate) fn run_layout_on<W: Widget + ?Sized>(
     parent_ctx.widget_state.merge_up(state_mut.item);
     state_mut.item.size = new_size;
     new_size
+}
+
+// --- MARK: CLEAR LAYOUT
+// This function is called on stashed widgets and their children
+// to set all layout flags to false.
+fn clear_layout_flags(
+    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    state: ArenaMut<'_, WidgetState>,
+    properties: ArenaMut<'_, AnyMap>,
+) {
+    state.item.needs_layout = false;
+    state.item.request_layout = false;
+
+    let id = state.item.id;
+    recurse_on_children(
+        id,
+        widget.reborrow_mut(),
+        state.children,
+        properties.children,
+        |widget, state, properties| {
+            clear_layout_flags(widget, state, properties);
+        },
+    );
 }
 
 // --- MARK: ROOT
