@@ -81,10 +81,10 @@
 //!         next_task: String::new(),
 //!         window_id: WindowId::next(),
 //!     };
+//!     # return;
 //!     let event_loop = masonry_winit::app::EventLoop::with_user_event()
 //!         .build()
 //!         .unwrap();
-//!     # return;
 //!     masonry_winit::app::run_with(
 //!         event_loop,
 //!         vec![(
