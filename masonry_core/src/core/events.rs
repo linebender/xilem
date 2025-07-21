@@ -80,7 +80,7 @@ pub enum Update {
     ///
     /// See also [`is_disabled`] and [`set_disabled`].
     ///
-    /// [disabled]: crate::doc::doc_06_masonry_concepts#disabled
+    /// [disabled]: crate::doc::internals_02_masonry_concepts#disabled
     /// [`is_disabled`]: crate::core::EventCtx::is_disabled
     /// [`set_disabled`]: crate::core::EventCtx::set_disabled
     DisabledChanged(bool),
@@ -89,7 +89,7 @@ pub enum Update {
     ///
     /// See also [`is_stashed`] and [`set_stashed`].
     ///
-    /// [stashed]: crate::doc::doc_06_masonry_concepts#stashed
+    /// [stashed]: crate::doc::internals_02_masonry_concepts#stashed
     /// [`is_stashed`]: crate::core::EventCtx::is_stashed
     /// [`set_stashed`]: crate::core::EventCtx::set_stashed
     StashedChanged(bool),
@@ -112,14 +112,14 @@ pub enum Update {
 
     /// Called when the [active] status of the current widget changes.
     ///
-    /// [active]: crate::doc::doc_06_masonry_concepts#widget-status
+    /// [active]: crate::doc::internals_02_masonry_concepts#widget-status
     ActiveChanged(bool),
 
     /// Called when the [active] status of the current widget or a descendant changes.
     ///
     /// This is sent before [`Update::ActiveChanged`].
     ///
-    /// [active]: crate::doc::doc_06_masonry_concepts#widget-status
+    /// [active]: crate::doc::internals_02_masonry_concepts#widget-status
     ChildActiveChanged(bool),
 
     /// Called when the [focused] status of the current widget changes.

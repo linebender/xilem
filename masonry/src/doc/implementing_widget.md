@@ -296,7 +296,7 @@ All context types have getters to check some status information:
 - `is_disabled()`
 - `is_stashed()`
 
-See the ["Concepts and definitions"](06_masonry_concepts.md#widget-status) documentation for more information on what they mean.
+See the ["Concepts and definitions"](crate::doc::internals_02_masonry_concepts#widget-status) documentation for more information on what they mean.
 
 ### Requesting passes
 
