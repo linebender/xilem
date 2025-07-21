@@ -99,7 +99,7 @@ pub struct Gradient {
 pub enum RadialGradientShape {
     /// A circle defined based on the box size.
     CircleTo(RadialGradientExtent),
-    /// A circle with a fixed radius.
+    /// A circle with a fixed radius in logical pixels.
     FixedCircle(f64),
     // TODO - Add following and remove #[non_exhaustive]:
     // EllipseTo(RadialGradientExtent),
