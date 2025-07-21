@@ -373,7 +373,10 @@ mod tests {
                 ChildAlignment::ParentAligned,
             )
             .with_child(
-                NewWidget::new_with_props(SizedBox::new(Label::new("Foreground").with_next_id()), fg_props),
+                NewWidget::new_with_props(
+                    SizedBox::new(Label::new("Foreground").with_next_id()),
+                    fg_props,
+                ),
                 ChildAlignment::ParentAligned,
             );
 
@@ -418,8 +421,14 @@ mod tests {
             )
             .with_child(Label::new("TopLeft").with_next_id(), Alignment::TopLeft)
             .with_child(Label::new("TopRight").with_next_id(), Alignment::TopRight)
-            .with_child(Label::new("BottomLeft").with_next_id(), Alignment::BottomLeft)
-            .with_child(Label::new("BottomRight").with_next_id(), Alignment::BottomRight);
+            .with_child(
+                Label::new("BottomLeft").with_next_id(),
+                Alignment::BottomLeft,
+            )
+            .with_child(
+                Label::new("BottomRight").with_next_id(),
+                Alignment::BottomRight,
+            );
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignments_self_aligned");

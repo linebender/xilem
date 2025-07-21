@@ -644,12 +644,15 @@ mod tests {
     #[test]
     fn edit_splitter() {
         let image_1 = {
-            let widget = Split::new(Label::new("Hello").with_next_id(), Label::new("World").with_next_id())
-                .split_point(0.3)
-                .min_size(40.0, 10.0)
-                .bar_size(12.0)
-                .draggable(true)
-                .solid_bar(true);
+            let widget = Split::new(
+                Label::new("Hello").with_next_id(),
+                Label::new("World").with_next_id(),
+            )
+            .split_point(0.3)
+            .min_size(40.0, 10.0)
+            .bar_size(12.0)
+            .draggable(true)
+            .solid_bar(true);
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -661,7 +664,10 @@ mod tests {
         };
 
         let image_2 = {
-            let widget = Split::new(Label::new("Hello").with_next_id(), Label::new("World").with_next_id());
+            let widget = Split::new(
+                Label::new("Hello").with_next_id(),
+                Label::new("World").with_next_id(),
+            );
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),

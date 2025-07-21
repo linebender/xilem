@@ -357,7 +357,11 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_child(this: &mut WidgetMut<'_, Self>, idx: usize, child: NewWidget<impl Widget + ?Sized>) {
+    pub fn insert_child(
+        this: &mut WidgetMut<'_, Self>,
+        idx: usize,
+        child: NewWidget<impl Widget + ?Sized>,
+    ) {
         let child = Child::Fixed {
             widget: child.erased().to_pod(),
             alignment: None,
