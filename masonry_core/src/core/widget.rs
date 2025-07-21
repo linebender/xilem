@@ -142,7 +142,7 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// Text events will target the [focused widget], then bubble to each parent.
     ///
-    /// [focused widget]: crate::doc::internals_02_masonry_concepts#text-focus
+    /// [focused widget]: crate::doc::masonry_concepts#text-focus
     fn on_text_event(
         &mut self,
         ctx: &mut EventCtx<'_>,

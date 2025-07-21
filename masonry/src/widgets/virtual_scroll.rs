@@ -90,7 +90,7 @@ pub struct VirtualScrollAction {
 /// The widget requires these ids to be dense (that is, if it has a child with ids 1 and 3, it must have a child
 /// with id 2).
 ///
-/// This widget works in close coordinate with the [driver](crate::doc::doc_01_creating_app#the-driver) to
+/// This widget works in close coordinate with the [driver](crate::doc::creating_app#the-driver) to
 /// load the children; that is, the driver must provide the children when requested.
 /// See [usage](#usage) for more details.
 ///

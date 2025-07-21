@@ -80,7 +80,7 @@ pub enum Update {
     ///
     /// See also [`is_disabled`] and [`set_disabled`].
     ///
-    /// [disabled]: crate::doc::internals_02_masonry_concepts#disabled
+    /// [disabled]: crate::doc::masonry_concepts#disabled
     /// [`is_disabled`]: crate::core::EventCtx::is_disabled
     /// [`set_disabled`]: crate::core::EventCtx::set_disabled
     DisabledChanged(bool),
@@ -89,7 +89,7 @@ pub enum Update {
     ///
     /// See also [`is_stashed`] and [`set_stashed`].
     ///
-    /// [stashed]: crate::doc::internals_02_masonry_concepts#stashed
+    /// [stashed]: crate::doc::masonry_concepts#stashed
     /// [`is_stashed`]: crate::core::EventCtx::is_stashed
     /// [`set_stashed`]: crate::core::EventCtx::set_stashed
     StashedChanged(bool),
@@ -100,38 +100,38 @@ pub enum Update {
 
     /// Called when the [hovered] status of the current widget changes.
     ///
-    /// [hovered]: crate::doc::internals_02_masonry_concepts#widget-status
+    /// [hovered]: crate::doc::masonry_concepts#widget-status
     HoveredChanged(bool),
 
     /// Called when the [hovered] status of the current widget or a descendant changes.
     ///
     /// This is sent before [`Update::HoveredChanged`].
     ///
-    /// [hovered]: crate::doc::internals_02_masonry_concepts#widget-status
+    /// [hovered]: crate::doc::masonry_concepts#widget-status
     ChildHoveredChanged(bool),
 
     /// Called when the [active] status of the current widget changes.
     ///
-    /// [active]: crate::doc::internals_02_masonry_concepts#widget-status
+    /// [active]: crate::doc::masonry_concepts#widget-status
     ActiveChanged(bool),
 
     /// Called when the [active] status of the current widget or a descendant changes.
     ///
     /// This is sent before [`Update::ActiveChanged`].
     ///
-    /// [active]: crate::doc::internals_02_masonry_concepts#widget-status
+    /// [active]: crate::doc::masonry_concepts#widget-status
     ChildActiveChanged(bool),
 
     /// Called when the [focused] status of the current widget changes.
     ///
-    /// [focused]: crate::doc::internals_02_masonry_concepts#text-focus
+    /// [focused]: crate::doc::masonry_concepts#text-focus
     FocusChanged(bool),
 
     /// Called when the [focused] status of the current widget or a descendant changes.
     ///
     /// This is sent before [`Update::FocusChanged`].
     ///
-    /// [focused]: crate::doc::internals_02_masonry_concepts#text-focus
+    /// [focused]: crate::doc::masonry_concepts#text-focus
     ChildFocusChanged(bool),
 }
 
