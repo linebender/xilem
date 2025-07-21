@@ -260,30 +260,6 @@ impl WidgetState {
         }
     }
 
-    /// Create a dummy root state.
-    ///
-    /// This is useful for passes that need a parent state for the root widget.
-    pub(crate) fn synthetic(id: WidgetId, size: Size) -> Self {
-        Self {
-            size,
-            is_new: false,
-            needs_layout: false,
-            request_compose: false,
-            needs_compose: false,
-            request_paint: false,
-            needs_paint: false,
-            request_accessibility: false,
-            needs_accessibility: false,
-            request_anim: false,
-            needs_anim: false,
-            needs_update_disabled: false,
-            needs_update_stashed: false,
-            children_changed: false,
-            needs_update_focus_chain: false,
-            ..Self::new(id, "<root>", WidgetOptions::default())
-        }
-    }
-
     /// Update to incorporate state changes from a child.
     ///
     /// This method is idempotent and can be called multiple times.
