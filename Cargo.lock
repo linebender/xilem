@@ -2121,7 +2121,6 @@ dependencies = [
  "masonry_testing",
  "parley",
  "profiling",
- "smallvec",
  "tracing",
  "ui-events",
  "vello",

@@ -1,7 +1,7 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use smallvec::smallvec;
+use masonry_core::core::ChildrenIds;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{PointerButton, Update, Widget, WidgetId, WidgetPod};
@@ -20,7 +20,7 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
             ctx.place_child(child, Point::ZERO);
             size
         })
-        .children_fn(|child| smallvec![child.id()])
+        .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
 }
 
 #[cfg(false)]
@@ -259,9 +259,9 @@ fn check_forget_children_changed() {
         })
         .children_fn(|child| {
             if let Some(child) = child {
-                smallvec![child.as_dyn()]
+                ChildrenIds::from_slice(&[child.id()])
             } else {
-                smallvec![]
+                ChildrenIds::new()
             }
         });
 

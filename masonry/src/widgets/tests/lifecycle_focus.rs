@@ -6,8 +6,6 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use smallvec::smallvec;
-
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt as _, WrapperWidget, widget_ids};
 use crate::widgets::Flex;
 use crate::*;
@@ -182,7 +180,7 @@ fn resign_focus_on_disable() {
                 ctx.place_child(child, Point::ZERO);
                 layout
             })
-            .children_fn(|child| smallvec![child.id()])
+            .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
     }
 
     let [group_0, group_1, sub_group, focus_1, focus_2] = widget_ids();

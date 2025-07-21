@@ -13,7 +13,6 @@ use masonry_core::core::{
 };
 use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::kurbo::{Point, Size};
-use masonry_core::smallvec::SmallVec;
 use masonry_core::vello::Scene;
 
 pub(crate) type PointerEventFn<S> =
@@ -335,7 +334,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         if let Some(f) = self.children.as_ref() {
             f(&self.state)
         } else {
-            SmallVec::new()
+            ChildrenIds::new()
         }
     }
 
