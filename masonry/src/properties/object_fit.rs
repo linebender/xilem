@@ -8,6 +8,8 @@ use vello::kurbo::{Affine, Size};
 
 // These are based on https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit
 /// Strategies for inscribing a rectangle inside another rectangle.
+///
+/// Default value is [`Self::Contain`].
 #[derive(Clone, Copy, PartialEq)]
 pub enum ObjectFit {
     /// As large as possible without changing aspect ratio of image and all of image shown
@@ -34,7 +36,7 @@ impl Property for ObjectFit {
 
 impl Default for ObjectFit {
     fn default() -> Self {
-        Self::Contain
+        *Self::static_default()
     }
 }
 
