@@ -7,7 +7,7 @@
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 use masonry::TextAlign;
 use masonry::core::{
-    ErasedAction, PointerButton, Properties, StyleProperty, WidgetId, WidgetOptions, WidgetPod,
+    ErasedAction, NewWidget, PointerButton, Properties, StyleProperty, WidgetId, WidgetOptions,
 };
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
@@ -66,12 +66,11 @@ fn make_grid(grid_spacing: f64) -> Grid {
     let props = Properties::new()
         .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
         .with(BorderWidth::all(1.0));
-    let label = SizedBox::new_pod(WidgetPod::new_with(
-        Box::new(label),
-        WidgetId::next(),
-        WidgetOptions::default(),
-        props,
-    ));
+    let label = SizedBox::new_pod(
+        NewWidget::new_with(label, WidgetId::next(), WidgetOptions::default(), props)
+            .erased()
+            .to_pod(),
+    );
 
     let button_inputs = vec![
         GridParams {
@@ -148,7 +147,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(main_widget).erased(),
+            NewWidget::new(main_widget).erased().to_pod(),
         )],
         driver,
         default_property_set(),

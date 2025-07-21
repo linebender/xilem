@@ -129,7 +129,7 @@ where
         }
         widget = widget.with_active_child(self.active_child);
         let mut pod = ctx.create_pod(widget);
-        pod.properties = self.properties.build_properties();
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, seq_state)
     }
 

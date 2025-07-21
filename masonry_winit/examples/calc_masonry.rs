@@ -16,8 +16,8 @@ use std::str::FromStr;
 use masonry::accesskit;
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
-    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx,
+    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -324,12 +324,13 @@ fn op_button_with_label(op: char, label: String) -> CalcButton {
         Label::new(label).with_style(StyleProperty::FontSize(24.)),
     ))
     .expand();
-    let sized_box = WidgetPod::new_with(
-        Box::new(sized_box),
+    let sized_box = NewWidget::new_with(
+        sized_box,
         WidgetId::next(),
         WidgetOptions::default(),
         Properties::new().with(Background::Color(BLUE)),
-    );
+    )
+    .to_pod();
 
     CalcButton::new(sized_box, CalcAction::Op(op), BLUE, LIGHT_BLUE)
 }
@@ -346,12 +347,13 @@ fn digit_button(digit: u8) -> CalcButton {
         Label::new(format!("{digit}")).with_style(StyleProperty::FontSize(24.)),
     ))
     .expand();
-    let sized_box = WidgetPod::new_with(
-        Box::new(sized_box),
+    let sized_box = NewWidget::new_with(
+        sized_box,
         WidgetId::next(),
         WidgetOptions::default(),
         Properties::new().with(Background::Color(GRAY)),
-    );
+    )
+    .to_pod();
 
     CalcButton::new(sized_box, CalcAction::Digit(digit), GRAY, LIGHT_GRAY)
 }
@@ -462,7 +464,9 @@ fn main() {
         vec![(
             calc_state.window_id,
             window_attributes,
-            WidgetPod::new_with_props(build_calc(), root_props()).erased(),
+            NewWidget::new_with_props(build_calc(), root_props())
+                .erased()
+                .to_pod(),
         )],
         calc_state,
         default_property_set(),

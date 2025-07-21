@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::core::{ErasedAction, StyleProperty, WidgetId, WidgetPod};
+use masonry::core::{ErasedAction, NewWidget, StyleProperty, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
 use masonry::theme::default_property_set;
@@ -68,7 +68,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(main_widget).erased(),
+            NewWidget::new(main_widget).erased().to_pod(),
         )],
         driver,
         default_property_set(),

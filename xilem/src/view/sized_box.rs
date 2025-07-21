@@ -136,7 +136,7 @@ where
             .raw_width(self.width)
             .raw_height(self.height);
         let mut pod = ctx.create_pod(widget);
-        pod.properties = self.properties.build_properties();
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, child_state)
     }
 

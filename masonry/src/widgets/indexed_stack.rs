@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
-use masonry_core::core::WidgetMut;
 use tracing::{Span, trace_span};
 use vello::kurbo::{Affine, Line, Point, Stroke};
 
-use crate::core::{AccessCtx, ChildrenIds, PropertiesRef, Widget, WidgetId, WidgetPod};
+use crate::core::{
+    AccessCtx, ChildrenIds, NewWidget, PropertiesRef, Widget, WidgetId, WidgetMut, WidgetPod,
+};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -35,12 +36,12 @@ impl IndexedStack {
 
     /// Builder-style method to add a child widget.
     pub fn with_child(self, child: impl Widget) -> Self {
-        self.with_child_pod(WidgetPod::new(child).erased())
+        self.with_child_pod(NewWidget::new(child).erased().to_pod())
     }
 
     /// Builder-style method to add a child widget with a pre-assigned id.
     pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(child, id).erased())
+        self.with_child_pod(NewWidget::new_with_id(child, id).erased().to_pod())
     }
 
     /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
@@ -92,7 +93,7 @@ impl IndexedStack {
     ///
     /// See also [`with_child`](IndexedStack::with_child).
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
+        let child_pod: WidgetPod<dyn Widget> = NewWidget::new(child).erased().to_pod();
         Self::add_child_pod(this, child_pod);
     }
 
@@ -100,7 +101,7 @@ impl IndexedStack {
     ///
     /// See also [`with_child_id`](IndexedStack::with_child_id).
     pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
+        let child_pod: WidgetPod<dyn Widget> = NewWidget::new_with_id(child, id).erased().to_pod();
         Self::add_child_pod(this, child_pod);
     }
 
@@ -121,7 +122,7 @@ impl IndexedStack {
     ///
     /// Panics if the index is larger than the number of children.
     pub fn insert_stack_child_at(this: &mut WidgetMut<'_, Self>, idx: usize, child: impl Widget) {
-        Self::insert_stack_child_pod(this, idx, WidgetPod::new(child).erased());
+        Self::insert_stack_child_pod(this, idx, NewWidget::new(child).erased().to_pod());
     }
 
     /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.

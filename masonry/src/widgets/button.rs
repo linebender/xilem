@@ -316,7 +316,7 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::Properties;
+    use masonry_core::core::{NewWidget, Properties};
 
     use super::*;
     use crate::core::keyboard::NamedKey;
@@ -370,10 +370,11 @@ mod tests {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));
-            let label = WidgetPod::new_with_props(
+            let label = NewWidget::new_with_props(
                 label,
                 Properties::new().with(TextColor::new(ACCENT_COLOR)),
-            );
+            )
+            .to_pod();
 
             let button = Button::from_label_pod(label);
 

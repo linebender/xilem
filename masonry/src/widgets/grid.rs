@@ -4,14 +4,13 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::UpdateCtx;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
@@ -67,12 +66,12 @@ impl Grid {
 
     /// Builder-style method to add a child widget.
     pub fn with_child(self, child: impl Widget, params: GridParams) -> Self {
-        self.with_child_pod(WidgetPod::new(child).erased(), params)
+        self.with_child_pod(NewWidget::new(child).erased().to_pod(), params)
     }
 
     /// Builder-style method to add a child widget with a pre-assigned id.
     pub fn with_child_id(self, child: impl Widget, id: WidgetId, params: GridParams) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(child, id).erased(), params)
+        self.with_child_pod(NewWidget::new_with_id(child, id).erased().to_pod(), params)
     }
 
     /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
@@ -155,7 +154,7 @@ impl Grid {
     ///
     /// See also [`with_child`](Grid::with_child).
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget, params: GridParams) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
+        let child_pod: WidgetPod<dyn Widget> = NewWidget::new(child).erased().to_pod();
         Self::add_child_pod(this, child_pod, params);
     }
 
@@ -168,7 +167,7 @@ impl Grid {
         id: WidgetId,
         params: GridParams,
     ) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
+        let child_pod: WidgetPod<dyn Widget> = NewWidget::new_with_id(child, id).erased().to_pod();
         Self::add_child_pod(this, child_pod, params);
     }
 
@@ -200,7 +199,7 @@ impl Grid {
         child: impl Widget,
         params: impl Into<GridParams>,
     ) {
-        Self::insert_grid_child_pod(this, idx, WidgetPod::new(child).erased(), params);
+        Self::insert_grid_child_pod(this, idx, NewWidget::new(child).erased().to_pod(), params);
     }
 
     /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.

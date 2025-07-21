@@ -333,7 +333,7 @@ impl Widget for Checkbox {
 #[cfg(test)]
 mod tests {
 
-    use masonry_core::core::Properties;
+    use masonry_core::core::{NewWidget, Properties};
     use ui_events::keyboard::NamedKey;
 
     use super::*;
@@ -380,10 +380,11 @@ mod tests {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));
-            let label = WidgetPod::new_with_props(
+            let label = NewWidget::new_with_props(
                 label,
                 Properties::new().with(TextColor::new(ACCENT_COLOR)),
-            );
+            )
+            .to_pod();
             let checkbox = Checkbox::from_label_pod(true, label);
 
             let mut harness = TestHarness::create_with_size(

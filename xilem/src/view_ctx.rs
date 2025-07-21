@@ -80,7 +80,7 @@ impl ViewCtx {
         f: impl FnOnce(&mut Self) -> Pod<W>,
     ) -> Pod<W> {
         let value = f(self);
-        self.record_action(value.id);
+        self.record_action(value.new_widget.id);
         value
     }
 

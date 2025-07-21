@@ -34,8 +34,8 @@ use crate::core::{
 /// ## Explicit `WidgetId`s.
 ///
 /// Sometimes, you may want to construct a widget, in a way that lets you know its id,
-/// so you can refer to the widget later. You can use [`WidgetPod::new_with_id`](crate::core::WidgetPod::new_with_id) to pass
-/// an id to the `WidgetPod` you're creating; various widgets which have methods to create
+/// so you can refer to the widget later. You can use [`NewWidget::new_with_id`](crate::core::NewWidget::new_with_id) to pass
+/// an id to the `NewWidget` you're creating; various widgets which have methods to create
 /// children may have variants taking ids as parameters.
 ///
 /// If you set a `WidgetId` directly, you are responsible for ensuring that it

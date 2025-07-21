@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{Properties, WidgetId, WidgetOptions, WidgetPod};
+use masonry::core::{NewWidget, Properties, WidgetId, WidgetOptions};
 use masonry::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground,
     DisabledTextColor, Padding, TextColor,
@@ -142,21 +142,24 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             props.insert(DisabledTextColor(TextColor { color }));
         }
 
-        let text_input = widgets::TextInput::from_text_area_pod(WidgetPod::new_with(
-            Box::new(text_area),
-            WidgetId::next(),
-            WidgetOptions {
-                disabled: self.disabled,
-                transform: Affine::default(),
-            },
-            props,
-        ));
+        let text_input = widgets::TextInput::from_text_area_pod(
+            NewWidget::new_with(
+                text_area,
+                WidgetId::next(),
+                WidgetOptions {
+                    disabled: self.disabled,
+                    transform: Affine::default(),
+                },
+                props,
+            )
+            .to_pod(),
+        );
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
         ctx.record_action(id);
         let mut pod = ctx.create_pod(text_input);
-        pod.properties = self.properties.build_properties();
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
     }
 

@@ -194,7 +194,7 @@ where
             }
         }
         let mut pod = ctx.create_pod(widget);
-        pod.properties = self.properties.build_properties();
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, seq_state)
     }
 

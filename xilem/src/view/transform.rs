@@ -100,9 +100,9 @@ where
         let (mut child_pod, child_state) = self.child.build(ctx, app_state);
         let state = private::TransformedState {
             child: child_state,
-            previous_transform: child_pod.options.transform,
+            previous_transform: child_pod.new_widget.options.transform,
         };
-        child_pod.options.transform = self.transform * state.previous_transform;
+        child_pod.new_widget.options.transform = self.transform * state.previous_transform;
         (child_pod, state)
     }
 

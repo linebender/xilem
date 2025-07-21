@@ -133,7 +133,7 @@ where
             widget = widget.with_child_pod(element.child.erased_widget_pod(), element.params);
         }
         let mut pod = ctx.create_pod(widget);
-        pod.properties = self.properties.build_properties();
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, seq_state)
     }
 

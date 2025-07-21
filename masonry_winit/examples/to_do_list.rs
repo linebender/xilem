@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{ErasedAction, Properties, Widget, WidgetId, WidgetPod};
+use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
@@ -61,13 +61,14 @@ fn make_widget_tree() -> impl Widget {
     Portal::new(
         Flex::column()
             .with_child_pod(
-                WidgetPod::new_with_props(
+                NewWidget::new_with_props(
                     Flex::row()
                         .with_flex_child(TextInput::new(""), 1.0)
                         .with_child(Button::new("Add task")),
                     Properties::new().with(Padding::all(WIDGET_SPACING)),
                 )
-                .erased(),
+                .erased()
+                .to_pod(),
             )
             .with_spacer(WIDGET_SPACING),
     )
@@ -92,7 +93,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(make_widget_tree()).erased(),
+            NewWidget::new(make_widget_tree()).erased().to_pod(),
         )],
         driver,
         default_property_set(),

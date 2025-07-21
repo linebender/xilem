@@ -7,8 +7,8 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::util::include_screenshot;
 
@@ -191,7 +191,7 @@ impl ZStack {
     /// Appends a child widget to the `ZStack`.
     /// The child are placed back to front, in the order they are added.
     pub fn with_child(self, child: impl Widget, alignment: impl Into<ChildAlignment>) -> Self {
-        self.with_child_pod(WidgetPod::new(child).erased(), alignment)
+        self.with_child_pod(NewWidget::new(child).erased().to_pod(), alignment)
     }
 
     /// Appends a child widget with a given `id` to the `ZStack`.
@@ -201,7 +201,10 @@ impl ZStack {
         id: WidgetId,
         alignment: impl Into<ChildAlignment>,
     ) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(child, id).erased(), alignment)
+        self.with_child_pod(
+            NewWidget::new_with_id(child, id).erased().to_pod(),
+            alignment,
+        )
     }
 
     /// Appends a child widget pod to the `ZStack`.
@@ -229,7 +232,7 @@ impl ZStack {
         child: impl Widget,
         alignment: impl Into<ChildAlignment>,
     ) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
+        let child_pod: WidgetPod<dyn Widget> = NewWidget::new(child).erased().to_pod();
         Self::insert_child_pod(this, child_pod, alignment);
     }
 
@@ -242,7 +245,7 @@ impl ZStack {
         id: WidgetId,
         alignment: impl Into<ChildAlignment>,
     ) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
+        let child_pod: WidgetPod<dyn Widget> = NewWidget::new_with_id(child, id).erased().to_pod();
         Self::insert_child_pod(this, child_pod, alignment);
     }
 

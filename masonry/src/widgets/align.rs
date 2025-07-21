@@ -14,8 +14,8 @@ use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetPod,
 };
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
@@ -42,7 +42,7 @@ impl Align {
     pub fn new(align: UnitPoint, child: impl Widget + 'static) -> Self {
         Self {
             align,
-            child: WidgetPod::new(child).erased(),
+            child: NewWidget::new(child).erased().to_pod(),
             width_factor: None,
             height_factor: None,
         }
@@ -67,7 +67,7 @@ impl Align {
     pub fn horizontal(align: UnitPoint, child: impl Widget + 'static) -> Self {
         Self {
             align,
-            child: WidgetPod::new(child).erased(),
+            child: NewWidget::new(child).erased().to_pod(),
             width_factor: None,
             height_factor: Some(1.0),
         }
@@ -77,7 +77,7 @@ impl Align {
     pub fn vertical(align: UnitPoint, child: impl Widget + 'static) -> Self {
         Self {
             align,
-            child: WidgetPod::new(child).erased(),
+            child: NewWidget::new(child).erased().to_pod(),
             width_factor: Some(1.0),
             height_factor: None,
         }

@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::NewWidget;
 use masonry_core::util::fill;
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
@@ -40,7 +41,7 @@ impl SizedBox {
     /// Construct container with child, and both width and height not set.
     pub fn new(child: impl Widget) -> Self {
         Self {
-            child: Some(WidgetPod::new(child).erased()),
+            child: Some(NewWidget::new(child).erased().to_pod()),
             width: None,
             height: None,
         }
@@ -49,7 +50,7 @@ impl SizedBox {
     /// Construct container with child, and both width and height not set.
     pub fn new_with_id(child: impl Widget, id: WidgetId) -> Self {
         Self {
-            child: Some(WidgetPod::new_with_id(child, id).erased()),
+            child: Some(NewWidget::new_with_id(child, id).erased().to_pod()),
             width: None,
             height: None,
         }
@@ -141,7 +142,7 @@ impl SizedBox {
         if let Some(child) = this.widget.child.take() {
             this.ctx.remove_child(child);
         }
-        this.widget.child = Some(WidgetPod::new(child).erased());
+        this.widget.child = Some(NewWidget::new(child).erased().to_pod());
         this.ctx.children_changed();
         this.ctx.request_layout();
     }

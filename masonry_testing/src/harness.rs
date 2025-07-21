@@ -19,11 +19,10 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    DefaultProperties, ErasedAction, Handled, Ime, PointerButton, PointerEvent, PointerId,
-    PointerInfo, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget,
-    WidgetId, WidgetMut, WidgetRef, WindowEvent,
+    DefaultProperties, ErasedAction, Handled, Ime, NewWidget, PointerButton, PointerEvent,
+    PointerId, PointerInfo, PointerState, PointerType, PointerUpdate, Properties, ScrollDelta,
+    TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
 };
-use masonry_core::core::{Properties, WidgetPod};
 use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Point, Size, Vec2};
@@ -278,7 +277,9 @@ impl TestHarness {
         let mut harness = Self {
             signal_receiver,
             render_root: RenderRoot::new(
-                WidgetPod::new_with_props(root_widget, root_widget_props).erased(),
+                NewWidget::new_with_props(root_widget, root_widget_props)
+                    .erased()
+                    .to_pod(),
                 move |signal| signal_sender.send(signal).unwrap(),
                 RenderRootOptions {
                     // TODO - Pass the default property set as an input instead.

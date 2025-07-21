@@ -129,7 +129,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
                 .with_style(StyleProperty::FontStack(self.font.clone()))
                 .with_line_break_mode(self.line_break_mode),
         );
-        pod.properties = self.properties.build_properties();
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
     }
 

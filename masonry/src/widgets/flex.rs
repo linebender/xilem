@@ -6,7 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::RegisterCtx;
+use masonry_core::core::{NewWidget, RegisterCtx};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::common::FloatExt;
@@ -194,14 +194,14 @@ impl Flex {
     ///
     /// Convenient for assembling a group of widgets in a single expression.
     pub fn with_child(self, child: impl Widget) -> Self {
-        self.with_child_pod(WidgetPod::new(child).erased())
+        self.with_child_pod(NewWidget::new(child).erased().to_pod())
     }
 
     /// Builder-style variant of [`Flex::add_child`], that takes the id that the child will have.
     ///
     /// Useful for unit tests.
     pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(child, id).erased())
+        self.with_child_pod(NewWidget::new_with_id(child, id).erased().to_pod())
     }
 
     /// Builder-style method for [adding](Flex::add_child) a type-erased child to this.
@@ -216,7 +216,7 @@ impl Flex {
 
     /// Builder-style method to add a flexible child to the container.
     pub fn with_flex_child(self, child: impl Widget, params: impl Into<FlexParams>) -> Self {
-        self.with_flex_child_pod(WidgetPod::new(child).erased(), params)
+        self.with_flex_child_pod(NewWidget::new(child).erased().to_pod(), params)
     }
 
     /// Builder-style method to add a flexible child to the container.
@@ -324,7 +324,7 @@ impl Flex {
     /// [`with_child`]: Flex::with_child
     pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
         let child = Child::Fixed {
-            widget: WidgetPod::new(child).erased(),
+            widget: NewWidget::new(child).erased().to_pod(),
             alignment: None,
         };
         this.widget.children.push(child);
@@ -338,7 +338,7 @@ impl Flex {
     /// [`with_child_id`]: Flex::with_child_id
     pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
         let child = Child::Fixed {
-            widget: WidgetPod::new_with_id(child, id).erased(),
+            widget: NewWidget::new_with_id(child, id).erased().to_pod(),
             alignment: None,
         };
         this.widget.children.push(child);
@@ -352,7 +352,7 @@ impl Flex {
         params: impl Into<FlexParams>,
     ) {
         let params = params.into();
-        let child = new_flex_child(params, WidgetPod::new(child).erased());
+        let child = new_flex_child(params, NewWidget::new(child).erased().to_pod());
 
         this.widget.children.push(child);
         this.ctx.children_changed();
@@ -391,7 +391,7 @@ impl Flex {
     ///
     /// Panics if the index is larger than the number of children.
     pub fn insert_child(this: &mut WidgetMut<'_, Self>, idx: usize, child: impl Widget) {
-        Self::insert_child_pod(this, idx, WidgetPod::new(child).erased());
+        Self::insert_child_pod(this, idx, NewWidget::new(child).erased().to_pod());
     }
 
     /// Insert a non-flex child widget wrapped in a [`WidgetPod`] at the given index.
@@ -423,7 +423,7 @@ impl Flex {
         child: impl Widget,
         params: impl Into<FlexParams>,
     ) {
-        Self::insert_flex_child_pod(this, idx, WidgetPod::new(child).erased(), params);
+        Self::insert_flex_child_pod(this, idx, NewWidget::new(child).erased().to_pod(), params);
     }
 
     /// Insert a flex child widget wrapped in a [`WidgetPod`] at the given index.

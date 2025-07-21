@@ -45,7 +45,7 @@ where
         let (root_widget, view_state) = self.root_widget_view.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
         (
-            CreateWindow(initial_attributes, root_widget.into_widget_pod().erased()),
+            CreateWindow(initial_attributes, root_widget.erased_widget_pod()),
             view_state,
         )
     }
