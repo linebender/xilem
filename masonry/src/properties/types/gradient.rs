@@ -111,7 +111,7 @@ pub enum RadialGradientShape {
 ///
 /// Matches the `radial-extent` parameter of the [`radial-gradient()`] syntax.
 ///
-/// [`radial-gradient()`]: https://drafts.csswg.org/css-images-3/#radial-gradient-syntax
+/// [`radial-gradient()`]: https://developer.mozilla.org/en-US/docs/Web/CSS/gradient/radial-gradient#size
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RadialGradientExtent {
     /// Interpreted like CSS `closest-corner` size.
