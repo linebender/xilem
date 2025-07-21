@@ -4,6 +4,7 @@
 //! The context types that are passed into various widget methods.
 
 use std::any::Any;
+use std::collections::hash_map::Entry;
 
 use accesskit::TreeUpdate;
 use anymore::AnyDebug;
@@ -91,6 +92,7 @@ pub struct EventCtx<'a> {
 
 /// A context provided to the [`Widget::register_children`] method.
 pub struct RegisterCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     #[cfg(debug_assertions)]
     pub(crate) registered_ids: Vec<WidgetId>,
@@ -1401,6 +1403,7 @@ impl RegisterCtx<'_> {
             id,
             options,
             properties,
+            tag,
             action_type,
             #[cfg(debug_assertions)]
             action_type_name,
@@ -1422,6 +1425,17 @@ impl RegisterCtx<'_> {
             #[cfg(debug_assertions)]
             action_type_name,
         );
+
+        if !tag.is_empty() {
+            let entry = self.global_state.widget_tags.entry(tag);
+
+            let Entry::Vacant(vacant_entry) = entry else {
+                debug_panic!("Tag '{tag}' already exists in the widget tree");
+                return;
+            };
+
+            vacant_entry.insert(id);
+        }
 
         let node = WidgetArenaNode {
             widget: widget.as_box_dyn(),
