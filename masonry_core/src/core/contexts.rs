@@ -10,19 +10,18 @@ use anymore::AnyDebug;
 use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
-use tree_arena::{ArenaMutList, ArenaRefList};
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
     AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties, ErasedAction,
-    FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState,
+    FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaMut,
+    WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::layout::run_layout_on;
 use crate::peniko::Color;
-use crate::util::{AnyMap, get_debug_color};
+use crate::util::get_debug_color;
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -52,10 +51,8 @@ pub struct MutateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
     pub(crate) properties: PropertiesMut<'a>,
-    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaMut<'a>,
 }
 
 /// A context provided inside of [`WidgetRef`].
@@ -65,19 +62,15 @@ pub struct MutateCtx<'a> {
 pub struct QueryCtx<'a> {
     pub(crate) global_state: &'a RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
-    pub(crate) widget_state_children: ArenaRefList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaRefList<'a, Box<dyn Widget>>,
     pub(crate) properties: PropertiesRef<'a>,
-    pub(crate) properties_children: ArenaRefList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaRef<'a>,
 }
 
 /// A context provided to event-handling [`Widget`] methods.
 pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaMut<'a>,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
@@ -85,9 +78,7 @@ pub struct EventCtx<'a> {
 
 /// A context provided to the [`Widget::register_children`] method.
 pub struct RegisterCtx<'a> {
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaMut<'a>,
     #[cfg(debug_assertions)]
     pub(crate) registered_ids: Vec<WidgetId>,
 }
@@ -96,9 +87,7 @@ pub struct RegisterCtx<'a> {
 pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaMut<'a>,
 }
 
 // TODO - Change this once other layout methods are added.
@@ -106,9 +95,7 @@ pub struct UpdateCtx<'a> {
 pub struct LayoutCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaMut<'a>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
 
@@ -116,16 +103,14 @@ pub struct LayoutCtx<'a> {
 pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) children: WidgetArenaMut<'a>,
 }
 
 /// A context passed to [`Widget::paint`] method.
 pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
+    pub(crate) children: WidgetArenaMut<'a>,
     pub(crate) debug_paint: bool,
 }
 
@@ -133,9 +118,7 @@ pub struct PaintCtx<'a> {
 pub struct AccessCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
-    pub(crate) widget_state_children: ArenaMutList<'a, WidgetState>,
-    pub(crate) widget_children: ArenaMutList<'a, Box<dyn Widget>>,
-    pub(crate) properties_children: ArenaMutList<'a, AnyMap>,
+    pub(crate) children: WidgetArenaMut<'a>,
     pub(crate) tree_update: &'a mut TreeUpdate,
     pub(crate) rebuild_all: bool,
 }
@@ -161,6 +144,7 @@ impl_context_method!(
         /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
         fn get_child<Child: Widget>(&self, child: &'_ WidgetPod<Child>) -> &'_ Child {
             let child_ref = self
+                .children
                 .widget_children
                 .item(child.id())
                 .expect("get_child: child not found");
@@ -173,6 +157,7 @@ impl_context_method!(
         /// Helper method to get a direct reference to a child widget from its `WidgetPod`.
         fn get_child_dyn(&self, child: &'_ WidgetPod<impl Widget + ?Sized>) -> &'_ dyn Widget {
             let child_ref = self
+                .children
                 .widget_children
                 .item(child.id())
                 .expect("get_child: child not found");
@@ -183,6 +168,7 @@ impl_context_method!(
         /// Helper method to get a direct reference to a child widget's `WidgetState` from its `WidgetPod`.
         fn get_child_state(&self, child: &'_ WidgetPod<impl Widget + ?Sized>) -> &'_ WidgetState {
             let child_state_ref = self
+                .children
                 .widget_state_children
                 .item(child.id())
                 .expect("get_child_state: child not found");
@@ -213,6 +199,7 @@ impl_context_method!(
             child: &'_ mut WidgetPod<Child>,
         ) -> &'_ mut WidgetState {
             let child_state_mut = self
+                .children
                 .widget_state_children
                 .item_mut(child.id())
                 .expect("get_child_state_mut: child not found");
@@ -230,28 +217,34 @@ impl MutateCtx<'_> {
         child: &'c mut WidgetPod<Child>,
     ) -> WidgetMut<'c, Child> {
         let child_state_mut = self
+            .children
             .widget_state_children
             .item_mut(child.id())
             .expect("get_mut: child not found");
         let child_mut = self
+            .children
             .widget_children
             .item_mut(child.id())
             .expect("get_mut: child not found");
         let child_properties = self
+            .children
             .properties_children
             .item_mut(child.id())
             .expect("get_mut: child not found");
+        let children = WidgetArenaMut {
+            widget_state_children: child_state_mut.children,
+            widget_children: child_mut.children,
+            properties_children: child_properties.children,
+        };
         let child_ctx = MutateCtx {
             global_state: self.global_state,
             parent_widget_state: Some(&mut self.widget_state),
             widget_state: child_state_mut.item,
-            widget_state_children: child_state_mut.children,
-            widget_children: child_mut.children,
             properties: PropertiesMut {
                 map: child_properties.item,
                 default_map: self.properties.default_map,
             },
-            properties_children: child_properties.children,
+            children,
         };
         WidgetMut {
             ctx: child_ctx,
@@ -267,10 +260,8 @@ impl MutateCtx<'_> {
             // It will still be called when the original borrow is dropped.
             parent_widget_state: None,
             widget_state: self.widget_state,
-            widget_state_children: self.widget_state_children.reborrow_mut(),
-            widget_children: self.widget_children.reborrow_mut(),
             properties: self.properties.reborrow_mut(),
-            properties_children: self.properties_children.reborrow_mut(),
+            children: self.children.reborrow_mut(),
         }
     }
 
@@ -278,9 +269,7 @@ impl MutateCtx<'_> {
         UpdateCtx {
             global_state: self.global_state,
             widget_state: self.widget_state,
-            widget_state_children: self.widget_state_children.reborrow_mut(),
-            widget_children: self.widget_children.reborrow_mut(),
-            properties_children: self.properties_children.reborrow_mut(),
+            children: self.children.reborrow_mut(),
         }
     }
 
@@ -300,28 +289,34 @@ impl<'w> QueryCtx<'w> {
     /// Return a [`WidgetRef`] to a child widget.
     pub fn get(self, child: WidgetId) -> WidgetRef<'w, dyn Widget> {
         let child_state = self
+            .children
             .widget_state_children
             .into_item(child)
             .expect("get: child not found");
         let child_widget = self
+            .children
             .widget_children
             .into_item(child)
             .expect("get: child not found");
         let child_properties = self
+            .children
             .properties_children
             .into_item(child)
             .expect("get: child not found");
+        let children = WidgetArenaRef {
+            widget_state_children: child_state.children,
+            widget_children: child_widget.children,
+            properties_children: child_properties.children,
+        };
 
         let ctx = QueryCtx {
             global_state: self.global_state,
-            widget_state_children: child_state.children,
-            widget_children: child_widget.children,
             widget_state: child_state.item,
             properties: PropertiesRef {
                 map: child_properties.item,
                 default_map: self.properties.default_map,
             },
-            properties_children: child_properties.children,
+            children,
         };
         WidgetRef {
             ctx,
@@ -1100,14 +1095,17 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
         // TODO - Send recursive event to child
         let id = child.id();
         let _ = self
+            .children
             .widget_state_children
             .remove(id)
             .expect("remove_child: child not found");
         let _ = self
+            .children
             .widget_children
             .remove(id)
             .expect("remove_child: child not found");
         let _ = self
+            .children
             .properties_children
             .remove(id)
             .expect("remove_child: child not found");
@@ -1300,9 +1298,11 @@ impl RegisterCtx<'_> {
         let id = child.id();
         let state = WidgetState::new(child.id(), widget.short_type_name(), options);
 
-        self.widget_children.insert(id, widget.as_box_dyn());
-        self.widget_state_children.insert(id, state);
-        self.properties_children.insert(id, properties.map);
+        self.children
+            .widget_children
+            .insert(id, widget.as_box_dyn());
+        self.children.widget_state_children.insert(id, state);
+        self.children.properties_children.insert(id, properties.map);
     }
 }
 
@@ -1347,27 +1347,33 @@ macro_rules! impl_get_raw {
                 's: 'r,
             {
                 let child_state_mut = self
+                    .children
                     .widget_state_children
                     .item_mut(child.id())
                     .expect("get_raw_ref: child not found");
                 let child_mut = self
+                    .children
                     .widget_children
                     .item_mut(child.id())
                     .expect("get_raw_ref: child not found");
                 let child_properties = self
+                    .children
                     .properties_children
                     .item_mut(child.id())
                     .expect("get_raw_ref: child not found");
+                let children = WidgetArenaMut {
+                    widget_state_children: child_state_mut.children,
+                    widget_children: child_mut.children,
+                    properties_children: child_properties.children,
+                };
                 #[allow(
                     clippy::needless_update,
                     reason = "May be needless in some macro invocations"
                 )]
                 let child_ctx = $SomeCtx {
                     widget_state: child_state_mut.item,
-                    widget_state_children: child_state_mut.children,
-                    widget_children: child_mut.children,
-                    properties_children: child_properties.children,
                     global_state: self.global_state,
+                    children,
                     ..*self
                 };
                 RawWrapper {
@@ -1388,27 +1394,33 @@ macro_rules! impl_get_raw {
                 's: 'r,
             {
                 let child_state_mut = self
+                    .children
                     .widget_state_children
                     .item_mut(child.id())
                     .expect("get_raw_mut: child not found");
                 let child_mut = self
+                    .children
                     .widget_children
                     .item_mut(child.id())
                     .expect("get_raw_mut: child not found");
                 let child_properties = self
+                    .children
                     .properties_children
                     .item_mut(child.id())
                     .expect("get_raw_mut: child not found");
+                let children = WidgetArenaMut {
+                    widget_state_children: child_state_mut.children,
+                    widget_children: child_mut.children,
+                    properties_children: child_properties.children,
+                };
                 #[allow(
                     clippy::needless_update,
                     reason = "May be needless in some macro invocations"
                 )]
                 let child_ctx = $SomeCtx {
                     widget_state: child_state_mut.item,
-                    widget_state_children: child_state_mut.children,
-                    widget_children: child_mut.children,
-                    properties_children: child_properties.children,
                     global_state: self.global_state,
+                    children,
                     ..*self
                 };
                 RawWrapperMut {
@@ -1436,22 +1448,28 @@ impl<'s> AccessCtx<'s> {
         's: 'r,
     {
         let child_state_mut = self
+            .children
             .widget_state_children
             .item_mut(child.id())
             .expect("get_raw_ref: child not found");
         let child_mut = self
+            .children
             .widget_children
             .item_mut(child.id())
             .expect("get_raw_ref: child not found");
         let child_properties = self
+            .children
             .properties_children
             .item_mut(child.id())
             .expect("get_raw_ref: child not found");
-        let child_ctx = AccessCtx {
-            widget_state: child_state_mut.item,
+        let children = WidgetArenaMut {
             widget_state_children: child_state_mut.children,
             widget_children: child_mut.children,
             properties_children: child_properties.children,
+        };
+        let child_ctx = AccessCtx {
+            widget_state: child_state_mut.item,
+            children,
             global_state: self.global_state,
             tree_update: self.tree_update,
             rebuild_all: self.rebuild_all,

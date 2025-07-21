@@ -41,7 +41,7 @@ pub use ui_events::pointer::{
 };
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
-pub(crate) use widget_arena::WidgetArena;
+pub(crate) use widget_arena::{WidgetArena, WidgetArenaMut, WidgetArenaRef};
 pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
 

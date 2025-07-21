@@ -7,7 +7,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetId};
+use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetArenaRef, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -117,42 +117,43 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
             .children_ids()
             .iter()
             .map(|&id| {
-                let Some(state_ref) = self.ctx.widget_state_children.into_item(id) else {
+                let Some(state_ref) = self.ctx.children.widget_state_children.into_item(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
                     );
                 };
-                let Some(widget_ref) = self.ctx.widget_children.into_item(id) else {
+                let Some(widget_ref) = self.ctx.children.widget_children.into_item(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
                     );
                 };
-                let Some(properties_ref) = self.ctx.properties_children.into_item(id) else {
+                let Some(properties_ref) = self.ctx.children.properties_children.into_item(id)
+                else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
                     );
                 };
 
-                // Box<dyn Widget> -> &dyn Widget
-                // Without this step, the type of `WidgetRef::widget` would be
-                // `&Box<dyn Widget> as &dyn Widget`, which would be an additional layer
-                // of indirection.
-                let widget = widget_ref.item;
-                let widget: &dyn Widget = &**widget;
+                let children = WidgetArenaRef {
+                    widget_children: widget_ref.children,
+                    widget_state_children: state_ref.children,
+                    properties_children: properties_ref.children,
+                };
+                let widget = &**widget_ref.item;
+                let state = state_ref.item;
+                let properties = properties_ref.item;
 
                 let ctx = QueryCtx {
                     global_state: self.ctx.global_state,
-                    widget_state_children: state_ref.children,
-                    widget_children: widget_ref.children,
-                    widget_state: state_ref.item,
+                    widget_state: state,
                     properties: PropertiesRef {
-                        map: properties_ref.item,
+                        map: properties,
                         default_map: self.ctx.properties.default_map,
                     },
-                    properties_children: properties_ref.children,
+                    children,
                 };
 
                 WidgetRef { ctx, widget }

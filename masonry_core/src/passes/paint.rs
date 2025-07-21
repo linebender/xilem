@@ -10,7 +10,9 @@ use vello::kurbo::{Affine, Rect};
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetId, WidgetState};
+use crate::core::{
+    DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetArenaMut, WidgetId, WidgetState,
+};
 use crate::passes::{enter_span_if, recurse_on_children};
 use crate::util::{AnyMap, get_debug_color, stroke};
 
@@ -20,7 +22,7 @@ fn paint_widget(
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
-    mut widget: ArenaMut<'_, Box<dyn Widget>>,
+    widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     properties: ArenaMut<'_, AnyMap>,
     debug_paint: bool,
@@ -35,18 +37,26 @@ fn paint_widget(
     // but we deliberately avoid doing that to avoid creating zombie flags.
     // (See WidgetState doc.)
 
+    let mut children = WidgetArenaMut {
+        widget_children: widget.children,
+        widget_state_children: state.children,
+        properties_children: properties.children,
+    };
+    let widget = &mut **widget.item;
+    let state = state.item;
+    let properties = properties.item;
+
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
     let mut ctx = PaintCtx {
         global_state,
-        widget_state: state.item,
-        widget_state_children: state.children.reborrow_mut(),
-        widget_children: widget.children.reborrow_mut(),
+        widget_state: state,
+        children: children.reborrow_mut(),
         debug_paint,
     };
     if ctx.widget_state.request_paint && !is_stashed {
         if trace {
-            trace!("Painting widget '{}' {}", widget.item.short_type_name(), id);
+            trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
 
         // TODO - Reserve scene
@@ -54,54 +64,48 @@ fn paint_widget(
         let scene = scenes.entry(id).or_default();
         scene.reset();
         let props = PropertiesRef {
-            map: properties.item,
-            default_map: default_properties.for_widget(widget.item.type_id()),
+            map: properties,
+            default_map: default_properties.for_widget(widget.type_id()),
         };
-        widget.item.paint(&mut ctx, &props, scene);
+        widget.paint(&mut ctx, &props, scene);
     }
 
-    state.item.request_paint = false;
-    state.item.needs_paint = false;
+    state.request_paint = false;
+    state.needs_paint = false;
 
-    let has_clip = state.item.clip_path.is_some();
+    let has_clip = state.clip_path.is_some();
     if !is_stashed {
-        let transform = state.item.window_transform;
+        let transform = state.window_transform;
         let scene = scenes.get(&id).unwrap();
 
-        if let Some(clip) = state.item.clip_path {
+        if let Some(clip) = state.clip_path {
             complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
         }
 
         complete_scene.append(scene, Some(transform));
     }
 
-    let id = state.item.id;
-    let bounding_rect = state.item.bounding_rect;
-    let parent_state = state.item;
-    recurse_on_children(
-        id,
-        widget.reborrow_mut(),
-        state.children,
-        properties.children,
-        |widget, mut state, properties| {
-            // TODO: We could skip painting children outside the parent clip path.
-            // There's a few things to consider if we do:
-            // - Some widgets can paint outside of their layout box.
-            // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
-            // - We still want to reset needs_paint and request_paint flags.
-            paint_widget(
-                global_state,
-                default_properties,
-                complete_scene,
-                scenes,
-                widget,
-                state.reborrow_mut(),
-                properties,
-                debug_paint,
-            );
-            parent_state.merge_up(state.item);
-        },
-    );
+    let bounding_rect = state.bounding_rect;
+    let parent_state = state;
+
+    recurse_on_children(id, widget, children, |widget, mut state, properties| {
+        // TODO: We could skip painting children outside the parent clip path.
+        // There's a few things to consider if we do:
+        // - Some widgets can paint outside of their layout box.
+        // - Once we implement compositor layers, we may want to paint outside of the clip path anyway in anticipation of user scrolling.
+        // - We still want to reset needs_paint and request_paint flags.
+        paint_widget(
+            global_state,
+            default_properties,
+            complete_scene,
+            scenes,
+            widget,
+            state.reborrow_mut(),
+            properties,
+            debug_paint,
+        );
+        parent_state.merge_up(state.item);
+    });
 
     if !is_stashed {
         // draw the global axis aligned bounding rect of the widget
