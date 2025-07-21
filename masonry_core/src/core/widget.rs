@@ -399,14 +399,6 @@ pub trait Widget: AsDynWidget + Any {
     {
         NewWidget::new(self)
     }
-
-    /// Convenience method to create a `NewWidget` from this.
-    fn with_next_id2(self) -> NewWidget<Self>
-    where
-        Self: Sized,
-    {
-        NewWidget::new(self)
-    }
 }
 
 /// See [`Widget::find_widget_under_pointer`] for more details.

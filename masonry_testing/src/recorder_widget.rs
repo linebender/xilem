@@ -15,9 +15,9 @@ use std::rc::Rc;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetRef,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
 use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::kurbo::{Point, Size};
@@ -262,5 +262,12 @@ impl<W: Widget> Widget for Recorder<W> {
 
     fn short_type_name(&self) -> &'static str {
         "Recorder"
+    }
+
+    fn with_next_id(self) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new(self)
     }
 }

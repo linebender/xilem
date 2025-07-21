@@ -7,9 +7,9 @@ use tracing::trace_span;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef, find_widget_under_pointer,
 };
 use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::kurbo::{Point, Size};
@@ -376,5 +376,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn short_type_name(&self) -> &'static str {
         "ModularWidget"
+    }
+
+    fn with_next_id(self) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new(self)
     }
 }

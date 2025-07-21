@@ -30,12 +30,14 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
         Recorder::new(self, recording)
     }
 
+    // TODO - Move to `Widget` trait.
     /// Wrap this widget in a [`WrapperWidget`] with the given id.
     fn with_id(self, id: WidgetId) -> WrapperWidget {
         let child = NewWidget::new_with_id(self, id).erased().to_pod();
         WrapperWidget::new_pod(child)
     }
 
+    // TODO - Move to `Widget` trait.
     /// Wrap this widget in a [`WrapperWidget`] with the given [`Properties`].
     fn with_props(self, props: Properties) -> WrapperWidget {
         let child = NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
