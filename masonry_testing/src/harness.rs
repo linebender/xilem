@@ -298,6 +298,7 @@ impl TestHarness {
             title: String::new(),
         };
         harness.process_window_event(WindowEvent::Resize(window_size));
+        harness.process_window_event(WindowEvent::EnableAccessTree);
 
         harness
     }
@@ -378,6 +379,7 @@ impl TestHarness {
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
         let (scene, tree_update) = self.render_root.redraw();
+        let tree_update = tree_update.unwrap();
         if let Some(access_tree) = &mut self.access_tree {
             access_tree.update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
         } else {

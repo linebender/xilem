@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
-use tracing::{debug, info_span, trace};
+use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
@@ -19,17 +19,16 @@ fn build_accessibility_tree(
     mut widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     mut properties: ArenaMut<'_, AnyMap>,
-    rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {
     let _span = enter_span_if(global_state.trace.access, state.reborrow());
     let id = state.item.id;
 
-    if !rebuild_all && !state.item.needs_accessibility {
+    if !state.item.needs_accessibility {
         return;
     }
 
-    if (rebuild_all || state.item.request_accessibility) && !state.item.is_stashed {
+    if state.item.request_accessibility && !state.item.is_stashed {
         if global_state.trace.access {
             trace!(
                 "Building accessibility node for widget '{}' {}",
@@ -45,7 +44,6 @@ fn build_accessibility_tree(
             widget_children: widget.children.reborrow_mut(),
             properties_children: properties.children.reborrow_mut(),
             tree_update,
-            rebuild_all,
         };
         let mut node = build_access_node(&mut **widget.item, &mut ctx, scale_factor);
         let props = PropertiesRef {
@@ -79,7 +77,6 @@ fn build_accessibility_tree(
                 widget,
                 state.reborrow_mut(),
                 properties,
-                rebuild_all,
                 None,
             );
             parent_state.merge_up(state.item);
@@ -187,9 +184,6 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         (widget, state, properties)
     };
 
-    if root.rebuild_access_tree {
-        debug!("Running ACCESSIBILITY pass with rebuild_all");
-    }
     build_accessibility_tree(
         &mut root.global_state,
         &root.default_properties,
@@ -197,10 +191,8 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
         root_widget,
         root_state,
         root_properties,
-        root.rebuild_access_tree,
         Some(scale_factor),
     );
-    root.rebuild_access_tree = false;
 
     // TODO: make root node type customizable to support Dialog/AlertDialog roles
     // (should go hand in hand with introducing support for modal windows?)
