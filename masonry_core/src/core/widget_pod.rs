@@ -25,7 +25,8 @@ pub struct WidgetPod<W: ?Sized> {
 /// alongside it once it's added to the tree.
 #[non_exhaustive]
 pub struct NewWidget<W: ?Sized> {
-    pub(crate) widget: Box<W>,
+    /// The widget we're going to add.
+    pub widget: Box<W>,
     pub(crate) id: WidgetId,
 
     /// The options the widget will be created with.
