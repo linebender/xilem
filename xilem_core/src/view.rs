@@ -10,7 +10,7 @@ use core::ops::Deref;
 
 use crate::environment::Environment;
 use crate::message::MessageResult;
-use crate::{DynMessage, Mut, ViewElement};
+use crate::{DynMessage, MessageContext, Mut, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -103,8 +103,8 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
 
