@@ -6,7 +6,7 @@
 use hidden::OneOfState;
 
 use crate::{
-    DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    MessageContext, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used.
@@ -135,39 +135,66 @@ pub trait OneOfCtx<
 
     /// Casts the view element `elem` to the `OneOf::A` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_a(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, A>));
+    fn with_downcast_a<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, A>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::B` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_b(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, B>));
+    fn with_downcast_b<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, B>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::C` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_c(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, C>));
+    fn with_downcast_c<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, C>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::D` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_d(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, D>));
+    fn with_downcast_d<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, D>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::E` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_e(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, E>));
+    fn with_downcast_e<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, E>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::F` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_f(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, F>));
+    fn with_downcast_f<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, F>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::G` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_g(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, G>));
+    fn with_downcast_g<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, G>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::H` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_h(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, H>));
+    fn with_downcast_h<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, H>) -> R,
+    ) -> R;
 
     /// Casts the view element `elem` to the `OneOf::I` variant.
     /// `f` needs to be invoked with that inner `ViewElement`
-    fn with_downcast_i(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, I>));
+    fn with_downcast_i<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, I>) -> R,
+    ) -> R;
 
     /// Creates the wrapping element, this is used in `View::build` to wrap the inner view element variant
     fn upcast_one_of_element(
@@ -526,26 +553,42 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let (start, rest) = id_path
-            .split_first()
-            .expect("Id path has elements for OneOf");
+        let start = ctx.take_first().expect("Id path has elements for OneOf");
         if start.routing_id() != view_state.generation {
-            return MessageResult::Stale(message);
+            return MessageResult::Stale;
         }
         match (self, &mut view_state.inner_state) {
-            (Self::A(v), OneOf::A(state)) => v.message(state, rest, message, app_state),
-            (Self::B(v), OneOf::B(state)) => v.message(state, rest, message, app_state),
-            (Self::C(v), OneOf::C(state)) => v.message(state, rest, message, app_state),
-            (Self::D(v), OneOf::D(state)) => v.message(state, rest, message, app_state),
-            (Self::E(v), OneOf::E(state)) => v.message(state, rest, message, app_state),
-            (Self::F(v), OneOf::F(state)) => v.message(state, rest, message, app_state),
-            (Self::G(v), OneOf::G(state)) => v.message(state, rest, message, app_state),
-            (Self::H(v), OneOf::H(state)) => v.message(state, rest, message, app_state),
-            (Self::I(v), OneOf::I(state)) => v.message(state, rest, message, app_state),
+            (Self::A(v), OneOf::A(state)) => Context::with_downcast_a(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::B(v), OneOf::B(state)) => Context::with_downcast_b(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::C(v), OneOf::C(state)) => Context::with_downcast_c(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::D(v), OneOf::D(state)) => Context::with_downcast_d(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::E(v), OneOf::E(state)) => Context::with_downcast_e(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::F(v), OneOf::F(state)) => Context::with_downcast_f(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::G(v), OneOf::G(state)) => Context::with_downcast_g(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::H(v), OneOf::H(state)) => Context::with_downcast_h(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
+            (Self::I(v), OneOf::I(state)) => Context::with_downcast_i(&mut element, |element| {
+                v.message(state, ctx, element, app_state)
+            }),
             _ => unreachable!(),
         }
     }
@@ -556,7 +599,7 @@ where
 #[doc(hidden)]
 mod hidden {
     use super::PhantomElementCtx;
-    use crate::{DynMessage, View, ViewMarker};
+    use crate::{MessageContext, Mut, View, ViewMarker};
 
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     #[derive(Debug)]
@@ -596,8 +639,8 @@ mod hidden {
         fn message(
             &self,
             _: &mut Self::ViewState,
-            _: &[crate::ViewId],
-            _: DynMessage,
+            _: &mut MessageContext,
+            _: Mut<'_, Self::Element>,
             _: &mut State,
         ) -> crate::MessageResult<Action> {
             match *self {}

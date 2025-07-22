@@ -14,12 +14,13 @@ type AnyNoopView = dyn AnyView<(), Action, TestCtx, TestElement>;
 fn messages_to_inner_view() {
     let view: Box<AnyNoopView> = Box::new(OperationView::<0>(0));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
-
-    let result = view.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
-    assert_action(result, 0);
+    ctx.with_message_context(element.view_path.clone(), DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        assert_action(result, 0);
+    });
 }
 
 #[test]
@@ -38,8 +39,10 @@ fn message_after_rebuild() {
         &[Operation::Build(0), Operation::Rebuild { from: 0, to: 1 }]
     );
 
-    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
-    assert_action(result, 1);
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        assert_action(result, 1);
+    });
 }
 
 #[test]
@@ -62,8 +65,10 @@ fn no_message_after_stale() {
         ]
     );
 
-    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }
 
 #[test]
@@ -100,6 +105,8 @@ fn no_message_after_stale_then_same_type() {
         ]
     );
 
-    let result = view3.message(&mut state, &path, DynMessage::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view3.message(&mut state, ctx, &mut element, &mut ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }

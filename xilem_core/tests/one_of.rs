@@ -89,67 +89,67 @@ impl
         }
     }
 
-    fn with_downcast_a(
+    fn with_downcast_a<R>(
         elem: &mut Mut<'_, Self::OneOfElement>,
-        f: impl FnOnce(Mut<'_, TestElement>),
-    ) {
-        f(elem);
+        f: impl FnOnce(Mut<'_, TestElement>) -> R,
+    ) -> R {
+        f(elem)
     }
 
-    fn with_downcast_b(
+    fn with_downcast_b<R>(
         elem: &mut Mut<'_, Self::OneOfElement>,
-        f: impl FnOnce(Mut<'_, TestElement>),
-    ) {
-        f(elem);
+        f: impl FnOnce(Mut<'_, TestElement>) -> R,
+    ) -> R {
+        f(elem)
     }
 
     // when one of the following would be invoked, it would be an error in the impl of `OneOfN`
-    fn with_downcast_c(
+    fn with_downcast_c<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_d(
+    fn with_downcast_d<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_e(
+    fn with_downcast_e<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_f(
+    fn with_downcast_f<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_g(
+    fn with_downcast_g<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_h(
+    fn with_downcast_h<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 
-    fn with_downcast_i(
+    fn with_downcast_i<R>(
         _elem: &mut Mut<'_, Self::OneOfElement>,
-        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>),
-    ) {
+        _f: impl FnOnce(Mut<'_, <Self as PhantomElementCtx>::PhantomElement>) -> R,
+    ) -> R {
         unreachable!()
     }
 }
@@ -227,12 +227,14 @@ fn one_of_passthrough_teardown() {
 fn one_of_passthrough_message() {
     let view1: OneOf2<OperationView<0>, OperationView<1>> = OneOf2::A(record_ops_0(0));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view1.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
-    assert_action(result, 0);
+    ctx.with_message_context(element.view_path.clone(), DynMessage::new(()), |ctx| {
+        let result = view1.message(&mut state, ctx, &mut element, &mut ());
+        assert_action(result, 0);
+    });
 }
 
 #[test]
@@ -255,8 +257,10 @@ fn one_of_no_message_after_stale() {
         ]
     );
 
-    let result = view2.message(&mut state, &path, DynMessage::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view2.message(&mut state, ctx, &mut element, &mut ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }
 
 #[test]
@@ -293,6 +297,8 @@ fn one_of_no_message_after_stale_then_same_type() {
         ]
     );
 
-    let result = view3.message(&mut state, &path, DynMessage::new(()), &mut ());
-    assert!(matches!(result, MessageResult::Stale(_)));
+    ctx.with_message_context(path, DynMessage::new(()), |ctx| {
+        let result = view3.message(&mut state, ctx, &mut element, &mut ());
+        assert!(matches!(result, MessageResult::Stale));
+    });
 }
