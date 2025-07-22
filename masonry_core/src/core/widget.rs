@@ -392,8 +392,8 @@ pub trait Widget: AsDynWidget + Any {
             .unwrap_or(name)
     }
 
-    /// Convenience method to create a `NewWidget` from this.
-    fn with_next_id(self) -> NewWidget<Self>
+    /// Convenience method to create a [`NewWidget`] from this.
+    fn with_auto_id(self) -> NewWidget<Self>
     where
         Self: Sized,
     {

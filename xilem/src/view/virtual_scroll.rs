@@ -145,7 +145,7 @@ where
         let pod = Pod::new(
             widgets::VirtualScroll::<Element>::new(0).with_valid_range(self.valid_range.clone()),
         );
-        ctx.record_action(pod.new_widget.id);
+        ctx.record_action(pod.new_widget.id());
         (
             pod,
             private::VirtualScrollState {

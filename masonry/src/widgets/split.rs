@@ -612,8 +612,8 @@ mod tests {
     fn columns() {
         #[rustfmt::skip]
         let widget = Split::new(
-            Label::new("Hello").with_next_id(),
-            Label::new("World").with_next_id(),
+            Label::new("Hello").with_auto_id(),
+            Label::new("World").with_auto_id(),
         ).split_axis(Axis::Horizontal).draggable(false);
 
         let window_size = Size::new(150.0, 150.0);
@@ -627,8 +627,8 @@ mod tests {
     fn rows() {
         #[rustfmt::skip]
         let widget = Split::new(
-            Label::new("Hello").with_next_id(),
-            Label::new("World").with_next_id(),
+            Label::new("Hello").with_auto_id(),
+            Label::new("World").with_auto_id(),
         ).split_axis(Axis::Vertical).draggable(false);
 
         let window_size = Size::new(150.0, 150.0);
@@ -645,8 +645,8 @@ mod tests {
     fn edit_splitter() {
         let image_1 = {
             let widget = Split::new(
-                Label::new("Hello").with_next_id(),
-                Label::new("World").with_next_id(),
+                Label::new("Hello").with_auto_id(),
+                Label::new("World").with_auto_id(),
             )
             .split_point(0.3)
             .min_size(40.0, 10.0)
@@ -665,8 +665,8 @@ mod tests {
 
         let image_2 = {
             let widget = Split::new(
-                Label::new("Hello").with_next_id(),
-                Label::new("World").with_next_id(),
+                Label::new("Hello").with_auto_id(),
+                Label::new("World").with_auto_id(),
             );
 
             let mut harness = TestHarness::create_with_size(

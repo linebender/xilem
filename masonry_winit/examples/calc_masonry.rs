@@ -324,9 +324,9 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<CalcButton> {
         Align::centered(
             Label::new(label)
                 .with_style(StyleProperty::FontSize(24.))
-                .with_next_id(),
+                .with_auto_id(),
         )
-        .with_next_id(),
+        .with_auto_id(),
     )
     .expand();
     let sized_box = NewWidget::new_with(
@@ -357,9 +357,9 @@ fn digit_button(digit: u8) -> NewWidget<CalcButton> {
         Align::centered(
             Label::new(format!("{digit}"))
                 .with_style(StyleProperty::FontSize(24.))
-                .with_next_id(),
+                .with_auto_id(),
         )
-        .with_next_id(),
+        .with_auto_id(),
     )
     .expand();
     let sized_box = NewWidget::new_with(
@@ -402,7 +402,7 @@ fn build_calc() -> NewWidget<impl Widget> {
     let root_widget = Flex::column()
         .with_gap(0.0)
         .with_flex_spacer(0.2)
-        .with_child(display.with_next_id())
+        .with_child(display.with_auto_id())
         .with_flex_spacer(0.2)
         .cross_axis_alignment(CrossAxisAlignment::End)
         .with_flex_child(

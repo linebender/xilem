@@ -301,15 +301,15 @@ mod tests {
 
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::add_child(&mut stack, button::Button::new("A").with_next_id());
+            IndexedStack::add_child(&mut stack, button::Button::new("A").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_single");
 
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::add_child(&mut stack, button::Button::new("B").with_next_id());
-            IndexedStack::add_child(&mut stack, button::Button::new("C").with_next_id());
-            IndexedStack::add_child(&mut stack, button::Button::new("D").with_next_id());
+            IndexedStack::add_child(&mut stack, button::Button::new("B").with_auto_id());
+            IndexedStack::add_child(&mut stack, button::Button::new("C").with_auto_id());
+            IndexedStack::add_child(&mut stack, button::Button::new("D").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_single"); // the active child should not change
 
@@ -323,9 +323,9 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = IndexedStack::new()
-            .with_child(button::Button::new("A").with_next_id())
-            .with_child(button::Button::new("B").with_next_id())
-            .with_child(button::Button::new("C").with_next_id())
+            .with_child(button::Button::new("A").with_auto_id())
+            .with_child(button::Button::new("B").with_auto_id())
+            .with_child(button::Button::new("C").with_auto_id())
             .with_active_child(1);
         let window_size = Size::new(50.0, 50.0);
         let mut harness =
@@ -350,7 +350,7 @@ mod tests {
         // Add another widget at the end
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::add_child(&mut stack, button::Button::new("D").with_next_id());
+            IndexedStack::add_child(&mut stack, button::Button::new("D").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_removed_widget"); // Should not change
 
@@ -364,8 +364,8 @@ mod tests {
         // Insert back the first two at the start
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::insert_child(&mut stack, 0, button::Button::new("A").with_next_id());
-            IndexedStack::insert_child(&mut stack, 1, button::Button::new("B").with_next_id());
+            IndexedStack::insert_child(&mut stack, 0, button::Button::new("A").with_auto_id());
+            IndexedStack::insert_child(&mut stack, 1, button::Button::new("B").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_new_widget"); // Should not change
 

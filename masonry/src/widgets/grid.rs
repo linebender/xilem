@@ -352,7 +352,7 @@ mod tests {
     fn test_grid_basics() {
         // Start with a 1x1 grid
         let widget = Grid::with_dimensions(1, 1).with_child(
-            button::Button::new("A").with_next_id(),
+            button::Button::new("A").with_auto_id(),
             GridParams::new(0, 0, 1, 1),
         );
         let window_size = Size::new(200.0, 200.0);
@@ -379,7 +379,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B").with_next_id(),
+                button::Button::new("B").with_auto_id(),
                 GridParams::new(1, 0, 3, 1),
             );
         });
@@ -390,7 +390,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("C").with_next_id(),
+                button::Button::new("C").with_auto_id(),
                 GridParams::new(0, 1, 1, 3),
             );
         });
@@ -401,7 +401,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("D").with_next_id(),
+                button::Button::new("D").with_auto_id(),
                 GridParams::new(1, 1, 2, 2),
             );
         });
@@ -425,7 +425,7 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = Grid::with_dimensions(2, 2).with_child(
-            button::Button::new("A").with_next_id(),
+            button::Button::new("A").with_auto_id(),
             GridParams::new(0, 0, 1, 1),
         );
         let window_size = Size::new(200.0, 200.0);
@@ -446,7 +446,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("A").with_next_id(),
+                button::Button::new("A").with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -470,7 +470,7 @@ mod tests {
     #[test]
     fn test_widget_order() {
         let widget = Grid::with_dimensions(2, 2).with_child(
-            button::Button::new("A").with_next_id(),
+            button::Button::new("A").with_auto_id(),
             GridParams::new(0, 0, 1, 1),
         );
         let window_size = Size::new(200.0, 200.0);
@@ -484,7 +484,7 @@ mod tests {
             let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B").with_next_id(),
+                button::Button::new("B").with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -497,7 +497,7 @@ mod tests {
             Grid::insert_grid_child_at(
                 &mut grid,
                 0,
-                button::Button::new("C").with_next_id(),
+                button::Button::new("C").with_auto_id(),
                 GridParams::new(0, 0, 2, 1),
             );
         });

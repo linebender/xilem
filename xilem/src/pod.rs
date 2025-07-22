@@ -54,9 +54,7 @@ impl<W: Widget + FromDynWidget + ?Sized> ViewElement for Pod<W> {
 
 impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Pod<dyn Widget> {
     fn upcast(_: &mut ViewCtx, child: Pod<W>) -> Self {
-        Pod {
-            new_widget: child.new_widget.erased(),
-        }
+        child.erased()
     }
 
     fn with_downcast_val<R>(

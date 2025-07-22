@@ -378,7 +378,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
         "ModularWidget"
     }
 
-    fn with_next_id(self) -> NewWidget<Self>
+    fn with_auto_id(self) -> NewWidget<Self>
     where
         Self: Sized,
     {

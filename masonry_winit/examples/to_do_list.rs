@@ -36,7 +36,7 @@ impl AppDriver for Driver {
             ctx.render_root(window_id).edit_root_widget(|mut root| {
                 let mut portal = root.downcast::<Portal<Flex>>();
                 let mut flex = Portal::child_mut(&mut portal);
-                Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_next_id());
+                Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_auto_id());
 
                 let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
                 let mut first_row = first_row.downcast::<Flex>();
@@ -62,12 +62,12 @@ fn make_widget_tree() -> impl Widget {
         Flex::column()
             .with_child(NewWidget::new_with_props(
                 Flex::row()
-                    .with_flex_child(TextInput::new("").with_next_id(), 1.0)
-                    .with_child(Button::new("Add task").with_next_id()),
+                    .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
+                    .with_child(Button::new("Add task").with_auto_id()),
                 Properties::new().with(Padding::all(WIDGET_SPACING)),
             ))
             .with_spacer(WIDGET_SPACING)
-            .with_next_id(),
+            .with_auto_id(),
     )
 }
 

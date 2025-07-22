@@ -514,7 +514,7 @@ mod tests {
     use crate::widgets::{Button, Flex, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {
-        SizedBox::new(Button::new(text).with_next_id())
+        SizedBox::new(Button::new(text).with_auto_id())
             .width(70.0)
             .height(40.0)
     }
@@ -527,33 +527,33 @@ mod tests {
 
         let widget = Portal::new(NewWidget::new(
             Flex::column()
-                .with_child(button("Item 1").with_next_id())
+                .with_child(button("Item 1").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 2").with_next_id())
+                .with_child(button("Item 2").with_auto_id())
                 .with_spacer(10.0)
                 .with_child(NewWidget::new_with_id(button("Item 3"), item_3_id))
                 .with_spacer(10.0)
-                .with_child(button("Item 4").with_next_id())
+                .with_child(button("Item 4").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 5").with_next_id())
+                .with_child(button("Item 5").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 6").with_next_id())
+                .with_child(button("Item 6").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 7").with_next_id())
+                .with_child(button("Item 7").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 8").with_next_id())
+                .with_child(button("Item 8").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 9").with_next_id())
+                .with_child(button("Item 9").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 10").with_next_id())
+                .with_child(button("Item 10").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 11").with_next_id())
+                .with_child(button("Item 11").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(button("Item 12").with_next_id())
+                .with_child(button("Item 12").with_auto_id())
                 .with_spacer(10.0)
                 .with_child(NewWidget::new_with_id(button("Item 13"), item_13_id))
                 .with_spacer(10.0)
-                .with_child(button("Item 14").with_next_id())
+                .with_child(button("Item 14").with_auto_id())
                 .with_spacer(10.0),
         ));
 
@@ -598,7 +598,7 @@ mod tests {
                     button_id,
                 ))
                 .with_spacer(500.0)
-                .with_next_id(),
+                .with_auto_id(),
         );
 
         let mut harness =

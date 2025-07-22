@@ -264,7 +264,7 @@ impl<W: Widget> Widget for Recorder<W> {
         "Recorder"
     }
 
-    fn with_next_id(self) -> NewWidget<Self>
+    fn with_auto_id(self) -> NewWidget<Self>
     where
         Self: Sized,
     {

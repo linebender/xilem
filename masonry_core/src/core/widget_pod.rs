@@ -16,15 +16,25 @@ pub struct WidgetPod<W: ?Sized> {
 }
 
 /// A container for a widget yet to be inserted.
+///
+/// In general, functions which take a new widget and add it to the tree
+/// (e.g. `FooBarContainer::add_child_widget()`) should take a `NewWidget` as
+/// a parameter.
+///
+/// `NewWidget` holds both the widget itself and additional metadata which will be stored
+/// alongside it once it's added to the tree.
 #[non_exhaustive]
-#[expect(missing_docs, reason = "Names are self-explanatory.")]
 pub struct NewWidget<W: ?Sized> {
-    pub widget: Box<W>,
-    pub id: WidgetId,
+    pub(crate) widget: Box<W>,
+    pub(crate) id: WidgetId,
+
+    /// The options the widget will be created with.
     pub options: WidgetOptions,
+    /// The properties the widget will be created with.
     pub properties: Properties,
 }
 
+// TODO - Remove this and merge it into NewWidget?
 /// The options a new widget will be created with.
 #[derive(Default, Debug)]
 pub struct WidgetOptions {
@@ -47,6 +57,8 @@ enum WidgetPodInner<W: ?Sized> {
 
 impl<W: Widget> NewWidget<W> {
     /// Create a new widget.
+    ///
+    /// You can also get the same result with [`Widget::with_auto_id()`].
     pub fn new(inner: W) -> Self {
         Self::new_with_id(inner, WidgetId::next())
     }
@@ -61,23 +73,20 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
+    // TODO - Replace with builder methods?
     /// Create a new widget with custom [`Properties`].
     pub fn new_with_props(inner: W, props: Properties) -> Self {
         Self {
-            widget: Box::new(inner),
-            id: WidgetId::next(),
-            options: WidgetOptions::default(),
             properties: props,
+            ..Self::new(inner)
         }
     }
 
     /// Create a new widget with custom [`WidgetOptions`].
     pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
         Self {
-            widget: Box::new(inner),
-            id: WidgetId::next(),
             options,
-            properties: Properties::default(),
+            ..Self::new(inner)
         }
     }
 
@@ -113,6 +122,11 @@ impl<W: Widget + ?Sized> NewWidget<W> {
             inner: WidgetPodInner::Create(self),
         }
     }
+
+    /// Get the id of the widget.
+    pub fn id(&self) -> WidgetId {
+        self.id
+    }
 }
 
 impl<W: Widget> WidgetPod<W> {
@@ -135,7 +149,7 @@ impl<W: Widget + ?Sized> WidgetPod<W> {
         }
     }
 
-    /// Get the identity of the widget.
+    /// Get the id of the widget.
     pub fn id(&self) -> WidgetId {
         self.id
     }

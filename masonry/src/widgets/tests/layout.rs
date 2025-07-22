@@ -28,7 +28,7 @@ fn layout_simple() {
                     id_2,
                 ))
                 .with_flex_spacer(1.0)
-                .with_next_id(),
+                .with_auto_id(),
         )
         .with_flex_spacer(1.0);
 

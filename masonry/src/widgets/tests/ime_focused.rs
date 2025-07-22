@@ -16,7 +16,7 @@ fn ime_on_remove() {
             TextArea::new_editable("Simple input test"),
             text_area,
         ))
-        .with_next_id(),
+        .with_auto_id(),
     );
 
     let mut harness = TestHarness::create(default_property_set(), widget);

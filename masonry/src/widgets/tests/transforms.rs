@@ -21,7 +21,7 @@ fn blue_box(inner: impl Widget) -> impl Widget {
     box_props.insert(BorderColor::new(palette::css::TEAL));
     box_props.insert(BorderWidth::all(2.0));
 
-    SizedBox::new(inner.with_next_id())
+    SizedBox::new(inner.with_auto_id())
         .width(200.)
         .height(100.)
         .with_props(box_props)
@@ -51,7 +51,7 @@ fn transforms_translation_rotation() {
 fn transforms_pointer_events() {
     let transformed_widget = NewWidget::new_with_options(
         blue_box(ZStack::new().with_child(
-            Button::new("Should be pressed").with_next_id(),
+            Button::new("Should be pressed").with_auto_id(),
             Alignment::BottomRight,
         )),
         WidgetOptions {

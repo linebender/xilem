@@ -61,9 +61,9 @@ fn make_grid(grid_spacing: f64) -> Grid {
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
             .with_text_alignment(TextAlign::Center)
-            .with_next_id(),
+            .with_auto_id(),
     );
-    let label = SizedBox::new(label.with_next_id());
+    let label = SizedBox::new(label.with_auto_id());
 
     let props = Properties::new()
         .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
@@ -123,10 +123,10 @@ fn make_grid(grid_spacing: f64) -> Grid {
     // Arrange widgets in a 4 by 4 grid.
     let mut main_widget = Grid::with_dimensions(4, 4)
         .with_spacing(grid_spacing)
-        .with_child(label.with_next_id(), GridParams::new(1, 0, 1, 1));
+        .with_child(label.with_auto_id(), GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = grid_button(button_input);
-        main_widget = main_widget.with_child(button.with_next_id(), button_input);
+        main_widget = main_widget.with_child(button.with_auto_id(), button_input);
     }
 
     main_widget

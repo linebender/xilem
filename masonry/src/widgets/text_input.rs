@@ -43,7 +43,7 @@ impl TextInput {
     ///
     /// To use non-default text properties, use [`from_text_area`](Self::from_text_area) instead.
     pub fn new(text: &str) -> Self {
-        Self::from_text_area(TextArea::new_editable(text).with_next_id())
+        Self::from_text_area(TextArea::new_editable(text).with_auto_id())
     }
 
     /// Create a new `TextInput` from a styled text area.
@@ -231,7 +231,7 @@ mod tests {
         let text_input = TextInput::from_text_area(
             TextArea::new_editable("TextInput contents")
                 .with_style(StyleProperty::FontSize(14.0))
-                .with_next_id(),
+                .with_auto_id(),
         );
         let mut harness = TestHarness::create_with_size(
             default_property_set(),

@@ -365,7 +365,7 @@ mod tests {
         let widget = ZStack::new()
             .with_child(
                 NewWidget::new_with_props(
-                    SizedBox::new(Label::new("Background").with_next_id())
+                    SizedBox::new(Label::new("Background").with_auto_id())
                         .width(200.)
                         .height(100.),
                     bg_props,
@@ -374,7 +374,7 @@ mod tests {
             )
             .with_child(
                 NewWidget::new_with_props(
-                    SizedBox::new(Label::new("Foreground").with_next_id()),
+                    SizedBox::new(Label::new("Foreground").with_auto_id()),
                     fg_props,
                 ),
                 ChildAlignment::ParentAligned,
@@ -416,17 +416,17 @@ mod tests {
         let widget = ZStack::new()
             .with_alignment(Alignment::Center)
             .with_child(
-                Label::new("ParentAligned").with_next_id(),
+                Label::new("ParentAligned").with_auto_id(),
                 ChildAlignment::ParentAligned,
             )
-            .with_child(Label::new("TopLeft").with_next_id(), Alignment::TopLeft)
-            .with_child(Label::new("TopRight").with_next_id(), Alignment::TopRight)
+            .with_child(Label::new("TopLeft").with_auto_id(), Alignment::TopLeft)
+            .with_child(Label::new("TopRight").with_auto_id(), Alignment::TopRight)
             .with_child(
-                Label::new("BottomLeft").with_next_id(),
+                Label::new("BottomLeft").with_auto_id(),
                 Alignment::BottomLeft,
             )
             .with_child(
-                Label::new("BottomRight").with_next_id(),
+                Label::new("BottomRight").with_auto_id(),
                 Alignment::BottomRight,
             );
 

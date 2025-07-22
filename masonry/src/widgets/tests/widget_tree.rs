@@ -18,9 +18,9 @@ fn access_grandchild_widget() {
                 .with_child(
                     Flex::row()
                         .with_child(NewWidget::new_with_id(Label::new("Old text"), id_label))
-                        .with_next_id(),
+                        .with_auto_id(),
                 )
-                .with_next_id(),
+                .with_auto_id(),
         )
         .with_flex_spacer(1.0);
 
