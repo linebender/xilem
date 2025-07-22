@@ -9,7 +9,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::core::{ArcStr, ErasedAction, StyleProperty, WidgetId, WidgetPod};
+use masonry::core::{ArcStr, ErasedAction, NewWidget, StyleProperty, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
@@ -76,7 +76,7 @@ impl AppDriver for Driver {
                         VirtualScroll::add_child(
                             &mut scroll,
                             idx,
-                            WidgetPod::new(Label::new(label).with_style(StyleProperty::FontSize(
+                            NewWidget::new(Label::new(label).with_style(StyleProperty::FontSize(
                                 if idx % 100 == 0 { 40. } else { 20. },
                             ))),
                         );
@@ -90,9 +90,10 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    let main_widget = WidgetPod::new(init()).erased();
+    let scroll_id = WidgetId::next();
+    let main_widget = NewWidget::new_with_id(init(), scroll_id).erased();
     let driver = Driver {
-        scroll_id: main_widget.id(),
+        scroll_id,
         fizz: "Fizz".into(),
         buzz: "Buzz".into(),
         fizzbuzz: "FizzBuzz".into(),

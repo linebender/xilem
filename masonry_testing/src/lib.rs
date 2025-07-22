@@ -17,7 +17,7 @@ pub use modular_widget::ModularWidget;
 pub use recorder_widget::{Record, Recorder, Recording};
 pub use wrapper_widget::WrapperWidget;
 
-use masonry_core::core::{Properties, Widget, WidgetId, WidgetOptions, WidgetPod};
+use masonry_core::core::{NewWidget, Properties, Widget, WidgetId, WidgetOptions};
 
 // TODO - Split off into separate file
 
@@ -30,21 +30,19 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
         Recorder::new(self, recording)
     }
 
+    // TODO - Move to `Widget` trait.
     /// Wrap this widget in a [`WrapperWidget`] with the given id.
     fn with_id(self, id: WidgetId) -> WrapperWidget {
-        let child = WidgetPod::new_with_id(self, id).erased();
+        let child = NewWidget::new_with_id(self, id).erased().to_pod();
         WrapperWidget::new_pod(child)
     }
 
+    // TODO - Move to `Widget` trait.
     /// Wrap this widget in a [`WrapperWidget`] with the given [`Properties`].
     fn with_props(self, props: Properties) -> WrapperWidget {
-        let child = WidgetPod::new_with(
-            Box::new(self),
-            WidgetId::next(),
-            WidgetOptions::default(),
-            props,
-        )
-        .erased();
+        let child = NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
+            .erased()
+            .to_pod();
         WrapperWidget::new_pod(child)
     }
 }

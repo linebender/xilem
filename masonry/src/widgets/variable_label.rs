@@ -14,7 +14,7 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, StyleProperty, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     WidgetPod,
 };
@@ -128,22 +128,15 @@ pub struct VariableLabel {
 impl VariableLabel {
     /// Create a new variable label from the given text.
     pub fn new(text: impl Into<ArcStr>) -> Self {
-        Self::from_label_pod(WidgetPod::new(Label::new(text)))
+        Self::from_label(NewWidget::new(Label::new(text)))
     }
 
     /// Create a new variable label from the given label.
     ///
     /// Uses the label's text and style values.
-    pub fn from_label(label: Label) -> Self {
-        Self::from_label_pod(WidgetPod::new(label))
-    }
-
-    /// Create a new variable label from the given label wrapped in a [`WidgetPod`].
-    ///
-    /// Uses the label's text and style values.
-    pub fn from_label_pod(label: WidgetPod<Label>) -> Self {
+    pub fn from_label(label: NewWidget<Label>) -> Self {
         Self {
-            label,
+            label: label.to_pod(),
             weight: AnimatedF32::stable(FontWeight::NORMAL.value()),
         }
     }

@@ -3,6 +3,7 @@
 
 use insta::assert_debug_snapshot;
 
+use crate::core::{NewWidget, Widget as _};
 use crate::testing::{TestHarness, widget_ids};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, Label};
@@ -13,7 +14,13 @@ fn access_grandchild_widget() {
 
     let widget = Flex::column()
         .with_child(
-            Flex::row().with_child(Flex::row().with_child_id(Label::new("Old text"), id_label)),
+            Flex::row()
+                .with_child(
+                    Flex::row()
+                        .with_child(NewWidget::new_with_id(Label::new("Old text"), id_label))
+                        .with_auto_id(),
+                )
+                .with_auto_id(),
         )
         .with_flex_spacer(1.0);
 

@@ -6,15 +6,14 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::RegisterCtx;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::common::FloatExt;
 use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
@@ -193,21 +192,9 @@ impl Flex {
     /// Builder-style variant of [`Flex::add_child`].
     ///
     /// Convenient for assembling a group of widgets in a single expression.
-    pub fn with_child(self, child: impl Widget) -> Self {
-        self.with_child_pod(WidgetPod::new(child).erased())
-    }
-
-    /// Builder-style variant of [`Flex::add_child`], that takes the id that the child will have.
-    ///
-    /// Useful for unit tests.
-    pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(child, id).erased())
-    }
-
-    /// Builder-style method for [adding](Flex::add_child) a type-erased child to this.
-    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>) -> Self {
+    pub fn with_child(mut self, child: NewWidget<impl Widget + ?Sized>) -> Self {
         let child = Child::Fixed {
-            widget,
+            widget: child.erased().to_pod(),
             alignment: None,
         };
         self.children.push(child);
@@ -215,20 +202,13 @@ impl Flex {
     }
 
     /// Builder-style method to add a flexible child to the container.
-    pub fn with_flex_child(self, child: impl Widget, params: impl Into<FlexParams>) -> Self {
-        self.with_flex_child_pod(WidgetPod::new(child).erased(), params)
-    }
-
-    /// Builder-style method to add a flexible child to the container.
-    pub fn with_flex_child_pod(
+    pub fn with_flex_child(
         mut self,
-        widget: WidgetPod<dyn Widget>,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
     ) -> Self {
-        // TODO - dedup?
-        let params: FlexParams = params.into();
-
-        let child = new_flex_child(params, widget);
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
         self.children.push(child);
         self
     }
@@ -322,23 +302,9 @@ impl Flex {
     /// See also [`with_child`].
     ///
     /// [`with_child`]: Flex::with_child
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         let child = Child::Fixed {
-            widget: WidgetPod::new(child).erased(),
-            alignment: None,
-        };
-        this.widget.children.push(child);
-        this.ctx.children_changed();
-    }
-
-    /// Add a non-flex child widget with a pre-assigned id.
-    ///
-    /// See also [`with_child_id`].
-    ///
-    /// [`with_child_id`]: Flex::with_child_id
-    pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
-        let child = Child::Fixed {
-            widget: WidgetPod::new_with_id(child, id).erased(),
+            widget: child.erased().to_pod(),
             alignment: None,
         };
         this.widget.children.push(child);
@@ -348,11 +314,11 @@ impl Flex {
     /// Add a flexible child widget.
     pub fn add_flex_child(
         this: &mut WidgetMut<'_, Self>,
-        child: impl Widget,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
     ) {
-        let params = params.into();
-        let child = new_flex_child(params, WidgetPod::new(child).erased());
+        let child = child.erased().to_pod();
+        let child = new_flex_child(params.into(), child);
 
         this.widget.children.push(child);
         this.ctx.children_changed();
@@ -390,22 +356,13 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_child(this: &mut WidgetMut<'_, Self>, idx: usize, child: impl Widget) {
-        Self::insert_child_pod(this, idx, WidgetPod::new(child).erased());
-    }
-
-    /// Insert a non-flex child widget wrapped in a [`WidgetPod`] at the given index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_child_pod(
+    pub fn insert_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        widget: WidgetPod<dyn Widget>,
+        child: NewWidget<impl Widget + ?Sized>,
     ) {
         let child = Child::Fixed {
-            widget,
+            widget: child.erased().to_pod(),
             alignment: None,
         };
         this.widget.children.insert(idx, child);
@@ -420,23 +377,10 @@ impl Flex {
     pub fn insert_flex_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: impl Widget,
+        child: NewWidget<impl Widget + ?Sized>,
         params: impl Into<FlexParams>,
     ) {
-        Self::insert_flex_child_pod(this, idx, WidgetPod::new(child).erased(), params);
-    }
-
-    /// Insert a flex child widget wrapped in a [`WidgetPod`] at the given index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_flex_child_pod(
-        this: &mut WidgetMut<'_, Self>,
-        idx: usize,
-        child: WidgetPod<dyn Widget>,
-        params: impl Into<FlexParams>,
-    ) {
+        let child = child.erased().to_pod();
         let child = new_flex_child(params.into(), child);
         this.widget.children.insert(idx, child);
         this.ctx.children_changed();
@@ -835,11 +779,11 @@ impl Child {
     }
 }
 
-fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
+fn new_flex_child(params: FlexParams, child: WidgetPod<dyn Widget>) -> Child {
     if let Some(flex) = params.flex {
         if flex.is_normal() && flex > 0.0 {
             Child::Flex {
-                widget,
+                widget: child,
                 alignment: params.alignment,
                 flex,
             }
@@ -848,13 +792,13 @@ fn new_flex_child(params: FlexParams, widget: WidgetPod<dyn Widget>) -> Child {
                 "Flex value should be > 0.0 (was {flex}). See the docs for masonry::widgets::Flex for more information"
             );
             Child::Fixed {
-                widget,
+                widget: child,
                 alignment: params.alignment,
             }
         }
     } else {
         Child::Fixed {
-            widget,
+            widget: child,
             alignment: params.alignment,
         }
     }
@@ -1286,11 +1230,11 @@ mod tests {
     #[test]
     fn flex_row_cross_axis_snapshots() {
         let widget = Flex::row()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").with_auto_id())
+            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+            .with_child(Label::new("foo").with_auto_id())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1332,11 +1276,11 @@ mod tests {
     #[test]
     fn flex_row_main_axis_snapshots() {
         let widget = Flex::row()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").with_auto_id())
+            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+            .with_child(Label::new("foo").with_auto_id())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1395,11 +1339,11 @@ mod tests {
     #[test]
     fn flex_col_cross_axis_snapshots() {
         let widget = Flex::column()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").with_auto_id())
+            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+            .with_child(Label::new("foo").with_auto_id())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1441,11 +1385,11 @@ mod tests {
     #[test]
     fn flex_col_main_axis_snapshots() {
         let widget = Flex::column()
-            .with_child(Label::new("hello"))
-            .with_flex_child(Label::new("world"), 1.0)
-            .with_child(Label::new("foo"))
+            .with_child(Label::new("hello").with_auto_id())
+            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+            .with_child(Label::new("foo").with_auto_id())
             .with_flex_child(
-                Label::new("bar"),
+                Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
             );
 
@@ -1505,10 +1449,10 @@ mod tests {
     fn edit_flex_container() {
         let image_1 = {
             let widget = Flex::column()
-                .with_child(Label::new("a"))
-                .with_child(Label::new("b"))
-                .with_child(Label::new("c"))
-                .with_child(Label::new("d"));
+                .with_child(Label::new("a").with_auto_id())
+                .with_child(Label::new("b").with_auto_id())
+                .with_child(Label::new("c").with_auto_id())
+                .with_child(Label::new("d").with_auto_id());
             // -> abcd
 
             let window_size = Size::new(200.0, 150.0);
@@ -1520,17 +1464,17 @@ mod tests {
 
                 Flex::remove_child(&mut flex, 1);
                 // -> acd
-                Flex::add_child(&mut flex, Label::new("x"));
+                Flex::add_child(&mut flex, Label::new("x").with_auto_id());
                 // -> acdx
-                Flex::add_flex_child(&mut flex, Label::new("y"), 2.0);
+                Flex::add_flex_child(&mut flex, Label::new("y").with_auto_id(), 2.0);
                 // -> acdxy
                 Flex::add_spacer(&mut flex, 5.0);
                 // -> acdxy_
                 Flex::add_flex_spacer(&mut flex, 1.0);
                 // -> acdxy__
-                Flex::insert_child(&mut flex, 2, Label::new("i"));
+                Flex::insert_child(&mut flex, 2, Label::new("i").with_auto_id());
                 // -> acidxy__
-                Flex::insert_flex_child(&mut flex, 2, Label::new("j"), 2.0);
+                Flex::insert_flex_child(&mut flex, 2, Label::new("j").with_auto_id(), 2.0);
                 // -> acjidxy__
                 Flex::insert_spacer(&mut flex, 2, 5.0);
                 // -> ac_jidxy__
@@ -1543,15 +1487,15 @@ mod tests {
 
         let image_2 = {
             let widget = Flex::column()
-                .with_child(Label::new("a"))
-                .with_child(Label::new("c"))
+                .with_child(Label::new("a").with_auto_id())
+                .with_child(Label::new("c").with_auto_id())
                 .with_flex_spacer(1.0)
                 .with_spacer(5.0)
-                .with_flex_child(Label::new("j"), 2.0)
-                .with_child(Label::new("i"))
-                .with_child(Label::new("d"))
-                .with_child(Label::new("x"))
-                .with_flex_child(Label::new("y"), 2.0)
+                .with_flex_child(Label::new("j").with_auto_id(), 2.0)
+                .with_child(Label::new("i").with_auto_id())
+                .with_child(Label::new("d").with_auto_id())
+                .with_child(Label::new("x").with_auto_id())
+                .with_flex_child(Label::new("y").with_auto_id(), 2.0)
                 .with_spacer(5.0)
                 .with_flex_spacer(1.0);
 
@@ -1568,8 +1512,8 @@ mod tests {
     #[test]
     fn get_flex_child() {
         let widget = Flex::column()
-            .with_child(Label::new("hello"))
-            .with_child(Label::new("world"))
+            .with_child(Label::new("hello").with_auto_id())
+            .with_child(Label::new("world").with_auto_id())
             .with_spacer(1.0);
 
         let window_size = Size::new(200.0, 150.0);

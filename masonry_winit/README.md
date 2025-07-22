@@ -40,7 +40,7 @@ Lots of things need improvements, e.g. text input is janky and snapshot testing 
 The to-do-list example looks like this:
 
 ```rust
-use masonry::core::{ErasedAction, Widget, WidgetId, WidgetPod};
+use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextInput};
@@ -66,12 +66,14 @@ impl AppDriver for Driver {
             ctx.render_root(window_id).edit_root_widget(|mut root| {
                 let mut portal = root.downcast::<Portal<Flex>>();
                 let mut flex = Portal::child_mut(&mut portal);
-                Flex::add_child(&mut flex, Label::new(self.next_task.clone()));
+                Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_auto_id());
             });
         } else if action.is::<TextAction>() {
-            let action: TextAction = *action.downcast().unwrap();
+            let action = *action.downcast::<TextAction>().unwrap();
             match action {
-                TextAction::Changed(new_text) => self.next_task = new_text.clone(),
+                TextAction::Changed(new_text) => {
+                    self.next_task = new_text.clone();
+                }
                 _ => {}
             }
         }
@@ -79,16 +81,17 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+    const WIDGET_SPACING: f64 = 5.0;
 
     let main_widget = Portal::new(
         Flex::column()
-            .with_child(
+            .with_child(NewWidget::new(
                 Flex::row()
-                    .with_flex_child(TextInput::new(""), 1.0)
-                    .with_child(Button::new("Add task")),
-            )
-            .with_spacer(VERTICAL_WIDGET_SPACING),
+                    .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
+                    .with_child(Button::new("Add task").with_auto_id()),
+            ))
+            .with_spacer(WIDGET_SPACING)
+            .with_auto_id(),
     );
 
     let window_size = LogicalSize::new(400.0, 400.0);
@@ -101,12 +104,15 @@ fn main() {
         next_task: String::new(),
         window_id: WindowId::next(),
     };
-    masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+    let event_loop = masonry_winit::app::EventLoop::with_user_event()
+        .build()
+        .unwrap();
+    masonry_winit::app::run_with(
+        event_loop,
         vec![(
             driver.window_id,
             window_attributes,
-            WidgetPod::new(main_widget).erased(),
+            NewWidget::new(main_widget).erased(),
         )],
         driver,
         default_property_set(),

@@ -2,11 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, Role};
-use masonry_core::core::WidgetMut;
 use tracing::{Span, trace_span};
 use vello::kurbo::{Affine, Line, Point, Stroke};
 
-use crate::core::{AccessCtx, ChildrenIds, PropertiesRef, Widget, WidgetId, WidgetPod};
+use crate::core::{
+    AccessCtx, ChildrenIds, NewWidget, PropertiesRef, Widget, WidgetId, WidgetMut, WidgetPod,
+};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -34,18 +35,8 @@ impl IndexedStack {
     }
 
     /// Builder-style method to add a child widget.
-    pub fn with_child(self, child: impl Widget) -> Self {
-        self.with_child_pod(WidgetPod::new(child).erased())
-    }
-
-    /// Builder-style method to add a child widget with a pre-assigned id.
-    pub fn with_child_id(self, child: impl Widget, id: WidgetId) -> Self {
-        self.with_child_pod(WidgetPod::new_with_id(child, id).erased())
-    }
-
-    /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
-    pub fn with_child_pod(mut self, widget: WidgetPod<dyn Widget>) -> Self {
-        self.children.push(widget);
+    pub fn with_child(mut self, child: NewWidget<impl Widget + ?Sized>) -> Self {
+        self.children.push(child.erased().to_pod());
         self
     }
 
@@ -91,24 +82,8 @@ impl IndexedStack {
     /// Add a child widget to the end of the stack.
     ///
     /// See also [`with_child`](IndexedStack::with_child).
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new(child).erased();
-        Self::add_child_pod(this, child_pod);
-    }
-
-    /// Add a child widget with a pre-assigned id to the end of the stack.
-    ///
-    /// See also [`with_child_id`](IndexedStack::with_child_id).
-    pub fn add_child_id(this: &mut WidgetMut<'_, Self>, child: impl Widget, id: WidgetId) {
-        let child_pod: WidgetPod<dyn Widget> = WidgetPod::new_with_id(child, id).erased();
-        Self::add_child_pod(this, child_pod);
-    }
-
-    /// Add a child widget already wrapped in a [`WidgetPod`] to the end of the stack.
-    ///
-    /// See also [`with_child_pod`](IndexedStack::with_child_pod).
-    pub fn add_child_pod(this: &mut WidgetMut<'_, Self>, widget: WidgetPod<dyn Widget>) {
-        this.widget.children.push(widget);
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
+        this.widget.children.push(child.erased().to_pod());
         this.ctx.children_changed();
         this.ctx.request_layout();
     }
@@ -120,23 +95,12 @@ impl IndexedStack {
     /// # Panics
     ///
     /// Panics if the index is larger than the number of children.
-    pub fn insert_stack_child_at(this: &mut WidgetMut<'_, Self>, idx: usize, child: impl Widget) {
-        Self::insert_stack_child_pod(this, idx, WidgetPod::new(child).erased());
-    }
-
-    /// Insert a child widget already wrapped in a [`WidgetPod`] at the given index.
-    ///
-    /// This lets you control the order of the children stored by the indexed stack.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_stack_child_pod(
+    pub fn insert_child(
         this: &mut WidgetMut<'_, Self>,
         idx: usize,
-        child: WidgetPod<dyn Widget>,
+        child: NewWidget<impl Widget + ?Sized>,
     ) {
-        this.widget.children.insert(idx, child);
+        this.widget.children.insert(idx, child.erased().to_pod());
         if this.widget.active_child >= idx {
             // adjust index to keep the same widget active
             this.widget.active_child += 1;
@@ -337,15 +301,15 @@ mod tests {
 
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::add_child(&mut stack, button::Button::new("A"));
+            IndexedStack::add_child(&mut stack, button::Button::new("A").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_single");
 
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::add_child(&mut stack, button::Button::new("B"));
-            IndexedStack::add_child(&mut stack, button::Button::new("C"));
-            IndexedStack::add_child(&mut stack, button::Button::new("D"));
+            IndexedStack::add_child(&mut stack, button::Button::new("B").with_auto_id());
+            IndexedStack::add_child(&mut stack, button::Button::new("C").with_auto_id());
+            IndexedStack::add_child(&mut stack, button::Button::new("D").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_single"); // the active child should not change
 
@@ -359,9 +323,9 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = IndexedStack::new()
-            .with_child(button::Button::new("A"))
-            .with_child(button::Button::new("B"))
-            .with_child(button::Button::new("C"))
+            .with_child(button::Button::new("A").with_auto_id())
+            .with_child(button::Button::new("B").with_auto_id())
+            .with_child(button::Button::new("C").with_auto_id())
             .with_active_child(1);
         let window_size = Size::new(50.0, 50.0);
         let mut harness =
@@ -386,7 +350,7 @@ mod tests {
         // Add another widget at the end
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::add_child(&mut stack, button::Button::new("D"));
+            IndexedStack::add_child(&mut stack, button::Button::new("D").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_removed_widget"); // Should not change
 
@@ -400,8 +364,8 @@ mod tests {
         // Insert back the first two at the start
         harness.edit_root_widget(|mut stack| {
             let mut stack = stack.downcast::<IndexedStack>();
-            IndexedStack::insert_stack_child_at(&mut stack, 0, button::Button::new("A"));
-            IndexedStack::insert_stack_child_at(&mut stack, 1, button::Button::new("B"));
+            IndexedStack::insert_child(&mut stack, 0, button::Button::new("A").with_auto_id());
+            IndexedStack::insert_child(&mut stack, 1, button::Button::new("B").with_auto_id());
         });
         assert_render_snapshot!(harness, "indexed_stack_builder_new_widget"); // Should not change
 

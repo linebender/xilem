@@ -14,8 +14,8 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BoxConstraints, BrushIndex, CreateWidget, DefaultProperties, ErasedAction,
-    FromDynWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaMut,
+    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget,
+    NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaMut,
     WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
@@ -1298,8 +1298,9 @@ impl RegisterCtx<'_> {
     /// Container widgets should call this on all their children in
     /// their implementation of [`Widget::register_children`].
     pub fn register_child(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
-        let Some(CreateWidget {
+        let Some(NewWidget {
             widget,
+            id,
             options,
             properties,
         }) = child.take_inner()
@@ -1309,11 +1310,10 @@ impl RegisterCtx<'_> {
 
         #[cfg(debug_assertions)]
         {
-            self.registered_ids.push(child.id());
+            self.registered_ids.push(id);
         }
 
-        let id = child.id();
-        let state = WidgetState::new(child.id(), widget.short_type_name(), options);
+        let state = WidgetState::new(id, widget.short_type_name(), options);
 
         self.children
             .widget_children

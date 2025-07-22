@@ -19,11 +19,10 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    DefaultProperties, ErasedAction, Handled, Ime, PointerButton, PointerEvent, PointerId,
-    PointerInfo, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget,
-    WidgetId, WidgetMut, WidgetRef, WindowEvent,
+    DefaultProperties, ErasedAction, Handled, Ime, NewWidget, PointerButton, PointerEvent,
+    PointerId, PointerInfo, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent,
+    Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
 };
-use masonry_core::core::{Properties, WidgetPod};
 use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Point, Size, Vec2};
@@ -216,16 +215,17 @@ impl TestHarness {
     ///
     /// Window size will be [`TestHarnessParams::DEFAULT_SIZE`].
     /// Background color will be [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
+    // TODO - Take NewWidget
     pub fn create(default_props: DefaultProperties, root_widget: impl Widget) -> Self {
         Self::create_with(
             default_props,
-            root_widget,
-            Properties::new(),
+            NewWidget::new(root_widget),
             TestHarnessParams::default(),
         )
     }
 
     /// Builds harness with given root widget and window size.
+    // TODO - Take NewWidget
     pub fn create_with_size(
         default_props: DefaultProperties,
         root_widget: impl Widget,
@@ -233,8 +233,7 @@ impl TestHarness {
     ) -> Self {
         Self::create_with(
             default_props,
-            root_widget,
-            Properties::new(),
+            NewWidget::new(root_widget),
             TestHarnessParams {
                 window_size,
                 ..Default::default()
@@ -245,8 +244,7 @@ impl TestHarness {
     /// Builds harness with given root widget and additional parameters.
     pub fn create_with(
         default_props: DefaultProperties,
-        root_widget: impl Widget,
-        root_widget_props: Properties,
+        root_widget: NewWidget<impl Widget>,
         params: TestHarnessParams,
     ) -> Self {
         let mouse_state = PointerState::default();
@@ -278,7 +276,7 @@ impl TestHarness {
         let mut harness = Self {
             signal_receiver,
             render_root: RenderRoot::new(
-                WidgetPod::new_with_props(root_widget, root_widget_props).erased(),
+                root_widget,
                 move |signal| signal_sender.send(signal).unwrap(),
                 RenderRootOptions {
                     // TODO - Pass the default property set as an input instead.

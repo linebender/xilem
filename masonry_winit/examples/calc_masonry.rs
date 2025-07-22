@@ -16,8 +16,8 @@ use std::str::FromStr;
 use masonry::accesskit;
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
-    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx,
+    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
 };
 use masonry::dpi::LogicalSize;
 use masonry::kurbo::{Point, Size};
@@ -316,69 +316,93 @@ impl AppDriver for CalcState {
 
 // ---
 
-fn op_button_with_label(op: char, label: String) -> CalcButton {
+fn op_button_with_label(op: char, label: String) -> NewWidget<CalcButton> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
-    let sized_box = SizedBox::new(Align::centered(
-        Label::new(label).with_style(StyleProperty::FontSize(24.)),
-    ))
+    let sized_box = SizedBox::new(
+        Align::centered(
+            Label::new(label)
+                .with_style(StyleProperty::FontSize(24.))
+                .with_auto_id(),
+        )
+        .with_auto_id(),
+    )
     .expand();
-    let sized_box = WidgetPod::new_with(
-        Box::new(sized_box),
+    let sized_box = NewWidget::new_with(
+        sized_box,
         WidgetId::next(),
         WidgetOptions::default(),
         Properties::new().with(Background::Color(BLUE)),
-    );
+    )
+    .to_pod();
 
-    CalcButton::new(sized_box, CalcAction::Op(op), BLUE, LIGHT_BLUE)
+    NewWidget::new(CalcButton::new(
+        sized_box,
+        CalcAction::Op(op),
+        BLUE,
+        LIGHT_BLUE,
+    ))
 }
 
-fn op_button(op: char) -> CalcButton {
+fn op_button(op: char) -> NewWidget<CalcButton> {
     op_button_with_label(op, op.to_string())
 }
 
-fn digit_button(digit: u8) -> CalcButton {
+fn digit_button(digit: u8) -> NewWidget<CalcButton> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
     const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
 
-    let sized_box = SizedBox::new(Align::centered(
-        Label::new(format!("{digit}")).with_style(StyleProperty::FontSize(24.)),
-    ))
+    let sized_box = SizedBox::new(
+        Align::centered(
+            Label::new(format!("{digit}"))
+                .with_style(StyleProperty::FontSize(24.))
+                .with_auto_id(),
+        )
+        .with_auto_id(),
+    )
     .expand();
-    let sized_box = WidgetPod::new_with(
-        Box::new(sized_box),
+    let sized_box = NewWidget::new_with(
+        sized_box,
         WidgetId::next(),
         WidgetOptions::default(),
         Properties::new().with(Background::Color(GRAY)),
-    );
+    )
+    .to_pod();
 
-    CalcButton::new(sized_box, CalcAction::Digit(digit), GRAY, LIGHT_GRAY)
+    NewWidget::new(CalcButton::new(
+        sized_box,
+        CalcAction::Digit(digit),
+        GRAY,
+        LIGHT_GRAY,
+    ))
 }
 
 fn flex_row(
-    w1: impl Widget + 'static,
-    w2: impl Widget + 'static,
-    w3: impl Widget + 'static,
-    w4: impl Widget + 'static,
-) -> impl Widget {
-    Flex::row()
-        .with_gap(0.0)
-        .with_flex_child(w1, 1.0)
-        .with_spacer(1.0)
-        .with_flex_child(w2, 1.0)
-        .with_spacer(1.0)
-        .with_flex_child(w3, 1.0)
-        .with_spacer(1.0)
-        .with_flex_child(w4, 1.0)
+    w1: NewWidget<impl Widget>,
+    w2: NewWidget<impl Widget>,
+    w3: NewWidget<impl Widget>,
+    w4: NewWidget<impl Widget>,
+) -> NewWidget<impl Widget> {
+    NewWidget::new(
+        Flex::row()
+            .with_gap(0.0)
+            .with_flex_child(w1, 1.0)
+            .with_spacer(1.0)
+            .with_flex_child(w2, 1.0)
+            .with_spacer(1.0)
+            .with_flex_child(w3, 1.0)
+            .with_spacer(1.0)
+            .with_flex_child(w4, 1.0),
+    )
 }
 
-fn build_calc() -> impl Widget {
+fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
-    Flex::column()
+    let root_widget = Flex::column()
         .with_gap(0.0)
         .with_flex_spacer(0.2)
-        .with_child(display)
+        .with_child(display.with_auto_id())
         .with_flex_spacer(0.2)
         .cross_axis_alignment(CrossAxisAlignment::End)
         .with_flex_child(
@@ -429,13 +453,14 @@ fn build_calc() -> impl Widget {
                 op_button('='),
             ),
             1.0,
-        )
-}
+        );
 
-fn root_props() -> Properties {
-    Properties::new()
-        .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
-        .with(Padding::all(2.0))
+    NewWidget::new_with_props(
+        root_widget,
+        Properties::new()
+            .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
+            .with(Padding::all(2.0)),
+    )
 }
 
 fn main() {
@@ -462,7 +487,7 @@ fn main() {
         vec![(
             calc_state.window_id,
             window_attributes,
-            WidgetPod::new_with_props(build_calc(), root_props()).erased(),
+            build_calc().erased(),
         )],
         calc_state,
         default_property_set(),
@@ -482,7 +507,6 @@ mod tests {
         let mut harness = TestHarness::create_with(
             default_property_set(),
             build_calc(),
-            root_props(),
             TestHarnessParams::default(),
         );
         assert_render_snapshot!(harness, "example_calc_masonry_initial");

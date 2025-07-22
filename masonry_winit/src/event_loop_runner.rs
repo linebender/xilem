@@ -11,7 +11,7 @@ use std::sync::{Arc, mpsc};
 use accesskit_winit::Adapter;
 use masonry_core::app::{RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy};
 use masonry_core::core::{
-    DefaultProperties, ErasedAction, TextEvent, Widget, WidgetId, WidgetPod, WindowEvent,
+    DefaultProperties, ErasedAction, NewWidget, TextEvent, Widget, WidgetId, WindowEvent,
 };
 use masonry_core::kurbo::Affine;
 use masonry_core::peniko::Color;
@@ -81,7 +81,7 @@ pub(crate) struct Window {
 impl Window {
     pub(crate) fn new(
         window_id: WindowId,
-        root_widget: WidgetPod<dyn Widget>,
+        root_widget: NewWidget<dyn Widget>,
         attributes: WindowAttributes,
         signal_sender: Sender<(WindowId, RenderRootSignal)>,
         default_properties: Arc<DefaultProperties>,
@@ -134,7 +134,7 @@ pub struct MasonryState<'a> {
     signal_sender: Sender<(WindowId, RenderRootSignal)>,
     default_properties: Arc<DefaultProperties>,
     pub(crate) exit: bool,
-    initial_windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+    initial_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
     need_first_frame: Vec<HandleId>,
 }
 
@@ -160,7 +160,7 @@ pub fn run(
     // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
     // This is passed in mostly to allow configuring the Android app
     mut loop_builder: EventLoopBuilder,
-    windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+    windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
     app_driver: impl AppDriver + 'static,
     default_property_set: DefaultProperties,
 ) -> Result<(), EventLoopError> {
@@ -171,7 +171,7 @@ pub fn run(
 
 pub fn run_with(
     event_loop: EventLoop,
-    windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+    windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
     app_driver: impl AppDriver + 'static,
     default_properties: DefaultProperties,
 ) -> Result<(), EventLoopError> {
@@ -263,7 +263,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 impl MasonryState<'_> {
     pub fn new(
         event_loop_proxy: EventLoopProxy,
-        initial_windows: Vec<(WindowId, WindowAttributes, WidgetPod<dyn Widget>)>,
+        initial_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
         default_properties: DefaultProperties,
     ) -> Self {
         let render_cx = RenderContext::new();
@@ -332,7 +332,7 @@ impl MasonryState<'_> {
         event_loop: &ActiveEventLoop,
         window_id: WindowId,
         attributes: WindowAttributes,
-        root_widget: WidgetPod<dyn Widget>,
+        root_widget: NewWidget<dyn Widget>,
     ) {
         let window = Window::new(
             window_id,

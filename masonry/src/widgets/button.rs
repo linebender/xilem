@@ -14,9 +14,9 @@ use vello::peniko::Color;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
@@ -47,7 +47,7 @@ impl Button {
     /// let button = Button::new("Increment");
     /// ```
     pub fn new(text: impl Into<ArcStr>) -> Self {
-        Self::from_label(Label::new(text))
+        Self::from_label(Label::new(text).with_auto_id())
     }
 
     /// Create a new button with the provided [`Label`].
@@ -55,24 +55,17 @@ impl Button {
     /// # Examples
     ///
     /// ```
-    /// use masonry::core::StyleProperty;
+    /// use masonry::core::{StyleProperty, Widget as _};
     /// use masonry::peniko::Color;
     /// use masonry::widgets::{Button, Label};
     ///
     /// let label = Label::new("Increment").with_style(StyleProperty::FontSize(20.0));
-    /// let button = Button::from_label(label);
+    /// let button = Button::from_label(label.with_auto_id());
     /// ```
-    pub fn from_label(label: Label) -> Self {
+    pub fn from_label(label: NewWidget<Label>) -> Self {
         Self {
-            label: WidgetPod::new(label),
+            label: label.to_pod(),
         }
-    }
-
-    /// Create a new button with the provided [`Label`] with a predetermined id.
-    ///
-    /// This constructor is useful for toolkits which use Masonry (such as Xilem).
-    pub fn from_label_pod(label: WidgetPod<Label>) -> Self {
-        Self { label }
     }
 }
 
@@ -316,11 +309,9 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::Properties;
-
     use super::*;
     use crate::core::keyboard::NamedKey;
-    use crate::core::{PointerButton, StyleProperty};
+    use crate::core::{PointerButton, Properties, StyleProperty};
     use crate::properties::TextColor;
     use crate::testing::{
         TestHarness, TestWidgetExt, WrapperWidget, assert_render_snapshot, widget_ids,
@@ -370,12 +361,12 @@ mod tests {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));
-            let label = WidgetPod::new_with_props(
+            let label = NewWidget::new_with_props(
                 label,
                 Properties::new().with(TextColor::new(ACCENT_COLOR)),
             );
 
-            let button = Button::from_label_pod(label);
+            let button = Button::from_label(label);
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -441,13 +432,13 @@ mod tests {
 
         let grid = Grid::with_dimensions(2, 2)
             .with_spacing(40.0)
-            .with_child(Button::new("A"), GridParams::new(0, 0, 1, 1))
-            .with_child(Button::new("B"), GridParams::new(1, 0, 1, 1))
-            .with_child(Button::new("C"), GridParams::new(0, 1, 1, 1))
-            .with_child(Button::new("D"), GridParams::new(1, 1, 1, 1));
+            .with_child(Button::new("A").with_auto_id(), GridParams::new(0, 0, 1, 1))
+            .with_child(Button::new("B").with_auto_id(), GridParams::new(1, 0, 1, 1))
+            .with_child(Button::new("C").with_auto_id(), GridParams::new(0, 1, 1, 1))
+            .with_child(Button::new("D").with_auto_id(), GridParams::new(1, 1, 1, 1));
 
-        let root_widget =
-            SizedBox::new(grid).with_props(Properties::new().with(Padding::all(20.0)));
+        let root_widget = SizedBox::new(grid.with_auto_id())
+            .with_props(Properties::new().with(Padding::all(20.0)));
 
         let window_size = Size::new(300.0, 300.0);
         let mut harness =

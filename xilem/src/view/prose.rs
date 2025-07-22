@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, Properties, StyleProperty, WidgetPod};
+use masonry::core::{ArcStr, NewWidget, Properties, StyleProperty};
 use masonry::parley::FontWeight;
 use masonry::properties::{DisabledTextColor, TextColor};
 use masonry::widgets::{
@@ -117,10 +117,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         if let Some(color) = self.disabled_text_color {
             props.insert(DisabledTextColor(TextColor { color }));
         }
-        let text_area = WidgetPod::new_with_props(text_area, props);
+        let text_area = NewWidget::new_with_props(text_area, props);
 
         let pod = ctx.create_pod(
-            widgets::Prose::from_text_area_pod(text_area)
+            widgets::Prose::from_text_area(text_area)
                 .with_clip(line_break_clips(self.line_break_mode)),
         );
         (pod, ())

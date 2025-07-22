@@ -183,7 +183,7 @@ where
             ctx.with_id(CHILD2_VIEW_ID, |ctx| self.child2.build(ctx, app_state));
 
         let widget_pod = ctx.create_pod(
-            widgets::Split::new_pod(child1.into_widget_pod(), child2.into_widget_pod())
+            widgets::Split::new(child1.new_widget, child2.new_widget)
                 .split_axis(self.split_axis)
                 .split_point(self.split_point)
                 .min_size(self.min_size.0, self.min_size.1)

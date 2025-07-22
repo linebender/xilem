@@ -5,9 +5,9 @@ use std::any::TypeId;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
+    Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
@@ -22,7 +22,8 @@ impl WrapperWidget {
     ///
     /// The `child` is the initial child widget.
     pub fn new<W: Widget + 'static>(child: impl Widget) -> Self {
-        Self::new_pod(WidgetPod::new(child).erased())
+        // FIXME - Take NewWidget argument
+        Self::new_pod(NewWidget::new(child).erased().to_pod())
     }
 
     /// Create a new `WrapperWidget` with a `WidgetPod`.
@@ -41,7 +42,8 @@ impl WrapperWidget {
 impl WrapperWidget {
     /// Replace the container's child widget.
     pub fn set_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
-        Self::set_child_pod(this, WidgetPod::new(child).erased());
+        // FIXME - Take NewWidget argument
+        Self::set_child_pod(this, NewWidget::new(child).erased().to_pod());
     }
 
     /// Replace the container's child widget with a `WidgetPod`.

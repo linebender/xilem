@@ -496,13 +496,13 @@ mod tests {
         let label5 = base_label().with_text_alignment(TextAlign::Center);
         let label6 = base_label().with_text_alignment(TextAlign::End);
         let flex = Flex::column()
-            .with_flex_child(label1, CrossAxisAlignment::Start)
-            .with_flex_child(label2, CrossAxisAlignment::Start)
-            .with_flex_child(label3, CrossAxisAlignment::Start)
+            .with_flex_child(label1.with_auto_id(), CrossAxisAlignment::Start)
+            .with_flex_child(label2.with_auto_id(), CrossAxisAlignment::Start)
+            .with_flex_child(label3.with_auto_id(), CrossAxisAlignment::Start)
             // Text alignment start is "overwritten" by CrossAxisAlignment::Center.
-            .with_flex_child(label4, CrossAxisAlignment::Center)
-            .with_flex_child(label5, CrossAxisAlignment::Center)
-            .with_flex_child(label6, CrossAxisAlignment::Center)
+            .with_flex_child(label4.with_auto_id(), CrossAxisAlignment::Center)
+            .with_flex_child(label5.with_auto_id(), CrossAxisAlignment::Center)
+            .with_flex_child(label6.with_auto_id(), CrossAxisAlignment::Center)
             .with_gap(0.0);
 
         let mut harness =
@@ -518,25 +518,31 @@ mod tests {
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_line_break_mode(LineBreaking::WordWrap),
+                        .with_line_break_mode(LineBreaking::WordWrap)
+                        .with_auto_id(),
                 )
-                .width(180.0),
+                .width(180.0)
+                .with_auto_id(),
             )
             .with_spacer(20.0)
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_line_break_mode(LineBreaking::Clip),
+                        .with_line_break_mode(LineBreaking::Clip)
+                        .with_auto_id(),
                 )
-                .width(180.0),
+                .width(180.0)
+                .with_auto_id(),
             )
             .with_spacer(20.0)
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
-                        .with_line_break_mode(LineBreaking::Overflow),
+                        .with_line_break_mode(LineBreaking::Overflow)
+                        .with_auto_id(),
                 )
-                .width(180.0),
+                .width(180.0)
+                .with_auto_id(),
             )
             .with_flex_spacer(1.0);
 

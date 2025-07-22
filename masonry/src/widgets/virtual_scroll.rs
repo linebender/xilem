@@ -11,8 +11,8 @@ use vello::kurbo::{Point, Size, Vec2};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
-    LayoutCtx, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::util::debug_panic;
 
@@ -28,13 +28,13 @@ use crate::util::debug_panic;
 /// # use masonry::widgets::{VirtualScrollAction, Label};
 /// # use core::marker::PhantomData;
 /// # let action: ErasedAction = Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 });
-/// # struct WidgetPod<W>(W);
-/// # impl<W> WidgetPod<W> { fn new(val: W) -> Self { Self(val) } }
+/// # struct NewWidget<W>(W);
+/// # impl<W> NewWidget<W> { fn new(val: W) -> Self { Self(val) } }
 /// # // A fake VirtualScroll, as setting up a full Masonry context for this example would also be very verbose
 /// # struct VirtualScroll<W>(PhantomData<W>);
 /// # impl<W> VirtualScroll<W> {
 /// #    fn remove_child(&mut self, idx: i64) {}
-/// #    fn add_child(&mut self, idx: i64, pod: WidgetPod<W>) {}
+/// #    fn add_child(&mut self, idx: i64, pod: NewWidget<W>) {}
 /// #    fn will_handle_action(&mut self, action: &VirtualScrollAction) {}
 /// # }
 /// # let mut scroll = VirtualScroll::<Label>(PhantomData);
@@ -52,7 +52,7 @@ use crate::util::debug_panic;
 ///         VirtualScroll::add_child(
 ///             &mut scroll,
 ///             idx,
-///             WidgetPod::new(label),
+///             NewWidget::new(label),
 ///         );
 ///     }
 /// }
@@ -338,7 +338,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// This should be done only in the handling of a [`VirtualScrollAction`].
     /// This must be called after [`VirtualScroll::will_handle_action`].
     #[track_caller]
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, idx: i64, child: WidgetPod<W>) {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, idx: i64, child: NewWidget<W>) {
         // TODO: Maybe just warn?
         debug_assert!(
             this.widget.action_handled,
@@ -349,7 +349,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
             "`add_child` should only be called with an index requested by the controller."
         );
         this.ctx.children_changed();
-        if this.widget.items.insert(idx, child).is_some() {
+        if this.widget.items.insert(idx, child.to_pod()).is_some() {
             tracing::warn!("Tried to add child {idx} twice to VirtualScroll");
         };
     }
@@ -1018,8 +1018,8 @@ mod tests {
     use vello::kurbo::Size;
 
     use crate::core::{
-        FromDynWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId, WidgetMut,
-        WidgetPod,
+        FromDynWidget, NewWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId,
+        WidgetMut,
     };
     use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
@@ -1083,7 +1083,7 @@ mod tests {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
-                        WidgetPod::new(
+                        NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
                         ),
                     );
@@ -1132,7 +1132,7 @@ mod tests {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
-                        WidgetPod::new(
+                        NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
                         ),
                     );
@@ -1178,7 +1178,7 @@ mod tests {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
-                        WidgetPod::new(
+                        NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
                         ),
                     );
@@ -1224,7 +1224,7 @@ mod tests {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
-                        WidgetPod::new(
+                        NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
                         ),
                     );
@@ -1274,7 +1274,7 @@ mod tests {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
-                        WidgetPod::new(
+                        NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
                         ),
                     );
@@ -1357,7 +1357,7 @@ mod tests {
                     VirtualScroll::add_child(
                         &mut scroll,
                         idx,
-                        WidgetPod::new(
+                        NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
                         ),
                     );

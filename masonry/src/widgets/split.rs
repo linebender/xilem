@@ -11,8 +11,8 @@ use vello::kurbo::{Line, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
 use crate::theme;
@@ -44,16 +44,9 @@ where
 }
 
 // --- MARK: BUILDERS
-impl<ChildA: Widget, ChildB: Widget> Split<ChildA, ChildB> {
-    /// Create a new split panel.
-    pub fn new(child1: ChildA, child2: ChildB) -> Self {
-        Self::new_pod(WidgetPod::new(child1), WidgetPod::new(child2))
-    }
-}
-
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
-    /// Build split panel from two children already wrapped in [`WidgetPod`]s.
-    pub fn new_pod(child1: WidgetPod<ChildA>, child2: WidgetPod<ChildB>) -> Self {
+    /// Create a new split panel.
+    pub fn new(child1: NewWidget<ChildA>, child2: NewWidget<ChildB>) -> Self {
         Self {
             split_axis: Axis::Horizontal,
             split_point_chosen: 0.5,
@@ -64,8 +57,8 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
             solid: false,
             draggable: true,
             click_offset: 0.0,
-            child1,
-            child2,
+            child1: child1.to_pod(),
+            child2: child2.to_pod(),
         }
     }
 
@@ -619,8 +612,8 @@ mod tests {
     fn columns() {
         #[rustfmt::skip]
         let widget = Split::new(
-            Label::new("Hello"),
-            Label::new("World"),
+            Label::new("Hello").with_auto_id(),
+            Label::new("World").with_auto_id(),
         ).split_axis(Axis::Horizontal).draggable(false);
 
         let window_size = Size::new(150.0, 150.0);
@@ -634,8 +627,8 @@ mod tests {
     fn rows() {
         #[rustfmt::skip]
         let widget = Split::new(
-            Label::new("Hello"),
-            Label::new("World"),
+            Label::new("Hello").with_auto_id(),
+            Label::new("World").with_auto_id(),
         ).split_axis(Axis::Vertical).draggable(false);
 
         let window_size = Size::new(150.0, 150.0);
@@ -651,12 +644,15 @@ mod tests {
     #[test]
     fn edit_splitter() {
         let image_1 = {
-            let widget = Split::new(Label::new("Hello"), Label::new("World"))
-                .split_point(0.3)
-                .min_size(40.0, 10.0)
-                .bar_size(12.0)
-                .draggable(true)
-                .solid_bar(true);
+            let widget = Split::new(
+                Label::new("Hello").with_auto_id(),
+                Label::new("World").with_auto_id(),
+            )
+            .split_point(0.3)
+            .min_size(40.0, 10.0)
+            .bar_size(12.0)
+            .draggable(true)
+            .solid_bar(true);
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -668,7 +664,10 @@ mod tests {
         };
 
         let image_2 = {
-            let widget = Split::new(Label::new("Hello"), Label::new("World"));
+            let widget = Split::new(
+                Label::new("Hello").with_auto_id(),
+                Label::new("World").with_auto_id(),
+            );
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),

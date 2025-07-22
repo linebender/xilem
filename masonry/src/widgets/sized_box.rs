@@ -6,17 +6,16 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::util::fill;
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut, PropertiesRef,
-    RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
-use crate::util::{include_screenshot, stroke};
+use crate::util::{fill, include_screenshot, stroke};
 
 /// A widget with predefined size.
 ///
@@ -38,27 +37,9 @@ pub struct SizedBox {
 // --- MARK: BUILDERS
 impl SizedBox {
     /// Construct container with child, and both width and height not set.
-    pub fn new(child: impl Widget) -> Self {
+    pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
-            child: Some(WidgetPod::new(child).erased()),
-            width: None,
-            height: None,
-        }
-    }
-
-    /// Construct container with child, and both width and height not set.
-    pub fn new_with_id(child: impl Widget, id: WidgetId) -> Self {
-        Self {
-            child: Some(WidgetPod::new_with_id(child, id).erased()),
-            width: None,
-            height: None,
-        }
-    }
-
-    /// Construct container with child in a pod, and both width and height not set.
-    pub fn new_pod(child: WidgetPod<dyn Widget>) -> Self {
-        Self {
-            child: Some(child),
+            child: Some(child.erased().to_pod()),
             width: None,
             height: None,
         }
@@ -137,11 +118,11 @@ impl SizedBox {
     /// Give this container a child widget.
     ///
     /// If this container already has a child, it will be overwritten.
-    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: impl Widget) {
+    pub fn set_child(this: &mut WidgetMut<'_, Self>, child: NewWidget<impl Widget + ?Sized>) {
         if let Some(child) = this.widget.child.take() {
             this.ctx.remove_child(child);
         }
-        this.widget.child = Some(WidgetPod::new(child).erased());
+        this.widget.child = Some(child.erased().to_pod());
         this.ctx.children_changed();
         this.ctx.request_layout();
     }
@@ -332,7 +313,7 @@ mod tests {
 
     #[test]
     fn expand() {
-        let expand = SizedBox::new(Label::new("hello!")).expand();
+        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).expand();
         let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
         let child_bc = expand.child_constraints(&bc);
         assert_eq!(child_bc.min(), Size::new(400., 400.,));
@@ -340,7 +321,7 @@ mod tests {
 
     #[test]
     fn no_width() {
-        let expand = SizedBox::new(Label::new("hello!")).height(200.);
+        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(200.);
         let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
         let child_bc = expand.child_constraints(&bc);
         assert_eq!(child_bc.min(), Size::new(0., 200.,));
@@ -373,7 +354,7 @@ mod tests {
         box_props.insert(BorderWidth::all(5.0));
         box_props.insert(CornerRadius::all(5.0));
 
-        let widget = SizedBox::new(Label::new("hello")).with_props(box_props);
+        let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness =
@@ -389,7 +370,7 @@ mod tests {
         box_props.insert(BorderWidth::all(5.0));
         box_props.insert(CornerRadius::all(5.0));
 
-        let widget = SizedBox::new(Label::new("hello"))
+        let widget = SizedBox::new(Label::new("hello").with_auto_id())
             .width(20.0)
             .height(20.0)
             .with_props(box_props);
@@ -409,7 +390,7 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
         box_props.insert(Padding::from_vh(15., 10.));
 
-        let widget = SizedBox::new(Label::new("hello")).with_props(box_props);
+        let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness =
@@ -423,7 +404,7 @@ mod tests {
         let mut box_props = Properties::new();
         box_props.insert(Background::Color(palette::css::PLUM));
 
-        let widget = SizedBox::new(Label::new("hello"))
+        let widget = SizedBox::new(Label::new("hello").with_auto_id())
             .width(20.0)
             .height(20.0)
             .with_props(box_props);
@@ -527,7 +508,7 @@ mod tests {
         box_props.insert(BorderWidth::all(5.0));
         box_props.insert(Padding::all(25.));
 
-        let widget = SizedBox::new(Label::new("hello"))
+        let widget = SizedBox::new(Label::new("hello").with_auto_id())
             .width(20.0)
             .height(20.0)
             .with_props(box_props);
@@ -577,7 +558,7 @@ mod tests {
         // This is the difference
         box_props.insert(Padding::all(0.2));
 
-        let widget = SizedBox::new(Label::new("hello"))
+        let widget = SizedBox::new(Label::new("hello").with_auto_id())
             .width(20.0)
             .height(20.0)
             .with_props(box_props);

@@ -31,9 +31,8 @@ pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;
 pub use widget::{AllowRawMut, AsDynWidget, ChildrenIds, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
-pub use widget_pod::WidgetPod;
+pub use widget_pod::{NewWidget, WidgetOptions, WidgetPod};
 pub use widget_ref::WidgetRef;
-pub use widget_state::WidgetOptions;
 
 pub use ui_events::keyboard::{KeyboardEvent, Modifiers};
 pub use ui_events::pointer::{
@@ -42,7 +41,6 @@ pub use ui_events::pointer::{
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
 pub(crate) use widget_arena::{WidgetArena, WidgetArenaMut, WidgetArenaRef};
-pub(crate) use widget_pod::CreateWidget;
 pub(crate) use widget_state::WidgetState;
 
 /// Actions are emitted by Masonry widgets when a user input needs to be handled by the application.

@@ -4,7 +4,7 @@
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::WidgetId;
+use crate::core::{WidgetId, WidgetOptions};
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -197,16 +197,6 @@ pub(crate) struct WidgetState {
     pub(crate) trace_span: Span,
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
-}
-
-// TODO - Add Properties
-/// The options the widget will be created with.
-#[derive(Default, Debug)]
-pub struct WidgetOptions {
-    /// The transform the widget will be created with.
-    pub transform: Affine,
-    /// The disabled state the widget will be created with.
-    pub disabled: bool,
 }
 
 impl WidgetState {
