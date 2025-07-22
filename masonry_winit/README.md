@@ -66,7 +66,7 @@ impl AppDriver for Driver {
             ctx.render_root(window_id).edit_root_widget(|mut root| {
                 let mut portal = root.downcast::<Portal<Flex>>();
                 let mut flex = Portal::child_mut(&mut portal);
-                Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_next_id());
+                Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_auto_id());
             });
         } else if action.is::<TextAction>() {
             let action = *action.downcast::<TextAction>().unwrap();
@@ -87,11 +87,11 @@ fn main() {
         Flex::column()
             .with_child(NewWidget::new(
                 Flex::row()
-                    .with_flex_child(TextInput::new("").with_next_id(), 1.0)
-                    .with_child(Button::new("Add task").with_next_id()),
+                    .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
+                    .with_child(Button::new("Add task").with_auto_id()),
             ))
             .with_spacer(WIDGET_SPACING)
-            .with_next_id(),
+            .with_auto_id(),
     );
 
     let window_size = LogicalSize::new(400.0, 400.0);

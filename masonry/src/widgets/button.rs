@@ -60,7 +60,7 @@ impl Button {
     /// use masonry::widgets::{Button, Label};
     ///
     /// let label = Label::new("Increment").with_style(StyleProperty::FontSize(20.0));
-    /// let button = Button::from_label(label.with_next_id());
+    /// let button = Button::from_label(label.with_auto_id());
     /// ```
     pub fn from_label(label: NewWidget<Label>) -> Self {
         Self {
