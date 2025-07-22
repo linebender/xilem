@@ -64,7 +64,7 @@ impl Grid {
         self
     }
 
-    /// Builder-style method to add a child widget already wrapped in a [`WidgetPod`].
+    /// Builder-style method to add a child widget.
     pub fn with_child(
         mut self,
         child: NewWidget<impl Widget + ?Sized>,
@@ -138,7 +138,7 @@ impl GridParams {
 
 // --- MARK: WIDGETMUT
 impl Grid {
-    /// Add a child widget already wrapped in a [`WidgetPod`].
+    /// Add a child widget.
     ///
     /// See also [`with_child`](Grid::with_child).
     pub fn add_child(

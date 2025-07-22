@@ -351,7 +351,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Insert a non-flex child widget wrapped in a [`WidgetPod`] at the given index.
+    /// Insert a non-flex child widget at the given index.
     ///
     /// # Panics
     ///
@@ -369,7 +369,7 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Insert a flex child widget wrapped in a [`WidgetPod`] at the given index.
+    /// Insert a flex child widget at the given index.
     ///
     /// # Panics
     ///
