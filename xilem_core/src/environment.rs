@@ -6,7 +6,7 @@
 use anymore::AnyDebug;
 use hashbrown::{HashMap, hash_map::Entry};
 
-use crate::{MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::{any::TypeId, marker::PhantomData};
@@ -250,7 +250,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
-        element: crate::Mut<'_, Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         // Use our value in the child rebuild.
@@ -283,7 +283,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
-        element: crate::Mut<'_, Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         // Make our value available in the child teardown.
@@ -311,14 +311,33 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: crate::DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
+        // Use our value in the child message.
+        let slot =
+            &mut ctx.environment.slots[usize::try_from(view_state.environment_slot).unwrap()];
+        debug_assert!(
+            view_state.this_state.is_some(),
+            "`Provides` should be providing something."
+        );
+        core::mem::swap(&mut slot.item, &mut view_state.this_state);
+
         // TODO: Any need for a message directly to this view?
         // TODO: When the context/environment is available in messages, add the context value here.
-        self.child
-            .message(&mut view_state.child_state, id_path, message, app_state)
+        let ret = self
+            .child
+            .message(&mut view_state.child_state, ctx, element, app_state);
+
+        let slot =
+            &mut ctx.environment.slots[usize::try_from(view_state.environment_slot).unwrap()];
+        core::mem::swap(&mut slot.item, &mut view_state.this_state);
+        debug_assert!(
+            view_state.this_state.is_some(),
+            "`Provides` should get its value back."
+        );
+        ret
     }
 }
 
@@ -481,7 +500,7 @@ where
         _: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
-        element: crate::Mut<'_, Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         ctx.with_id(WITH_CONTEXT_CHILD, |ctx| {
@@ -516,7 +535,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
-        element: crate::Mut<'_, Self::Element>,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         if let Some(_listener_idx) = view_state.listener_index {
@@ -535,28 +554,26 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: crate::DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        let Some((first, rest)) = id_path.split_first() else {
-            match message.downcast::<Rebuild>() {
-                Ok(_) => return MessageResult::RequestRebuild,
-                Err(message) => {
-                    tracing::warn!("Expected `Rebuild` in WithContext::Message, got {message:?}");
-                    return MessageResult::Stale(message);
+        let Some(first) = ctx.take_first() else {
+            match ctx.take_message::<Rebuild>() {
+                Some(_) => return MessageResult::RequestRebuild,
+                None => {
+                    tracing::warn!("Expected `Rebuild` in WithContext::Message, got {ctx:?}");
+                    return MessageResult::Stale;
                 }
             }
         };
         debug_assert_eq!(
-            *first, WITH_CONTEXT_CHILD,
+            first, WITH_CONTEXT_CHILD,
             "Message should have been routed properly."
         );
 
-        // TODO: Any need for a message directly to this view?
-        // TODO: When the context/environment is available in messages, add the context value here.
         view_state
             .prev
-            .message(&mut view_state.child_state, rest, message, app_state)
+            .message(&mut view_state.child_state, ctx, element, app_state)
     }
 }

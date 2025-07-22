@@ -10,7 +10,7 @@ use core::ops::Deref;
 
 use crate::environment::Environment;
 use crate::message::MessageResult;
-use crate::{DynMessage, MessageContext, Mut, ViewElement};
+use crate::{MessageContext, Mut, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -205,12 +205,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.deref()
-            .message(view_state, id_path, message, app_state)
+        self.deref().message(view_state, ctx, element, app_state)
     }
 }
 
@@ -275,13 +274,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
-                .message(&mut view_state.view_state, id_path, message, app_state);
+                .message(&mut view_state.view_state, ctx, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }
@@ -339,13 +338,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
-                .message(&mut view_state.view_state, id_path, message, app_state);
+                .message(&mut view_state.view_state, ctx, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }

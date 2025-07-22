@@ -11,8 +11,10 @@ use anymore::AnyDebug;
 /// where we are along that path.
 /// Additionally, it also provides access to the current [`Environment`],
 /// allowing the resources for the current view tree location to be accessed.
+// TODO: Is it OK for this debug to be load bearing? It probably shouldn't be a derive.
 #[derive(Debug)]
 pub struct MessageContext {
+    // TODO: Just plain pub?
     pub(crate) environment: Environment,
     full_id_path: Vec<ViewId>,
     id_path_index: usize,
@@ -53,12 +55,12 @@ impl MessageContext {
                 if f(&*message) {
                     return Some(message);
                 } else {
-                    self.message = Some(DynMessage(message))
+                    self.message = Some(DynMessage(message));
                 }
             } else {
                 self.message = Some(message);
             }
-            return None;
+            None
         } else {
             panic!("The message has already been taken.");
         }

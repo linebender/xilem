@@ -5,7 +5,7 @@ use core::any::type_name;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
 
 /// The View for [`lens`].
 ///
@@ -144,14 +144,14 @@ where
     fn message(
         &self,
         (child, child_view_state): &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut ParentState,
     ) -> MessageResult<Action> {
         child.message(
             child_view_state,
-            id_path,
-            message,
+            ctx,
+            element,
             (self.access_state)(app_state),
         )
     }

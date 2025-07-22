@@ -3,7 +3,7 @@
 
 use core::fmt::Debug;
 
-use crate::{DynMessage, MessageResult, NoElement, View, ViewMarker, ViewPathTracker};
+use crate::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker, ViewPathTracker};
 
 /// A view which executes `once` exactly once.
 ///
@@ -103,7 +103,7 @@ where
         _: &Self,
         (): &mut Self::ViewState,
         _: &mut Context,
-        (): crate::Mut<'_, Self::Element>,
+        (): Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         // Nothing to do
@@ -113,7 +113,7 @@ where
         &self,
         (): &mut Self::ViewState,
         _: &mut Context,
-        _: crate::Mut<'_, Self::Element>,
+        _: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
         // Nothing to do
@@ -122,11 +122,11 @@ where
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _: &[crate::ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        _: Mut<'_, Self::Element>,
         _: &mut State,
     ) -> MessageResult<Action> {
         // Nothing to do
-        panic!("Message should not have been sent to a `RunOnce` View: {message:?}");
+        panic!("Message should not have been sent to a `RunOnce` View: {ctx:?}");
     }
 }

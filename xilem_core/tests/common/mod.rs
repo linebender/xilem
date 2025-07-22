@@ -38,6 +38,16 @@ impl TestCtx {
             "Views should always match push_ids and pop_ids"
         );
     }
+    pub(super) fn with_message_context(
+        &mut self,
+        target_id_path: Vec<ViewId>,
+        message: DynMessage,
+        f: impl FnOnce(&mut MessageContext),
+    ) {
+        let mut ctx = MessageContext::new(std::mem::take(&mut self.1), target_id_path, message);
+        f(&mut ctx);
+        self.1 = ctx.finish().0;
+    }
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -154,12 +164,17 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut (),
     ) -> MessageResult<Action> {
+        let mut elements = SeqTracker {
+            inner: element.children.as_mut().unwrap(),
+            ix: 0,
+            scratch: &mut view_state.1,
+        };
         self.seq
-            .seq_message(&mut view_state.0, id_path, message, app_state)
+            .seq_message(&mut view_state.0, ctx, &mut elements, app_state)
     }
 }
 
@@ -209,8 +224,8 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
     fn message(
         &self,
         _: &mut Self::ViewState,
-        _: &[ViewId],
-        _: DynMessage,
+        _: &mut MessageContext,
+        _: Mut<'_, Self::Element>,
         _: &mut (),
     ) -> MessageResult<Action> {
         // If we get an `Action` value, we know it came from here

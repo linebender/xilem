@@ -95,7 +95,7 @@ fn two_element_passthrough() {
 fn two_element_message() {
     let view = sequence(2, [record_ops(0), record_ops(1)]);
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -110,9 +110,14 @@ fn two_element_message() {
     assert_eq!(second_child.operations, &[Operation::Build(1)]);
     let second_path = second_child.view_path.to_vec();
 
-    let result = view.message(&mut state, &first_path, DynMessage::new(()), &mut ());
-    assert_action(result, 0);
+    ctx.with_message_context(first_path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        assert_action(result, 0);
+    });
+    // let result = view.message(&mut state, &first_path, DynMessage::new(()), &mut ());
 
-    let result = view.message(&mut state, &second_path, DynMessage::new(()), &mut ());
-    assert_action(result, 1);
+    ctx.with_message_context(second_path, DynMessage::new(()), |ctx| {
+        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        assert_action(result, 1);
+    });
 }

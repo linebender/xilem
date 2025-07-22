@@ -1,9 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::{
-    DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
-};
+use crate::{MessageContext, MessageResult, Mut, View, ViewElement, ViewMarker, ViewPathTracker};
 
 /// This trait provides a way to add [`View`] implementations for types that would be restricted otherwise by the orphan rules.
 ///
@@ -44,8 +42,8 @@ pub trait OrphanView<V, State, Action>: ViewPathTracker + Sized {
     fn orphan_message(
         view: &V,
         view_state: &mut Self::OrphanViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::OrphanElement>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
 }
@@ -94,11 +92,11 @@ macro_rules! impl_orphan_view_for {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                id_path: &[ViewId],
-                message: DynMessage,
+                ctx: &mut MessageContext,
+                element: Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) -> MessageResult<Action> {
-                Context::orphan_message(self, view_state, id_path, message, app_state)
+                Context::orphan_message(self, view_state, ctx, element, app_state)
             }
         }
     };
@@ -128,7 +126,7 @@ impl_orphan_view_for!(usize);
 /// These [`OrphanView`] implementations can e.g. be used in a vector graphics context, as for example seen in `xilem_web` within svg nodes
 mod kurbo {
     use super::OrphanView;
-    use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker};
+    use crate::{MessageContext, MessageResult, Mut, View, ViewMarker};
     impl_orphan_view_for!(kurbo::PathSeg);
     impl_orphan_view_for!(kurbo::Arc);
     impl_orphan_view_for!(kurbo::BezPath);

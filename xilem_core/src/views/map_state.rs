@@ -4,7 +4,7 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
 
 /// The View for [`map_state`].
 ///
@@ -129,11 +129,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut ParentState,
     ) -> MessageResult<Action> {
         self.child
-            .message(view_state, id_path, message, (self.map_state)(app_state))
+            .message(view_state, ctx, element, (self.map_state)(app_state))
     }
 }

@@ -7,7 +7,7 @@
 use core::any::Any;
 
 use xilem_core::{
-    DynMessage, Environment, MessageResult, Mut, SuperElement, View, ViewElement, ViewId,
+    Environment, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement, ViewId,
     ViewMarker, ViewPathTracker,
 };
 
@@ -92,8 +92,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        _id_path: &[ViewId],
-        _message: DynMessage,
+        _ctx: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
         MessageResult::Nop

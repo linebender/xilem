@@ -9,7 +9,8 @@ use core::sync::atomic::{AtomicBool, Ordering};
 
 use crate::element::NoElement;
 use crate::{
-    DynMessage, MessageResult, SuperElement, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    MessageContext, MessageResult, SuperElement, View, ViewElement, ViewId, ViewMarker,
+    ViewPathTracker,
 };
 
 /// An append only `Vec`.
@@ -126,8 +127,8 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
 }
@@ -201,11 +202,16 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.message(seq_state, id_path, message, app_state)
+        elements.mutate(|this_element| {
+            Element::with_downcast_val(this_element, |element| {
+                self.message(seq_state, ctx, element, app_state)
+            })
+            .1
+        })
     }
 }
 
@@ -343,16 +349,17 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let (start, rest) = id_path
-            .split_first()
+        let start = ctx
+            .take_first()
             .expect("Id path has elements for Option<ViewSequence>");
+
         if start.routing_id() != seq_state.generation {
             // The message was sent to a previous edition of the inner value
-            return MessageResult::Stale(message);
+            return MessageResult::Stale;
         }
         assert_eq!(
             self.is_some(),
@@ -360,10 +367,10 @@ where
             "Inconsistent ViewSequence state. Perhaps the parent is mixing up children"
         );
         if let Some((seq, inner_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
-            seq.seq_message(inner_state, rest, message, app_state)
+            seq.seq_message(inner_state, ctx, elements, app_state)
         } else {
             // TODO: this should be unreachable as the generation was increased on the falling edge
-            MessageResult::Stale(message)
+            MessageResult::Stale
         }
     }
 }
@@ -551,22 +558,25 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let (start, rest) = id_path
-            .split_first()
+        let start = ctx
+            .take_first()
             .expect("Id path has elements for Vec<ViewSequence>");
-        let (index, generation) = view_id_to_index_generation(*start);
+        let (index, generation) = view_id_to_index_generation(start);
         let stored_generation = &seq_state.generations[index];
         if *stored_generation != generation {
             // The value in the sequence i
-            return MessageResult::Stale(message);
+            return MessageResult::Stale;
         }
         // Panics if index is out of bounds, but we know it isn't because this is the same generation
         let inner_state = &mut seq_state.inner_states[index];
-        self[index].seq_message(inner_state, rest, message, app_state)
+
+        // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
+        elements.skip(todo!());
+        self[index].seq_message(inner_state, ctx, elements, app_state)
     }
 }
 
@@ -622,18 +632,20 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let (start, rest) = id_path
-            .split_first()
+        let start = ctx
+            .take_first()
             .expect("Id path has elements for [ViewSequence; N]");
 
         let index: usize = start.routing_id().try_into().unwrap();
         // We know the index is in bounds because it was created from an index into a value of Self
         let inner_state = &mut seq_state[index];
-        self[index].seq_message(inner_state, rest, message, app_state)
+        // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
+        elements.skip(todo!());
+        self[index].seq_message(inner_state, ctx, elements, app_state)
     }
 
     #[doc(hidden)]
@@ -694,11 +706,11 @@ where
     fn seq_message(
         &self,
         _: &mut Self::SeqState,
-        _: &[ViewId],
-        _message: DynMessage,
+        ctx: &mut MessageContext,
+        _: &mut impl ElementSplice<Element>,
         _: &mut State,
     ) -> MessageResult<Action> {
-        unreachable!("Messages should never be dispatched to an empty tuple");
+        unreachable!("Messages should never be dispatched to an empty tuple {ctx:?}.");
         // TODO add Debug trait bound because of this?: , got {message:?}
     }
 }
@@ -745,11 +757,11 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.0.seq_message(seq_state, id_path, message, app_state)
+        self.0.seq_message(seq_state, ctx, elements, app_state)
     }
 }
 
@@ -815,20 +827,22 @@ macro_rules! impl_view_tuple {
             fn seq_message(
                 &self,
                 seq_state: &mut Self::SeqState,
-                id_path: &[ViewId],
-                message: DynMessage,
+                ctx: &mut MessageContext,
+                elements: &mut impl ElementSplice<Element>,
                 app_state: &mut State,
             ) -> MessageResult<Action> {
-                let (start, rest) = id_path
-                    .split_first()
+                let start = ctx
+                    .take_first()
                     .expect("Id path has elements for tuple");
+                // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
+                elements.skip(todo!());
                 match start.routing_id() {
                     $(
-                        $idx => self.$idx.seq_message(&mut seq_state.$idx, rest, message, app_state),
+                        $idx => self.$idx.seq_message(&mut seq_state.$idx, ctx, elements, app_state),
                     )+
                     // If we have received a message, our parent is (mostly) certain that we requested it
                     // The only time that wouldn't be the case is when a generational index has overflowed?
-                    _ => unreachable!("Unexpected id path {start:?} in tuple (wants to be routed via {rest:?})"),
+                    _ => unreachable!("Unexpected id path {start:?} in tuple (wants to be routed via {ctx:?})"),
                 }
             }
         }
@@ -966,10 +980,11 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        ctx: &mut MessageContext,
+        _elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        self.seq.seq_message(seq_state, id_path, message, app_state)
+        self.seq
+            .seq_message(seq_state, ctx, &mut NoElements, app_state)
     }
 }
