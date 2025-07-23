@@ -120,9 +120,9 @@ This pass is ran when widgets are [stashed] or un-stashed.
 
 It's very similar to the "update disabled" pass, and takes care of propagating stashed flags.
 
-#### "Update focus chain" pass
+#### "Update focusable" pass
 
-This pass rebuilds the [focus chain] whenever it might be out of date.
+This pass updates flags used to determine whether a widget has any descendant accepting focus.
 
 It runs whenever a widget that accepts tab focus is added, removed, enabled, disabled, stashed or unstashed.
 This makes sure that tab-browsing always lands on the right widget.

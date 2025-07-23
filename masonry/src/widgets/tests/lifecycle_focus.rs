@@ -11,24 +11,6 @@ use crate::widgets::Flex;
 use crate::*;
 
 #[cfg(false)]
-/// Check that a focus chain is correctly built initially..
-#[test]
-fn build_focus_chain() {
-    let [id_1, id_2, id_3, id_4] = widget_ids();
-
-    let widget = Flex::column()
-        .with_child_id(FocusTaker::new(), id_1)
-        .with_child_id(FocusTaker::new(), id_2)
-        .with_child_id(FocusTaker::new(), id_3)
-        .with_child_id(FocusTaker::new(), id_4);
-
-    let harness = TestHarness::create(widgets);
-
-    // verify that we start out with four widgets registered for focus
-    assert_eq!(harness.window().focus_chain(), &[id_1, id_2, id_3, id_4]);
-}
-
-#[cfg(false)]
 /// Check that focus changes trigger on_status_change
 #[test]
 fn focus_status_change() {

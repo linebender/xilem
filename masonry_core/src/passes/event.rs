@@ -12,6 +12,7 @@ use crate::core::{
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
+use crate::passes::update::find_next_in_focus_chain;
 use crate::passes::{enter_span, merge_state_up};
 
 // --- MARK: HELPERS
@@ -183,7 +184,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         && let Some(target_widget_id) = target_widget_id
     {
         // The next tab event assign focus around this widget.
-        root.global_state.most_recently_clicked_widget = Some(target_widget_id);
+        root.global_state.focus_anchor = Some(target_widget_id);
 
         // If we click outside of the focused widget, we clear the focus.
         if let Some(focused_widget) = root.global_state.focused_widget {
@@ -290,7 +291,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             && handled == Handled::No
         {
             let forward = !key.modifiers.shift();
-            let next_focused_widget = root.widget_from_focus_chain(forward);
+            let next_focused_widget = find_next_in_focus_chain(root, forward);
             root.global_state.next_focused_widget = next_focused_widget;
             handled = Handled::Yes;
         }

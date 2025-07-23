@@ -1119,7 +1119,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     pub fn children_changed(&mut self) {
         trace!("children_changed");
         self.widget_state.children_changed = true;
-        self.widget_state.needs_update_focus_chain = true;
+        self.widget_state.needs_update_focusable = true;
         self.request_layout();
     }
 
@@ -1135,6 +1135,11 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
             .remove(id)
             .expect("remove_child: child not found");
         self.global_state.scene_cache.remove(&child.id());
+
+        // If we remove the focus anchor, its parent becomes the anchor.
+        if self.global_state.focus_anchor == Some(id) {
+            self.global_state.focus_anchor = Some(self.widget_state.id);
+        }
 
         self.children_changed();
     }
