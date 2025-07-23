@@ -106,7 +106,7 @@ It is ran when new widgets are added to the tree, or existing widgets are remove
 
 It will call the `register_children()` widget method on container widgets whose children changed, then the `update()` method with the [`WidgetAdded`] event on new widgets.
 
-**Note:** Passes that send update events that concern a chain of parents like [`ChildFocusChanged`] or [`HoveredChanged`] will send the event first to the innermost widget, then up the parent chain.
+**Note:** Passes that send update events that concern a chain of parents like [`ChildFocusChanged`] or [`ChildHoveredChanged`] will send the event first to the innermost widget, then up the parent chain.
 
 #### "Update disabled" pass
 
@@ -129,7 +129,11 @@ This makes sure that tab-browsing always lands on the right widget.
 
 #### "Update focus" pass
 
-<!-- TODO - document update focus --- (document iteration order) -->
+This pass updates thing that need to change as a result of [text focus] having changed.
+
+It updates focus-related flags and sends [`FocusChanged`] and [`ChildFocusChanged`] events.
+
+It updates IME status and may send [`Ime::Disabled`] events to a widget and [`StartIme`] / [`EndIme`] signals to the platform.
 
 #### "Update scroll" pass
 
@@ -139,7 +143,12 @@ It iterates other the entire parent chain of this widget, and passes [`RequestPa
 
 #### "Update pointer" pass
 
-<!-- TODO - document update pointer --- (document iteration order) -->
+This pass updates thing that need to change as a result of either a pointer having moved, for things having moved/changed under a pointer.
+
+It updates the hovered and [active] status of widgets and sends related events.
+
+It also update the pointer's icon depending on which widget it's hovering.
+
 
 ### Layout pass
 
@@ -216,9 +225,15 @@ They can access the layout of children if they have already been laid out.
 [`RegisterCtx`]: crate::core::RegisterCtx
 [`QueryCtx`]: crate::core::QueryCtx
 [`WidgetAdded`]: crate::core::Update::WidgetAdded
+[`Ime::Disabled`]: crate::core::Ime::Disabled
+[`FocusChanged`]: crate::core::Update::FocusChanged
 [`ChildFocusChanged`]: crate::core::Update::ChildFocusChanged
-[`HoveredChanged`]: crate::core::Update::HoveredChanged
-[`RequestPanToChild`]: crate::core::Update::HoveredChanged
-[disabled]: crate::doc::doc_06_masonry_concepts#disabled
-[stashed]: crate::doc::doc_06_masonry_concepts#stashed
-[focus chain]: crate::doc::doc_06_masonry_concepts#focus-chain
+[`ChildHoveredChanged`]: crate::core::Update::ChildHoveredChanged
+[`RequestPanToChild`]: crate::core::Update::RequestPanToChild
+[`StartIme`]: crate::core::RenderRootSignal::StartIme
+[`EndIme`]: crate::core::RenderRootSignal::EndIme
+[disabled]: crate::doc::internals_02_masonry_concepts#disabled
+[stashed]: crate::doc::internals_02_masonry_concepts#stashed
+[stashed]: crate::doc::internals_02_masonry_concepts#active
+[focus chain]: crate::doc::internals_02_masonry_concepts#focus-chain
+[text focus]: crate::doc::internals_02_masonry_concepts#text-focus
