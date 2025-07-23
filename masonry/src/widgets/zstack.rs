@@ -269,6 +269,7 @@ mod tests {
             (UnitPoint::BOTTOM_LEFT, "bottom_left"),
             (UnitPoint::BOTTOM, "bottom_center"),
             (UnitPoint::BOTTOM_RIGHT, "bottom_right"),
+            (UnitPoint::new(0.2, 1.0), "bottom_leftish"),
         ];
 
         for (align, name) in all_cases {
