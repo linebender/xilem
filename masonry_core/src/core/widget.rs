@@ -310,7 +310,7 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
     ///
-    /// [hovered](crate::doc::masonry_concepts#hovered)
+    /// [hovered]: crate::doc::masonry_concepts#hovered
     fn accepts_pointer_interaction(&self) -> bool {
         true
     }
@@ -321,7 +321,7 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
     ///
-    /// [text focus](crate::doc::masonry_concepts#text-focus)
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
     fn accepts_focus(&self) -> bool {
         false
     }
