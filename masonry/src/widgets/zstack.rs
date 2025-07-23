@@ -341,10 +341,10 @@ impl Widget for ZStack {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::Properties;
     use vello::peniko::color::palette;
 
     use super::*;
+    use crate::core::Properties;
     use crate::properties::{Background, BorderColor, BorderWidth};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;

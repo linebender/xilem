@@ -1,10 +1,9 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry_core::core::ChildrenIds;
 use vello::kurbo::{Point, Size};
 
-use crate::core::{PointerButton, Update, Widget, WidgetId, WidgetPod};
+use crate::core::{ChildrenIds, PointerButton, Update, Widget, WidgetId, WidgetPod};
 use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
 use crate::theme::default_property_set;
 use crate::widgets::Flex;

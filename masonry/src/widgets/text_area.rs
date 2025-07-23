@@ -932,12 +932,11 @@ pub enum InsertNewline {
 
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::Properties;
     use masonry_testing::WrapperWidget;
     use vello::kurbo::Size;
 
     use super::*;
-    use crate::core::{KeyboardEvent, Modifiers};
+    use crate::core::{KeyboardEvent, Modifiers, Properties};
     use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
     use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.

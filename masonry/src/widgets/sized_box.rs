@@ -298,9 +298,8 @@ impl Widget for SizedBox {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::Properties;
-
     use super::*;
+    use crate::core::Properties;
     use crate::palette;
     use crate::properties::types::{Gradient, UnitPoint};
     use crate::testing::{

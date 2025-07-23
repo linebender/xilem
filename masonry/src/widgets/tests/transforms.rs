@@ -5,11 +5,10 @@
 
 use std::f64::consts::PI;
 
-use masonry_core::core::{NewWidget, Properties};
 use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
-use crate::core::{PointerButton, Widget, WidgetOptions};
+use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
 use crate::properties::{Background, BorderColor, BorderWidth};
 use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::default_property_set;
