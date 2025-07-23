@@ -309,6 +309,9 @@ impl ElementSplice<TestElement> for SeqTracker<'_> {
     fn skip(&mut self, n: usize) {
         self.ix += n;
     }
+    fn index(&self) -> usize {
+        self.ix
+    }
     fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, TestElement>) -> R) -> R {
         let ret = f(&mut self.inner.active[self.ix]);
         let val = self.inner.active.remove(self.ix);

@@ -36,6 +36,12 @@ impl<T> AppendVec<T> {
     pub fn drain(&mut self) -> Drain<'_, T> {
         self.inner.drain(..)
     }
+    /// Equivalent to [`ElementSplice::index`].
+    pub fn index(&self) -> usize {
+        // If there are no items, to get here we need to skip 0
+        // if there is one, we need to skip 1
+        self.inner.len()
+    }
     /// Returns `true` if the vector contains no elements.
     ///
     /// See [`Vec::is_empty`] for more details
@@ -57,6 +63,8 @@ impl<T> Default for AppendVec<T> {
         }
     }
 }
+
+// --- MARK: Traits
 
 /// Views for ordered sequences of elements.
 ///
@@ -88,6 +96,9 @@ where
     /// - To store generations and other data needed to avoid routing stale messages
     ///   to incorrect views.
     /// - To pass on the state of child sequences, or a child View's [`ViewState`].
+    ///
+    /// The type used for this associated type cannot be treated as public API; this is
+    /// internal state to the `ViewSequence` implementation.
     ///
     /// [`ViewState`]: View::ViewState
     type SeqState;
@@ -122,8 +133,19 @@ where
 
     /// Propagate a message.
     ///
-    /// Handle a message, propagating to elements if needed. Here, `id_path` is a slice
-    /// of ids, where the first item identifiers a child element of this sequence, if necessary.
+    /// Handle a message, propagating to child views if needed.
+    /// The context contains both the path of this view, and the remaining
+    /// path that the rest of the implementation needs to go along.
+    /// The first items in the remaining part of thtis path will be those added
+    /// in build and/or rebuild.
+    ///
+    /// The provided `elements` must be at the same [`index`](ElementSplice::index)
+    /// it was at when `rebuild` (or `build`) was last called on this sequence.
+    // Potential optimisation: Sequence implementations can be grouped into three classes:
+    // 1) Statically known size (e.g. a single element, a tuple with only statically known size)
+    // 2) Linear time known size (e.g. a tuple of linear or better known size, a vec of statically known size, an option)
+    // 3) Dynamically known size (e.g. a vec)
+    // For case 1 and maybe case 2, we don't need to store the indices, and could instead rebuild them dynamically.
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
@@ -147,9 +169,18 @@ pub trait ElementSplice<Element: ViewElement> {
     fn mutate<R>(&mut self, f: impl FnOnce(Element::Mut<'_>) -> R) -> R;
     /// Don't make any changes to the next n existing elements.
     fn skip(&mut self, n: usize);
+    /// How many elements you would need to [`skip`](ElementSplice::skip) from when this
+    /// `ElementSplice` was created to get to the current element.
+    ///
+    /// Note that in using this function, previous views will have skipped.
+    /// Values obtained from this method may change during any `rebuild`, but will not change
+    /// between `build`/`rebuild` and the next `message`
+    fn index(&self) -> usize;
     /// Delete the next existing element, after running a function on it.
     fn delete<R>(&mut self, f: impl FnOnce(Element::Mut<'_>) -> R) -> R;
 }
+
+// --- MARK: For V: View
 
 impl<State, Action, Context, V, Element> ViewSequence<State, Action, Context, Element> for V
 where
@@ -214,6 +245,8 @@ where
         })
     }
 }
+
+// --- MARK: for Option<Seq>
 
 /// The state used to implement `ViewSequence` for `Option<impl ViewSequence>`
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
@@ -375,6 +408,8 @@ where
     }
 }
 
+// --- MARK: for Vec<Seq>
+
 /// The state used to implement `ViewSequence` for `Vec<impl ViewSequence>`
 ///
 /// We use a generation arena for vector types, with half of the `ViewId` dedicated
@@ -385,7 +420,11 @@ where
 #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 #[derive(Debug)]
 pub struct VecViewState<InnerState> {
-    inner_states: Vec<InnerState>,
+    // We use two vectors here because the `inner_states` is the
+    // same length as the actual vector, whereas the generations
+    // is the same length as the longest version of this we have seen.
+    /// The fields of the tuple are (number of widgets to skip, `InnerState`).
+    inner_states: Vec<(usize, InnerState)>,
 
     generations: Vec<u32>,
 }
@@ -435,6 +474,7 @@ where
         elements: &mut AppendVec<Element>,
         app_state: &mut State,
     ) -> Self::SeqState {
+        let start_idx = elements.index();
         let generations = alloc::vec![0; self.len()];
         let inner_states = self
             .iter()
@@ -442,7 +482,9 @@ where
             .zip(&generations)
             .map(|((index, seq), generation)| {
                 let id = create_generational_view_id(index, *generation);
-                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state))
+                let this_skip = elements.index() - start_idx;
+                let inner_state = ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
+                (this_skip, inner_state)
             })
             .collect();
         VecViewState {
@@ -460,13 +502,15 @@ where
         elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) {
-        for (i, (((child, child_prev), child_state), child_generation)) in self
+        let start_idx = elements.index();
+        for (i, (((child, child_prev), (child_skip, child_state)), child_generation)) in self
             .iter()
             .zip(prev)
             .zip(&mut seq_state.inner_states)
             .zip(&seq_state.generations)
             .enumerate()
         {
+            *child_skip = elements.index() - start_idx;
             // Rebuild the items which are common to both vectors
             let id = create_generational_view_id(i, *child_generation);
             ctx.with_id(id, |ctx| {
@@ -482,7 +526,7 @@ where
             let generations = seq_state.generations[n..].iter_mut();
             // But remove the old states
             let states = seq_state.inner_states.drain(n..);
-            for (index, ((old_seq, generation), mut inner_state)) in
+            for (index, ((old_seq, generation), (_, mut inner_state))) in
                 to_teardown.zip(generations).zip(states).enumerate()
             {
                 let id = create_generational_view_id(index + n, *generation);
@@ -508,9 +552,6 @@ where
                     // We believe this to be superfluous for the default use case, as even with 1000 rebuilds a second, each adding
                     // to the same array, this would take 50 days of the application running continuously.
                     // See also https://github.com/bevyengine/bevy/pull/9907, where they warn in their equivalent case
-                    // Note that we have a slightly different strategy to Bevy, where we use a global generation
-                    // This theoretically allows some of the memory in `seq_state` to be reclaimed, at the cost of making overflow
-                    // more likely here. Note that we don't actually reclaim this memory at the moment.
 
                     // We use 0 to wrap around. It would require extremely unfortunate timing to get an async event
                     // with the correct generation exactly u32::MAX generations late, so wrapping is the best option
@@ -528,7 +569,10 @@ where
                         .enumerate()
                         .map(|(index, (seq, generation))| {
                             let id = create_generational_view_id(index + prev_n, *generation);
-                            ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state))
+                            let this_skip = elements.index() - start_idx;
+                            let inner_state =
+                                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
+                            (this_skip, inner_state)
                         }),
                 );
             });
@@ -543,7 +587,7 @@ where
         elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) {
-        for (index, ((seq, state), generation)) in self
+        for (index, ((seq, (_, state)), generation)) in self
             .iter()
             .zip(&mut seq_state.inner_states)
             .zip(&seq_state.generations)
@@ -572,13 +616,14 @@ where
             return MessageResult::Stale;
         }
         // Panics if index is out of bounds, but we know it isn't because this is the same generation
-        let inner_state = &mut seq_state.inner_states[index];
+        let (child_skip, inner_state) = &mut seq_state.inner_states[index];
 
-        // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
-        elements.skip(todo!());
+        elements.skip(*child_skip);
         self[index].seq_message(inner_state, ctx, elements, app_state)
     }
 }
+
+// --- MARK: for [Seq; N]
 
 impl<State, Action, Context, Element, Seq, const N: usize>
     ViewSequence<State, Action, Context, Element> for [Seq; N]
@@ -587,7 +632,8 @@ where
     Context: ViewPathTracker,
     Element: ViewElement,
 {
-    type SeqState = [Seq::SeqState; N];
+    /// The fields of the tuple are (number of widgets to skip, child `SeqState`).
+    type SeqState = [(usize, Seq::SeqState); N];
 
     #[doc(hidden)]
     fn seq_build(
@@ -596,14 +642,16 @@ where
         elements: &mut AppendVec<Element>,
         app_state: &mut State,
     ) -> Self::SeqState {
+        let start_idx = elements.index();
         // there's no enumerate directly on an array
         let mut idx = 0;
         self.each_ref().map(|vs| {
+            let this_skip = elements.index() - start_idx;
             let state = ctx.with_id(ViewId::new(idx), |ctx| {
                 vs.seq_build(ctx, elements, app_state)
             });
             idx += 1;
-            state
+            (this_skip, state)
         })
     }
 
@@ -616,7 +664,11 @@ where
         elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) {
-        for (idx, ((seq, prev_seq), state)) in self.iter().zip(prev).zip(seq_state).enumerate() {
+        let start_idx = elements.index();
+        for (idx, ((seq, prev_seq), (this_skip, state))) in
+            self.iter().zip(prev).zip(seq_state).enumerate()
+        {
+            *this_skip = elements.index() - start_idx;
             ctx.with_id(
                 ViewId::new(idx.try_into().expect(
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
@@ -642,9 +694,9 @@ where
 
         let index: usize = start.routing_id().try_into().unwrap();
         // We know the index is in bounds because it was created from an index into a value of Self
-        let inner_state = &mut seq_state[index];
+        let (this_skip, inner_state) = &mut seq_state[index];
         // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
-        elements.skip(todo!());
+        elements.skip(*this_skip);
         self[index].seq_message(inner_state, ctx, elements, app_state)
     }
 
@@ -656,7 +708,7 @@ where
         elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
     ) {
-        for (idx, (seq, state)) in self.iter().zip(seq_state).enumerate() {
+        for (idx, (seq, (_, state))) in self.iter().zip(seq_state).enumerate() {
             ctx.with_id(
                 ViewId::new(idx.try_into().expect(
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
@@ -668,6 +720,8 @@ where
         }
     }
 }
+
+// --- MARK: for ()
 
 impl<State, Action, Context, Element> ViewSequence<State, Action, Context, Element> for ()
 where
@@ -714,6 +768,8 @@ where
         // TODO add Debug trait bound because of this?: , got {message:?}
     }
 }
+
+// --- MARK: for (Seq,)
 
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element> for (Seq,)
 where
@@ -765,6 +821,8 @@ where
     }
 }
 
+// --- MARK: for (Seq, ...)
+
 macro_rules! impl_view_tuple {
     (
         // We could use the ${index} metavariable here once it's stable
@@ -780,7 +838,8 @@ macro_rules! impl_view_tuple {
             > ViewSequence<State, Action, Context, Element> for ($($seq,)+)
 
         {
-            type SeqState = ($($seq::SeqState,)+);
+            /// The fields of the inner tuples are (number of widgets to skip, child state).
+            type SeqState = ($((usize,$seq::SeqState),)+);
 
             fn seq_build(
                 &self,
@@ -788,9 +847,12 @@ macro_rules! impl_view_tuple {
                 elements: &mut AppendVec<Element>,
                 app_state: &mut State,
             ) -> Self::SeqState {
+                let start_idx = elements.index();
                 ($(
                     ctx.with_id(ViewId::new($idx), |ctx| {
-                        self.$idx.seq_build(ctx, elements, app_state)
+                        let this_skip = elements.index() - start_idx;
+                        let state = self.$idx.seq_build(ctx, elements, app_state);
+                        (this_skip, state)
                     }),
                 )+)
             }
@@ -803,9 +865,11 @@ macro_rules! impl_view_tuple {
                 elements: &mut impl ElementSplice<Element>,
                 app_state: &mut State,
             ) {
+                let start_idx = elements.index();
                 $(
                     ctx.with_id(ViewId::new($idx), |ctx| {
-                        self.$idx.seq_rebuild(&prev.$idx, &mut seq_state.$idx, ctx, elements, app_state);
+                        seq_state.$idx.0 = elements.index() - start_idx;
+                        self.$idx.seq_rebuild(&prev.$idx, &mut seq_state.$idx.1, ctx, elements, app_state);
                     });
                 )+
             }
@@ -819,7 +883,7 @@ macro_rules! impl_view_tuple {
             ) {
                 $(
                     ctx.with_id(ViewId::new($idx), |ctx| {
-                        self.$idx.seq_teardown(&mut seq_state.$idx, ctx, elements, app_state)
+                        self.$idx.seq_teardown(&mut seq_state.$idx.1, ctx, elements, app_state)
                     });
                 )+
             }
@@ -835,10 +899,12 @@ macro_rules! impl_view_tuple {
                     .take_first()
                     .expect("Id path has elements for tuple");
                 // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
-                elements.skip(todo!());
                 match start.routing_id() {
                     $(
-                        $idx => self.$idx.seq_message(&mut seq_state.$idx, ctx, elements, app_state),
+                        $idx => {
+                            elements.skip(seq_state.$idx.0);
+                            self.$idx.seq_message(&mut seq_state.$idx.1, ctx, elements, app_state)
+                        },
                     )+
                     // If we have received a message, our parent is (mostly) certain that we requested it
                     // The only time that wouldn't be the case is when a generational index has overflowed?
@@ -866,10 +932,12 @@ impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14);
 impl_view_tuple!(M0, Seq0, 0; M1, Seq1, 1; M2, Seq2, 2; M3, Seq3, 3; M4, Seq4, 4; M5, Seq5, 5; M6, Seq6, 6; M7, Seq7, 7; M8, Seq8, 8; M9, Seq9, 9; M10, Seq10, 10; M11, Seq11, 11; M12, Seq12, 12; M13, Seq13, 13; M14, Seq14, 14; M15, Seq15, 15);
 
+// --- MARK: NoElements
+
 /// A stub `ElementSplice` implementation for `NoElement`.
 ///
 /// It is technically possible for someone to create an implementation of `ViewSequence`
-/// which uses a `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful.
+/// which uses a (different) `NoElement` `ElementSplice`. But we don't think that sequence could be meaningful.
 pub(crate) struct NoElements;
 
 impl ElementSplice<NoElement> for NoElements {
@@ -885,6 +953,10 @@ impl ElementSplice<NoElement> for NoElements {
     }
 
     fn skip(&mut self, _: usize) {}
+
+    fn index(&self) -> usize {
+        0
+    }
 
     fn delete<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
         f(())

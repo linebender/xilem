@@ -69,6 +69,9 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     /// This often means routing information for messages to child views or view sequences,
     /// to avoid sending outdated views.
     /// This is also used in [`memoize`](crate::memoize) to store the previously constructed view.
+    ///
+    /// The type used for this associated type cannot be treated as public API; this is
+    /// internal state to the `ViewSequence` implementation.
     type ViewState;
 
     /// Create the corresponding Element value.

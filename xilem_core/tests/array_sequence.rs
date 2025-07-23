@@ -114,7 +114,6 @@ fn two_element_message() {
         let result = view.message(&mut state, ctx, &mut element, &mut ());
         assert_action(result, 0);
     });
-    // let result = view.message(&mut state, &first_path, DynMessage::new(()), &mut ());
 
     ctx.with_message_context(second_path, DynMessage::new(()), |ctx| {
         let result = view.message(&mut state, ctx, &mut element, &mut ());
