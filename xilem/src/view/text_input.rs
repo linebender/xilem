@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{NewWidget, Properties, WidgetId, WidgetOptions};
+use masonry::core::{ArcStr, NewWidget, Properties, WidgetId, WidgetOptions};
 use masonry::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
     DisabledBackground, DisabledContentColor, Padding,
@@ -33,6 +33,7 @@ where
         on_enter: None,
         text_color: None,
         disabled_text_color: None,
+        placeholder: ArcStr::default(),
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
@@ -48,6 +49,7 @@ pub struct TextInput<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_color: Option<Color>,
     disabled_text_color: Option<Color>,
+    placeholder: ArcStr,
     text_alignment: TextAlign,
     insert_newline: InsertNewline,
     disabled: bool,
@@ -69,6 +71,12 @@ impl<State, Action> TextInput<State, Action> {
     /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
     pub fn disabled_text_color(mut self, color: Color) -> Self {
         self.disabled_text_color = Some(color);
+        self
+    }
+
+    /// Set the string which is shown when the input is empty.
+    pub fn placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
+        self.placeholder = placeholder_text.into();
         self
     }
 
@@ -151,6 +159,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             },
             props,
         ));
+        let text_input = text_input.with_placeholder(self.placeholder.clone());
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
@@ -185,6 +194,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             } else {
                 element.remove_prop::<DisabledContentColor>();
             }
+        }
+        if self.placeholder != prev.placeholder {
+            widgets::TextInput::set_placeholder(&mut element, self.placeholder.clone());
         }
 
         if element.ctx.is_disabled() != self.disabled {

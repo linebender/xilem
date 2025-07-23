@@ -60,7 +60,10 @@ impl AppDriver for Driver {
 pub fn make_widget_tree() -> NewWidget<impl Widget> {
     const WIDGET_SPACING: f64 = 5.0;
 
-    let text_input = NewWidget::new_with_tag(TextInput::new(""), TEXT_INPUT_TAG);
+    let text_input = NewWidget::new_with_tag(
+        TextInput::new("").with_placeholder("ex: 'Do the dishes', 'File my taxes', ..."),
+        TEXT_INPUT_TAG,
+    );
     let button = NewWidget::new(Button::with_text("Add task"));
 
     let list = Flex::column()

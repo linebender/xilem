@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::{ArcStr, Properties};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
@@ -16,9 +17,14 @@ use crate::core::{
 };
 use crate::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
+    TextColor,
 };
 use crate::util::{fill, stroke};
-use crate::widgets::TextArea;
+use crate::widgets::{Label, TextArea};
+
+// TODO - Make placeholder style customizable
+// Semi-transparent white.
+const PLACEHOLDER_COLOR: TextColor = TextColor::new(Color::from_rgba8(0xFF, 0xFF, 0xFF, 0x8F));
 
 /// The text input widget displays text which can be edited by the user,
 /// inside a surrounding box.
@@ -34,6 +40,7 @@ use crate::widgets::TextArea;
 /// This is because `TextInput` largely serves as a wrapper around a [`TextArea`].
 pub struct TextInput {
     text: WidgetPod<TextArea<true>>,
+    placeholder: WidgetPod<Label>,
 
     /// Whether to clip the contained text.
     clip: bool,
@@ -51,8 +58,25 @@ impl TextInput {
     pub fn from_text_area(text: NewWidget<TextArea<true>>) -> Self {
         Self {
             text: text.to_pod(),
+            placeholder: NewWidget::new_with_props(
+                Label::new(""),
+                Properties::new().with(PLACEHOLDER_COLOR),
+            )
+            .to_pod(),
             clip: false,
         }
+    }
+
+    /// The text that will be displayed when this input is empty.
+    ///
+    /// To modify this on active text input, use [`set_placeholder`](Self::set_placeholder).
+    pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
+        self.placeholder = NewWidget::new_with_props(
+            Label::new(placeholder_text),
+            Properties::new().with(PLACEHOLDER_COLOR),
+        )
+        .to_pod();
+        self
     }
 
     /// Whether to clip the text to the drawn boundaries.
@@ -83,6 +107,16 @@ impl TextInput {
         this.ctx.get_mut(&mut this.widget.text)
     }
 
+    /// The text that will be displayed when this input is empty.
+    ///
+    /// The runtime equivalent of [`with_placeholder`](Self::with_placeholder).
+    pub fn set_placeholder(this: &mut WidgetMut<'_, Self>, placeholder_text: impl Into<ArcStr>) {
+        Label::set_text(
+            &mut this.ctx.get_mut(&mut this.widget.placeholder),
+            placeholder_text,
+        );
+    }
+
     /// Whether to clip the text to the drawn boundaries.
     ///
     /// If this is set to true, it is recommended, but not required, that this
@@ -101,6 +135,7 @@ impl Widget for TextInput {
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.text);
+        ctx.register_child(&mut self.placeholder);
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
@@ -149,6 +184,21 @@ impl Widget for TextInput {
         let pos = border.place_down(pos);
         let pos = padding.place_down(pos);
         ctx.place_child(&mut self.text, pos);
+
+        let text_is_empty = {
+            ctx.get_raw(&mut self.text)
+                .0
+                .text()
+                .chars()
+                .next()
+                .is_none()
+        };
+
+        ctx.set_stashed(&mut self.placeholder, !text_is_empty);
+        if text_is_empty {
+            let _ = ctx.run_layout(&mut self.placeholder, &bc);
+            ctx.place_child(&mut self.placeholder, pos);
+        }
 
         if shadow.is_visible() {
             ctx.set_paint_insets(shadow.get_insets());
@@ -206,7 +256,7 @@ impl Widget for TextInput {
     }
 
     fn children_ids(&self) -> ChildrenIds {
-        ChildrenIds::from_slice(&[self.text.id()])
+        ChildrenIds::from_slice(&[self.text.id(), self.placeholder.id()])
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
