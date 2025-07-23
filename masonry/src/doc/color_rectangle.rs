@@ -13,6 +13,10 @@
 
 use crate as masonry;
 
+// Note: The "// ---" lines separate blocks of code which are included together in
+// a tutorial example. So for example, the first code block in the widget tutorial
+// imports Color and Size, and then successive code blocks import more items.
+
 use masonry::kurbo::Size;
 use masonry::peniko::Color;
 // ---
@@ -38,6 +42,8 @@ use masonry::core::{ChildrenIds, RegisterCtx};
 use masonry::core::WidgetMut;
 // ---
 use masonry::properties::Background;
+
+// ---
 
 pub struct ColorRectangle {
     size: Size,
@@ -139,7 +145,7 @@ impl Widget for ColorRectangle {
 
     // ---
 
-    #[cfg(false)]
+    #[cfg(false)] // We show two `paint` implementations; check that both parse.
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         scene.fill(
@@ -199,10 +205,8 @@ impl Widget for ColorRectangle {
 // ---
 
 // Implementation from "Reading widget properties" tutorial.
-#[expect(unused, reason = "example code")]
-#[expect(clippy::use_self, reason = "example code")]
+#[expect(dead_code, reason = "example code")]
 #[expect(clippy::trivially_copy_pass_by_ref, reason = "example code")]
-#[expect(clippy::all, reason = "example code")]
 impl ColorRectangle {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let background = props.get::<Background>();
@@ -215,13 +219,16 @@ impl ColorRectangle {
             &rect,
         );
     }
+}
 
-    fn set_bg() {
-        let mut color_rectangle_mut: WidgetMut<'_, ColorRectangle> = None.unwrap();
+// ---
 
-        let bg = Background::Color(masonry::palette::css::BLUE);
-        color_rectangle_mut.insert_prop(bg);
-    }
+#[expect(dead_code, reason = "example code")]
+fn set_bg(color_rectangle_mut: WidgetMut<'_, ColorRectangle>) {
+    let mut color_rectangle_mut: WidgetMut<'_, ColorRectangle> = color_rectangle_mut;
+
+    let bg = Background::Color(masonry::palette::css::BLUE);
+    color_rectangle_mut.insert_prop(bg);
 }
 
 // ---
