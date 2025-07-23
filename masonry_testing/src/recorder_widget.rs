@@ -62,19 +62,19 @@ pub struct Recording(Rc<RefCell<VecDeque<Record>>>);
 #[derive(Debug, Clone)]
 pub enum Record {
     /// Pointer event.
-    PE(PointerEvent),
+    PointerEvent(PointerEvent),
     /// Text event.
-    TE(TextEvent),
+    TextEvent(TextEvent),
     /// Access event.
-    AE(AccessEvent),
+    AccessEvent(AccessEvent),
     /// Animation frame.
-    AF(u64),
+    AnimFrame(u64),
     /// Register children
-    RC,
+    RegisterChildren,
     /// Update
-    U(Update),
+    Update(Update),
     /// Property change.
-    PC(TypeId),
+    PropertyChange(TypeId),
     /// Layout. Records the size returned by the layout method.
     Layout(Size),
     /// Compose.
@@ -82,7 +82,7 @@ pub enum Record {
     /// Paint.
     Paint,
     /// Accessibility.
-    Access,
+    Accessibility,
 }
 
 impl Recording {
@@ -136,7 +136,7 @@ impl<W: Widget> Widget for Recorder<W> {
         props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        self.recording.push(Record::PE(event.clone()));
+        self.recording.push(Record::PointerEvent(event.clone()));
         self.child.on_pointer_event(ctx, props, event);
     }
 
@@ -146,7 +146,7 @@ impl<W: Widget> Widget for Recorder<W> {
         props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        self.recording.push(Record::TE(event.clone()));
+        self.recording.push(Record::TextEvent(event.clone()));
         self.child.on_text_event(ctx, props, event);
     }
 
@@ -156,7 +156,7 @@ impl<W: Widget> Widget for Recorder<W> {
         props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        self.recording.push(Record::AE(event.clone()));
+        self.recording.push(Record::AccessEvent(event.clone()));
         self.child.on_access_event(ctx, props, event);
     }
 
@@ -166,22 +166,22 @@ impl<W: Widget> Widget for Recorder<W> {
         props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
-        self.recording.push(Record::AF(interval));
+        self.recording.push(Record::AnimFrame(interval));
         self.child.on_anim_frame(ctx, props, interval);
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
-        self.recording.push(Record::RC);
+        self.recording.push(Record::RegisterChildren);
         self.child.register_children(ctx);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update) {
-        self.recording.push(Record::U(event.clone()));
+        self.recording.push(Record::Update(event.clone()));
         self.child.update(ctx, props, event);
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        self.recording.push(Record::PC(property_type));
+        self.recording.push(Record::PropertyChange(property_type));
         self.child.property_changed(ctx, property_type);
     }
 
@@ -216,7 +216,7 @@ impl<W: Widget> Widget for Recorder<W> {
         props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
-        self.recording.push(Record::Access);
+        self.recording.push(Record::Accessibility);
         self.child.accessibility(ctx, props, node);
     }
 
