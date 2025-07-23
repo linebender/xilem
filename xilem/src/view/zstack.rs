@@ -4,6 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::properties::types::UnitPoint;
 use masonry::widgets;
 use xilem_core::{MessageResult, ViewId};
 
@@ -13,7 +14,7 @@ use crate::core::{
 };
 use crate::{Pod, ViewCtx, WidgetView};
 
-pub use masonry::widgets::{Alignment, ChildAlignment};
+pub use masonry::widgets::ChildAlignment;
 
 /// A widget that lays out its children on top of each other.
 /// The children are laid out back to front.
@@ -36,7 +37,7 @@ pub use masonry::widgets::{Alignment, ChildAlignment};
 pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) -> ZStack<Seq> {
     ZStack {
         sequence,
-        alignment: Alignment::default(),
+        alignment: UnitPoint::CENTER,
     }
 }
 
@@ -46,12 +47,12 @@ pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) 
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct ZStack<Seq> {
     sequence: Seq,
-    alignment: Alignment,
+    alignment: UnitPoint,
 }
 
 impl<Seq> ZStack<Seq> {
     /// Changes the alignment of the children.
-    pub fn alignment(mut self, alignment: impl Into<Alignment>) -> Self {
+    pub fn alignment(mut self, alignment: impl Into<UnitPoint>) -> Self {
         self.alignment = alignment.into();
         self
     }
