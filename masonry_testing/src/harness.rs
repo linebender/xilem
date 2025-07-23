@@ -19,11 +19,10 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    DefaultProperties, ErasedAction, Handled, Ime, NewWidget, PointerButton, PointerEvent,
-    PointerId, PointerInfo, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent,
-    Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
+    CursorIcon, DefaultProperties, ErasedAction, Handled, Ime, NewWidget, PointerButton,
+    PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate, ScrollDelta,
+    TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
 };
-use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Point, Size, Vec2};
 use masonry_core::peniko::{Blob, Color};

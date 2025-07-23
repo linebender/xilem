@@ -34,6 +34,8 @@ pub use widget_mut::WidgetMut;
 pub use widget_pod::{NewWidget, WidgetOptions, WidgetPod};
 pub use widget_ref::WidgetRef;
 
+pub use cursor_icon::CursorIcon;
+
 pub use ui_events::keyboard::{KeyboardEvent, Modifiers};
 pub use ui_events::pointer::{
     PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,

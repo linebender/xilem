@@ -3,16 +3,15 @@
 
 use std::collections::HashSet;
 
-use cursor_icon::CursorIcon;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use ui_events::pointer::PointerType;
 
 use crate::app::{RenderRoot, RenderRootSignal, RenderRootState};
 use crate::core::{
-    DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaMut, WidgetArenaRef, WidgetId,
-    WidgetState,
+    CursorIcon, DefaultProperties, Ime, PointerEvent, PointerInfo, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetArenaMut, WidgetArenaRef,
+    WidgetId, WidgetState,
 };
 use crate::passes::event::{run_on_pointer_event_pass, run_on_text_event_pass};
 use crate::passes::{enter_span, enter_span_if, merge_state_up, recurse_on_children};

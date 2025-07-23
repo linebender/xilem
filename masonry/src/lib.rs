@@ -40,7 +40,7 @@ pub use accesskit;
 pub use parley::{Alignment as TextAlign, AlignmentOptions as TextAlignOptions};
 pub use vello::peniko::color::palette;
 pub use vello::{kurbo, peniko};
-pub use {cursor_icon, dpi, parley, vello};
+pub use {dpi, parley, vello};
 
 pub use masonry_core::{app, core, util};
 #[cfg(any(feature = "testing", test))]
