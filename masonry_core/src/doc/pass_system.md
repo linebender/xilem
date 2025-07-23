@@ -230,10 +230,10 @@ They can access the layout of children if they have already been laid out.
 [`ChildFocusChanged`]: crate::core::Update::ChildFocusChanged
 [`ChildHoveredChanged`]: crate::core::Update::ChildHoveredChanged
 [`RequestPanToChild`]: crate::core::Update::RequestPanToChild
-[`StartIme`]: crate::core::RenderRootSignal::StartIme
-[`EndIme`]: crate::core::RenderRootSignal::EndIme
+[`StartIme`]: crate::app::RenderRootSignal::StartIme
+[`EndIme`]: crate::app::RenderRootSignal::EndIme
 [disabled]: crate::doc::internals_02_masonry_concepts#disabled
 [stashed]: crate::doc::internals_02_masonry_concepts#stashed
-[stashed]: crate::doc::internals_02_masonry_concepts#active
+[active]: crate::doc::internals_02_masonry_concepts#active
 [focus chain]: crate::doc::internals_02_masonry_concepts#focus-chain
 [text focus]: crate::doc::internals_02_masonry_concepts#text-focus
