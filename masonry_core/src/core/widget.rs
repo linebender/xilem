@@ -310,16 +310,18 @@ pub trait Widget: AsDynWidget + Any {
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
     ///
-    /// [disabled](crate::doc::masonry_concepts#hovered)
+    /// [hovered](crate::doc::masonry_concepts#hovered)
     fn accepts_pointer_interaction(&self) -> bool {
         true
     }
 
-    /// Whether this widget gets text focus. False by default.
+    /// Whether this widget gets [text focus]. False by default.
     ///
     /// If true, pressing Tab can focus this widget.
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    ///
+    /// [text focus](crate::doc::masonry_concepts#text-focus)
     fn accepts_focus(&self) -> bool {
         false
     }
