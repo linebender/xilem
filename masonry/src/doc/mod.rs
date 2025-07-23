@@ -35,6 +35,9 @@ pub mod doc_04_testing_widget {}
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_05_widget_properties {}
 
+pub use masonry_core::doc::internals_01_pass_system;
+pub use masonry_core::doc::internals_02_masonry_concepts;
+
 // We add some aliases below so that the rest of the doc can link to these documents
 // without including the chapter number.
 
@@ -48,6 +51,3 @@ pub use self::doc_03_implementing_container_widget as implementing_container_wid
 pub use self::doc_04_testing_widget as testing_widget;
 #[doc(hidden)]
 pub use self::doc_05_widget_properties as widget_properties;
-
-pub use masonry_core::doc::internals_01_pass_system;
-pub use masonry_core::doc::internals_02_masonry_concepts;
