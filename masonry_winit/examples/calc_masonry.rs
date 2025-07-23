@@ -48,7 +48,7 @@ enum CalcAction {
 // We use CalcAction as a property and store it alongside buttons
 impl Property for CalcAction {
     fn static_default() -> &'static Self {
-        &CalcAction::None
+        &Self::None
     }
 }
 
@@ -248,7 +248,7 @@ fn build_calc() -> NewWidget<impl Widget> {
     }
 
     let root_widget = Grid::with_dimensions(4, 6)
-        .with_spacing(1.0)
+        .with_spacing(0.0)
         .with_child(display.with_auto_id(), GridParams::new(0, 0, 4, 1))
         .with_child(
             op_button_with_label('c', "CE".to_string()),
