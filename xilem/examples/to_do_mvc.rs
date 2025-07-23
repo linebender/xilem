@@ -40,6 +40,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
             task_list.next_task = new_value;
         },
     )
+    .placeholder("ex: 'Do the dishes', 'File my taxes', ...")
     .insert_newline(InsertNewline::OnShiftEnter)
     .on_enter(|task_list: &mut TaskList, _| {
         task_list.add_task();
