@@ -1,8 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// TODO - Renumber docs.
-
 //! Documentation-only module for Masonry core concepts.
 //!
 //! This module includes a series of articles documenting internals and fundamental
