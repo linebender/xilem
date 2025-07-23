@@ -1211,9 +1211,15 @@ impl_context_method!(
             trace!("submit_action");
             let action = action.into();
             if action.type_id() != self.widget_state.action_type {
+                #[cfg(debug_assertions)]
+                let expected_type = self.widget_state.action_type_name;
+                #[cfg(not(debug_assertions))]
+                let expected_type = "<Self as Widget>::Action";
+
                 debug_panic!(
-                    "Trying to emit action of incorrect type {}. Type should always be `<Self as Widget>::Action",
+                    "Trying to emit action of incorrect type `{}`. Expected type is `{}`.",
                     action.type_name(),
+                    expected_type,
                 );
                 return;
             }
@@ -1301,6 +1307,8 @@ impl RegisterCtx<'_> {
             options,
             properties,
             action_type,
+            #[cfg(debug_assertions)]
+            action_type_name,
         }) = child.take_inner()
         else {
             return;
@@ -1311,7 +1319,14 @@ impl RegisterCtx<'_> {
             self.registered_ids.push(id);
         }
 
-        let state = WidgetState::new(id, widget.short_type_name(), options, action_type);
+        let state = WidgetState::new(
+            id,
+            widget.short_type_name(),
+            options,
+            action_type,
+            #[cfg(debug_assertions)]
+            action_type_name,
+        );
 
         self.children
             .widget_children

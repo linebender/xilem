@@ -30,6 +30,8 @@ pub struct NewWidget<W: ?Sized> {
     pub widget: Box<W>,
     pub(crate) id: WidgetId,
     pub(crate) action_type: TypeId,
+    #[cfg(debug_assertions)]
+    pub(crate) action_type_name: &'static str,
 
     /// The options the widget will be created with.
     pub options: WidgetOptions,
@@ -72,6 +74,8 @@ impl<W: Widget> NewWidget<W> {
             widget: Box::new(inner),
             id,
             action_type: TypeId::of::<W>(),
+            #[cfg(debug_assertions)]
+            action_type_name: std::any::type_name::<W>(),
             options: WidgetOptions::default(),
             properties: Properties::default(),
         }
@@ -100,6 +104,8 @@ impl<W: Widget> NewWidget<W> {
             widget: Box::new(inner),
             id,
             action_type: TypeId::of::<W>(),
+            #[cfg(debug_assertions)]
+            action_type_name: std::any::type_name::<W>(),
             options,
             properties: props,
         }
@@ -116,6 +122,8 @@ impl<W: Widget + ?Sized> NewWidget<W> {
             widget: self.widget.as_box_dyn(),
             id: self.id,
             action_type: self.action_type,
+            #[cfg(debug_assertions)]
+            action_type_name: self.action_type_name,
             options: self.options,
             properties: self.properties,
         }
