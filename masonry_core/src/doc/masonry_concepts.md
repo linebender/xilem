@@ -95,9 +95,11 @@ In that case, we still mark the widget as focused, but with a different color to
 
 ## Disabled
 
-A disabled widget is one which is visibly marked as non-interactive.
+A disabled widget is one which is made non-interactive, and should affect the state of the application.
 
-It cannot have active status, cannot get or keep text focus, and cannot get text events (except [`Ime::Disabled`]).
+For an example the decrease button of a counter of type `usize` should be disabled if the value is `0`.
+
+A disabled widget cannot have active status, cannot get or keep text focus, and cannot get text events (except [`Ime::Disabled`]).
 It cannot get pointer events (except [`PointerEvent::Cancel`]) or have hovered status either.
 Its pointer icon will be the default one.
 

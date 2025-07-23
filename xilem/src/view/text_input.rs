@@ -205,7 +205,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             widgets::TextInput::set_placeholder(&mut element, self.placeholder.clone());
         }
 
-        if element.ctx.is_disabled() != self.disabled {
+        if element.ctx.is_explicitly_disabled() != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }
 
