@@ -16,6 +16,7 @@
 // https://linebender.org/blog/doc-include/
 
 /// Contains the items implemented in "Creating a new widget" and other tutorials.
+#[doc(hidden)]
 pub mod color_rectangle;
 
 // TODO - Add vertical_stack module.
