@@ -145,6 +145,7 @@ impl Widget for ColorRectangle {
 
     // ---
 
+    #[cfg(false)] // We show two `paint` implementations; check that both parse.
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         scene.fill(
@@ -181,15 +182,12 @@ impl Widget for ColorRectangle {
     fn children_ids(&self) -> ChildrenIds {
         ChildrenIds::new()
     }
-}
 
-// ---
+    // ---
 
-// Second implementation from "Creating a new widget" tutorial.
-#[expect(dead_code, reason = "example code")]
-#[expect(clippy::trivially_copy_pass_by_ref, reason = "example code")]
-impl ColorRectangle {
-    fn paint2(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    // Second implementation from "Creating a new widget" tutorial.
+    // We use this one in the trait, so that hovering is detected in our unit tests.
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         let color = if ctx.is_hovered() {
             Color::WHITE
@@ -212,7 +210,7 @@ impl ColorRectangle {
 #[expect(dead_code, reason = "example code")]
 #[expect(clippy::trivially_copy_pass_by_ref, reason = "example code")]
 impl ColorRectangle {
-    fn paint3(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let background = props.get::<Background>();
         let rect = ctx.size().to_rect();
         scene.fill(
