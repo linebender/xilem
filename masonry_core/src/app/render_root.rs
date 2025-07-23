@@ -96,10 +96,10 @@ pub(crate) struct RenderRootState {
     /// Widget that will be focused once the `update_focus` pass is run.
     pub(crate) next_focused_widget: Option<WidgetId>,
 
-    /// Most recently clicked widget.
+    /// Most recently clicked/focused widget.
     ///
     /// This is used to pick the focused widget on Tab events.
-    pub(crate) most_recently_clicked_widget: Option<WidgetId>,
+    pub(crate) focus_anchor: Option<WidgetId>,
 
     /// Whether the window is focused.
     pub(crate) window_focused: bool,
@@ -301,7 +301,7 @@ impl RenderRoot {
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
-                most_recently_clicked_widget: None,
+                focus_anchor: None,
                 window_focused: true,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
@@ -714,44 +714,6 @@ impl RenderRoot {
         self.global_state.next_focused_widget = id;
         self.run_rewrite_passes();
         true
-    }
-
-    pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
-        let focused_widget = self
-            .global_state
-            .focused_widget
-            .or(self.global_state.most_recently_clicked_widget);
-        let focused_idx = focused_widget.and_then(|focused_widget| {
-            self.focus_chain()
-                .iter()
-                // Find where the focused widget is in the focus chain
-                .position(|id| id == &focused_widget)
-        });
-
-        if let Some(idx) = focused_idx {
-            // Return the id that's next to it in the focus chain
-            let len = self.focus_chain().len();
-            let new_idx = if forward {
-                (idx + 1) % len
-            } else {
-                (idx + len - 1) % len
-            };
-            Some(self.focus_chain()[new_idx])
-        } else {
-            // If no widget is currently focused or the
-            // currently focused widget isn't in the focus chain,
-            // then we'll just return the first/last entry of the chain, if any.
-            if forward {
-                self.focus_chain().first().copied()
-            } else {
-                self.focus_chain().last().copied()
-            }
-        }
-    }
-
-    // TODO - Store in RenderRootState
-    pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
-        &self.root_state().focus_chain
     }
 
     /// Returns true if the widget tree is waiting for an animation frame.
