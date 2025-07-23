@@ -1027,7 +1027,7 @@ impl_context_method!(
         /// [disabled]: crate::doc::masonry_concepts#disabled
         /// [`set_disabled`]: EventCtx::set_disabled
         pub fn is_explicitly_disabled(&self) -> bool {
-            self.widget_state.is_disabled
+            self.widget_state.is_explicitly_disabled
         }
 
         /// Whether this widget is [stashed].
