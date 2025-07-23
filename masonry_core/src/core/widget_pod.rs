@@ -73,9 +73,9 @@ impl<W: Widget> NewWidget<W> {
         Self {
             widget: Box::new(inner),
             id,
-            action_type: TypeId::of::<W>(),
+            action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
-            action_type_name: std::any::type_name::<W>(),
+            action_type_name: std::any::type_name::<W::Action>(),
             options: WidgetOptions::default(),
             properties: Properties::default(),
         }
@@ -103,9 +103,9 @@ impl<W: Widget> NewWidget<W> {
         Self {
             widget: Box::new(inner),
             id,
-            action_type: TypeId::of::<W>(),
+            action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
-            action_type_name: std::any::type_name::<W>(),
+            action_type_name: std::any::type_name::<W::Action>(),
             options,
             properties: props,
         }
