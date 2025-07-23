@@ -40,7 +40,7 @@ fn message_after_rebuild() {
     );
 
     ctx.with_message_context(path, DynMessage::new(()), |ctx| {
-        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        let result = view2.message(&mut state, ctx, &mut element, &mut ());
         assert_action(result, 1);
     });
 }
@@ -66,7 +66,7 @@ fn no_message_after_stale() {
     );
 
     ctx.with_message_context(path, DynMessage::new(()), |ctx| {
-        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        let result = view2.message(&mut state, ctx, &mut element, &mut ());
         assert!(matches!(result, MessageResult::Stale));
     });
 }
