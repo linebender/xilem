@@ -79,18 +79,20 @@ Properties should *not* be used to represent an individual widget's state. The f
 With that in mind, let's rewrite our `ColorRectangle` widget to use properties:
 
 ```rust,ignore
-use masonry::properties::BackgroundColor;
+// ...
+use masonry::properties::Background;
+// ...
 
 impl Widget for ColorRectangle {
     // ...
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let color = props.get::<BackgroundColor>();
+        let background = props.get::<Background>();
         let rect = ctx.size().to_rect();
         scene.fill(
             Fill::NonZero,
             Affine::IDENTITY,
-            color,
+            &background.get_peniko_brush_for_rect(rect),
             Some(Affine::IDENTITY),
             &rect,
         );
@@ -105,10 +107,9 @@ impl Widget for ColorRectangle {
 The most idiomatic way to set properties is through `WidgetMut`:
 
 ```rust,ignore
-let color_rectangle_mut: WidgetMut<ColorRectangle> = ...;
+let mut color_rectangle_mut: WidgetMut<'_, ColorRectangle> = ...;
 
-let bg = BackgroundColor { color: masonry::palette::css::BLUE };
-
+let bg = Background::Color(masonry::palette::css::BLUE);
 color_rectangle_mut.insert_prop(bg);
 ```
 

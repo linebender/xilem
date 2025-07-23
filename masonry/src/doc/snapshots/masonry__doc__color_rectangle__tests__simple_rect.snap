@@ -1,0 +1,8 @@
+---
+source: masonry/src/doc/color_rectangle.rs
+assertion_line: 188
+expression: harness.root_widget()
+---
+WrapperWidget(
+    ColorRectangle,
+)
