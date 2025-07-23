@@ -421,12 +421,12 @@ impl Widget for Label {
 #[cfg(test)]
 mod tests {
 
-    use masonry_core::core::Properties;
     use masonry_testing::TestWidgetExt as _;
     use parley::style::GenericFamily;
     use parley::{FontFamily, StyleProperty};
 
     use super::*;
+    use crate::core::Properties;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox};
