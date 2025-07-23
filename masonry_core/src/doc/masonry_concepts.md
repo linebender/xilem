@@ -112,6 +112,13 @@ A widget is considered "interactive" if it can still get text and/or pointer eve
 Stashed and disabled widget are non-interactive.
 
 
+## Focus chain
+
+Masonry stores an array of all the ids of widgets which can be focused.
+
+This array is called the focus chain, and is used by Masonry to move focus when the user presses `Tab` or `Shift+Tab`.
+
+
 ## Properties / Props
 
 All widgets have associated data of arbitrary types called "properties".

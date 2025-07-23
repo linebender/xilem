@@ -99,21 +99,56 @@ They compute if some widget's property has changed, and send it a matching `upda
 
 For instance, if a user presses `Tab` and text focus moves to the next widget, Masonry will run the `update_focus` pass, which will automatically changed the "focused" status of the previously-focused widget and the newly-focused widget, and call their `update()` methods with relevant events.
 
-### Update tree pass
+#### "Update tree" pass
 
 The `update_widget_tree` pass is a special case.
-It is called when new widgets are added to the tree, or existing widgets are removed.
+It is ran when new widgets are added to the tree, or existing widgets are removed.
 
 It will call the `register_children()` widget method on container widgets whose children changed, then the `update()` method with the [`WidgetAdded`] event on new widgets.
 
-**Note:** Passes that send update events that concern a chain of parents like [`ChildFocusChanged`] or [`HoveredChanged`] will send the event first to the innermost widget, then up the parent chain.
+**Note:** Passes that send update events that concern a chain of parents like [`ChildFocusChanged`] or [`ChildHoveredChanged`] will send the event first to the innermost widget, then up the parent chain.
 
-<!-- TODO - document update disabled --- -->
-<!-- TODO - document update stashed --- -->
-<!-- TODO - document update focus chain --- -->
-<!-- TODO - document update focus --- (document iteration order) -->
-<!-- TODO - document update scroll --- -->
-<!-- TODO - document update pointer --- (document iteration order) -->
+#### "Update disabled" pass
+
+This pass is ran when widgets are [disabled] or enabled.
+
+It takes care of propagating disabled flags so that, if a widget is marked as disabled, all its children will be disabled as well.
+
+#### "Update stashed" pass
+
+This pass is ran when widgets are [stashed] or un-stashed.
+
+It's very similar to the "update disabled" pass, and takes care of propagating stashed flags.
+
+#### "Update focus chain" pass
+
+This pass rebuilds the [focus chain] whenever it might be out of date.
+
+It runs whenever a widget that accepts tab focus is added, removed, enabled, disabled, stashed or unstashed.
+This makes sure that tab-browsing always lands on the right widget.
+
+#### "Update focus" pass
+
+This pass updates thing that need to change as a result of [text focus] having changed.
+
+It updates focus-related flags and sends [`FocusChanged`] and [`ChildFocusChanged`] events.
+
+It updates IME status and may send [`Ime::Disabled`] events to a widget and [`StartIme`] / [`EndIme`] signals to the platform.
+
+#### "Update scroll" pass
+
+This pass is requested when something happens that makes a widget want to be "scrolled into view", such as typing into a text input widget.
+
+It iterates other the entire parent chain of this widget, and passes [`RequestPanToChild`] to each parent.
+
+#### "Update pointer" pass
+
+This pass updates thing that need to change as a result of either a pointer having moved, for things having moved/changed under a pointer.
+
+It updates the hovered and [active] status of widgets and sends related events.
+
+It also update the pointer's icon depending on which widget it's hovering.
+
 
 ### Layout pass
 
@@ -190,5 +225,15 @@ They can access the layout of children if they have already been laid out.
 [`RegisterCtx`]: crate::core::RegisterCtx
 [`QueryCtx`]: crate::core::QueryCtx
 [`WidgetAdded`]: crate::core::Update::WidgetAdded
+[`Ime::Disabled`]: crate::core::Ime::Disabled
+[`FocusChanged`]: crate::core::Update::FocusChanged
 [`ChildFocusChanged`]: crate::core::Update::ChildFocusChanged
-[`HoveredChanged`]: crate::core::Update::HoveredChanged
+[`ChildHoveredChanged`]: crate::core::Update::ChildHoveredChanged
+[`RequestPanToChild`]: crate::core::Update::RequestPanToChild
+[`StartIme`]: crate::app::RenderRootSignal::StartIme
+[`EndIme`]: crate::app::RenderRootSignal::EndIme
+[disabled]: crate::doc::internals_02_masonry_concepts#disabled
+[stashed]: crate::doc::internals_02_masonry_concepts#stashed
+[active]: crate::doc::internals_02_masonry_concepts#active
+[focus chain]: crate::doc::internals_02_masonry_concepts#focus-chain
+[text focus]: crate::doc::internals_02_masonry_concepts#text-focus
