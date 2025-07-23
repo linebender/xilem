@@ -6,6 +6,7 @@
 mod box_constraints;
 mod contexts;
 mod events;
+mod layout_cache;
 mod object_fit;
 mod properties;
 mod text;
@@ -40,6 +41,7 @@ pub use ui_events::pointer::{
 };
 pub use ui_events::{ScrollDelta, keyboard, pointer};
 
+pub(crate) use layout_cache::*;
 pub(crate) use widget_arena::{WidgetArena, WidgetArenaMut, WidgetArenaRef};
 pub(crate) use widget_state::WidgetState;
 

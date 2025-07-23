@@ -411,14 +411,9 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             !self.constrain_vertical && portal_size.height < content_size.height;
 
         ctx.set_stashed(
-            &mut self.scrollbar_vertical,
-            !self.scrollbar_vertical_visible,
-        );
-        ctx.set_stashed(
             &mut self.scrollbar_horizontal,
             !self.scrollbar_horizontal_visible,
         );
-
         if self.scrollbar_horizontal_visible {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
             scrollbar.widget().portal_size = portal_size.width;
@@ -431,9 +426,12 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 &mut self.scrollbar_horizontal,
                 Point::new(0.0, portal_size.height - scrollbar_size.height),
             );
-        } else {
-            ctx.skip_layout(&mut self.scrollbar_horizontal);
         }
+
+        ctx.set_stashed(
+            &mut self.scrollbar_vertical,
+            !self.scrollbar_vertical_visible,
+        );
         if self.scrollbar_vertical_visible {
             let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
             scrollbar.widget().portal_size = portal_size.height;
@@ -446,8 +444,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 &mut self.scrollbar_vertical,
                 Point::new(portal_size.width - scrollbar_size.width, 0.0),
             );
-        } else {
-            ctx.skip_layout(&mut self.scrollbar_vertical);
         }
 
         portal_size

@@ -635,7 +635,6 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
                 // is nearly impossible to handle correctly without using this method; in particular, if a
                 // driver is delayed in being called (such as if layout is run twice in the passes loop).
                 ctx.set_stashed(child, true);
-                ctx.skip_layout(child);
                 continue;
             }
             first_item = first_item.map(|it| it.min(*idx)).or(Some(*idx));
