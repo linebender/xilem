@@ -319,7 +319,7 @@ All context types have getters to check some status information:
 - `is_disabled()`
 - `is_stashed()`
 
-See the ["Concepts and definitions"](crate::doc::internals_02_masonry_concepts#widget-status) documentation for more information on what they mean.
+See the ["Concepts and definitions"](masonry_core::doc::masonry_concepts#widget-status) documentation for more information on what they mean.
 
 ### Requesting passes
 
@@ -394,7 +394,7 @@ impl Widget for ColorRectangle {
 Most of the methods we've listed take a `props: &mut PropertiesMut<'_>` argument.
 
 We won't cover properties in this chapter.
-See [Reading widget properties](crate::doc::doc_05_widget_properties) for more info.
+See [Reading widget properties](crate::doc::widget_properties) for more info.
 
 
 ## Widget mutation

@@ -377,7 +377,7 @@ impl EventCtx<'_> {
     /// If pointer capture is lost for external reasons (the widget is disabled, the window lost focus,
     /// etc), the widget will still get a [`Cancel`] event.
     ///
-    /// [Pointer capture]: crate::doc::internals_02_masonry_concepts#pointer-capture
+    /// [Pointer capture]: crate::doc::masonry_concepts#pointer-capture
     /// [`Down`]: ui_events::pointer::PointerEvent::Down
     /// [`Up`]: ui_events::pointer::PointerEvent::Up
     /// [`Cancel`]: ui_events::pointer::PointerEvent::Cancel
@@ -396,7 +396,7 @@ impl EventCtx<'_> {
 
     /// Release the pointer previously [captured] through [`capture_pointer`].
     ///
-    /// [captured]: crate::doc::internals_02_masonry_concepts#pointer-capture
+    /// [captured]: crate::doc::masonry_concepts#pointer-capture
     /// [`capture_pointer`]: EventCtx::capture_pointer
     pub fn release_pointer(&mut self) {
         let id = self.widget_id();
@@ -454,7 +454,7 @@ impl EventCtx<'_> {
     /// from different widgets during a single event cycle means that the last
     /// widget that requests focus will override the previous requests.
     ///
-    /// [text focus]: crate::doc::internals_02_masonry_concepts#text-focus
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
     pub fn request_focus(&mut self) {
         trace!("request_focus");
         // We need to send the request even if we're currently focused,
@@ -467,7 +467,7 @@ impl EventCtx<'_> {
 
     /// Transfer [text focus] to the widget with the given `WidgetId`.
     ///
-    /// [text focus]: crate::doc::internals_02_masonry_concepts#text-focus
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
     pub fn set_focus(&mut self, target: WidgetId) {
         trace!("set_focus target={:?}", target);
         self.global_state.next_focused_widget = Some(target);
@@ -477,7 +477,7 @@ impl EventCtx<'_> {
     ///
     /// This should only be called by a widget that currently has focus.
     ///
-    /// [text focus]: crate::doc::internals_02_masonry_concepts#text-focus
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
     pub fn resign_focus(&mut self) {
         trace!("resign_focus");
         if self.has_focus_target() {
@@ -847,7 +847,7 @@ impl_context_method!(
 
         /// The bounding rect of the widget in window coordinates.
         ///
-        /// See [bounding rect documentation](crate::doc::internals_02_masonry_concepts#bounding-rect)
+        /// See [bounding rect documentation](crate::doc::masonry_concepts#bounding-rect)
         /// for details.
         pub fn bounding_rect(&self) -> Rect {
             self.widget_state.bounding_rect()
@@ -917,7 +917,7 @@ impl_context_method!(
         /// status. If the pointer is captured but not hovering over the captured
         /// widget, then no widget has the hovered status.
         ///
-        /// [captured]: crate::doc::internals_02_masonry_concepts#pointer-capture
+        /// [captured]: crate::doc::masonry_concepts#pointer-capture
         pub fn is_hovered(&self) -> bool {
             self.widget_state.is_hovered
         }
@@ -935,7 +935,7 @@ impl_context_method!(
         /// Currently, a widget is determined to be active when it has [captured] a pointer,
         /// but this may change in the future to account for e.g. keyboard interactions.
         ///
-        /// [captured]: crate::doc::internals_02_masonry_concepts#pointer-capture
+        /// [captured]: crate::doc::masonry_concepts#pointer-capture
         pub fn is_active(&self) -> bool {
             self.widget_state.is_active
         }
@@ -952,7 +952,7 @@ impl_context_method!(
         /// The pointer will usually be the mouse. In future versions, this
         /// function will take a pointer id as input to test a specific pointer.
         ///
-        /// [captured]: crate::doc::internals_02_masonry_concepts#pointer-capture
+        /// [captured]: crate::doc::masonry_concepts#pointer-capture
         pub fn is_pointer_capture_target(&self) -> bool {
             self.global_state.pointer_capture_target == Some(self.widget_state.id)
         }
@@ -964,7 +964,7 @@ impl_context_method!(
         /// Returns `true` if this specific widget is focused.
         /// To check if any descendants are focused use [`has_focus_target`].
         ///
-        /// [text focus]: crate::doc::internals_02_masonry_concepts#text-focus
+        /// [text focus]: crate::doc::masonry_concepts#text-focus
         /// [`has_focus_target`]: Self::has_focus_target
         pub fn is_focus_target(&self) -> bool {
             self.global_state.focused_widget == Some(self.widget_id())
@@ -1016,7 +1016,7 @@ impl_context_method!(
 
         /// Check is widget is [stashed]().
         ///
-        /// [stashed]: crate::doc::internals_02_masonry_concepts#stashed
+        /// [stashed]: crate::doc::masonry_concepts#stashed
         pub fn is_stashed(&self) -> bool {
             self.widget_state.is_stashed
         }

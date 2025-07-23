@@ -305,7 +305,7 @@ impl TestHarness {
 
     /// Send a [`WindowEvent`] to the simulated window.
     ///
-    /// This will run [rewrite passes](masonry_core::doc::internals_01_pass_system#rewrite-passes) after the event is processed.
+    /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_window_event(&mut self, event: WindowEvent) -> Handled {
         let handled = self.render_root.handle_window_event(event);
         self.process_signals();
@@ -314,7 +314,7 @@ impl TestHarness {
 
     /// Send a [`PointerEvent`] to the simulated window.
     ///
-    /// This will run [rewrite passes](masonry_core::doc::internals_01_pass_system#rewrite-passes) after the event is processed.
+    /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_pointer_event(&mut self, event: PointerEvent) -> Handled {
         let handled = self.render_root.handle_pointer_event(event);
         self.process_signals();
@@ -323,7 +323,7 @@ impl TestHarness {
 
     /// Send a [`TextEvent`] to the simulated window.
     ///
-    /// This will run [rewrite passes](masonry_core::doc::internals_01_pass_system#rewrite-passes) after the event is processed.
+    /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
     pub fn process_text_event(&mut self, event: TextEvent) -> Handled {
         let handled = self.render_root.handle_text_event(event);
         self.process_signals();
@@ -602,7 +602,7 @@ impl TestHarness {
         }
     }
 
-    /// Sets the [focused widget](masonry_core::doc::internals_02_masonry_concepts#text-focus).
+    /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     ///
     /// ## Panics
     ///
@@ -659,19 +659,19 @@ impl TestHarness {
         self.render_root.get_widget(id)
     }
 
-    /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::internals_02_masonry_concepts#text-focus).
+    /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.root_widget()
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
-    /// Return a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::internals_02_masonry_concepts#pointer-capture).
+    /// Return a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
             .get_widget(self.render_root.pointer_capture_target()?)
     }
 
-    /// Return the id of the widget which [captures pointer events](masonry_core::doc::internals_02_masonry_concepts#pointer-capture).
+    /// Return the id of the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).
     // TODO - This is kinda redundant with the above
     pub fn pointer_capture_target_id(&self) -> Option<WidgetId> {
         self.render_root.pointer_capture_target()
