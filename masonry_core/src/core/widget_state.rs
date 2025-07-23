@@ -208,8 +208,11 @@ pub(crate) struct WidgetState {
     /// Used in some guard rails to provide richer error messages when a parent forgets
     /// to iterate over some children.
     pub(crate) trace_span: Span,
+    // TODO - Encapsulate this in WidgetStateDebugInfo struct.
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
+    #[cfg(debug_assertions)]
+    pub(crate) action_type_name: &'static str,
 }
 
 impl WidgetState {
@@ -218,6 +221,7 @@ impl WidgetState {
         widget_name: &'static str,
         options: WidgetOptions,
         action_type: TypeId,
+        #[cfg(debug_assertions)] action_type_name: &'static str,
     ) -> Self {
         Self {
             id,
@@ -265,6 +269,8 @@ impl WidgetState {
             needs_update_focus_chain: true,
             #[cfg(debug_assertions)]
             widget_name,
+            #[cfg(debug_assertions)]
+            action_type_name,
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
             trace_span: Span::none(),
