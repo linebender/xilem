@@ -49,5 +49,5 @@ pub use self::doc_04_testing_widget as testing_widget;
 #[doc(hidden)]
 pub use self::doc_05_widget_properties as widget_properties;
 
-pub use masonry_core::doc::masonry_concepts;
-pub use masonry_core::doc::pass_system;
+pub use masonry_core::doc::internals_01_pass_system;
+pub use masonry_core::doc::internals_02_masonry_concepts;
