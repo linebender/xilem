@@ -7,7 +7,7 @@ use ui_events::pointer::PointerType;
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessEvent, EventCtx, Handled, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut,
+    AccessEvent, EventCtx, Handled, Ime, PointerEvent, PointerInfo, PointerUpdate, PropertiesMut,
     TextEvent, Widget, WidgetId,
 };
 use crate::debug_panic;
@@ -71,6 +71,7 @@ fn run_event_pass<E>(
     root: &mut RenderRoot,
     target: Option<WidgetId>,
     event: &E,
+    skip_if_disabled: bool,
     allow_pointer_capture: bool,
     pass_fn: impl FnMut(&mut dyn Widget, &mut EventCtx<'_>, &mut PropertiesMut<'_>, &E),
     trace: bool,
@@ -82,6 +83,14 @@ fn run_event_pass<E>(
     {
         debug_panic!("Cannot send event to non-existent widget {id}.");
         return Handled::No;
+    }
+
+    if let Some(id) = target {
+        let state = root.widget_arena.get_state(id);
+
+        if state.item.is_disabled && skip_if_disabled {
+            return Handled::No;
+        }
     }
 
     let original_target = target;
@@ -199,10 +208,12 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         }
     }
 
+    let skip_if_disabled = !matches!(event, PointerEvent::Cancel { .. });
     let handled = run_event_pass(
         root,
         target_widget_id,
         event,
+        skip_if_disabled,
         matches!(event, PointerEvent::Down { .. }),
         |widget, ctx, props, event| {
             widget.on_pointer_event(ctx, props, event);
@@ -272,10 +283,12 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         }
     });
 
+    let skip_if_disabled = !matches!(event, TextEvent::Ime(Ime::Disabled));
     let mut handled = run_event_pass(
         root,
         target,
         event,
+        skip_if_disabled,
         false,
         |widget, ctx, props, event| {
             widget.on_text_event(ctx, props, event);
@@ -335,10 +348,12 @@ pub(crate) fn run_on_access_event_pass(
     let _span = info_span!("access_event").entered();
     debug!("Running ON_ACCESS_EVENT pass with {}", event.short_name());
 
+    let skip_if_disabled = true;
     let mut handled = run_event_pass(
         root,
         Some(target),
         event,
+        skip_if_disabled,
         false,
         |widget, ctx, props, event| {
             widget.on_access_event(ctx, props, event);
