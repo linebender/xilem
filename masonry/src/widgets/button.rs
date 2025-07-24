@@ -387,7 +387,6 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut button| {
-                let mut button = button.downcast::<Button>();
                 Button::set_text(&mut button, "The quick brown fox jumps over the lazy dog");
 
                 let mut label = Button::label_mut(&mut button);
@@ -412,8 +411,6 @@ mod tests {
             TestHarness::create_with_size(default_property_set(), button, window_size);
 
         harness.edit_root_widget(|mut button| {
-            let mut button = button.downcast::<Button>();
-
             button.insert_prop(BorderColor { color: red });
             button.insert_prop(BorderWidth { width: 5.0 });
             button.insert_prop(CornerRadius { radius: 20.0 });
@@ -445,7 +442,6 @@ mod tests {
             TestHarness::create_with_size(default_property_set(), root_widget, window_size);
 
         harness.edit_root_widget(|mut root| {
-            let mut root = root.downcast::<WrapperWidget>();
             let mut sized_box = WrapperWidget::child_mut(&mut root);
             let mut sized_box = sized_box.downcast::<SizedBox>();
             let mut grid = SizedBox::child_mut(&mut sized_box).unwrap();

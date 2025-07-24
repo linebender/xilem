@@ -1092,8 +1092,7 @@ mod tests {
 
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_basic");
-        harness.edit_widget(virtual_scroll_id, |mut portal| {
-            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+        harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 100);
         });
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
@@ -1140,8 +1139,7 @@ mod tests {
         }
 
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
-        harness.edit_widget(virtual_scroll_id, |mut portal| {
-            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+        harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 100);
         });
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
@@ -1186,8 +1184,7 @@ mod tests {
         }
 
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
-        harness.edit_widget(virtual_scroll_id, |mut portal| {
-            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+        harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 200);
         });
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
@@ -1232,8 +1229,7 @@ mod tests {
         }
 
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
-        harness.edit_widget(virtual_scroll_id, |mut portal| {
-            let mut scroll = portal.downcast::<VirtualScroll<ScrollContents>>();
+        harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 200);
         });
         drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
@@ -1418,7 +1414,7 @@ mod tests {
     }
 
     fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
-        harness: &mut TestHarness,
+        harness: &mut TestHarness<VirtualScroll<T>>,
         virtual_scroll_id: WidgetId,
         mut f: impl FnMut(VirtualScrollAction, WidgetMut<'_, VirtualScroll<T>>),
     ) {
@@ -1445,8 +1441,7 @@ mod tests {
                 "Shouldn't have sent an update if tUsehe target hasn't changed"
             );
 
-            harness.edit_widget(virtual_scroll_id, |mut portal| {
-                let scroll = portal.downcast::<VirtualScroll<T>>();
+            harness.edit_root_widget(|scroll| {
                 f(action, scroll);
             });
         }

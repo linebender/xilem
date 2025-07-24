@@ -5,6 +5,7 @@
 
 use std::collections::VecDeque;
 use std::io::Cursor;
+use std::marker::PhantomData;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
@@ -126,7 +127,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///
 /// [`assert_render_snapshot`]: crate::assert_render_snapshot
 /// [`insta`]: https://docs.rs/insta/latest/insta/
-pub struct TestHarness {
+pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
     access_tree: Option<accesskit_consumer::Tree>,
@@ -137,6 +138,7 @@ pub struct TestHarness {
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
     title: String,
+    _marker: PhantomData<W>,
 }
 
 /// Parameters for creating a [`TestHarness`].
@@ -209,13 +211,13 @@ impl Default for TestHarnessParams {
     }
 }
 
-impl TestHarness {
+impl<W: Widget> TestHarness<W> {
     /// Builds harness with given root widget.
     ///
     /// Window size will be [`TestHarnessParams::DEFAULT_SIZE`].
     /// Background color will be [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     // TODO - Take NewWidget
-    pub fn create(default_props: DefaultProperties, root_widget: impl Widget) -> Self {
+    pub fn create(default_props: DefaultProperties, root_widget: W) -> Self {
         Self::create_with(
             default_props,
             NewWidget::new(root_widget),
@@ -227,7 +229,7 @@ impl TestHarness {
     // TODO - Take NewWidget
     pub fn create_with_size(
         default_props: DefaultProperties,
-        root_widget: impl Widget,
+        root_widget: W,
         window_size: Size,
     ) -> Self {
         Self::create_with(
@@ -243,7 +245,7 @@ impl TestHarness {
     /// Builds harness with given root widget and additional parameters.
     pub fn create_with(
         default_props: DefaultProperties,
-        root_widget: NewWidget<impl Widget>,
+        root_widget: NewWidget<W>,
         params: TestHarnessParams,
     ) -> Self {
         let mouse_state = PointerState::default();
@@ -294,6 +296,7 @@ impl TestHarness {
             has_ime_session: false,
             ime_rect: Default::default(),
             title: String::new(),
+            _marker: PhantomData,
         };
         harness.process_window_event(WindowEvent::Resize(window_size));
 
@@ -637,8 +640,8 @@ impl TestHarness {
     // --- MARK: GETTERS
 
     /// Return a [`WidgetRef`] to the root widget.
-    pub fn root_widget(&self) -> WidgetRef<'_, dyn Widget> {
-        self.render_root.get_root_widget()
+    pub fn root_widget(&self) -> WidgetRef<'_, W> {
+        self.render_root.get_root_widget().downcast().unwrap()
     }
 
     /// Return a [`WidgetRef`] to the widget with the given id.
@@ -660,7 +663,8 @@ impl TestHarness {
 
     /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
-        self.root_widget()
+        self.render_root
+            .get_root_widget()
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
@@ -688,14 +692,17 @@ impl TestHarness {
             }
         }
 
-        inspect(self.root_widget(), &f);
+        inspect(self.render_root.get_root_widget(), &f);
     }
 
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
-        let ret = self.render_root.edit_root_widget(f);
+    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
+        let ret = self.render_root.edit_root_widget(|mut root| {
+            let root = root.downcast::<W>();
+            f(root)
+        });
         self.process_signals();
         ret
     }

@@ -363,20 +363,17 @@ mod tests {
 
         // Expand it to a 4x4 grid
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::set_width(&mut grid, 4);
         });
         assert_render_snapshot!(harness, "grid_expanded_4x1");
 
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::set_height(&mut grid, 4);
         });
         assert_render_snapshot!(harness, "grid_expanded_4x4");
 
         // Add a widget that takes up more than one horizontal cell
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
                 button::Button::new("B").with_auto_id(),
@@ -387,7 +384,6 @@ mod tests {
 
         // Add a widget that takes up more than one vertical cell
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
                 button::Button::new("C").with_auto_id(),
@@ -398,7 +394,6 @@ mod tests {
 
         // Add a widget that takes up more than one horizontal and vertical cell
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
                 button::Button::new("D").with_auto_id(),
@@ -409,14 +404,12 @@ mod tests {
 
         // Change the spacing
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::set_spacing(&mut grid, 7.0);
         });
         assert_render_snapshot!(harness, "grid_with_changed_spacing");
 
         // Make the spacing negative
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::set_spacing(&mut grid, -4.0);
         });
         assert_render_snapshot!(harness, "grid_with_negative_spacing");
@@ -436,14 +429,12 @@ mod tests {
 
         // Now remove the widget
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::remove_child(&mut grid, 0);
         });
         assert_render_snapshot!(harness, "grid_2x2_with_removed_widget");
 
         // Add it back
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
                 button::Button::new("A").with_auto_id(),
@@ -454,14 +445,12 @@ mod tests {
 
         // Change the grid params to position it on the other corner
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::update_child_grid_params(&mut grid, 0, GridParams::new(1, 1, 1, 1));
         });
         assert_render_snapshot!(harness, "grid_moved_2x2_1");
 
         // Now make it take up the entire grid
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::update_child_grid_params(&mut grid, 0, GridParams::new(0, 0, 2, 2));
         });
         assert_render_snapshot!(harness, "grid_moved_2x2_2");
@@ -481,7 +470,6 @@ mod tests {
 
         // Order sets the draw order, so draw a widget over A by adding it after
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::add_child(
                 &mut grid,
                 button::Button::new("B").with_auto_id(),
@@ -493,7 +481,6 @@ mod tests {
         // Draw a widget under the others by putting it at index 0
         // Make it wide enough to see it stick out, with half of it under A and B.
         harness.edit_root_widget(|mut grid| {
-            let mut grid = grid.downcast::<Grid>();
             Grid::insert_grid_child_at(
                 &mut grid,
                 0,

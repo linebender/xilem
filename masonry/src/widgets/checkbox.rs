@@ -396,7 +396,6 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut checkbox| {
-                let mut checkbox = checkbox.downcast::<Checkbox>();
                 Checkbox::set_checked(&mut checkbox, true);
                 Checkbox::set_text(
                     &mut checkbox,

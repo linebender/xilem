@@ -675,8 +675,6 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut splitter| {
-                let mut splitter = splitter.downcast::<Split<Label, Label>>();
-
                 Split::set_split_point(&mut splitter, 0.3);
                 Split::set_min_size(&mut splitter, 40.0, 10.0);
                 Split::set_bar_size(&mut splitter, 12.0);

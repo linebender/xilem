@@ -971,8 +971,7 @@ mod tests {
                 );
             }
 
-            harness.edit_root_widget(|mut root| {
-                let mut area = root.downcast::<TextArea<false>>();
+            harness.edit_root_widget(|mut area| {
                 TextArea::set_word_wrap(&mut area, true);
             });
 
@@ -1006,7 +1005,6 @@ mod tests {
                 TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
 
             harness.edit_root_widget(|mut root| {
-                let mut root = root.downcast::<WrapperWidget>();
                 let mut area = WrapperWidget::child_mut(&mut root);
                 let mut area = area.downcast::<TextArea<false>>();
                 TextArea::reset_text(&mut area, "Test string");
@@ -1021,7 +1019,6 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut root| {
-                let mut root = root.downcast::<WrapperWidget>();
                 let mut area = WrapperWidget::child_mut(&mut root);
                 let mut area = area.downcast::<TextArea<false>>();
                 area.insert_prop(TextColor::new(palette::css::BROWN));

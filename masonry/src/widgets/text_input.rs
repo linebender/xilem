@@ -243,7 +243,6 @@ mod tests {
 
         let mut text_area_id = None;
         harness.edit_root_widget(|mut text_input| {
-            let mut text_input = text_input.downcast::<TextInput>();
             let mut text_input = TextInput::text_mut(&mut text_input);
             text_area_id = Some(text_input.ctx.widget_id());
 

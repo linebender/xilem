@@ -575,7 +575,6 @@ mod tests {
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
-                let mut label = label.downcast::<Label>();
                 label.insert_prop(TextColor::new(ACCENT_COLOR));
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));
