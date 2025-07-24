@@ -277,7 +277,7 @@ mod tests {
                 let mut zstack = zstack.downcast::<ZStack>();
                 ZStack::set_alignment(&mut zstack, align);
             });
-            assert_render_snapshot!(harness, &format!("zstack_alignment_{}", name));
+            assert_render_snapshot!(harness, &format!("zstack_alignment_{name}"));
         }
     }
 
