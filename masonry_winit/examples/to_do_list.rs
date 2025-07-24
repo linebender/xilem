@@ -57,7 +57,8 @@ impl AppDriver for Driver {
     }
 }
 
-fn make_widget_tree() -> impl Widget {
+/// Return initial to-do-list without items.
+pub fn make_widget_tree() -> impl Widget {
     Portal::new(
         Flex::column()
             .with_child(NewWidget::new_with_props(

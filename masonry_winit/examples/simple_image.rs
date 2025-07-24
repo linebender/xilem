@@ -29,7 +29,8 @@ impl AppDriver for Driver {
     }
 }
 
-fn make_image() -> Image {
+/// Return an image with hardcoded data
+pub fn make_image() -> Image {
     let image_bytes = include_bytes!("./assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();

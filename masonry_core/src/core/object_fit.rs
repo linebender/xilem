@@ -32,6 +32,10 @@ impl ObjectFit {
     /// This takes some properties of a widget and an object fit and returns an affine matrix
     /// used to position and scale the image in the widget.
     pub fn affine_to_fill(self, parent: Size, fit_box: Size) -> Affine {
+        if fit_box.width == 0. || fit_box.height == 0. {
+            return Affine::IDENTITY;
+        }
+
         let raw_scalex = parent.width / fit_box.width;
         let raw_scaley = parent.height / fit_box.height;
 
