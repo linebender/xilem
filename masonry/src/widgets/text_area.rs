@@ -5,7 +5,6 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
-use cursor_icon::CursorIcon;
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use tracing::{Span, trace_span};
@@ -15,9 +14,10 @@ use vello::peniko::Fill;
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, ChildrenIds, EventCtx, Ime, LayoutCtx,
-    PaintCtx, PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
+    AccessCtx, AccessEvent, BoxConstraints, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime,
+    LayoutCtx, PaintCtx, PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    render_text,
 };
 use crate::properties::{DisabledTextColor, TextColor};
 use crate::theme::default_text_styles;

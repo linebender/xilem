@@ -7,7 +7,6 @@ use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use accesskit::{Node, Role};
-use cursor_icon::CursorIcon;
 use smallvec::SmallVec;
 use tracing::field::DisplayValue;
 use tracing::{Span, trace_span};
@@ -15,8 +14,8 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, EventCtx, LayoutCtx, NewWidget, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
+    AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, NewWidget,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
     UpdateCtx, WidgetRef,
 };
 

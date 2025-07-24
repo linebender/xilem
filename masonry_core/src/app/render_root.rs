@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use accesskit::{ActionRequest, NodeId, TreeUpdate};
-use cursor_icon::CursorIcon;
 use dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use parley::fontique::{Blob, Collection, CollectionOptions, FamilyId, FontInfo, SourceCache};
 use parley::{FontContext, LayoutContext};
@@ -15,7 +14,7 @@ use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessEvent, BrushIndex, DefaultProperties, ErasedAction, Handled, Ime, NewWidget,
+    AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, Handled, Ime, NewWidget,
     PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena,
     WidgetArenaMut, WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
     WindowEvent,

@@ -15,11 +15,10 @@ use std::rc::Rc;
 
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
 };
-use masonry_core::cursor_icon::CursorIcon;
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
 

@@ -4,15 +4,14 @@
 //! A widget which splits an area in two, with a settable ratio, and optional draggable resizing.
 
 use accesskit::{Node, Role};
-use cursor_icon::CursorIcon;
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 use vello::kurbo::{Line, Point, Rect, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, FromDynWidget, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
+    RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
 use crate::theme;
