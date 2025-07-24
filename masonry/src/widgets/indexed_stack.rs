@@ -221,9 +221,7 @@ impl Widget for IndexedStack {
                 ctx.place_child(child, origin);
             } else {
                 // TODO: move set_stashed to a different layout pass when possible,
-                // and remove skip_layout.
                 ctx.set_stashed(child, true);
-                ctx.skip_layout(child);
             }
         }
 

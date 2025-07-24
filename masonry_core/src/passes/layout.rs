@@ -46,6 +46,45 @@ pub(crate) fn run_layout_on(
 
     let id = state.id;
 
+    // This checks reads `is_explicitly_stashed` instead of `is_stashed` because the latter may be outdated.
+    // A widget's `is_explicitly_stashed` flag is controlled by its direct parent.
+    // The parent may set this flag during layout, in which case it should avoid calling `run_layout`.
+    // Note that, because this check exits before recursing, `run_layout` can only ever be
+    // reached for a widget whose parent is not stashed, which means `is_explicitly_stashed`
+    // being false is sufficient to know the widget is non-stashed.
+    if state.is_explicitly_stashed {
+        debug_panic!(
+            "Error in '{}' {}: trying to compute layout of stashed widget.",
+            widget.short_type_name(),
+            id,
+        );
+        state.size = Size::ZERO;
+        return Size::ZERO;
+    }
+
+    bc.debug_check(widget.short_type_name());
+
+    if !state.needs_layout && state.layout_cache.old_bc == Some(*bc) {
+        // We reset this to false to mark that the current widget has been visited.
+        state.request_layout = false;
+        return state.size;
+    }
+
+    // TODO - Not everything that has been re-laid out needs to be repainted.
+    state.needs_paint = true;
+    state.needs_compose = true;
+    state.needs_accessibility = true;
+    state.request_paint = true;
+    state.request_compose = true;
+    state.request_accessibility = true;
+
+    if trace {
+        trace!("Computing layout with constraints {:?}", bc);
+    }
+
+    // Again, these two blocks read `is_explicitly_stashed` instead of `is_stashed`
+    // because the latter may be outdated if layout code has called `set_stashed`.
+
     let mut children_ids = ChildrenIds::new();
     if cfg!(debug_assertions) {
         children_ids = widget.children_ids();
@@ -58,42 +97,11 @@ pub(crate) fn run_layout_on(
                 .item_mut(child_id)
                 .unwrap()
                 .item;
-            if !child_state.is_stashed {
+            if !child_state.is_explicitly_stashed {
                 child_state.request_layout = true;
             }
         }
     }
-
-    // This checks reads is_explicitly_stashed instead of is_stashed because the latter may be outdated.
-    // A widget's is_explicitly_stashed flag is controlled by its direct parent.
-    // The parent may set this flag during layout, in which case it should avoid calling run_layout.
-    // Note that, because this check exits before recursing, run_layout can only ever be
-    // reached for a widget whose parent is not stashed, which means is_explicitly_stashed
-    // being false is sufficient to know the widget is non-stashed.
-    if state.is_explicitly_stashed {
-        debug_panic!(
-            "Error in '{}' {}: trying to compute layout of stashed widget.",
-            widget.short_type_name(),
-            id,
-        );
-        state.size = Size::ZERO;
-        return Size::ZERO;
-    }
-
-    // TODO - Not everything that has been re-laid out needs to be repainted.
-    state.needs_paint = true;
-    state.needs_compose = true;
-    state.needs_accessibility = true;
-    state.request_paint = true;
-    state.request_compose = true;
-    state.request_accessibility = true;
-
-    bc.debug_check(widget.short_type_name());
-    if trace {
-        trace!("Computing layout with constraints {:?}", bc);
-    }
-
-    state.local_paint_rect = Rect::ZERO;
 
     // If children are stashed, the layout pass will not recurse over them.
     // We reset need_layout and request_layout to false directly instead.
@@ -102,36 +110,27 @@ pub(crate) fn run_layout_on(
         widget,
         children.reborrow_mut(),
         |widget, state, properties| {
-            if state.item.is_stashed {
+            if state.item.is_explicitly_stashed {
                 clear_layout_flags(widget, state, properties);
             }
         },
     );
 
+    state.local_paint_rect = Rect::ZERO;
+
     let new_size = {
-        let mut inner_ctx = LayoutCtx {
+        let mut ctx = LayoutCtx {
             widget_state: state,
             children: children.reborrow_mut(),
             default_properties,
             global_state,
         };
-
-        // TODO - If constraints are the same and request_layout isn't set,
-        // skip calling layout
-        inner_ctx.widget_state.request_layout = false;
         let mut props = PropertiesMut {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
-        widget.layout(&mut inner_ctx, &mut props, bc)
+        widget.layout(&mut ctx, &mut props, bc)
     };
-    if state.request_layout {
-        debug_panic!(
-            "Error in '{}' {}: layout request flag was set during layout pass",
-            widget.short_type_name(),
-            id,
-        );
-    }
     if trace {
         trace!(
             "Computed layout: size={}, baseline={}, insets={:?}",
@@ -139,6 +138,7 @@ pub(crate) fn run_layout_on(
         );
     }
 
+    state.request_layout = false;
     state.needs_layout = false;
     state.is_expecting_place_child_call = true;
 
@@ -156,7 +156,7 @@ pub(crate) fn run_layout_on(
                 .unwrap()
                 .item;
 
-            if child_state.is_stashed {
+            if child_state.is_explicitly_stashed {
                 continue;
             }
 
@@ -194,6 +194,8 @@ pub(crate) fn run_layout_on(
             debug_panic!("Error in '{}' {}: invalid size {}", name, id, new_size);
         }
     }
+
+    state.layout_cache.old_bc = Some(*bc);
 
     state.size = new_size;
     new_size

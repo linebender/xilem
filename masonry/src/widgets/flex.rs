@@ -29,7 +29,6 @@ pub struct Flex {
     main_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     children: Vec<Child>,
-    old_bc: BoxConstraints,
     gap: f64,
 }
 
@@ -129,7 +128,6 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            old_bc: BoxConstraints::tight(Size::ZERO),
             gap: crate::theme::WIDGET_PADDING,
         }
     }
@@ -833,11 +831,6 @@ impl Widget for Flex {
         let bc = border.layout_down(bc);
         let bc = padding.layout_down(bc);
 
-        // Indicates that the box constrains for the following children have changed.
-        // Therefore they have to calculate layout again.
-        let bc_changed = self.old_bc != bc;
-        self.old_bc = bc;
-
         // we loosen our constraints when passing to children.
         let loosened_bc = bc.loosen();
 
@@ -847,8 +840,6 @@ impl Widget for Flex {
         let mut max_above_baseline = 0_f64;
         let mut max_below_baseline = 0_f64;
         let mut any_use_baseline = false;
-
-        let mut any_changed = bc_changed || ctx.needs_layout();
 
         let gap = self.gap;
         // The gaps are only between the items, so 2 children means 1 gap.
@@ -863,11 +854,10 @@ impl Widget for Flex {
                 Child::Fixed { widget, alignment } => {
                     // The BoxConstraints of fixed-children only depends on the BoxConstraints of the
                     // Flex widget.
-                    let child_size = if bc_changed || ctx.child_needs_layout(widget) {
+                    let child_size = {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
-                        let old_size = ctx.old_size();
                         let child_size = ctx.run_layout(widget, &loosened_bc);
 
                         if child_size.width.is_infinite() {
@@ -878,14 +868,7 @@ impl Widget for Flex {
                             tracing::warn!("A non-Flex child has an infinite height.");
                         }
 
-                        if old_size != child_size {
-                            any_changed = true;
-                        }
-
                         child_size
-                    } else {
-                        ctx.skip_layout(widget);
-                        ctx.child_layout_rect(widget).size()
                     };
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
@@ -924,7 +907,7 @@ impl Widget for Flex {
                 } => {
                     // The BoxConstraints of flex-children depends on the size of every sibling, which
                     // received layout earlier. Therefore we use any_changed.
-                    let child_size = if any_changed || ctx.child_needs_layout(widget) {
+                    let child_size = {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
@@ -932,18 +915,8 @@ impl Widget for Flex {
                         let actual_major = desired_major.round();
                         remainder = desired_major - actual_major;
 
-                        let old_size = ctx.old_size();
                         let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
-                        let child_size = ctx.run_layout(widget, &child_bc);
-
-                        if old_size != child_size {
-                            any_changed = true;
-                        }
-
-                        child_size
-                    } else {
-                        ctx.skip_layout(widget);
-                        ctx.child_layout_rect(widget).size()
+                        ctx.run_layout(widget, &child_bc)
                     };
 
                     let baseline_offset = ctx.child_baseline_offset(widget);

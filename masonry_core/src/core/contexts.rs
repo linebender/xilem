@@ -715,14 +715,6 @@ impl LayoutCtx<'_> {
         self.get_child_state(child).size
     }
 
-    /// Skips running the layout pass and calling [`LayoutCtx::place_child`] on the child.
-    ///
-    /// This may be removed in the future. Currently it's useful for
-    /// stashed children and children whose layout is cached.
-    pub fn skip_layout(&mut self, child: &mut WidgetPod<impl Widget + ?Sized>) {
-        self.get_child_state_mut(child).request_layout = false;
-    }
-
     /// Gives the widget a clip path.
     ///
     /// A widget's clip path will have two effects:

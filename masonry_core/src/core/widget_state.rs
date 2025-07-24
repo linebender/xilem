@@ -4,7 +4,7 @@
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::{WidgetId, WidgetOptions};
+use crate::core::{LayoutCache, WidgetId, WidgetOptions};
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -88,6 +88,8 @@ pub(crate) struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
+    /// Data cached from previous layout passes.
+    pub(crate) layout_cache: LayoutCache,
 
     /// Tracks whether widget gets pointer events.
     /// Should be immutable after `WidgetAdded` event.
@@ -208,6 +210,7 @@ impl WidgetState {
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
+            layout_cache: LayoutCache::empty(),
             accepts_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
