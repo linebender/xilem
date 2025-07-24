@@ -517,11 +517,20 @@ impl RenderRoot {
     /// Get a [`WidgetMut`] to a specific widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is no widget with the given id in the tree.
+    #[track_caller]
     pub fn edit_widget<R>(
         &mut self,
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
+        if !self.widget_arena.has(id) {
+            panic!("Could not find widget {id} in tree.");
+        }
+
         let res = mutate_widget(self, id, f);
 
         self.run_rewrite_passes();

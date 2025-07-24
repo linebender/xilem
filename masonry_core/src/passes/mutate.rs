@@ -12,6 +12,8 @@ pub(crate) fn mutate_widget<R>(
     id: WidgetId,
     mutate_fn: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
 ) -> R {
+    // TODO - This panics if id can't be found.
+    // Should it return Option instead?
     let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(id);
     let children = WidgetArenaMut {
         widget_children: widget_mut.children,
