@@ -3,8 +3,8 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker};
-use crate::{DomNode, DomView, DynMessage, ViewCtx};
+use crate::core::{MessageContext, MessageResult, Mut, View, ViewMarker};
+use crate::{DomNode, DomView, ViewCtx};
 
 /// Invokes the `callback` after the inner `element` [`DomView`] was created.
 /// See [`after_build`] for more details.
@@ -148,12 +148,12 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.element
-            .message(view_state, id_path, message, app_state)
+            .message(view_state, message, element, app_state)
     }
 }
 
@@ -204,12 +204,12 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.element
-            .message(view_state, id_path, message, app_state)
+            .message(view_state, message, element, app_state)
     }
 }
 
@@ -254,11 +254,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.element
-            .message(view_state, id_path, message, app_state)
+            .message(view_state, message, element, app_state)
     }
 }

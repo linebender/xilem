@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::{AppendVec, MessageResult, ViewId};
+use crate::core::{AppendVec, MessageContext, MessageResult, ViewId};
 use crate::elements::DomChildrenSplice;
 use crate::{AnyPod, DomFragment, DynMessage, ViewCtx};
 
@@ -123,17 +123,34 @@ where
         let mut inner_guard = self.0.borrow_mut();
         let inner = &mut *inner_guard;
         if let Some(fragment) = &mut inner.fragment {
-            let message_result = fragment.seq_message(
-                inner.fragment_state.as_mut().unwrap(),
-                &message.id_path,
-                message.body,
-                &mut inner.data,
-            );
+            let message_result;
+            {
+                let env = std::mem::take(&mut inner.ctx.environment);
+                let mut message_context =
+                    MessageContext::new(env, (*message.id_path).into(), message.body);
+                let mut dom_children_splice = DomChildrenSplice::new(
+                    &mut inner.fragment_append_scratch,
+                    &mut inner.elements,
+                    &mut inner.vec_splice_scratch,
+                    &inner.root,
+                    inner.ctx.fragment.clone(),
+                    false,
+                    false,
+                );
+                message_result = fragment.seq_message(
+                    inner.fragment_state.as_mut().unwrap(),
+                    &mut message_context,
+                    &mut dom_children_splice,
+                    &mut inner.data,
+                );
+                let (env, _path, _message) = message_context.finish();
+                inner.ctx.environment = env;
+            }
 
             // Each of those results are currently resulting in a rebuild, that may be subject to change
             match message_result {
                 MessageResult::RequestRebuild | MessageResult::Nop | MessageResult::Action(_) => {}
-                MessageResult::Stale(_) => {
+                MessageResult::Stale => {
                     // TODO perhaps inform the user that a stale request bubbled to the top?
                 }
             }

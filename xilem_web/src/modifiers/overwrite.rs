@@ -240,11 +240,11 @@ macro_rules! overwrite_bool_modifier_view {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                id_path: &[$crate::core::ViewId],
-                message: $crate::DynMessage,
+                message: &mut $crate::core::MessageContext,
+                element: $crate::core::Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) -> $crate::core::MessageResult<Action> {
-                self.inner.message(view_state, id_path, message, app_state)
+                self.inner.message(view_state, message, element, app_state)
             }
         }
     };

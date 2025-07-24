@@ -10,9 +10,9 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::PointerEvent;
 
-use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::core::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::interfaces::Element;
-use crate::{DomView, DynMessage, ViewCtx};
+use crate::{DomView, ViewCtx};
 
 /// Use a distinctive number here, to be able to catch bugs.
 /// In case the generational-id view path in `View::Message` lead to a wrong view
@@ -201,22 +201,22 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let Some((first, remainder)) = id_path.split_first() else {
+        let Some(first) = message.take_first() else {
             throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
         };
-        if *first != POINTER_VIEW_ID {
+        if first != POINTER_VIEW_ID {
             throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
         }
-        if remainder.is_empty() {
-            let msg = message.downcast().unwrap_throw();
+        if message.remaining_path().is_empty() {
+            let msg = message.take_message().unwrap_throw();
             MessageResult::Action((self.callback)(app_state, *msg))
         } else {
             self.child
-                .message(&mut view_state.child_state, remainder, message, app_state)
+                .message(&mut view_state.child_state, message, element, app_state)
         }
     }
 }

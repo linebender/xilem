@@ -5,9 +5,9 @@
 
 use peniko::kurbo::{BezPath, Circle, Line, Rect};
 
-use crate::core::{MessageResult, Mut, OrphanView, ViewId};
+use crate::core::{MessageContext, MessageResult, Mut, OrphanView};
 use crate::modifiers::{Attributes, WithModifier};
-use crate::{DynMessage, FromWithContext, Pod, SVG_NS, ViewCtx};
+use crate::{FromWithContext, Pod, SVG_NS, ViewCtx};
 
 fn create_element<R>(
     name: &str,
@@ -74,11 +74,12 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCt
     fn orphan_message(
         _view: &Line,
         (): &mut Self::OrphanViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        _message: &mut MessageContext,
+        _element: Mut<'_, Self::OrphanElement>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        MessageResult::Stale(message)
+        // TODO: Panic here?
+        MessageResult::Stale
     }
 }
 
@@ -131,11 +132,11 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCt
     fn orphan_message(
         _view: &Rect,
         (): &mut Self::OrphanViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        _message: &mut MessageContext,
+        _element: Mut<'_, Self::OrphanElement>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }
 
@@ -186,11 +187,11 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for View
     fn orphan_message(
         _view: &Circle,
         (): &mut Self::OrphanViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        _message: &mut MessageContext,
+        _element: Mut<'_, Self::OrphanElement>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }
 
@@ -243,11 +244,11 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for Vie
     fn orphan_message(
         _view: &BezPath,
         _view_state: &mut Self::OrphanViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        _message: &mut MessageContext,
+        _element: Mut<'_, Self::OrphanElement>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }
 
