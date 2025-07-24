@@ -9,7 +9,8 @@
 use std::sync::Arc;
 
 use masonry::properties::Padding;
-use masonry::widgets::{Alignment, LineBreaking};
+use masonry::properties::types::UnitPoint;
+use masonry::widgets::LineBreaking;
 use tokio::sync::mpsc::UnboundedSender;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
@@ -197,7 +198,7 @@ impl Status {
                 });
                 OneOf3::C(zstack((
                     image(image_data),
-                    attribution.alignment(Alignment::TopRight),
+                    attribution.alignment(UnitPoint::TOP_RIGHT),
                 )))
             }
         };
