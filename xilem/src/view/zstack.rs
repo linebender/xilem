@@ -128,7 +128,7 @@ where
 /// A trait that extends a [`WidgetView`] with methods to provide parameters for a parent [`ZStack`].
 pub trait ZStackExt<State, Action>: WidgetView<State, Action> {
     /// Applies [`ChildAlignment`] to this view.
-    /// This allows the view to override the default [`Alignment`] of the parent [`ZStack`].
+    /// This allows the view to override the default alignment of the parent [`ZStack`].
     /// This can only be used on views that are direct children of a [`ZStack`].
     fn alignment(self, alignment: impl Into<ChildAlignment>) -> ZStackItem<Self, State, Action>
     where
