@@ -131,6 +131,11 @@ impl Widget for Checkbox {
         }
     }
 
+    fn accepts_focus(&self) -> bool {
+        // Checkboxes can be tab-focused...
+        true
+    }
+
     fn on_access_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -300,16 +305,6 @@ impl Widget for Checkbox {
 
     fn children_ids(&self) -> ChildrenIds {
         ChildrenIds::from_slice(&[self.label.id()])
-    }
-
-    fn accepts_focus(&self) -> bool {
-        // Checkboxes can be tab-focused...
-        true
-    }
-
-    fn accepts_text_input(&self) -> bool {
-        // ... But they still aren't text areas.
-        false
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
