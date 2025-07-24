@@ -41,7 +41,7 @@ impl UnitPoint {
     }
 
     /// Given a rectangle, resolve the point within the rectangle.
-    pub fn resolve(self, rect: Rect) -> Point {
+    pub const fn resolve(self, rect: Rect) -> Point {
         Point::new(
             rect.x0 + self.u * (rect.x1 - rect.x0),
             rect.y0 + self.v * (rect.y1 - rect.y0),
