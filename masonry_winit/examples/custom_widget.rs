@@ -11,8 +11,8 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
-    Widget, WidgetId,
+    NewWidget, ObjectFit, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
+    TextEvent, Widget, WidgetId,
 };
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
@@ -158,7 +158,8 @@ impl Widget for CustomWidget {
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
         let image_data = Image::new(image_data.into(), ImageFormat::Rgba8, 256, 256);
-        scene.draw_image(&image_data, Affine::IDENTITY);
+        let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), Size::new(256., 256.));
+        scene.draw_image(&image_data, transform);
     }
 
     fn accessibility_role(&self) -> Role {
