@@ -34,7 +34,7 @@ impl Property for TextColor {
 
 impl TextColor {
     /// Create new `TextColor` with given value.
-    pub fn new(color: AlphaColor<Srgb>) -> Self {
+    pub const fn new(color: AlphaColor<Srgb>) -> Self {
         Self { color }
     }
 }

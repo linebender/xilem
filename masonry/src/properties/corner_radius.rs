@@ -21,7 +21,7 @@ impl Property for CornerRadius {
 
 impl CornerRadius {
     /// Create new `CornerRadius` with given value.
-    pub fn all(radius: f64) -> Self {
+    pub const fn all(radius: f64) -> Self {
         Self { radius }
     }
 

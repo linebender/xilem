@@ -66,7 +66,7 @@ impl BoxShadow {
     }
 
     /// Builder method to change the shadow's blur radius.
-    pub fn blur(self, blur_radius: f64) -> Self {
+    pub const fn blur(self, blur_radius: f64) -> Self {
         Self {
             blur_radius,
             ..self
@@ -85,7 +85,7 @@ impl BoxShadow {
     /// Returns `false` if the shadow can be safely treated as non-existent.
     ///
     /// May have false positives.
-    pub fn is_visible(&self) -> bool {
+    pub const fn is_visible(&self) -> bool {
         let alpha = self.color.components[3];
         alpha != 0.0
     }
