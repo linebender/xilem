@@ -117,7 +117,7 @@ where
     ) {
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
-        if element.ctx.is_explicitly_disabled() != self.disabled {
+        if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }
         if prev.label != self.label {
