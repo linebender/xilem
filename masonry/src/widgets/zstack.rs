@@ -4,12 +4,13 @@
 use accesskit::{Node, Role};
 use tracing::trace_span;
 use vello::Scene;
-use vello::kurbo::{Point, Size};
+use vello::kurbo::{Rect, Size};
 
 use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
 
 struct Child {
@@ -18,12 +19,12 @@ struct Child {
 }
 
 /// An option specifying how a child widget is aligned within a [`ZStack`].
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum ChildAlignment {
     /// Specifies that the child should use the global alignment as specified by the parent [`ZStack`] widget.
     ParentAligned,
     /// Specifies that the child should override the global alignment specified by the parent [`ZStack`] widget.
-    SelfAligned(Alignment),
+    SelfAligned(UnitPoint),
 }
 
 /// A widget container that lays the child widgets on top of each other.
@@ -32,135 +33,24 @@ pub enum ChildAlignment {
 /// Each child can additionally override the global alignment using [`ChildAlignment::SelfAligned`].
 ///
 #[doc = include_screenshot!("zstack_alignment_default.png", "Red foreground widget on top of blue background widget.")]
-#[derive(Default)]
 pub struct ZStack {
     children: Vec<Child>,
-    alignment: Alignment,
+    alignment: UnitPoint,
 }
 
-/// Alignment describes the position of a view laid on top of another view.
-///
-/// See also [`VerticalAlignment`] and [`HorizontalAlignment`] for describing only a single axis.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Alignment {
-    /// Align to the top left corner.
-    TopLeft,
-    /// Align to the center of the top edge.
-    Top,
-    /// Align to the top right corner.
-    TopRight,
-    /// Align to the center of the left edge.
-    Left,
-    /// Align to the center.
-    #[default]
-    Center,
-    /// Align to the center of the right edge.
-    Right,
-    /// Align to the bottom left corner.
-    BottomLeft,
-    /// Align to the center of the bottom edge.
-    Bottom,
-    /// Align to the bottom right corner.
-    BottomRight,
-}
-
-/// Describes the vertical position of a view laid on top of another view.
-///
-/// See also [`Alignment`].
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VerticalAlignment {
-    /// Align to the top edge.
-    Top,
-    /// Align to the center.
-    #[default]
-    Center,
-    /// Align to the bottom edge.
-    Bottom,
-}
-
-/// Describes the horizontal position of a view laid on top of another view.
-///
-/// See also [`Alignment`].
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum HorizontalAlignment {
-    /// Align to the left edge.
-    Left,
-    #[default]
-    /// Align to the center.
-    Center,
-    /// Align to the right edge.
-    Right,
+impl Default for ZStack {
+    fn default() -> Self {
+        Self {
+            children: Vec::default(),
+            alignment: UnitPoint::CENTER,
+        }
+    }
 }
 
 // --- MARK: IMPL ALIGNMENTS
 
-impl Alignment {
-    /// Constructs a new `Alignment` from a [vertical][`VerticalAlignment`] and [horizontal][`HorizontalAlignment`] alignment.
-    pub fn new(vertical: VerticalAlignment, horizontal: HorizontalAlignment) -> Self {
-        match (vertical, horizontal) {
-            (VerticalAlignment::Top, HorizontalAlignment::Left) => Self::TopLeft,
-            (VerticalAlignment::Top, HorizontalAlignment::Center) => Self::Top,
-            (VerticalAlignment::Top, HorizontalAlignment::Right) => Self::TopRight,
-            (VerticalAlignment::Center, HorizontalAlignment::Left) => Self::Left,
-            (VerticalAlignment::Center, HorizontalAlignment::Center) => Self::Center,
-            (VerticalAlignment::Center, HorizontalAlignment::Right) => Self::Right,
-            (VerticalAlignment::Bottom, HorizontalAlignment::Left) => Self::BottomLeft,
-            (VerticalAlignment::Bottom, HorizontalAlignment::Center) => Self::Bottom,
-            (VerticalAlignment::Bottom, HorizontalAlignment::Right) => Self::BottomRight,
-        }
-    }
-
-    /// Gets the vertical component of the alignment.
-    pub fn vertical(self) -> VerticalAlignment {
-        match self {
-            Self::Center | Self::Left | Self::Right => VerticalAlignment::Center,
-            Self::Top | Self::TopLeft | Self::TopRight => VerticalAlignment::Top,
-            Self::Bottom | Self::BottomLeft | Self::BottomRight => VerticalAlignment::Bottom,
-        }
-    }
-
-    /// Gets the horizontal component of the alignment.
-    pub fn horizontal(self) -> HorizontalAlignment {
-        match self {
-            Self::Center | Self::Top | Self::Bottom => HorizontalAlignment::Center,
-            Self::Left | Self::TopLeft | Self::BottomLeft => HorizontalAlignment::Left,
-            Self::Right | Self::TopRight | Self::BottomRight => HorizontalAlignment::Right,
-        }
-    }
-}
-
-impl From<Alignment> for VerticalAlignment {
-    fn from(value: Alignment) -> Self {
-        value.vertical()
-    }
-}
-
-impl From<Alignment> for HorizontalAlignment {
-    fn from(value: Alignment) -> Self {
-        value.horizontal()
-    }
-}
-
-impl From<(VerticalAlignment, HorizontalAlignment)> for Alignment {
-    fn from((vertical, horizontal): (VerticalAlignment, HorizontalAlignment)) -> Self {
-        Self::new(vertical, horizontal)
-    }
-}
-
-impl From<VerticalAlignment> for Alignment {
-    fn from(vertical: VerticalAlignment) -> Self {
-        Self::new(vertical, HorizontalAlignment::Center)
-    }
-}
-
-impl From<HorizontalAlignment> for Alignment {
-    fn from(horizontal: HorizontalAlignment) -> Self {
-        Self::new(VerticalAlignment::Center, horizontal)
-    }
-}
-
-impl From<Alignment> for ChildAlignment {
-    fn from(value: Alignment) -> Self {
+impl From<UnitPoint> for ChildAlignment {
+    fn from(value: UnitPoint) -> Self {
         Self::SelfAligned(value)
     }
 }
@@ -183,7 +73,7 @@ impl ZStack {
     }
 
     /// Changes the alignment of the children.
-    pub fn with_alignment(mut self, alignment: impl Into<Alignment>) -> Self {
+    pub fn with_alignment(mut self, alignment: impl Into<UnitPoint>) -> Self {
         self.alignment = alignment.into();
         self
     }
@@ -238,7 +128,7 @@ impl ZStack {
     /// Change the alignment of the `ZStack`.
     ///
     /// See also [`with_alignment`][Self::with_alignment].
-    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: impl Into<Alignment>) {
+    pub fn set_alignment(this: &mut WidgetMut<'_, Self>, alignment: impl Into<UnitPoint>) {
         this.widget.alignment = alignment.into();
         this.ctx.request_layout();
     }
@@ -276,28 +166,14 @@ impl Widget for ZStack {
         // Second pass: place the children given the calculated max_size bounds.
         for child in &mut self.children {
             let child_size = ctx.child_size(&child.widget);
-
             let end = max_size - child_size;
-            let end = Point::new(end.width, end.height);
-
-            let center = Point::new(end.x / 2., end.y / 2.);
 
             let child_alignment = match child.alignment {
                 ChildAlignment::SelfAligned(alignment) => alignment,
                 ChildAlignment::ParentAligned => self.alignment,
             };
 
-            let origin = match child_alignment {
-                Alignment::TopLeft => Point::ZERO,
-                Alignment::Top => Point::new(center.x, 0.),
-                Alignment::TopRight => Point::new(end.x, 0.),
-                Alignment::Left => Point::new(0., center.y),
-                Alignment::Center => center,
-                Alignment::Right => Point::new(end.x, center.y),
-                Alignment::BottomLeft => Point::new(0., end.y),
-                Alignment::Bottom => Point::new(center.x, end.y),
-                Alignment::BottomRight => end,
-            };
+            let origin = child_alignment.resolve(Rect::new(0., 0., end.width, end.height));
 
             ctx.place_child(&mut child.widget, origin);
         }
@@ -383,51 +259,45 @@ mod tests {
         let mut harness = TestHarness::create(default_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignment_default");
 
-        let vertical_cases = [
-            ("top", VerticalAlignment::Top),
-            ("center", VerticalAlignment::Center),
-            ("bottom", VerticalAlignment::Bottom),
+        let all_cases = [
+            (UnitPoint::TOP_LEFT, "top_left"),
+            (UnitPoint::TOP, "top_center"),
+            (UnitPoint::TOP_RIGHT, "top_right"),
+            (UnitPoint::LEFT, "center_left"),
+            (UnitPoint::CENTER, "center_center"),
+            (UnitPoint::RIGHT, "center_right"),
+            (UnitPoint::BOTTOM_LEFT, "bottom_left"),
+            (UnitPoint::BOTTOM, "bottom_center"),
+            (UnitPoint::BOTTOM_RIGHT, "bottom_right"),
+            (UnitPoint::new(0.2, 1.0), "bottom_leftish"),
         ];
 
-        let horizontal_cases = [
-            ("left", HorizontalAlignment::Left),
-            ("center", HorizontalAlignment::Center),
-            ("right", HorizontalAlignment::Right),
-        ];
-
-        let all_cases = vertical_cases
-            .into_iter()
-            .flat_map(|vert| horizontal_cases.map(|hori| (vert, hori)));
-
-        for (vertical, horizontal) in all_cases {
+        for (align, name) in all_cases {
             harness.edit_root_widget(|mut zstack| {
                 let mut zstack = zstack.downcast::<ZStack>();
-                ZStack::set_alignment(&mut zstack, (vertical.1, horizontal.1));
+                ZStack::set_alignment(&mut zstack, align);
             });
-            assert_render_snapshot!(
-                harness,
-                &format!("zstack_alignment_{}_{}", vertical.0, horizontal.0)
-            );
+            assert_render_snapshot!(harness, &format!("zstack_alignment_{name}"));
         }
     }
 
     #[test]
     fn zstack_alignments_self_aligned() {
         let widget = ZStack::new()
-            .with_alignment(Alignment::Center)
+            .with_alignment(UnitPoint::CENTER)
             .with_child(
                 Label::new("ParentAligned").with_auto_id(),
                 ChildAlignment::ParentAligned,
             )
-            .with_child(Label::new("TopLeft").with_auto_id(), Alignment::TopLeft)
-            .with_child(Label::new("TopRight").with_auto_id(), Alignment::TopRight)
+            .with_child(Label::new("TopLeft").with_auto_id(), UnitPoint::TOP_LEFT)
+            .with_child(Label::new("TopRight").with_auto_id(), UnitPoint::TOP_RIGHT)
             .with_child(
                 Label::new("BottomLeft").with_auto_id(),
-                Alignment::BottomLeft,
+                UnitPoint::BOTTOM_LEFT,
             )
             .with_child(
                 Label::new("BottomRight").with_auto_id(),
-                Alignment::BottomRight,
+                UnitPoint::BOTTOM_RIGHT,
             );
 
         let mut harness = TestHarness::create(default_property_set(), widget);

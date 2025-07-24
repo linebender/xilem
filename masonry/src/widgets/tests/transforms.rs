@@ -9,10 +9,11 @@ use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
 use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
+use crate::properties::types::UnitPoint;
 use crate::properties::{Background, BorderColor, BorderWidth};
 use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::default_property_set;
-use crate::widgets::{Alignment, Button, ChildAlignment, Label, SizedBox, ZStack};
+use crate::widgets::{Button, ChildAlignment, Label, SizedBox, ZStack};
 
 fn blue_box(inner: impl Widget) -> impl Widget {
     let mut box_props = Properties::new();
@@ -51,7 +52,7 @@ fn transforms_pointer_events() {
     let transformed_widget = NewWidget::new_with_options(
         blue_box(ZStack::new().with_child(
             Button::new("Should be pressed").with_auto_id(),
-            Alignment::BottomRight,
+            UnitPoint::BOTTOM_RIGHT,
         )),
         WidgetOptions {
             transform: Affine::rotate(PI * 0.125).then_translate(Vec2::new(100.0, 50.0)),

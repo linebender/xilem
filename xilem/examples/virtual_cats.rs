@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use masonry::core::ArcStr;
 use masonry::properties::Padding;
-use masonry::widgets::Alignment;
+use masonry::properties::types::UnitPoint;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -113,7 +113,7 @@ impl VirtualCats {
             });
             Either::A(zstack((
                 image(img).fit(ObjectFit::FitWidth),
-                attribution.alignment(Alignment::TopRight),
+                attribution.alignment(UnitPoint::TOP_RIGHT),
             )))
         } else {
             Either::B(sized_box(spinner()).width(80.).height(80.))
