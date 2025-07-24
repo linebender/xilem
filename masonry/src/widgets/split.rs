@@ -547,12 +547,6 @@ where
         ctx.place_child(&mut self.child1, child1_pos);
         ctx.place_child(&mut self.child2, child2_pos);
 
-        let child1_paint_rect = ctx.child_paint_rect(&self.child1);
-        let child2_paint_rect = ctx.child_paint_rect(&self.child2);
-        let paint_rect = child1_paint_rect.union(child2_paint_rect);
-        let insets = paint_rect - my_size.to_rect();
-        ctx.set_paint_insets(insets);
-
         my_size
     }
 

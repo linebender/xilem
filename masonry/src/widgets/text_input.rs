@@ -148,7 +148,8 @@ impl Widget for TextInput {
         ctx.place_child(&mut self.text, pos);
 
         if shadow.is_visible() {
-            ctx.set_paint_insets(shadow.get_insets());
+            let rect = size.to_rect();
+            ctx.add_to_paint_rect(shadow.get_paint_rect(rect));
         }
 
         if self.clip {

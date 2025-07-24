@@ -219,7 +219,8 @@ impl Widget for Button {
         // TODO - pos = (size - label_size) / 2
 
         if shadow.is_visible() {
-            ctx.set_paint_insets(shadow.get_insets());
+            let rect = size.to_rect();
+            ctx.add_to_paint_rect(shadow.get_paint_rect(rect));
         }
 
         ctx.set_baseline_offset(baseline);

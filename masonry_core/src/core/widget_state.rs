@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::Span;
-use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
 
 use crate::core::{WidgetId, WidgetOptions};
 
@@ -73,14 +73,11 @@ pub(crate) struct WidgetState {
     /// The origin of the widget in the `window_transform` coordinate space; together with
     /// `size` these constitute the widget's layout rect.
     pub(crate) origin: Point,
-    /// The insets applied to the layout rect to generate the paint rect.
-    /// In general, these will be zero; the exception is for things like
+    /// A rect sized to include everything the widget expects to paint, in local coordinates.
+    /// In general, this will be (origin, size); the exception is for things like
     /// drop shadows or overflowing text.
-    pub(crate) paint_insets: Insets,
-    // TODO - Document
-    // The computed paint rect, in local coordinates.
     pub(crate) local_paint_rect: Rect,
-    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates. Includes `paint_insets`.
+    /// An axis aligned bounding rect (AABB in 2D), containing itself and all its descendents in window coordinates. Includes `local_paint_rect`.
     pub(crate) bounding_rect: Rect,
     /// The offset of the baseline relative to the bottom of the widget.
     ///
@@ -206,7 +203,6 @@ impl WidgetState {
             origin: Point::ORIGIN,
             size: Size::ZERO,
             is_expecting_place_child_call: false,
-            paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
             accepts_pointer_interaction: true,
             accepts_focus: false,
@@ -280,7 +276,9 @@ impl WidgetState {
         Rect::from_origin_size(self.origin, self.size)
     }
 
-    /// The axis aligned bounding rect of this widget in window coordinates. Includes `paint_insets`.
+    /// The axis aligned bounding rect of this widget in window coordinates.
+    ///
+    /// This is the union of this widget's `local_paint_rect` and those of all its descendants.
     ///
     /// This might not map to a visible area of the screen, eg if the widget is scrolled
     /// away.

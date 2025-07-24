@@ -243,7 +243,6 @@ impl Widget for SizedBox {
         let (size, _) = padding.layout_up(size, 0.);
         let (size, _) = border.layout_up(size, 0.);
 
-        // TODO - figure out paint insets
         // TODO - figure out baseline offset
 
         if size.width.is_infinite() {

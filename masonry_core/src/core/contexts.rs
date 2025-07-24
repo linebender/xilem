@@ -10,7 +10,7 @@ use anymore::AnyDebug;
 use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
-use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
+use vello::kurbo::{Affine, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
@@ -594,56 +594,23 @@ impl LayoutCtx<'_> {
                 origin,
             );
         }
-        if origin != self.get_child_state_mut(child).origin {
-            self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).transform_changed = true;
+
+        let child_state = self.get_child_state_mut(child);
+        if origin != child_state.origin {
+            child_state.origin = origin;
+            child_state.transform_changed = true;
         }
-        self.get_child_state_mut(child)
-            .is_expecting_place_child_call = false;
+        child_state.is_expecting_place_child_call = false;
 
-        self.widget_state.local_paint_rect = self
-            .widget_state
-            .local_paint_rect
-            .union(self.get_child_state(child).paint_rect());
+        let child_rect = child_state.paint_rect();
+        self.add_to_paint_rect(child_rect);
     }
 
-    /// Set explicit paint [`Insets`] for this widget.
+    /// Expand the paint rect to include the given rect.
     ///
-    /// You are not required to set explicit paint bounds unless you need
-    /// to paint outside of your layout bounds. In this case, the argument
-    /// should be an [`Insets`] struct that indicates where your widget
-    /// needs to overpaint, relative to its bounds.
-    pub fn set_paint_insets(&mut self, insets: impl Into<Insets>) {
-        let insets = insets.into();
-        self.widget_state.paint_insets = insets.nonnegative();
-    }
-
-    // TODO - This is currently redundant with the code in LayoutCtx::place_child
-    /// Given a child and its parent's size, determine the
-    /// appropriate paint `Insets` for the parent.
-    ///
-    /// This is a convenience method; it allows the parent to correctly
-    /// propagate a child's desired paint rect, if it extends beyond the bounds
-    /// of the parent's layout rect.
-    ///
-    /// ## Panics
-    ///
-    /// This method will panic if the child's [`layout()`](LayoutCtx::run_layout) method has not been called yet
-    /// and if [`LayoutCtx::place_child()`] has not been called for the child.
-    #[track_caller]
-    pub fn compute_insets_from_child(
-        &mut self,
-        child: &WidgetPod<impl Widget + ?Sized>,
-        my_size: Size,
-    ) -> Insets {
-        self.assert_layout_done(child, "compute_insets_from_child");
-        self.assert_placed(child, "compute_insets_from_child");
-        let parent_bounds = my_size.to_rect();
-        let union_paint_rect = self
-            .get_child_state(child)
-            .paint_rect()
-            .union(parent_bounds);
-        union_paint_rect - parent_bounds
+    /// The new paint rect will be the union of the old paint rect and `rect`.
+    pub fn add_to_paint_rect(&mut self, rect: Rect) {
+        self.widget_state.local_paint_rect = self.widget_state.local_paint_rect.union(rect);
     }
 
     /// Set an explicit baseline position for this widget.

@@ -4,7 +4,7 @@
 use std::any::TypeId;
 
 use vello::Scene;
-use vello::kurbo::{Affine, Insets, Point, RoundedRect};
+use vello::kurbo::{Affine, Point, Rect, RoundedRect};
 use vello::peniko::color::{AlphaColor, Srgb};
 
 use crate::core::{Property, UpdateCtx};
@@ -114,14 +114,11 @@ impl BoxShadow {
         );
     }
 
-    /// Helper function that returns how much a given shadow expands the paint rect.
-    pub fn get_insets(&self) -> Insets {
+    /// Helper function that returns the full rect the shadow paints to.
+    pub fn get_paint_rect(&self, rect: Rect) -> Rect {
         let blur_radius = self.blur_radius.max(0.);
-        Insets {
-            x0: (blur_radius - self.offset.x).max(0.),
-            y0: (blur_radius - self.offset.y).max(0.),
-            x1: (blur_radius + self.offset.x).max(0.),
-            y1: (blur_radius + self.offset.y).max(0.),
-        }
+        let offset = self.offset.to_vec2();
+
+        rect.inset(blur_radius) + offset
     }
 }
