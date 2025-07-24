@@ -132,7 +132,7 @@ impl Widget for Checkbox {
     }
 
     fn accepts_focus(&self) -> bool {
-        // Checkboxes can be tab-focused...
+        // Checkbox can be tab-focused...
         true
     }
 
