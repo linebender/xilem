@@ -42,7 +42,7 @@ pub trait OrphanView<V, State, Action>: ViewPathTracker + Sized {
     fn orphan_message(
         view: &V,
         view_state: &mut Self::OrphanViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::OrphanElement>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
@@ -92,11 +92,11 @@ macro_rules! impl_orphan_view_for {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                ctx: &mut MessageContext,
+                message: &mut MessageContext,
                 element: Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) -> MessageResult<Action> {
-                Context::orphan_message(self, view_state, ctx, element, app_state)
+                Context::orphan_message(self, view_state, message, element, app_state)
             }
         }
     };

@@ -200,7 +200,7 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        _ctx: &mut MessageContext,
+        _message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
         _app_state: &mut State,
     ) -> xilem_core::MessageResult<Action> {

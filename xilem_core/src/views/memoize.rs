@@ -134,14 +134,14 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             view_state
                 .view
-                .message(&mut view_state.view_state, ctx, element, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }
@@ -265,14 +265,14 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             view_state
                 .view
-                .message(&mut view_state.view_state, ctx, element, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }

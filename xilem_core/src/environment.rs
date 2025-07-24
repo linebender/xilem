@@ -311,13 +311,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
         // Use our value in the child message.
         let slot =
-            &mut ctx.environment.slots[usize::try_from(view_state.environment_slot).unwrap()];
+            &mut message.environment.slots[usize::try_from(view_state.environment_slot).unwrap()];
         debug_assert!(
             view_state.this_state.is_some(),
             "`Provides` should be providing something."
@@ -328,10 +328,10 @@ where
         // TODO: When the context/environment is available in messages, add the context value here.
         let ret = self
             .child
-            .message(&mut view_state.child_state, ctx, element, app_state);
+            .message(&mut view_state.child_state, message, element, app_state);
 
         let slot =
-            &mut ctx.environment.slots[usize::try_from(view_state.environment_slot).unwrap()];
+            &mut message.environment.slots[usize::try_from(view_state.environment_slot).unwrap()];
         core::mem::swap(&mut slot.item, &mut view_state.this_state);
         debug_assert!(
             view_state.this_state.is_some(),
@@ -554,15 +554,15 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        let Some(first) = ctx.take_first() else {
-            match ctx.take_message::<Rebuild>() {
+        let Some(first) = message.take_first() else {
+            match message.take_message::<Rebuild>() {
                 Some(_) => return MessageResult::RequestRebuild,
                 None => {
-                    tracing::warn!("Expected `Rebuild` in WithContext::Message, got {ctx:?}");
+                    tracing::warn!("Expected `Rebuild` in WithContext::Message, got {message:?}");
                     return MessageResult::Stale;
                 }
             }
@@ -574,6 +574,6 @@ where
 
         view_state
             .prev
-            .message(&mut view_state.child_state, ctx, element, app_state)
+            .message(&mut view_state.child_state, message, element, app_state)
     }
 }

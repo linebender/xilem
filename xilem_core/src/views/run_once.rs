@@ -122,11 +122,10 @@ where
     fn message(
         &self,
         (): &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         _: Mut<'_, Self::Element>,
         _: &mut State,
     ) -> MessageResult<Action> {
-        // Nothing to do
-        panic!("Message should not have been sent to a `RunOnce` View: {ctx:?}");
+        panic!("Message should not have been sent to a `RunOnce` View: {message:?}");
     }
 }

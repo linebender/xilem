@@ -92,18 +92,21 @@ where
     fn message(
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        let first = ctx.take_first().expect("Id path has elements for Fork");
+        let first = message.take_first().expect("Id path has elements for Fork");
         match first.routing_id() {
             0 => self
                 .active_view
-                .message(active_state, ctx, element, app_state),
-            1 => self
-                .alongside_view
-                .seq_message(alongside_state, ctx, &mut NoElements, app_state),
+                .message(active_state, message, element, app_state),
+            1 => self.alongside_view.seq_message(
+                alongside_state,
+                message,
+                &mut NoElements,
+                app_state,
+            ),
             _ => unreachable!(),
         }
     }

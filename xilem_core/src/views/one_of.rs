@@ -553,41 +553,43 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let start = ctx.take_first().expect("Id path has elements for OneOf");
+        let start = message
+            .take_first()
+            .expect("Id path has elements for OneOf");
         if start.routing_id() != view_state.generation {
             return MessageResult::Stale;
         }
         match (self, &mut view_state.inner_state) {
             (Self::A(v), OneOf::A(state)) => Context::with_downcast_a(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::B(v), OneOf::B(state)) => Context::with_downcast_b(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::C(v), OneOf::C(state)) => Context::with_downcast_c(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::D(v), OneOf::D(state)) => Context::with_downcast_d(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::E(v), OneOf::E(state)) => Context::with_downcast_e(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::F(v), OneOf::F(state)) => Context::with_downcast_f(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::G(v), OneOf::G(state)) => Context::with_downcast_g(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::H(v), OneOf::H(state)) => Context::with_downcast_h(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             (Self::I(v), OneOf::I(state)) => Context::with_downcast_i(&mut element, |element| {
-                v.message(state, ctx, element, app_state)
+                v.message(state, message, element, app_state)
             }),
             _ => unreachable!(),
         }
