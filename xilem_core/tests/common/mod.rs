@@ -164,7 +164,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut (),
     ) -> MessageResult<Action> {
@@ -174,7 +174,7 @@ where
             scratch: &mut view_state.1,
         };
         self.seq
-            .seq_message(&mut view_state.0, ctx, &mut elements, app_state)
+            .seq_message(&mut view_state.0, message, &mut elements, app_state)
     }
 }
 

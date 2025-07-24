@@ -71,7 +71,7 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
     fn orphan_message(
         _view: &&'static str,
         _view_state: &mut Self::OrphanViewState,
-        _ctx: &mut MessageContext,
+        _message: &mut MessageContext,
         _element: Mut<'_, Self::OrphanElement>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {

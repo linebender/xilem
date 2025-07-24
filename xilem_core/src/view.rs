@@ -106,7 +106,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
@@ -208,11 +208,12 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.deref().message(view_state, ctx, element, app_state)
+        self.deref()
+            .message(view_state, message, element, app_state)
     }
 }
 
@@ -277,13 +278,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
-                .message(&mut view_state.view_state, ctx, element, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }
@@ -341,13 +342,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
-                .message(&mut view_state.view_state, ctx, element, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }

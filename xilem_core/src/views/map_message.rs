@@ -160,11 +160,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<ParentAction> {
-        let child_result = self.child.message(view_state, ctx, element, app_state);
+        let child_result = self.child.message(view_state, message, element, app_state);
         (self.map_fn)(app_state, child_result)
     }
 }

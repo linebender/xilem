@@ -144,13 +144,13 @@ where
     fn message(
         &self,
         (child, child_view_state): &mut Self::ViewState,
-        ctx: &mut MessageContext,
+        message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut ParentState,
     ) -> MessageResult<Action> {
         child.message(
             child_view_state,
-            ctx,
+            message,
             element,
             (self.access_state)(app_state),
         )
