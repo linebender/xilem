@@ -3,8 +3,8 @@
 
 use wasm_bindgen::JsCast;
 
-use crate::core::{MessageResult, Mut, OrphanView, ViewId};
-use crate::{DynMessage, Pod, PodFlags, ViewCtx};
+use crate::core::{MessageContext, MessageResult, Mut, OrphanView};
+use crate::{Pod, PodFlags, ViewCtx};
 
 // strings -> text nodes
 macro_rules! impl_string_view {
@@ -52,11 +52,12 @@ macro_rules! impl_string_view {
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[ViewId],
-                message: DynMessage,
+                _message: &mut MessageContext,
+                _element: Mut<'_, Self::OrphanElement>,
                 _app_state: &mut State,
             ) -> MessageResult<Action> {
-                MessageResult::Stale(message)
+                // TODO: Panic?
+                MessageResult::Stale
             }
         }
     };
@@ -111,11 +112,11 @@ macro_rules! impl_to_string_view {
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _id_path: &[ViewId],
-                message: DynMessage,
+                _message: &mut MessageContext,
+                _element: Mut<'_, Self::OrphanElement>,
                 _app_state: &mut State,
             ) -> MessageResult<Action> {
-                MessageResult::Stale(message)
+                MessageResult::Stale
             }
         }
     };

@@ -55,7 +55,7 @@ pub struct ViewCtx {
     /// A stack containing modifier count size-hints for each element context, mostly to avoid unnecessary allocations.
     modifier_size_hints: Vec<VecMap<TypeId, usize>>,
     modifier_size_hint_stack_idx: usize,
-    environment: Environment,
+    pub(crate) environment: Environment,
 }
 
 impl Default for ViewCtx {
