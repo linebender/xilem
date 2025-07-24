@@ -33,7 +33,9 @@ pub enum TextEvent {
     Ime(Ime),
     /// The window took or lost focus.
     WindowFocusChange(bool),
-    // TODO - Add ClipboardPaste variant.
+    // TODO - Handle rich text copy-pasting
+    /// The user pasted content in
+    ClipboardPaste(String),
 }
 
 /// An accessibility event.
@@ -206,6 +208,7 @@ impl TextEvent {
             Self::Ime(Ime::Preedit(s, _)) if s.is_empty() => "Ime::Preedit(\"\")",
             Self::Ime(Ime::Preedit(_, _)) => "Ime::Preedit(\"...\")",
             Self::WindowFocusChange(_) => "WindowFocusChange",
+            Self::ClipboardPaste(_) => "ClipboardPaste",
         }
     }
 }

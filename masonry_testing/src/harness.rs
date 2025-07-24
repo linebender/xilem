@@ -136,6 +136,7 @@ pub struct TestHarness {
     action_queue: VecDeque<(ErasedAction, WidgetId)>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
+    clipboard: String,
     title: String,
 }
 
@@ -293,6 +294,7 @@ impl TestHarness {
             action_queue: VecDeque::new(),
             has_ime_session: false,
             ime_rect: Default::default(),
+            clipboard: String::new(),
             title: String::new(),
         };
         harness.process_window_event(WindowEvent::Resize(window_size));
@@ -345,6 +347,9 @@ impl TestHarness {
                 }
                 RenderRootSignal::ImeMoved(position, size) => {
                     self.ime_rect = (position, size);
+                }
+                RenderRootSignal::ClipboardStore(text) => {
+                    self.clipboard = text;
                 }
                 RenderRootSignal::RequestRedraw => (),
                 RenderRootSignal::RequestAnimFrame => (),
@@ -756,6 +761,13 @@ impl TestHarness {
     /// This is usually the layout rectangle of the focused widget.
     pub fn ime_rect(&self) -> (LogicalPosition<f64>, LogicalSize<f64>) {
         self.ime_rect
+    }
+
+    /// Returns the contents of the emulated clipboard.
+    ///
+    /// This is an empty string by default.
+    pub fn clipboard_contents(&self) -> String {
+        self.clipboard.clone()
     }
 
     /// Return the size of the simulated window.
