@@ -130,6 +130,8 @@ pub struct TestHarness {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
     access_tree: Option<accesskit_consumer::Tree>,
+    render_context: Option<RenderContext>,
+    vello_renderer: Option<vello::Renderer>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
@@ -287,6 +289,8 @@ impl TestHarness {
                 },
             ),
             access_tree: None,
+            render_context: None,
+            vello_renderer: None,
             mouse_state,
             window_size,
             background_color: params.background_color,
@@ -384,25 +388,32 @@ impl TestHarness {
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
-        // TODO: Cache/share the context
-        let mut context = RenderContext::new();
+
+        let mut context = self
+            .render_context
+            .take()
+            .unwrap_or_else(RenderContext::new);
+
         let device_id =
             pollster::block_on(context.device(None)).expect("No compatible device found");
         let device_handle = &mut context.devices[device_id];
         let device = &device_handle.device;
         let queue = &device_handle.queue;
-        let mut renderer = vello::Renderer::new(
-            device,
-            vello::RendererOptions {
-                // TODO - Examine this value
-                use_cpu: true,
-                num_init_threads: NonZeroUsize::new(1),
-                // TODO - Examine this value
-                antialiasing_support: vello::AaSupport::area_only(),
-                ..Default::default()
-            },
-        )
-        .expect("Got non-Send/Sync error from creating renderer");
+
+        let mut renderer = self.vello_renderer.take().unwrap_or_else(|| {
+            vello::Renderer::new(
+                device,
+                vello::RendererOptions {
+                    // TODO - Examine this value
+                    use_cpu: true,
+                    num_init_threads: NonZeroUsize::new(1),
+                    // TODO - Examine this value
+                    antialiasing_support: vello::AaSupport::area_only(),
+                    ..Default::default()
+                },
+            )
+            .expect("Got non-Send/Sync error from creating renderer")
+        });
 
         // TODO - fix window_size
         let (width, height) = (self.window_size.width, self.window_size.height);
@@ -471,6 +482,9 @@ impl TestHarness {
             let start = (row * padded_byte_width).try_into().unwrap();
             result_unpadded.extend(&data[start..start + (width * 4) as usize]);
         }
+
+        self.render_context = Some(context);
+        self.vello_renderer = Some(renderer);
 
         RgbaImage::from_vec(width, height, result_unpadded).expect("failed to create image")
     }
