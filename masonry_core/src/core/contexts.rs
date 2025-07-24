@@ -1019,17 +1019,6 @@ impl_context_method!(
             self.widget_state.is_disabled
         }
 
-        /// Whether this widget is explicitly [disabled].
-        ///
-        /// This doesn't return true is the widget is only disabled because an ancestor is.
-        /// To make this widget explicitly disabled use [`set_disabled`].
-        ///
-        /// [disabled]: crate::doc::masonry_concepts#disabled
-        /// [`set_disabled`]: EventCtx::set_disabled
-        pub fn is_explicitly_disabled(&self) -> bool {
-            self.widget_state.is_explicitly_disabled
-        }
-
         /// Whether this widget is [stashed].
         ///
         /// [stashed]: crate::doc::masonry_concepts#stashed
