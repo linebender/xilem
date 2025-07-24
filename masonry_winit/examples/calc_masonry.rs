@@ -13,26 +13,19 @@
 
 use std::str::FromStr;
 
-use masonry::accesskit;
 use masonry::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, RegisterCtx,
-    StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions, WidgetPod,
+    ErasedAction, NewWidget, Properties, Property, StyleProperty, Widget, WidgetId, WidgetOptions,
 };
 use masonry::dpi::LogicalSize;
-use masonry::kurbo::{Point, Size};
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
-use masonry::properties::{Background, BorderColor, BorderWidth, Padding};
+use masonry::properties::{
+    ActiveBackground, Background, BorderColor, BorderWidth, HoveredBorderColor, Padding,
+};
 use masonry::theme::default_property_set;
-use masonry::vello::Scene;
-use masonry::widgets::{Align, CrossAxisAlignment, Flex, Label, SizedBox};
+use masonry::widgets::{Button, ButtonPress, CrossAxisAlignment, Flex, Grid, GridParams, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
-use tracing::{Span, trace, trace_span};
-
-// TODO - Rewrite this example to be simpler,
-// use properties directly and remove the CalcButton widget.
 
 #[derive(Clone)]
 struct CalcState {
@@ -49,16 +42,20 @@ struct CalcState {
 enum CalcAction {
     Digit(u8),
     Op(char),
+    None,
 }
 
-/// A custom widget which acts like a button.
-///
-/// Emits the [`CalcAction`] action when pressed.
-struct CalcButton {
-    inner: WidgetPod<SizedBox>,
-    action: CalcAction,
-    base_color: Color,
-    active_color: Color,
+// We use CalcAction as a property and store it alongside buttons
+impl Property for CalcAction {
+    fn static_default() -> &'static Self {
+        &Self::None
+    }
+}
+
+impl Default for CalcAction {
+    fn default() -> Self {
+        *Property::static_default()
+    }
 }
 
 // ---
@@ -147,166 +144,36 @@ impl CalcState {
     }
 }
 
-impl CalcButton {
-    fn new(
-        inner: WidgetPod<SizedBox>,
-        action: CalcAction,
-        base_color: Color,
-        active_color: Color,
-    ) -> Self {
-        Self {
-            inner,
-            action,
-            base_color,
-            active_color,
-        }
-    }
-}
-
-impl Widget for CalcButton {
-    fn on_pointer_event(
-        &mut self,
-        ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        event: &PointerEvent,
-    ) {
-        match event {
-            PointerEvent::Down { .. } => {
-                if !ctx.is_disabled() {
-                    let color = self.active_color;
-                    // See `update` for why we use `mutate_later` here.
-                    ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        inner.insert_prop(Background::Color(color));
-                    });
-                    ctx.capture_pointer();
-                    trace!("CalcButton {:?} pressed", ctx.widget_id());
-                }
-            }
-            PointerEvent::Up { .. } => {
-                if ctx.is_active() && !ctx.is_disabled() {
-                    let color = self.base_color;
-                    // See `update` for why we use `mutate_later` here.
-                    ctx.mutate_later(&mut self.inner, move |mut inner| {
-                        inner.insert_prop(Background::Color(color));
-                    });
-                    ctx.submit_action(self.action);
-                    trace!("CalcButton {:?} released", ctx.widget_id());
-                }
-            }
-            _ => (),
-        }
-    }
-
-    fn on_text_event(
-        &mut self,
-        _ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        _event: &TextEvent,
-    ) {
-    }
-
-    fn on_access_event(
-        &mut self,
-        ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        event: &AccessEvent,
-    ) {
-        if ctx.target() == ctx.widget_id() {
-            match event.action {
-                accesskit::Action::Click => {
-                    ctx.submit_action(self.action);
-                }
-                _ => {}
-            }
-        }
-    }
-
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
-        // Masonry doesn't let us change a widget's attributes directly.
-        // We use `mutate_later` to get a mutable reference to the inner widget
-        // and change its border color. This is a simple way to implement a
-        // "hovered" visual effect, but it's somewhat non-idiomatic compared to
-        // implementing the effect inside the "paint" method.
-        match event {
-            Update::HoveredChanged(true) => {
-                ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    inner.insert_prop(BorderColor::new(Color::WHITE));
-                    inner.insert_prop(BorderWidth::all(3.0));
-                });
-            }
-            Update::HoveredChanged(false) => {
-                ctx.mutate_later(&mut self.inner, move |mut inner| {
-                    inner.remove_prop::<BorderColor>();
-                    inner.remove_prop::<BorderWidth>();
-                });
-            }
-            _ => (),
-        }
-    }
-
-    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
-        ctx.register_child(&mut self.inner);
-    }
-
-    fn layout(
-        &mut self,
-        ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
-        bc: &BoxConstraints,
-    ) -> Size {
-        let size = ctx.run_layout(&mut self.inner, bc);
-        ctx.place_child(&mut self.inner, Point::ORIGIN);
-
-        size
-    }
-
-    fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
-
-    fn accessibility_role(&self) -> accesskit::Role {
-        accesskit::Role::Button
-    }
-
-    fn accessibility(
-        &mut self,
-        _ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
-        node: &mut accesskit::Node,
-    ) {
-        let _name = match self.action {
-            CalcAction::Digit(digit) => digit.to_string(),
-            CalcAction::Op(op) => op.to_string(),
-        };
-        // We may want to add a name if it doesn't interfere with the child label
-        // ctx.current_node().set_name(name);
-        node.add_action(accesskit::Action::Click);
-    }
-
-    fn children_ids(&self) -> ChildrenIds {
-        ChildrenIds::from_slice(&[self.inner.id()])
-    }
-
-    fn make_trace_span(&self, id: WidgetId) -> Span {
-        trace_span!("CalcButton", id = id.trace())
-    }
-}
-
 impl AppDriver for CalcState {
     fn on_action(
         &mut self,
         window_id: WindowId,
         ctx: &mut DriverCtx<'_, '_>,
-        _widget_id: WidgetId,
+        widget_id: WidgetId,
         action: ErasedAction,
     ) {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
-        match action.downcast_ref::<CalcAction>().unwrap() {
+        let Some(source) = ctx.render_root(window_id).get_widget(widget_id) else {
+            return;
+        };
+        let Some(button) = source.downcast::<Button>() else {
+            return;
+        };
+        let Ok(_action) = action.downcast::<ButtonPress>() else {
+            return;
+        };
+
+        match button.get_prop::<CalcAction>() {
             CalcAction::Digit(digit) => self.digit(*digit),
             CalcAction::Op(op) => self.op(*op),
+            CalcAction::None => (),
         }
 
         ctx.render_root(window_id).edit_root_widget(|mut root| {
-            let mut flex = root.downcast();
+            let mut grid = root.downcast();
+            let mut flex = Grid::child_mut(&mut grid, 0);
+            let mut flex = flex.downcast();
             let mut label = Flex::child_mut(&mut flex, 1).unwrap();
             let mut label = label.downcast::<Label>();
             Label::set_text(&mut label, &*self.value);
@@ -316,144 +183,96 @@ impl AppDriver for CalcState {
 
 // ---
 
-fn op_button_with_label(op: char, label: String) -> NewWidget<CalcButton> {
+fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
-    let sized_box = SizedBox::new(
-        Align::centered(
-            Label::new(label)
-                .with_style(StyleProperty::FontSize(24.))
-                .with_auto_id(),
-        )
-        .with_auto_id(),
-    )
-    .expand();
-    let sized_box = NewWidget::new_with(
-        sized_box,
+    let button = Button::from_label(
+        Label::new(label)
+            .with_style(StyleProperty::FontSize(24.))
+            .with_auto_id(),
+    );
+
+    NewWidget::new_with(
+        button,
         WidgetId::next(),
         WidgetOptions::default(),
-        Properties::new().with(Background::Color(BLUE)),
+        Properties::new()
+            .with(Background::Color(BLUE))
+            .with(ActiveBackground(Background::Color(LIGHT_BLUE)))
+            .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
+            .with(BorderColor::new(Color::TRANSPARENT))
+            .with(BorderWidth::all(2.0))
+            .with(CalcAction::Op(op)),
     )
-    .to_pod();
-
-    NewWidget::new(CalcButton::new(
-        sized_box,
-        CalcAction::Op(op),
-        BLUE,
-        LIGHT_BLUE,
-    ))
 }
 
-fn op_button(op: char) -> NewWidget<CalcButton> {
+fn op_button(op: char) -> NewWidget<Button> {
     op_button_with_label(op, op.to_string())
 }
 
-fn digit_button(digit: u8) -> NewWidget<CalcButton> {
+fn digit_button(digit: u8) -> NewWidget<Button> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
     const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
 
-    let sized_box = SizedBox::new(
-        Align::centered(
-            Label::new(format!("{digit}"))
-                .with_style(StyleProperty::FontSize(24.))
-                .with_auto_id(),
-        )
-        .with_auto_id(),
-    )
-    .expand();
-    let sized_box = NewWidget::new_with(
-        sized_box,
+    let button = Button::from_label(
+        Label::new(format!("{digit}"))
+            .with_style(StyleProperty::FontSize(24.))
+            .with_auto_id(),
+    );
+
+    NewWidget::new_with(
+        button,
         WidgetId::next(),
         WidgetOptions::default(),
-        Properties::new().with(Background::Color(GRAY)),
-    )
-    .to_pod();
-
-    NewWidget::new(CalcButton::new(
-        sized_box,
-        CalcAction::Digit(digit),
-        GRAY,
-        LIGHT_GRAY,
-    ))
-}
-
-fn flex_row(
-    w1: NewWidget<impl Widget>,
-    w2: NewWidget<impl Widget>,
-    w3: NewWidget<impl Widget>,
-    w4: NewWidget<impl Widget>,
-) -> NewWidget<impl Widget> {
-    NewWidget::new(
-        Flex::row()
-            .with_gap(0.0)
-            .with_flex_child(w1, 1.0)
-            .with_spacer(1.0)
-            .with_flex_child(w2, 1.0)
-            .with_spacer(1.0)
-            .with_flex_child(w3, 1.0)
-            .with_spacer(1.0)
-            .with_flex_child(w4, 1.0),
+        Properties::new()
+            .with(Background::Color(GRAY))
+            .with(ActiveBackground(Background::Color(LIGHT_GRAY)))
+            .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
+            .with(BorderColor::new(Color::TRANSPARENT))
+            .with(BorderWidth::all(2.0))
+            .with(CalcAction::Digit(digit)),
     )
 }
 
 fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
-    let root_widget = Flex::column()
-        .with_gap(0.0)
-        .with_flex_spacer(0.2)
+    let display = Flex::column()
+        .with_flex_spacer(1.)
         .with_child(display.with_auto_id())
-        .with_flex_spacer(0.2)
-        .cross_axis_alignment(CrossAxisAlignment::End)
-        .with_flex_child(
-            flex_row(
-                op_button_with_label('c', "CE".to_string()),
-                op_button('C'),
-                op_button('⌫'),
-                op_button('÷'),
-            ),
-            1.0,
+        .with_flex_spacer(1.)
+        .cross_axis_alignment(CrossAxisAlignment::End);
+
+    fn button_params(x: i32, y: i32) -> GridParams {
+        GridParams::new(x, y, 1, 1)
+    }
+
+    let root_widget = Grid::with_dimensions(4, 6)
+        .with_spacing(1.0)
+        .with_child(display.with_auto_id(), GridParams::new(0, 0, 4, 1))
+        .with_child(
+            op_button_with_label('c', "CE".to_string()),
+            button_params(0, 1),
         )
-        .with_spacer(1.0)
-        .with_flex_child(
-            flex_row(
-                digit_button(7),
-                digit_button(8),
-                digit_button(9),
-                op_button('×'),
-            ),
-            1.0,
-        )
-        .with_spacer(1.0)
-        .with_flex_child(
-            flex_row(
-                digit_button(4),
-                digit_button(5),
-                digit_button(6),
-                op_button('−'),
-            ),
-            1.0,
-        )
-        .with_spacer(1.0)
-        .with_flex_child(
-            flex_row(
-                digit_button(1),
-                digit_button(2),
-                digit_button(3),
-                op_button('+'),
-            ),
-            1.0,
-        )
-        .with_spacer(1.0)
-        .with_flex_child(
-            flex_row(
-                op_button('±'),
-                digit_button(0),
-                op_button('.'),
-                op_button('='),
-            ),
-            1.0,
-        );
+        .with_child(op_button('C'), button_params(1, 1))
+        .with_child(op_button('⌫'), button_params(2, 1))
+        .with_child(op_button('÷'), button_params(3, 1))
+        .with_child(digit_button(7), button_params(0, 2))
+        .with_child(digit_button(8), button_params(1, 2))
+        .with_child(digit_button(9), button_params(2, 2))
+        .with_child(op_button('×'), button_params(3, 2))
+        .with_child(digit_button(4), button_params(0, 3))
+        .with_child(digit_button(5), button_params(1, 3))
+        .with_child(digit_button(6), button_params(2, 3))
+        .with_child(op_button('−'), button_params(3, 3))
+        .with_child(digit_button(1), button_params(0, 4))
+        .with_child(digit_button(2), button_params(1, 4))
+        .with_child(digit_button(3), button_params(2, 4))
+        .with_child(op_button('+'), button_params(3, 4))
+        .with_child(op_button('±'), button_params(0, 5))
+        .with_child(digit_button(0), button_params(1, 5))
+        .with_child(op_button('.'), button_params(2, 5))
+        .with_child(op_button('='), button_params(3, 5));
 
     NewWidget::new_with_props(
         root_widget,
