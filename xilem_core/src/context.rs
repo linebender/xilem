@@ -23,24 +23,47 @@ pub struct MessageContext {
 
 impl MessageContext {
     // TODO: Tests.
-    // TODO(DJMcNab): Document better (blocks merge)
-
+    /// Remove the first element from the id path which this message needs to be routed to.
+    ///
+    /// This mirrors [`ViewPathTracker::with_id`](crate::ViewPathTracker::with_id).
+    /// Returns `None` if there are no more elements in the id path (which likely means that
+    /// this view is the target view, depending on how it uses its section of the id path).
     pub fn take_first(&mut self) -> Option<ViewId> {
         let ret = self.full_id_path.get(self.id_path_index)?;
         self.id_path_index += 1;
         Some(*ret)
     }
+
+    /// The remaining id path, which should mostly be handled by your children.
+    ///
+    /// If this returns an empty slice, then `take_first` will return `None`.
     pub fn remaining_path(&self) -> &[ViewId] {
         &self.full_id_path[self.id_path_index..]
     }
+
+    /// The path to this view.
     pub fn current_path(&self) -> &[ViewId] {
         &self.full_id_path[..self.id_path_index]
     }
+    /// Take the message, downcasting it to the specified type.
+    ///
+    /// If the message is not of the specified type, returns `None`.
+    ///
+    /// # Panics
+    ///
+    /// If the message has already been taken.
     #[track_caller]
     pub fn take_message<T: AnyDebug>(&mut self) -> Option<Box<T>> {
         self.maybe_take_message(|_| true)
     }
 
+    /// Downcast the message to the specified type, taking it if `f` returns true.
+    ///
+    /// If the message is not of the specified type, returns `None`.
+    ///
+    /// # Panics
+    ///
+    /// If the message has already been taken.
     #[track_caller]
     pub fn maybe_take_message<T: AnyDebug>(
         &mut self,
