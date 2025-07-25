@@ -194,6 +194,13 @@ macro_rules! assert_failing_render_snapshot {
 }
 
 impl TestHarnessParams {
+    /// Default test param values.
+    pub const DEFAULT: Self = Self {
+        window_size: Self::DEFAULT_SIZE,
+        background_color: Self::DEFAULT_BACKGROUND_COLOR,
+        scale_factor: 1.0,
+    };
+
     /// Default canvas size for tests.
     pub const DEFAULT_SIZE: Size = Size::new(400., 400.);
 
@@ -203,11 +210,7 @@ impl TestHarnessParams {
 
 impl Default for TestHarnessParams {
     fn default() -> Self {
-        Self {
-            window_size: Self::DEFAULT_SIZE,
-            background_color: Self::DEFAULT_BACKGROUND_COLOR,
-            scale_factor: 1.0,
-        }
+        Self::DEFAULT
     }
 }
 
@@ -409,6 +412,11 @@ impl<W: Widget> TestHarness<W> {
 
         // TODO - fix window_size
         let (width, height) = (self.window_size.width, self.window_size.height);
+
+        // Avoid having a zero-sized image
+        let width = width.max(1);
+        let height = height.max(1);
+
         let render_params = vello::RenderParams {
             base_color: self.background_color,
             width,

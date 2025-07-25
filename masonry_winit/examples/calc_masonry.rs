@@ -235,7 +235,8 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
     )
 }
 
-fn build_calc() -> NewWidget<impl Widget> {
+/// Build the widget tree
+pub fn build_calc() -> NewWidget<impl Widget> {
     let display = Label::new(String::new()).with_style(StyleProperty::FontSize(32.));
     let display = Flex::column()
         .with_flex_spacer(1.)

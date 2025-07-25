@@ -56,7 +56,8 @@ fn grid_button(params: GridParams) -> Button {
     ))
 }
 
-fn make_grid(grid_spacing: f64) -> Grid {
+/// Create a grid with a bunch of buttons
+pub fn make_grid(grid_spacing: f64) -> Grid {
     let label = Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))

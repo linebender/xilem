@@ -38,7 +38,9 @@ impl AppDriver for Driver {
     }
 }
 
-struct CustomWidget(String);
+/// A widget with a custom implementation of the Widget trait.
+#[derive(Debug)]
+pub struct CustomWidget(pub String);
 
 impl Widget for CustomWidget {
     fn on_pointer_event(
@@ -156,7 +158,7 @@ impl Widget for CustomWidget {
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
         let image_data = Image::new(image_data.into(), ImageFormat::Rgba8, 256, 256);
-        let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), size);
+        let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), Size::new(256., 256.));
         scene.draw_image(&image_data, transform);
     }
 
