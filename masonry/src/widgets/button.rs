@@ -309,15 +309,15 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_testing::TestHarnessParams;
+
     use super::*;
     use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, Properties, StyleProperty};
     use crate::properties::TextColor;
-    use crate::testing::{
-        TestHarness, TestWidgetExt, WrapperWidget, assert_render_snapshot, widget_ids,
-    };
+    use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
-    use crate::widgets::{Grid, GridParams, SizedBox};
+    use crate::widgets::{Grid, GridParams};
 
     #[test]
     fn simple_button() {
@@ -433,20 +433,15 @@ mod tests {
             .with_child(Button::new("B").with_auto_id(), GridParams::new(1, 0, 1, 1))
             .with_child(Button::new("C").with_auto_id(), GridParams::new(0, 1, 1, 1))
             .with_child(Button::new("D").with_auto_id(), GridParams::new(1, 1, 1, 1));
+        let root_widget =
+            NewWidget::new_with_props(grid, Properties::new().with(Padding::all(20.0)));
 
-        let root_widget = SizedBox::new(grid.with_auto_id())
-            .with_props(Properties::new().with(Padding::all(20.0)));
-
-        let window_size = Size::new(300.0, 300.0);
+        let mut test_params = TestHarnessParams::default();
+        test_params.window_size = Size::new(300.0, 300.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), root_widget, window_size);
+            TestHarness::create_with(default_property_set(), root_widget, test_params);
 
-        harness.edit_root_widget(|mut root| {
-            let mut sized_box = WrapperWidget::child_mut(&mut root);
-            let mut sized_box = sized_box.downcast::<SizedBox>();
-            let mut grid = SizedBox::child_mut(&mut sized_box).unwrap();
-            let mut grid = grid.downcast::<Grid>();
-
+        harness.edit_root_widget(|mut grid| {
             {
                 let mut button = Grid::child_mut(&mut grid, 0);
                 let mut button = button.downcast::<Button>();
