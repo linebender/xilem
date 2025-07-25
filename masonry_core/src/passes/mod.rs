@@ -20,6 +20,7 @@ pub(crate) mod event;
 pub(crate) mod layout;
 pub(crate) mod mutate;
 pub(crate) mod paint;
+pub(crate) mod query;
 pub(crate) mod update;
 
 #[must_use = "Span will be immediately closed if dropped"]
