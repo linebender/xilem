@@ -489,35 +489,23 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     Key::Character(x)
                         if EDITABLE && action_mod && x.as_str().eq_ignore_ascii_case("x") =>
                     {
-                        edited = true;
-                        // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
-                        // if let Some(text) = self.editor.selected_text() {
-                        //     let cb = ClipboardContext::new().unwrap();
-                        //     cb.set_text(text.to_owned()).ok();
-                        //     self.editor.drive(fcx, lcx, |drv| drv.delete_selection());
-                        // }
-                        // edited = true;
+                        if let Some(text) = self.editor.selected_text()
+                            && !text.is_empty()
+                        {
+                            let text = text.to_string();
+                            self.editor.driver(fctx, lctx).delete_selection();
+                            edited = true;
+                            ctx.set_clipboard(text);
+                        }
                     }
                     // Copy
                     #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
                     Key::Character(c) if action_mod && c.as_str().eq_ignore_ascii_case("c") => {
-                        // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
-                        // if let Some(text) = self.editor.selected_text() {
-                        //     let cb = ClipboardContext::new().unwrap();
-                        //     cb.set_text(text.to_owned()).ok();
-                        // }
-                    }
-                    // Paste
-                    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
-                    Key::Character(v)
-                        if EDITABLE && action_mod && v.as_str().eq_ignore_ascii_case("v") =>
-                    {
-                        edited = true;
-                        // TODO: use clipboard_rs::{Clipboard, ClipboardContext};
-                        // let cb = ClipboardContext::new().unwrap();
-                        // let text = cb.get_text().unwrap_or_default();
-                        // self.editor.drive(fcx, lcx, |drv| drv.insert_or_replace_selection(&text));
-                        // edited = true;
+                        if let Some(text) = self.editor.selected_text()
+                            && !text.is_empty()
+                        {
+                            ctx.set_clipboard(text.to_string());
+                        }
                     }
                     Key::Character(a) if action_mod && a.as_str().eq_ignore_ascii_case("a") => {
                         let mut drv = self.editor.driver(fctx, lctx);
@@ -672,8 +660,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     self.rendered_generation = new_generation;
                 }
             }
+
             // TODO: Set our highlighting colour to a lighter blue as window unfocused
             TextEvent::WindowFocusChange(_) => {}
+
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
                 let (fctx, lctx) = ctx.text_contexts();
@@ -712,6 +702,23 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 if new_generation != self.rendered_generation {
                     ctx.request_layout();
                     self.rendered_generation = new_generation;
+                }
+            }
+
+            TextEvent::ClipboardPaste(text) => {
+                if EDITABLE {
+                    let (fctx, lctx) = ctx.text_contexts();
+                    self.editor
+                        .driver(fctx, lctx)
+                        .insert_or_replace_selection(text);
+
+                    // TODO - Factor out with other branches
+                    let new_generation = self.editor.generation();
+                    if new_generation != self.rendered_generation {
+                        ctx.submit_action(TextAction::Changed(self.text().into_iter().collect()));
+                        ctx.request_layout();
+                        self.rendered_generation = new_generation;
+                    }
                 }
             }
         }
