@@ -184,9 +184,10 @@ mod tests {
 
     use super::*;
     use crate::TextAlign;
+    use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
-    use crate::widgets::{CrossAxisAlignment, Flex, SizedBox, TextArea};
+    use crate::widgets::{Flex, SizedBox, TextArea};
 
     #[test]
     /// A wrapping prose's text alignment should be respected, regardless of
