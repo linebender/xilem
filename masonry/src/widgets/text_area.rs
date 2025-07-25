@@ -938,7 +938,7 @@ mod tests {
 
     use super::*;
     use crate::core::{KeyboardEvent, Modifiers, Properties};
-    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use crate::testing::TestHarness;
     use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.
 
@@ -1082,12 +1082,11 @@ mod tests {
             },
         ];
         for scenario in scenarios {
-            let [text_id] = widget_ids();
-            let area = TextArea::new_editable("hello world")
-                .with_insert_newline(scenario.insert_newline)
-                .with_id(text_id);
+            let area =
+                TextArea::new_editable("hello world").with_insert_newline(scenario.insert_newline);
 
             let mut harness = TestHarness::create(default_property_set(), area);
+            let text_id = harness.root_widget().id();
 
             harness.focus_on(Some(text_id));
             harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
@@ -1096,8 +1095,7 @@ mod tests {
                 ..Default::default()
             }));
 
-            let widget = harness.try_get_widget(text_id).unwrap();
-            let area = widget.downcast::<TextArea<true>>().unwrap();
+            let area = harness.root_widget();
             let text = area.text().to_string();
             let (action, widget_id) = harness.pop_action::<TextAction>().unwrap();
             assert_eq!(widget_id, text_id);
