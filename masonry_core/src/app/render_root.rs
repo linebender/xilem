@@ -14,10 +14,10 @@ use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, Handled, Ime, NewWidget,
-    PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena,
-    WidgetArenaMut, WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
-    WindowEvent,
+    AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled,
+    Ime, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget,
+    WidgetArena, WidgetArenaMut, WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef,
+    WidgetState, WidgetTag, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
@@ -138,6 +138,8 @@ pub(crate) struct RenderRootState {
 
     /// Scene cache for the widget tree.
     pub(crate) scenes: HashMap<WidgetId, Scene>,
+
+    pub(crate) widget_tags: HashMap<&'static str, WidgetId>,
 
     /// Whether data set in the pointer pass has been invalidated.
     pub(crate) needs_pointer_pass: bool,
@@ -302,6 +304,7 @@ impl RenderRoot {
                 is_ime_active: false,
                 last_sent_ime_area: INVALID_IME_AREA,
                 scenes: HashMap::new(),
+                widget_tags: HashMap::new(),
                 needs_pointer_pass: false,
                 trace: PassTracing::from_env(),
                 inspector_state: InspectorState {
@@ -532,6 +535,29 @@ impl RenderRoot {
         }
 
         let res = mutate_widget(self, id, f);
+
+        self.run_rewrite_passes();
+
+        res
+    }
+
+    /// Get a [`WidgetMut`] to the widget with the given tag.
+    ///
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
+    #[track_caller]
+    pub fn edit_widget_with_tag<R, W: Widget + FromDynWidget + ?Sized>(
+        &mut self,
+        tag: WidgetTag<W>,
+        f: impl FnOnce(WidgetMut<'_, W>) -> R,
+    ) -> R {
+        let Some(id) = self.global_state.widget_tags.get(&tag.name).copied() else {
+            panic!(
+                "Could not find widget with tag '{}' in widget tree.",
+                tag.name
+            );
+        };
+
+        let res = mutate_widget(self, id, |mut widget_mut| f(widget_mut.downcast()));
 
         self.run_rewrite_passes();
 
