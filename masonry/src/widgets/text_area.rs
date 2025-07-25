@@ -932,7 +932,8 @@ pub enum InsertNewline {
 
 #[cfg(test)]
 mod tests {
-    use masonry_testing::WrapperWidget;
+    use masonry_core::core::NewWidget;
+    use masonry_testing::TestHarnessParams;
     use vello::kurbo::Size;
 
     use super::*;
@@ -987,26 +988,29 @@ mod tests {
 
     #[test]
     fn edit_textarea() {
-        let base_target = {
-            let area = TextArea::new_immutable("Test string")
-                .with_props(Properties::new().with(TextColor::new(palette::css::AZURE)));
+        let mut test_params = TestHarnessParams::default();
+        test_params.window_size = Size::new(200.0, 20.0);
 
-            let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
+        let base_target = {
+            let area = NewWidget::new_with_props(
+                TextArea::new_immutable("Test string"),
+                Properties::new().with(TextColor::new(palette::css::AZURE)),
+            );
+
+            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
 
             harness.render()
         };
 
         {
-            let area = TextArea::new_immutable("Different string")
-                .with_props(Properties::new().with(TextColor::new(palette::css::AZURE)));
+            let area = NewWidget::new_with_props(
+                TextArea::new_immutable("Different string"),
+                Properties::new().with(TextColor::new(palette::css::AZURE)),
+            );
 
-            let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
+            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
 
-            harness.edit_root_widget(|mut root| {
-                let mut area = WrapperWidget::child_mut(&mut root);
-                let mut area = area.downcast::<TextArea<false>>();
+            harness.edit_root_widget(|mut area| {
                 TextArea::reset_text(&mut area, "Test string");
             });
 
@@ -1018,9 +1022,7 @@ mod tests {
                 "Updating the text should match with base text"
             );
 
-            harness.edit_root_widget(|mut root| {
-                let mut area = WrapperWidget::child_mut(&mut root);
-                let mut area = area.downcast::<TextArea<false>>();
+            harness.edit_root_widget(|mut area| {
                 area.insert_prop(TextColor::new(palette::css::BROWN));
             });
 
