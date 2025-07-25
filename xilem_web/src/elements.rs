@@ -359,7 +359,7 @@ where
         // As such, for now we just use a dummy value
         Rc::new(web_sys::DocumentFragment::new().unwrap()),
         true,
-        // HACK: This will never be read
+        // Hydration should only be used within `View::{build,rebuild}`, a message reaching this would indicate that the element is already build and hydrated, so this can safely be false. 
         false,
     );
     children.dyn_seq_message(
