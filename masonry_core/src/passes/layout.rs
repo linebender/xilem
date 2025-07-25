@@ -10,7 +10,7 @@
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Rect, Size};
+use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::RenderRootState;
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
@@ -50,7 +50,9 @@ pub(crate) fn run_layout_on(
             widget.short_type_name(),
             id,
         );
-        state.size = Size::ZERO;
+        state.origin = Point::ZERO;
+        state.end_point = Point::ZERO;
+        state.layout_size = Size::ZERO;
         return Size::ZERO;
     }
 
@@ -59,7 +61,7 @@ pub(crate) fn run_layout_on(
     if !state.needs_layout && state.layout_cache.old_bc == Some(*bc) {
         // We reset this to false to mark that the current widget has been visited.
         state.request_layout = false;
-        return state.size;
+        return state.layout_size;
     }
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
@@ -176,7 +178,7 @@ pub(crate) fn run_layout_on(
 
     state.layout_cache.old_bc = Some(*bc);
 
-    state.size = new_size;
+    state.layout_size = new_size;
     new_size
 }
 

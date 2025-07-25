@@ -8,8 +8,7 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::common::FloatExt;
-use vello::kurbo::{Affine, Line, Point, Size, Stroke};
+use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
 
 use crate::core::{
     AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
@@ -55,7 +54,6 @@ struct Spacing {
     n_children: usize,
     index: usize,
     equal_space: f64,
-    remainder: f64,
 }
 
 enum Child {
@@ -546,15 +544,7 @@ impl Spacing {
             n_children,
             index: 0,
             equal_space,
-            remainder: 0.,
         }
-    }
-
-    fn next_space(&mut self) -> f64 {
-        let desired_space = self.equal_space + self.remainder;
-        let actual_space = desired_space.round();
-        self.remainder = desired_space - actual_space;
-        actual_space
     }
 }
 
@@ -580,24 +570,24 @@ impl Iterator for Spacing {
                         false => 0.,
                     },
                     MainAxisAlignment::Center => match self.index {
-                        0 => self.next_space(),
-                        i if i == self.n_children => self.next_space(),
+                        0 => self.equal_space,
+                        i if i == self.n_children => self.equal_space,
                         _ => 0.,
                     },
                     MainAxisAlignment::SpaceBetween => match self.index {
                         0 => 0.,
-                        i if i != self.n_children => self.next_space(),
+                        i if i != self.n_children => self.equal_space,
                         _ => match self.n_children {
-                            1 => self.next_space(),
+                            1 => self.equal_space,
                             _ => 0.,
                         },
                     },
-                    MainAxisAlignment::SpaceEvenly => self.next_space(),
+                    MainAxisAlignment::SpaceEvenly => self.equal_space,
                     MainAxisAlignment::SpaceAround => {
                         if self.index == 0 || self.index == self.n_children {
-                            self.next_space()
+                            self.equal_space
                         } else {
-                            self.next_space() + self.next_space()
+                            self.equal_space + self.equal_space
                         }
                     }
                 }
@@ -731,8 +721,8 @@ impl Widget for Flex {
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_non_flex += self.direction.major(child_size).expand();
-                    minor = minor.max(self.direction.minor(child_size).expand());
+                    major_non_flex += self.direction.major(child_size);
+                    minor = minor.max(self.direction.minor(child_size));
                     max_above_baseline =
                         max_above_baseline.max(child_size.height - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
@@ -770,7 +760,7 @@ impl Widget for Flex {
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
                         let desired_major = (*flex) * px_per_flex + remainder;
-                        let actual_major = desired_major.round();
+                        let actual_major = desired_major;
                         remainder = desired_major - actual_major;
 
                         let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
@@ -779,15 +769,15 @@ impl Widget for Flex {
 
                     let baseline_offset = ctx.child_baseline_offset(widget);
 
-                    major_flex += self.direction.major(child_size).expand();
-                    minor = minor.max(self.direction.minor(child_size).expand());
+                    major_flex += self.direction.major(child_size);
+                    minor = minor.max(self.direction.minor(child_size));
                     max_above_baseline =
                         max_above_baseline.max(child_size.height - baseline_offset);
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
                 Child::FlexedSpacer(flex, calculated_size) => {
                     let desired_major = (*flex) * px_per_flex + remainder;
-                    *calculated_size = desired_major.round();
+                    *calculated_size = desired_major;
                     remainder = desired_major - *calculated_size;
                     major_flex += *calculated_size;
                 }
@@ -859,7 +849,7 @@ impl Widget for Flex {
                     let child_pos = border.place_down(child_pos);
                     let child_pos = padding.place_down(child_pos);
                     ctx.place_child(widget, child_pos);
-                    major += self.direction.major(child_size).expand();
+                    major += self.direction.major(child_size);
                     major += spacing.next().unwrap_or(0.);
                     major += gap;
                 }

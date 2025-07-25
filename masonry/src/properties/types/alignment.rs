@@ -47,7 +47,7 @@ impl CrossAxisAlignment {
         match self {
             Self::Start => 0.0,
             // in vertical layout, baseline is equivalent to center
-            Self::Center | Self::Baseline => (val / 2.0).round(),
+            Self::Center | Self::Baseline => val / 2.0,
             Self::End => val,
             Self::Fill => 0.0,
         }

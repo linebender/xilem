@@ -573,12 +573,25 @@ impl LayoutCtx<'_> {
                 origin,
             );
         }
-        if origin != self.get_child_state_mut(child).origin {
-            self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).transform_changed = true;
+
+        let child_state = self.get_child_state_mut(child);
+
+        let end_point = origin + child_state.layout_size.to_vec2();
+        let baseline_y = origin.y + child_state.baseline_offset;
+        // TODO - Account for display scale in pixel snapping.
+        let origin = origin.round();
+        let end_point = end_point.round();
+        let baseline_y = baseline_y.round();
+
+        // TODO - We may want to invalidate in other cases as well
+        if origin != child_state.origin {
+            child_state.transform_changed = true;
         }
-        self.get_child_state_mut(child)
-            .is_expecting_place_child_call = false;
+        child_state.origin = origin;
+        child_state.end_point = end_point;
+        child_state.baseline_y = baseline_y;
+
+        child_state.is_expecting_place_child_call = false;
 
         self.widget_state.local_paint_rect = self
             .widget_state
@@ -657,7 +670,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
-        self.get_child_state(child).baseline_offset
+        self.get_child_state(child).baseline_offset()
     }
 
     // TODO - Remove (used in Flex)
@@ -691,7 +704,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
         self.assert_layout_done(child, "child_size");
-        self.get_child_state(child).size
+        self.get_child_state(child).layout_size
     }
 
     /// Gives the widget a clip path.
@@ -730,7 +743,7 @@ impl LayoutCtx<'_> {
     ///
     /// **TODO** This method should be removed after the layout refactor.
     pub fn old_size(&self) -> Size {
-        self.widget_state.size
+        self.widget_state.size()
     }
 }
 
@@ -784,12 +797,12 @@ impl_context_method!(
     {
         /// The layout size.
         ///
-        /// This is the layout size returned by the [`layout`] method on the previous
-        /// layout pass.
+        /// This is roughly the layout size returned by the [`layout`] method on
+        /// the previous layout pass, with some adjustment for pixel snapping.
         ///
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
-            self.widget_state.size
+            self.widget_state.size()
         }
 
         // TODO - Remove. Currently only used in tests.
@@ -800,7 +813,7 @@ impl_context_method!(
 
         /// The offset of the baseline relative to the bottom of the widget.
         pub fn baseline_offset(&self) -> f64 {
-            self.widget_state.baseline_offset
+            self.widget_state.baseline_offset()
         }
 
         /// The origin of the widget in window coordinates, relative to the top left corner of the
