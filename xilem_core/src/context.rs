@@ -23,6 +23,8 @@ pub struct MessageContext {
 
 impl MessageContext {
     // TODO: Tests.
+    // TODO(DJMcNab): Document better (blocks merge)
+
     pub fn take_first(&mut self) -> Option<ViewId> {
         let ret = self.full_id_path.get(self.id_path_index)?;
         self.id_path_index += 1;

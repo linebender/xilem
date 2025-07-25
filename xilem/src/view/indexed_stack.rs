@@ -4,8 +4,8 @@
 use std::marker::PhantomData;
 
 use crate::core::{
-    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewId, ViewMarker, ViewSequence,
+    AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewMarker, ViewSequence,
 };
 use crate::{Pod, PropertyTuple as _, ViewCtx};
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
@@ -173,12 +173,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
+        let mut splice = IndexedStackSplice::new(element);
         self.sequence
-            .seq_message(view_state, id_path, message, app_state)
+            .seq_message(view_state, message, &mut splice, app_state)
     }
 }
 
@@ -262,6 +263,10 @@ impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_> {
 
     fn skip(&mut self, n: usize) {
         self.idx += n;
+    }
+
+    fn index(&self) -> usize {
+        self.idx
     }
 
     fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, IndexedStackElement>) -> R) -> R {

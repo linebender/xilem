@@ -6,15 +6,13 @@ use std::marker::PhantomData;
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
 use masonry::properties::types::UnitPoint;
 use masonry::widgets;
-use xilem_core::{MessageResult, ViewId};
+pub use masonry::widgets::ChildAlignment;
 
 use crate::core::{
-    AppendVec, DynMessage, ElementSplice, Mut, SuperElement, View, ViewElement, ViewMarker,
-    ViewSequence,
+    AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx, WidgetView};
-
-pub use masonry::widgets::ChildAlignment;
 
 /// A widget that lays out its children on top of each other.
 /// The children are laid out back to front.
@@ -114,12 +112,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
+        let mut splice = ZStackSplice::new(element);
         self.sequence
-            .seq_message(view_state, id_path, message, app_state)
+            .seq_message(view_state, message, &mut splice, app_state)
     }
 }
 
@@ -224,11 +223,14 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.view.message(view_state, id_path, message, app_state)
+        let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
+            .expect("ZStackWrapper always has a corresponding child");
+        self.view
+            .message(view_state, message, child.downcast(), app_state)
     }
 }
 
@@ -364,6 +366,10 @@ impl ElementSplice<ZStackElement> for ZStackSplice<'_> {
 
     fn skip(&mut self, n: usize) {
         self.idx += n;
+    }
+
+    fn index(&self) -> usize {
+        self.idx
     }
 
     fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, ZStackElement>) -> R) -> R {

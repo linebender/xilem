@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::PropertyTuple as _;
-use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::style::Style;
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, View, ViewCtx};
 
 use masonry::core::ArcStr;
 use masonry::properties::*;
@@ -141,19 +141,19 @@ where
     fn message(
         &self,
         (): &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
-            id_path.is_empty(),
+            message.remaining_path().is_empty(),
             "id path should be empty in Checkbox::message"
         );
-        match message.downcast::<CheckboxToggled>() {
-            Ok(checked) => MessageResult::Action((self.callback)(app_state, checked.0)),
-            Err(message) => {
+        match message.take_message::<CheckboxToggled>() {
+            Some(checked) => MessageResult::Action((self.callback)(app_state, checked.0)),
+            None => {
                 tracing::error!("Wrong message type in Checkbox::message, got {message:?}.");
-                MessageResult::Stale(message)
+                MessageResult::Stale
             }
         }
     }

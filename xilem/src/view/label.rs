@@ -7,10 +7,11 @@ use masonry::properties::{DisabledTextColor, TextColor};
 use masonry::widgets::{
     LineBreaking, {self},
 };
+use xilem_core::MessageContext;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::core::{Mut, ViewMarker};
 use crate::style::Style;
-use crate::{MessageResult, Pod, PropertyTuple as _, TextAlign, View, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, PropertyTuple as _, TextAlign, View, ViewCtx};
 
 /// A non-interactive text element.
 /// # Example
@@ -175,13 +176,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
+            ?message,
             "Message arrived in Label::message, but Label doesn't consume any messages, this is a bug"
         );
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }

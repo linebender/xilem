@@ -6,11 +6,14 @@ use std::{collections::HashMap, marker::PhantomData, ops::Range};
 use masonry::core::{FromDynWidget, Widget, WidgetPod};
 use masonry::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
-use xilem_core::{
-    AsyncCtx, DynMessage, MessageResult, SendMessage, View, ViewId, ViewMarker, ViewPathTracker,
-};
 
+use crate::core::{
+    AsyncCtx, MessageContext, MessageResult, Mut, SendMessage, View, ViewId, ViewMarker,
+    ViewPathTracker,
+};
 use crate::{Pod, ViewCtx, WidgetView};
+
+// TODO: Refactor this file massively due to new changes in Xilem.
 
 /// A (vertical) virtual scrolling View, for Masonry's [`VirtualScroll`](widgets::VirtualScroll).
 ///
@@ -174,7 +177,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: xilem_core::Mut<'_, Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         if self.valid_range != prev.valid_range {
@@ -305,7 +308,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: xilem_core::Mut<'_, Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         for (&idx, child) in &view_state.previous_views {
@@ -325,28 +328,32 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<Action> {
-        if let [first, tail @ ..] = id_path {
-            let child_idx = index_for_view_id(*first);
+        if let Some(first) = message.take_first() {
+            let child_idx = index_for_view_id(first);
             let target = view_state.previous_views.get(&child_idx);
             if let Some(target) = target {
                 let state = view_state.view_states.get_mut(&child_idx).unwrap();
-                let result = target.message(&mut state.state, tail, message, app_state);
+
+                let result = target.message(
+                    &mut state.state,
+                    message,
+                    widgets::VirtualScroll::child_mut(&mut element, child_idx),
+                    app_state,
+                );
                 if matches!(result, MessageResult::RequestRebuild) {
                     state.requested_rebuild = true;
                 }
                 return result;
             } else {
                 tracing::error!("Message sent type in VirtualScroll::message: {message:?}");
-                return MessageResult::Stale(message);
+                return MessageResult::Stale;
             }
         }
-        if message.is::<VirtualScrollAction>() {
-            let action = message.downcast::<VirtualScrollAction>().unwrap();
-
+        if let Some(action) = message.take_message::<VirtualScrollAction>() {
             view_state.current_updated = true;
             // We know that the `current_views` have not been applied, so we can just brute force overwrite them.
             view_state.current_views.clear();
@@ -359,7 +366,9 @@ where
             }
             view_state.pending_action = Some(*action);
             MessageResult::RequestRebuild
-        } else if message.is::<UpdateVirtualChildren>() {
+        } else if let Some(UpdateVirtualChildren) =
+            message.take_message::<UpdateVirtualChildren>().as_deref()
+        {
             view_state.current_updated = true;
             view_state.current_views.clear();
             view_state.pending_children_update = false;
@@ -370,8 +379,8 @@ where
             }
             MessageResult::RequestRebuild
         } else {
-            tracing::error!("Wrong message type in VirtualScroll::message: {message:?}");
-            MessageResult::Stale(message)
+            tracing::error!(?message, "Wrong message type in VirtualScroll::message");
+            MessageResult::Stale
         }
     }
 }
