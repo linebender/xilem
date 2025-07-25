@@ -10,6 +10,7 @@ rust-version.workspace = true
 name = "counter_custom_element"
 test = false
 doctest = false
+doc = false
 bench = false
 
 [lints]
