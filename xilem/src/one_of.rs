@@ -41,55 +41,82 @@ impl<
 {
     type OneOfElement = Pod<OneOfWidget<A, B, C, D, E, F, G, H, I>>;
 
-    fn with_downcast_a(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<A>>)) {
+    fn with_downcast_a<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<A>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::A(a) => f(elem.ctx.get_mut(a)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_b(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<B>>)) {
+    fn with_downcast_b<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<B>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::B(b) => f(elem.ctx.get_mut(b)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_c(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<C>>)) {
+    fn with_downcast_c<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<C>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::C(c) => f(elem.ctx.get_mut(c)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_d(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<D>>)) {
+    fn with_downcast_d<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<D>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::D(d) => f(elem.ctx.get_mut(d)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_e(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<E>>)) {
+    fn with_downcast_e<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<E>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::E(e) => f(elem.ctx.get_mut(e)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_f(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<F>>)) {
+    fn with_downcast_f<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<F>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::F(f_) => f(elem.ctx.get_mut(f_)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_g(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<G>>)) {
+    fn with_downcast_g<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<G>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::G(g) => f(elem.ctx.get_mut(g)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_h(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<H>>)) {
+    fn with_downcast_h<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<H>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::H(h) => f(elem.ctx.get_mut(h)),
             _ => unreachable!(),
         }
     }
-    fn with_downcast_i(elem: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<I>>)) {
+    fn with_downcast_i<R>(
+        elem: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<I>>) -> R,
+    ) -> R {
         match elem.widget {
             OneOfWidget::I(i) => f(elem.ctx.get_mut(i)),
             _ => unreachable!(),

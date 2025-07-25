@@ -27,7 +27,7 @@ pub enum MessageResult<Action> {
     /// does not require the element tree to be recreated.
     Nop,
     /// The view this message was being routed to no longer exists.
-    Stale(DynMessage),
+    Stale,
 }
 
 impl<A> MessageResult<A> {
@@ -36,7 +36,7 @@ impl<A> MessageResult<A> {
         match self {
             Self::Action(a) => MessageResult::Action(f(a)),
             Self::RequestRebuild => MessageResult::RequestRebuild,
-            Self::Stale(message) => MessageResult::Stale(message),
+            Self::Stale => MessageResult::Stale,
             Self::Nop => MessageResult::Nop,
         }
     }

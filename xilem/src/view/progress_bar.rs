@@ -3,8 +3,8 @@
 
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{MessageContext, Mut, ViewMarker};
+use crate::{MessageResult, Pod, View, ViewCtx};
 
 /// A view which displays a progress bar.
 ///
@@ -54,13 +54,14 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
+            ?message,
             "Message arrived in ProgressBar::message, but ProgressBar doesn't consume any messages, this is a bug"
         );
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }

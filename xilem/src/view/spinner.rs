@@ -4,8 +4,8 @@
 use masonry::peniko::Color;
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{MessageContext, Mut, ViewMarker};
+use crate::{MessageResult, Pod, View, ViewCtx};
 
 /// An indefinite spinner.
 ///
@@ -94,13 +94,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         _: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
+            ?message,
             "Message arrived in Spinner::message, but Spinner doesn't consume any messages, this is a bug"
         );
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }

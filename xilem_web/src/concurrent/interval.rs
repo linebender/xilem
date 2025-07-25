@@ -6,8 +6,8 @@ use std::marker::PhantomData;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
-use crate::{DynMessage, OptionalAction, ViewCtx};
+use crate::core::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker};
+use crate::{OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
 pub struct Interval<Callback, State, Action> {
@@ -140,12 +140,12 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        debug_assert!(id_path.is_empty());
-        message.downcast::<()>().unwrap_throw();
+        debug_assert!(message.remaining_path().is_empty());
+        message.take_message::<()>().unwrap_throw();
         match (self.callback)(app_state).action() {
             Some(action) => MessageResult::Action(action),
             None => MessageResult::Nop,

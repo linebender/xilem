@@ -52,10 +52,7 @@ The current proposal would split the application into two processes:
 
 ## `no_std` support
 
-Xilem Core supports running with `#![no_std]`, but does use [`alloc`][] to be available.
-
-It is plausible that this reactivity pattern could be used without allocation being required, but that is not provided by this package.
-If you wish to use Xilem Core in environments where an allocator is not available, feel free to bring this up on [Zulip][Zulip].
+Xilem Core supports running with `#![no_std]`, but does require [`alloc`][] to be available.
 
 [Xilem]: https://crates.io/crates/xilem
 [Xilem Web]: https://crates.io/crates/xilem_web

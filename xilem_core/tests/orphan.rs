@@ -8,7 +8,7 @@
 
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
-use xilem_core::{DynMessage, MessageResult, Mut, OrphanView, View, ViewId, ViewPathTracker};
+use xilem_core::{MessageContext, MessageResult, Mut, OrphanView, View, ViewPathTracker};
 
 mod common;
 use common::*;
@@ -71,11 +71,11 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
     fn orphan_message(
         _view: &&'static str,
         _view_state: &mut Self::OrphanViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        _message: &mut MessageContext,
+        _element: Mut<'_, Self::OrphanElement>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }
 

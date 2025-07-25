@@ -6,11 +6,11 @@ use std::marker::PhantomData;
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::core::{MessageContext, MessageResult, Mut, View, ViewElement, ViewMarker};
 use crate::diff::{Diff, diff_iters};
 use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
-use crate::{DomView, DynMessage, ViewCtx};
+use crate::{DomView, ViewCtx};
 
 type CowStr = std::borrow::Cow<'static, str>;
 
@@ -387,10 +387,10 @@ where
     fn message(
         &self,
         (_, view_state): &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.el.message(view_state, id_path, message, app_state)
+        self.el.message(view_state, message, element, app_state)
     }
 }

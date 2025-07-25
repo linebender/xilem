@@ -4,7 +4,7 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
 
 /// View type for [`map_message`] and [`map_action`]. Most users will want to use `map_action` (the latter).
 ///
@@ -160,11 +160,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<ParentAction> {
-        let child_result = self.child.message(view_state, id_path, message, app_state);
+        let child_result = self.child.message(view_state, message, element, app_state);
         (self.map_fn)(app_state, child_result)
     }
 }

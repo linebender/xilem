@@ -5,7 +5,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
-use crate::{DynMessage, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///
@@ -134,14 +134,14 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             view_state
                 .view
-                .message(&mut view_state.view_state, id_path, message, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }
@@ -265,14 +265,14 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             view_state
                 .view
-                .message(&mut view_state.view_state, id_path, message, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }

@@ -8,7 +8,7 @@ use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
 use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, View, ViewId, ViewMarker};
+use crate::core::{MessageContext, Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget with predefined size.
@@ -186,10 +186,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        self.inner.message(view_state, id_path, message, app_state)
+        let mut child = widgets::SizedBox::child_mut(&mut element)
+            .expect("We only create SizedBox with a child");
+        self.inner
+            .message(view_state, message, child.downcast(), app_state)
     }
 }

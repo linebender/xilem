@@ -10,8 +10,8 @@ use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Pa
 use masonry::widgets;
 
 use crate::core::{
-    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewId, ViewMarker, ViewSequence,
+    AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
+    ViewMarker, ViewSequence,
 };
 use crate::{Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
@@ -179,12 +179,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
+        let mut splice = GridSplice::new(element);
         self.sequence
-            .seq_message(view_state, id_path, message, app_state)
+            .seq_message(view_state, message, &mut splice, app_state)
     }
 }
 
@@ -281,6 +282,10 @@ impl ElementSplice<GridElement> for GridSplice<'_> {
 
     fn skip(&mut self, n: usize) {
         self.idx += n;
+    }
+
+    fn index(&self) -> usize {
+        self.idx
     }
 
     fn delete<R>(&mut self, f: impl FnOnce(Mut<'_, GridElement>) -> R) -> R {
@@ -479,10 +484,12 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.view.message(view_state, id_path, message, app_state)
+        let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
+        self.view
+            .message(view_state, message, child.downcast(), app_state)
     }
 }

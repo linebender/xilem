@@ -12,7 +12,7 @@ use tokio::task::JoinHandle;
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
-    DynMessage, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
+    MessageContext, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
     ViewPathTracker,
 };
 
@@ -119,15 +119,15 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
-            id_path.is_empty(),
+            message.remaining_path().is_empty(),
             "id path should be empty in Task::message"
         );
-        let message = message.downcast::<M>().unwrap();
+        let message = message.take_message::<M>().unwrap();
         MessageResult::Action((self.on_event)(app_state, *message))
     }
 }
