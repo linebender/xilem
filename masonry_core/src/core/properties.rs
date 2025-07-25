@@ -100,6 +100,42 @@ impl Properties {
     }
 }
 
+macro_rules! impl_props_from_tuple {
+    (
+        $(
+            $Type: ident, $idx: tt;
+        )*
+    ) => {
+
+        impl<
+            $($Type: Property,)*
+        >
+        From<( $($Type,)* )> for Properties
+        {
+            fn from(value: ( $($Type,)* )) -> Self {
+                Properties::new()
+                    $(
+                        .with(value.$idx)
+                    )*
+            }
+        }
+
+    };
+}
+
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9; P10, 10; P11, 11;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9; P10, 10;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8; P9, 9;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7; P8, 8;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6; P7, 7;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5; P6, 6;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4; P5, 5;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3; P4, 4;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2; P3, 3;);
+impl_props_from_tuple!(P0, 0; P1, 1; P2, 2;);
+impl_props_from_tuple!(P0, 0; P1, 1;);
+impl_props_from_tuple!(P0, 0;);
+
 impl PropertiesRef<'_> {
     /// Returns `true` if the widget has a local property of type `P`.
     ///
