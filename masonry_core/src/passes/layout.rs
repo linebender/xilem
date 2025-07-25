@@ -229,6 +229,26 @@ fn clear_layout_flags(
     });
 }
 
+// --- MARK: PLACE WIDGET
+pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
+    let end_point = origin + child_state.layout_size.to_vec2();
+    let baseline_y = origin.y + child_state.baseline_offset;
+    // TODO - Account for display scale in pixel snapping.
+    let origin = origin.round();
+    let end_point = end_point.round();
+    let baseline_y = baseline_y.round();
+
+    // TODO - We may want to invalidate in other cases as well
+    if origin != child_state.origin {
+        child_state.transform_changed = true;
+    }
+    child_state.origin = origin;
+    child_state.end_point = end_point;
+    child_state.baseline_y = baseline_y;
+
+    child_state.is_expecting_place_child_call = false;
+}
+
 // --- MARK: ROOT
 /// See the [passes documentation](../doc/05_pass_system.md#layout-pass).
 pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
@@ -273,7 +293,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         root_properties,
         &bc,
     );
-    root_state.item.is_expecting_place_child_call = false;
+    place_widget(root_state.item, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.size_policy {
         let new_size =
