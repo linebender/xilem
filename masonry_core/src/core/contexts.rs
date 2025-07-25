@@ -20,7 +20,7 @@ use crate::core::{
     WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
-use crate::passes::layout::run_layout_on;
+use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
 use crate::util::get_debug_color;
 
@@ -576,22 +576,7 @@ impl LayoutCtx<'_> {
 
         let child_state = self.get_child_state_mut(child);
 
-        let end_point = origin + child_state.layout_size.to_vec2();
-        let baseline_y = origin.y + child_state.baseline_offset;
-        // TODO - Account for display scale in pixel snapping.
-        let origin = origin.round();
-        let end_point = end_point.round();
-        let baseline_y = baseline_y.round();
-
-        // TODO - We may want to invalidate in other cases as well
-        if origin != child_state.origin {
-            child_state.transform_changed = true;
-        }
-        child_state.origin = origin;
-        child_state.end_point = end_point;
-        child_state.baseline_y = baseline_y;
-
-        child_state.is_expecting_place_child_call = false;
+        place_widget(child_state, origin);
 
         self.widget_state.local_paint_rect = self
             .widget_state
@@ -670,7 +655,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_baseline_offset(&self, child: &WidgetPod<impl Widget + ?Sized>) -> f64 {
         self.assert_layout_done(child, "child_baseline_offset");
-        self.get_child_state(child).baseline_offset()
+        self.get_child_state(child).baseline_offset
     }
 
     // TODO - Remove (used in Flex)

@@ -14,7 +14,7 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::RenderRootState;
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut};
+use crate::core::{BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, WidgetState};
 use crate::core::{DefaultProperties, WidgetArenaNode};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
@@ -199,6 +199,26 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
     });
 }
 
+// --- MARK: PLACE WIDGET
+pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
+    let end_point = origin + child_state.layout_size.to_vec2();
+    let baseline_y = origin.y + child_state.baseline_offset;
+    // TODO - Account for display scale in pixel snapping.
+    let origin = origin.round();
+    let end_point = end_point.round();
+    let baseline_y = baseline_y.round();
+
+    // TODO - We may want to invalidate in other cases as well
+    if origin != child_state.origin {
+        child_state.transform_changed = true;
+    }
+    child_state.origin = origin;
+    child_state.end_point = end_point;
+    child_state.baseline_y = baseline_y;
+
+    child_state.is_expecting_place_child_call = false;
+}
+
 // --- MARK: ROOT
 /// See the [passes documentation](../doc/05_pass_system.md#layout-pass).
 pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
@@ -223,7 +243,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         root_node.reborrow_mut(),
         &bc,
     );
-    root_node.item.state.is_expecting_place_child_call = false;
+    place_widget(&mut root_node.item.state, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.size_policy {
         let new_size =
