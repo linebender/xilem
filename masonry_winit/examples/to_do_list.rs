@@ -58,7 +58,7 @@ impl AppDriver for Driver {
 }
 
 /// Return initial to-do-list without items.
-pub fn make_widget_tree() -> impl Widget {
+pub fn make_widget_tree() -> NewWidget<impl Widget> {
     Portal::new(
         Flex::column()
             .with_child(NewWidget::new_with_props(
@@ -70,6 +70,7 @@ pub fn make_widget_tree() -> impl Widget {
             .with_spacer(WIDGET_SPACING)
             .with_auto_id(),
     )
+    .with_auto_id()
 }
 
 fn main() {
@@ -91,7 +92,7 @@ fn main() {
         vec![(
             driver.window_id,
             window_attributes,
-            NewWidget::new(make_widget_tree()).erased(),
+            make_widget_tree().erased(),
         )],
         driver,
         default_property_set(),

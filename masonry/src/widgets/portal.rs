@@ -532,7 +532,8 @@ mod tests {
                 .with_spacer(10.0)
                 .with_child(button("Item 14").with_auto_id())
                 .with_spacer(10.0),
-        ));
+        ))
+        .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(400., 400.));
@@ -573,7 +574,8 @@ mod tests {
                 ))
                 .with_spacer(500.0)
                 .with_auto_id(),
-        );
+        )
+        .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200., 200.));

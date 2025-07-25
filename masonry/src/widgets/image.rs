@@ -152,6 +152,7 @@ impl Widget for Image {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::NewWidget;
     use vello::peniko::ImageFormat;
 
     use super::*;
@@ -164,7 +165,7 @@ mod tests {
         // TODO - Blob::empty() function?
         let image_data = ImageBuf::new(Vec::new().into(), ImageFormat::Rgba8, 0, 0);
 
-        let image_widget = Image::new(image_data);
+        let image_widget = NewWidget::new(Image::new(image_data));
         let mut harness = TestHarness::create(default_property_set(), image_widget);
         let _ = harness.render();
     }
@@ -189,7 +190,7 @@ mod tests {
             2,
             2,
         );
-        let image_widget = Image::new(image_data);
+        let image_widget = NewWidget::new(Image::new(image_data));
 
         let mut harness = TestHarness::create_with_size(
             default_property_set(),
@@ -204,7 +205,7 @@ mod tests {
         let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
 
         let render_1 = {
-            let image_widget = Image::new(image_data.clone());
+            let image_widget = NewWidget::new(Image::new(image_data.clone()));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -218,7 +219,7 @@ mod tests {
         let render_2 = {
             let other_image_data =
                 ImageBuf::new(vec![10; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
-            let image_widget = Image::new(other_image_data);
+            let image_widget = NewWidget::new(Image::new(other_image_data));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -243,46 +244,50 @@ mod tests {
         let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
         let harness_size = Size::new(100.0, 50.0);
 
-        // Contain.
-        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Contain);
+        let image_widget = NewWidget::new(Image::new(image_data.clone()));
         let mut harness =
             TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+
+        // Contain.
+        harness.edit_root_widget(|mut image| {
+            Image::set_fit_mode(&mut image, ObjectFit::Contain);
+        });
         assert_render_snapshot!(harness, "image_layout_contain");
 
         // Cover.
-        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Cover);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+        harness.edit_root_widget(|mut image| {
+            Image::set_fit_mode(&mut image, ObjectFit::Cover);
+        });
         assert_render_snapshot!(harness, "image_layout_cover");
 
         // Fill.
-        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::Fill);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+        harness.edit_root_widget(|mut image| {
+            Image::set_fit_mode(&mut image, ObjectFit::Fill);
+        });
         assert_render_snapshot!(harness, "image_layout_fill");
 
         // FitHeight.
-        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::FitHeight);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+        harness.edit_root_widget(|mut image| {
+            Image::set_fit_mode(&mut image, ObjectFit::FitHeight);
+        });
         assert_render_snapshot!(harness, "image_layout_fitheight");
 
         // FitWidth.
-        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::FitWidth);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+        harness.edit_root_widget(|mut image| {
+            Image::set_fit_mode(&mut image, ObjectFit::FitWidth);
+        });
         assert_render_snapshot!(harness, "image_layout_fitwidth");
 
         // None.
-        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::None);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+        harness.edit_root_widget(|mut image| {
+            Image::set_fit_mode(&mut image, ObjectFit::None);
+        });
         assert_render_snapshot!(harness, "image_layout_none");
 
         // ScaleDown.
-        let image_widget = Image::new(image_data.clone()).fit_mode(ObjectFit::ScaleDown);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+        harness.edit_root_widget(|mut image| {
+            Image::set_fit_mode(&mut image, ObjectFit::ScaleDown);
+        });
         assert_render_snapshot!(harness, "image_layout_scaledown");
     }
 }

@@ -21,16 +21,10 @@ impl WrapperWidget {
     /// Create a new `WrapperWidget`.
     ///
     /// The `child` is the initial child widget.
-    pub fn new<W: Widget + 'static>(child: impl Widget) -> Self {
-        // FIXME - Take NewWidget argument
-        Self::new_pod(NewWidget::new(child).erased().to_pod())
-    }
-
-    /// Create a new `WrapperWidget` with a `WidgetPod`.
-    ///
-    /// The `child` is the initial child widget.
-    pub fn new_pod(child: WidgetPod<dyn Widget>) -> Self {
-        Self { child }
+    pub fn new(child: NewWidget<impl Widget>) -> Self {
+        Self {
+            child: child.erased().to_pod(),
+        }
     }
 
     /// Get mutable reference to the child widget.

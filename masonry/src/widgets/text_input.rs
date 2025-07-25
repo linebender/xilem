@@ -228,11 +228,11 @@ mod tests {
 
     #[test]
     fn text_input_outline() {
-        let text_input = TextInput::from_text_area(
+        let text_input = NewWidget::new(TextInput::from_text_area(
             TextArea::new_editable("TextInput contents")
                 .with_style(StyleProperty::FontSize(14.0))
                 .with_auto_id(),
-        );
+        ));
         let mut harness = TestHarness::create_with_size(
             default_property_set(),
             text_input,

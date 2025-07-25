@@ -162,6 +162,8 @@ impl Widget for Spinner {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::NewWidget;
+
     use super::*;
     use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -169,7 +171,7 @@ mod tests {
 
     #[test]
     fn simple_spinner() {
-        let spinner = Spinner::new();
+        let spinner = NewWidget::new(Spinner::new());
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness =
@@ -186,7 +188,7 @@ mod tests {
     #[test]
     fn edit_spinner() {
         let image_1 = {
-            let spinner = Spinner::new().with_color(palette::css::PURPLE);
+            let spinner = NewWidget::new(Spinner::new().with_color(palette::css::PURPLE));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -197,7 +199,7 @@ mod tests {
         };
 
         let image_2 = {
-            let spinner = Spinner::new();
+            let spinner = NewWidget::new(Spinner::new());
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
