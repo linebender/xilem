@@ -144,13 +144,11 @@ impl Widget for Button {
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        if ctx.target() == ctx.widget_id() {
-            match event.action {
-                accesskit::Action::Click => {
-                    ctx.submit_action(ButtonPress { button: None });
-                }
-                _ => {}
+        match event.action {
+            accesskit::Action::Click => {
+                ctx.submit_action(ButtonPress { button: None });
             }
+            _ => {}
         }
     }
 

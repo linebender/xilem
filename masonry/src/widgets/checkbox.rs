@@ -142,16 +142,14 @@ impl Widget for Checkbox {
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        if ctx.target() == ctx.widget_id() {
-            match event.action {
-                accesskit::Action::Click => {
-                    self.checked = !self.checked;
-                    ctx.submit_action(CheckboxToggled(self.checked));
-                    // Checked state impacts appearance and accessibility node
-                    ctx.request_render();
-                }
-                _ => {}
+        match event.action {
+            accesskit::Action::Click => {
+                self.checked = !self.checked;
+                ctx.submit_action(CheckboxToggled(self.checked));
+                // Checked state impacts appearance and accessibility node
+                ctx.request_render();
             }
+            _ => {}
         }
     }
 
