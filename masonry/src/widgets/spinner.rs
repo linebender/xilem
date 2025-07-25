@@ -206,7 +206,6 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut spinner| {
-                let mut spinner = spinner.downcast::<Spinner>();
                 Spinner::set_color(&mut spinner, palette::css::PURPLE);
             });
 

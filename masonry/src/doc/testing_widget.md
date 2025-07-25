@@ -142,15 +142,15 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
 
     #[test]
     fn edit_rect() {
-        let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), Color::BLUE).with_id(rect_id);
+        const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
+        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE);
 
-        let mut harness = TestHarness::create(widget);
+        let mut harness = TestHarness::create(default_property_set(), widget);
 
-        harness.edit_widget(rect_id |mut rect| {
-            let mut rect = rect.downcast::<ColorRectangle>();
-            ColorRectangle::set_color(&mut rect, Size::new(50.0, 50.0));
-            ColorRectangle::set_size(&mut rect, Color::RED);
+        harness.edit_root_widget(|mut rect| {
+            ColorRectangle::set_size(&mut rect, Size::new(50.0, 50.0));
+            ColorRectangle::set_color(&mut rect, RED);
         });
 
         assert_render_snapshot!(harness, "rect_big_red_rectangle");

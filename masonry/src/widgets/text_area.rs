@@ -932,12 +932,13 @@ pub enum InsertNewline {
 
 #[cfg(test)]
 mod tests {
-    use masonry_testing::WrapperWidget;
+    use masonry_core::core::NewWidget;
+    use masonry_testing::TestHarnessParams;
     use vello::kurbo::Size;
 
     use super::*;
     use crate::core::{KeyboardEvent, Modifiers, Properties};
-    use crate::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use crate::testing::TestHarness;
     use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.
 
@@ -971,8 +972,7 @@ mod tests {
                 );
             }
 
-            harness.edit_root_widget(|mut root| {
-                let mut area = root.downcast::<TextArea<false>>();
+            harness.edit_root_widget(|mut area| {
                 TextArea::set_word_wrap(&mut area, true);
             });
 
@@ -988,27 +988,29 @@ mod tests {
 
     #[test]
     fn edit_textarea() {
-        let base_target = {
-            let area = TextArea::new_immutable("Test string")
-                .with_props(Properties::new().with(TextColor::new(palette::css::AZURE)));
+        let mut test_params = TestHarnessParams::default();
+        test_params.window_size = Size::new(200.0, 20.0);
 
-            let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
+        let base_target = {
+            let area = NewWidget::new_with_props(
+                TextArea::new_immutable("Test string"),
+                Properties::new().with(TextColor::new(palette::css::AZURE)),
+            );
+
+            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
 
             harness.render()
         };
 
         {
-            let area = TextArea::new_immutable("Different string")
-                .with_props(Properties::new().with(TextColor::new(palette::css::AZURE)));
+            let area = NewWidget::new_with_props(
+                TextArea::new_immutable("Different string"),
+                Properties::new().with(TextColor::new(palette::css::AZURE)),
+            );
 
-            let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(200.0, 20.0));
+            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
 
-            harness.edit_root_widget(|mut root| {
-                let mut root = root.downcast::<WrapperWidget>();
-                let mut area = WrapperWidget::child_mut(&mut root);
-                let mut area = area.downcast::<TextArea<false>>();
+            harness.edit_root_widget(|mut area| {
                 TextArea::reset_text(&mut area, "Test string");
             });
 
@@ -1020,10 +1022,7 @@ mod tests {
                 "Updating the text should match with base text"
             );
 
-            harness.edit_root_widget(|mut root| {
-                let mut root = root.downcast::<WrapperWidget>();
-                let mut area = WrapperWidget::child_mut(&mut root);
-                let mut area = area.downcast::<TextArea<false>>();
+            harness.edit_root_widget(|mut area| {
                 area.insert_prop(TextColor::new(palette::css::BROWN));
             });
 
@@ -1083,12 +1082,11 @@ mod tests {
             },
         ];
         for scenario in scenarios {
-            let [text_id] = widget_ids();
-            let area = TextArea::new_editable("hello world")
-                .with_insert_newline(scenario.insert_newline)
-                .with_id(text_id);
+            let area =
+                TextArea::new_editable("hello world").with_insert_newline(scenario.insert_newline);
 
             let mut harness = TestHarness::create(default_property_set(), area);
+            let text_id = harness.root_widget().id();
 
             harness.focus_on(Some(text_id));
             harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {
@@ -1097,8 +1095,7 @@ mod tests {
                 ..Default::default()
             }));
 
-            let widget = harness.try_get_widget(text_id).unwrap();
-            let area = widget.downcast::<TextArea<true>>().unwrap();
+            let area = harness.root_widget();
             let text = area.text().to_string();
             let (action, widget_id) = harness.pop_action::<TextAction>().unwrap();
             assert_eq!(widget_id, text_id);

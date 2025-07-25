@@ -227,7 +227,6 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut image| {
-                let mut image = image.downcast::<Image>();
                 Image::set_image_data(&mut image, image_data);
             });
 

@@ -288,8 +288,7 @@ mod tests {
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), bar, Size::new(60.0, 20.0));
 
-            harness.edit_root_widget(|mut label| {
-                let mut bar = label.downcast::<ProgressBar>();
+            harness.edit_root_widget(|mut bar| {
                 ProgressBar::set_progress(&mut bar, Some(0.5));
             });
 

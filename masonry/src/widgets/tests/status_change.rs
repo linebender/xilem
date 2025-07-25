@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
+use masonry_core::core::Widget;
 use vello::kurbo::Vec2;
 
 use crate::core::{NewWidget, PointerButton, PointerEvent, Update, WidgetId};
@@ -23,11 +24,11 @@ fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     None
 }
 
-fn is_hovered(harness: &TestHarness, id: WidgetId) -> bool {
+fn is_hovered(harness: &TestHarness<impl Widget>, id: WidgetId) -> bool {
     harness.get_widget(id).ctx().is_hovered()
 }
 
-fn has_hovered(harness: &TestHarness, id: WidgetId) -> bool {
+fn has_hovered(harness: &TestHarness<impl Widget>, id: WidgetId) -> bool {
     harness.get_widget(id).ctx().has_hovered()
 }
 

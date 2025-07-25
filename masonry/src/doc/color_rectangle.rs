@@ -279,15 +279,13 @@ mod tests {
 
     #[test]
     fn edit_rect() {
+        const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
         const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
-        let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
-        harness.edit_widget(rect_id, |mut rect| {
-            const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
-            let mut rect = rect.downcast::<ColorRectangle>();
+        harness.edit_root_widget(|mut rect| {
             ColorRectangle::set_size(&mut rect, Size::new(50.0, 50.0));
             ColorRectangle::set_color(&mut rect, RED);
         });

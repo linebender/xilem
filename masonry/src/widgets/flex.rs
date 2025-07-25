@@ -1216,31 +1216,26 @@ mod tests {
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Start);
         });
         assert_render_snapshot!(harness, "flex_row_cross_axis_start");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Center);
         });
         assert_render_snapshot!(harness, "flex_row_cross_axis_center");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::End);
         });
         assert_render_snapshot!(harness, "flex_row_cross_axis_end");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Baseline);
         });
         assert_render_snapshot!(harness, "flex_row_cross_axis_baseline");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Fill);
         });
         assert_render_snapshot!(harness, "flex_row_cross_axis_fill");
@@ -1264,37 +1259,31 @@ mod tests {
         // MAIN AXIS ALIGNMENT
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Start);
         });
         assert_render_snapshot!(harness, "flex_row_main_axis_start");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Center);
         });
         assert_render_snapshot!(harness, "flex_row_main_axis_center");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::End);
         });
         assert_render_snapshot!(harness, "flex_row_main_axis_end");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceBetween);
         });
         assert_render_snapshot!(harness, "flex_row_main_axis_spaceBetween");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceEvenly);
         });
         assert_render_snapshot!(harness, "flex_row_main_axis_spaceEvenly");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "flex_row_main_axis_spaceAround");
@@ -1303,7 +1292,6 @@ mod tests {
         // TODO - This doesn't seem to do anything?
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_must_fill_main_axis(&mut flex, true);
         });
         assert_render_snapshot!(harness, "flex_row_fill_main_axis");
@@ -1325,31 +1313,26 @@ mod tests {
             TestHarness::create_with_size(default_property_set(), widget, window_size);
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Start);
         });
         assert_render_snapshot!(harness, "flex_col_cross_axis_start");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Center);
         });
         assert_render_snapshot!(harness, "flex_col_cross_axis_center");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::End);
         });
         assert_render_snapshot!(harness, "flex_col_cross_axis_end");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Baseline);
         });
         assert_render_snapshot!(harness, "flex_col_cross_axis_baseline");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Fill);
         });
         assert_render_snapshot!(harness, "flex_col_cross_axis_fill");
@@ -1373,37 +1356,31 @@ mod tests {
         // MAIN AXIS ALIGNMENT
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Start);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_start");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Center);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_center");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::End);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_end");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceBetween);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_spaceBetween");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceEvenly);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_spaceEvenly");
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
         });
         assert_render_snapshot!(harness, "flex_col_main_axis_spaceAround");
@@ -1412,7 +1389,6 @@ mod tests {
         // TODO - This doesn't seem to do anything?
 
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
             Flex::set_must_fill_main_axis(&mut flex, true);
         });
         assert_render_snapshot!(harness, "flex_col_fill_main_axis");
@@ -1433,8 +1409,6 @@ mod tests {
                 TestHarness::create_with_size(default_property_set(), widget, window_size);
 
             harness.edit_root_widget(|mut flex| {
-                let mut flex = flex.downcast::<Flex>();
-
                 Flex::remove_child(&mut flex, 1);
                 // -> acd
                 Flex::add_child(&mut flex, Label::new("x").with_auto_id());
@@ -1493,8 +1467,6 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
         harness.edit_root_widget(|mut flex| {
-            let mut flex = flex.downcast::<Flex>();
-
             let mut child = Flex::child_mut(&mut flex, 1).unwrap();
             assert_eq!(
                 child
