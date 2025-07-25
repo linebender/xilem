@@ -56,11 +56,6 @@ pub trait ViewMarker {}
 /// impl<...> ViewMarker for Button<...> {}
 /// impl<...> View<...> for Button<...> {...}
 /// ```
-///
-/// ## Alloc
-///
-/// As it uses owned dynamically typed messages ([`DynMessage`]), this trait requires an
-/// allocator to be available.
 pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     /// The element type which this view operates on.
     type Element: ViewElement;
