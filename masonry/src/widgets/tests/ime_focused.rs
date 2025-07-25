@@ -31,7 +31,6 @@ fn ime_on_remove() {
     let ime_area_size = harness.ime_rect().1;
     assert!(ime_area_size.width > 0. && ime_area_size.height > 0.);
     harness.edit_root_widget(|mut widget| {
-        let mut widget = widget.downcast::<Flex>();
         Flex::remove_child(&mut widget, 0);
     });
 }
