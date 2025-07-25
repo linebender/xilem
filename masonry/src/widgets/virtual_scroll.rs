@@ -501,6 +501,8 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 
 impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
+    type Action = VirtualScrollAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -847,7 +849,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
             if self.active_range != target_range {
                 let previous_active = self.active_range.clone();
 
-                ctx.submit_action(VirtualScrollAction {
+                ctx.submit_action::<Self::Action>(VirtualScrollAction {
                     old_active: previous_active,
                     target: target_range,
                 });

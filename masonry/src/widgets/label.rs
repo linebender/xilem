@@ -7,6 +7,7 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
+use masonry_core::core::NoAction;
 use parley::{Layout, LayoutAccessibility};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -261,6 +262,8 @@ impl Label {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Label {
+    type Action = NoAction;
+
     fn accepts_pointer_interaction(&self) -> bool {
         false
     }

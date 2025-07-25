@@ -14,9 +14,9 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget,
-    NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaMut,
-    WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, FromDynWidget, NewWidget,
+    PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaMut, WidgetArenaRef,
+    WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::layout::run_layout_on;
@@ -1200,22 +1200,33 @@ impl_context_method!(
             self.global_state.mutate_callbacks.push(callback);
         }
 
-        /// Submit an Action, which indicates that this widget requires something be handled
+        /// Submit an action, which indicates that this widget requires something be handled
         /// by the application, such as user input.
         ///
-        /// For further details see [`ErasedAction`].
-        /// If you have an already boxed action, prefer `submit_erased_action`.s
-        pub fn submit_action(&mut self, action: impl AnyDebug + Send) {
-            self.submit_erased_action(Box::new(action));
-        }
-
-        /// Submit an already boxed action.
+        /// The `Action` type parameter should always be the `Self::Action` associated type
+        /// of the widget you're calling this method from.
         ///
-        /// See `submit_action` for more details.
-        pub fn submit_erased_action(&mut self, action: ErasedAction) {
+        /// For further details see [`ErasedAction`](crate::core::ErasedAction).
+        pub fn submit_action<Action: AnyDebug + Send>(&mut self, action: impl Into<Action>) {
             trace!("submit_action");
-            self.global_state
-                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
+            let action = action.into();
+            if action.type_id() != self.widget_state.action_type {
+                #[cfg(debug_assertions)]
+                let expected_type = self.widget_state.action_type_name;
+                #[cfg(not(debug_assertions))]
+                let expected_type = "<Self as Widget>::Action";
+
+                debug_panic!(
+                    "Trying to emit action of incorrect type `{}`. Expected type is `{}`.",
+                    action.type_name(),
+                    expected_type,
+                );
+                return;
+            }
+            self.global_state.emit_signal(RenderRootSignal::Action(
+                Box::new(action),
+                self.widget_state.id,
+            ));
         }
 
         /// Set the IME cursor area.
@@ -1295,6 +1306,9 @@ impl RegisterCtx<'_> {
             id,
             options,
             properties,
+            action_type,
+            #[cfg(debug_assertions)]
+            action_type_name,
         }) = child.take_inner()
         else {
             return;
@@ -1305,7 +1319,14 @@ impl RegisterCtx<'_> {
             self.registered_ids.push(id);
         }
 
-        let state = WidgetState::new(id, widget.short_type_name(), options);
+        let state = WidgetState::new(
+            id,
+            widget.short_type_name(),
+            options,
+            action_type,
+            #[cfg(debug_assertions)]
+            action_type_name,
+        );
 
         self.children
             .widget_children

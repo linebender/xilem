@@ -10,7 +10,7 @@ use vello::kurbo::{Line, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
-    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
+    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
@@ -388,6 +388,8 @@ where
     ChildA: Widget + ?Sized,
     ChildB: Widget + ?Sized,
 {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
