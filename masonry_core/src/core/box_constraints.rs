@@ -15,12 +15,8 @@ use vello::kurbo::Size;
 /// Further, a container widget should compute appropriate constraints
 /// for each of its child widgets, and pass those down when recursing.
 ///
-/// The constraints are always [rounded away from zero] to integers
-/// to enable pixel perfect layout.
-///
 /// [`layout`]: crate::core::Widget::layout
 /// [Flutter BoxConstraints]: https://api.flutter.dev/flutter/rendering/BoxConstraints-class.html
-/// [rounded away from zero]: Size::expand
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BoxConstraints {
     min: Size,
@@ -39,28 +35,14 @@ impl BoxConstraints {
     /// Create a new box constraints object.
     ///
     /// Create constraints based on minimum and maximum size.
-    ///
-    /// The given sizes are also [rounded away from zero],
-    /// so that the layout is aligned to integers.
-    ///
-    /// [rounded away from zero]: Size::expand
     pub fn new(min: Size, max: Size) -> Self {
-        Self {
-            min: min.expand(),
-            max: max.expand(),
-        }
+        Self { min, max }
     }
 
     /// Create a "tight" box constraints object.
     ///
     /// A "tight" constraint can only be satisfied by a single size.
-    ///
-    /// The given size is also [rounded away from zero],
-    /// so that the layout is aligned to integers.
-    ///
-    /// [rounded away from zero]: Size::expand
     pub fn tight(size: Size) -> Self {
-        let size = size.expand();
         Self {
             min: size,
             max: size,
@@ -78,13 +60,8 @@ impl BoxConstraints {
     }
 
     /// Clamp a given size so that it fits within the constraints.
-    ///
-    /// The given size is also [rounded away from zero],
-    /// so that the layout is aligned to integers.
-    ///
-    /// [rounded away from zero]: Size::expand
     pub fn constrain(&self, size: impl Into<Size>) -> Size {
-        size.into().expand().clamp(self.min, self.max)
+        size.into().clamp(self.min, self.max)
     }
 
     /// Returns the max size of these constraints.
@@ -154,22 +131,15 @@ impl BoxConstraints {
         if !(0.0 <= self.min.width
             && self.min.width <= self.max.width
             && 0.0 <= self.min.height
-            && self.min.height <= self.max.height
-            && self.min.expand() == self.min
-            && self.max.expand() == self.max)
+            && self.min.height <= self.max.height)
         {
             debug_panic!("Bad BoxConstraints passed to {name}: {self:?}",);
         }
     }
 
     /// Shrink min and max constraints by size
-    ///
-    /// The given size is also [rounded away from zero],
-    /// so that the layout is aligned to integers.
-    ///
-    /// [rounded away from zero]: Size::expand
     pub fn shrink(&self, diff: impl Into<Size>) -> Self {
-        let diff = diff.into().expand();
+        let diff = diff.into();
         let min = Size::new(
             (self.min().width - diff.width).max(0.),
             (self.min().height - diff.height).max(0.),
