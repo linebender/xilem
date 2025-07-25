@@ -5,6 +5,7 @@
 
 use insta::assert_debug_snapshot;
 
+use crate::core::Widget;
 use crate::testing::{
     Record, Recording, TestHarness, TestWidgetExt as _, WrapperWidget, widget_ids,
 };
@@ -15,7 +16,7 @@ use crate::*;
 #[test]
 fn app_creation() {
     let record = Recording::default();
-    let widget = SizedBox::empty().record(&record);
+    let widget = SizedBox::empty().record(&record).with_auto_id();
 
     let _harness = TestHarness::create(default_property_set(), widget);
 

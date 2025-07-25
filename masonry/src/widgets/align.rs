@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn centered() {
-        let widget = Align::centered(Label::new("hello").with_auto_id());
+        let widget = Align::centered(Label::new("hello").with_auto_id()).with_auto_id();
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn right() {
-        let widget = Align::right(Label::new("hello").with_auto_id());
+        let widget = Align::right(Label::new("hello").with_auto_id()).with_auto_id();
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -199,7 +199,7 @@ mod tests {
 
     #[test]
     fn left() {
-        let widget = Align::left(Label::new("hello").with_auto_id());
+        let widget = Align::left(Label::new("hello").with_auto_id()).with_auto_id();
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 

@@ -433,7 +433,7 @@ mod tests {
 
     #[test]
     fn simple_label() {
-        let label = Label::new("Hello");
+        let label = Label::new("Hello").with_auto_id();
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
@@ -460,7 +460,8 @@ mod tests {
     fn underline_label() {
         let label = Label::new("Emphasis")
             .with_line_break_mode(LineBreaking::WordWrap)
-            .with_style(StyleProperty::Underline(true));
+            .with_style(StyleProperty::Underline(true))
+            .with_auto_id();
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
@@ -472,7 +473,8 @@ mod tests {
         let label = Label::new("Tpyo")
             .with_line_break_mode(LineBreaking::WordWrap)
             .with_style(StyleProperty::Strikethrough(true))
-            .with_style(StyleProperty::StrikethroughSize(Some(4.)));
+            .with_style(StyleProperty::StrikethroughSize(Some(4.)))
+            .with_auto_id();
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
@@ -503,7 +505,8 @@ mod tests {
             .with_flex_child(label4.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(label5.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(label6.with_auto_id(), CrossAxisAlignment::Center)
-            .with_gap(0.0);
+            .with_gap(0.0)
+            .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 200.0));
@@ -544,7 +547,8 @@ mod tests {
                 .width(180.0)
                 .with_auto_id(),
             )
-            .with_flex_spacer(1.0);
+            .with_flex_spacer(1.0)
+            .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 200.0));
@@ -569,7 +573,9 @@ mod tests {
         };
 
         let image_2 = {
-            let label = Label::new("Hello world").with_style(StyleProperty::FontSize(40.0));
+            let label = Label::new("Hello world")
+                .with_style(StyleProperty::FontSize(40.0))
+                .with_auto_id();
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));

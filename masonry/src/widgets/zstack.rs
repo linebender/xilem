@@ -254,7 +254,8 @@ mod tests {
                     fg_props,
                 ),
                 ChildAlignment::ParentAligned,
-            );
+            )
+            .with_auto_id();
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignment_default");
@@ -297,7 +298,8 @@ mod tests {
             .with_child(
                 Label::new("BottomRight").with_auto_id(),
                 UnitPoint::BOTTOM_RIGHT,
-            );
+            )
+            .with_auto_id();
 
         let mut harness = TestHarness::create(default_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignments_self_aligned");

@@ -1209,7 +1209,8 @@ mod tests {
             .with_flex_child(
                 Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
-            );
+            )
+            .with_auto_id();
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1250,7 +1251,8 @@ mod tests {
             .with_flex_child(
                 Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
-            );
+            )
+            .with_auto_id();
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1306,7 +1308,8 @@ mod tests {
             .with_flex_child(
                 Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
-            );
+            )
+            .with_auto_id();
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1347,7 +1350,8 @@ mod tests {
             .with_flex_child(
                 Label::new("bar").with_auto_id(),
                 FlexParams::new(2.0, CrossAxisAlignment::Start),
-            );
+            )
+            .with_auto_id();
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1401,7 +1405,8 @@ mod tests {
                 .with_child(Label::new("a").with_auto_id())
                 .with_child(Label::new("b").with_auto_id())
                 .with_child(Label::new("c").with_auto_id())
-                .with_child(Label::new("d").with_auto_id());
+                .with_child(Label::new("d").with_auto_id())
+                .with_auto_id();
             // -> abcd
 
             let window_size = Size::new(200.0, 150.0);
@@ -1444,7 +1449,8 @@ mod tests {
                 .with_child(Label::new("x").with_auto_id())
                 .with_flex_child(Label::new("y").with_auto_id(), 2.0)
                 .with_spacer(5.0)
-                .with_flex_spacer(1.0);
+                .with_flex_spacer(1.0)
+                .with_auto_id();
 
             let window_size = Size::new(200.0, 150.0);
             let mut harness =
@@ -1461,7 +1467,8 @@ mod tests {
         let widget = Flex::column()
             .with_child(Label::new("hello").with_auto_id())
             .with_child(Label::new("world").with_auto_id())
-            .with_spacer(1.0);
+            .with_spacer(1.0)
+            .with_auto_id();
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1487,7 +1494,7 @@ mod tests {
 
     #[test]
     fn divide_by_zero() {
-        let widget = Flex::column().with_flex_spacer(0.0);
+        let widget = Flex::column().with_flex_spacer(0.0).with_auto_id();
 
         // Running layout should not panic when the flex sum is zero.
         let window_size = Size::new(200.0, 150.0);

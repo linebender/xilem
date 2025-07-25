@@ -1065,7 +1065,7 @@ mod tests {
     fn sensible_driver() {
         type ScrollContents = Label;
 
-        let widget = VirtualScroll::<ScrollContents>::new(0);
+        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
@@ -1113,7 +1113,7 @@ mod tests {
     fn small_gaps() {
         type ScrollContents = Label;
 
-        let widget = VirtualScroll::<ScrollContents>::new(0);
+        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
@@ -1158,7 +1158,7 @@ mod tests {
     fn big_gaps() {
         type ScrollContents = Label;
 
-        let widget = VirtualScroll::<ScrollContents>::new(0);
+        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
@@ -1203,7 +1203,7 @@ mod tests {
     fn degenerate_driver() {
         type ScrollContents = Label;
 
-        let widget = VirtualScroll::<ScrollContents>::new(0);
+        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
@@ -1248,7 +1248,9 @@ mod tests {
         type ScrollContents = Label;
 
         const MIN: i64 = 10;
-        let widget = VirtualScroll::<ScrollContents>::new(0).with_valid_range(MIN..i64::MAX);
+        let widget = VirtualScroll::<ScrollContents>::new(0)
+            .with_valid_range(MIN..i64::MAX)
+            .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
@@ -1322,7 +1324,9 @@ mod tests {
         type ScrollContents = Label;
 
         const MAX: i64 = 10;
-        let widget = VirtualScroll::<ScrollContents>::new(100).with_valid_range(i64::MIN..MAX);
+        let widget = VirtualScroll::<ScrollContents>::new(100)
+            .with_valid_range(i64::MIN..MAX)
+            .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
