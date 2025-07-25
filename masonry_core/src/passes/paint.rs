@@ -21,8 +21,7 @@ fn paint_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
-    scenes: &mut HashMap<WidgetId, Scene>,
-    postfix_scenes: &mut HashMap<WidgetId, Scene>,
+    scene_cache: &mut HashMap<WidgetId, (Scene, Scene)>,
     widget: ArenaMut<'_, Box<dyn Widget>>,
     mut state: ArenaMut<'_, WidgetState>,
     properties: ArenaMut<'_, AnyMap>,
@@ -64,8 +63,7 @@ fn paint_widget(
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
-        let scene = scenes.entry(id).or_default();
-        let postfix_scene = postfix_scenes.entry(id).or_default();
+        let (scene, postfix_scene) = scene_cache.entry(id).or_default();
         scene.reset();
         postfix_scene.reset();
         let props = PropertiesRef {
@@ -82,8 +80,7 @@ fn paint_widget(
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
         let transform = state.window_transform;
-        // let scene = scenes.get(&id).unwrap();
-        let scene = scenes.entry(id).or_default();
+        let scene = &mut scene_cache.entry(id).or_default().0;
 
         if let Some(clip) = state.clip_path {
             complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
@@ -103,8 +100,7 @@ fn paint_widget(
             global_state,
             default_properties,
             complete_scene,
-            scenes,
-            postfix_scenes,
+            scene_cache,
             widget,
             state.reborrow_mut(),
             properties,
@@ -129,8 +125,7 @@ fn paint_widget(
             complete_scene.pop_layer();
         }
 
-        // let postfix_scene = postfix_scenes.get(&id).unwrap();
-        let postfix_scene = postfix_scenes.entry(id).or_default();
+        let postfix_scene = &mut scene_cache.entry(id).or_default().1;
         complete_scene.append(postfix_scene, Some(transform));
     }
 }
@@ -166,21 +161,19 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
     // This should be removed once remove_child is exclusive to MutateCtx.
-    let mut scenes = std::mem::take(&mut root.global_state.scenes);
-    let mut postfix_scenes = std::mem::take(&mut root.global_state.postfix_scenes);
+    let mut scene_cache = std::mem::take(&mut root.global_state.scene_cache);
 
     paint_widget(
         &mut root.global_state,
         &root.default_properties,
         &mut complete_scene,
-        &mut scenes,
-        &mut postfix_scenes,
+        &mut scene_cache,
         root_widget,
         root_state,
         root_properties,
         root.debug_paint,
     );
-    root.global_state.scenes = scenes;
+    root.global_state.scene_cache = scene_cache;
 
     // Display a rectangle over the hovered widget
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
