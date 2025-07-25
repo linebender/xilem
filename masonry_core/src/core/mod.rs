@@ -3,6 +3,7 @@
 
 //! Basic types and traits Masonry is built on.
 
+mod axis;
 mod box_constraints;
 mod contexts;
 mod events;
@@ -18,11 +19,13 @@ mod widget_ref;
 mod widget_state;
 
 use anymore::AnyDebug;
+pub use axis::Axis;
 pub use box_constraints::BoxConstraints;
 pub use contexts::{
     AccessCtx, ComposeCtx, EventCtx, LayoutCtx, MutateCtx, PaintCtx, QueryCtx, RawCtx, RegisterCtx,
     UpdateCtx,
 };
+pub use cursor_icon::CursorIcon;
 pub use events::{
     AccessEvent, Handled, Ime, ResizeDirection, TextEvent, Update, WindowEvent, WindowTheme,
 };
@@ -34,8 +37,6 @@ pub use widget::{AllowRawMut, AsDynWidget, ChildrenIds, FromDynWidget, Widget, W
 pub use widget_mut::WidgetMut;
 pub use widget_pod::{NewWidget, WidgetOptions, WidgetPod};
 pub use widget_ref::WidgetRef;
-
-pub use cursor_icon::CursorIcon;
 
 pub use ui_events::keyboard::{KeyboardEvent, Modifiers};
 pub use ui_events::pointer::{

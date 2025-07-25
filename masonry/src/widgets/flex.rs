@@ -9,12 +9,13 @@ use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::common::FloatExt;
-use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
+use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
+    AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::theme::DEFAULT_GAP;
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
@@ -46,57 +47,6 @@ pub struct Flex {
 pub struct FlexParams {
     flex: Option<f64>,
     alignment: Option<CrossAxisAlignment>,
-}
-
-/// An axis in visual space.
-///
-/// Most often used by widgets to describe
-/// the direction in which they grow as their number of children increases.
-/// Has some methods for manipulating geometry with respect to the axis.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Axis {
-    /// The x axis
-    Horizontal,
-    /// The y axis
-    Vertical,
-}
-
-/// The alignment of the widgets on the container's cross (or minor) axis.
-///
-/// If a widget is smaller than the container on the minor axis, this determines
-/// where it is positioned.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum CrossAxisAlignment {
-    /// Top or left.
-    Start,
-    /// Widgets are centered in the container.
-    Center,
-    /// Bottom or right.
-    End,
-    /// Align on the baseline.
-    Baseline,
-    /// Fill the available space.
-    Fill,
-}
-
-/// Arrangement of children on the main axis.
-///
-/// If there is surplus space on the main axis after laying out children, this
-/// enum represents how children are laid out in this space.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum MainAxisAlignment {
-    /// Top or left.
-    Start,
-    /// Children are centered, without padding.
-    Center,
-    /// Bottom or right.
-    End,
-    /// Extra space is divided evenly between each child.
-    SpaceBetween,
-    /// Extra space is divided evenly between each child, as well as at the ends.
-    SpaceEvenly,
-    /// Space between each child, with less at the start and end.
-    SpaceAround,
 }
 
 struct Spacing {
@@ -544,97 +494,6 @@ impl Flex {
 }
 
 // --- MARK: OTHER IMPLS
-impl Axis {
-    /// Get the axis perpendicular to this one.
-    pub fn cross(self) -> Self {
-        match self {
-            Self::Horizontal => Self::Vertical,
-            Self::Vertical => Self::Horizontal,
-        }
-    }
-
-    /// Extract from the argument the magnitude along this axis
-    pub fn major(self, size: Size) -> f64 {
-        match self {
-            Self::Horizontal => size.width,
-            Self::Vertical => size.height,
-        }
-    }
-
-    /// Extract from the argument the magnitude along the perpendicular axis
-    pub fn minor(self, size: Size) -> f64 {
-        self.cross().major(size)
-    }
-
-    /// Extract the extent of the argument in this axis as a pair.
-    pub fn major_span(self, rect: Rect) -> (f64, f64) {
-        match self {
-            Self::Horizontal => (rect.x0, rect.x1),
-            Self::Vertical => (rect.y0, rect.y1),
-        }
-    }
-
-    /// Extract the extent of the argument in the minor axis as a pair.
-    pub fn minor_span(self, rect: Rect) -> (f64, f64) {
-        self.cross().major_span(rect)
-    }
-
-    /// Extract the coordinate locating the argument with respect to this axis.
-    pub fn major_pos(self, pos: Point) -> f64 {
-        match self {
-            Self::Horizontal => pos.x,
-            Self::Vertical => pos.y,
-        }
-    }
-
-    /// Extract the coordinate locating the argument with respect to this axis.
-    pub fn major_vec(self, vec: Vec2) -> f64 {
-        match self {
-            Self::Horizontal => vec.x,
-            Self::Vertical => vec.y,
-        }
-    }
-
-    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
-    pub fn minor_pos(self, pos: Point) -> f64 {
-        self.cross().major_pos(pos)
-    }
-
-    /// Extract the coordinate locating the argument with respect to the perpendicular axis.
-    pub fn minor_vec(self, vec: Vec2) -> f64 {
-        self.cross().major_vec(vec)
-    }
-
-    // TODO - make_pos, make_size, make_rect
-    /// Arrange the major and minor measurements with respect to this axis such that it forms
-    /// an (x, y) pair.
-    pub fn pack(self, major: f64, minor: f64) -> (f64, f64) {
-        match self {
-            Self::Horizontal => (major, minor),
-            Self::Vertical => (minor, major),
-        }
-    }
-
-    /// Generate constraints with new values on the major axis.
-    pub(crate) fn constraints(
-        self,
-        bc: &BoxConstraints,
-        min_major: f64,
-        major: f64,
-    ) -> BoxConstraints {
-        match self {
-            Self::Horizontal => BoxConstraints::new(
-                Size::new(min_major, bc.min().height),
-                Size::new(major, bc.max().height),
-            ),
-            Self::Vertical => BoxConstraints::new(
-                Size::new(bc.min().width, min_major),
-                Size::new(bc.max().width, major),
-            ),
-        }
-    }
-}
-
 impl FlexParams {
     /// Create custom `FlexParams` with a specific `flex_factor` and an optional
     /// [`CrossAxisAlignment`].
@@ -659,21 +518,6 @@ impl FlexParams {
         Self {
             flex,
             alignment: alignment.into(),
-        }
-    }
-}
-
-impl CrossAxisAlignment {
-    /// Given the difference between the size of the container and the size
-    /// of the child (on their minor axis) return the necessary offset for
-    /// this alignment.
-    fn align(self, val: f64) -> f64 {
-        match self {
-            Self::Start => 0.0,
-            // in vertical layout, baseline is equivalent to center
-            Self::Center | Self::Baseline => (val / 2.0).round(),
-            Self::End => val,
-            Self::Fill => 0.0,
         }
     }
 }

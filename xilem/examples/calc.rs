@@ -4,7 +4,8 @@
 //! A simple calculator example
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
+use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::widgets::GridParams;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;

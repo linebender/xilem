@@ -3,6 +3,9 @@
 
 //! Views for the widgets which are built-in to Masonry. These are the primitives your Xilem app's view tree will generally be constructed from.
 
+// TODO - Remove
+pub use masonry::core::Axis;
+
 mod task;
 pub use task::*;
 

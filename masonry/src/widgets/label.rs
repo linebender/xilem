@@ -427,9 +427,10 @@ mod tests {
 
     use super::*;
     use crate::core::Properties;
+    use crate::properties::types::CrossAxisAlignment;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
-    use crate::widgets::{CrossAxisAlignment, Flex, SizedBox};
+    use crate::widgets::{Flex, SizedBox};
 
     #[test]
     fn simple_label() {

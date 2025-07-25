@@ -10,11 +10,11 @@ use vello::Scene;
 use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
+    AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
     LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
     ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::widgets::{Axis, ScrollBar};
+use crate::widgets::ScrollBar;
 
 // TODO - refactor - see https://github.com/linebender/xilem/issues/366
 // TODO - rename "Portal" to "ScrollPortal"?
