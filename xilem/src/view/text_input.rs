@@ -10,10 +10,10 @@ use masonry::widgets::{self, TextAction};
 use vello::kurbo::Affine;
 use vello::peniko::Color;
 
-use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::core::{MessageContext, Mut, View, ViewMarker};
 use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
-use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, ViewId};
+use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -225,16 +225,16 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
-            id_path.is_empty(),
+            message.remaining_path().is_empty(),
             "id path should be empty in TextInput::message"
         );
-        match message.downcast::<TextAction>() {
-            Ok(action) => match *action {
+        match message.take_message::<TextAction>() {
+            Some(action) => match *action {
                 TextAction::Changed(text) => {
                     MessageResult::Action((self.on_changed)(app_state, text))
                 }
@@ -244,12 +244,12 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
 
                 TextAction::Entered(_) => {
                     tracing::error!("Textbox::message: on_enter is not set");
-                    MessageResult::Stale(DynMessage(action))
+                    MessageResult::Stale
                 }
             },
-            Err(message) => {
-                tracing::error!("Wrong message type in TextInput::message: {message:?}.");
-                MessageResult::Stale(message)
+            None => {
+                tracing::error!(?message, "Wrong message type in TextInput::message");
+                MessageResult::Stale
             }
         }
     }

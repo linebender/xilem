@@ -8,8 +8,8 @@ use masonry::widgets::{
     LineBreaking, {self},
 };
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
+use crate::core::{MessageContext, Mut, ViewMarker};
+use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx};
 
 /// A view which displays selectable text.
 pub fn prose(content: impl Into<ArcStr>) -> Prose {
@@ -189,13 +189,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
+            ?message,
             "Message arrived in Prose::message, but Prose doesn't consume any messages, this is a bug"
         );
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }

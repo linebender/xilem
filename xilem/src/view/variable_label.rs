@@ -5,10 +5,9 @@ use masonry::core::ArcStr;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
 use vello::peniko::Color;
-use xilem_core::ViewPathTracker;
 
 use super::{Label, label};
-use crate::core::{DynMessage, Mut, ViewMarker};
+use crate::core::{MessageContext, Mut, ViewMarker, ViewPathTracker};
 use crate::style::Style as _;
 use crate::{MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 
@@ -151,18 +150,25 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        if let Some((first, remainder)) = id_path.split_first() {
+        if let Some(first) = message.take_first() {
             assert_eq!(first.routing_id(), 0);
-            self.label.message(&mut (), remainder, message, app_state)
+
+            self.label.message(
+                &mut (),
+                message,
+                widgets::VariableLabel::label_mut(&mut element),
+                app_state,
+            )
         } else {
             tracing::error!(
+                ?message,
                 "Message arrived in VariableLabel::message, but VariableLabel doesn't consume any messages, this is a bug"
             );
-            MessageResult::Stale(message)
+            MessageResult::Stale
         }
     }
 }

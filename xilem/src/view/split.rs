@@ -4,9 +4,9 @@
 use std::marker::PhantomData;
 
 use masonry::core::Axis;
-use masonry::widgets::{self};
-use xilem_core::{DynMessage, MessageResult, View, ViewId, ViewMarker, ViewPathTracker};
+use masonry::widgets;
 
+use crate::core::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
@@ -202,7 +202,7 @@ where
         prev: &Self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: xilem_core::Mut<'_, Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         if prev.split_axis != self.split_axis {
@@ -260,7 +260,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        mut element: xilem_core::Mut<'_, Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         let child1_element = widgets::Split::child1_mut(&mut element);
@@ -275,27 +275,30 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<Action> {
-        match id_path.split_first() {
-            Some((&CHILD1_VIEW_ID, rest)) => {
+        match message.take_first() {
+            Some(CHILD1_VIEW_ID) => {
+                let child1_element = widgets::Split::child1_mut(&mut element);
                 self.child1
-                    .message(&mut view_state.0, rest, message, app_state)
+                    .message(&mut view_state.0, message, child1_element, app_state)
             }
-            Some((&CHILD2_VIEW_ID, rest)) => {
+            Some(CHILD2_VIEW_ID) => {
+                let child2_element = widgets::Split::child2_mut(&mut element);
                 self.child2
-                    .message(&mut view_state.1, rest, message, app_state)
+                    .message(&mut view_state.1, message, child2_element, app_state)
             }
             view_id => {
                 tracing::error!(
+                    ?message,
                     "Invalid message arrived in Split::message, expected {:?} or {:?}, got {:?}. This is a bug.",
                     CHILD1_VIEW_ID,
                     CHILD2_VIEW_ID,
                     view_id
                 );
-                MessageResult::Stale(message)
+                MessageResult::Stale
             }
         }
     }
