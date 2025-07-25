@@ -195,14 +195,15 @@ impl Widget for ProgressBar {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::NewWidget;
+
     use super::*;
-    use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
 
     #[test]
     fn indeterminate_progressbar() {
-        let [progressbar_id] = widget_ids();
-        let widget = ProgressBar::new(None).with_id(progressbar_id);
+        let widget = NewWidget::new(ProgressBar::new(None));
 
         let window_size = Size::new(150.0, 60.0);
         let mut harness =
@@ -213,9 +214,7 @@ mod tests {
 
     #[test]
     fn _0_percent_progressbar() {
-        let [_0percent] = widget_ids();
-
-        let widget = ProgressBar::new(Some(0.)).with_id(_0percent);
+        let widget = NewWidget::new(ProgressBar::new(Some(0.)));
         let window_size = Size::new(150.0, 60.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -225,9 +224,7 @@ mod tests {
 
     #[test]
     fn _25_percent_progressbar() {
-        let [_25percent] = widget_ids();
-
-        let widget = ProgressBar::new(Some(0.25)).with_id(_25percent);
+        let widget = NewWidget::new(ProgressBar::new(Some(0.25)));
         let window_size = Size::new(150.0, 60.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -237,9 +234,7 @@ mod tests {
 
     #[test]
     fn _50_percent_progressbar() {
-        let [_50percent] = widget_ids();
-
-        let widget = ProgressBar::new(Some(0.5)).with_id(_50percent);
+        let widget = NewWidget::new(ProgressBar::new(Some(0.5)));
         let window_size = Size::new(150.0, 60.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -249,9 +244,7 @@ mod tests {
 
     #[test]
     fn _75_percent_progressbar() {
-        let [_75percent] = widget_ids();
-
-        let widget = ProgressBar::new(Some(0.75)).with_id(_75percent);
+        let widget = NewWidget::new(ProgressBar::new(Some(0.75)));
         let window_size = Size::new(150.0, 60.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -261,9 +254,7 @@ mod tests {
 
     #[test]
     fn _100_percent_progressbar() {
-        let [_100percent] = widget_ids();
-
-        let widget = ProgressBar::new(Some(1.)).with_id(_100percent);
+        let widget = NewWidget::new(ProgressBar::new(Some(1.)));
         let window_size = Size::new(150.0, 60.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -274,7 +265,7 @@ mod tests {
     #[test]
     fn edit_progressbar() {
         let image_1 = {
-            let bar = ProgressBar::new(Some(0.5));
+            let bar = NewWidget::new(ProgressBar::new(Some(0.5)));
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), bar, Size::new(60.0, 20.0));
@@ -283,7 +274,7 @@ mod tests {
         };
 
         let image_2 = {
-            let bar = ProgressBar::new(None);
+            let bar = NewWidget::new(ProgressBar::new(None));
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), bar, Size::new(60.0, 20.0));

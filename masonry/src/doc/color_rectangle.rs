@@ -239,18 +239,20 @@ fn set_bg(color_rectangle_mut: WidgetMut<'_, ColorRectangle>) {
 mod tests {
     use super::*;
     use insta::assert_debug_snapshot;
-    use masonry::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use masonry::testing::{TestHarness, widget_ids};
     use masonry::theme::default_property_set;
+    use masonry_core::core::NewWidget;
     // ---
     use masonry::testing::assert_render_snapshot;
+    // ---
+
+    const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
 
     #[test]
     fn simple_rect() {
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
-        let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
+        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE);
 
-        let mut harness = TestHarness::create(default_property_set(), widget);
+        let mut harness = TestHarness::create(default_property_set(), NewWidget::new(widget));
 
         assert_debug_snapshot!(harness.root_widget());
 
@@ -263,9 +265,9 @@ mod tests {
 
     #[test]
     fn hovered() {
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
         let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
+        let widget =
+            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -280,8 +282,7 @@ mod tests {
     #[test]
     fn edit_rect() {
         const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE);
+        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -297,9 +298,9 @@ mod tests {
 
     #[test]
     fn on_click() {
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
         let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
+        let widget =
+            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 

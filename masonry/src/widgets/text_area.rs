@@ -945,7 +945,9 @@ mod tests {
     #[test]
     fn edit_wordwrap() {
         let base_with_wrapping = {
-            let area = TextArea::new_immutable("String which will wrap").with_word_wrap(true);
+            let area = NewWidget::new(
+                TextArea::new_immutable("String which will wrap").with_word_wrap(true),
+            );
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
@@ -954,7 +956,9 @@ mod tests {
         };
 
         {
-            let area = TextArea::new_immutable("String which will wrap").with_word_wrap(false);
+            let area = NewWidget::new(
+                TextArea::new_immutable("String which will wrap").with_word_wrap(false),
+            );
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
@@ -1082,8 +1086,9 @@ mod tests {
             },
         ];
         for scenario in scenarios {
-            let area =
-                TextArea::new_editable("hello world").with_insert_newline(scenario.insert_newline);
+            let area = NewWidget::new(
+                TextArea::new_editable("hello world").with_insert_newline(scenario.insert_newline),
+            );
 
             let mut harness = TestHarness::create(default_property_set(), area);
             let text_id = harness.root_widget().id();

@@ -32,14 +32,15 @@ First, let's write a test module with a first unit test:
 mod tests {
     use super::*;
     use insta::assert_debug_snapshot;
-    use masonry::testing::{widget_ids, TestHarness, TestWidgetExt};
+    use masonry::testing::{TestHarness, TestWidgetExt, widget_ids};
     use masonry::theme::default_property_set;
+    use masonry_core::core::NewWidget;
+
+    const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
 
     #[test]
     fn simple_rect() {
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
-        let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
+        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -50,13 +51,11 @@ mod tests {
 }
 ```
 
-<!-- TODO - Rewrite this once we have a better way to assign ids to widgets. -->
-
 First, we create a `ColorRectangle` with an arbitrary size and color.
-We use `TestWidgetExt::with_id()` to assign it a pre-drawn id.
-(As a side-effect, this also wraps our `ColorRectangle` in a [`WrapperWidget`].)
 
-Then we instantiate the [`TestHarness`], with our (wrapped) `ColorRectangle` as the root.
+<!-- TODO - Document NewWidget in previous chapter. -->
+
+Then we instantiate the [`TestHarness`], with our `ColorRectangle`, wrapped in a `NewWidget`, as the root.
 
 We use `TestHarness::root_widget()` to get a [`WidgetRef`] to our root.
 
@@ -113,9 +112,9 @@ Let's create another snapshot test to check that our widget correctly changes co
 
     #[test]
     fn hovered() {
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
         let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
+        let widget =
+            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -125,6 +124,9 @@ Let's create another snapshot test to check that our widget correctly changes co
         assert_render_snapshot!(harness, "rect_hovered_rectangle");
     }
 ```
+
+We use `NewWidget::new_with_id()` to create our widget a pre-drawn id.
+Then we move the mouse to our rectangle widget, and we check the widget's new appearance.
 
 <!-- TODO - Include screenshot. -->
 
@@ -143,8 +145,7 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
     #[test]
     fn edit_rect() {
         const RED: Color = Color::from_rgb8(u8::MAX, 0, 0);
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE);
+        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -164,16 +165,16 @@ Let's add a test that changes a rectangle's color, then checks its visual appear
 
 The `TestHarness` is also capable of reading actions emitted by our widget with the `pop_action()` method.
 
-Since our `WidgetRectangle` doesn't emit actions, let's look at a unit test for the [`Button`] widget instead:
+<!-- TODO - Explain this. -->
 
 ```rust
     // ...
 
     #[test]
     fn on_click() {
-        const BLUE: Color = Color::from_rgb8(0, 0, u8::MAX);
         let [rect_id] = widget_ids();
-        let widget = ColorRectangle::new(Size::new(20.0, 20.0), BLUE).with_id(rect_id);
+        let widget =
+            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
 
         let mut harness = TestHarness::create(default_property_set(), widget);
 

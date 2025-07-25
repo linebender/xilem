@@ -230,7 +230,10 @@ mod tests {
     fn screenshot_test() {
         let my_string = "Masonry + Vello".to_string();
 
-        let mut harness = TestHarness::create(default_property_set(), CustomWidget(my_string));
+        let mut harness = TestHarness::create(
+            default_property_set(),
+            NewWidget::new(CustomWidget(my_string)),
+        );
         assert_render_snapshot!(harness, "example_custom_widget_initial");
     }
 }

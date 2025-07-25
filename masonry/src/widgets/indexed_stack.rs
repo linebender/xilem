@@ -290,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_indexed_stack_basics() {
-        let widget = IndexedStack::new();
+        let widget = IndexedStack::new().with_auto_id();
         let window_size = Size::new(50.0, 50.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
@@ -321,7 +321,8 @@ mod tests {
             .with_child(button::Button::new("A").with_auto_id())
             .with_child(button::Button::new("B").with_auto_id())
             .with_child(button::Button::new("C").with_auto_id())
-            .with_active_child(1);
+            .with_active_child(1)
+            .with_auto_id();
         let window_size = Size::new(50.0, 50.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);

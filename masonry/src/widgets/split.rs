@@ -613,7 +613,7 @@ mod tests {
         let widget = Split::new(
             Label::new("Hello").with_auto_id(),
             Label::new("World").with_auto_id(),
-        ).split_axis(Axis::Horizontal).draggable(false);
+        ).split_axis(Axis::Horizontal).draggable(false).with_auto_id();
 
         let window_size = Size::new(150.0, 150.0);
         let mut harness =
@@ -628,7 +628,7 @@ mod tests {
         let widget = Split::new(
             Label::new("Hello").with_auto_id(),
             Label::new("World").with_auto_id(),
-        ).split_axis(Axis::Vertical).draggable(false);
+        ).split_axis(Axis::Vertical).draggable(false).with_auto_id();
 
         let window_size = Size::new(150.0, 150.0);
         let mut harness =
@@ -651,7 +651,8 @@ mod tests {
             .min_size(40.0, 10.0)
             .bar_size(12.0)
             .draggable(true)
-            .solid_bar(true);
+            .solid_bar(true)
+            .with_auto_id();
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -666,7 +667,8 @@ mod tests {
             let widget = Split::new(
                 Label::new("Hello").with_auto_id(),
                 Label::new("World").with_auto_id(),
-            );
+            )
+            .with_auto_id();
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),

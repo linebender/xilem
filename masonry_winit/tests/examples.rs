@@ -59,7 +59,7 @@ mod tests {
     fn zero_size_grid_masonry() {
         let mut harness = TestHarness::create_with(
             default_property_set(),
-            others::grid_masonry::make_grid(1.0).with_auto_id(),
+            others::grid_masonry::make_grid(1.0),
             PARAMS_ZERO_SIZE,
         );
         let _ = harness.render();
@@ -69,7 +69,7 @@ mod tests {
     fn zero_size_simple_image() {
         let mut harness = TestHarness::create_with(
             default_property_set(),
-            others::simple_image::make_image().with_auto_id(),
+            others::simple_image::make_image(),
             PARAMS_ZERO_SIZE,
         );
         let _ = harness.render();
@@ -79,7 +79,7 @@ mod tests {
     fn zero_size_to_do_list() {
         let mut harness = TestHarness::create_with(
             default_property_set(),
-            others::to_do_list::make_widget_tree().with_auto_id(),
+            others::to_do_list::make_widget_tree(),
             PARAMS_ZERO_SIZE,
         );
         let _ = harness.render();

@@ -22,7 +22,8 @@ fn access_grandchild_widget() {
                 )
                 .with_auto_id(),
         )
-        .with_flex_spacer(1.0);
+        .with_flex_spacer(1.0)
+        .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
 

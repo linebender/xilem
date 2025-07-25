@@ -26,9 +26,11 @@ fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
 #[should_panic(expected = "not visited in method on_text_event")]
 #[test]
 fn check_forget_to_recurse_text_event() {
-    let widget = make_parent_widget(Flex::row()).text_event_fn(|_child, _ctx, _, _event| {
-        // We forget to call child.on_text_event();
-    });
+    let widget = make_parent_widget(Flex::row())
+        .text_event_fn(|_child, _ctx, _, _event| {
+            // We forget to call child.on_text_event();
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
@@ -42,9 +44,11 @@ fn check_forget_to_recurse_text_event() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_to_recurse_lifecycle() {
-    let widget = make_parent_widget(Flex::row()).lifecycle_fn(|_child, _ctx, _event| {
-        // We forget to call child.lifecycle();
-    });
+    let widget = make_parent_widget(Flex::row())
+        .lifecycle_fn(|_child, _ctx, _event| {
+            // We forget to call child.lifecycle();
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(widget);
 }
@@ -53,14 +57,16 @@ fn check_forget_to_recurse_lifecycle() {
 #[should_panic(expected = "before receiving WidgetAdded.")]
 #[test]
 fn check_forget_to_recurse_widget_added() {
-    let widget = make_parent_widget(Flex::row()).lifecycle_fn(|child, ctx, event| {
-        if let Update::WidgetAdded = event {
-            // We forget to call child.lifecycle();
-            ctx.skip_child(child);
-        } else {
-            child.lifecycle(ctx, event);
-        }
-    });
+    let widget = make_parent_widget(Flex::row())
+        .lifecycle_fn(|child, ctx, event| {
+            if let Update::WidgetAdded = event {
+                // We forget to call child.lifecycle();
+                ctx.skip_child(child);
+            } else {
+                child.lifecycle(ctx, event);
+            }
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(widget);
 }
@@ -72,9 +78,11 @@ fn check_forget_to_recurse_widget_added() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_register_child() {
-    let widget = make_parent_widget(Flex::row()).register_children_fn(|_child, _ctx| {
-        // We forget to call ctx.register_child();
-    });
+    let widget = make_parent_widget(Flex::row())
+        .register_children_fn(|_child, _ctx| {
+            // We forget to call ctx.register_child();
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(default_property_set(), widget);
 }
@@ -86,10 +94,12 @@ fn check_forget_register_child() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_register_invalid_child() {
-    let widget = make_parent_widget(Flex::row()).register_children_fn(|child, ctx| {
-        ctx.register_child(child);
-        ctx.register_child(&mut WidgetPod::new(Flex::row()));
-    });
+    let widget = make_parent_widget(Flex::row())
+        .register_children_fn(|child, ctx| {
+            ctx.register_child(child);
+            ctx.register_child(&mut WidgetPod::new(Flex::row()));
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(default_property_set(), widget);
 }
@@ -101,9 +111,11 @@ fn check_register_invalid_child() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_pointer_capture_outside_pointer_down() {
-    let widget = ModularWidget::new(()).pointer_event_fn(|_, ctx, _, _event| {
-        ctx.capture_pointer();
-    });
+    let widget = ModularWidget::new(())
+        .pointer_event_fn(|_, ctx, _, _event| {
+            ctx.capture_pointer();
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move((10.0, 10.0));
@@ -137,10 +149,12 @@ fn check_pointer_capture_text_event() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_to_recurse_layout() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|_child, _ctx, _, _| {
-        // We forget to call ctx.run_layout();
-        Size::ZERO
-    });
+    let widget = make_parent_widget(Flex::row())
+        .layout_fn(|_child, _ctx, _, _| {
+            // We forget to call ctx.run_layout();
+            Size::ZERO
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(default_property_set(), widget);
 }
@@ -152,10 +166,12 @@ fn check_forget_to_recurse_layout() {
     ignore = "This test doesn't work without debug assertions (i.e. in release mode). See https://github.com/linebender/xilem/issues/477"
 )]
 fn check_forget_to_call_place_child() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, _, bc| {
-        // We call ctx.run_layout(), but forget place_child
-        ctx.run_layout(child, bc)
-    });
+    let widget = make_parent_widget(Flex::row())
+        .layout_fn(|child, ctx, _, bc| {
+            // We call ctx.run_layout(), but forget place_child
+            ctx.run_layout(child, bc)
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(default_property_set(), widget);
 }
@@ -175,7 +191,8 @@ fn allow_non_recurse_event_handled() {
         .text_event_fn(|_child, ctx, _, _event| {
             // Event handled, we don't need to recurse
             ctx.set_handled();
-        });
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
@@ -194,7 +211,8 @@ fn allow_non_recurse_cursor_oob() {
             let _size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::ZERO);
             Size::new(6000.0, 6000.0)
-        });
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::new(5000.0, 5000.0));
@@ -211,7 +229,8 @@ fn allow_non_recurse_oob_paint() {
             let _size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::new(500.0, 500.0));
             Size::new(600.0, 600.0)
-        });
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create_with_size(widget, Size::new(400.0, 400.0));
     harness.render();
@@ -262,7 +281,8 @@ fn check_forget_children_changed() {
             } else {
                 ChildrenIds::new()
             }
-        });
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(widget);
     harness.submit_command(ADD_CHILD);
@@ -274,10 +294,12 @@ fn check_forget_children_changed() {
 #[should_panic]
 #[test]
 fn check_recurse_event_twice() {
-    let widget = make_parent_widget(Flex::row()).pointer_event_fn(|child, ctx, _, event| {
-        child.on_pointer_event(ctx, event);
-        child.on_pointer_event(ctx, event);
-    });
+    let widget = make_parent_widget(Flex::row())
+        .pointer_event_fn(|child, ctx, _, event| {
+            child.on_pointer_event(ctx, event);
+            child.on_pointer_event(ctx, event);
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);
@@ -287,10 +309,12 @@ fn check_recurse_event_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_lifecycle_twice() {
-    let widget = make_parent_widget(Flex::row()).lifecycle_fn(|child, ctx, event| {
-        child.lifecycle(ctx, event);
-        child.lifecycle(ctx, event);
-    });
+    let widget = make_parent_widget(Flex::row())
+        .lifecycle_fn(|child, ctx, event| {
+            child.lifecycle(ctx, event);
+            child.lifecycle(ctx, event);
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(widget);
 }
@@ -299,12 +323,14 @@ fn check_recurse_lifecycle_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_layout_twice() {
-    let widget = make_parent_widget(Flex::row()).layout_fn(|child, ctx, _, bc| {
-        let size = ctx.run_layout(child, bc);
-        let _ = ctx.run_layout(child, bc);
-        ctx.place_child(child, Point::ZERO);
-        size
-    });
+    let widget = make_parent_widget(Flex::row())
+        .layout_fn(|child, ctx, _, bc| {
+            let size = ctx.run_layout(child, bc);
+            let _ = ctx.run_layout(child, bc);
+            ctx.place_child(child, Point::ZERO);
+            size
+        })
+        .with_auto_id();
 
     let _harness = TestHarness::create(widget);
 }
@@ -313,10 +339,12 @@ fn check_recurse_layout_twice() {
 #[should_panic]
 #[test]
 fn check_recurse_paint_twice() {
-    let widget = make_parent_widget(Flex::row()).paint_fn(|child, ctx, scene| {
-        child.paint(ctx, scene);
-        child.paint(ctx, scene);
-    });
+    let widget = make_parent_widget(Flex::row())
+        .paint_fn(|child, ctx, scene| {
+            child.paint(ctx, scene);
+            child.paint(ctx, scene);
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(widget);
     harness.render();
@@ -337,7 +365,8 @@ fn check_layout_stashed() {
             let size = ctx.run_layout(child, bc);
             ctx.place_child(child, Point::ZERO);
             size
-        });
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move(Point::ZERO);
@@ -351,11 +380,13 @@ fn check_layout_stashed() {
 #[test]
 fn check_paint_rect_includes_children() {
     use crate::widgets::Label;
-    let widget = make_parent_widget(Label::new("Hello world")).layout_fn(|child, ctx, _, bc| {
-        let _size = ctx.run_layout(child, bc);
-        ctx.place_child(child, Point::ZERO);
-        Size::ZERO
-    });
+    let widget = make_parent_widget(Label::new("Hello world"))
+        .layout_fn(|child, ctx, _, bc| {
+            let _size = ctx.run_layout(child, bc);
+            ctx.place_child(child, Point::ZERO);
+            Size::ZERO
+        })
+        .with_auto_id();
 
     let mut harness = TestHarness::create(widget);
     harness.mouse_move(Point::ZERO);

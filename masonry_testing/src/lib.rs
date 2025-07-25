@@ -31,24 +31,21 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
     }
 
     // TODO - Move to `Widget` trait.
-    /// Wrap this widget in a [`WrapperWidget`] with the given id.
-    fn with_id(self, id: WidgetId) -> WrapperWidget {
-        let child = NewWidget::new_with_id(self, id).erased().to_pod();
-        WrapperWidget::new_pod(child)
+    /// Wrap this widget in a [`NewWidget`] with the given id.
+    fn with_id(self, id: WidgetId) -> NewWidget<Self> {
+        NewWidget::new_with_id(self, id)
     }
 
     // TODO - Move to `Widget` trait.
-    /// Wrap this widget in a [`WrapperWidget`] with the given [`Properties`].
-    fn with_props(self, props: Properties) -> WrapperWidget {
-        let child = NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
-            .erased()
-            .to_pod();
-        WrapperWidget::new_pod(child)
+    /// Wrap this widget in a [`NewWidget`] with the given [`Properties`].
+    fn with_props(self, props: Properties) -> NewWidget<Self> {
+        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
     }
 }
 
 impl<W: Widget + 'static> TestWidgetExt for W {}
 
+// TODO - Remove this
 /// Convenience function to return an array of unique widget ids.
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
     std::array::from_fn(|_| WidgetId::next())

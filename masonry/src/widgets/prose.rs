@@ -198,13 +198,12 @@ mod tests {
                 .with_word_wrap(false)
                 .with_auto_id(),
         )
-        .with_clip(true);
+        .with_clip(true)
+        .with_auto_id();
 
-        let root_widget = Flex::row().with_child(
-            SizedBox::new(prose.with_auto_id())
-                .width(60.)
-                .with_auto_id(),
-        );
+        let root_widget = Flex::row()
+            .with_child(SizedBox::new(prose).width(60.).with_auto_id())
+            .with_auto_id();
 
         let mut harness = TestHarness::create_with_size(
             default_property_set(),
@@ -242,7 +241,8 @@ mod tests {
             .with_flex_child(prose4.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(prose5.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(prose6.with_auto_id(), CrossAxisAlignment::Center)
-            .with_gap(0.0);
+            .with_gap(0.0)
+            .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 120.0));
