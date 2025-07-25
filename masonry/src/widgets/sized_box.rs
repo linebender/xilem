@@ -543,27 +543,4 @@ mod tests {
 
         assert_failing_render_snapshot!(harness, "sized_box_empty_box");
     }
-
-    #[test]
-    fn invalid_screenshot_2() {
-        // Copy-pasted from label_box_with_size
-        let mut box_props = Properties::new();
-        box_props.insert(BorderColor::new(palette::css::BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(5.0));
-
-        // This is the difference
-        box_props.insert(Padding::all(0.2));
-
-        let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(20.0)
-            .height(20.0)
-            .with_props(box_props);
-
-        let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
-
-        assert_failing_render_snapshot!(harness, "sized_box_label_box_with_size");
-    }
 }

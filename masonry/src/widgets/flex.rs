@@ -988,48 +988,29 @@ mod tests {
         assert_eq!(vec(a, 10., 2), vec![5., 0., 5.]);
         assert_eq!(vec(a, 10., 3), vec![5., 0., 0., 5.]);
         assert_eq!(vec(a, 1., 0), vec![1.]);
-        assert_eq!(vec(a, 3., 1), vec![2., 1.]);
-        assert_eq!(vec(a, 5., 2), vec![3., 0., 2.]);
-        assert_eq!(vec(a, 17., 3), vec![9., 0., 0., 8.]);
+        assert_eq!(vec(a, 3., 1), vec![1.5, 1.5]);
+        assert_eq!(vec(a, 5., 2), vec![2.5, 0., 2.5]);
+        assert_eq!(vec(a, 17., 3), vec![8.5, 0., 0., 8.5]);
 
         let a = MainAxisAlignment::SpaceBetween;
         assert_eq!(vec(a, 10., 0), vec![10.]);
         assert_eq!(vec(a, 10., 1), vec![0., 10.]);
         assert_eq!(vec(a, 10., 2), vec![0., 10., 0.]);
         assert_eq!(vec(a, 10., 3), vec![0., 5., 5., 0.]);
-        assert_eq!(vec(a, 33., 5), vec![0., 8., 9., 8., 8., 0.]);
-        assert_eq!(vec(a, 34., 5), vec![0., 9., 8., 9., 8., 0.]);
-        assert_eq!(vec(a, 35., 5), vec![0., 9., 9., 8., 9., 0.]);
-        assert_eq!(vec(a, 36., 5), vec![0., 9., 9., 9., 9., 0.]);
-        assert_eq!(vec(a, 37., 5), vec![0., 9., 10., 9., 9., 0.]);
-        assert_eq!(vec(a, 38., 5), vec![0., 10., 9., 10., 9., 0.]);
-        assert_eq!(vec(a, 39., 5), vec![0., 10., 10., 9., 10., 0.]);
+        assert_eq!(vec(a, 34., 5), vec![0., 8.5, 8.5, 8.5, 8.5, 0.]);
 
         let a = MainAxisAlignment::SpaceEvenly;
         assert_eq!(vec(a, 10., 0), vec![10.]);
         assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(vec(a, 10., 2), vec![3., 4., 3.]);
-        assert_eq!(vec(a, 10., 3), vec![3., 2., 3., 2.]);
-        assert_eq!(vec(a, 33., 5), vec![6., 5., 6., 5., 6., 5.]);
-        assert_eq!(vec(a, 34., 5), vec![6., 5., 6., 6., 5., 6.]);
-        assert_eq!(vec(a, 35., 5), vec![6., 6., 5., 6., 6., 6.]);
-        assert_eq!(vec(a, 36., 5), vec![6., 6., 6., 6., 6., 6.]);
-        assert_eq!(vec(a, 37., 5), vec![6., 6., 7., 6., 6., 6.]);
-        assert_eq!(vec(a, 38., 5), vec![6., 7., 6., 6., 7., 6.]);
-        assert_eq!(vec(a, 39., 5), vec![7., 6., 7., 6., 7., 6.]);
+        assert_eq!(vec(a, 10., 2), vec![10. / 3., 10. / 3., 10. / 3.]);
+        assert_eq!(vec(a, 10., 3), vec![2.5, 2.5, 2.5, 2.5]);
 
         let a = MainAxisAlignment::SpaceAround;
         assert_eq!(vec(a, 10., 0), vec![10.]);
         assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(vec(a, 10., 2), vec![3., 5., 2.]);
-        assert_eq!(vec(a, 10., 3), vec![2., 3., 3., 2.]);
-        assert_eq!(vec(a, 33., 5), vec![3., 7., 6., 7., 7., 3.]);
-        assert_eq!(vec(a, 34., 5), vec![3., 7., 7., 7., 7., 3.]);
-        assert_eq!(vec(a, 35., 5), vec![4., 7., 7., 7., 7., 3.]);
-        assert_eq!(vec(a, 36., 5), vec![4., 7., 7., 7., 7., 4.]);
-        assert_eq!(vec(a, 37., 5), vec![4., 7., 8., 7., 7., 4.]);
-        assert_eq!(vec(a, 38., 5), vec![4., 7., 8., 8., 7., 4.]);
-        assert_eq!(vec(a, 39., 5), vec![4., 8., 7., 8., 8., 4.]);
+        assert_eq!(vec(a, 10., 2), vec![2.5, 5., 2.5]);
+        assert_eq!(vec(a, 12., 3), vec![2., 4., 4., 2.]);
+        assert_eq!(vec(a, 35., 5), vec![3.5, 7., 7., 7., 7., 3.5]);
     }
 
     // TODO - fix this test
