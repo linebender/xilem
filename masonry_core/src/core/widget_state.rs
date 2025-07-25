@@ -75,7 +75,7 @@ pub(crate) struct WidgetState {
     /// Computed from the widget's origin and size, with some pixel snapping.
     pub(crate) end_point: Point,
     /// The value returned by the widget's layout method.
-    /// Used to compute end_point.
+    /// Used to compute `end_point`.
     pub(crate) layout_size: Size,
     /// The insets applied to the layout rect to generate the paint rect.
     /// In general, these will be zero; the exception is for things like
@@ -92,7 +92,7 @@ pub(crate) struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
-    /// The pixel-snapped position of the baseline, computed from baseline_offset
+    /// The pixel-snapped position of the baseline, computed from `baseline_offset`
     pub(crate) baseline_y: f64,
     /// Data cached from previous layout passes.
     pub(crate) layout_cache: LayoutCache,
