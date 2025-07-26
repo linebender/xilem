@@ -10,6 +10,7 @@
 use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
+use masonry::properties::types::Length;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
@@ -73,7 +74,7 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
                 .with_child(button),
             Properties::new().with(Padding::all(WIDGET_SPACING)),
         ))
-        .with_spacer(WIDGET_SPACING);
+        .with_spacer(Length::px(WIDGET_SPACING));
 
     NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
 }

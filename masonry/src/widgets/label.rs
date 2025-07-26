@@ -409,6 +409,7 @@ mod tests {
     use super::*;
     use crate::core::Properties;
     use crate::properties::types::CrossAxisAlignment;
+    use crate::properties::types::Length;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Flex, SizedBox};
@@ -487,7 +488,7 @@ mod tests {
             .with_flex_child(label4.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(label5.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(label6.with_auto_id(), CrossAxisAlignment::Center)
-            .with_gap(0.0)
+            .with_gap(Length::ZERO)
             .with_auto_id();
 
         let mut harness =
@@ -505,25 +506,25 @@ mod tests {
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::WordWrap)),
                 )
-                .width(180.0)
+                .width(Length::px(180.0))
                 .with_auto_id(),
             )
-            .with_spacer(20.0)
+            .with_spacer(Length::px(20.0))
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::Clip)),
                 )
-                .width(180.0)
+                .width(Length::px(180.0))
                 .with_auto_id(),
             )
-            .with_spacer(20.0)
+            .with_spacer(Length::px(20.0))
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::Overflow)),
                 )
-                .width(180.0)
+                .width(Length::px(180.0))
                 .with_auto_id(),
             )
             .with_flex_spacer(1.0)

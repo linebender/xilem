@@ -8,6 +8,7 @@
 
 use std::time::Duration;
 
+use masonry::properties::types::Length;
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
 use xilem::style::Style as _;
@@ -64,7 +65,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 if data.active {
                     FlexSpacer::Flex(x as f64)
                 } else {
-                    FlexSpacer::Fixed((count - x) as f64)
+                    FlexSpacer::Fixed(Length::px((count - x) as f64))
                 },
             )
         })
@@ -77,7 +78,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
             })
             .into_any_flex()
         } else {
-            FlexSpacer::Fixed(10.0 * c.0 as f64).into_any_flex()
+            FlexSpacer::Fixed(Length::px(10.0 * c.0 as f64)).into_any_flex()
         }
     });
 

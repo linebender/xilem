@@ -3,6 +3,7 @@
 
 //! A simple emoji picker.
 
+use masonry::properties::types::Length;
 use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
@@ -15,7 +16,7 @@ use xilem::{
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
     flex((
-        FlexSpacer::Fixed(50.), // Padding because of the info bar on Android
+        FlexSpacer::Fixed(Length::px(50.)), // Padding because of the info bar on Android
         flex_row((
             // TODO: Expose that this is a "zoom out" button accessibly
             button("🔍-", |data: &mut EmojiPagination| {
@@ -37,7 +38,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
         ),
         data.last_selected
             .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
-        FlexSpacer::Fixed(10.),
+        FlexSpacer::Fixed(Length::px(10.)),
     ))
     .direction(Axis::Vertical)
     .must_fill_major_axis(true)
@@ -86,7 +87,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
         data.size.try_into().unwrap(),
         data.size.try_into().unwrap(),
     )
-    .spacing(10.0)
+    .spacing(Length::px(10.0))
     .padding(20.0)
 }
 

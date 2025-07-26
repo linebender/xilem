@@ -4,6 +4,7 @@
 //! A widget gallery for xilem/masonry
 
 use masonry::dpi::LogicalSize;
+use masonry::properties::types::Length;
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
@@ -68,8 +69,8 @@ fn border_box<State: 'static, Action: 'static>(
         FlexSpacer::Flex(1.),
     )))
     .border(Color::WHITE, 2.)
-    .width(450.)
-    .height(200.)
+    .width(Length::px(450.))
+    .height(Length::px(200.))
 }
 
 /// Top-level view
@@ -99,7 +100,7 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
             ))
             .active(data.tab as usize),
         ))
-        .gap(SPACER_WIDTH),
+        .gap(Length::px(SPACER_WIDTH)),
     )
     .padding(SPACER_WIDTH)
 }

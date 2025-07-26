@@ -1,6 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use masonry::properties::types::Length;
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use std::marker::PhantomData;
 
@@ -59,14 +60,14 @@ pub struct SizedBox<V, State, Action = ()> {
 
 impl<V, State, Action> SizedBox<V, State, Action> {
     /// Set container's width.
-    pub fn width(mut self, width: f64) -> Self {
-        self.width = Some(width);
+    pub fn width(mut self, width: Length) -> Self {
+        self.width = Some(width.value());
         self
     }
 
     /// Set container's height.
-    pub fn height(mut self, height: f64) -> Self {
-        self.height = Some(height);
+    pub fn height(mut self, height: Length) -> Self {
+        self.height = Some(height.value());
         self
     }
 

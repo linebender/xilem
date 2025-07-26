@@ -222,6 +222,7 @@ mod tests {
 
     use super::*;
     use crate::core::Properties;
+    use crate::properties::types::Length;
     use crate::properties::{Background, BorderColor, BorderWidth};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
@@ -243,8 +244,8 @@ mod tests {
             .with_child(
                 NewWidget::new_with_props(
                     SizedBox::new(Label::new("Background").with_auto_id())
-                        .width(200.)
-                        .height(100.),
+                        .width(Length::px(200.))
+                        .height(Length::px(100.)),
                     bg_props,
                 ),
                 ChildAlignment::ParentAligned,
