@@ -16,6 +16,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+use crate::theme::DEFAULT_GAP;
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
 /// A container with either horizontal or vertical layout.
@@ -38,6 +39,9 @@ pub struct Flex {
 /// you can simply call [`with_flex_child`](Flex::with_flex_child) or [`add_flex_child`](Flex::add_flex_child),
 /// passing the child and the desired flex factor as a `f64`, which has an impl of
 /// `Into<FlexParams>`.
+///
+/// You can also add spacers and flexible spacers using e.g. [`with_spacer`](Flex::with_spacer).
+/// Spacers are children which take up space but don't paint anything.
 #[derive(Default, Debug, Copy, Clone, PartialEq)]
 pub struct FlexParams {
     flex: Option<f64>,
@@ -128,7 +132,7 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            gap: crate::theme::WIDGET_PADDING,
+            gap: DEFAULT_GAP,
         }
     }
 
@@ -166,11 +170,18 @@ impl Flex {
         self
     }
 
-    /// Builder-style method for setting the spacing along the
+    /// Builder-style method for setting a gap along the
     /// major axis between any two elements in logical pixels.
     ///
+    /// By default this is [`DEFAULT_GAP`].
+    ///
     /// Equivalent to the css [gap] property.
-    /// This gap is also present between spacers.
+    ///
+    /// This gap is between any two children, including spacers.
+    /// As such, when adding a spacer, you add both the spacer's size (or computed flex size)
+    /// and the gap between the spacer and its neighbors.
+    /// As such, if you're adding lots of spacers to a flex parent, you may want to set
+    /// its gap to zero to make the layout more predictable.
     ///
     /// ## Panics
     ///
@@ -211,9 +222,9 @@ impl Flex {
         self
     }
 
-    /// Builder-style method for adding a fixed-size spacer to the container.
+    /// Builder-style method for adding a fixed-size spacer child to the container.
     ///
-    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
+    /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
     pub fn with_spacer(mut self, mut len: f64) -> Self {
         if len < 0.0 {
             tracing::warn!("with_spacer called with negative length: {}", len);
@@ -225,7 +236,7 @@ impl Flex {
         self
     }
 
-    /// Builder-style method for adding a `flex` spacer to the container.
+    /// Builder-style method for adding a `flex` spacer child to the container.
     pub fn with_flex_spacer(mut self, flex: f64) -> Self {
         let flex = if flex >= 0.0 {
             flex
@@ -279,7 +290,10 @@ impl Flex {
     /// Set the spacing along the major axis between any two elements in logical pixels.
     ///
     /// Equivalent to the css [gap] property.
-    /// This gap is also present between spacers.
+    ///
+    /// This gap is between any two children, including spacers.
+    /// As such, using a non-zero gap and also adding spacers may lead to counter-intuitive results.
+    /// You should usually pick one or the other.
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     ///
@@ -322,9 +336,9 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Add an empty spacer widget with the given size.
+    /// Add an empty spacer child with the given size.
     ///
-    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
+    /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
     pub fn add_spacer(this: &mut WidgetMut<'_, Self>, mut len: f64) {
         if len < 0.0 {
             tracing::warn!("add_spacer called with negative length: {}", len);
@@ -336,7 +350,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Add an empty spacer widget with a specific `flex` factor.
+    /// Add an empty spacer child with a specific `flex` factor.
     pub fn add_flex_spacer(this: &mut WidgetMut<'_, Self>, flex: f64) {
         let flex = if flex >= 0.0 {
             flex
@@ -384,9 +398,9 @@ impl Flex {
         this.ctx.children_changed();
     }
 
-    /// Insert an empty spacer widget with the given size at the given index.
+    /// Insert an empty spacer child with the given size at the given index.
     ///
-    /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
+    /// A good default is [`DEFAULT_SPACER_LEN`](crate::theme::DEFAULT_SPACER_LEN).
     ///
     /// # Panics
     ///
@@ -402,7 +416,7 @@ impl Flex {
         this.ctx.request_layout();
     }
 
-    /// Add an empty spacer widget with a specific `flex` factor.
+    /// Add an empty spacer child with a specific `flex` factor.
     ///
     /// # Panics
     ///
