@@ -67,7 +67,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
-        gap: masonry::theme::WIDGET_PADDING,
+        gap: masonry::theme::DEFAULT_GAP,
         properties: FlexProps::default(),
         phantom: PhantomData,
     }
@@ -124,16 +124,21 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     /// Set the spacing along the major axis between any two elements in logical pixels.
     ///
     /// Equivalent to the css [gap] property.
-    /// This gap is also present between spacers.
     ///
-    /// Leave unset to use the default spacing which is [`WIDGET_PADDING`].
+    /// This gap is between any two children, including spacers.
+    /// As such, when adding a spacer, you add both the spacer's size (or computed flex size)
+    /// and the gap between the spacer and its neighbors.
+    /// As such, if you're adding lots of spacers to a flex parent, you may want to set
+    /// its gap to zero to make the layout more predictable.
+    ///
+    /// Leave unset to use the default spacing which is [`DEFAULT_GAP`].
     ///
     /// ## Panics
     ///
     /// If `gap` is not a non-negative finite value.
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    /// [`WIDGET_PADDING`]: masonry::theme::WIDGET_PADDING
+    /// [`DEFAULT_GAP`]: masonry::theme::DEFAULT_GAP
     #[track_caller]
     pub fn gap(mut self, gap: f64) -> Self {
         if gap.is_finite() && gap >= 0.0 {
