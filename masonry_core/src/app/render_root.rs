@@ -216,23 +216,33 @@ pub enum RenderRootSignal {
     RequestAnimFrame,
     /// The window should take focus.
     TakeFocus,
-    /// The mouse icon has changed.
+    /// The mouse icon should change.
     SetCursor(CursorIcon),
-    /// The window size has changed.
+    /// The window should be resized.
     SetSize(PhysicalSize<u32>),
     /// The window title has changed.
     SetTitle(String),
-    /// The window is being dragged.
+    /// The user has started dragging the window.
+    ///
+    /// Masonry should send this event when the user presses the left mouse button while hovering a client-side decoration representing the window title bar or similar.
+    /// The platform that receives this event should start moving the window until the mouse button is released.
     DragWindow,
-    /// The window is being resized.
+    /// The user has started drag-resizing the window.
+    ///
+    /// Masonry should send this event when the user presses the left mouse button while hovering a client-side decoration representing a window resize handle.
+    /// The platform that receives this event should start moving the window until the mouse button is released.
     DragResizeWindow(ResizeDirection),
-    /// The window is being maximized.
+    /// The window should be maximized.
     ToggleMaximized,
-    /// The window is being minimized.
+    /// The window should be minimized.
     Minimize,
-    /// The window is being closed.
+    /// The app should terminate.
     Exit,
-    /// The window menu is being shown.
+    /// The [Windows system menu] should be shown.
+    ///
+    /// Other platforms may ignore this.
+    ///
+    /// [Windows system menu]: https://en.wikipedia.org/wiki/Common_menus_in_Microsoft_Windows#System_menu
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
