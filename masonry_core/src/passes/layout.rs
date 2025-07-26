@@ -4,6 +4,8 @@
 //! The layout pass, which provides the size and position of each widget
 //! before any translations applied in [`compose`](crate::passes::compose).
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
+//!
+//! [`Widget::layout`]: crate::core::Widget::layout
 
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
@@ -20,6 +22,8 @@ use crate::passes::{enter_span_if, recurse_on_children};
 // --- MARK: RUN LAYOUT
 /// Run [`Widget::layout`] method on the given widget.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
+///
+/// [`Widget::layout`]: crate::core::Widget::layout
 pub(crate) fn run_layout_on(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
