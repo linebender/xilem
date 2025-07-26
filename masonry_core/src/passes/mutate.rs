@@ -4,7 +4,7 @@
 use tracing::info_span;
 
 use crate::app::RenderRoot;
-use crate::core::{MutateCtx, PropertiesMut, Widget, WidgetArenaMut, WidgetId, WidgetMut};
+use crate::core::{MutateCtx, PropertiesMut, Widget, WidgetId, WidgetMut};
 use crate::passes::merge_state_up;
 
 pub(crate) fn mutate_widget<R>(
@@ -14,15 +14,12 @@ pub(crate) fn mutate_widget<R>(
 ) -> R {
     // TODO - This panics if id can't be found.
     // Should it return Option instead?
-    let (widget_mut, state_mut, properties_mut) = root.widget_arena.get_all_mut(id);
-    let children = WidgetArenaMut {
-        widget_children: widget_mut.children,
-        widget_state_children: state_mut.children,
-        properties_children: properties_mut.children,
-    };
-    let widget = &mut **widget_mut.item;
-    let state = state_mut.item;
-    let properties = properties_mut.item;
+    let node = root.widget_arena.get_node_mut(id);
+    let children = node.children;
+    let widget = &mut *node.item.widget;
+    let state = &mut node.item.state;
+    let properties = &mut node.item.properties;
+    let id = state.id;
 
     let _span = info_span!("mutate_widget", name = widget.short_type_name()).entered();
 

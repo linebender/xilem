@@ -8,10 +8,9 @@
 //! This file includes utility functions used by multiple passes.
 
 use tracing::span::EnteredSpan;
-use tree_arena::{ArenaMut, ArenaRef};
+use tree_arena::{ArenaMut, ArenaMutList};
 
-use crate::core::{Widget, WidgetArena, WidgetArenaMut, WidgetId, WidgetState};
-use crate::util::AnyMap;
+use crate::core::{Widget, WidgetArena, WidgetArenaNode, WidgetId, WidgetState};
 
 pub(crate) mod accessibility;
 pub(crate) mod anim;
@@ -23,49 +22,32 @@ pub(crate) mod paint;
 pub(crate) mod update;
 
 #[must_use = "Span will be immediately closed if dropped"]
-pub(crate) fn enter_span_if(
-    enabled: bool,
-    state: ArenaRef<'_, WidgetState>,
-) -> Option<EnteredSpan> {
+pub(crate) fn enter_span_if(enabled: bool, state: &WidgetState) -> Option<EnteredSpan> {
     enabled.then(|| enter_span(state))
 }
 
 #[must_use = "Span will be immediately closed if dropped"]
-pub(crate) fn enter_span(state: ArenaRef<'_, WidgetState>) -> EnteredSpan {
-    state.item.trace_span.clone().entered()
+pub(crate) fn enter_span(state: &WidgetState) -> EnteredSpan {
+    state.trace_span.clone().entered()
 }
 
 pub(crate) fn recurse_on_children(
     id: WidgetId,
     widget: &mut dyn Widget,
-    mut children: WidgetArenaMut<'_>,
-    mut callback: impl FnMut(
-        ArenaMut<'_, Box<dyn Widget>>,
-        ArenaMut<'_, WidgetState>,
-        ArenaMut<'_, AnyMap>,
-    ),
+    mut children: ArenaMutList<'_, WidgetArenaNode>,
+    mut callback: impl FnMut(ArenaMut<'_, WidgetArenaNode>),
 ) {
     let parent_name = widget.short_type_name();
     let parent_id = id;
 
     for child_id in widget.children_ids() {
-        let widget = children.widget_children.item_mut(child_id).unwrap_or_else(|| {
+        let Some(node) = children.item_mut(child_id) else {
             panic!(
                 "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
-            )
-        });
-        let state = children.widget_state_children.item_mut(child_id).unwrap_or_else(|| {
-            panic!(
-                "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
-            )
-        });
-        let properties = children.properties_children.item_mut(child_id).unwrap_or_else(|| {
-            panic!(
-                "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
-            )
-        });
+            );
+        };
 
-        callback(widget, state, properties);
+        callback(node);
     }
 }
 
@@ -77,10 +59,13 @@ pub(crate) fn merge_state_up(arena: &mut WidgetArena, widget_id: WidgetId) {
         return;
     };
 
-    let mut parent_state_mut = arena.states.find_mut(parent_id).unwrap();
-    let child_state_mut = parent_state_mut.children.item_mut(widget_id).unwrap();
+    let mut parent_node_mut = arena.nodes.find_mut(parent_id).unwrap();
+    let child_node_mut = parent_node_mut.children.item_mut(widget_id).unwrap();
 
-    parent_state_mut.item.merge_up(child_state_mut.item);
+    parent_node_mut
+        .item
+        .state
+        .merge_up(&mut child_node_mut.item.state);
 }
 
 /// Masonry has a significant number of passes which may traverse a significant number of

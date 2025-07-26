@@ -16,8 +16,7 @@ use vello::kurbo::{Rect, Size};
 use crate::core::{
     AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, Handled, Ime, NewWidget,
     PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget, WidgetArena,
-    WidgetArenaMut, WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
-    WindowEvent,
+    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState, WindowEvent,
 };
 use crate::passes::accessibility::run_accessibility_pass;
 use crate::passes::anim::run_update_anim_pass;
@@ -34,7 +33,6 @@ use crate::passes::update::{
     run_update_widget_tree_pass,
 };
 use crate::passes::{PassTracing, recurse_on_children};
-use crate::util::AnyMap;
 
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.
@@ -311,9 +309,7 @@ impl RenderRoot {
                 scale_factor,
             },
             widget_arena: WidgetArena {
-                widgets: TreeArena::new(),
-                states: TreeArena::new(),
-                properties: TreeArena::new(),
+                nodes: TreeArena::new(),
             },
             rebuild_access_tree: true,
             debug_paint,
@@ -336,21 +332,25 @@ impl RenderRoot {
     }
 
     pub(crate) fn root_state(&self) -> &WidgetState {
-        self.widget_arena
-            .states
+        &self
+            .widget_arena
+            .nodes
             .roots()
             .into_item(self.root.id())
             .expect("root widget not in widget tree")
             .item
+            .state
     }
 
     pub(crate) fn root_state_mut(&mut self) -> &mut WidgetState {
-        self.widget_arena
-            .states
+        &mut self
+            .widget_arena
+            .nodes
             .roots_mut()
             .into_item_mut(self.root.id())
             .expect("root widget not in widget tree")
             .item
+            .state
     }
 
     // --- MARK: WINDOW_EVENT
@@ -465,26 +465,12 @@ impl RenderRoot {
 
     /// Get a [`WidgetRef`] to a specific widget.
     pub fn get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
-        let state_ref = self.widget_arena.states.find(id)?;
-        let widget_ref = self
-            .widget_arena
-            .widgets
-            .find(id)
-            .expect("found state but not widget");
-        let properties_ref = self
-            .widget_arena
-            .properties
-            .find(id)
-            .expect("found state but not properties");
+        let node_ref = self.widget_arena.nodes.find(id)?;
 
-        let children = WidgetArenaRef {
-            widget_children: widget_ref.children,
-            widget_state_children: state_ref.children,
-            properties_children: properties_ref.children,
-        };
-        let widget = &**widget_ref.item;
-        let state = state_ref.item;
-        let properties = properties_ref.item;
+        let children = node_ref.children;
+        let widget = &*node_ref.item.widget;
+        let state = &node_ref.item.state;
+        let properties = &node_ref.item.properties;
 
         let ctx = QueryCtx {
             global_state: &self.global_state,
@@ -604,7 +590,7 @@ impl RenderRoot {
                 .global_state
                 .focused_widget
                 .expect("IME is active without a focused widget");
-            let ime_area = self.widget_arena.get_state(widget).item.get_ime_area();
+            let ime_area = self.widget_arena.get_state(widget).get_ime_area();
             // Certain desktop environments (primarily KDE on Wayland) re-synchronise IME state
             // with the client (this app) in response to the safe area changing.
             // Our handling of that ultimately results in us sending the safe area again,
@@ -619,18 +605,10 @@ impl RenderRoot {
     }
 
     pub(crate) fn request_render_all(&mut self) {
-        fn request_render_all_in(
-            widget: ArenaMut<'_, Box<dyn Widget>>,
-            state: ArenaMut<'_, WidgetState>,
-            properties: ArenaMut<'_, AnyMap>,
-        ) {
-            let children = WidgetArenaMut {
-                widget_children: widget.children,
-                widget_state_children: state.children,
-                properties_children: properties.children,
-            };
-            let widget = &mut **widget.item;
-            let state = state.item;
+        fn request_render_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
+            let children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
 
             state.needs_paint = true;
             state.needs_accessibility = true;
@@ -638,14 +616,13 @@ impl RenderRoot {
             state.request_accessibility = true;
 
             let id = state.id;
-            recurse_on_children(id, widget, children, |widget, state, properties| {
-                request_render_all_in(widget, state, properties);
+            recurse_on_children(id, widget, children, |node| {
+                request_render_all_in(node);
             });
         }
 
-        let (root_widget, root_state, root_properties) =
-            self.widget_arena.get_all_mut(self.root.id());
-        request_render_all_in(root_widget, root_state, root_properties);
+        let root_node = self.widget_arena.get_node_mut(self.root.id());
+        request_render_all_in(root_node);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
     }
@@ -654,11 +631,12 @@ impl RenderRoot {
     /// i.e. not disabled or stashed.
     /// Only interactive widgets can have text focus or pointer capture.
     pub(crate) fn is_still_interactive(&self, id: WidgetId) -> bool {
-        let Some(state) = self.widget_arena.states.find(id) else {
+        let Some(node) = self.widget_arena.nodes.find(id) else {
             return false;
         };
+        let state = &node.item.state;
 
-        !state.item.is_stashed && !state.item.is_disabled
+        !state.is_stashed && !state.is_disabled
     }
 
     /// Return the [`WidgetId`] of the [focused widget](crate::doc::masonry_concepts#text-focus).
