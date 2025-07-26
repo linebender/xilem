@@ -242,7 +242,7 @@ pub enum RenderRootSignal {
     ///
     /// Other platforms may ignore this.
     ///
-    /// [Windows system menu]: https://en.wikipedia.org/wiki/Common_menus_in_Microsoft_Windows#System_menu
+    /// [Windows system menu]: https://en.wikipedia.org/w/index.php?title=Common_menus_in_Microsoft_Windows&oldid=1285312933#System_menu
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
