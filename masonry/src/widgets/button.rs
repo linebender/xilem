@@ -426,7 +426,7 @@ mod tests {
         use crate::palette::css::ORANGE;
 
         let grid = Grid::with_dimensions(2, 2)
-            .with_spacing(40.0)
+            .with_gap(40.0)
             .with_child(Button::new("A").with_auto_id(), GridParams::new(0, 0, 1, 1))
             .with_child(Button::new("B").with_auto_id(), GridParams::new(1, 0, 1, 1))
             .with_child(Button::new("C").with_auto_id(), GridParams::new(0, 1, 1, 1))

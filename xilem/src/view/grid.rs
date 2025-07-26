@@ -45,7 +45,7 @@ pub use masonry::widgets::GridParams;
 /// 3,
 /// 2,
 /// )
-/// .spacing(GRID_GAP)
+/// .gap(GRID_GAP)
 /// ```
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
 pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
@@ -55,7 +55,7 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
 ) -> Grid<Seq, State, Action> {
     Grid {
         sequence,
-        spacing: 0.0,
+        gap: 0.0,
         height,
         width,
         properties: GridProps::default(),
@@ -69,7 +69,7 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Grid<Seq, State, Action = ()> {
     sequence: Seq,
-    spacing: f64,
+    gap: f64,
     width: i32,
     height: i32,
     properties: GridProps,
@@ -81,13 +81,13 @@ pub struct Grid<Seq, State, Action = ()> {
 }
 
 impl<Seq, State, Action> Grid<Seq, State, Action> {
-    /// Set the spacing (both vertical and horizontal) between grid items.
+    /// Set the gap (both vertical and horizontal) between grid items.
     #[track_caller]
-    pub fn spacing(mut self, spacing: f64) -> Self {
-        if spacing.is_finite() && spacing >= 0.0 {
-            self.spacing = spacing;
+    pub fn gap(mut self, gap: f64) -> Self {
+        if gap.is_finite() && gap >= 0.0 {
+            self.gap = gap;
         } else {
-            panic!("Invalid `spacing` {spacing}; expected a non-negative finite value.")
+            panic!("Invalid `gap` {gap}; expected a non-negative finite value.")
         }
         self
     }
@@ -127,7 +127,7 @@ where
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Grid::with_dimensions(self.width, self.height);
-        widget = widget.with_spacing(self.spacing);
+        widget = widget.with_gap(self.gap);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
         for element in elements.into_inner() {
             widget = widget.with_child(element.child.new_widget, element.params);
@@ -153,8 +153,8 @@ where
         if prev.width != self.width {
             widgets::Grid::set_width(&mut element, self.width);
         }
-        if prev.spacing != self.spacing {
-            widgets::Grid::set_spacing(&mut element, self.spacing);
+        if prev.gap != self.gap {
+            widgets::Grid::set_gap(&mut element, self.gap);
         }
 
         let mut splice = GridSplice::new(element);

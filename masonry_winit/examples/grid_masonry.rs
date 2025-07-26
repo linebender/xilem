@@ -19,7 +19,7 @@ use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
 struct Driver {
-    grid_spacing: f64,
+    grid_gap: f64,
     window_id: WindowId,
 }
 
@@ -35,7 +35,7 @@ impl AppDriver for Driver {
 
         if action.is::<ButtonPress>() {
             let button = action.downcast::<ButtonPress>().unwrap().button;
-            self.grid_spacing += match button {
+            self.grid_gap += match button {
                 Some(PointerButton::Primary) => 1.0,
                 Some(PointerButton::Secondary) => -1.0,
                 _ => 0.5,
@@ -43,7 +43,7 @@ impl AppDriver for Driver {
 
             ctx.render_root(window_id).edit_root_widget(|mut root| {
                 let mut grid = root.downcast::<Grid>();
-                Grid::set_spacing(&mut grid, self.grid_spacing);
+                Grid::set_gap(&mut grid, self.grid_gap);
             });
         }
     }
@@ -123,7 +123,7 @@ pub fn make_grid(grid_spacing: f64) -> Grid {
 
     // Arrange widgets in a 4 by 4 grid.
     let mut main_widget = Grid::with_dimensions(4, 4)
-        .with_spacing(grid_spacing)
+        .with_gap(grid_spacing)
         .with_child(label.with_auto_id(), GridParams::new(1, 0, 1, 1));
     for button_input in button_inputs {
         let button = grid_button(button_input);
@@ -135,10 +135,10 @@ pub fn make_grid(grid_spacing: f64) -> Grid {
 
 fn main() {
     let driver = Driver {
-        grid_spacing: 1.0,
+        grid_gap: 1.0,
         window_id: WindowId::next(),
     };
-    let main_widget = make_grid(driver.grid_spacing);
+    let main_widget = make_grid(driver.grid_gap);
 
     let window_size = LogicalSize::new(800.0, 500.0);
     let window_attributes = Window::default_attributes()

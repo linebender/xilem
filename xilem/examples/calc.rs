@@ -248,7 +248,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
         4,
         6,
     )
-    .spacing(GRID_GAP)
+    .gap(GRID_GAP)
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
