@@ -225,12 +225,12 @@ pub enum RenderRootSignal {
     /// The user has started dragging the window.
     ///
     /// Masonry should send this event when the user presses the left mouse button while hovering a client-side decoration representing the window title bar or similar.
-    /// The platform that receives this event should start moving the window until the mouse button is released.
+    /// The platform that receives this event should start moving the window around until the mouse button is released.
     DragWindow,
     /// The user has started drag-resizing the window.
     ///
     /// Masonry should send this event when the user presses the left mouse button while hovering a client-side decoration representing a window resize handle.
-    /// The platform that receives this event should start moving the window until the mouse button is released.
+    /// The platform that receives this event should start resizing the window until the mouse button is released.
     DragResizeWindow(ResizeDirection),
     /// The window should be maximized.
     ToggleMaximized,
