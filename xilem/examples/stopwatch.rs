@@ -7,7 +7,7 @@ use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 
 use masonry::dpi::LogicalSize;
-use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use tokio::time;
 use tracing::warn;
@@ -108,10 +108,10 @@ fn get_formatted_duration(dur: Duration) -> String {
 fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     fork(
         flex((
-            FlexSpacer::Fixed(5.0),
+            FlexSpacer::Fixed(Length::px(5.0)),
             label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
             flex_row((lap_reset_button(data), start_stop_button(data))),
-            FlexSpacer::Fixed(1.0),
+            FlexSpacer::Fixed(Length::px(1.0)),
             laps_section(data),
             label(data.displayed_error.as_ref()),
         )),

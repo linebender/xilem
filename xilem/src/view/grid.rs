@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 use crate::style::Style;
 
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::properties::types::Length;
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets;
 
@@ -55,7 +56,7 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
 ) -> Grid<Seq, State, Action> {
     Grid {
         sequence,
-        spacing: 0.0,
+        spacing: Length::ZERO,
         height,
         width,
         properties: GridProps::default(),
@@ -69,7 +70,7 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Grid<Seq, State, Action = ()> {
     sequence: Seq,
-    spacing: f64,
+    spacing: Length,
     width: i32,
     height: i32,
     properties: GridProps,
@@ -83,12 +84,8 @@ pub struct Grid<Seq, State, Action = ()> {
 impl<Seq, State, Action> Grid<Seq, State, Action> {
     /// Set the spacing (both vertical and horizontal) between grid items.
     #[track_caller]
-    pub fn spacing(mut self, spacing: f64) -> Self {
-        if spacing.is_finite() && spacing >= 0.0 {
-            self.spacing = spacing;
-        } else {
-            panic!("Invalid `spacing` {spacing}; expected a non-negative finite value.")
-        }
+    pub fn spacing(mut self, spacing: Length) -> Self {
+        self.spacing = spacing;
         self
     }
 }

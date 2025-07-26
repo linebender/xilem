@@ -14,6 +14,7 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::types::Length;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{fill, include_screenshot, stroke};
 
@@ -59,14 +60,14 @@ impl SizedBox {
     }
 
     /// Set container's width.
-    pub fn width(mut self, width: f64) -> Self {
-        self.width = Some(width);
+    pub fn width(mut self, width: Length) -> Self {
+        self.width = Some(width.value());
         self
     }
 
     /// Set container's height.
-    pub fn height(mut self, height: f64) -> Self {
-        self.height = Some(height);
+    pub fn height(mut self, height: Length) -> Self {
+        self.height = Some(height.value());
         self
     }
 
@@ -79,6 +80,8 @@ impl SizedBox {
     /// [`expand_height`]: Self::expand_height
     /// [`expand_width`]: Self::expand_width
     pub fn expand(mut self) -> Self {
+        // TODO - Using infinity in layout is a code smell.
+        // Rewor these methods.
         self.width = Some(f64::INFINITY);
         self.height = Some(f64::INFINITY);
         self
@@ -320,7 +323,7 @@ mod tests {
 
     #[test]
     fn no_width() {
-        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(200.);
+        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(Length::px(200.));
         let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
         let child_bc = expand.child_constraints(&bc);
         assert_eq!(child_bc.min(), Size::new(0., 200.,));
@@ -335,8 +338,8 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
 
         let widget = SizedBox::empty()
-            .width(20.0)
-            .height(20.0)
+            .width(Length::px(20.0))
+            .height(Length::px(20.0))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -370,8 +373,8 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(20.0)
-            .height(20.0)
+            .width(Length::px(20.0))
+            .height(Length::px(20.0))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -404,8 +407,8 @@ mod tests {
         box_props.insert(Background::Color(palette::css::PLUM));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(20.0)
-            .height(20.0)
+            .width(Length::px(20.0))
+            .height(Length::px(20.0))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -432,8 +435,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(20.)
-            .height(20.)
+            .width(Length::px(20.))
+            .height(Length::px(20.))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -460,8 +463,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(20.)
-            .height(20.)
+            .width(Length::px(20.))
+            .height(Length::px(20.))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -488,8 +491,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(20.)
-            .height(20.)
+            .width(Length::px(20.))
+            .height(Length::px(20.))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -508,8 +511,8 @@ mod tests {
         box_props.insert(Padding::all(25.));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(20.0)
-            .height(20.0)
+            .width(Length::px(20.0))
+            .height(Length::px(20.0))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -535,8 +538,8 @@ mod tests {
         box_props.insert(BorderWidth::all(5.2));
 
         let widget = SizedBox::empty()
-            .width(20.0)
-            .height(20.0)
+            .width(Length::px(20.0))
+            .height(Length::px(20.0))
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);

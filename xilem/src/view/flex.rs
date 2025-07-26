@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 use crate::style::Style;
 
 use masonry::core::{Axis, FromDynWidget, Widget, WidgetMut};
+use masonry::properties::types::Length;
 pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 pub use masonry::widgets::FlexParams;
@@ -94,7 +95,7 @@ pub struct Flex<Seq, State, Action = ()> {
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    gap: f64,
+    gap: Length,
     properties: FlexProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
@@ -134,20 +135,11 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     ///
     /// Leave unset to use the default spacing which is [`DEFAULT_GAP`].
     ///
-    /// # Panics
-    ///
-    /// If `gap` is not a non-negative finite value.
-    ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     /// [`DEFAULT_GAP`]: masonry::theme::DEFAULT_GAP
     #[track_caller]
-    pub fn gap(mut self, gap: f64) -> Self {
-        if gap.is_finite() && gap >= 0.0 {
-            self.gap = gap;
-        } else {
-            // TODO: Don't panic here, for future editor scenarios.
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
-        }
+    pub fn gap(mut self, gap: Length) -> Self {
+        self.gap = gap;
         self
     }
 }
@@ -318,7 +310,7 @@ pub enum FlexElement {
     /// Child widget.
     Child(Pod<dyn Widget>, FlexParams),
     /// Child spacer with fixed size.
-    FixedSpacer(f64),
+    FixedSpacer(Length),
     /// Child spacer with flex size.
     FlexSpacer(f64),
 }
@@ -666,7 +658,7 @@ where
 #[derive(Copy, Clone, PartialEq)]
 #[expect(missing_docs, reason = "TODO - Need to document units used.")]
 pub enum FlexSpacer {
-    Fixed(f64),
+    Fixed(Length),
     Flex(f64),
 }
 

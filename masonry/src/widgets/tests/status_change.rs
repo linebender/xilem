@@ -6,6 +6,7 @@ use masonry_core::core::Widget;
 use vello::kurbo::Vec2;
 
 use crate::core::{NewWidget, PointerButton, PointerEvent, Update, WidgetId};
+use crate::properties::types::Length;
 use crate::testing::{
     PRIMARY_MOUSE, Record, Recording, TestHarness, TestWidgetExt as _, widget_ids,
 };
@@ -53,17 +54,19 @@ fn propagate_hovered() {
 
     let widget = Flex::column()
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.0).height(10.0),
+            SizedBox::empty()
+                .width(Length::px(10.0))
+                .height(Length::px(10.0)),
             empty,
         ))
         .with_child(NewWidget::new_with_id(
             Flex::column()
-                .with_spacer(100.0)
+                .with_spacer(Length::px(100.0))
                 .with_child(NewWidget::new_with_id(
                     Button::with_text("hovered").record_with(&button_rec),
                     button,
                 ))
-                .with_spacer(10.0)
+                .with_spacer(Length::px(10.0))
                 .record_with(&padding_rec),
             pad,
         ))
@@ -239,11 +242,15 @@ fn get_pointer_events_while_active() {
 
     let widget = Flex::column()
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.0).height(10.0),
+            SizedBox::empty()
+                .width(Length::px(10.0))
+                .height(Length::px(10.0)),
             empty,
         ))
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.0).height(10.0),
+            SizedBox::empty()
+                .width(Length::px(10.0))
+                .height(Length::px(10.0)),
             empty_2,
         ))
         .with_child(NewWidget::new_with_id(
@@ -323,7 +330,9 @@ fn automatically_lose_pointer_on_pointer_lost() {
 
     let widget = Flex::column()
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.0).height(10.0),
+            SizedBox::empty()
+                .width(Length::px(10.0))
+                .height(Length::px(10.0)),
             empty,
         ))
         .with_child(NewWidget::new_with_id(
