@@ -175,6 +175,9 @@ This is done "at the end" of the layout pass, so to speak, so that widgets can l
 
 The snapping is done in a way that preserves relations between widgets: if one widget ends precisely where another stops, Masonry will pick values so that their pixel-snapped layout rects have no gap or overlap.
 
+**Note:** This may produce incorrect results with DPI scaling.
+DPI-aware pixel snapping is a future feature.
+
 
 [`Cancel`]: ui_events::pointer::PointerEvent::Cancel
 [`FocusChanged`]: crate::core::Update::FocusChanged
