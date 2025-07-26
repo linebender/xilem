@@ -1169,8 +1169,6 @@ impl_context_method!(
         }
 
         /// Get direct reference to the stored child, and a context handle for that child.
-        ///
-        /// See [pass documentation](crate::doc::doc_05_pass_system) for the pass order.
         pub fn get_raw<Child: Widget + FromDynWidget + ?Sized>(
             &mut self,
             child: &mut WidgetPod<Child>,
@@ -1204,7 +1202,7 @@ impl_context_method!(
         /// behave as expected.
         /// As such, the child widget must opt-in using the `AllowRawMut` trait.
         ///
-        /// See [pass documentation](crate::doc::doc_05_pass_system) for the pass order.
+        /// See [pass documentation](crate::doc::pass_system) for the pass order.
         pub fn get_raw_mut<Child: Widget + FromDynWidget + AllowRawMut + ?Sized>(
             &mut self,
             child: &mut WidgetPod<Child>,
