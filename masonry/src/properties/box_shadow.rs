@@ -4,10 +4,12 @@
 use std::any::TypeId;
 
 use vello::Scene;
-use vello::kurbo::{Affine, Insets, Point, RoundedRect};
+use vello::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
 use vello::peniko::color::{AlphaColor, Srgb};
+use vello::peniko::{BlendMode, Compose, Mix};
 
 use crate::core::{Property, UpdateCtx};
+use crate::properties::CornerRadius;
 
 // TODO - This is a first implementation of box shadows. A full version would need
 // to address the following points:
@@ -90,6 +92,11 @@ impl BoxShadow {
         alpha != 0.0
     }
 
+    /// Creates a rounded rectangle that will cast the shadow.
+    pub fn shadow_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
+        size.to_rect().to_rounded_rect(border_radius.radius)
+    }
+
     /// Helper function to paint the shadow into a scene.
     pub fn paint(&self, scene: &mut Scene, transform: Affine, rect: RoundedRect) {
         if !self.is_visible() {
@@ -104,12 +111,24 @@ impl BoxShadow {
             + rect.radii().top_left
             + rect.radii().top_right)
             / 4.;
-        scene.draw_blurred_rounded_rect(
+
+        let std_dev = blur_radius;
+
+        let kernel_size = 2.5 * std_dev;
+        let carve_out = (rect - self.offset.to_vec2())
+            .to_path(0.1)
+            .reverse_subpaths();
+        let big_rect = rect
+            .rect()
+            .inflate(kernel_size, kernel_size)
+            .path_elements(0.1);
+        let shape = BezPath::from_iter(big_rect.chain(carve_out));
+        scene.draw_blurred_rounded_rect_in(
+            &shape,
             transform,
             rect.rect(),
             self.color,
             radius,
-            // TODO - I'm not sure this is the right std_dev.
             blur_radius,
         );
     }

@@ -232,7 +232,6 @@ impl Widget for Button {
 
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
 
         let bg = if ctx.is_disabled() {
             &props.get::<DisabledBackground>().0
@@ -258,11 +257,19 @@ impl Widget for Button {
             };
         }
 
-        shadow.paint(scene, Affine::IDENTITY, bg_rect);
-
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
+    }
+
+    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let size = ctx.size();
+        let border_radius = props.get::<CornerRadius>();
+        let shadow = props.get::<BoxShadow>();
+
+        let shadow_rect = shadow.shadow_rect(size, border_radius);
+
+        shadow.paint(scene, Affine::IDENTITY, shadow_rect);
     }
 
     fn accessibility_role(&self) -> Role {
