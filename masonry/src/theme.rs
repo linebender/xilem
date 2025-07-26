@@ -10,11 +10,11 @@ use parley::{GenericFamily, LineHeight};
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::peniko::Color;
 use crate::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
-    CornerRadius, DisabledBackground, DisabledCheckmarkColor, DisabledTextColor,
-    HoveredBorderColor, Padding, TextColor,
+    ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CheckmarkColor,
+    CheckmarkStrokeWidth, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
+    DisabledTextColor, HoveredBorderColor, Padding, TextColor,
 };
-use crate::widgets::{Button, Checkbox, Label, TextArea, TextInput};
+use crate::widgets::{Button, Checkbox, Label, ProgressBar, TextArea, TextInput};
 
 pub const BORDER_WIDTH: f64 = 1.;
 
@@ -95,6 +95,16 @@ pub fn default_property_set() -> DefaultProperties {
     // Label
     properties.insert::<Label, _>(TextColor::new(TEXT_COLOR));
     properties.insert::<Label, _>(DisabledTextColor(TextColor::new(DISABLED_TEXT_COLOR)));
+
+    // ProgressBar
+    properties.insert::<ProgressBar, _>(CornerRadius { radius: 2. });
+    properties.insert::<ProgressBar, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<ProgressBar, _>(Background::Color(ZYNC_900));
+    properties.insert::<ProgressBar, _>(BorderColor { color: ZYNC_800 });
+    properties.insert::<ProgressBar, _>(BarColor(ACCENT_COLOR));
 
     properties
 }

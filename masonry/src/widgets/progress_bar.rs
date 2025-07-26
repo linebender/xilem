@@ -3,6 +3,8 @@
 
 //! A progress bar widget.
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -12,7 +14,7 @@ use crate::core::{
     AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::theme;
+use crate::properties::{Background, BarColor, BorderColor, BorderWidth, CornerRadius};
 use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::{Label, LineBreaking};
 
@@ -99,6 +101,14 @@ impl Widget for ProgressBar {
         ctx.register_child(&mut self.label);
     }
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        BorderWidth::prop_changed(ctx, property_type);
+        CornerRadius::prop_changed(ctx, property_type);
+        Background::prop_changed(ctx, property_type);
+        BarColor::prop_changed(ctx, property_type);
+        BorderColor::prop_changed(ctx, property_type);
+    }
+
     fn update(
         &mut self,
         _ctx: &mut UpdateCtx<'_>,
@@ -131,35 +141,27 @@ impl Widget for ProgressBar {
         final_size
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let border_width = 1.;
-        let size = ctx.size();
-        let border_radius = 2.;
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let border_width = props.get::<BorderWidth>();
+        let border_radius = props.get::<CornerRadius>();
+        let bg = props.get::<Background>();
+        let bar_color = props.get::<BarColor>();
+        let border_color = props.get::<BorderColor>();
 
-        let bg_rect = size
-            .to_rect()
-            .inset(-border_width)
-            .to_rounded_rect(border_radius - border_width);
-        let border_rect = size
-            .to_rect()
-            .inset(-border_width / 2.0)
-            .to_rounded_rect(border_radius);
+        let bg_rect = border_width.bg_rect(ctx.size(), border_radius);
+        let border_rect = border_width.border_rect(ctx.size(), border_radius);
 
         let progress_rect_size = Size::new(
             ctx.size().width * self.progress.unwrap_or(1.),
             ctx.size().height,
         );
-        let progress_rect = progress_rect_size
-            .to_rect()
-            .inset(-border_width)
-            .to_rounded_rect(border_radius - border_width);
+        let progress_rect = border_width.bg_rect(progress_rect_size, border_radius);
 
-        // TODO - Use properties instead.
+        let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
+        fill(scene, &bg_rect, &brush);
+        fill(scene, &progress_rect, bar_color.0);
 
-        fill(scene, &bg_rect, theme::ZYNC_900);
-        fill(scene, &progress_rect, theme::ACCENT_COLOR);
-
-        stroke(scene, &border_rect, theme::ZYNC_800, border_width);
+        stroke(scene, &border_rect, border_color.color, border_width.width);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -198,6 +200,7 @@ mod tests {
     use super::*;
     use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
+    use crate::{core::Properties, palette};
 
     #[test]
     fn indeterminate_progressbar() {
@@ -274,7 +277,8 @@ mod tests {
     #[test]
     fn edit_progressbar() {
         let image_1 = {
-            let bar = ProgressBar::new(Some(0.5));
+            let bar = ProgressBar::new(Some(0.5))
+                .with_props(Properties::new().with(BarColor(palette::css::PURPLE)));
 
             let mut harness =
                 TestHarness::create_with_size(default_property_set(), bar, Size::new(60.0, 20.0));
@@ -290,6 +294,7 @@ mod tests {
 
             harness.edit_root_widget(|mut bar| {
                 ProgressBar::set_progress(&mut bar, Some(0.5));
+                bar.insert_prop(BarColor(palette::css::PURPLE));
             });
 
             harness.render()
