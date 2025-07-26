@@ -837,11 +837,6 @@ impl_context_method!(
         pub fn to_window(&self, widget_point: Point) -> Point {
             self.widget_state.window_transform * widget_point
         }
-
-        /// Get the given child's size.
-        pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
-            self.get_child_state(child).size
-        }
     }
 );
 

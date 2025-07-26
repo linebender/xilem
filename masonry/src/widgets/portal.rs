@@ -24,6 +24,7 @@ use crate::widgets::{Axis, ScrollBar};
 #[expect(missing_docs, reason = "TODO")]
 pub struct Portal<W: Widget + ?Sized> {
     child: WidgetPod<W>,
+    content_size: Size,
     // TODO - differentiate between the "explicit" viewport pos determined
     // by user input, and the computed viewport pos that may change based
     // on re-layouts
@@ -45,6 +46,7 @@ impl<W: Widget + ?Sized> Portal<W> {
     pub fn new(child: NewWidget<W>) -> Self {
         Self {
             child: child.to_pod(),
+            content_size: Size::ZERO,
             viewport_pos: Point::ORIGIN,
             constrain_horizontal: false,
             constrain_vertical: false,
@@ -263,7 +265,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         event: &PointerEvent,
     ) {
         let portal_size = ctx.size();
-        let content_size = ctx.child_size(&self.child);
+        let content_size = self.content_size;
 
         match *event {
             PointerEvent::Scroll { delta, .. } => {
@@ -356,7 +358,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         match event {
             Update::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
-                let content_size = ctx.child_size(&self.child);
+                let content_size = self.content_size;
 
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
                 ctx.request_compose();
@@ -396,6 +398,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 
         let content_size = ctx.run_layout(&mut self.child, &child_bc);
         let portal_size = bc.constrain(content_size);
+
+        self.content_size = content_size;
 
         // TODO - document better
         // Recompute the portal offset for the new layout
