@@ -7,7 +7,7 @@ use std::ops::Deref;
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetArenaRef, WidgetId};
+use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -117,34 +117,17 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
             .children_ids()
             .iter()
             .map(|&id| {
-                let Some(state_ref) = self.ctx.children.widget_state_children.into_item(id) else {
-                    panic!(
-                        "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
-                        self.widget.short_type_name()
-                    );
-                };
-                let Some(widget_ref) = self.ctx.children.widget_children.into_item(id) else {
-                    panic!(
-                        "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
-                        self.widget.short_type_name()
-                    );
-                };
-                let Some(properties_ref) = self.ctx.children.properties_children.into_item(id)
-                else {
+                let Some(node_ref) = self.ctx.children.into_item(id) else {
                     panic!(
                         "Error in '{}' #{parent_id}: child #{id} has not been added to tree",
                         self.widget.short_type_name()
                     );
                 };
 
-                let children = WidgetArenaRef {
-                    widget_children: widget_ref.children,
-                    widget_state_children: state_ref.children,
-                    properties_children: properties_ref.children,
-                };
-                let widget = &**widget_ref.item;
-                let state = state_ref.item;
-                let properties = properties_ref.item;
+                let children = node_ref.children;
+                let widget = &*node_ref.item.widget;
+                let state = &node_ref.item.state;
+                let properties = &node_ref.item.properties;
 
                 let ctx = QueryCtx {
                     global_state: self.ctx.global_state,

@@ -5,30 +5,22 @@ use tracing::info_span;
 use tree_arena::ArenaMut;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{
-    DefaultProperties, PropertiesMut, UpdateCtx, Widget, WidgetArenaMut, WidgetState,
-};
+use crate::core::{DefaultProperties, PropertiesMut, UpdateCtx, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::AnyMap;
 
 // --- MARK: UPDATE ANIM
 fn update_anim_for_widget(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
+    node: ArenaMut<'_, WidgetArenaNode>,
     elapsed_ns: u64,
 ) {
-    let _span = enter_span_if(global_state.trace.anim, state.reborrow());
-    let mut children = WidgetArenaMut {
-        widget_children: widget.children,
-        widget_state_children: state.children,
-        properties_children: properties.children,
-    };
-    let widget = &mut **widget.item;
-    let state = state.item;
-    let properties = properties.item;
+    let mut children = node.children;
+    let widget = &mut *node.item.widget;
+    let state = &mut node.item.state;
+    let properties = &mut node.item.properties;
+    let id = state.id;
+    let _span = enter_span_if(global_state.trace.anim, state);
 
     if !state.needs_anim {
         return;
@@ -52,18 +44,15 @@ fn update_anim_for_widget(
         widget.on_anim_frame(&mut ctx, &mut props, elapsed_ns);
     }
 
-    let id = state.id;
     let parent_state = state;
-    recurse_on_children(id, widget, children, |widget, mut state, properties| {
+    recurse_on_children(id, widget, children, |mut node| {
         update_anim_for_widget(
             global_state,
             default_properties,
-            widget,
-            state.reborrow_mut(),
-            properties,
+            node.reborrow_mut(),
             elapsed_ns,
         );
-        parent_state.merge_up(state.item);
+        parent_state.merge_up(&mut node.item.state);
     });
 }
 
@@ -77,14 +66,11 @@ fn update_anim_for_widget(
 pub(crate) fn run_update_anim_pass(root: &mut RenderRoot, elapsed_ns: u64) {
     let _span = info_span!("update_anim").entered();
 
-    let (root_widget, mut root_state, root_properties) =
-        root.widget_arena.get_all_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root.id());
     update_anim_for_widget(
         &mut root.global_state,
         &root.default_properties,
-        root_widget,
-        root_state.reborrow_mut(),
-        root_properties,
+        root_node,
         elapsed_ns,
     );
 }

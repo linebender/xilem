@@ -6,27 +6,21 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{ComposeCtx, Widget, WidgetArenaMut, WidgetState};
+use crate::core::{ComposeCtx, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::AnyMap;
 
 // --- MARK: RECURSE
 fn compose_widget(
     global_state: &mut RenderRootState,
-    widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
+    node: ArenaMut<'_, WidgetArenaNode>,
     parent_transformed: bool,
     parent_window_transform: Affine,
 ) {
-    let _span = enter_span_if(global_state.trace.compose, state.reborrow());
-    let mut children = WidgetArenaMut {
-        widget_children: widget.children,
-        widget_state_children: state.children,
-        properties_children: properties.children,
-    };
-    let widget = &mut **widget.item;
-    let state = state.item;
+    let mut children = node.children;
+    let widget = &mut *node.item.widget;
+    let state = &mut node.item.state;
+    let id = state.id;
+    let _span = enter_span_if(global_state.trace.compose, state);
 
     let transformed = parent_transformed || state.transform_changed;
 
@@ -61,25 +55,22 @@ fn compose_widget(
     state.request_compose = false;
     state.transform_changed = false;
 
-    let id = state.id;
     let parent_transform = state.window_transform;
     let parent_state = state;
-    recurse_on_children(id, widget, children, |widget, mut state, properties| {
+    recurse_on_children(id, widget, children, |mut node| {
         compose_widget(
             global_state,
-            widget,
-            state.reborrow_mut(),
-            properties,
+            node.reborrow_mut(),
             transformed,
             parent_transform,
         );
         let parent_bounding_rect = parent_state.bounding_rect;
 
-        if let Some(child_bounding_rect) = parent_state.clip_child(state.item.bounding_rect) {
+        if let Some(child_bounding_rect) = parent_state.clip_child(node.item.state.bounding_rect) {
             parent_state.bounding_rect = parent_bounding_rect.union(child_bounding_rect);
         }
 
-        parent_state.merge_up(state.item);
+        parent_state.merge_up(&mut node.item.state);
     });
 }
 
@@ -94,13 +85,6 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
         root.global_state.needs_pointer_pass = true;
     }
 
-    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
-    compose_widget(
-        &mut root.global_state,
-        root_widget,
-        root_state,
-        root_properties,
-        false,
-        Affine::IDENTITY,
-    );
+    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    compose_widget(&mut root.global_state, root_node, false, Affine::IDENTITY);
 }

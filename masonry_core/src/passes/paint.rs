@@ -10,11 +10,9 @@ use vello::kurbo::{Affine, Rect};
 use vello::peniko::{Color, Fill, Mix};
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{
-    DefaultProperties, PaintCtx, PropertiesRef, Widget, WidgetArenaMut, WidgetId, WidgetState,
-};
+use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaNode, WidgetId};
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::{AnyMap, get_debug_color, stroke};
+use crate::util::{get_debug_color, stroke};
 
 // --- MARK: PAINT WIDGET
 fn paint_widget(
@@ -22,29 +20,22 @@ fn paint_widget(
     default_properties: &DefaultProperties,
     complete_scene: &mut Scene,
     scenes: &mut HashMap<WidgetId, Scene>,
-    widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
+    node: ArenaMut<'_, WidgetArenaNode>,
     debug_paint: bool,
 ) {
-    let trace = global_state.trace.paint;
-    let _span = enter_span_if(trace, state.reborrow());
+    let mut children = node.children;
+    let widget = &mut *node.item.widget;
+    let state = &mut node.item.state;
+    let properties = &mut node.item.properties;
+    let id = state.id;
 
-    let id = state.item.id;
-    let is_stashed = state.item.is_stashed;
+    let trace = global_state.trace.paint;
+    let _span = enter_span_if(trace, state);
 
     // Note: At this point we could short-circuit if is_stashed is true,
     // but we deliberately avoid doing that to avoid creating zombie flags.
     // (See WidgetState doc.)
-
-    let mut children = WidgetArenaMut {
-        widget_children: widget.children,
-        widget_state_children: state.children,
-        properties_children: properties.children,
-    };
-    let widget = &mut **widget.item;
-    let state = state.item;
-    let properties = properties.item;
+    let is_stashed = state.is_stashed;
 
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
@@ -88,7 +79,7 @@ fn paint_widget(
     let bounding_rect = state.bounding_rect;
     let parent_state = state;
 
-    recurse_on_children(id, widget, children, |widget, mut state, properties| {
+    recurse_on_children(id, widget, children, |mut node| {
         // TODO: We could skip painting children outside the parent clip path.
         // There's a few things to consider if we do:
         // - Some widgets can paint outside of their layout box.
@@ -99,12 +90,10 @@ fn paint_widget(
             default_properties,
             complete_scene,
             scenes,
-            widget,
-            state.reborrow_mut(),
-            properties,
+            node.reborrow_mut(),
             debug_paint,
         );
-        parent_state.merge_up(state.item);
+        parent_state.merge_up(&mut node.item.state);
     });
 
     if !is_stashed {
@@ -131,25 +120,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
 
-    let (root_widget, root_state, root_properties) = {
-        let widget_id = root.root.id();
-        let widget = root
-            .widget_arena
-            .widgets
-            .find_mut(widget_id)
-            .expect("root_paint: root not in widget tree");
-        let state = root
-            .widget_arena
-            .states
-            .find_mut(widget_id)
-            .expect("root_paint: root state not in widget tree");
-        let properties = root
-            .widget_arena
-            .properties
-            .find_mut(widget_id)
-            .expect("root_paint: root properties not in widget tree");
-        (widget, state, properties)
-    };
+    let root_node = root.widget_arena.get_node_mut(root.root.id());
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
     // This should be removed once remove_child is exclusive to MutateCtx.
@@ -160,9 +131,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         &root.default_properties,
         &mut complete_scene,
         &mut scenes,
-        root_widget,
-        root_state,
-        root_properties,
+        root_node,
         root.debug_paint,
     );
     root.global_state.scenes = scenes;
@@ -170,7 +139,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     // Display a rectangle over the hovered widget
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
         const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
-        let state = root.widget_arena.get_state(hovered_widget).item;
+        let state = root.widget_arena.get_state(hovered_widget);
         let rect = Rect::from_origin_size(state.window_origin(), state.size);
 
         complete_scene.fill(
