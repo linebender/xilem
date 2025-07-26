@@ -10,6 +10,7 @@
 use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
+use masonry::properties::types::Length;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
@@ -67,7 +68,7 @@ pub fn make_widget_tree() -> impl Widget {
                     .with_child(Button::new("Add task").with_auto_id()),
                 Properties::new().with(Padding::all(WIDGET_SPACING)),
             ))
-            .with_spacer(WIDGET_SPACING)
+            .with_spacer(Length::px(WIDGET_SPACING))
             .with_auto_id(),
     )
 }

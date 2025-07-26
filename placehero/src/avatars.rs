@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use xilem::core::one_of::Either;
 use xilem::core::{MessageProxy, NoElement, View};
+use xilem::masonry::properties::types::Length;
 use xilem::palette::css;
 use xilem::style::{Gradient, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -73,7 +74,11 @@ impl Avatars {
         let height = 50.;
         if let Some(maybe_image) = self.icons.get(url) {
             if let Some(image_) = maybe_image {
-                return Either::A(sized_box(image(image_)).width(width).height(height));
+                return Either::A(
+                    sized_box(image(image_))
+                        .width(Length::px(width))
+                        .height(Length::px(height)),
+                );
             }
         } else if let Some(requester) = self.requester.as_ref() {
             drop(requester.send(AvatarRequest {
@@ -92,8 +97,8 @@ impl Avatars {
                     )
                     .with_stops([css::YELLOW, css::LIME]),
                 )
-                .width(width)
-                .height(height)
+                .width(Length::px(width))
+                .height(Length::px(height))
                 .padding(4.0),
         )
     }

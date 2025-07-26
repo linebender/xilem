@@ -9,7 +9,7 @@ use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
 use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
-use crate::properties::types::UnitPoint;
+use crate::properties::types::{Length, UnitPoint};
 use crate::properties::{Background, BorderColor, BorderWidth};
 use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot};
 use crate::theme::default_property_set;
@@ -22,8 +22,8 @@ fn blue_box(inner: impl Widget) -> impl Widget {
     box_props.insert(BorderWidth::all(2.0));
 
     SizedBox::new(inner.with_auto_id())
-        .width(200.)
-        .height(100.)
+        .width(Length::px(200.))
+        .height(Length::px(100.))
         .with_props(box_props)
 }
 

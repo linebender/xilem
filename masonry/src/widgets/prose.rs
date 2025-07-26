@@ -184,6 +184,7 @@ mod tests {
 
     use super::*;
     use crate::TextAlign;
+    use crate::properties::types::Length;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::{CrossAxisAlignment, Flex, SizedBox, TextArea};
@@ -202,7 +203,7 @@ mod tests {
 
         let root_widget = Flex::row().with_child(
             SizedBox::new(prose.with_auto_id())
-                .width(60.)
+                .width(Length::px(60.))
                 .with_auto_id(),
         );
 
@@ -242,7 +243,7 @@ mod tests {
             .with_flex_child(prose4.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(prose5.with_auto_id(), CrossAxisAlignment::Center)
             .with_flex_child(prose6.with_auto_id(), CrossAxisAlignment::Center)
-            .with_gap(0.0);
+            .with_gap(Length::ZERO);
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 120.0));
