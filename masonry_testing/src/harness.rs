@@ -666,6 +666,11 @@ impl<W: Widget> TestHarness<W> {
         self.render_root.get_root_widget().downcast().unwrap()
     }
 
+    /// Return the [`WidgetId`] of the root widget.
+    pub fn root_id(&self) -> WidgetId {
+        self.render_root.get_root_widget().id()
+    }
+
     /// Return a [`WidgetRef`] to the widget with the given id.
     ///
     /// ## Panics
