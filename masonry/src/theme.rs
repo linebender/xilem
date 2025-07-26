@@ -40,7 +40,8 @@ pub const SCROLLBAR_PAD: f64 = 2.;
 pub const SCROLLBAR_MIN_SIZE: f64 = 45.;
 pub const SCROLLBAR_RADIUS: f64 = 5.;
 pub const SCROLLBAR_EDGE_WIDTH: f64 = 1.;
-pub const WIDGET_PADDING: f64 = 10.0;
+pub const DEFAULT_GAP: f64 = 10.0;
+pub const DEFAULT_SPACER_LEN: f64 = 10.0;
 pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
 
 pub fn default_property_set() -> DefaultProperties {
