@@ -1086,7 +1086,7 @@ mod tests {
                 TextArea::new_editable("hello world").with_insert_newline(scenario.insert_newline);
 
             let mut harness = TestHarness::create(default_property_set(), area);
-            let text_id = harness.root_widget().id();
+            let text_id = harness.root_id();
 
             harness.focus_on(Some(text_id));
             harness.process_text_event(TextEvent::Keyboard(KeyboardEvent {

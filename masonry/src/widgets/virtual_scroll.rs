@@ -1069,7 +1069,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
-        let virtual_scroll_id = harness.root_widget().id();
+        let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
@@ -1117,7 +1117,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
-        let virtual_scroll_id = harness.root_widget().id();
+        let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
@@ -1162,7 +1162,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
-        let virtual_scroll_id = harness.root_widget().id();
+        let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
@@ -1207,7 +1207,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
-        let virtual_scroll_id = harness.root_widget().id();
+        let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
@@ -1252,7 +1252,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
-        let virtual_scroll_id = harness.root_widget().id();
+        let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
@@ -1326,7 +1326,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
-        let virtual_scroll_id = harness.root_widget().id();
+        let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
