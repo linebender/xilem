@@ -3,6 +3,7 @@
 
 use megalodon::entities::{Context, Status};
 use xilem::WidgetView;
+use xilem::masonry::properties::types::Length;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};
 use xilem::view::{CrossAxisAlignment, FlexExt, flex, flex_row, label, portal, sized_box};
@@ -66,8 +67,8 @@ fn thread_ancestor(avatars: &mut Avatars, status: &Status) -> impl WidgetView<Pl
         flex_row((
             // An awful left-side border.
             sized_box(flex(()))
-                .width(3.)
-                .height(50.)
+                .width(Length::px(3.))
+                .height(Length::px(50.))
                 .background_color(css::WHITE)
                 .flex(CrossAxisAlignment::Start),
             flex(base_status(avatars, status)).flex(1.0),

@@ -15,6 +15,7 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::types::Length;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -29,7 +30,7 @@ pub struct Flex {
     main_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     children: Vec<Child>,
-    gap: f64,
+    gap: Length,
 }
 
 /// Optional parameters for an item in a [`Flex`] container (row or column).
@@ -114,7 +115,7 @@ enum Child {
         alignment: Option<CrossAxisAlignment>,
         flex: f64,
     },
-    FixedSpacer(f64, f64),
+    FixedSpacer(Length, f64),
     FlexedSpacer(f64, f64),
 }
 
@@ -128,7 +129,7 @@ impl Flex {
             cross_alignment: CrossAxisAlignment::Center,
             main_alignment: MainAxisAlignment::Start,
             fill_major_axis: false,
-            gap: crate::theme::WIDGET_PADDING,
+            gap: Length::px(crate::theme::WIDGET_PADDING),
         }
     }
 
@@ -172,17 +173,9 @@ impl Flex {
     /// Equivalent to the css [gap] property.
     /// This gap is also present between spacers.
     ///
-    /// ## Panics
-    ///
-    /// If `gap` is not a non-negative finite value.
-    ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     // TODO: Semantics - should this include fixed spacers?
-    pub fn with_gap(mut self, mut gap: f64) -> Self {
-        if !gap.is_finite() || gap < 0.0 {
-            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
-            gap = 0.0;
-        }
+    pub fn with_gap(mut self, gap: Length) -> Self {
         self.gap = gap;
         self
     }
@@ -214,12 +207,7 @@ impl Flex {
     /// Builder-style method for adding a fixed-size spacer to the container.
     ///
     /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
-    pub fn with_spacer(mut self, mut len: f64) -> Self {
-        if len < 0.0 {
-            tracing::warn!("with_spacer called with negative length: {}", len);
-        }
-        len = len.clamp(0.0, f64::MAX);
-
+    pub fn with_spacer(mut self, len: Length) -> Self {
         let new_child = Child::FixedSpacer(len, 0.0);
         self.children.push(new_child);
         self
@@ -282,15 +270,7 @@ impl Flex {
     /// This gap is also present between spacers.
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    ///
-    /// ## Panics
-    ///
-    /// If `gap` is not a non-negative finite value.
-    pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {
-        if !gap.is_finite() || gap < 0.0 {
-            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
-            gap = 0.0;
-        }
+    pub fn set_gap(this: &mut WidgetMut<'_, Self>, gap: Length) {
         this.widget.gap = gap;
         this.ctx.request_layout();
     }
@@ -325,12 +305,7 @@ impl Flex {
     /// Add an empty spacer widget with the given size.
     ///
     /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
-    pub fn add_spacer(this: &mut WidgetMut<'_, Self>, mut len: f64) {
-        if len < 0.0 {
-            tracing::warn!("add_spacer called with negative length: {}", len);
-        }
-        len = len.clamp(0.0, f64::MAX);
-
+    pub fn add_spacer(this: &mut WidgetMut<'_, Self>, len: Length) {
         let new_child = Child::FixedSpacer(len, 0.0);
         this.widget.children.push(new_child);
         this.ctx.request_layout();
@@ -387,16 +362,7 @@ impl Flex {
     /// Insert an empty spacer widget with the given size at the given index.
     ///
     /// A good default size is [`WIDGET_PADDING`](crate::theme::WIDGET_PADDING).
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is larger than the number of children.
-    pub fn insert_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, mut len: f64) {
-        if len < 0.0 {
-            tracing::warn!("add_spacer called with negative length: {}", len);
-        }
-        len = len.clamp(0.0, f64::MAX);
-
+    pub fn insert_spacer(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
         let new_child = Child::FixedSpacer(len, 0.0);
         this.widget.children.insert(idx, new_child);
         this.ctx.request_layout();
@@ -465,7 +431,7 @@ impl Flex {
         params: impl Into<FlexParams>,
     ) {
         let child = &mut this.widget.children[idx];
-        let child_val = std::mem::replace(child, Child::FixedSpacer(0.0, 0.0));
+        let child_val = std::mem::replace(child, Child::FixedSpacer(Length::ZERO, 0.0));
         let widget = match child_val {
             Child::Fixed { widget, .. } | Child::Flex { widget, .. } => widget,
             _ => {
@@ -501,7 +467,7 @@ impl Flex {
     /// # Panics
     ///
     /// Panics if the element at `idx` is not a spacer.
-    pub fn update_spacer_fixed(this: &mut WidgetMut<'_, Self>, idx: usize, len: f64) {
+    pub fn update_spacer_fixed(this: &mut WidgetMut<'_, Self>, idx: usize, len: Length) {
         let child = &mut this.widget.children[idx];
 
         match *child {
@@ -843,7 +809,7 @@ impl Widget for Flex {
 
         let gap = self.gap;
         // The gaps are only between the items, so 2 children means 1 gap.
-        let total_gap = self.children.len().saturating_sub(1) as f64 * gap;
+        let total_gap = self.children.len().saturating_sub(1) as f64 * gap.value();
         // Measure non-flex children.
         let mut major_non_flex = total_gap;
         // We start with a small value to avoid divide-by-zero errors.
@@ -880,7 +846,7 @@ impl Widget for Flex {
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
                 Child::FixedSpacer(kv, calculated_size) => {
-                    *calculated_size = *kv;
+                    *calculated_size = kv.value();
                     if *calculated_size < 0.0 {
                         tracing::warn!("Length provided to fixed spacer was less than 0");
                     }
@@ -1003,12 +969,12 @@ impl Widget for Flex {
                     ctx.place_child(widget, child_pos);
                     major += self.direction.major(child_size).expand();
                     major += spacing.next().unwrap_or(0.);
-                    major += gap;
+                    major += gap.value();
                 }
                 Child::FlexedSpacer(_, calculated_size)
                 | Child::FixedSpacer(_, calculated_size) => {
                     major += *calculated_size;
-                    major += gap;
+                    major += gap.value();
                 }
             }
         }
@@ -1021,7 +987,7 @@ impl Widget for Flex {
             // If we have at least one child, the last child added `gap` to `major`, which means that `major` is
             // not the total size of the flex in the major axis, it's instead where the "next widget" will be placed.
             // However, for the rest of this value, we need the total size of the widget in the major axis.
-            major -= gap;
+            major -= gap.value();
         }
 
         if flex_sum > MIN_FLEX_SUM {
@@ -1415,7 +1381,7 @@ mod tests {
                 // -> acdx
                 Flex::add_flex_child(&mut flex, Label::new("y").with_auto_id(), 2.0);
                 // -> acdxy
-                Flex::add_spacer(&mut flex, 5.0);
+                Flex::add_spacer(&mut flex, Length::px(5.0));
                 // -> acdxy_
                 Flex::add_flex_spacer(&mut flex, 1.0);
                 // -> acdxy__
@@ -1423,7 +1389,7 @@ mod tests {
                 // -> acidxy__
                 Flex::insert_flex_child(&mut flex, 2, Label::new("j").with_auto_id(), 2.0);
                 // -> acjidxy__
-                Flex::insert_spacer(&mut flex, 2, 5.0);
+                Flex::insert_spacer(&mut flex, 2, Length::px(5.0));
                 // -> ac_jidxy__
                 Flex::insert_flex_spacer(&mut flex, 2, 1.0);
                 // -> ac__jidxy__
@@ -1437,13 +1403,13 @@ mod tests {
                 .with_child(Label::new("a").with_auto_id())
                 .with_child(Label::new("c").with_auto_id())
                 .with_flex_spacer(1.0)
-                .with_spacer(5.0)
+                .with_spacer(Length::px(5.0))
                 .with_flex_child(Label::new("j").with_auto_id(), 2.0)
                 .with_child(Label::new("i").with_auto_id())
                 .with_child(Label::new("d").with_auto_id())
                 .with_child(Label::new("x").with_auto_id())
                 .with_flex_child(Label::new("y").with_auto_id(), 2.0)
-                .with_spacer(5.0)
+                .with_spacer(Length::px(5.0))
                 .with_flex_spacer(1.0);
 
             let window_size = Size::new(200.0, 150.0);
@@ -1461,7 +1427,7 @@ mod tests {
         let widget = Flex::column()
             .with_child(Label::new("hello").with_auto_id())
             .with_child(Label::new("world").with_auto_id())
-            .with_spacer(1.0);
+            .with_spacer(Length::px(1.0));
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =

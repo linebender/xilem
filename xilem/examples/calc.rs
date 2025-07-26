@@ -4,6 +4,7 @@
 //! A simple calculator example
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
+use masonry::properties::types::Length;
 use masonry::widgets::{CrossAxisAlignment, GridParams, MainAxisAlignment};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -199,7 +200,7 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
 }
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
-const GRID_GAP: f64 = 2.;
+const GRID_GAP: Length = Length::const_px(2.);
 fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
     grid(
         (
@@ -257,7 +258,7 @@ pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .main_axis_alignment(MainAxisAlignment::Start)
-        .gap(5.)
+        .gap(Length::px(5.))
 }
 
 /// Returns a label intended to be used in the calculator's top display.

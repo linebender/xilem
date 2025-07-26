@@ -313,6 +313,7 @@ mod tests {
     use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, Properties, StyleProperty};
     use crate::properties::TextColor;
+    use crate::properties::types::Length;
     use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams};
@@ -426,7 +427,7 @@ mod tests {
         use crate::palette::css::ORANGE;
 
         let grid = Grid::with_dimensions(2, 2)
-            .with_spacing(40.0)
+            .with_spacing(Length::px(40.0))
             .with_child(Button::new("A").with_auto_id(), GridParams::new(0, 0, 1, 1))
             .with_child(Button::new("B").with_auto_id(), GridParams::new(1, 0, 1, 1))
             .with_child(Button::new("C").with_auto_id(), GridParams::new(0, 1, 1, 1))

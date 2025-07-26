@@ -10,6 +10,7 @@
 use masonry::core::{ErasedAction, NewWidget, StyleProperty, Widget as _, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
+use masonry::properties::types::Length;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
@@ -50,7 +51,7 @@ fn main() {
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
         .with_child(label.with_auto_id())
-        .with_spacer(VERTICAL_WIDGET_SPACING)
+        .with_spacer(Length::px(VERTICAL_WIDGET_SPACING))
         .with_child(button.with_auto_id());
 
     let window_size = LogicalSize::new(400.0, 400.0);

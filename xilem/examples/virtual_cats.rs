@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use masonry::core::ArcStr;
 use masonry::properties::Padding;
-use masonry::properties::types::UnitPoint;
+use masonry::properties::types::{Length, UnitPoint};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -116,7 +116,11 @@ impl VirtualCats {
                 attribution.alignment(UnitPoint::TOP_RIGHT),
             )))
         } else {
-            Either::B(sized_box(spinner()).width(80.).height(80.))
+            Either::B(
+                sized_box(spinner())
+                    .width(Length::px(80.))
+                    .height(Length::px(80.)),
+            )
         };
         fork(flex((prose(item.message.clone()), img)), task)
     }
