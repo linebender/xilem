@@ -257,10 +257,16 @@ pub trait Widget: AsDynWidget + Any {
     /// Paint the widget appearance.
     ///
     /// Container widgets can paint a background before recursing to their
-    /// children, or annotations (for example, scrollbars) by painting
-    /// afterwards. In addition, they can apply masks and transforms on
-    /// the render context, which is especially useful for scrolling.
+    /// children. To draw on top of children, see [`Widget::post_paint`].
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene);
+
+    // TODO - Implement that method in some widgets.
+    // Shadows would be a good use case.
+    /// Second paint method, which paints on top of the widget's children.
+    ///
+    /// This method paints outside of the clip defined in [`LayoutCtx::set_clip_path`].
+    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+    }
 
     /// Return what kind of "thing" the widget fundamentally is.
     fn accessibility_role(&self) -> Role;

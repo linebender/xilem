@@ -1118,7 +1118,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
             .properties_children
             .remove(id)
             .expect("remove_child: child not found");
-        self.global_state.scenes.remove(&child.id());
+        self.global_state.scene_cache.remove(&child.id());
 
         self.children_changed();
     }
