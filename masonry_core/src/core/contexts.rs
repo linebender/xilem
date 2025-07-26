@@ -54,6 +54,7 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) properties: PropertiesMut<'a>,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 /// A context provided inside of [`WidgetRef`].
@@ -65,13 +66,24 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) properties: PropertiesRef<'a>,
     pub(crate) children: ArenaRefList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
+}
+
+/// A context given when calling another context's `get_raw()` method.
+pub struct RawCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) parent_widget_state: &'a mut WidgetState,
+    pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 /// A context provided to event-handling [`Widget`] methods.
 pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) children: WidgetArenaMut<'a>,
+    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
@@ -88,7 +100,8 @@ pub struct RegisterCtx<'a> {
 pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) children: WidgetArenaMut<'a>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 // TODO - Change this once other layout methods are added.
@@ -104,7 +117,8 @@ pub struct LayoutCtx<'a> {
 pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) children: WidgetArenaMut<'a>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 /// A context passed to [`Widget::paint`] method.
@@ -123,14 +137,6 @@ pub struct AccessCtx<'a> {
     pub(crate) tree_update: &'a mut TreeUpdate,
 }
 
-/// A context given when calling another context's `get_raw()` method.
-pub struct RawCtx<'a> {
-    pub(crate) global_state: &'a mut RenderRootState,
-    pub(crate) parent_widget_state: &'a mut WidgetState,
-    pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-}
-
 // --- MARK: GETTERS
 // Methods for all context types
 impl_context_method!(
@@ -144,7 +150,6 @@ impl_context_method!(
     AccessCtx<'_>,
     RawCtx<'_>,
     {
-        #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// The `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
             self.widget_state.id
@@ -240,6 +245,7 @@ impl MutateCtx<'_> {
                 default_map: self.properties.default_map,
             },
             children: node_mut.children,
+            default_properties: self.default_properties,
         };
         WidgetMut {
             ctx: child_ctx,
@@ -257,6 +263,7 @@ impl MutateCtx<'_> {
             widget_state: self.widget_state,
             properties: self.properties.reborrow_mut(),
             children: self.children.reborrow_mut(),
+            default_properties: self.default_properties,
         }
     }
 
@@ -265,6 +272,7 @@ impl MutateCtx<'_> {
             global_state: self.global_state,
             widget_state: self.widget_state,
             children: self.children.reborrow_mut(),
+            default_properties: self.default_properties,
         }
     }
 
@@ -295,6 +303,7 @@ impl<'w> QueryCtx<'w> {
                 default_map: self.properties.default_map,
             },
             children: child_node.children,
+            default_properties: self.default_properties,
         };
         WidgetRef {
             ctx: child_ctx,
@@ -1161,10 +1170,6 @@ impl_context_method!(
 
         /// Get direct reference to the stored child, and a context handle for that child.
         ///
-        /// This context lets you set pass flags for the child widget, which may be tricky.
-        /// In general, you should avoid setting the flags of a pass that runs before the
-        /// pass you're currently in.
-        ///
         /// See [pass documentation](crate::doc::doc_05_pass_system) for the pass order.
         pub fn get_raw<Child: Widget + FromDynWidget + ?Sized>(
             &mut self,
@@ -1179,6 +1184,7 @@ impl_context_method!(
                 parent_widget_state: &mut self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
+                default_properties: self.default_properties,
             };
 
             let widget = Child::from_dyn(&*node_mut.item.widget).unwrap();
@@ -1191,6 +1197,12 @@ impl_context_method!(
         /// This context lets you set pass flags for the child widget, which may be tricky.
         /// In general, you should avoid setting the flags of a pass that runs before the
         /// pass you're currently in.
+        /// Not doing so might lead to performance cliffs and, hypothetically, panics.
+        ///
+        /// This method is an escape hatch for cases where a parent widget completely
+        /// controls their child, but needs it to be a separate widget for user interaction to
+        /// behave as expected.
+        /// As such, the child widget must opt-in using the `AllowRawMut` trait.
         ///
         /// See [pass documentation](crate::doc::doc_05_pass_system) for the pass order.
         pub fn get_raw_mut<Child: Widget + FromDynWidget + AllowRawMut + ?Sized>(
@@ -1206,6 +1218,7 @@ impl_context_method!(
                 parent_widget_state: &mut self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
+                default_properties: self.default_properties,
             };
 
             let widget = Child::from_dyn_mut(&mut *node_mut.item.widget).unwrap();

@@ -60,6 +60,7 @@ fn run_targeted_update_pass(
             global_state: &mut root.global_state,
             widget_state: state,
             children,
+            default_properties: &root.default_properties,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -95,6 +96,7 @@ fn run_single_update_pass(
         global_state: &mut root.global_state,
         widget_state: state,
         children,
+        default_properties: &root.default_properties,
     };
     let mut props = PropertiesMut {
         map: properties,
@@ -175,6 +177,7 @@ fn update_widget_tree(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
+            default_properties,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -246,6 +249,7 @@ fn update_disabled_for_widget(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
+            default_properties,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -321,6 +325,7 @@ fn update_stashed_for_widget(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
+            default_properties,
         };
         let mut props = PropertiesMut {
             map: properties,
@@ -833,6 +838,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
                 default_map: root.default_properties.for_widget(widget.type_id()),
             },
             children,
+            default_properties: &root.default_properties,
         };
 
         if state.is_disabled {

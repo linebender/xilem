@@ -35,6 +35,7 @@ pub(crate) fn mutate_widget<R>(
                 default_map: root.default_properties.for_widget(widget.type_id()),
             },
             children,
+            default_properties: &root.default_properties,
         },
         widget,
     };

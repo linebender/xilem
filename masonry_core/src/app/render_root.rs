@@ -480,6 +480,7 @@ impl RenderRoot {
                 default_map: self.default_properties.for_widget(widget.type_id()),
             },
             children,
+            default_properties: &self.default_properties,
         };
         Some(WidgetRef { ctx, widget })
     }
