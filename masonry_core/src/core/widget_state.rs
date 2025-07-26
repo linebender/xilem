@@ -67,12 +67,16 @@ pub(crate) struct WidgetState {
     pub(crate) id: WidgetId,
 
     // --- LAYOUT ---
-    /// The size of the widget; this is the value returned by the widget's layout
-    /// method.
-    pub(crate) size: Size,
-    /// The origin of the widget in the `window_transform` coordinate space; together with
-    /// `size` these constitute the widget's layout rect.
+    // TODO - Better explain origin and end_point
+    /// The origin (top-left) of the widget in the `window_transform` coordinate space.
+    /// Together with `end_point`, these constitute the widget's layout rect.
     pub(crate) origin: Point,
+    /// The bottom right of the widget in the `window_transform` coordinate space.
+    /// Computed from the widget's origin and size, with some pixel snapping.
+    pub(crate) end_point: Point,
+    /// The value returned by the widget's layout method.
+    /// Used to compute `end_point`.
+    pub(crate) layout_size: Size,
     /// The insets applied to the layout rect to generate the paint rect.
     /// In general, these will be zero; the exception is for things like
     /// drop shadows or overflowing text.
@@ -88,6 +92,8 @@ pub(crate) struct WidgetState {
     /// the baseline. Widgets that contain text or controls that expect to be
     /// laid out alongside text can set this as appropriate.
     pub(crate) baseline_offset: f64,
+    /// The pixel-snapped position of the baseline, computed from `baseline_offset`
+    pub(crate) baseline_y: f64,
     /// Data cached from previous layout passes.
     pub(crate) layout_cache: LayoutCache,
 
@@ -206,7 +212,8 @@ impl WidgetState {
         Self {
             id,
             origin: Point::ORIGIN,
-            size: Size::ZERO,
+            end_point: Point::ORIGIN,
+            layout_size: Size::ZERO,
             is_expecting_place_child_call: false,
             paint_insets: Insets::ZERO,
             local_paint_rect: Rect::ZERO,
@@ -223,6 +230,7 @@ impl WidgetState {
             is_disabled: false,
             is_stashed: false,
             baseline_offset: 0.0,
+            baseline_y: 0.0,
             is_new: true,
             has_hovered: false,
             is_hovered: false,
@@ -277,10 +285,26 @@ impl WidgetState {
         self.local_paint_rect + self.origin.to_vec2()
     }
 
+    /// The size of this widget.
+    ///
+    /// This may be different from the value returned by [`Widget::layout`](crate::core::Widget::layout)
+    /// depending on pixel snapping.
+    pub(crate) fn size(&self) -> Size {
+        (self.end_point - self.origin).to_size()
+    }
+
+    /// The offset of the baseline relative to the bottom of the widget.
+    ///
+    /// This may be different from the value set by [`LayoutCtx::set_baseline_offset`](crate::core::LayoutCtx::set_baseline_offset)
+    /// depending on pixel snapping.
+    pub(crate) fn baseline_offset(&self) -> f64 {
+        self.end_point.y - self.baseline_y
+    }
+
     // TODO - Remove
     /// The rectangle used when calculating layout with other widgets.
     pub(crate) fn layout_rect(&self) -> Rect {
-        Rect::from_origin_size(self.origin, self.size)
+        Rect::from_points(self.origin, self.end_point)
     }
 
     /// The axis aligned bounding rect of this widget in window coordinates. Includes `paint_insets`.
@@ -298,7 +322,7 @@ impl WidgetState {
         // Note: this returns sensible values for a widget that is translated and/or rescaled.
         // Other transformations like rotation may produce weird IME areas.
         self.window_transform
-            .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size.to_rect()))
+            .transform_rect_bbox(self.ime_area.unwrap_or_else(|| self.size().to_rect()))
     }
 
     pub(crate) fn window_origin(&self) -> Point {

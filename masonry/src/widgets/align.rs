@@ -120,8 +120,7 @@ impl Widget for Align {
         let extra_height = (my_size.height - size.height).max(0.);
         let origin = self
             .align
-            .resolve(Rect::new(0., 0., extra_width, extra_height))
-            .expand();
+            .resolve(Rect::new(0., 0., extra_width, extra_height));
         ctx.place_child(&mut self.child, origin);
 
         let my_insets = ctx.compute_insets_from_child(&self.child, my_size);

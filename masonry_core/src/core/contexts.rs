@@ -19,7 +19,7 @@ use crate::core::{
     WidgetArenaRef, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
-use crate::passes::layout::run_layout_on;
+use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
 use crate::util::get_debug_color;
 
@@ -594,12 +594,10 @@ impl LayoutCtx<'_> {
                 origin,
             );
         }
-        if origin != self.get_child_state_mut(child).origin {
-            self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).transform_changed = true;
-        }
-        self.get_child_state_mut(child)
-            .is_expecting_place_child_call = false;
+
+        let child_state = self.get_child_state_mut(child);
+
+        place_widget(child_state, origin);
 
         self.widget_state.local_paint_rect = self
             .widget_state
@@ -712,7 +710,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
         self.assert_layout_done(child, "child_size");
-        self.get_child_state(child).size
+        self.get_child_state(child).layout_size
     }
 
     /// Gives the widget a clip path.
@@ -751,7 +749,7 @@ impl LayoutCtx<'_> {
     ///
     /// **TODO** This method should be removed after the layout refactor.
     pub fn old_size(&self) -> Size {
-        self.widget_state.size
+        self.widget_state.size()
     }
 }
 
@@ -805,12 +803,12 @@ impl_context_method!(
     {
         /// The layout size.
         ///
-        /// This is the layout size returned by the [`layout`] method on the previous
-        /// layout pass.
+        /// This is roughly the layout size returned by the [`layout`] method on
+        /// the previous layout pass, with some adjustment for pixel snapping.
         ///
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
-            self.widget_state.size
+            self.widget_state.size()
         }
 
         // TODO - Remove. Currently only used in tests.
@@ -821,7 +819,7 @@ impl_context_method!(
 
         /// The offset of the baseline relative to the bottom of the widget.
         pub fn baseline_offset(&self) -> f64 {
-            self.widget_state.baseline_offset
+            self.widget_state.baseline_offset()
         }
 
         /// The origin of the widget in window coordinates, relative to the top left corner of the

@@ -18,6 +18,9 @@ use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
 use crate::widgets::flex::Axis;
 
+// TODO - Remove size rounding.
+// Pixel snapping is now done at the Masonry level.
+
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
 #[doc = include_screenshot!("split_columns.png", "Split panel with two labels.")]
