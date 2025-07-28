@@ -302,9 +302,7 @@ mod tests {
     use crate::core::Properties;
     use crate::palette;
     use crate::properties::types::{Gradient, UnitPoint};
-    use crate::testing::{
-        TestHarness, TestWidgetExt, assert_failing_render_snapshot, assert_render_snapshot,
-    };
+    use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Label;
 

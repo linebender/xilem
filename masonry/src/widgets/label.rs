@@ -420,8 +420,6 @@ impl Widget for Label {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-
-    use masonry_testing::TestWidgetExt as _;
     use parley::style::GenericFamily;
     use parley::{FontFamily, StyleProperty};
 

@@ -12,7 +12,7 @@ use vello::peniko::color::palette;
 use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
 use crate::properties::types::UnitPoint;
 use crate::properties::{Background, BorderColor, BorderWidth};
-use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot};
+use crate::testing::{TestHarness, assert_render_snapshot};
 use crate::theme::default_property_set;
 use crate::widgets::{Button, ChildAlignment, Label, SizedBox, ZStack};
 

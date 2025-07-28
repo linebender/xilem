@@ -4,7 +4,7 @@
 use vello::kurbo::{Point, Size};
 
 use crate::core::{ChildrenIds, PointerButton, Update, Widget, WidgetId, WidgetPod};
-use crate::testing::{ModularWidget, TestHarness, TestWidgetExt};
+use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::default_property_set;
 use crate::widgets::Flex;
 
