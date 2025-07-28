@@ -543,7 +543,6 @@ macro_rules! define_element {
             ) -> MessageResult<Action> {
                 message_element(&*self.children, element, element_state, message, app_state)
                 // self.children
-                //     .dyn_seq_message(&mut view_state.seq_state, message, elements, app_state)
             }
         }
     };
