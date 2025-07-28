@@ -240,7 +240,7 @@ pub enum RenderRootSignal {
     Exit,
     /// The [window system menu] should be shown.
     ///
-    /// There are no guarantees as to the shown menu will contain, or even if a window menu will be drawn at all.
+    /// There are no guarantees as to what the shown menu will contain, or even if a window menu will be drawn at all.
     /// In general, the menu may contain options to maximize, minimize or move the window.
     ///
     /// Some platforms may ignore this.
