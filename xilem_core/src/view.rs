@@ -67,6 +67,8 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     ///
     /// The type used for this associated type cannot be treated as public API; this is
     /// internal state to the `View` implementation.
+    /// That is, `View` implementations are permitted to change the type they use for this
+    ///  during even a patch release of their crate.
     type ViewState;
 
     /// Create the corresponding Element value.

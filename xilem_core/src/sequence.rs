@@ -99,6 +99,8 @@ where
     ///
     /// The type used for this associated type cannot be treated as public API; this is
     /// internal state to the `ViewSequence` implementation.
+    /// That is, `ViewSequence` implementations are permitted to change the type they use for this
+    ///  during even a patch release of their crate.
     ///
     /// [`ViewState`]: View::ViewState
     type SeqState;
