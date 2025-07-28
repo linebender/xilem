@@ -72,7 +72,7 @@ impl MessageContext {
         debug_assert_eq!(
             self.full_id_path.len(),
             self.id_path_index,
-            "Should only be taking messages "
+            "Can't take a message that has not reached it's target"
         );
         if let Some(message) = self.message.take() {
             if message.is::<T>() {
