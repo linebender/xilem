@@ -238,9 +238,14 @@ pub enum RenderRootSignal {
     Minimize,
     /// The app should terminate.
     Exit,
-    /// The [Windows system menu] should be shown.
+    /// The [window system menu] should be shown.
     ///
-    /// Other platforms may ignore this.
+    /// There are no guarantees as to the shown menu will contain, or even if a window menu will be drawn at all.
+    /// In general, the menu may contain options to maximize, minimize or move the window.
+    ///
+    /// Some platforms may ignore this.
+    ///
+    /// See also [the Wayland doc for `xdg_toplevel::show_window_menu`](https://wayland.app/protocols/xdg-shell#xdg_toplevel:request:show_window_menu).
     ///
     /// [Windows system menu]: https://en.wikipedia.org/w/index.php?title=Common_menus_in_Microsoft_Windows&oldid=1285312933#System_menu
     ShowWindowMenu(LogicalPosition<f64>),
