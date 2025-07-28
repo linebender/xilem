@@ -54,6 +54,7 @@ pub struct MutateCtx<'a> {
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) properties: PropertiesMut<'a>,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 /// A context provided inside of [`WidgetRef`].
@@ -65,6 +66,16 @@ pub struct QueryCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) properties: PropertiesRef<'a>,
     pub(crate) children: ArenaRefList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
+}
+
+/// A context given when calling another context's `get_raw_mut()` method.
+pub struct RawCtx<'a> {
+    pub(crate) global_state: &'a mut RenderRootState,
+    pub(crate) parent_widget_state: &'a mut WidgetState,
+    pub(crate) widget_state: &'a mut WidgetState,
+    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 /// A context provided to event-handling [`Widget`] methods.
@@ -72,6 +83,7 @@ pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
     pub(crate) is_handled: bool,
@@ -89,6 +101,7 @@ pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 // TODO - Change this once other layout methods are added.
@@ -105,6 +118,7 @@ pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
+    pub(crate) default_properties: &'a DefaultProperties,
 }
 
 /// A context passed to [`Widget::paint`] method.
@@ -121,7 +135,6 @@ pub struct AccessCtx<'a> {
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) tree_update: &'a mut TreeUpdate,
-    pub(crate) rebuild_all: bool,
 }
 
 // --- MARK: GETTERS
@@ -135,6 +148,7 @@ impl_context_method!(
     ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
+    RawCtx<'_>,
     {
         /// The `WidgetId` of the current widget.
         pub fn widget_id(&self) -> WidgetId {
@@ -175,6 +189,7 @@ impl_context_method!(
                 .state
         }
 
+        #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
         /// The current (local) transform of this widget.
         pub fn transform(&self) -> Affine {
             self.widget_state.transform
@@ -188,6 +203,7 @@ impl_context_method!(
     UpdateCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
+    RawCtx<'_>,
     {
         /// Helper method to get a mutable reference to a child widget's `WidgetState` from its `WidgetPod`.
         ///
@@ -229,6 +245,7 @@ impl MutateCtx<'_> {
                 default_map: self.properties.default_map,
             },
             children: node_mut.children,
+            default_properties: self.default_properties,
         };
         WidgetMut {
             ctx: child_ctx,
@@ -246,6 +263,7 @@ impl MutateCtx<'_> {
             widget_state: self.widget_state,
             properties: self.properties.reborrow_mut(),
             children: self.children.reborrow_mut(),
+            default_properties: self.default_properties,
         }
     }
 
@@ -254,6 +272,7 @@ impl MutateCtx<'_> {
             global_state: self.global_state,
             widget_state: self.widget_state,
             children: self.children.reborrow_mut(),
+            default_properties: self.default_properties,
         }
     }
 
@@ -284,6 +303,7 @@ impl<'w> QueryCtx<'w> {
                 default_map: self.properties.default_map,
             },
             children: child_node.children,
+            default_properties: self.default_properties,
         };
         WidgetRef {
             ctx: child_ctx,
@@ -301,6 +321,7 @@ impl_context_method!(
     ComposeCtx<'_>,
     PaintCtx<'_>,
     AccessCtx<'_>,
+    RawCtx<'_>,
     {
         /// Get the Parley contexts needed to build and paint text sections.
         ///
@@ -974,8 +995,7 @@ impl_context_method!(
 );
 
 // --- MARK: UPDATE FLAGS
-// Methods on MutateCtx, EventCtx, and UpdateCtx
-impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, {
+impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     /// Request a [`paint`](crate::core::Widget::paint) and an [`accessibility`](crate::core::Widget::accessibility) pass.
     pub fn request_render(&mut self) {
         trace!("request_render");
@@ -1099,6 +1119,7 @@ impl_context_method!(
     UpdateCtx<'_>,
     LayoutCtx<'_>,
     ComposeCtx<'_>,
+    RawCtx<'_>,
     {
         // TODO - Remove from LayoutCtx/ComposeCtx
         /// Mark child widget as stashed.
@@ -1145,6 +1166,62 @@ impl_context_method!(
                 callback: Box::new(|mut widget_mut| f(widget_mut.downcast())),
             };
             self.global_state.mutate_callbacks.push(callback);
+        }
+
+        /// Get direct reference to the stored child, and a context handle for that child.
+        pub fn get_raw<Child: Widget + FromDynWidget + ?Sized>(
+            &mut self,
+            child: &mut WidgetPod<Child>,
+        ) -> (&Child, RawCtx<'_>) {
+            let node_mut = self
+                .children
+                .item_mut(child.id())
+                .expect("get_mut: child not found");
+            let child_ctx = RawCtx {
+                global_state: self.global_state,
+                parent_widget_state: self.widget_state,
+                widget_state: &mut node_mut.item.state,
+                children: node_mut.children,
+                default_properties: self.default_properties,
+            };
+
+            let widget = Child::from_dyn(&*node_mut.item.widget).unwrap();
+
+            (widget, child_ctx)
+        }
+
+        /// Get direct mutable reference to the stored child, and a context handle for that child.
+        ///
+        /// This context lets you set pass flags for the child widget, which may be tricky.
+        /// In general, you should avoid setting the flags of a pass that runs before the
+        /// pass you're currently in.
+        /// Not doing so might lead to performance cliffs and, hypothetically, panics.
+        ///
+        /// This method is an escape hatch for cases where a parent widget completely
+        /// controls their child, but needs it to be a separate widget for user interaction to
+        /// behave as expected.
+        /// As such, the child widget must opt-in using the `AllowRawMut` trait.
+        ///
+        /// See [pass documentation](crate::doc::pass_system) for the pass order.
+        pub fn get_raw_mut<Child: Widget + FromDynWidget + AllowRawMut + ?Sized>(
+            &mut self,
+            child: &mut WidgetPod<Child>,
+        ) -> (&mut Child, RawCtx<'_>) {
+            let node_mut = self
+                .children
+                .item_mut(child.id())
+                .expect("get_mut: child not found");
+            let child_ctx = RawCtx {
+                global_state: self.global_state,
+                parent_widget_state: self.widget_state,
+                widget_state: &mut node_mut.item.state,
+                children: node_mut.children,
+                default_properties: self.default_properties,
+            };
+
+            let widget = Child::from_dyn_mut(&mut *node_mut.item.widget).unwrap();
+
+            (widget, child_ctx)
         }
 
         /// Submit an Action, which indicates that this widget requires something be handled
@@ -1273,6 +1350,12 @@ impl RegisterCtx<'_> {
     }
 }
 
+impl Drop for RawCtx<'_> {
+    fn drop(&mut self) {
+        self.parent_widget_state.merge_up(self.widget_state);
+    }
+}
+
 // --- MARK: DEBUG PAINT
 impl PaintCtx<'_> {
     /// Whether debug paint is enabled.
@@ -1296,189 +1379,3 @@ impl PaintCtx<'_> {
         get_debug_color(self.widget_id().to_raw())
     }
 }
-
-// --- MARK: RAW WRAPPERS
-macro_rules! impl_get_raw {
-    ($SomeCtx:tt) => {
-        impl<'s> $SomeCtx<'s> {
-            /// Get a child context and a raw shared reference to a child widget.
-            ///
-            /// The child context can be used to call context methods on behalf of the
-            /// child widget.
-            pub fn get_raw_ref<'a, 'r, Child: Widget + FromDynWidget + ?Sized>(
-                &'a mut self,
-                child: &'a mut WidgetPod<Child>,
-            ) -> RawWrapper<'r, $SomeCtx<'r>, Child>
-            where
-                'a: 'r,
-                's: 'r,
-            {
-                let child_mut = self
-                    .children
-                    .item_mut(child.id())
-                    .expect("get_raw_ref: child not found");
-                #[allow(
-                    clippy::needless_update,
-                    reason = "May be needless in some macro invocations"
-                )]
-                let child_ctx = $SomeCtx {
-                    widget_state: &mut child_mut.item.state,
-                    global_state: self.global_state,
-                    children: child_mut.children,
-                    ..*self
-                };
-                RawWrapper {
-                    ctx: child_ctx,
-                    widget: Child::from_dyn(&*child_mut.item.widget).unwrap(),
-                }
-            }
-
-            /// Get a raw mutable reference to a child widget.
-            ///
-            /// See documentation for [`AllowRawMut`] for more details.
-            pub fn get_raw_mut<'a, 'r, Child: Widget + FromDynWidget + AllowRawMut + ?Sized>(
-                &'a mut self,
-                child: &'a mut WidgetPod<Child>,
-            ) -> RawWrapperMut<'r, $SomeCtx<'r>, Child>
-            where
-                'a: 'r,
-                's: 'r,
-            {
-                let child_mut = self
-                    .children
-                    .item_mut(child.id())
-                    .expect("get_raw_mut: child not found");
-                #[allow(
-                    clippy::needless_update,
-                    reason = "May be needless in some macro invocations"
-                )]
-                let child_ctx = $SomeCtx {
-                    widget_state: &mut child_mut.item.state,
-                    global_state: self.global_state,
-                    children: child_mut.children,
-                    ..*self
-                };
-                RawWrapperMut {
-                    parent_widget_state: &mut self.widget_state,
-                    ctx: child_ctx,
-                    widget: Child::from_dyn_mut(&mut *child_mut.item.widget).unwrap(),
-                }
-            }
-        }
-    };
-}
-
-impl_get_raw!(EventCtx);
-impl_get_raw!(UpdateCtx);
-impl_get_raw!(LayoutCtx);
-
-#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-impl<'s> AccessCtx<'s> {
-    pub fn get_raw_ref<'a, 'r, Child: Widget + FromDynWidget + ?Sized>(
-        &'a mut self,
-        child: &'a WidgetPod<Child>,
-    ) -> RawWrapper<'r, AccessCtx<'r>, Child>
-    where
-        'a: 'r,
-        's: 'r,
-    {
-        let child_mut = self
-            .children
-            .item_mut(child.id())
-            .expect("get_raw_ref: child not found");
-        let child_ctx = AccessCtx {
-            widget_state: &mut child_mut.item.state,
-            global_state: self.global_state,
-            children: child_mut.children,
-            tree_update: self.tree_update,
-            rebuild_all: self.rebuild_all,
-        };
-        RawWrapper {
-            ctx: child_ctx,
-            widget: Child::from_dyn(&*child_mut.item.widget).unwrap(),
-        }
-    }
-}
-
-#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-pub struct RawWrapper<'a, Ctx, W: ?Sized> {
-    ctx: Ctx,
-    widget: &'a W,
-}
-
-#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-pub struct RawWrapperMut<'a, Ctx: IsContext, W: ?Sized> {
-    parent_widget_state: &'a mut WidgetState,
-    ctx: Ctx,
-    widget: &'a mut W,
-}
-
-#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-impl<Ctx, W: ?Sized> RawWrapper<'_, Ctx, W> {
-    pub fn widget(&self) -> &W {
-        self.widget
-    }
-
-    pub fn ctx(&self) -> &Ctx {
-        &self.ctx
-    }
-}
-
-#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-impl<Ctx: IsContext, W: ?Sized> RawWrapperMut<'_, Ctx, W> {
-    pub fn widget(&mut self) -> &mut W {
-        self.widget
-    }
-
-    pub fn ctx(&mut self) -> &mut Ctx {
-        &mut self.ctx
-    }
-}
-
-impl<Ctx: IsContext, W: ?Sized> Drop for RawWrapperMut<'_, Ctx, W> {
-    fn drop(&mut self) {
-        self.parent_widget_state
-            .merge_up(self.ctx.get_widget_state());
-    }
-}
-
-mod private {
-    #[allow(
-        unnameable_types,
-        reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
-    )]
-    pub trait Sealed {}
-}
-
-// TODO - Rethink RawWrapper API
-// We're exporting a trait with a method that returns a private type.
-// It's mostly fine because the trait is sealed anyway, but it's not great for documentation.
-
-#[allow(
-    private_interfaces,
-    reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
-)]
-#[allow(missing_docs, reason = "RawWrapper is likely to be reworked")]
-pub trait IsContext: private::Sealed {
-    fn get_widget_state(&mut self) -> &mut WidgetState;
-}
-
-macro_rules! impl_context_trait {
-    ($SomeCtx:tt) => {
-        impl private::Sealed for $SomeCtx<'_> {}
-
-        #[allow(
-            private_interfaces,
-            reason = "see https://predr.ag/blog/definitive-guide-to-sealed-traits-in-rust/"
-        )]
-        impl IsContext for $SomeCtx<'_> {
-            fn get_widget_state(&mut self) -> &mut WidgetState {
-                self.widget_state
-            }
-        }
-    };
-}
-
-impl_context_trait!(EventCtx);
-impl_context_trait!(UpdateCtx);
-impl_context_trait!(LayoutCtx);

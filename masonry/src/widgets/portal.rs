@@ -24,6 +24,7 @@ use crate::widgets::{Axis, ScrollBar};
 #[expect(missing_docs, reason = "TODO")]
 pub struct Portal<W: Widget + ?Sized> {
     child: WidgetPod<W>,
+    content_size: Size,
     // TODO - differentiate between the "explicit" viewport pos determined
     // by user input, and the computed viewport pos that may change based
     // on re-layouts
@@ -45,6 +46,7 @@ impl<W: Widget + ?Sized> Portal<W> {
     pub fn new(child: NewWidget<W>) -> Self {
         Self {
             child: child.to_pod(),
+            content_size: Size::ZERO,
             viewport_pos: Point::ORIGIN,
             constrain_horizontal: false,
             constrain_vertical: false,
@@ -263,7 +265,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         event: &PointerEvent,
     ) {
         let portal_size = ctx.size();
-        let content_size = ctx.get_raw_ref(&mut self.child).ctx().size();
+        let content_size = self.content_size;
 
         match *event {
             PointerEvent::Scroll { delta, .. } => {
@@ -281,10 +283,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 ctx.request_compose();
 
                 // TODO - horizontal scrolling?
-                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
-                scrollbar.widget().cursor_progress =
+                let (scrollbar, mut scrollbar_ctx) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                scrollbar.cursor_progress =
                     self.viewport_pos.y / (content_size - portal_size).height;
-                scrollbar.ctx().request_render();
+                scrollbar_ctx.request_render();
             }
             _ => (),
         }
@@ -293,11 +295,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         // pointer events, then its event method has already been called by the time this runs.
         let mut scrollbar_moved = false;
         {
-            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-            if scrollbar.widget().moved {
-                scrollbar.widget().moved = false;
+            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+            if scrollbar.moved {
+                scrollbar.moved = false;
 
-                let progress = scrollbar.widget().cursor_progress;
+                let progress = scrollbar.cursor_progress;
                 self.viewport_pos = Axis::Horizontal
                     .pack(
                         progress * Axis::Horizontal.major(content_size - portal_size),
@@ -308,11 +310,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             }
         }
         {
-            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
-            if scrollbar.widget().moved {
-                scrollbar.widget().moved = false;
+            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+            if scrollbar.moved {
+                scrollbar.moved = false;
 
-                let progress = scrollbar.widget().cursor_progress;
+                let progress = scrollbar.cursor_progress;
                 self.viewport_pos = Axis::Vertical
                     .pack(
                         progress * Axis::Vertical.major(content_size - portal_size),
@@ -356,7 +358,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         match event {
             Update::RequestPanToChild(target) => {
                 let portal_size = ctx.size();
-                let content_size = ctx.get_raw_ref(&mut self.child).ctx().size();
+                let content_size = self.content_size;
 
                 self.pan_viewport_to_raw(portal_size, content_size, *target);
                 ctx.request_compose();
@@ -365,17 +367,18 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 // event in `on_pointer_event`.
                 // Because this code directly manipulates child widgets, it's hard to factor
                 // it out.
-                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
-                scrollbar.widget().cursor_progress =
+                let (scrollbar, mut scrollbar_ctx) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                scrollbar.cursor_progress =
                     self.viewport_pos.y / (content_size - portal_size).height;
-                scrollbar.ctx().request_render();
+                scrollbar_ctx.request_render();
 
-                std::mem::drop(scrollbar);
+                std::mem::drop(scrollbar_ctx);
 
-                let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-                scrollbar.widget().cursor_progress =
+                let (scrollbar, mut scrollbar_ctx) =
+                    ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+                scrollbar.cursor_progress =
                     self.viewport_pos.x / (content_size - portal_size).width;
-                scrollbar.ctx().request_render();
+                scrollbar_ctx.request_render();
             }
             _ => {}
         }
@@ -396,6 +399,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let content_size = ctx.run_layout(&mut self.child, &child_bc);
         let portal_size = bc.constrain(content_size);
 
+        self.content_size = content_size;
+
         // TODO - document better
         // Recompute the portal offset for the new layout
         self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos);
@@ -415,11 +420,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             !self.scrollbar_horizontal_visible,
         );
         if self.scrollbar_horizontal_visible {
-            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
-            scrollbar.widget().portal_size = portal_size.width;
-            scrollbar.widget().content_size = content_size.width;
+            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+            scrollbar.portal_size = portal_size.width;
+            scrollbar.content_size = content_size.width;
             // TODO - request paint for scrollbar?
-            std::mem::drop(scrollbar);
 
             let scrollbar_size = ctx.run_layout(&mut self.scrollbar_horizontal, bc);
             ctx.place_child(
@@ -433,11 +437,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
             !self.scrollbar_vertical_visible,
         );
         if self.scrollbar_vertical_visible {
-            let mut scrollbar = ctx.get_raw_mut(&mut self.scrollbar_vertical);
-            scrollbar.widget().portal_size = portal_size.height;
-            scrollbar.widget().content_size = content_size.height;
+            let (scrollbar, _) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
+            scrollbar.portal_size = portal_size.height;
+            scrollbar.content_size = content_size.height;
             // TODO - request paint for scrollbar?
-            std::mem::drop(scrollbar);
 
             let scrollbar_size = ctx.run_layout(&mut self.scrollbar_vertical, bc);
             ctx.place_child(
@@ -461,30 +464,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 
     fn accessibility(
         &mut self,
-        ctx: &mut AccessCtx<'_>,
+        _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
-        // TODO - Double check this code
-        // Not sure about these values
-        if false {
-            node.set_scroll_x(self.viewport_pos.x);
-            node.set_scroll_y(self.viewport_pos.y);
-            node.set_scroll_x_min(0.0);
-
-            let x_max = ctx
-                .get_raw_ref(&self.scrollbar_horizontal)
-                .widget()
-                .portal_size;
-            let y_max = ctx
-                .get_raw_ref(&self.scrollbar_vertical)
-                .widget()
-                .portal_size;
-            node.set_scroll_x_max(x_max);
-            node.set_scroll_y_min(0.0);
-            node.set_scroll_y_max(y_max);
-        }
-
         node.set_clips_children();
     }
 

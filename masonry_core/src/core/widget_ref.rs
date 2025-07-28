@@ -137,6 +137,7 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
                         default_map: self.ctx.properties.default_map,
                     },
                     children,
+                    default_properties: self.ctx.default_properties,
                 };
 
                 WidgetRef { ctx, widget }

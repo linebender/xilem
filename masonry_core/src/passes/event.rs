@@ -97,6 +97,7 @@ fn run_event_pass<E>(
                 global_state: &mut root.global_state,
                 widget_state: &mut node.item.state,
                 children: node.children.reborrow_mut(),
+                default_properties: &root.default_properties,
                 target: original_target.unwrap(),
                 allow_pointer_capture,
                 is_handled: false,

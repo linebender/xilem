@@ -44,7 +44,6 @@ fn build_accessibility_tree(
             widget_state: state,
             children: children.reborrow_mut(),
             tree_update,
-            rebuild_all,
         };
         let mut node = build_access_node(widget, &mut ctx, scale_factor);
         let props = PropertiesRef {

@@ -52,7 +52,7 @@ The animation pass may be considered as a special event pass: it's not triggered
 ## Rewrite passes
 
 After an event pass, some flags may have been changed, and some values may have been invalidated and need to be recomputed.
-To address these invalidations, Masonry runs a set of **rewrite passes** over the tree:
+To address these invalidations, Masonry runs a set of **rewrite passes** over the tree, in the following order:
 
 - **mutate:** Runs callbacks with mutable access to the tree.
 - **update_widget_tree:** Updates the tree when widgets are added or removed.

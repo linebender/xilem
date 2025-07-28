@@ -450,7 +450,7 @@ pub fn find_widget_under_pointer<'c>(
 /// A parent widget can use [`EventCtx::get_raw_mut`], [`UpdateCtx::get_raw_mut`],
 /// or [`LayoutCtx::get_raw_mut`] to directly access a child widget. In that case,
 /// these methods return both a mutable reference to the child widget and a new
-/// context (`MutateCtx`, `EventCtx`, etc) scoped to the child. The parent is
+/// [`RawCtx`](crate::core::RawCtx) context scoped to the child. The parent is
 /// responsible for calling the context methods (eg `request_layout`,
 /// `request_accessibility_update`) for the child.
 ///
