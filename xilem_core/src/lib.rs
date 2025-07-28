@@ -47,10 +47,6 @@
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 extern crate alloc;
 
-// // Used only for ad-hoc debugging of tests
-// #[cfg(test)]
-// extern crate std;
-
 pub use anymore;
 
 mod context;
