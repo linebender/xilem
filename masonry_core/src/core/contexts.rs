@@ -69,7 +69,7 @@ pub struct QueryCtx<'a> {
     pub(crate) default_properties: &'a DefaultProperties,
 }
 
-/// A context given when calling another context's `get_raw()` method.
+/// A context given when calling another context's `get_raw_mut()` method.
 pub struct RawCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) parent_widget_state: &'a mut WidgetState,
