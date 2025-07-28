@@ -346,13 +346,13 @@ mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
-    use crate::widgets::button;
+    use crate::widgets::{Button, Label};
 
     #[test]
     fn test_grid_basics() {
         // Start with a 1x1 grid
         let widget = NewWidget::new(Grid::with_dimensions(1, 1).with_child(
-            button::Button::new("A").with_auto_id(),
+            Button::new(Label::new("A").with_auto_id()).with_auto_id(),
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
@@ -376,7 +376,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B").with_auto_id(),
+                Button::new(Label::new("B").with_auto_id()).with_auto_id(),
                 GridParams::new(1, 0, 3, 1),
             );
         });
@@ -386,7 +386,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add_child(
                 &mut grid,
-                button::Button::new("C").with_auto_id(),
+                Button::new(Label::new("C").with_auto_id()).with_auto_id(),
                 GridParams::new(0, 1, 1, 3),
             );
         });
@@ -396,7 +396,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add_child(
                 &mut grid,
-                button::Button::new("D").with_auto_id(),
+                Button::new(Label::new("D").with_auto_id()).with_auto_id(),
                 GridParams::new(1, 1, 2, 2),
             );
         });
@@ -418,7 +418,7 @@ mod tests {
     #[test]
     fn test_widget_removal_and_modification() {
         let widget = NewWidget::new(Grid::with_dimensions(2, 2).with_child(
-            button::Button::new("A").with_auto_id(),
+            Button::new(Label::new("A").with_auto_id()).with_auto_id(),
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
@@ -437,7 +437,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add_child(
                 &mut grid,
-                button::Button::new("A").with_auto_id(),
+                Button::new(Label::new("A").with_auto_id()).with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -459,7 +459,7 @@ mod tests {
     #[test]
     fn test_widget_order() {
         let widget = NewWidget::new(Grid::with_dimensions(2, 2).with_child(
-            button::Button::new("A").with_auto_id(),
+            Button::new(Label::new("A").with_auto_id()).with_auto_id(),
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
@@ -472,7 +472,7 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             Grid::add_child(
                 &mut grid,
-                button::Button::new("B").with_auto_id(),
+                Button::new(Label::new("B").with_auto_id()).with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
             );
         });
@@ -484,7 +484,7 @@ mod tests {
             Grid::insert_grid_child_at(
                 &mut grid,
                 0,
-                button::Button::new("C").with_auto_id(),
+                Button::new(Label::new("C").with_auto_id()).with_auto_id(),
                 GridParams::new(0, 0, 2, 1),
             );
         });

@@ -14,7 +14,7 @@ use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
+use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Label, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
@@ -49,11 +49,14 @@ impl AppDriver for Driver {
     }
 }
 
-fn grid_button(params: GridParams) -> Button {
-    Button::new(format!(
-        "X: {}, Y: {}, W: {}, H: {}",
-        params.x, params.y, params.width, params.height
-    ))
+fn grid_button(params: GridParams) -> Button<Label> {
+    Button::new(
+        Label::new(format!(
+            "X: {}, Y: {}, W: {}, H: {}",
+            params.x, params.y, params.width, params.height
+        ))
+        .with_auto_id(),
+    )
 }
 
 /// Create a grid with a bunch of buttons

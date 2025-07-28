@@ -158,7 +158,7 @@ impl AppDriver for CalcState {
         let Some(source) = ctx.render_root(window_id).get_widget(widget_id) else {
             return;
         };
-        let Some(button) = source.downcast::<Button>() else {
+        let Some(button) = source.downcast::<Button<dyn Widget>>() else {
             return;
         };
         let Ok(_action) = action.downcast::<ButtonPress>() else {
@@ -184,11 +184,11 @@ impl AppDriver for CalcState {
 
 // ---
 
-fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
+fn op_button_with_label(op: char, label: String) -> NewWidget<Button<Label>> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
-    let button = Button::from_label(
+    let button = Button::new(
         Label::new(label)
             .with_style(StyleProperty::FontSize(24.))
             .with_auto_id(),
@@ -208,15 +208,15 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
     )
 }
 
-fn op_button(op: char) -> NewWidget<Button> {
+fn op_button(op: char) -> NewWidget<Button<Label>> {
     op_button_with_label(op, op.to_string())
 }
 
-fn digit_button(digit: u8) -> NewWidget<Button> {
+fn digit_button(digit: u8) -> NewWidget<Button<Label>> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
     const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
 
-    let button = Button::from_label(
+    let button = Button::new(
         Label::new(format!("{digit}"))
             .with_style(StyleProperty::FontSize(24.))
             .with_auto_id(),

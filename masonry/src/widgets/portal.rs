@@ -490,10 +490,10 @@ mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
-    use crate::widgets::{Button, Flex, SizedBox};
+    use crate::widgets::{Button, Flex, Label, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {
-        SizedBox::new(Button::new(text).with_auto_id())
+        SizedBox::new(Button::new(Label::new(text).with_auto_id()).with_auto_id())
             .width(70.0)
             .height(40.0)
     }
@@ -569,7 +569,7 @@ mod tests {
             Flex::column()
                 .with_spacer(500.0)
                 .with_child(NewWidget::new_with_id(
-                    Button::new("Fully visible"),
+                    Button::new(Label::new("Fully visible").with_auto_id()),
                     button_id,
                 ))
                 .with_spacer(500.0)

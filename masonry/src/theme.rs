@@ -48,17 +48,18 @@ pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
 
     // Button
-    properties.insert::<Button, _>(Padding::from_vh(6., 16.));
-    properties.insert::<Button, _>(CornerRadius { radius: 6. });
-    properties.insert::<Button, _>(BorderWidth {
+    // TODO: Figure a way to make this a default for all button types!
+    properties.insert::<Button<Label>, _>(Padding::from_vh(6., 16.));
+    properties.insert::<Button<Label>, _>(CornerRadius { radius: 6. });
+    properties.insert::<Button<Label>, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
 
-    properties.insert::<Button, _>(Background::Color(ZYNC_800));
-    properties.insert::<Button, _>(ActiveBackground(Background::Color(ZYNC_700)));
-    properties.insert::<Button, _>(DisabledBackground(Background::Color(Color::BLACK)));
-    properties.insert::<Button, _>(BorderColor { color: ZYNC_700 });
-    properties.insert::<Button, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+    properties.insert::<Button<Label>, _>(Background::Color(ZYNC_800));
+    properties.insert::<Button<Label>, _>(ActiveBackground(Background::Color(ZYNC_700)));
+    properties.insert::<Button<Label>, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<Button<Label>, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<Button<Label>, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
 
     // Checkbox
     properties.insert::<Checkbox, _>(CornerRadius { radius: 4. });

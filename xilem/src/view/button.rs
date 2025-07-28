@@ -142,7 +142,7 @@ impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
 where
     F: Fn(&mut State, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
 {
-    type Element = Pod<widgets::Button>;
+    type Element = Pod<widgets::Button<widgets::Label>>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
@@ -150,7 +150,7 @@ where
             View::<State, Action, _>::build(&self.label, ctx, app_state)
         });
         ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx.create_pod(widgets::Button::from_label(child.new_widget));
+            let mut pod = ctx.create_pod(widgets::Button::new(child.new_widget));
             pod.new_widget.properties = self.properties.build_properties();
             pod.new_widget.options.disabled = self.disabled;
             pod
@@ -176,7 +176,7 @@ where
                 &prev.label,
                 state,
                 ctx,
-                widgets::Button::label_mut(&mut element),
+                widgets::Button::child_mut(&mut element),
                 app_state,
             );
         });
@@ -194,7 +194,7 @@ where
                 &self.label,
                 &mut (),
                 ctx,
-                widgets::Button::label_mut(&mut element),
+                widgets::Button::child_mut(&mut element),
                 app_state,
             );
         });
