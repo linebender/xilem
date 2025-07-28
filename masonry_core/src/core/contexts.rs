@@ -82,7 +82,7 @@ pub struct RawCtx<'a> {
 pub struct EventCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) children: WidgetArenaMut<'a>,
+    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
     pub(crate) target: WidgetId,
     pub(crate) allow_pointer_capture: bool,
@@ -100,7 +100,7 @@ pub struct RegisterCtx<'a> {
 pub struct UpdateCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) children: WidgetArenaMut<'a>,
+    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
 
@@ -117,7 +117,7 @@ pub struct LayoutCtx<'a> {
 pub struct ComposeCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a mut WidgetState,
-    pub(crate) children: WidgetArenaMut<'a>,
+    pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
 

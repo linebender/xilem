@@ -6,9 +6,7 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{
-    ComposeCtx, DefaultProperties, Widget, WidgetArenaMut, WidgetArenaNode, WidgetState,
-};
+use crate::core::{ComposeCtx, DefaultProperties, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RECURSE
