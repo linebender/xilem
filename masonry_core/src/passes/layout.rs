@@ -4,6 +4,8 @@
 //! The layout pass, which provides the size and position of each widget
 //! before any translations applied in [`compose`](crate::passes::compose).
 //! Most of the logic for this pass happens in [`Widget::layout`] implementations.
+//!
+//! [`Widget::layout`]: crate::core::Widget::layout
 
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
@@ -12,39 +14,29 @@ use vello::kurbo::{Rect, Size};
 
 use crate::app::RenderRootState;
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::DefaultProperties;
-use crate::core::{
-    BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, Widget, WidgetArenaMut, WidgetState,
-};
+use crate::core::{BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut};
+use crate::core::{DefaultProperties, WidgetArenaNode};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
-use crate::util::AnyMap;
 
 // --- MARK: RUN LAYOUT
 /// Run [`Widget::layout`] method on the given widget.
 /// This will be called by [`LayoutCtx::run_layout`], which is itself called in the parent widget's `layout`.
+///
+/// [`Widget::layout`]: crate::core::Widget::layout
 pub(crate) fn run_layout_on(
     global_state: &mut RenderRootState,
     default_properties: &DefaultProperties,
-    widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
+    node: ArenaMut<'_, WidgetArenaNode>,
     bc: &BoxConstraints,
 ) -> Size {
-    let trace = global_state.trace.layout;
-    let _span = enter_span_if(trace, state.reborrow());
-
-    let mut children = WidgetArenaMut {
-        widget_children: widget.children,
-        widget_state_children: state.children,
-        properties_children: properties.children,
-    };
-
-    let widget = &mut **widget.item;
-    let state = state.item;
-    let properties = properties.item;
-
+    let mut children = node.children;
+    let widget = &mut *node.item.widget;
+    let state = &mut node.item.state;
+    let properties = &mut node.item.properties;
     let id = state.id;
+    let trace = global_state.trace.layout;
+    let _span = enter_span_if(trace, state);
 
     // This checks reads `is_explicitly_stashed` instead of `is_stashed` because the latter may be outdated.
     // A widget's `is_explicitly_stashed` flag is controlled by its direct parent.
@@ -92,11 +84,7 @@ pub(crate) fn run_layout_on(
         // We forcefully set request_layout to true for all children.
         // This is used below to check that widget.layout(..) visited all of them.
         for child_id in widget.children_ids() {
-            let child_state = children
-                .widget_state_children
-                .item_mut(child_id)
-                .unwrap()
-                .item;
+            let child_state = &mut children.item_mut(child_id).unwrap().item.state;
             if !child_state.is_explicitly_stashed {
                 child_state.request_layout = true;
             }
@@ -105,16 +93,11 @@ pub(crate) fn run_layout_on(
 
     // If children are stashed, the layout pass will not recurse over them.
     // We reset need_layout and request_layout to false directly instead.
-    recurse_on_children(
-        id,
-        widget,
-        children.reborrow_mut(),
-        |widget, state, properties| {
-            if state.item.is_explicitly_stashed {
-                clear_layout_flags(widget, state, properties);
-            }
-        },
-    );
+    recurse_on_children(id, widget, children.reborrow_mut(), |node| {
+        if node.item.state.is_explicitly_stashed {
+            clear_layout_flags(node);
+        }
+    });
 
     state.local_paint_rect = Rect::ZERO;
 
@@ -150,11 +133,7 @@ pub(crate) fn run_layout_on(
     {
         let name = widget.short_type_name();
         for child_id in widget.children_ids() {
-            let child_state = children
-                .widget_state_children
-                .item_mut(child_id)
-                .unwrap()
-                .item;
+            let child_state = &children.item(child_id).unwrap().item.state;
 
             if child_state.is_explicitly_stashed {
                 continue;
@@ -204,26 +183,17 @@ pub(crate) fn run_layout_on(
 // --- MARK: CLEAR LAYOUT
 // This function is called on stashed widgets and their children
 // to set all layout flags to false.
-fn clear_layout_flags(
-    widget: ArenaMut<'_, Box<dyn Widget>>,
-    state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
-) {
-    let children = WidgetArenaMut {
-        widget_children: widget.children,
-        widget_state_children: state.children,
-        properties_children: properties.children,
-    };
-
-    let widget = &mut **widget.item;
-    let state = state.item;
+fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
+    let children = node.children;
+    let widget = &mut *node.item.widget;
+    let state = &mut node.item.state;
+    let id = state.id;
 
     state.needs_layout = false;
     state.request_layout = false;
 
-    let id = state.id;
-    recurse_on_children(id, widget, children, |widget, state, properties| {
-        clear_layout_flags(widget, state, properties);
+    recurse_on_children(id, widget, children, |node| {
+        clear_layout_flags(node);
     });
 }
 
@@ -243,35 +213,15 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
     };
 
-    let (root_widget, mut root_state, root_properties) = {
-        let widget_id = root.root.id();
-        let widget = root
-            .widget_arena
-            .widgets
-            .find_mut(widget_id)
-            .expect("run_layout_pass: root not in widget tree");
-        let state = root
-            .widget_arena
-            .states
-            .find_mut(widget_id)
-            .expect("run_layout_pass: root state not in widget tree");
-        let properties = root
-            .widget_arena
-            .properties
-            .find_mut(widget_id)
-            .expect("run_layout_pass: root properties not in widget tree");
-        (widget, state, properties)
-    };
+    let mut root_node = root.widget_arena.get_node_mut(root.root.id());
 
     let size = run_layout_on(
         &mut root.global_state,
         &root.default_properties,
-        root_widget,
-        root_state.reborrow_mut(),
-        root_properties,
+        root_node.reborrow_mut(),
         &bc,
     );
-    root_state.item.is_expecting_place_child_call = false;
+    root_node.item.state.is_expecting_place_child_call = false;
 
     if let WindowSizePolicy::Content = root.size_policy {
         let new_size =
