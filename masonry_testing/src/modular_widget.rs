@@ -8,9 +8,9 @@ use tracing::trace_span;
 use masonry_core::accesskit::{Node, Role};
 use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
-    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetRef,
-    find_widget_under_pointer,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef,
+    QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetOptions,
+    WidgetRef, find_widget_under_pointer,
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
@@ -383,5 +383,19 @@ impl<S: 'static> Widget for ModularWidget<S> {
         Self: Sized,
     {
         NewWidget::new(self)
+    }
+
+    fn with_id(self, id: WidgetId) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new_with_id(self, id)
+    }
+
+    fn with_props(self, props: Properties) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
     }
 }
