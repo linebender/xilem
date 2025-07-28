@@ -273,6 +273,7 @@ impl AnyElement<Self, TestCtx> for TestElement {
 #[derive(Clone)]
 pub(super) struct SeqChildren {
     pub(super) active: Vec<TestElement>,
+    // The index in the original sequence, and the element.
     pub(super) deleted: Vec<(usize, TestElement)>,
 }
 

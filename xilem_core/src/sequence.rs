@@ -561,6 +561,7 @@ where
         } else if n > prev_n {
             // If needed, create new generations
             seq_state.generations.resize(n, 0);
+            let outer_idx = elements.index();
             elements.with_scratch(|elements| {
                 seq_state.inner_states.extend(
                     self[prev_n..]
@@ -569,7 +570,7 @@ where
                         .enumerate()
                         .map(|(index, (seq, generation))| {
                             let id = create_generational_view_id(index + prev_n, *generation);
-                            let this_skip = elements.index() - start_idx;
+                            let this_skip = elements.index() + outer_idx - start_idx;
                             let inner_state =
                                 ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
                             (this_skip, inner_state)
