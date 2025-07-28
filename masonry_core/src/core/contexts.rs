@@ -1179,7 +1179,7 @@ impl_context_method!(
                 .expect("get_mut: child not found");
             let child_ctx = RawCtx {
                 global_state: self.global_state,
-                parent_widget_state: &mut self.widget_state,
+                parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
                 default_properties: self.default_properties,
@@ -1213,7 +1213,7 @@ impl_context_method!(
                 .expect("get_mut: child not found");
             let child_ctx = RawCtx {
                 global_state: self.global_state,
-                parent_widget_state: &mut self.widget_state,
+                parent_widget_state: self.widget_state,
                 widget_state: &mut node_mut.item.state,
                 children: node_mut.children,
                 default_properties: self.default_properties,
