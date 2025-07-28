@@ -721,7 +721,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     // TODO - Factor out with other branches
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
-                        ctx.submit_action(TextAction::Changed(self.text().into_iter().collect()));
+                        ctx.submit_action::<Self::Action>(TextAction::Changed(
+                            self.text().into_iter().collect(),
+                        ));
                         ctx.request_layout();
                         self.rendered_generation = new_generation;
                     }
