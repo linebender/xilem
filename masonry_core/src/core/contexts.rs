@@ -1186,6 +1186,16 @@ impl_context_method!(
             self.widget_state.ime_area = None;
         }
 
+        /// Set the contents of the platform clipboard.
+        ///
+        /// For example, text widgets should call this for "cut" and "copy" user interactions.
+        /// Note that we currently don't support the "Primary" selection buffer on X11/Wayland.
+        pub fn set_clipboard(&mut self, contents: String) {
+            trace!("set_clipboard");
+            self.global_state
+                .emit_signal(RenderRootSignal::ClipboardStore(contents));
+        }
+
         /// Start a window drag.
         ///
         /// Moves the window with the left mouse button until the button is released.

@@ -208,6 +208,8 @@ pub enum RenderRootSignal {
     EndIme,
     /// The IME area has been moved.
     ImeMoved(LogicalPosition<f64>, LogicalSize<f64>),
+    /// A user interaction has sent something to the clipboard.
+    ClipboardStore(String),
     /// The window needs to be redrawn.
     RequestRedraw,
     /// The window should be redrawn for an animation frame. Currently this isn't really different from `RequestRedraw`.
