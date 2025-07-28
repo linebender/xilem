@@ -34,7 +34,7 @@ pub enum TextEvent {
     /// The window took or lost focus.
     WindowFocusChange(bool),
     // TODO - Handle rich text copy-pasting
-    /// The user pasted content in
+    /// The user pasted content in.
     ClipboardPaste(String),
 }
 

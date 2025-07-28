@@ -1242,6 +1242,7 @@ impl_context_method!(
         /// Set the contents of the platform clipboard.
         ///
         /// For example, text widgets should call this for "cut" and "copy" user interactions.
+        /// Note that we currently don't support the "Primary" selection buffer on X11/Wayland.
         pub fn set_clipboard(&mut self, contents: String) {
             trace!("set_clipboard");
             self.global_state
