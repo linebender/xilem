@@ -3,7 +3,9 @@
 
 //! Views for the widgets which are built-in to Masonry. These are the primitives your Xilem app's view tree will generally be constructed from.
 
-// TODO - Remove
+// TODO - Remove this re-export, and change code importing it
+// to import `masonry::core::Axis` directly.
+// See https://github.com/linebender/xilem/issues/1254
 pub use masonry::core::Axis;
 
 mod task;
