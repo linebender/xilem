@@ -62,6 +62,8 @@ impl MessageContext {
     /// Downcast the message to the specified type, taking it if `f` returns true.
     ///
     /// If the message is not of the specified type, returns `None`.
+    /// Should only be used, when the message has reached its target,
+    /// i.e. `assert!(self.remaining_path().is_empty())`
     ///
     /// # Panics
     ///
