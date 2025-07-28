@@ -5,10 +5,11 @@ use std::marker::PhantomData;
 
 use crate::style::Style;
 
-use masonry::core::{FromDynWidget, Widget, WidgetMut};
+use masonry::core::{Axis, FromDynWidget, Widget, WidgetMut};
+pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
+pub use masonry::widgets::FlexParams;
 use masonry::widgets::{self};
-pub use masonry::widgets::{Axis, CrossAxisAlignment, FlexParams, MainAxisAlignment};
 
 use crate::core::{
     AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
@@ -20,7 +21,7 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```rust,no_run
-/// use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
+/// use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
 /// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};

@@ -19,11 +19,12 @@ use masonry::core::{
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
+use masonry::properties::types::CrossAxisAlignment;
 use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, HoveredBorderColor, Padding,
 };
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, ButtonPress, CrossAxisAlignment, Flex, Grid, GridParams, Label};
+use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 

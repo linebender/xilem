@@ -7,7 +7,7 @@ use std::ops::{Add, Sub};
 use std::time::{Duration, SystemTime};
 
 use masonry::dpi::LogicalSize;
-use masonry::widgets::{CrossAxisAlignment, MainAxisAlignment};
+use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use tokio::time;
 use tracing::warn;

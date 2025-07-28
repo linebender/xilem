@@ -30,7 +30,7 @@ mod zstack;
 pub use self::align::Align;
 pub use self::button::{Button, ButtonPress};
 pub use self::checkbox::{Checkbox, CheckboxToggled};
-pub use self::flex::{Axis, CrossAxisAlignment, Flex, FlexParams, MainAxisAlignment};
+pub use self::flex::{Flex, FlexParams};
 pub use self::grid::{Grid, GridParams};
 pub use self::image::Image;
 pub use self::indexed_stack::IndexedStack;

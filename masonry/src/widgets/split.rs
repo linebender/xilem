@@ -9,14 +9,13 @@ use vello::Scene;
 use vello::kurbo::{Line, Point, Rect, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
+    AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
     LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
     RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
-use crate::widgets::flex::Axis;
 
 /// A container containing two other widgets, splitting the area either horizontally or vertically.
 ///
