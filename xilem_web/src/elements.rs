@@ -542,7 +542,6 @@ macro_rules! define_element {
                 app_state: &mut State,
             ) -> MessageResult<Action> {
                 message_element(&*self.children, element, element_state, message, app_state)
-                // self.children
             }
         }
     };
