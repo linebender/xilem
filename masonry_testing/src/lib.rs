@@ -31,7 +31,8 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
 
 impl<W: Widget + 'static> TestWidgetExt for W {}
 
-// TODO - Remove this
+// TODO - We eventually want to remove the ability to reserve widget ids.
+// See https://github.com/linebender/xilem/issues/1255
 /// Convenience function to return an array of unique widget ids.
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
     std::array::from_fn(|_| WidgetId::next())

@@ -399,6 +399,8 @@ pub trait Widget: AsDynWidget + Any {
         NewWidget::new(self)
     }
 
+    // TODO - We eventually want to remove the ability to reserve widget ids.
+    // See https://github.com/linebender/xilem/issues/1255
     /// Convenience method to create wrap this in a [`NewWidget`] with the given id.
     fn with_id(self, id: WidgetId) -> NewWidget<Self>
     where
