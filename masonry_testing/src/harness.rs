@@ -169,6 +169,9 @@ pub struct TestHarnessParams {
 ///
 /// If a screenshot doesn't exist, the assert will fail; the new screenshot is stored as
 /// `<CRATE-ROOT>/screenshots/<TEST-NAME>.new.png`, and must be renamed before the assert will pass.
+///
+/// You can also run tests with the `MASONRY_TEST_BLESS` flag set to `1` to assume all
+/// differences are intended and overwrite all the screenshots with new values.
 #[macro_export]
 macro_rules! assert_render_snapshot {
     ($test_harness:expr, $name:expr) => {
@@ -846,10 +849,19 @@ impl<W: Widget> TestHarness<W> {
         let new_path = screenshots_folder.join(format!("{test_name}.new.png"));
         let diff_path = screenshots_folder.join(format!("{test_name}.diff.png"));
 
+        let bless_test = std::env::var_os("MASONRY_TEST_BLESS").is_some_and(|it| !it.is_empty());
+
         // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
         // Have a warning for that case (i.e. differentiation between not-found and invalid format)
         // and a environment variable to ignore the test in that case.
         let Ok(reference_file) = ImageReader::open(&reference_path) else {
+            if bless_test && !expect_failure {
+                let _ = std::fs::remove_file(&new_path);
+                let _ = std::fs::remove_file(&diff_path);
+                save_image(&new_image, &reference_path);
+                return;
+            }
+
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
             save_image(&new_image, &new_path);
@@ -869,7 +881,7 @@ impl<W: Widget> TestHarness<W> {
         }
 
         if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
-            if std::env::var_os("MASONRY_TEST_BLESS").is_some_and(|it| !it.is_empty()) {
+            if bless_test {
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
                 save_image(&new_image, &reference_path);
