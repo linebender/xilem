@@ -86,7 +86,6 @@ impl<T> Default for AppendVec<T> {
 ///  - An [`array`] of `ViewSequence` values.
 ///  - Tuples of `ViewSequences` with up to 15 elements.
 ///    These can be nested if an ad-hoc sequence of more than 15 sequences is needed.
-///
 pub trait ViewSequence<State, Action, Context, Element>: 'static
 where
     Context: ViewPathTracker,
@@ -143,6 +142,12 @@ where
     ///
     /// The provided `elements` must be at the same [`index`](ElementSplice::index)
     /// it was at when `rebuild` (or `build`) was last called on this sequence.
+    ///
+    /// The easiest way to achieve this is to cache the index reached before any child
+    /// sequence's build/rebuild, and skip to that value.
+    /// Note that the amount you will need to skip to reach this value won't be the index
+    /// directly, but instead must be the difference between this index and the value of
+    /// the index at the start of your build/rebuild.
     // Potential optimisation: Sequence implementations can be grouped into three classes:
     // 1) Statically known size (e.g. a single element, a tuple with only statically known size)
     // 2) Linear time known size (e.g. a tuple of linear or better known size, a vec of statically known size, an option)
