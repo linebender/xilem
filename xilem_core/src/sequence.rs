@@ -841,7 +841,7 @@ macro_rules! impl_view_tuple {
 
         {
             /// The fields of the inner tuples are (number of widgets to skip, child state).
-            type SeqState = ($((usize,$seq::SeqState),)+);
+            type SeqState = ($((usize, $seq::SeqState),)+);
 
             fn seq_build(
                 &self,
