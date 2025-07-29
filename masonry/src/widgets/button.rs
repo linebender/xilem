@@ -6,7 +6,6 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::FromDynWidget;
 use tracing::{Span, trace, trace_span};
 use ui_events::pointer::PointerButton;
 use vello::Scene;
@@ -31,12 +30,12 @@ use crate::util::{fill, include_screenshot, stroke};
 /// Emits [`ButtonPress`] when pressed.
 ///
 #[doc = include_screenshot!("button_hello.png", "Button with text label.")]
-pub struct Button<W: Widget + ?Sized> {
-    child: WidgetPod<W>,
+pub struct Button {
+    child: WidgetPod<dyn Widget>,
 }
 
 // --- MARK: BUILDERS
-impl<W: Widget + ?Sized> Button<W> {
+impl Button {
     /// Create a new button with a child widget.
     ///
     /// # Examples
@@ -47,17 +46,17 @@ impl<W: Widget + ?Sized> Button<W> {
     ///
     /// let button = Button::new(Label::new("Increment").with_auto_id());
     /// ```
-    pub fn new(child: NewWidget<W>) -> Self {
+    pub fn new(child: NewWidget<impl Widget>) -> Self {
         Self {
-            child: child.to_pod(),
+            child: child.erased().to_pod(),
         }
     }
 }
 
 // --- MARK: WIDGETMUT
-impl<W: Widget + FromDynWidget + ?Sized> Button<W> {
+impl Button {
     /// Get a mutable reference to the label.
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, W> {
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
         this.ctx.get_mut(&mut this.widget.child)
     }
 }
@@ -72,7 +71,7 @@ pub struct ButtonPress {
 }
 
 // --- MARK: IMPL WIDGET
-impl<W: Widget + FromDynWidget + ?Sized> Widget for Button<W> {
+impl Widget for Button {
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -359,6 +358,7 @@ mod tests {
 
             harness.edit_root_widget(|mut button| {
                 let mut label = Button::child_mut(&mut button);
+                let mut label = label.downcast();
 
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
 
@@ -428,25 +428,25 @@ mod tests {
         harness.edit_root_widget(|mut grid| {
             {
                 let mut button = Grid::child_mut(&mut grid, 0);
-                let mut button = button.downcast::<Button<Label>>();
+                let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (10., 10.)));
             }
 
             {
                 let mut button = Grid::child_mut(&mut grid, 1);
-                let mut button = button.downcast::<Button<Label>>();
+                let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(5.0));
             }
 
             {
                 let mut button = Grid::child_mut(&mut grid, 2);
-                let mut button = button.downcast::<Button<Label>>();
+                let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (-10., -10.)).blur(-5.0));
             }
 
             {
                 let mut button = Grid::child_mut(&mut grid, 3);
-                let mut button = button.downcast::<Button<Label>>();
+                let mut button = button.downcast::<Button>();
                 button.insert_prop(BoxShadow::new(ORANGE, (0., 0.)).blur(5.0));
             }
         });

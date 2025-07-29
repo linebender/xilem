@@ -142,7 +142,7 @@ impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
 where
     F: Fn(&mut State, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
 {
-    type Element = Pod<widgets::Button<widgets::Label>>;
+    type Element = Pod<widgets::Button>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
@@ -176,7 +176,7 @@ where
                 &prev.label,
                 state,
                 ctx,
-                widgets::Button::child_mut(&mut element),
+                widgets::Button::child_mut(&mut element).downcast(),
                 app_state,
             );
         });
@@ -194,7 +194,7 @@ where
                 &self.label,
                 &mut (),
                 ctx,
-                widgets::Button::child_mut(&mut element),
+                widgets::Button::child_mut(&mut element).downcast(),
                 app_state,
             );
         });

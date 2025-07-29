@@ -49,7 +49,7 @@ impl AppDriver for Driver {
     }
 }
 
-fn grid_button(params: GridParams) -> Button<Label> {
+fn grid_button(params: GridParams) -> Button {
     Button::new(
         Label::new(format!(
             "X: {}, Y: {}, W: {}, H: {}",
