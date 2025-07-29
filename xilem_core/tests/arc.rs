@@ -99,12 +99,14 @@ fn arc_passthrough_teardown() {
 fn arc_passthrough_message() {
     let view1 = Arc::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view1.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
-    assert_action(result, 0);
+    ctx.with_message_context(element.view_path.clone(), DynMessage::new(()), |ctx| {
+        let result = view1.message(&mut state, ctx, &mut element, &mut ());
+        assert_action(result, 0);
+    });
 }
 
 // --- MARK: Box tests
@@ -174,13 +176,15 @@ fn box_passthrough_teardown() {
 fn box_passthrough_message() {
     let view1 = Box::new(record_ops(0));
     let mut ctx = TestCtx::default();
-    let (element, mut state) = view1.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view1.build(&mut ctx, &mut ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    let result = view1.message(&mut state, &element.view_path, DynMessage::new(()), &mut ());
-    let MessageResult::Action(inner) = result else {
-        panic!()
-    };
-    assert_eq!(inner.id, 0);
+    ctx.with_message_context(element.view_path.clone(), DynMessage::new(()), |ctx| {
+        let result = view1.message(&mut state, ctx, &mut element, &mut ());
+        let MessageResult::Action(inner) = result else {
+            panic!()
+        };
+        assert_eq!(inner.id, 0);
+    });
 }

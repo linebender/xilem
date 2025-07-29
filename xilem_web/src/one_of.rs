@@ -84,67 +84,94 @@ where
         };
     }
 
-    fn with_downcast_a(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N1>>)) {
+    fn with_downcast_a<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N1>>) -> R,
+    ) -> R {
         let (OneOf::A(node), OneOf::A(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_b(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N2>>)) {
+    fn with_downcast_b<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N2>>) -> R,
+    ) -> R {
         let (OneOf::B(node), OneOf::B(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_c(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N3>>)) {
+    fn with_downcast_c<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N3>>) -> R,
+    ) -> R {
         let (OneOf::C(node), OneOf::C(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_d(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N4>>)) {
+    fn with_downcast_d<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N4>>) -> R,
+    ) -> R {
         let (OneOf::D(node), OneOf::D(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_e(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N5>>)) {
+    fn with_downcast_e<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N5>>) -> R,
+    ) -> R {
         let (OneOf::E(node), OneOf::E(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_f(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N6>>)) {
+    fn with_downcast_f<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N6>>) -> R,
+    ) -> R {
         let (OneOf::F(node), OneOf::F(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_g(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N7>>)) {
+    fn with_downcast_g<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N7>>) -> R,
+    ) -> R {
         let (OneOf::G(node), OneOf::G(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_h(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N8>>)) {
+    fn with_downcast_h<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N8>>) -> R,
+    ) -> R {
         let (OneOf::H(node), OneOf::H(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 
-    fn with_downcast_i(e: &mut Mut<'_, Self::OneOfElement>, f: impl FnOnce(Mut<'_, Pod<N9>>)) {
+    fn with_downcast_i<R>(
+        e: &mut Mut<'_, Self::OneOfElement>,
+        f: impl FnOnce(Mut<'_, Pod<N9>>) -> R,
+    ) -> R {
         let (OneOf::I(node), OneOf::I(props)) = (&mut e.node, &mut e.props) else {
             unreachable!()
         };
-        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed));
+        f(PodMut::new(node, props, e.flags, e.parent, e.was_removed))
     }
 }
 

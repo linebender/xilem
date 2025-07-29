@@ -10,7 +10,7 @@ use core::ops::Deref;
 
 use crate::environment::Environment;
 use crate::message::MessageResult;
-use crate::{DynMessage, Mut, ViewElement};
+use crate::{MessageContext, Mut, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -56,11 +56,6 @@ pub trait ViewMarker {}
 /// impl<...> ViewMarker for Button<...> {}
 /// impl<...> View<...> for Button<...> {...}
 /// ```
-///
-/// ## Alloc
-///
-/// As it uses owned dynamically typed messages ([`DynMessage`]), this trait requires an
-/// allocator to be available.
 pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     /// The element type which this view operates on.
     type Element: ViewElement;
@@ -69,6 +64,11 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     /// This often means routing information for messages to child views or view sequences,
     /// to avoid sending outdated views.
     /// This is also used in [`memoize`](crate::memoize) to store the previously constructed view.
+    ///
+    /// The type used for this associated type cannot be treated as public API; this is
+    /// internal state to the `View` implementation.
+    /// That is, `View` implementations are permitted to change the type they use for this
+    ///  during even a patch release of their crate.
     type ViewState;
 
     /// Create the corresponding Element value.
@@ -103,8 +103,8 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
 
@@ -205,12 +205,12 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         self.deref()
-            .message(view_state, id_path, message, app_state)
+            .message(view_state, message, element, app_state)
     }
 }
 
@@ -275,13 +275,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
-                .message(&mut view_state.view_state, id_path, message, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }
@@ -339,13 +339,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
-                .message(&mut view_state.view_state, id_path, message, app_state);
+                .message(&mut view_state.view_state, message, element, app_state);
         if matches!(message_result, MessageResult::RequestRebuild) {
             view_state.dirty = true;
         }

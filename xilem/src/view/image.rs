@@ -3,10 +3,10 @@
 
 //! The bitmap image widget.
 
-use masonry::widgets::{self};
+use masonry::widgets;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{MessageContext, Mut, ViewMarker};
+use crate::{MessageResult, Pod, View, ViewCtx};
 
 pub use masonry::core::ObjectFit;
 /// Displays the bitmap `image`.
@@ -84,13 +84,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _: Mut<'_, Self::Element>,
         _: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
-            "Message arrived in Image::message, but Image doesn't consume any messages, this is a bug"
+            ?message,
+            "Message arrived in Image::message, but Image doesn't consume any messages, this is a bug."
         );
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }

@@ -8,8 +8,10 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 
-use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker};
-use crate::{DynMessage, OptionalAction, ViewCtx};
+use crate::core::{
+    MessageContext, MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
+};
+use crate::{OptionalAction, ViewCtx};
 
 /// Await a future returned by `init_future` invoked with the argument `data`, `callback` is called with the output of the future. `init_future` will be invoked again, when `data` changes. Use [`memoized_await`] for construction of this [`View`]
 pub struct MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut> {
@@ -245,13 +247,19 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        (): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        assert_eq!(id_path.len(), 1);
-        if id_path[0].routing_id() == view_state.generation {
-            match *message.downcast().unwrap_throw() {
+        assert_eq!(
+            message.remaining_path().len(),
+            1,
+            "MemoizedAwait doesn't have children but controls a single path element, got {message:?}."
+        );
+        let my_id = message.take_first().unwrap();
+
+        if my_id.routing_id() == view_state.generation {
+            match *message.take_message().unwrap_throw() {
                 MemoizedAwaitMessage::Output(future_output) => {
                     match (self.callback)(app_state, future_output).action() {
                         Some(action) => MessageResult::Action(action),
@@ -265,7 +273,7 @@ where
                 }
             }
         } else {
-            MessageResult::Stale(message)
+            MessageResult::Stale
         }
     }
 }

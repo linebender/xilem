@@ -10,10 +10,10 @@ use futures::channel::oneshot;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
 
+use crate::ViewCtx;
 use crate::context::MessageThunk;
 use crate::core::anymore::AnyDebug;
-use crate::core::{MessageResult, Mut, NoElement, View, ViewId, ViewMarker};
-use crate::{DynMessage, ViewCtx};
+use crate::core::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker};
 
 /// Spawn an async task to update state asynchronously
 ///
@@ -182,15 +182,15 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        _element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         debug_assert!(
-            id_path.is_empty(),
-            "id path should be empty in AsyncRepeat::message"
+            message.remaining_path().is_empty(),
+            "id path should be empty in AsyncRepeat::message, got {message:?}"
         );
-        let message = message.downcast::<M>().unwrap();
+        let message = message.take_message::<M>().unwrap();
         MessageResult::Action((self.on_event)(app_state, *message))
     }
 }

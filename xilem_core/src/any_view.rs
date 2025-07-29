@@ -7,7 +7,7 @@ use alloc::boxed::Box;
 use core::any::Any;
 
 use crate::{
-    AnyElement, DynMessage, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
+    AnyElement, MessageContext, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
     ViewPathTracker,
 };
 
@@ -58,8 +58,8 @@ pub trait AnyView<State, Action, Context, Element: ViewElement> {
     fn dyn_message(
         &self,
         dyn_state: &mut AnyViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Element::Mut<'_>,
         app_state: &mut State,
     ) -> MessageResult<Action>;
 }
@@ -153,22 +153,26 @@ where
     fn dyn_message(
         &self,
         dyn_state: &mut AnyViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: DynamicElement::Mut<'_>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         let state = dyn_state
             .inner_state
             .downcast_mut()
             .expect("build or rebuild always set the correct corresponding state type");
-        let Some((first, remainder)) = id_path.split_first() else {
+        let Some(first) = message.take_first() else {
+            // TODO: More info here (i.e. debug print message).
             unreachable!("Parent view of `AnyView` sent outdated and/or incorrect empty view path");
         };
         if first.routing_id() != dyn_state.generation {
             // Do we want to log something here?
-            return MessageResult::Stale(message);
+            return MessageResult::Stale;
         }
-        self.message(state, remainder, message, app_state)
+        DynamicElement::with_downcast_val(element, |element| {
+            self.message(state, message, element, app_state)
+        })
+        .1
     }
 }
 
@@ -223,11 +227,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.dyn_message(view_state, id_path, message, app_state)
+        self.dyn_message(view_state, message, element, app_state)
     }
 }
 
@@ -278,11 +282,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.dyn_message(view_state, id_path, message, app_state)
+        self.dyn_message(view_state, message, element, app_state)
     }
 }
 
@@ -331,11 +335,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.dyn_message(view_state, id_path, message, app_state)
+        self.dyn_message(view_state, message, element, app_state)
     }
 }
 
@@ -384,10 +388,10 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.dyn_message(view_state, id_path, message, app_state)
+        self.dyn_message(view_state, message, element, app_state)
     }
 }

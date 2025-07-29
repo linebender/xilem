@@ -6,9 +6,9 @@ use std::marker::PhantomData;
 
 use peniko::{Brush, kurbo};
 
-use crate::core::{MessageResult, Mut, View, ViewElement, ViewId, ViewMarker};
+use crate::core::{MessageContext, MessageResult, Mut, View, ViewElement, ViewMarker};
 use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
-use crate::{DomView, DynMessage, ViewCtx};
+use crate::{DomView, ViewCtx};
 
 pub struct Fill<V, State, Action> {
     child: V,
@@ -166,11 +166,11 @@ where
     fn message(
         &self,
         child_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.child.message(child_state, id_path, message, app_state)
+        self.child.message(child_state, message, element, app_state)
     }
 }
 
@@ -295,11 +295,11 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.child.message(view_state, id_path, message, app_state)
+        self.child.message(view_state, message, element, app_state)
     }
 }
 

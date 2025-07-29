@@ -4,8 +4,8 @@
 use masonry::app::RenderRoot;
 use masonry::core::{NewWidget, Widget};
 use winit::window::{Window, WindowAttributes};
-use xilem_core::{AnyViewState, View, ViewElement, ViewMarker};
 
+use crate::core::{AnyViewState, MessageContext, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, ViewCtx, WindowOptions};
 
 pub(crate) struct WindowView<State> {
@@ -55,7 +55,7 @@ where
         prev: &Self,
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        (window, render_root): xilem_core::Mut<'_, Self::Element>,
+        (window, render_root): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         self.options.rebuild(&prev.options, window);
@@ -68,7 +68,7 @@ where
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        (_, render_root): xilem_core::Mut<'_, Self::Element>,
+        (_, render_root): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         render_root.edit_root_widget(|mut root| {
@@ -80,12 +80,14 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[xilem_core::ViewId],
-        message: xilem_core::DynMessage,
+        message: &mut MessageContext,
+        (_, render_root): Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
-        self.root_widget_view
-            .message(view_state, id_path, message, app_state)
+        render_root.edit_root_widget(|mut root| {
+            self.root_widget_view
+                .message(view_state, message, root.downcast(), app_state)
+        })
     }
 }
 

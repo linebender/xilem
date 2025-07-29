@@ -12,7 +12,7 @@ pub use masonry::widgets::FlexParams;
 use masonry::widgets::{self};
 
 use crate::core::{
-    AppendVec, DynMessage, ElementSplice, MessageResult, Mut, SuperElement, View, ViewElement,
+    AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
 use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
@@ -252,12 +252,13 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
+        let mut splice = FlexSplice::new(element);
         self.sequence
-            .seq_message(view_state, id_path, message, app_state)
+            .seq_message(view_state, message, &mut splice, app_state)
     }
 }
 
@@ -407,6 +408,10 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
 
     fn skip(&mut self, n: usize) {
         self.idx += n;
+    }
+
+    fn index(&self) -> usize {
+        self.idx
     }
 }
 
@@ -594,11 +599,14 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        self.view.message(view_state, id_path, message, app_state)
+        let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
+            .expect("FlexWrapper always has a widget child");
+        self.view
+            .message(view_state, message, child.downcast(), app_state)
     }
 }
 
@@ -664,11 +672,11 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
     fn message(
         &self,
         _: &mut Self::ViewState,
-        _: &[ViewId],
-        _: DynMessage,
+        message: &mut MessageContext,
+        _: Mut<'_, Self::Element>,
         _: &mut State,
     ) -> MessageResult<Action> {
-        unreachable!()
+        unreachable!("FlexSpacer doesn't handle messages but got {message:?}.")
     }
 }
 
@@ -896,16 +904,16 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let (start, rest) = id_path
-            .split_first()
+        let start = message
+            .take_first()
             .expect("Id path has elements for AnyFlexChild");
         if start.routing_id() != view_state.generation {
             // The message was sent to a previous edition of the inner value
-            return MessageResult::Stale(message);
+            return MessageResult::Stale;
         }
         let Self::Item(flex_item) = self else {
             unreachable!(
@@ -913,6 +921,11 @@ where
             )
         };
 
-        flex_item.message(view_state.inner.as_mut().unwrap(), rest, message, app_state)
+        flex_item.message(
+            view_state.inner.as_mut().unwrap(),
+            message,
+            element,
+            app_state,
+        )
     }
 }

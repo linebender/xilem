@@ -9,8 +9,8 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::{AddEventListenerOptions, js_sys};
 
 use crate::core::anymore::AnyDebug;
-use crate::core::{MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
-use crate::{DomView, DynMessage, OptionalAction, ViewCtx};
+use crate::core::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{DomView, OptionalAction, ViewCtx};
 
 /// Use a distinctive number here, to be able to catch bugs.
 /// In case the generational-id view path in `View::Message` lead to a wrong view
@@ -216,8 +216,8 @@ fn teardown_event_listener<State, Action, V>(
 fn message_event_listener<State, Action, V, Event, OA, Callback>(
     element_view: &V,
     state: &mut OnEventState<V::ViewState>,
-    id_path: &[ViewId],
-    message: DynMessage,
+    message: &mut MessageContext,
+    element: Mut<'_, V::Element>,
     app_state: &mut State,
     handler: &Callback,
 ) -> MessageResult<Action>
@@ -229,20 +229,20 @@ where
     OA: OptionalAction<Action>,
     Callback: Fn(&mut State, Event) -> OA + 'static,
 {
-    let Some((first, remainder)) = id_path.split_first() else {
+    let Some(first) = message.take_first() else {
         throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
     };
-    if *first != ON_EVENT_VIEW_ID {
+    if first != ON_EVENT_VIEW_ID {
         throw_str("Parent view of `OnEvent` sent outdated and/or incorrect empty view path");
     }
-    if remainder.is_empty() {
-        let event = message.downcast::<Event>().unwrap_throw();
+    if message.remaining_path().is_empty() {
+        let event = message.take_message::<Event>().unwrap_throw();
         match (handler)(app_state, *event).action() {
             Some(a) => MessageResult::Action(a),
             None => MessageResult::Nop,
         }
     } else {
-        element_view.message(&mut state.child_state, remainder, message, app_state)
+        element_view.message(&mut state.child_state, message, element, app_state)
     }
 }
 
@@ -338,15 +338,15 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: crate::DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         message_event_listener(
             &self.dom_view,
             view_state,
-            id_path,
             message,
+            element,
             app_state,
             &self.handler,
         )
@@ -460,11 +460,11 @@ macro_rules! event_definitions {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                id_path: &[ViewId],
-                message: crate::DynMessage,
+                 message: &mut MessageContext,
+                 element: Mut<'_, Self::Element>,
                 app_state: &mut State,
             ) -> MessageResult<Action> {
-                message_event_listener(&self.dom_view, view_state, id_path, message, app_state, &self.handler)
+                message_event_listener(&self.dom_view, view_state, message, element, app_state, &self.handler)
             }
         }
         )*
@@ -647,19 +647,19 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let Some((first, remainder)) = id_path.split_first() else {
+        let Some(first) = message.take_first() else {
             throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
         };
-        if *first != ON_EVENT_VIEW_ID {
+        if first != ON_EVENT_VIEW_ID {
             throw_str("Parent view of `OnResize` sent outdated and/or incorrect empty view path");
         }
-        if remainder.is_empty() {
+        if message.remaining_path().is_empty() {
             let event = message
-                .downcast::<web_sys::ResizeObserverEntry>()
+                .take_message::<web_sys::ResizeObserverEntry>()
                 .unwrap_throw();
             match (self.handler)(app_state, *event).action() {
                 Some(a) => MessageResult::Action(a),
@@ -667,7 +667,7 @@ where
             }
         } else {
             self.dom_view
-                .message(&mut view_state.child_state, remainder, message, app_state)
+                .message(&mut view_state.child_state, message, element, app_state)
         }
     }
 }

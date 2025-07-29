@@ -9,9 +9,8 @@ use masonry::properties::{
     DisabledBackground, HoveredBorderColor, Padding,
 };
 use masonry::widgets::{self, ButtonPress};
-use xilem_core::ViewPathTracker;
 
-use crate::core::{DynMessage, Mut, View, ViewMarker};
+use crate::core::{MessageContext, Mut, View, ViewMarker, ViewPathTracker};
 use crate::property_tuple::PropertyTuple;
 use crate::style::Style;
 use crate::view::Label;
@@ -205,25 +204,31 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        match id_path.split_first() {
-            Some((&LABEL_VIEW_ID, rest)) => self.label.message(&mut (), rest, message, app_state),
-            None => match message.downcast::<ButtonPress>() {
-                Ok(press) => (self.callback)(app_state, press.button),
-                Err(message) => {
+        match message.take_first() {
+            Some(LABEL_VIEW_ID) => self.label.message(
+                &mut (),
+                message,
+                widgets::Button::label_mut(&mut element),
+                app_state,
+            ),
+            None => match message.take_message::<ButtonPress>() {
+                Some(press) => (self.callback)(app_state, press.button),
+                None => {
+                    // TODO: Panic?
                     tracing::error!(
                         "Wrong message type in Button::message: {message:?} expected {}",
                         type_name::<ButtonPress>()
                     );
-                    MessageResult::Stale(message)
+                    MessageResult::Stale
                 }
             },
             _ => {
                 tracing::warn!("Got unexpected id path in Button::message");
-                MessageResult::Stale(message)
+                MessageResult::Stale
             }
         }
     }

@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, DynMessage, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker, ViewSequence,
-    sequence::NoElements,
+    AppendVec, MessageContext, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
+    ViewSequence, sequence::NoElements,
 };
 
 /// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
@@ -92,20 +92,21 @@ where
     fn message(
         &self,
         (active_state, alongside_state): &mut Self::ViewState,
-        id_path: &[ViewId],
-        message: DynMessage,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> crate::MessageResult<Action> {
-        let (first, id_path) = id_path
-            .split_first()
-            .expect("Id path has elements for Fork");
+        let first = message.take_first().expect("Id path has elements for Fork");
         match first.routing_id() {
             0 => self
                 .active_view
-                .message(active_state, id_path, message, app_state),
-            1 => self
-                .alongside_view
-                .seq_message(alongside_state, id_path, message, app_state),
+                .message(active_state, message, element, app_state),
+            1 => self.alongside_view.seq_message(
+                alongside_state,
+                message,
+                &mut NoElements,
+                app_state,
+            ),
             _ => unreachable!(),
         }
     }
