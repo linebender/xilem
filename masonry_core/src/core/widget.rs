@@ -15,8 +15,8 @@ use vello::kurbo::{Point, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, NewWidget,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update,
-    UpdateCtx, WidgetRef,
+    PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
+    TextEvent, Update, UpdateCtx, WidgetOptions, WidgetRef,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -391,12 +391,30 @@ pub trait Widget: AsDynWidget + Any {
             .unwrap_or(name)
     }
 
-    /// Convenience method to create a [`NewWidget`] from this.
+    /// Convenience method to create wrap this in a [`NewWidget`].
     fn with_auto_id(self) -> NewWidget<Self>
     where
         Self: Sized,
     {
         NewWidget::new(self)
+    }
+
+    // TODO - We eventually want to remove the ability to reserve widget ids.
+    // See https://github.com/linebender/xilem/issues/1255
+    /// Convenience method to create wrap this in a [`NewWidget`] with the given id.
+    fn with_id(self, id: WidgetId) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new_with_id(self, id)
+    }
+
+    /// Convenience method to create wrap this in a [`NewWidget`] with the given [`Properties`].
+    fn with_props(self, props: Properties) -> NewWidget<Self>
+    where
+        Self: Sized,
+    {
+        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
     }
 }
 

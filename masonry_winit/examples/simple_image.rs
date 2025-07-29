@@ -30,7 +30,7 @@ impl AppDriver for Driver {
 }
 
 /// Return an image with hardcoded data
-pub fn make_image() -> Image {
+pub fn make_image() -> NewWidget<Image> {
     let image_bytes = include_bytes!("./assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();
@@ -41,7 +41,7 @@ pub fn make_image() -> Image {
         height,
     );
 
-    Image::new(png_data).fit_mode(ObjectFit::Contain)
+    NewWidget::new(Image::new(png_data).fit_mode(ObjectFit::Contain))
 }
 
 fn main() {
@@ -53,11 +53,7 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(
-            WindowId::next(),
-            window_attributes,
-            NewWidget::new(make_image()).erased(),
-        )],
+        vec![(WindowId::next(), window_attributes, make_image().erased())],
         Driver,
         default_property_set(),
     )

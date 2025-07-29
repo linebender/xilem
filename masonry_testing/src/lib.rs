@@ -17,9 +17,7 @@ pub use modular_widget::ModularWidget;
 pub use recorder_widget::{Record, Recorder, Recording};
 pub use wrapper_widget::WrapperWidget;
 
-use masonry_core::core::{NewWidget, Properties, Widget, WidgetId, WidgetOptions};
-
-// TODO - Split off into separate file
+use masonry_core::core::{Widget, WidgetId};
 
 /// External trait implemented for all widgets.
 ///
@@ -29,26 +27,12 @@ pub trait TestWidgetExt: Widget + Sized + 'static {
     fn record(self, recording: &Recording) -> Recorder<Self> {
         Recorder::new(self, recording)
     }
-
-    // TODO - Move to `Widget` trait.
-    /// Wrap this widget in a [`WrapperWidget`] with the given id.
-    fn with_id(self, id: WidgetId) -> WrapperWidget {
-        let child = NewWidget::new_with_id(self, id).erased().to_pod();
-        WrapperWidget::new_pod(child)
-    }
-
-    // TODO - Move to `Widget` trait.
-    /// Wrap this widget in a [`WrapperWidget`] with the given [`Properties`].
-    fn with_props(self, props: Properties) -> WrapperWidget {
-        let child = NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
-            .erased()
-            .to_pod();
-        WrapperWidget::new_pod(child)
-    }
 }
 
 impl<W: Widget + 'static> TestWidgetExt for W {}
 
+// TODO - We eventually want to remove the ability to reserve widget ids.
+// See https://github.com/linebender/xilem/issues/1255
 /// Convenience function to return an array of unique widget ids.
 pub fn widget_ids<const N: usize>() -> [WidgetId; N] {
     std::array::from_fn(|_| WidgetId::next())

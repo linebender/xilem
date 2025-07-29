@@ -5,13 +5,14 @@
 
 use std::f64::consts::PI;
 
+use masonry_testing::WrapperWidget;
 use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
 use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
 use crate::properties::types::UnitPoint;
 use crate::properties::{Background, BorderColor, BorderWidth};
-use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot};
+use crate::testing::{TestHarness, assert_render_snapshot};
 use crate::theme::default_property_set;
 use crate::widgets::{Button, ChildAlignment, Label, SizedBox, ZStack};
 
@@ -21,10 +22,12 @@ fn blue_box(inner: impl Widget) -> impl Widget {
     box_props.insert(BorderColor::new(palette::css::TEAL));
     box_props.insert(BorderWidth::all(2.0));
 
-    SizedBox::new(inner.with_auto_id())
-        .width(200.)
-        .height(100.)
-        .with_props(box_props)
+    WrapperWidget::new(
+        SizedBox::new(inner.with_auto_id())
+            .width(200.)
+            .height(100.)
+            .with_props(box_props),
+    )
 }
 
 #[test]
@@ -41,7 +44,9 @@ fn transforms_translation_rotation() {
             ..Default::default()
         },
     );
-    let widget = ZStack::new().with_child(transformed_widget, ChildAlignment::ParentAligned);
+    let widget = ZStack::new()
+        .with_child(transformed_widget, ChildAlignment::ParentAligned)
+        .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     assert_render_snapshot!(harness, "transforms_translation_rotation");
@@ -59,7 +64,9 @@ fn transforms_pointer_events() {
             ..Default::default()
         },
     );
-    let widget = ZStack::new().with_child(transformed_widget, ChildAlignment::ParentAligned);
+    let widget = ZStack::new()
+        .with_child(transformed_widget, ChildAlignment::ParentAligned)
+        .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), widget);
     harness.mouse_move((335.0, 350.0)); // Should hit the last "d" of the button text

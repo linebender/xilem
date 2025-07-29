@@ -305,14 +305,14 @@ mod tests {
     use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, Properties, StyleProperty};
     use crate::properties::TextColor;
-    use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
+    use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams};
 
     #[test]
     fn simple_button() {
         let [button_id] = widget_ids();
-        let widget = Button::new("Hello").with_id(button_id);
+        let widget = NewWidget::new_with_id(Button::new("Hello"), button_id);
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
@@ -356,7 +356,7 @@ mod tests {
                 Properties::new().with(TextColor::new(ACCENT_COLOR)),
             );
 
-            let button = Button::from_label(label);
+            let button = NewWidget::new(Button::from_label(label));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -368,7 +368,7 @@ mod tests {
         };
 
         let image_2 = {
-            let button = Button::new("Hello world");
+            let button = NewWidget::new(Button::new("Hello world"));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -394,7 +394,7 @@ mod tests {
     #[test]
     fn set_properties() {
         let red = crate::palette::css::RED;
-        let button = Button::new("Some random text");
+        let button = NewWidget::new(Button::new("Some random text"));
 
         let window_size = Size::new(200.0, 80.0);
         let mut harness =

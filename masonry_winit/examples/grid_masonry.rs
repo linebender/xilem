@@ -57,7 +57,7 @@ fn grid_button(params: GridParams) -> Button {
 }
 
 /// Create a grid with a bunch of buttons
-pub fn make_grid(grid_spacing: f64) -> Grid {
+pub fn make_grid(grid_spacing: f64) -> NewWidget<Grid> {
     let label = Prose::from_text_area(
         TextArea::new_immutable("Change spacing by right and left clicking on the buttons")
             .with_style(StyleProperty::FontSize(14.0))
@@ -130,7 +130,7 @@ pub fn make_grid(grid_spacing: f64) -> Grid {
         main_widget = main_widget.with_child(button.with_auto_id(), button_input);
     }
 
-    main_widget
+    NewWidget::new(main_widget)
 }
 
 fn main() {
@@ -148,11 +148,7 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(
-            driver.window_id,
-            window_attributes,
-            NewWidget::new(main_widget).erased(),
-        )],
+        vec![(driver.window_id, window_attributes, main_widget.erased())],
         driver,
         default_property_set(),
     )

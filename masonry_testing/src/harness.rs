@@ -221,29 +221,25 @@ impl Default for TestHarnessParams {
 }
 
 impl<W: Widget> TestHarness<W> {
+    // -- MARK: CREATE
     /// Builds harness with given root widget.
     ///
     /// Window size will be [`TestHarnessParams::DEFAULT_SIZE`].
     /// Background color will be [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
-    // TODO - Take NewWidget
-    pub fn create(default_props: DefaultProperties, root_widget: W) -> Self {
-        Self::create_with(
-            default_props,
-            NewWidget::new(root_widget),
-            TestHarnessParams::default(),
-        )
+    pub fn create(default_props: DefaultProperties, root_widget: NewWidget<W>) -> Self {
+        Self::create_with(default_props, root_widget, TestHarnessParams::default())
     }
 
     /// Builds harness with given root widget and window size.
     // TODO - Take NewWidget
     pub fn create_with_size(
         default_props: DefaultProperties,
-        root_widget: W,
+        root_widget: NewWidget<W>,
         window_size: Size,
     ) -> Self {
         Self::create_with(
             default_props,
-            NewWidget::new(root_widget),
+            root_widget,
             TestHarnessParams {
                 window_size,
                 ..Default::default()

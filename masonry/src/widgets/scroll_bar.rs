@@ -260,15 +260,18 @@ impl AllowRawMut for ScrollBar {}
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::NewWidget;
+
     use super::*;
     use crate::core::PointerButton;
-    use crate::testing::{TestHarness, TestWidgetExt, assert_render_snapshot, widget_ids};
+    use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
 
     #[test]
     fn simple_scrollbar() {
         let [scrollbar_id] = widget_ids();
-        let widget = ScrollBar::new(Axis::Vertical, 200.0, 600.0).with_id(scrollbar_id);
+        let widget =
+            NewWidget::new_with_id(ScrollBar::new(Axis::Vertical, 200.0, 600.0), scrollbar_id);
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(50.0, 200.0));
@@ -295,7 +298,8 @@ mod tests {
     #[test]
     fn horizontal_scrollbar() {
         let [scrollbar_id] = widget_ids();
-        let widget = ScrollBar::new(Axis::Horizontal, 200.0, 600.0).with_id(scrollbar_id);
+        let widget =
+            NewWidget::new_with_id(ScrollBar::new(Axis::Horizontal, 200.0, 600.0), scrollbar_id);
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 50.0));

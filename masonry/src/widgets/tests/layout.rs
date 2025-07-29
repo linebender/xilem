@@ -6,7 +6,7 @@
 use vello::kurbo::{Insets, Size};
 
 use crate::core::{NewWidget, Widget as _};
-use crate::testing::{ModularWidget, TestHarness, TestWidgetExt, widget_ids};
+use crate::testing::{ModularWidget, TestHarness, widget_ids};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, SizedBox};
 
@@ -30,7 +30,8 @@ fn layout_simple() {
                 .with_flex_spacer(1.0)
                 .with_auto_id(),
         )
-        .with_flex_spacer(1.0);
+        .with_flex_spacer(1.0)
+        .with_auto_id();
 
     let harness = TestHarness::create(default_property_set(), widget);
 
