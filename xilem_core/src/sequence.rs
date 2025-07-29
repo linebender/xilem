@@ -698,7 +698,6 @@ where
         let index: usize = start.routing_id().try_into().unwrap();
         // We know the index is in bounds because it was created from an index into a value of Self
         let (this_skip, inner_state) = &mut seq_state[index];
-        // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
         elements.skip(*this_skip);
         self[index].seq_message(inner_state, message, elements, app_state)
     }
@@ -900,7 +899,6 @@ macro_rules! impl_view_tuple {
                 let start = message
                     .take_first()
                     .expect("Id path has elements for tuple");
-                // We can't know how many elements needed to be skipped before us (I think we need to have stored it)
                 match start.routing_id() {
                     $(
                         $idx => {
