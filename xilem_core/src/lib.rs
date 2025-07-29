@@ -57,7 +57,8 @@ pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 
 mod environment;
 pub use environment::{
-    Environment, Provides, Rebuild, Resource, WithContext, provides, with_context,
+    Environment, OnActionWithContext, Provides, Rebuild, Resource, WithContext,
+    on_action_with_context, provides, with_context,
 };
 
 mod view;
