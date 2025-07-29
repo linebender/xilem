@@ -1,14 +1,14 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-#![expect(missing_docs, reason = "TODO - Document these items")]
-
+use std::any::{Any, TypeId};
 use std::future::Future;
 use std::marker::PhantomData;
 use std::sync::Arc;
 
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::task::JoinHandle;
+use xilem_core::Resource;
 
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
@@ -16,6 +16,8 @@ use crate::core::{
     MessageContext, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
     ViewPathTracker,
 };
+
+// TODO: Update generic variable names to be more .
 
 /// Launch a task which will run until the view is no longer in the tree.
 ///
@@ -33,13 +35,47 @@ pub fn worker<F, H, M, S, V, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, S, V>
+) -> Worker<F, H, M, impl Fn(&mut State, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, UnboundedSender<V>),
+    S: Fn(&mut State, UnboundedSender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
+{
+    const {
+        assert!(
+            size_of::<F>() == 0,
+            "`worker` will not be ran again when its captured variables are updated.\n\
+            To ignore this warning, use `worker_raw`."
+        );
+    };
+    Worker {
+        init_future,
+        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
+            store_sender(state, sender);
+        },
+        on_response,
+        message: PhantomData,
+    }
+}
+
+/// A version of [`worker`] which can store its message sender in the environment.
+///
+/// This is an interim solution until we work out nicer
+/// interactions with environment values in callbacks and the like.
+pub fn env_worker<F, H, M, S, V, Res, State, Action, Fut>(
+    init_future: F,
+    store_sender: S,
+    on_response: H,
+) -> Worker<F, H, M, S, V, Res>
+where
+    F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
+    Fut: Future<Output = ()> + Send + 'static,
+    S: Fn(&mut State, &mut Res, UnboundedSender<V>),
+    H: Fn(&mut State, M) -> Action + 'static,
+    M: AnyDebug + Send + 'static,
+    Res: Resource,
 {
     const {
         assert!(
@@ -56,6 +92,15 @@ where
     }
 }
 
+/// An internal struct used to make [`env_worker`]/[`worker`] work.
+///
+/// This is an interim solution until we design better ways for callbacks to interact with messages.
+#[derive(Debug)]
+#[doc(hidden)]
+pub struct Dummy;
+
+impl Resource for Dummy {}
+
 /// Launch a worker which will run until the view is no longer in the tree.
 ///
 /// This is [`worker`] without the capturing rules.
@@ -64,38 +109,43 @@ pub fn worker_raw<M, V, S, F, H, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, S, V>
+) -> Worker<F, H, M, impl Fn(&mut State, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
 where
     // TODO(DJMcNab): Accept app_state here
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, UnboundedSender<V>),
+    S: Fn(&mut State, UnboundedSender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
 {
     Worker {
         init_future,
         on_response,
-        store_sender,
+        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
+            store_sender(state, sender);
+        },
         message: PhantomData,
     }
 }
 
-pub struct Worker<F, H, M, S, V> {
+/// The View type for [`worker`], [`env_worker`] and [`worker_raw`]. See its documentation for details.
+pub struct Worker<F, H, M, S, V, Res> {
     init_future: F,
     store_sender: S,
     on_response: H,
-    message: PhantomData<fn(M, V)>,
+    message: PhantomData<fn(M, V, Res)>,
 }
 
-impl<F, H, M, S, V> ViewMarker for Worker<F, H, M, S, V> {}
+impl<F, H, M, S, V, Res> ViewMarker for Worker<F, H, M, S, V, Res> {}
 
-impl<State, Action, F, H, M, Fut, S, V> View<State, Action, ViewCtx> for Worker<F, H, M, S, V>
+impl<State, Action, F, H, M, Fut, S, V, Res> View<State, Action, ViewCtx>
+    for Worker<F, H, M, S, V, Res>
 where
+    Res: Resource,
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
     V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, UnboundedSender<V>) + 'static,
+    S: Fn(&mut State, &mut Res, UnboundedSender<V>) + 'static,
     H: Fn(&mut State, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
 {
@@ -109,7 +159,38 @@ where
         let proxy = ctx.proxy();
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        (self.store_sender)(app_state, tx);
+        let env = ctx.environment();
+        if TypeId::of::<Res>() != TypeId::of::<Dummy>() {
+            let pos = env.get_slot_for_type::<Res>();
+            let Some(pos) = pos else {
+                panic!(
+                    // TODO: Track caller for this view?
+                    "Xilem: Tried to get context for {}, but it hasn't been provided. Did you forget to wrap this view with `xilem_core::environment::provides`?",
+                    core::any::type_name::<Res>()
+                );
+            };
+            let slot = &mut env.slots[usize::try_from(pos).unwrap()];
+            let Some(value) = slot.item.as_mut() else {
+                panic!(
+                    // TODO: Track caller for this view?
+                    "Xilem: Tried to get context for {}, but it hasn't been `Provided`.",
+                    core::any::type_name::<Res>()
+                );
+            };
+            (self.store_sender)(
+                app_state,
+                value
+                    .value
+                    .downcast_mut::<Res>()
+                    .expect("Environment's slots should have the correct types."),
+                tx,
+            );
+        } else {
+            // Hack: Use the same signature for both versions which need and don't need an environment.
+            let value: &mut dyn Any = &mut Dummy;
+            let res = value.downcast_mut::<Res>().expect("Has same type id.");
+            (self.store_sender)(app_state, res, tx);
+        }
         let handle = ctx
             .runtime()
             .spawn((self.init_future)(MessageProxy::new(proxy, path), rx));

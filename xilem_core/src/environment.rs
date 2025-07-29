@@ -20,16 +20,20 @@ pub struct Rebuild;
 // --- MARK: Environment
 
 #[derive(Debug)]
-struct EnvironmentItem {
-    value: Box<dyn AnyDebug>,
+#[expect(missing_docs, reason = "Public on an interim basis")]
+pub struct EnvironmentItem {
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub value: Box<dyn AnyDebug>,
     // TODO: Can we/do we want to make these share an allocation?
     // TODO: How do we GC this?
     change_listeners: Vec<Option<Arc<[ViewId]>>>,
 }
 
 #[derive(Debug)]
-struct Slot {
-    item: Option<EnvironmentItem>,
+#[expect(missing_docs, reason = "Public on an interim basis")]
+pub struct Slot {
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub item: Option<EnvironmentItem>,
     ref_count: u32,
     // generation: u32,
 }
@@ -47,7 +51,8 @@ struct Slot {
 /// they all implement.
 #[derive(Debug)]
 pub struct Environment {
-    slots: Vec<Slot>,
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub slots: Vec<Slot>,
     // We use u32 here so that we could move to a generation
     free_slots: Vec<u32>,
     types: HashMap<TypeId, u32>,
@@ -103,7 +108,8 @@ impl Environment {
         }
     }
 
-    fn get_slot_for_type<Context>(&mut self) -> Option<u32>
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub fn get_slot_for_type<Context>(&mut self) -> Option<u32>
     where
         Context: Resource,
     {
