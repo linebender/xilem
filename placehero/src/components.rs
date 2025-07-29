@@ -22,7 +22,7 @@ pub(crate) use thread::thread;
 // TODO: Determine our UX for boosting/reblogging.
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
-fn base_status(avatars: &mut Avatars, status: &Status) -> impl FlexSequence<Placehero> + use<> {
+fn base_status(status: &Status) -> impl FlexSequence<Placehero> + use<> {
     // TODO: This really should be Arced or something.
     let status_clone: Status = status.clone();
     // TODO: In theory, it's possible to reblog a reblog; it's not clear what happens in this case.
@@ -31,7 +31,7 @@ fn base_status(avatars: &mut Avatars, status: &Status) -> impl FlexSequence<Plac
     (
         // Account info/message time
         flex_row((
-            avatars.avatar(&status.account.avatar_static),
+            Avatars::avatar(status.account.avatar_static.clone()),
             flex((
                 inline_prose(status.account.display_name.as_str())
                     .weight(FontWeight::SEMI_BOLD)
