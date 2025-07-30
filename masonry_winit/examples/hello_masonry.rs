@@ -45,7 +45,7 @@ fn main() {
         .with_style(StyleProperty::FontSize(32.0))
         // Ideally there's be an Into in Parley for this
         .with_style(StyleProperty::FontWeight(FontWeight::BOLD));
-    let button = Button::new("Say hello");
+    let button = Button::with_text("Say hello");
 
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()

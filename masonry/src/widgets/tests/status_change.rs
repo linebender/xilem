@@ -60,7 +60,7 @@ fn propagate_hovered() {
             Flex::column()
                 .with_spacer(100.0)
                 .with_child(NewWidget::new_with_id(
-                    Button::new("hovered").record(&button_rec),
+                    Button::with_text("hovered").record(&button_rec),
                     button,
                 ))
                 .with_spacer(10.0)
@@ -162,7 +162,9 @@ fn update_hovered_on_mouse_leave() {
 
     let button_rec = Recording::default();
 
-    let widget = Button::new("hello").record(&button_rec).with_id(button_id);
+    let widget = Button::with_text("hello")
+        .record(&button_rec)
+        .with_id(button_id);
 
     let mut harness = TestHarness::create(default_property_set(), widget);
 
@@ -245,7 +247,7 @@ fn get_pointer_events_while_active() {
             empty_2,
         ))
         .with_child(NewWidget::new_with_id(
-            Button::new("hello").record(&button_rec),
+            Button::with_text("hello").record(&button_rec),
             button,
         ))
         .with_id(root);
@@ -325,7 +327,7 @@ fn automatically_lose_pointer_on_pointer_lost() {
             empty,
         ))
         .with_child(NewWidget::new_with_id(
-            Button::new("hello").record(&button_rec),
+            Button::with_text("hello").record(&button_rec),
             button,
         ))
         .with_id(root);

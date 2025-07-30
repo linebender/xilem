@@ -4,6 +4,7 @@
 //! A button widget.
 
 use std::any::TypeId;
+use std::sync::Arc;
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace, trace_span};
@@ -14,9 +15,9 @@ use vello::peniko::Color;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
+    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
+    WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
@@ -24,61 +25,59 @@ use crate::properties::{
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
-use crate::widgets::Label;
 
-/// A button with a text label.
+use super::Label;
+
+/// A button with a child widget.
 ///
 /// Emits [`ButtonPress`] when pressed.
 ///
 #[doc = include_screenshot!("button_hello.png", "Button with text label.")]
 pub struct Button {
-    label: WidgetPod<Label>,
+    child: WidgetPod<dyn Widget>,
 }
 
 // --- MARK: BUILDERS
 impl Button {
-    /// Create a new button with a text label.
+    /// Create a new button with a child widget.
+    ///
+    /// The child widget probably shouldn't be interactive,
+    /// to avoid behaviour which might be confusing to the user.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use masonry::widgets::{Button, Label};
+    /// use masonry::core::Widget;
+    ///
+    /// let button = Button::new(Label::new("Increment").with_auto_id());
+    /// ```
+    pub fn new(child: NewWidget<impl Widget>) -> Self {
+        Self {
+            child: child.erased().to_pod(),
+        }
+    }
+
+    /// Create a new button with a label widget.
     ///
     /// # Examples
     ///
     /// ```
     /// use masonry::widgets::Button;
+    /// use masonry::core::Widget;
     ///
-    /// let button = Button::new("Increment");
+    /// let button = Button::with_text("Increment");
     /// ```
-    pub fn new(text: impl Into<ArcStr>) -> Self {
-        Self::from_label(Label::new(text).with_auto_id())
-    }
-
-    /// Create a new button with the provided [`Label`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use masonry::core::{StyleProperty, Widget as _};
-    /// use masonry::peniko::Color;
-    /// use masonry::widgets::{Button, Label};
-    ///
-    /// let label = Label::new("Increment").with_style(StyleProperty::FontSize(20.0));
-    /// let button = Button::from_label(label.with_auto_id());
-    /// ```
-    pub fn from_label(label: NewWidget<Label>) -> Self {
-        Self {
-            label: label.to_pod(),
-        }
+    pub fn with_text(text: impl Into<Arc<str>>) -> Self {
+        Self::new(Label::new(text).with_auto_id())
     }
 }
 
 // --- MARK: WIDGETMUT
 impl Button {
-    /// Set the text.
-    pub fn set_text(this: &mut WidgetMut<'_, Self>, new_text: impl Into<ArcStr>) {
-        Label::set_text(&mut Self::label_mut(this), new_text);
-    }
-
     /// Get a mutable reference to the label.
-    pub fn label_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
-        this.ctx.get_mut(&mut this.widget.label)
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, dyn Widget> {
+        this.ctx.get_mut(&mut this.widget.child)
     }
 }
 
@@ -165,7 +164,7 @@ impl Widget for Button {
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
-        ctx.register_child(&mut self.label);
+        ctx.register_child(&mut self.child);
     }
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
@@ -196,8 +195,8 @@ impl Widget for Button {
         let bc = border.layout_down(bc);
         let bc = padding.layout_down(bc);
 
-        let label_size = ctx.run_layout(&mut self.label, &bc);
-        let baseline = ctx.child_baseline_offset(&self.label);
+        let label_size = ctx.run_layout(&mut self.child, &bc);
+        let baseline = ctx.child_baseline_offset(&self.child);
 
         let size = label_size;
         let (size, baseline) = padding.layout_up(size, baseline);
@@ -212,7 +211,7 @@ impl Widget for Button {
         // TODO - Figure out how to handle cases where label size doesn't fit bc.
         let size = initial_bc.constrain(size);
         let label_offset = (size.to_vec2() - label_size.to_vec2()) / 2.0;
-        ctx.place_child(&mut self.label, label_offset.to_point());
+        ctx.place_child(&mut self.child, label_offset.to_point());
 
         // TODO - pos = (size - label_size) / 2
 
@@ -278,7 +277,7 @@ impl Widget for Button {
     }
 
     fn children_ids(&self) -> ChildrenIds {
-        ChildrenIds::from_slice(&[self.label.id()])
+        ChildrenIds::from_slice(&[self.child.id()])
     }
 
     fn accepts_focus(&self) -> bool {
@@ -307,12 +306,12 @@ mod tests {
     use crate::properties::TextColor;
     use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::{ACCENT_COLOR, default_property_set};
-    use crate::widgets::{Grid, GridParams};
+    use crate::widgets::{Grid, GridParams, Label};
 
     #[test]
     fn simple_button() {
         let [button_id] = widget_ids();
-        let widget = NewWidget::new_with_id(Button::new("Hello"), button_id);
+        let widget = NewWidget::new_with_id(Button::with_text("Hello"), button_id);
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
@@ -356,7 +355,7 @@ mod tests {
                 Properties::new().with(TextColor::new(ACCENT_COLOR)),
             );
 
-            let button = NewWidget::new(Button::from_label(label));
+            let button = NewWidget::new(Button::new(label));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -368,7 +367,7 @@ mod tests {
         };
 
         let image_2 = {
-            let button = NewWidget::new(Button::new("Hello world"));
+            let button = NewWidget::new(Button::with_text("Hello world"));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -377,9 +376,11 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut button| {
-                Button::set_text(&mut button, "The quick brown fox jumps over the lazy dog");
+                let mut label = Button::child_mut(&mut button);
+                let mut label = label.downcast();
 
-                let mut label = Button::label_mut(&mut button);
+                Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
+
                 label.insert_prop(TextColor::new(ACCENT_COLOR));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
@@ -394,7 +395,7 @@ mod tests {
     #[test]
     fn set_properties() {
         let red = crate::palette::css::RED;
-        let button = NewWidget::new(Button::new("Some random text"));
+        let button = NewWidget::new(Button::with_text("Some random text"));
 
         let window_size = Size::new(200.0, 80.0);
         let mut harness =
@@ -406,7 +407,7 @@ mod tests {
             button.insert_prop(CornerRadius { radius: 20.0 });
             button.insert_prop(Padding::from_vh(3., 8.));
 
-            let mut label = Button::label_mut(&mut button);
+            let mut label = Button::child_mut(&mut button);
             label.insert_prop(TextColor::new(red));
         });
 
@@ -419,10 +420,22 @@ mod tests {
 
         let grid = Grid::with_dimensions(2, 2)
             .with_spacing(40.0)
-            .with_child(Button::new("A").with_auto_id(), GridParams::new(0, 0, 1, 1))
-            .with_child(Button::new("B").with_auto_id(), GridParams::new(1, 0, 1, 1))
-            .with_child(Button::new("C").with_auto_id(), GridParams::new(0, 1, 1, 1))
-            .with_child(Button::new("D").with_auto_id(), GridParams::new(1, 1, 1, 1));
+            .with_child(
+                Button::with_text("A").with_auto_id(),
+                GridParams::new(0, 0, 1, 1),
+            )
+            .with_child(
+                Button::with_text("B").with_auto_id(),
+                GridParams::new(1, 0, 1, 1),
+            )
+            .with_child(
+                Button::with_text("C").with_auto_id(),
+                GridParams::new(0, 1, 1, 1),
+            )
+            .with_child(
+                Button::with_text("D").with_auto_id(),
+                GridParams::new(1, 1, 1, 1),
+            );
         let root_widget =
             NewWidget::new_with_props(grid, Properties::new().with(Padding::all(20.0)));
 

@@ -65,7 +65,11 @@
 //!             .with_child(NewWidget::new(
 //!                 Flex::row()
 //!                     .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
-//!                     .with_child(Button::new("Add task").with_auto_id()),
+//!                     .with_child(
+//!                         Button::new(
+//!                             Label::new("Add task").with_auto_id()
+//!                         ).with_auto_id()
+//!                     ),
 //!             ))
 //!             .with_spacer(WIDGET_SPACING)
 //!             .with_auto_id(),

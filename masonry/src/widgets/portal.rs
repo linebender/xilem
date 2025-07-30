@@ -493,7 +493,7 @@ mod tests {
     use crate::widgets::{Button, Flex, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {
-        SizedBox::new(Button::new(text).with_auto_id())
+        SizedBox::new(Button::with_text(text).with_auto_id())
             .width(70.0)
             .height(40.0)
     }
@@ -569,7 +569,7 @@ mod tests {
             Flex::column()
                 .with_spacer(500.0)
                 .with_child(NewWidget::new_with_id(
-                    Button::new("Fully visible"),
+                    Button::with_text("Fully visible"),
                     button_id,
                 ))
                 .with_spacer(500.0)

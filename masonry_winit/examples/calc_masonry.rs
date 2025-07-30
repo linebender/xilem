@@ -188,7 +188,7 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
     const LIGHT_BLUE: Color = Color::from_rgb8(0x5c, 0xc4, 0xff);
 
-    let button = Button::from_label(
+    let button = Button::new(
         Label::new(label)
             .with_style(StyleProperty::FontSize(24.))
             .with_auto_id(),
@@ -216,7 +216,7 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
     const LIGHT_GRAY: Color = Color::from_rgb8(0x71, 0x71, 0x71);
 
-    let button = Button::from_label(
+    let button = Button::new(
         Label::new(format!("{digit}"))
             .with_style(StyleProperty::FontSize(24.))
             .with_auto_id(),
