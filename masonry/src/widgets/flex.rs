@@ -8,7 +8,7 @@ use std::any::TypeId;
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Line, Point, Rect, Size, Stroke, Vec2};
+use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
     AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
