@@ -20,7 +20,7 @@ use crate::core::{
     WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
-use crate::passes::layout::run_layout_on;
+use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
 use crate::util::get_debug_color;
 
@@ -573,12 +573,10 @@ impl LayoutCtx<'_> {
                 origin,
             );
         }
-        if origin != self.get_child_state_mut(child).origin {
-            self.get_child_state_mut(child).origin = origin;
-            self.get_child_state_mut(child).transform_changed = true;
-        }
-        self.get_child_state_mut(child)
-            .is_expecting_place_child_call = false;
+
+        let child_state = self.get_child_state_mut(child);
+
+        place_widget(child_state, origin);
 
         self.widget_state.local_paint_rect = self
             .widget_state
@@ -691,7 +689,7 @@ impl LayoutCtx<'_> {
     #[track_caller]
     pub fn child_size(&self, child: &WidgetPod<impl Widget + ?Sized>) -> Size {
         self.assert_layout_done(child, "child_size");
-        self.get_child_state(child).size
+        self.get_child_state(child).layout_size
     }
 
     /// Gives the widget a clip path.
@@ -730,7 +728,7 @@ impl LayoutCtx<'_> {
     ///
     /// **TODO** This method should be removed after the layout refactor.
     pub fn old_size(&self) -> Size {
-        self.widget_state.size
+        self.widget_state.size()
     }
 }
 
@@ -744,6 +742,9 @@ impl ComposeCtx<'_> {
     /// Set the scroll translation for the child widget.
     ///
     /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
+    ///
+    /// The given translation may be quantized so the child's final position
+    /// stays pixel-perfect.
     pub fn set_child_scroll_translation(
         &mut self,
         child: &mut WidgetPod<impl Widget + ?Sized>,
@@ -762,6 +763,41 @@ impl ComposeCtx<'_> {
                 translation,
             );
         }
+
+        let translation = translation.round();
+
+        let child = self.get_child_state_mut(child);
+        if translation != child.scroll_translation {
+            child.scroll_translation = translation;
+            child.transform_changed = true;
+        }
+    }
+
+    /// Set the scroll translation for the child widget.
+    ///
+    /// The translation is applied on top of the position from [`LayoutCtx::place_child`].
+    ///
+    /// Unlike [`Self::set_child_scroll_translation`], doesn't perform pixel-snapping.
+    /// This method should be used for intermediary scroll values during scroll animations.
+    pub fn set_animated_child_scroll_translation(
+        &mut self,
+        child: &mut WidgetPod<impl Widget + ?Sized>,
+        translation: Vec2,
+    ) {
+        if translation.x.is_nan()
+            || translation.x.is_infinite()
+            || translation.y.is_nan()
+            || translation.y.is_infinite()
+        {
+            debug_panic!(
+                "Error in {}: trying to call 'set_animated_child_scroll_translation' with child '{}' {} with invalid translation {:?}",
+                self.widget_id(),
+                self.get_child_dyn(child).short_type_name(),
+                child.id(),
+                translation,
+            );
+        }
+
         let child = self.get_child_state_mut(child);
         if translation != child.scroll_translation {
             child.scroll_translation = translation;
@@ -784,12 +820,12 @@ impl_context_method!(
     {
         /// The layout size.
         ///
-        /// This is the layout size returned by the [`layout`] method on the previous
-        /// layout pass.
+        /// This is roughly the layout size returned by the [`layout`] method on
+        /// the previous layout pass, with some adjustment for pixel snapping.
         ///
         /// [`layout`]: Widget::layout
         pub fn size(&self) -> Size {
-            self.widget_state.size
+            self.widget_state.size()
         }
 
         // TODO - Remove. Currently only used in tests.
@@ -800,7 +836,7 @@ impl_context_method!(
 
         /// The offset of the baseline relative to the bottom of the widget.
         pub fn baseline_offset(&self) -> f64 {
-            self.widget_state.baseline_offset
+            self.widget_state.baseline_offset()
         }
 
         /// The origin of the widget in window coordinates, relative to the top left corner of the

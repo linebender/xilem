@@ -140,7 +140,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     if let Some(hovered_widget) = root.global_state.inspector_state.hovered_widget {
         const HOVER_FILL_COLOR: Color = Color::from_rgba8(60, 60, 250, 100);
         let state = root.widget_arena.get_state(hovered_widget);
-        let rect = Rect::from_origin_size(state.window_origin(), state.size);
+        let rect = Rect::from_origin_size(state.window_origin(), state.size());
 
         complete_scene.fill(
             Fill::NonZero,

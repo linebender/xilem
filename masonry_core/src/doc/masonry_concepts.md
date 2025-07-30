@@ -165,6 +165,20 @@ Handling writing modes is in-scope for Masonry in the long term, but is deferred
 We will probably need to implement other features before we can handle it properly, such as style cascading.
 
 
+## Pixel snapping
+
+Masonry currently handles pixel snapping for its widgets.
+
+The basic idea is that when widgets are laid out, Masonry takes their reported sizes and positions, and rounds them to integer values, so that the drawn shapes line up with pixels.
+
+This is done "at the end" of the layout pass, so to speak, so that widgets can lay themselves out assuming a floating point coordinate space, and without worrying about rounding errors.
+
+The snapping is done in a way that preserves relations between widgets: if one widget ends precisely where another stops, Masonry will pick values so that their pixel-snapped layout rects have no gap or overlap.
+
+**Note:** This may produce incorrect results with DPI scaling.
+DPI-aware pixel snapping is a future feature.
+
+
 [`Cancel`]: ui_events::pointer::PointerEvent::Cancel
 [`FocusChanged`]: crate::core::Update::FocusChanged
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus

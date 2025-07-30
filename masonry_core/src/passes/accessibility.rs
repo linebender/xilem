@@ -83,7 +83,7 @@ fn build_access_node(
     scale_factor: Option<f64>,
 ) -> Node {
     let mut node = Node::new(widget.accessibility_role());
-    node.set_bounds(to_accesskit_rect(ctx.widget_state.size.to_rect()));
+    node.set_bounds(to_accesskit_rect(ctx.widget_state.size().to_rect()));
 
     let local_translation = ctx.widget_state.scroll_translation + ctx.widget_state.origin.to_vec2();
     let mut local_transform = ctx.widget_state.transform.then_translate(local_translation);

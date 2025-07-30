@@ -10,11 +10,11 @@
 use dpi::LogicalSize;
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
-use vello::kurbo::{Rect, Size};
+use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::RenderRootState;
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut};
+use crate::core::{BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, WidgetState};
 use crate::core::{DefaultProperties, WidgetArenaNode};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
@@ -50,7 +50,9 @@ pub(crate) fn run_layout_on(
             widget.short_type_name(),
             id,
         );
-        state.size = Size::ZERO;
+        state.origin = Point::ZERO;
+        state.end_point = Point::ZERO;
+        state.layout_size = Size::ZERO;
         return Size::ZERO;
     }
 
@@ -59,7 +61,7 @@ pub(crate) fn run_layout_on(
     if !state.needs_layout && state.layout_cache.old_bc == Some(*bc) {
         // We reset this to false to mark that the current widget has been visited.
         state.request_layout = false;
-        return state.size;
+        return state.layout_size;
     }
 
     // TODO - Not everything that has been re-laid out needs to be repainted.
@@ -176,7 +178,7 @@ pub(crate) fn run_layout_on(
 
     state.layout_cache.old_bc = Some(*bc);
 
-    state.size = new_size;
+    state.layout_size = new_size;
     new_size
 }
 
@@ -195,6 +197,26 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
     recurse_on_children(id, widget, children, |node| {
         clear_layout_flags(node);
     });
+}
+
+// --- MARK: PLACE WIDGET
+pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
+    let end_point = origin + child_state.layout_size.to_vec2();
+    let baseline_y = origin.y + child_state.baseline_offset;
+    // TODO - Account for display scale in pixel snapping.
+    let origin = origin.round();
+    let end_point = end_point.round();
+    let baseline_y = baseline_y.round();
+
+    // TODO - We may want to invalidate in other cases as well
+    if origin != child_state.origin {
+        child_state.transform_changed = true;
+    }
+    child_state.origin = origin;
+    child_state.end_point = end_point;
+    child_state.baseline_y = baseline_y;
+
+    child_state.is_expecting_place_child_call = false;
 }
 
 // --- MARK: ROOT
@@ -221,7 +243,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         root_node.reborrow_mut(),
         &bc,
     );
-    root_node.item.state.is_expecting_place_child_call = false;
+    place_widget(&mut root_node.item.state, Point::ORIGIN);
 
     if let WindowSizePolicy::Content = root.size_policy {
         let new_size =
