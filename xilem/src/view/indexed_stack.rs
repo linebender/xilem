@@ -260,7 +260,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Index
 // Used for building and rebuilding the ViewSequence
 impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<IndexedStackElement>) -> R) -> R {
-        let ret = f(&mut self.scratch);
+        let ret = f(self.scratch);
         for element in self.scratch.drain() {
             widgets::IndexedStack::insert_child(
                 &mut self.element,

@@ -362,7 +362,7 @@ impl<'w, 's> ZStackSplice<'w, 's> {
 
 impl ElementSplice<ZStackElement> for ZStackSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<ZStackElement>) -> R) -> R {
-        let ret = f(&mut self.scratch);
+        let ret = f(self.scratch);
         for element in self.scratch.drain() {
             widgets::ZStack::insert_child(
                 &mut self.element,

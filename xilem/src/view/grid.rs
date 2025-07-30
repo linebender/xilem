@@ -273,7 +273,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridE
 // Used for building and rebuilding the ViewSequence
 impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
-        let ret = f(&mut self.scratch);
+        let ret = f(self.scratch);
         for element in self.scratch.drain() {
             widgets::Grid::insert_grid_child_at(
                 &mut self.element,

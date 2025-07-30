@@ -412,7 +412,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
     }
 
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<FlexElement>) -> R) -> R {
-        let ret = f(&mut self.scratch);
+        let ret = f(self.scratch);
         for element in self.scratch.drain() {
             match element {
                 FlexElement::Child(child, params) => {
