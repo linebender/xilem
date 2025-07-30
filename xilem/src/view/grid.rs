@@ -146,7 +146,7 @@ where
         let mut widget = widgets::Grid::with_dimensions(self.width, self.height);
         widget = widget.with_spacing(self.spacing);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
-        for element in elements.into_inner() {
+        for element in elements.drain() {
             widget = widget.with_child(element.child.new_widget, element.params);
         }
         let mut pod = ctx.create_pod(widget);
@@ -155,7 +155,7 @@ where
             pod,
             GridState {
                 seq_state,
-                scratch: AppendVec::default(),
+                scratch: elements,
             },
         )
     }

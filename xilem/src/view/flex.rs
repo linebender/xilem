@@ -232,7 +232,7 @@ where
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
-        for child in elements.into_inner() {
+        for child in elements.drain() {
             widget = match child {
                 FlexElement::Child(child, params) => {
                     widget.with_flex_child(child.new_widget, params)
@@ -247,7 +247,7 @@ where
             pod,
             FlexState {
                 seq_state,
-                scratch: AppendVec::default(),
+                scratch: elements,
             },
         )
     }

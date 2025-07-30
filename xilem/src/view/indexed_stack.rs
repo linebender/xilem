@@ -141,7 +141,7 @@ where
         let mut elements = AppendVec::default();
         let mut widget = widgets::IndexedStack::new();
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
-        for element in elements.into_inner() {
+        for element in elements.drain() {
             widget = widget.with_child(element.child.new_widget);
         }
         widget = widget.with_active_child(self.active_child);
@@ -151,7 +151,7 @@ where
             pod,
             IndexedStackState {
                 seq_state,
-                scratch: AppendVec::default(),
+                scratch: elements,
             },
         )
     }

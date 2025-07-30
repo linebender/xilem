@@ -88,7 +88,7 @@ where
         let mut elements = AppendVec::default();
         let mut widget = widgets::ZStack::new().with_alignment(self.alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
-        for child in elements.into_inner() {
+        for child in elements.drain() {
             widget = widget.with_child(child.widget.new_widget, child.alignment);
         }
         let pod = ctx.create_pod(widget);
@@ -96,7 +96,7 @@ where
             pod,
             ZStackState {
                 seq_state,
-                scratch: AppendVec::default(),
+                scratch: elements,
             },
         )
     }
