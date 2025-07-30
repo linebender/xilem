@@ -108,6 +108,23 @@ crate::declare_property_tuple!(
     Padding, 4;
 );
 
+mod hidden {
+    use super::IndexedStackElement;
+    use crate::core::AppendVec;
+
+    #[doc(hidden)]
+    #[allow(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
+    pub struct IndexedStackState<SeqState> {
+        pub(crate) seq_state: SeqState,
+        pub(crate) scratch: AppendVec<IndexedStackElement>,
+    }
+}
+
+use hidden::IndexedStackState;
+
 impl<Seq, State, Action> ViewMarker for IndexedStack<Seq, State, Action> {}
 
 impl<State, Action, Seq> View<State, Action, ViewCtx> for IndexedStack<Seq, State, Action>
@@ -118,7 +135,7 @@ where
 {
     type Element = Pod<widgets::IndexedStack>;
 
-    type ViewState = Seq::SeqState;
+    type ViewState = IndexedStackState<Seq::SeqState>;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
@@ -130,13 +147,19 @@ where
         widget = widget.with_active_child(self.active_child);
         let mut pod = ctx.create_pod(widget);
         pod.new_widget.properties = self.properties.build_properties();
-        (pod, seq_state)
+        (
+            pod,
+            IndexedStackState {
+                seq_state,
+                scratch: AppendVec::default(),
+            },
+        )
     }
 
     fn rebuild(
         &self,
         prev: &Self,
-        view_state: &mut Self::ViewState,
+        IndexedStackState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
@@ -144,10 +167,10 @@ where
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
         {
-            let mut splice = IndexedStackSplice::new(element.reborrow_mut());
+            let mut splice = IndexedStackSplice::new(element.reborrow_mut(), scratch);
             self.sequence
-                .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice, app_state);
-            debug_assert!(splice.scratch.is_empty());
+                .seq_rebuild(&prev.sequence, seq_state, ctx, &mut splice, app_state);
+            debug_assert!(scratch.is_empty());
         }
 
         // set the active child after updating the sequence to
@@ -159,27 +182,30 @@ where
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
+        IndexedStackState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        let mut splice = IndexedStackSplice::new(element);
+        let mut splice = IndexedStackSplice::new(element, scratch);
         self.sequence
-            .seq_teardown(view_state, ctx, &mut splice, app_state);
-        debug_assert!(splice.scratch.into_inner().is_empty());
+            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
     }
 
     fn message(
         &self,
-        view_state: &mut Self::ViewState,
+        IndexedStackState { seq_state, scratch }: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let mut splice = IndexedStackSplice::new(element);
-        self.sequence
-            .seq_message(view_state, message, &mut splice, app_state)
+        let mut splice = IndexedStackSplice::new(element, scratch);
+        let result = self
+            .sequence
+            .seq_message(seq_state, message, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
+        result
     }
 }
 
@@ -232,7 +258,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for Index
 }
 
 // Used for building and rebuilding the ViewSequence
-impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_> {
+impl ElementSplice<IndexedStackElement> for IndexedStackSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<IndexedStackElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {
@@ -305,18 +331,21 @@ pub struct IndexedStackElementMut<'w> {
 }
 
 // Used for manipulating the ViewSequence.
-struct IndexedStackSplice<'w> {
+struct IndexedStackSplice<'w, 's> {
     idx: usize,
     element: WidgetMut<'w, widgets::IndexedStack>,
-    scratch: AppendVec<IndexedStackElement>,
+    scratch: &'s mut AppendVec<IndexedStackElement>,
 }
 
-impl<'w> IndexedStackSplice<'w> {
-    fn new(element: WidgetMut<'w, widgets::IndexedStack>) -> Self {
+impl<'w, 's> IndexedStackSplice<'w, 's> {
+    fn new(
+        element: WidgetMut<'w, widgets::IndexedStack>,
+        scratch: &'s mut AppendVec<IndexedStackElement>,
+    ) -> Self {
         Self {
             idx: 0,
             element,
-            scratch: AppendVec::default(),
+            scratch,
         }
     }
 }

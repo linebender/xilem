@@ -112,6 +112,23 @@ crate::declare_property_tuple!(
     Padding, 4;
 );
 
+mod hidden {
+    use super::GridElement;
+    use crate::core::AppendVec;
+
+    #[doc(hidden)]
+    #[allow(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
+    pub struct GridState<SeqState> {
+        pub(crate) seq_state: SeqState,
+        pub(crate) scratch: AppendVec<GridElement>,
+    }
+}
+
+use hidden::GridState;
+
 impl<Seq, State, Action> ViewMarker for Grid<Seq, State, Action> {}
 
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Grid<Seq, State, Action>
@@ -122,7 +139,7 @@ where
 {
     type Element = Pod<widgets::Grid>;
 
-    type ViewState = Seq::SeqState;
+    type ViewState = GridState<Seq::SeqState>;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
@@ -134,13 +151,19 @@ where
         }
         let mut pod = ctx.create_pod(widget);
         pod.new_widget.properties = self.properties.build_properties();
-        (pod, seq_state)
+        (
+            pod,
+            GridState {
+                seq_state,
+                scratch: AppendVec::default(),
+            },
+        )
     }
 
     fn rebuild(
         &self,
         prev: &Self,
-        view_state: &mut Self::ViewState,
+        GridState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
@@ -157,35 +180,38 @@ where
             widgets::Grid::set_spacing(&mut element, self.spacing);
         }
 
-        let mut splice = GridSplice::new(element);
+        let mut splice = GridSplice::new(element, scratch);
         self.sequence
-            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice, app_state);
-        debug_assert!(splice.scratch.is_empty());
+            .seq_rebuild(&prev.sequence, seq_state, ctx, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
     }
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
+        GridState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        let mut splice = GridSplice::new(element);
+        let mut splice = GridSplice::new(element, scratch);
         self.sequence
-            .seq_teardown(view_state, ctx, &mut splice, app_state);
-        debug_assert!(splice.scratch.into_inner().is_empty());
+            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
     }
 
     fn message(
         &self,
-        view_state: &mut Self::ViewState,
+        GridState { seq_state, scratch }: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let mut splice = GridSplice::new(element);
-        self.sequence
-            .seq_message(view_state, message, &mut splice, app_state)
+        let mut splice = GridSplice::new(element, scratch);
+        let result = self
+            .sequence
+            .seq_message(seq_state, message, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
+        result
     }
 }
 
@@ -245,7 +271,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for GridE
 }
 
 // Used for building and rebuilding the ViewSequence
-impl ElementSplice<GridElement> for GridSplice<'_> {
+impl ElementSplice<GridElement> for GridSplice<'_, '_> {
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<GridElement>) -> R) -> R {
         let ret = f(&mut self.scratch);
         for element in self.scratch.drain() {
@@ -384,18 +410,18 @@ pub struct GridElementMut<'w> {
 }
 
 // Used for manipulating the ViewSequence.
-struct GridSplice<'w> {
+struct GridSplice<'w, 's> {
     idx: usize,
     element: WidgetMut<'w, widgets::Grid>,
-    scratch: AppendVec<GridElement>,
+    scratch: &'s mut AppendVec<GridElement>,
 }
 
-impl<'w> GridSplice<'w> {
-    fn new(element: WidgetMut<'w, widgets::Grid>) -> Self {
+impl<'w, 's> GridSplice<'w, 's> {
+    fn new(element: WidgetMut<'w, widgets::Grid>, scratch: &'s mut AppendVec<GridElement>) -> Self {
         Self {
             idx: 0,
             element,
-            scratch: AppendVec::default(),
+            scratch,
         }
     }
 }
