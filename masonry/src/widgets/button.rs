@@ -28,7 +28,7 @@ use crate::util::{fill, include_screenshot, stroke};
 
 use super::Label;
 
-/// A button with a text label.
+/// A button with a child widget.
 ///
 /// Emits [`ButtonPress`] when pressed.
 ///
@@ -40,6 +40,9 @@ pub struct Button {
 // --- MARK: BUILDERS
 impl Button {
     /// Create a new button with a child widget.
+    ///
+    /// The child widget probably shouldn't be interactive,
+    /// to avoid behaviour which might be confusing to the user.
     ///
     /// # Examples
     ///
