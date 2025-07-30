@@ -56,7 +56,7 @@ fn transforms_translation_rotation() {
 fn transforms_pointer_events() {
     let transformed_widget = NewWidget::new_with_options(
         blue_box(ZStack::new().with_child(
-            Button::new(Label::new("Should be pressed").with_auto_id()).with_auto_id(),
+            Button::with_text("Should be pressed").with_auto_id(),
             UnitPoint::BOTTOM_RIGHT,
         )),
         WidgetOptions {

@@ -4,6 +4,7 @@
 //! A button widget.
 
 use std::any::TypeId;
+use std::sync::Arc;
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace, trace_span};
@@ -24,6 +25,8 @@ use crate::properties::{
 };
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
+
+use super::Label;
 
 /// A button with a text label.
 ///
@@ -50,6 +53,20 @@ impl Button {
         Self {
             child: child.erased().to_pod(),
         }
+    }
+
+    /// Create a new button with a label widget.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use masonry::widgets::Button;
+    /// use masonry::core::Widget;
+    ///
+    /// let button = Button::with_text("Increment");
+    /// ```
+    pub fn with_text(text: impl Into<Arc<str>>) -> Self {
+        Self::new(Label::new(text).with_auto_id())
     }
 }
 
@@ -291,8 +308,7 @@ mod tests {
     #[test]
     fn simple_button() {
         let [button_id] = widget_ids();
-        let widget =
-            NewWidget::new_with_id(Button::new(Label::new("Hello").with_auto_id()), button_id);
+        let widget = NewWidget::new_with_id(Button::with_text("Hello"), button_id);
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
@@ -348,7 +364,7 @@ mod tests {
         };
 
         let image_2 = {
-            let button = NewWidget::new(Button::new(Label::new("Hello world").with_auto_id()));
+            let button = NewWidget::new(Button::with_text("Hello world"));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -376,7 +392,7 @@ mod tests {
     #[test]
     fn set_properties() {
         let red = crate::palette::css::RED;
-        let button = NewWidget::new(Button::new(Label::new("Some random text").with_auto_id()));
+        let button = NewWidget::new(Button::with_text("Some random text"));
 
         let window_size = Size::new(200.0, 80.0);
         let mut harness =
@@ -402,19 +418,19 @@ mod tests {
         let grid = Grid::with_dimensions(2, 2)
             .with_spacing(40.0)
             .with_child(
-                Button::new(Label::new("A").with_auto_id()).with_auto_id(),
+                Button::with_text("A").with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
             )
             .with_child(
-                Button::new(Label::new("B").with_auto_id()).with_auto_id(),
+                Button::with_text("B").with_auto_id(),
                 GridParams::new(1, 0, 1, 1),
             )
             .with_child(
-                Button::new(Label::new("C").with_auto_id()).with_auto_id(),
+                Button::with_text("C").with_auto_id(),
                 GridParams::new(0, 1, 1, 1),
             )
             .with_child(
-                Button::new(Label::new("D").with_auto_id()).with_auto_id(),
+                Button::with_text("D").with_auto_id(),
                 GridParams::new(1, 1, 1, 1),
             );
         let root_widget =

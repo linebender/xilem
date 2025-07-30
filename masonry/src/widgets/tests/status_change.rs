@@ -10,7 +10,7 @@ use crate::testing::{
     PRIMARY_MOUSE, Record, Recording, TestHarness, TestWidgetExt as _, widget_ids,
 };
 use crate::theme::default_property_set;
-use crate::widgets::{Button, Flex, Label, SizedBox};
+use crate::widgets::{Button, Flex, SizedBox};
 
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     while let Some(event) = recording.next() {
@@ -60,7 +60,7 @@ fn propagate_hovered() {
             Flex::column()
                 .with_spacer(100.0)
                 .with_child(NewWidget::new_with_id(
-                    Button::new(Label::new("hovered").with_auto_id()).record(&button_rec),
+                    Button::with_text("hovered").record(&button_rec),
                     button,
                 ))
                 .with_spacer(10.0)
@@ -162,7 +162,7 @@ fn update_hovered_on_mouse_leave() {
 
     let button_rec = Recording::default();
 
-    let widget = Button::new(Label::new("hello").with_auto_id())
+    let widget = Button::with_text("hello")
         .record(&button_rec)
         .with_id(button_id);
 
@@ -247,7 +247,7 @@ fn get_pointer_events_while_active() {
             empty_2,
         ))
         .with_child(NewWidget::new_with_id(
-            Button::new(Label::new("hello").with_auto_id()).record(&button_rec),
+            Button::with_text("hello").record(&button_rec),
             button,
         ))
         .with_id(root);
@@ -327,7 +327,7 @@ fn automatically_lose_pointer_on_pointer_lost() {
             empty,
         ))
         .with_child(NewWidget::new_with_id(
-            Button::new(Label::new("hello").with_auto_id()).record(&button_rec),
+            Button::with_text("hello").record(&button_rec),
             button,
         ))
         .with_id(root);

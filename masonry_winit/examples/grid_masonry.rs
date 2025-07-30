@@ -50,13 +50,10 @@ impl AppDriver for Driver {
 }
 
 fn grid_button(params: GridParams) -> Button {
-    Button::new(
-        Label::new(format!(
-            "X: {}, Y: {}, W: {}, H: {}",
-            params.x, params.y, params.width, params.height
-        ))
-        .with_auto_id(),
-    )
+    Button::with_text(format!(
+        "X: {}, Y: {}, W: {}, H: {}",
+        params.x, params.y, params.width, params.height
+    ))
 }
 
 /// Create a grid with a bunch of buttons
