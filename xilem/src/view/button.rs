@@ -212,7 +212,7 @@ where
             Some(LABEL_VIEW_ID) => self.label.message(
                 &mut (),
                 message,
-                widgets::Button::label_mut(&mut element),
+                widgets::Button::child_mut(&mut element).downcast(),
                 app_state,
             ),
             None => match message.take_message::<ButtonPress>() {
