@@ -14,7 +14,7 @@ use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
 use masonry::theme::default_property_set;
-use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Label, Prose, SizedBox, TextArea};
+use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 

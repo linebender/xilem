@@ -490,7 +490,7 @@ mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
     use crate::theme::default_property_set;
-    use crate::widgets::{Button, Flex, Label, SizedBox};
+    use crate::widgets::{Button, Flex, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {
         SizedBox::new(Button::with_text(text).with_auto_id())
