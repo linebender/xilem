@@ -103,6 +103,7 @@ impl Avatars {
         )
     }
 
+    /// Requires the `Avatars` resource to be [provided](provides).
     // TODO: ArcStr for URL?
     pub(crate) fn avatar<State: 'static>(url: String) -> impl WidgetView<State> + use<State> {
         with_context(move |this: &mut Self, _: &mut State| {
