@@ -150,7 +150,6 @@ impl Widget for Image {
 #[cfg(test)]
 mod tests {
     use masonry_core::core::NewWidget;
-    use masonry_core::core::Properties;
     use vello::peniko::ImageFormat;
 
     use super::*;
