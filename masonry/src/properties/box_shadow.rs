@@ -80,7 +80,7 @@ impl BoxShadow {
         if property_type != TypeId::of::<Self>() {
             return;
         }
-        // TODO - request_paint_only?
+        // TODO - Call request_post_paint instead, which should be lighter?
         ctx.request_layout();
     }
 
