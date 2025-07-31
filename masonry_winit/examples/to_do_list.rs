@@ -63,7 +63,12 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
         Flex::column()
             .with_child(NewWidget::new_with_props(
                 Flex::row()
-                    .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
+                    .with_flex_child(
+                        TextInput::new("")
+                            .with_placeholder("ex: 'Do the dishes', 'File my taxes', ...")
+                            .with_auto_id(),
+                        1.0,
+                    )
                     .with_child(Button::with_text("Add task").with_auto_id()),
                 Properties::new().with(Padding::all(WIDGET_SPACING)),
             ))
