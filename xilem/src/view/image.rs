@@ -3,11 +3,11 @@
 
 //! The bitmap image widget.
 
-use masonry::core::Properties;
-use masonry::widgets::{self};
+use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx};
+use crate::style::Style;
+use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 
 pub use masonry::properties::ObjectFit;
 
@@ -27,7 +27,7 @@ pub fn image(image: &vello::peniko::Image) -> Image {
         // We take by reference as we expect all users of this API will need to clone, and it's
         // easier than documenting that cloning is cheap.
         image: image.clone(),
-        object_fit: None,
+        properties: ImageProps::default(),
     }
 }
 
@@ -37,16 +37,32 @@ pub fn image(image: &vello::peniko::Image) -> Image {
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Image {
     image: vello::peniko::Image,
-    object_fit: Option<ObjectFit>,
+    properties: ImageProps,
 }
 
 impl Image {
+    // Because this method is image-specific, we don't add it to the Style trait.
     /// Specify the object fit.
     pub fn fit(mut self, fill: ObjectFit) -> Self {
-        self.object_fit = Some(fill);
+        self.properties.0 = Some(fill);
         self
     }
 }
+
+impl Style for Image {
+    type Props = ImageProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
+    }
+}
+
+crate::declare_property_tuple!(
+    pub ImageProps;
+    Image;
+
+    ObjectFit, 0;
+);
 
 impl ViewMarker for Image {}
 impl<State, Action> View<State, Action, ViewCtx> for Image {
@@ -54,15 +70,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        // TODO - Replace this with properties on the Imagge view
-        // if we add other properties
-        let mut props = Properties::new();
-        if let Some(fill) = self.object_fit {
-            props.insert(fill);
-        }
-
         let mut pod = ctx.create_pod(widgets::Image::new(self.image.clone()));
-        pod.properties = props;
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
     }
 
@@ -74,13 +83,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Image {
         mut element: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        if prev.object_fit != self.object_fit {
-            if let Some(fill) = self.object_fit {
-                element.insert_prop(fill);
-            } else {
-                element.remove_prop::<ObjectFit>();
-            }
-        }
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
         if prev.image != self.image {
             widgets::Image::set_image_data(&mut element, self.image.clone());
         }
