@@ -12,6 +12,7 @@ mod box_shadow;
 mod checkmark;
 mod corner_radius;
 mod padding;
+mod placeholder_color;
 mod progress_bar;
 mod text_color;
 
@@ -24,5 +25,6 @@ pub use box_shadow::BoxShadow;
 pub use checkmark::{CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor};
 pub use corner_radius::CornerRadius;
 pub use padding::Padding;
+pub use placeholder_color::PlaceholderColor;
 pub use progress_bar::BarColor;
 pub use text_color::{DisabledTextColor, TextColor};
