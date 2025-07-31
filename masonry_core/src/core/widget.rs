@@ -260,8 +260,6 @@ pub trait Widget: AsDynWidget + Any {
     /// children. To draw on top of children, see [`Widget::post_paint`].
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene);
 
-    // TODO - Implement that method in some widgets.
-    // Shadows would be a good use case.
     /// Second paint method, which paints on top of the widget's children.
     ///
     /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`], and can paint things outside the clip.
