@@ -81,6 +81,8 @@ pub enum Record {
     Compose,
     /// Paint.
     Paint,
+    /// Paint after children.
+    PostPaint,
     /// Accessibility.
     Access,
 }
@@ -206,6 +208,11 @@ impl<W: Widget> Widget for Recorder<W> {
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         self.recording.push(Record::Paint);
         self.child.paint(ctx, props, scene);
+    }
+
+    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        self.recording.push(Record::PostPaint);
+        self.child.post_paint(ctx, props, scene);
     }
 
     fn accessibility_role(&self) -> Role {

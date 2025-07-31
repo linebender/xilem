@@ -52,6 +52,7 @@ pub struct ModularWidget<S> {
     layout: Option<Box<LayoutFn<S>>>,
     compose: Option<Box<ComposeFn<S>>>,
     paint: Option<Box<PaintFn<S>>>,
+    post_paint: Option<Box<PaintFn<S>>>,
     role: Option<Box<RoleFn<S>>>,
     access: Option<Box<AccessFn<S>>>,
     children: Option<Box<ChildrenFn<S>>>,
@@ -78,6 +79,7 @@ impl<S> ModularWidget<S> {
             layout: None,
             compose: None,
             paint: None,
+            post_paint: None,
             role: None,
             access: None,
             children: None,
@@ -197,6 +199,15 @@ impl<S> ModularWidget<S> {
         f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene) + 'static,
     ) -> Self {
         self.paint = Some(Box::new(f));
+        self
+    }
+
+    /// See [`Widget::post_paint`]
+    pub fn post_paint_fn(
+        mut self,
+        f: impl FnMut(&mut S, &mut PaintCtx<'_>, &PropertiesRef<'_>, &mut Scene) + 'static,
+    ) -> Self {
+        self.post_paint = Some(Box::new(f));
         self
     }
 
@@ -328,6 +339,12 @@ impl<S: 'static> Widget for ModularWidget<S> {
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         if let Some(f) = self.paint.as_mut() {
+            f(&mut self.state, ctx, props, scene);
+        }
+    }
+
+    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        if let Some(f) = self.post_paint.as_mut() {
             f(&mut self.state, ctx, props, scene);
         }
     }

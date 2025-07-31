@@ -1036,18 +1036,27 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
     pub fn request_render(&mut self) {
         trace!("request_render");
         self.widget_state.request_paint = true;
+        self.widget_state.request_post_paint = true;
         self.widget_state.needs_paint = true;
         self.widget_state.needs_accessibility = true;
         self.widget_state.request_accessibility = true;
     }
 
-    /// Request a [`paint`](crate::core::Widget::paint) pass.
+    /// Request a paint pass, specifically for the [`paint`](crate::core::Widget::paint) method.
     ///
-    /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::core::Widget::accessibility) pass.
-    /// Use `request_render` unless you're sure an accessibility pass is not needed.
+    /// Unlike [`request_render`](Self::request_render), this does not request an [`accessibility`](crate::core::Widget::accessibility) pass or a call to [`post_paint`](crate::core::Widget::post_paint).
+    ///
+    /// Use `request_render` unless you're sure neither is needed.
     pub fn request_paint_only(&mut self) {
-        trace!("request_paint");
+        trace!("request_paint_only");
         self.widget_state.request_paint = true;
+        self.widget_state.needs_paint = true;
+    }
+
+    /// Request a paint pass for the [`post_paint`](crate::core::Widget::post_paint) method.
+    pub fn request_post_paint(&mut self) {
+        trace!("request_post_paint");
+        self.widget_state.request_post_paint = true;
         self.widget_state.needs_paint = true;
     }
 
@@ -1121,7 +1130,7 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
             .children
             .remove(id)
             .expect("remove_child: child not found");
-        self.global_state.scenes.remove(&child.id());
+        self.global_state.scene_cache.remove(&child.id());
 
         self.children_changed();
     }
