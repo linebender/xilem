@@ -47,7 +47,7 @@ impl Avatars {
         provides(|_| Self::default(), fork(child, Self::worker()))
     }
 
-    pub(crate) fn worker<State, Action>()
+    fn worker<State, Action>()
     -> impl View<State, Action, ViewCtx, Element = NoElement> + use<State, Action>
     where
         State: 'static,
