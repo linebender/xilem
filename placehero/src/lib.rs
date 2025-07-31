@@ -16,7 +16,7 @@ use megalodon::entities::{Account, Context, Instance, Status};
 use megalodon::megalodon::GetAccountStatusesInputOptions;
 use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf4};
-use xilem::core::{NoElement, View, fork, lens};
+use xilem::core::{NoElement, View, fork};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{button, flex, label, prose, split, task_raw, worker_raw};
 use xilem::winit::error::EventLoopError;
@@ -49,7 +49,6 @@ struct Placehero {
     instance: Option<Instance>,
     thread_statuses: Vec<Status>,
     account: Option<Account>,
-    avatars: Avatars,
     show_context: Option<Status>,
     context: Option<Context>,
     context_sender: Option<UnboundedSender<String>>,
@@ -74,7 +73,6 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         instance: None,
         account: None,
         thread_statuses: Vec::new(),
-        avatars: Avatars::default(),
         show_context: None,
         context: None,
         context_sender: None,
@@ -118,12 +116,12 @@ impl Placehero {
             if let Some(context) = self.context.as_ref() {
                 // TODO: Display the status until the entire thread loads; this is hard because
                 // the thread's scroll position would jump.
-                OneOf4::A(thread(&mut self.avatars, show_context, context))
+                OneOf4::A(thread(show_context, context))
             } else {
                 OneOf::B(prose("Loading thread"))
             }
         } else if !self.thread_statuses.is_empty() {
-            OneOf::C(timeline(&mut self.thread_statuses, &mut self.avatars))
+            OneOf::C(timeline(&mut self.thread_statuses))
         } else {
             OneOf::D(prose("No statuses yet loaded"))
         }
@@ -131,7 +129,7 @@ impl Placehero {
 }
 
 fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
-    fork(
+    Avatars::provide(fork(
         split(app_state.sidebar(), app_state.main_view()).split_point(0.2),
         (
             load_instance(app_state.mastodon.clone()),
@@ -142,12 +140,8 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
                 .as_ref()
                 .map(|it| it.id.clone())
                 .map(|id| load_statuses(app_state.mastodon.clone(), id)),
-            lens(
-                |avatars: &mut Avatars| avatars.worker(),
-                |app_state: &mut Placehero| &mut app_state.avatars,
-            ),
         ),
-    )
+    ))
 }
 
 fn load_contexts(

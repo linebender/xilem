@@ -5,11 +5,14 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use xilem::core::one_of::Either;
-use xilem::core::{MessageProxy, NoElement, View};
+use xilem::core::{
+    MessageProxy, MessageResult, NoElement, Resource, View, fork, map_message,
+    on_action_with_context, provides, with_context,
+};
 use xilem::palette::css;
 use xilem::style::{Gradient, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use xilem::view::{image, sized_box, spinner, worker};
+use xilem::view::{env_worker, image, sized_box, spinner};
 use xilem::{Blob, Image, ImageFormat, ViewCtx, WidgetView, tokio};
 
 #[derive(Debug)]
@@ -23,78 +26,126 @@ struct AvatarResponse {
     image: Image,
 }
 
-#[derive(Default)]
+#[derive(Debug)]
 pub(crate) struct Avatars {
     icons: HashMap<String, Option<Image>>,
     requester: Option<UnboundedSender<AvatarRequest>>,
     // TODO: lru: ...
 }
 
+impl Resource for Avatars {}
+
 impl Avatars {
-    pub(crate) fn worker(&mut self) -> impl View<Self, (), ViewCtx, Element = NoElement> + use<> {
-        worker(
-            |proxy: MessageProxy<AvatarResponse>, mut rx: UnboundedReceiver<AvatarRequest>| async move {
-                while let Some(url) = rx.recv().await {
-                    let proxy = proxy.clone();
-                    tokio::task::spawn(async move {
-                        let url = url.avatar_url;
-                        let result = image_from_url(&url).await;
-                        match result {
-                            // We choose not to handle the case where the event loop has ended
-                            Ok(image) => drop(proxy.message(AvatarResponse { url, image })),
-                            // TODO: Report in the frontend?
-                            Err(err) => {
-                                tracing::warn!("Loading avatar from {url:?} failed: {err}.");
-                            }
-                        }
-                    });
+    /// Get the avatar view/component for the given url, as a 50x50 pixel box.
+    ///
+    /// This will fetch the image data from the URL, and cache it.
+    /// If the image hasn't yet loaded, will show a placeholder,
+    ///
+    ///  Requires that this View is within a [`Self::provide`] call.
+    // TODO: ArcStr for URL?
+    pub(crate) fn avatar<State: 'static>(url: String) -> impl WidgetView<State> + use<State> {
+        with_context(move |this: &mut Self, _: &mut State| {
+            let width = 50.;
+            let height = 50.;
+            if let Some(maybe_image) = this.icons.get(&url) {
+                if let Some(image_) = maybe_image {
+                    return Either::A(sized_box(image(image_)).width(width).height(height));
                 }
+            } else if let Some(requester) = this.requester.as_ref() {
+                drop(requester.send(AvatarRequest {
+                    avatar_url: url.to_string(),
+                }));
+                this.icons.insert(url.to_string(), None);
+            } else {
+                // If the worker hasn't started yet, we have to wait until it does to do so.
+            }
+            Either::B(
+                sized_box(spinner().color(css::BLACK))
+                    .background_gradient(
+                        Gradient::new_linear(
+                            // down-right
+                            const { -45_f64.to_radians() },
+                        )
+                        .with_stops([css::YELLOW, css::LIME]),
+                    )
+                    .width(width)
+                    .height(height)
+                    .padding(4.0),
+            )
+        })
+    }
+
+    /// Provide support for Mastodon Avatar display to the `child` view.
+    pub(crate) fn provide<State, Action, Child>(
+        child: Child,
+    ) -> impl WidgetView<State, Action, Element = Child::Element>
+    where
+        Child: WidgetView<State, Action>,
+        State: 'static,
+        Action: 'static,
+    {
+        provides(
+            |_| Self {
+                icons: HashMap::default(),
+                requester: None,
             },
-            |this: &mut Self, tx| {
-                if this.requester.is_some() {
-                    tracing::warn!("Unexpectedly got a second worker for requesting avatars.");
-                }
-                this.requester = Some(tx);
-            },
-            |this: &mut Self, response| {
-                let ret = this.icons.insert(response.url, Some(response.image));
-                if !matches!(ret, Some(None)) {
-                    tracing::warn!("Potentially loaded or tried to load same avatar twice.");
-                }
-            },
+            fork(child, Self::worker()),
         )
     }
 
-    pub(crate) fn avatar<State: 'static>(
-        &mut self,
-        url: &str,
-    ) -> impl WidgetView<State> + use<State> {
-        let width = 50.;
-        let height = 50.;
-        if let Some(maybe_image) = self.icons.get(url) {
-            if let Some(image_) = maybe_image {
-                return Either::A(sized_box(image(image_)).width(width).height(height));
-            }
-        } else if let Some(requester) = self.requester.as_ref() {
-            drop(requester.send(AvatarRequest {
-                avatar_url: url.to_string(),
-            }));
-            self.icons.insert(url.to_string(), None);
-        } else {
-            // If the worker hasn't started yet, we have to wait until it does to do so.
-        }
-        Either::B(
-            sized_box(spinner().color(css::BLACK))
-                .background_gradient(
-                    Gradient::new_linear(
-                        // down-right
-                        const { -45_f64.to_radians() },
-                    )
-                    .with_stops([css::YELLOW, css::LIME]),
-                )
-                .width(width)
-                .height(height)
-                .padding(4.0),
+    fn worker<State, Action>()
+    -> impl View<State, Action, ViewCtx, Element = NoElement> + use<State, Action>
+    where
+        State: 'static,
+        Action: 'static,
+    {
+        map_message(
+            on_action_with_context(
+                |_: &mut State, this: &mut Self, response| {
+                    let ret = this.icons.insert(response.url, Some(response.image));
+                    if !matches!(ret, Some(None)) {
+                        tracing::warn!("Potentially loaded or tried to load same avatar twice.");
+                    }
+                },
+                env_worker(
+                    |proxy: MessageProxy<AvatarResponse>,
+                     mut rx: UnboundedReceiver<AvatarRequest>| async move {
+                        while let Some(url) = rx.recv().await {
+                            let proxy = proxy.clone();
+                            tokio::task::spawn(async move {
+                                let url = url.avatar_url;
+                                let result = image_from_url(&url).await;
+                                match result {
+                                    // We choose not to handle the case where the event loop has ended
+                                    Ok(image) => drop(proxy.message(AvatarResponse { url, image })),
+                                    // TODO: Report in the frontend?
+                                    Err(err) => {
+                                        tracing::warn!(
+                                            "Loading avatar from {url:?} failed: {err}."
+                                        );
+                                    }
+                                }
+                            });
+                        }
+                    },
+                    |_: &mut State, this: &mut Self, tx| {
+                        if this.requester.is_some() {
+                            tracing::warn!(
+                                "Unexpectedly got a second worker for requesting avatars."
+                            );
+                        }
+                        this.requester = Some(tx);
+                    },
+                    |_: &mut State, response| response,
+                ),
+            ),
+            // Convert to the user-defined action type by ignoring any action we actually submit.
+            |_, action| match action {
+                MessageResult::Action(_) => MessageResult::RequestRebuild,
+                MessageResult::RequestRebuild => MessageResult::RequestRebuild,
+                MessageResult::Nop => MessageResult::Nop,
+                MessageResult::Stale => MessageResult::Stale,
+            },
         )
     }
 }

@@ -20,16 +20,20 @@ pub struct Rebuild;
 // --- MARK: Environment
 
 #[derive(Debug)]
-struct EnvironmentItem {
-    value: Box<dyn AnyDebug>,
+#[expect(missing_docs, reason = "Public on an interim basis")]
+pub struct EnvironmentItem {
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub value: Box<dyn AnyDebug>,
     // TODO: Can we/do we want to make these share an allocation?
     // TODO: How do we GC this?
     change_listeners: Vec<Option<Arc<[ViewId]>>>,
 }
 
 #[derive(Debug)]
-struct Slot {
-    item: Option<EnvironmentItem>,
+#[expect(missing_docs, reason = "Public on an interim basis")]
+pub struct Slot {
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub item: Option<EnvironmentItem>,
     ref_count: u32,
     // generation: u32,
 }
@@ -47,7 +51,8 @@ struct Slot {
 /// they all implement.
 #[derive(Debug)]
 pub struct Environment {
-    slots: Vec<Slot>,
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub slots: Vec<Slot>,
     // We use u32 here so that we could move to a generation
     free_slots: Vec<u32>,
     types: HashMap<TypeId, u32>,
@@ -103,7 +108,8 @@ impl Environment {
         }
     }
 
-    fn get_slot_for_type<Context>(&mut self) -> Option<u32>
+    #[expect(missing_docs, reason = "Public on an interim basis")]
+    pub fn get_slot_for_type<Context>(&mut self) -> Option<u32>
     where
         Context: Resource,
     {
@@ -575,5 +581,148 @@ where
         view_state
             .prev
             .message(&mut view_state.child_state, message, element, app_state)
+    }
+}
+
+// --- MARK: OnActionWithContext
+
+// TODO: This `Debug` impl is pretty stupid
+#[derive(Debug)]
+#[must_use = "View values do nothing unless provided to Xilem."]
+/// The View type for [`on_action_with_context`]. See its documentation for details.
+pub struct OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction> {
+    child: ChildView,
+    on_action: OnAction,
+    phantom: PhantomData<fn(State, ChildAction, Context, Res) -> Action>,
+}
+
+/// Operate on an environment value when a child view returns an action.
+///
+/// This is an interim solution whilst we design APIs for environment
+/// manipulation.
+///
+/// The first argument `on_action` is the function which will be ran in this case.
+/// The arguments are the app's state, the specified resource and the action returned
+/// by the child.
+pub fn on_action_with_context<State, Action, Context, OnAction, Res, ChildView, ChildAction>(
+    on_action: OnAction,
+    child: ChildView,
+) -> OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction>
+where
+    Context: ViewPathTracker,
+    // Experiment:
+    OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction>:
+        View<State, Action, Context>,
+    OnAction: Fn(&mut State, &mut Res, ChildAction) -> Action,
+{
+    OnActionWithContext {
+        child,
+        on_action,
+        phantom: PhantomData,
+    }
+}
+
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
+#[derive(Debug)]
+pub struct OnActionWithContextState<ChildState> {
+    child_state: ChildState,
+    environment_slot: u32,
+}
+
+impl<State, Action, Context, OnAction, Res, ChildView, ChildAction> ViewMarker
+    for OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction>
+{
+}
+impl<State, Action, Context, OnAction, Res, ChildView, ChildAction> View<State, Action, Context>
+    for OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction>
+where
+    Context: ViewPathTracker,
+    Res: Resource,
+    Self: 'static,
+    ChildView: View<State, ChildAction, Context>,
+    OnAction: Fn(&mut State, &mut Res, ChildAction) -> Action,
+{
+    type Element = ChildView::Element;
+
+    type ViewState = OnActionWithContextState<ChildView::ViewState>;
+
+    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+        let (element, child_state) = self.child.build(ctx, app_state);
+        let env = ctx.environment();
+        let pos = env.get_slot_for_type::<Res>();
+        let Some(pos) = pos else {
+            panic!(
+                // TODO: Track caller for this view?
+                "Xilem: Tried to get context for {}, but it hasn't been provided. Did you forget to wrap this view with `xilem_core::environment::provides`?",
+                core::any::type_name::<Context>()
+            );
+        };
+        (
+            element,
+            OnActionWithContextState {
+                child_state,
+                environment_slot: pos,
+            },
+        )
+    }
+
+    fn rebuild(
+        &self,
+        prev: &Self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.child.rebuild(
+            &prev.child,
+            &mut view_state.child_state,
+            ctx,
+            element,
+            app_state,
+        );
+    }
+
+    fn teardown(
+        &self,
+        view_state: &mut Self::ViewState,
+        ctx: &mut Context,
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) {
+        self.child
+            .teardown(&mut view_state.child_state, ctx, element, app_state);
+    }
+
+    fn message(
+        &self,
+        view_state: &mut Self::ViewState,
+        message: &mut MessageContext,
+        element: Mut<'_, Self::Element>,
+        app_state: &mut State,
+    ) -> MessageResult<Action> {
+        let prev_res = self
+            .child
+            .message(&mut view_state.child_state, message, element, app_state);
+        // Use our value in the child rebuild.
+
+        let env = &mut message.environment;
+        let slot = &mut env.slots[usize::try_from(view_state.environment_slot).unwrap()];
+        let Some(value) = slot.item.as_mut() else {
+            panic!(
+                // TODO: Track caller for this view?
+                "Xilem: Tried to get context for {}, but it hasn't been `Provided`.",
+                core::any::type_name::<Res>()
+            );
+        };
+        let resource = value
+            .value
+            .downcast_mut::<Res>()
+            .expect("Environment's slots should have the correct types.");
+
+        prev_res.map(|child_action| (self.on_action)(app_state, resource, child_action))
     }
 }
