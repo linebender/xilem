@@ -15,9 +15,9 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, FromDynWidget, NewWidget,
-    PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId, WidgetMut,
-    WidgetPod, WidgetRef, WidgetState,
+    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget,
+    NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId,
+    WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
@@ -1283,6 +1283,21 @@ impl_context_method!(
                 );
                 return;
             }
+            self.global_state.emit_signal(RenderRootSignal::Action(
+                Box::new(action),
+                self.widget_state.id,
+            ));
+        }
+
+        /// Submit a type-erased action.
+        ///
+        /// Unlike [`Self::submit_action`], this method lets you submit an action with an
+        /// arbitray type, which may not match `Self::Action`.
+        /// This may act as an escape hatch in some situations.
+        ///
+        /// For further details see [`ErasedAction`](crate::core::ErasedAction).
+        pub fn submit_untyped_action(&mut self, action: ErasedAction) {
+            trace!("submit_untyped_action");
             self.global_state.emit_signal(RenderRootSignal::Action(
                 Box::new(action),
                 self.widget_state.id,
