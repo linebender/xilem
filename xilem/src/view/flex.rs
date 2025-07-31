@@ -212,6 +212,7 @@ mod hidden {
 }
 
 use hidden::FlexState;
+use hidden::AnyFlexChildState;
 
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
@@ -780,8 +781,6 @@ where
         AnyFlexChild::Item(flex_item(Box::new(self.view), self.params))
     }
 }
-
-use hidden::AnyFlexChildState;
 
 impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>
