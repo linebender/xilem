@@ -5,9 +5,9 @@ use masonry::properties::SpinnerColor;
 use masonry::widgets;
 use vello::peniko::Color;
 
-use crate::core::{DynMessage, MessageContext, Mut, ViewMarker};
+use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::style::Style;
-use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 
 /// An indefinite spinner.
 ///
