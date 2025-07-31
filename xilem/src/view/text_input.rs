@@ -11,7 +11,7 @@ use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, View, ViewMarker};
 use crate::property_tuple::PropertyTuple;
-use crate::style::Style;
+use crate::style::{HasProperty, Style};
 use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
@@ -81,8 +81,7 @@ impl<State, Action> TextInput<State, Action> {
 
     /// Set the color of the text shown when the input is empty.
     pub fn placeholder_color(mut self, color: Color) -> Self {
-        // TODO - Avoid using tuple offsets.
-        self.properties.7 = Some(PlaceholderColor::new(color));
+        *self.property() = Some(PlaceholderColor::new(color));
         self
     }
 
