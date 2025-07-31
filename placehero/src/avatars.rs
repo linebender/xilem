@@ -26,7 +26,7 @@ struct AvatarResponse {
     image: Image,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub(crate) struct Avatars {
     icons: HashMap<String, Option<Image>>,
     requester: Option<UnboundedSender<AvatarRequest>>,
@@ -36,6 +36,46 @@ pub(crate) struct Avatars {
 impl Resource for Avatars {}
 
 impl Avatars {
+    /// Get the avatar view/component for the given url, as a 50x50 pixel box.
+    ///
+    /// This will fetch the image data from the URL, and cache it.
+    /// If the image hasn't yet loaded, will show a placeholder,
+    ///
+    ///  Requires that this View is within a [`Self::provide`] call.
+    // TODO: ArcStr for URL?
+    pub(crate) fn avatar<State: 'static>(url: String) -> impl WidgetView<State> + use<State> {
+        with_context(move |this: &mut Self, _: &mut State| {
+            let width = 50.;
+            let height = 50.;
+            if let Some(maybe_image) = this.icons.get(&url) {
+                if let Some(image_) = maybe_image {
+                    return Either::A(sized_box(image(image_)).width(width).height(height));
+                }
+            } else if let Some(requester) = this.requester.as_ref() {
+                drop(requester.send(AvatarRequest {
+                    avatar_url: url.to_string(),
+                }));
+                this.icons.insert(url.to_string(), None);
+            } else {
+                // If the worker hasn't started yet, we have to wait until it does to do so.
+            }
+            Either::B(
+                sized_box(spinner().color(css::BLACK))
+                    .background_gradient(
+                        Gradient::new_linear(
+                            // down-right
+                            const { -45_f64.to_radians() },
+                        )
+                        .with_stops([css::YELLOW, css::LIME]),
+                    )
+                    .width(width)
+                    .height(height)
+                    .padding(4.0),
+            )
+        })
+    }
+
+    /// Provide support for Mastodon Avatar display to the `child` view.
     pub(crate) fn provide<State, Action, Child>(
         child: Child,
     ) -> impl WidgetView<State, Action, Element = Child::Element>
@@ -44,7 +84,13 @@ impl Avatars {
         State: 'static,
         Action: 'static,
     {
-        provides(|_| Self::default(), fork(child, Self::worker()))
+        provides(
+            |_| Self {
+                icons: HashMap::default(),
+                requester: None,
+            },
+            fork(child, Self::worker()),
+        )
     }
 
     fn worker<State, Action>()
@@ -101,40 +147,6 @@ impl Avatars {
                 MessageResult::Stale => MessageResult::Stale,
             },
         )
-    }
-
-    /// Requires the `Avatars` resource to be [provided](provides).
-    // TODO: ArcStr for URL?
-    pub(crate) fn avatar<State: 'static>(url: String) -> impl WidgetView<State> + use<State> {
-        with_context(move |this: &mut Self, _: &mut State| {
-            let width = 50.;
-            let height = 50.;
-            if let Some(maybe_image) = this.icons.get(&url) {
-                if let Some(image_) = maybe_image {
-                    return Either::A(sized_box(image(image_)).width(width).height(height));
-                }
-            } else if let Some(requester) = this.requester.as_ref() {
-                drop(requester.send(AvatarRequest {
-                    avatar_url: url.to_string(),
-                }));
-                this.icons.insert(url.to_string(), None);
-            } else {
-                // If the worker hasn't started yet, we have to wait until it does to do so.
-            }
-            Either::B(
-                sized_box(spinner().color(css::BLACK))
-                    .background_gradient(
-                        Gradient::new_linear(
-                            // down-right
-                            const { -45_f64.to_radians() },
-                        )
-                        .with_stops([css::YELLOW, css::LIME]),
-                    )
-                    .width(width)
-                    .height(height)
-                    .padding(4.0),
-            )
-        })
     }
 }
 
