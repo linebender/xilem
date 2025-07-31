@@ -76,7 +76,12 @@ fn paint_widget(
     let has_clip = state.clip_path.is_some();
     if !is_stashed {
         let transform = state.window_transform;
-        let scene = &mut scene_cache.entry(id).or_default().0;
+        let Some((scene, _)) = &mut scene_cache.get(&id) else {
+            debug_panic!(
+                "Error in paint pass: scene should have been cached earlier in this function."
+            );
+            return;
+        };
 
         if let Some(clip) = state.clip_path {
             complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
@@ -119,7 +124,13 @@ fn paint_widget(
             complete_scene.pop_layer();
         }
 
-        let postfix_scene = &mut scene_cache.entry(id).or_default().1;
+        let Some((_, postfix_scene)) = &mut scene_cache.get(&id) else {
+            debug_panic!(
+                "Error in paint pass: scene should have been cached earlier in this function."
+            );
+            return;
+        };
+
         complete_scene.append(postfix_scene, Some(transform));
     }
 }
