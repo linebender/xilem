@@ -133,21 +133,21 @@ pub(crate) struct WidgetState {
     /// This widget or a descendant explicitly requested layout
     pub(crate) needs_layout: bool,
 
-    /// The compose method must be called on this widget
+    /// The `compose` method must be called on this widget
     pub(crate) request_compose: bool,
-    /// The compose method must be called on this widget or a descendant
+    /// The `compose` method must be called on this widget or a descendant
     pub(crate) needs_compose: bool,
 
-    /// The paint method must be called on this widget
+    /// The `paint` method must be called on this widget
     pub(crate) request_paint: bool,
-    /// The post_paint method must be called on this widget
+    /// The `post_paint` method must be called on this widget
     pub(crate) request_post_paint: bool,
     /// A painting method must be called on this widget or a descendant
     pub(crate) needs_paint: bool,
 
-    /// The accessibility method must be called on this widget
+    /// The `accessibility` method must be called on this widget
     pub(crate) request_accessibility: bool,
-    /// The accessibility method must be called on this widget or a descendant
+    /// The `accessibility` method must be called on this widget or a descendant
     pub(crate) needs_accessibility: bool,
 
     /// An animation must run on this widget
