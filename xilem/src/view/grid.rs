@@ -117,7 +117,7 @@ mod hidden {
     use crate::core::AppendVec;
 
     #[doc(hidden)]
-    #[allow(
+    #[expect(
         unnameable_types,
         reason = "Implementation detail, public because of trait visibility rules"
     )]

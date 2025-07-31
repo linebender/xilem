@@ -178,7 +178,7 @@ mod hidden {
     use crate::{AnyWidgetView, ViewCtx};
 
     #[doc(hidden)]
-    #[allow(
+    #[expect(
         unnameable_types,
         reason = "Implementation detail, public because of trait visibility rules"
     )]
@@ -188,7 +188,7 @@ mod hidden {
     }
 
     #[doc(hidden)]
-    #[allow(
+    #[expect(
         unnameable_types,
         reason = "Implementation detail, public because of trait visibility rules"
     )]
