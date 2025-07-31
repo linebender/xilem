@@ -171,6 +171,49 @@ crate::declare_property_tuple!(
     Padding, 4;
 );
 
+mod hidden {
+    use super::FlexItem;
+    use crate::core::{AppendVec, View};
+    use crate::view::FlexElement;
+    use crate::{AnyWidgetView, ViewCtx};
+
+    #[doc(hidden)]
+    #[expect(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
+    pub struct FlexState<SeqState> {
+        pub(crate) seq_state: SeqState,
+        pub(crate) scratch: AppendVec<FlexElement>,
+    }
+
+    #[doc(hidden)]
+    #[expect(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
+    pub struct AnyFlexChildState<State: 'static, Action: 'static> {
+        /// Just the optional view state of the flex item view
+        #[allow(
+            clippy::type_complexity,
+            reason = "There's no way to avoid spelling out this type."
+        )]
+        pub(crate) inner: Option<
+            <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
+                State,
+                Action,
+                ViewCtx,
+            >>::ViewState,
+        >,
+        /// The generational id handling is essentially very similar to that of the `Option<impl ViewSequence>`,
+        /// where `None` would represent a Spacer, and `Some` a view
+        pub(crate) generation: u64,
+    }
+}
+
+use hidden::AnyFlexChildState;
+use hidden::FlexState;
+
 impl<Seq, State, Action> ViewMarker for Flex<Seq, State, Action> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Flex<Seq, State, Action>
 where
@@ -180,7 +223,7 @@ where
 {
     type Element = Pod<widgets::Flex>;
 
-    type ViewState = Seq::SeqState;
+    type ViewState = FlexState<Seq::SeqState>;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
@@ -190,7 +233,7 @@ where
             .must_fill_main_axis(self.fill_major_axis)
             .main_axis_alignment(self.main_axis_alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
-        for child in elements.into_inner() {
+        for child in elements.drain() {
             widget = match child {
                 FlexElement::Child(child, params) => {
                     widget.with_flex_child(child.new_widget, params)
@@ -201,13 +244,19 @@ where
         }
         let mut pod = ctx.create_pod(widget);
         pod.new_widget.properties = self.properties.build_properties();
-        (pod, seq_state)
+        (
+            pod,
+            FlexState {
+                seq_state,
+                scratch: elements,
+            },
+        )
     }
 
     fn rebuild(
         &self,
         prev: &Self,
-        view_state: &mut Self::ViewState,
+        FlexState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
@@ -229,36 +278,38 @@ where
         if prev.gap != self.gap {
             widgets::Flex::set_gap(&mut element, self.gap);
         }
-        // TODO: Re-use scratch space?
-        let mut splice = FlexSplice::new(element);
+        let mut splice = FlexSplice::new(element, scratch);
         self.sequence
-            .seq_rebuild(&prev.sequence, view_state, ctx, &mut splice, app_state);
-        debug_assert!(splice.scratch.is_empty());
+            .seq_rebuild(&prev.sequence, seq_state, ctx, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
     }
 
     fn teardown(
         &self,
-        view_state: &mut Self::ViewState,
+        FlexState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        let mut splice = FlexSplice::new(element);
+        let mut splice = FlexSplice::new(element, scratch);
         self.sequence
-            .seq_teardown(view_state, ctx, &mut splice, app_state);
-        debug_assert!(splice.scratch.into_inner().is_empty());
+            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
     }
 
     fn message(
         &self,
-        view_state: &mut Self::ViewState,
+        FlexState { seq_state, scratch }: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
-        let mut splice = FlexSplice::new(element);
-        self.sequence
-            .seq_message(view_state, message, &mut splice, app_state)
+        let mut splice = FlexSplice::new(element, scratch);
+        let result = self
+            .sequence
+            .seq_message(seq_state, message, &mut splice, app_state);
+        debug_assert!(scratch.is_empty());
+        result
     }
 }
 
@@ -278,18 +329,19 @@ pub struct FlexElementMut<'w> {
     idx: usize,
 }
 
-struct FlexSplice<'w> {
+struct FlexSplice<'w, 's> {
     idx: usize,
     element: WidgetMut<'w, widgets::Flex>,
-    scratch: AppendVec<FlexElement>,
+    scratch: &'s mut AppendVec<FlexElement>,
 }
 
-impl<'w> FlexSplice<'w> {
-    fn new(element: WidgetMut<'w, widgets::Flex>) -> Self {
+impl<'w, 's> FlexSplice<'w, 's> {
+    fn new(element: WidgetMut<'w, widgets::Flex>, scratch: &'s mut AppendVec<FlexElement>) -> Self {
+        debug_assert!(scratch.is_empty());
         Self {
             idx: 0,
             element,
-            scratch: AppendVec::default(),
+            scratch,
         }
     }
 }
@@ -339,7 +391,7 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for FlexE
     }
 }
 
-impl ElementSplice<FlexElement> for FlexSplice<'_> {
+impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
     fn insert(&mut self, element: FlexElement) {
         match element {
             FlexElement::Child(child, params) => {
@@ -361,7 +413,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_> {
     }
 
     fn with_scratch<R>(&mut self, f: impl FnOnce(&mut AppendVec<FlexElement>) -> R) -> R {
-        let ret = f(&mut self.scratch);
+        let ret = f(self.scratch);
         for element in self.scratch.drain() {
             match element {
                 FlexElement::Child(child, params) => {
@@ -729,35 +781,6 @@ where
         AnyFlexChild::Item(flex_item(Box::new(self.view), self.params))
     }
 }
-
-mod hidden {
-    use super::FlexItem;
-    use crate::core::View;
-    use crate::{AnyWidgetView, ViewCtx};
-    #[doc(hidden)]
-    #[allow(
-        unnameable_types,
-        reason = "Implementation detail, public because of trait visibility rules"
-    )]
-    pub struct AnyFlexChildState<State: 'static, Action: 'static> {
-        /// Just the optional view state of the flex item view
-        #[allow(
-            clippy::type_complexity,
-            reason = "There's no way to avoid spelling out this type."
-        )]
-        pub(crate) inner: Option<
-            <FlexItem<Box<AnyWidgetView<State, Action>>, State, Action> as View<
-                State,
-                Action,
-                ViewCtx,
-            >>::ViewState,
-        >,
-        /// The generational id handling is essentially very similar to that of the `Option<impl ViewSequence>`,
-        /// where `None` would represent a Spacer, and `Some` a view
-        pub(crate) generation: u64,
-    }
-}
-use hidden::AnyFlexChildState;
 
 impl<State, Action> ViewMarker for AnyFlexChild<State, Action> {}
 impl<State, Action> View<State, Action, ViewCtx> for AnyFlexChild<State, Action>
