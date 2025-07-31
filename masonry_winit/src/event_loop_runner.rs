@@ -548,7 +548,7 @@ impl MasonryState<'_> {
         {
             let _render_poll_span =
                 tracing::info_span!("Waiting for GPU to finish rendering").entered();
-            device.poll(wgpu::Maintain::Wait);
+            device.poll(wgpu::PollType::Wait).unwrap();
         }
     }
 
