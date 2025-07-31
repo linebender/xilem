@@ -3,8 +3,7 @@
 
 use masonry::core::{ArcStr, NewWidget, Properties, WidgetId, WidgetOptions};
 use masonry::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
-    DisabledBackground, DisabledContentColor, Padding,
+    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius, DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
 };
 use masonry::widgets::{self, TextAction};
 use vello::kurbo::Affine;
@@ -80,6 +79,13 @@ impl<State, Action> TextInput<State, Action> {
         self
     }
 
+    /// Set the color of the text shown when the input is empty.
+    pub fn placeholder_color(mut self, color: Color) -> Self {
+        // TODO - Avoid using tuple offsets.
+        self.properties.7 = Some(PlaceholderColor::new(color));
+        self
+    }
+
     /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
     pub fn text_alignment(mut self, text_alignment: TextAlign) -> Self {
         self.text_alignment = text_alignment;
@@ -127,6 +133,7 @@ crate::declare_property_tuple!(
     BoxShadow, 4;
     CornerRadius, 5;
     Padding, 6;
+    PlaceholderColor, 7;
 );
 
 impl<State, Action> ViewMarker for TextInput<State, Action> {}

@@ -4,27 +4,22 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{ArcStr, Properties};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::Color;
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    AccessCtx, ArcStr, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    Properties, PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground, Padding,
-    TextColor,
+    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
+    DisabledBackground, Padding, PlaceholderColor,
 };
 use crate::util::{fill, stroke};
 use crate::widgets::{Label, TextArea};
-
-// TODO - Make placeholder style customizable
-// Semi-transparent white.
-const PLACEHOLDER_COLOR: TextColor = TextColor::new(Color::from_rgba8(0xFF, 0xFF, 0xFF, 0x8F));
 
 /// The text input widget displays text which can be edited by the user,
 /// inside a surrounding box.
@@ -58,11 +53,7 @@ impl TextInput {
     pub fn from_text_area(text: NewWidget<TextArea<true>>) -> Self {
         Self {
             text: text.to_pod(),
-            placeholder: NewWidget::new_with_props(
-                Label::new(""),
-                Properties::new().with(PLACEHOLDER_COLOR),
-            )
-            .to_pod(),
+            placeholder: NewWidget::new_with_props(Label::new(""), Properties::new()).to_pod(),
             clip: false,
         }
     }
@@ -71,11 +62,8 @@ impl TextInput {
     ///
     /// To modify this on active text input, use [`set_placeholder`](Self::set_placeholder).
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
-        self.placeholder = NewWidget::new_with_props(
-            Label::new(placeholder_text),
-            Properties::new().with(PLACEHOLDER_COLOR),
-        )
-        .to_pod();
+        self.placeholder =
+            NewWidget::new_with_props(Label::new(placeholder_text), Properties::new()).to_pod();
         self
     }
 
@@ -107,14 +95,16 @@ impl TextInput {
         this.ctx.get_mut(&mut this.widget.text)
     }
 
+    /// Edit the child label representing the placeholder text.
+    pub fn placeholder_mut<'t>(this: &'t mut WidgetMut<'_, Self>) -> WidgetMut<'t, Label> {
+        this.ctx.get_mut(&mut this.widget.placeholder)
+    }
+
     /// The text that will be displayed when this input is empty.
     ///
     /// The runtime equivalent of [`with_placeholder`](Self::with_placeholder).
     pub fn set_placeholder(this: &mut WidgetMut<'_, Self>, placeholder_text: impl Into<ArcStr>) {
-        Label::set_text(
-            &mut this.ctx.get_mut(&mut this.widget.placeholder),
-            placeholder_text,
-        );
+        Label::set_text(&mut Self::placeholder_mut(this), placeholder_text);
     }
 
     /// Whether to clip the text to the drawn boundaries.
@@ -146,10 +136,29 @@ impl Widget for TextInput {
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
         BoxShadow::prop_changed(ctx, property_type);
+
+        // FIXME - Find more elegant way to propagate property to child.
+        if property_type == TypeId::of::<PlaceholderColor>() {
+            ctx.mutate_self_later(|mut input| {
+                let mut input = input.downcast::<Self>();
+                let color = input.get_prop::<PlaceholderColor>().color;
+                let mut text_area = Self::placeholder_mut(&mut input);
+                text_area.insert_prop(ContentColor::new(color));
+            });
+        }
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
+            Update::WidgetAdded => {
+                // FIXME - Find more elegant way to propagate property to child.
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
+                    let color = input.get_prop::<PlaceholderColor>().color;
+                    let mut text_area = Self::placeholder_mut(&mut input);
+                    text_area.insert_prop(ContentColor::new(color));
+                });
+            }
             // We check for `ChildFocusChanged` instead of `FocusChanged`
             // because the actual widget that receives focus is the child `TextArea`
             Update::ChildFocusChanged(_) => {
