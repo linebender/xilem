@@ -11,10 +11,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
-use masonry::properties::Padding;
 use masonry::properties::types::UnitPoint;
 use masonry::properties::{LineBreaking, Padding};
-use masonry::widgets::Alignment;
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
