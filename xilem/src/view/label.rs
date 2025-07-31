@@ -4,7 +4,7 @@
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::properties::{DisabledTextColor, LineBreaking, TextColor};
-use masonry::widgets::{self};
+use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::style::Style;
