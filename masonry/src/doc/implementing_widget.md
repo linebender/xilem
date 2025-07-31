@@ -25,18 +25,20 @@ Widgets are types which implement the [`Widget`] trait:
 
 ```rust,ignore
 trait Widget {
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &PointerEvent);
-    fn on_text_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &TextEvent);
-    fn on_access_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &AccessEvent);
+    type Action: Any + Debug where Self: Sized;
 
-    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, interval: u64);
-    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update);
+    fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, props: &mut PropertiesMut<'_>, event: &PointerEvent);
+    fn on_text_event(&mut self, ctx: &mut EventCtx<'_>, props: &mut PropertiesMut<'_>, event: &TextEvent);
+    fn on_access_event(&mut self, ctx: &mut EventCtx<'_>, props: &mut PropertiesMut<'_>, event: &AccessEvent);
 
-    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size;
+    fn on_anim_frame(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, interval: u64);
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, props: &mut PropertiesMut<'_>, event: &Update);
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene);
+    fn layout(&mut self, ctx: &mut LayoutCtx<'_>, props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size;
+
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene);
     fn accessibility_role(&self) -> Role;
-    fn accessibility(&mut self, ctx: &mut AccessCtx<'_>, _props: &PropertiesRef<'_>, node: &mut Node);
+    fn accessibility(&mut self, ctx: &mut AccessCtx<'_>, props: &PropertiesRef<'_>, node: &mut Node);
 
     // ...
 }
@@ -90,13 +92,15 @@ use masonry::core::{
 // ...
 
 #[derive(Debug)]
-struct ColorRectanglePress;
+pub struct ColorRectanglePress;
 
 impl Widget for ColorRectangle {
+    type Action = ColorRectanglePress;
+
     fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
         match event {
             PointerEvent::Down { button: Some(PointerButton::Primary), .. } => {
-                ctx.submit_action(ColorRectanglePress);
+                ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {},
         }
@@ -107,7 +111,7 @@ impl Widget for ColorRectangle {
     fn on_access_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &AccessEvent) {
             match event.action {
                 accesskit::Action::Click => {
-                    ctx.submit_action(ColorRectanglePress);
+                    ctx.submit_action::<Self::Action>(ColorRectanglePress);
                 }
                 _ => {}
             }

@@ -73,9 +73,11 @@ impl ColorRectangle {
 // ---
 
 #[derive(Debug)]
-struct ColorRectanglePress;
+pub struct ColorRectanglePress;
 
 impl Widget for ColorRectangle {
+    type Action = ColorRectanglePress;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -87,7 +89,7 @@ impl Widget for ColorRectangle {
                 button: Some(PointerButton::Primary),
                 ..
             } => {
-                ctx.submit_action(ColorRectanglePress);
+                ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {}
         }
@@ -109,7 +111,7 @@ impl Widget for ColorRectangle {
     ) {
         match event.action {
             accesskit::Action::Click => {
-                ctx.submit_action(ColorRectanglePress);
+                ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {}
         }

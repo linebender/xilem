@@ -1,6 +1,7 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
 use vello::kurbo::Affine;
 
 use crate::core::{Properties, Widget, WidgetId};
@@ -28,6 +29,9 @@ pub struct NewWidget<W: ?Sized> {
     /// The widget we're going to add.
     pub widget: Box<W>,
     pub(crate) id: WidgetId,
+    pub(crate) action_type: TypeId,
+    #[cfg(debug_assertions)]
+    pub(crate) action_type_name: &'static str,
 
     /// The options the widget will be created with.
     pub options: WidgetOptions,
@@ -69,6 +73,9 @@ impl<W: Widget> NewWidget<W> {
         Self {
             widget: Box::new(inner),
             id,
+            action_type: TypeId::of::<W::Action>(),
+            #[cfg(debug_assertions)]
+            action_type_name: std::any::type_name::<W::Action>(),
             options: WidgetOptions::default(),
             properties: Properties::default(),
         }
@@ -96,6 +103,9 @@ impl<W: Widget> NewWidget<W> {
         Self {
             widget: Box::new(inner),
             id,
+            action_type: TypeId::of::<W::Action>(),
+            #[cfg(debug_assertions)]
+            action_type_name: std::any::type_name::<W::Action>(),
             options,
             properties: props,
         }
@@ -111,6 +121,9 @@ impl<W: Widget + ?Sized> NewWidget<W> {
         NewWidget {
             widget: self.widget.as_box_dyn(),
             id: self.id,
+            action_type: self.action_type,
+            #[cfg(debug_assertions)]
+            action_type_name: self.action_type_name,
             options: self.options,
             properties: self.properties,
         }

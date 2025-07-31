@@ -7,9 +7,9 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, NoAction,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::util::include_screenshot;
 use crate::widgets::TextArea;
@@ -94,6 +94,8 @@ impl Prose {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Prose {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _: &mut EventCtx<'_>,

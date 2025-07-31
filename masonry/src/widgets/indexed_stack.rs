@@ -6,7 +6,8 @@ use tracing::{Span, trace_span};
 use vello::kurbo::{Affine, Line, Point, Stroke};
 
 use crate::core::{
-    AccessCtx, ChildrenIds, NewWidget, PropertiesRef, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, ChildrenIds, NewWidget, NoAction, PropertiesRef, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
@@ -168,6 +169,8 @@ impl IndexedStack {
 
 // --- MARK: IMPL WIDGET
 impl Widget for IndexedStack {
+    type Action = NoAction;
+
     fn register_children(&mut self, ctx: &mut masonry_core::core::RegisterCtx<'_>) {
         for child in self.children.iter_mut() {
             ctx.register_child(child);

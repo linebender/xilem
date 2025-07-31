@@ -11,8 +11,8 @@ use vello::Scene;
 use vello::kurbo::{Point, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{fill, include_screenshot, stroke};
@@ -197,6 +197,8 @@ impl SizedBox {
 
 // --- MARK: IMPL WIDGET
 impl Widget for SizedBox {
+    type Action = NoAction;
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         if let Some(ref mut child) = self.child {
             ctx.register_child(child);

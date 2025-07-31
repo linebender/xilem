@@ -60,3 +60,7 @@ pub(crate) use widget_state::WidgetState;
 ///
 /// In tests, you can access these using the `pop_action` method on `TestHarness`.
 pub type ErasedAction = Box<dyn AnyDebug + Send>;
+
+/// Empty type to be used as the `Widget::Action` associated type for widgets which don't emit actions.
+#[derive(Debug)]
+pub enum NoAction {}

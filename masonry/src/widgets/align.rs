@@ -14,8 +14,8 @@ use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetPod,
 };
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
@@ -86,6 +86,8 @@ impl Align {
 
 // --- MARK: IMPL WIDGET
 impl Widget for Align {
+    type Action = NoAction;
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.child);
     }

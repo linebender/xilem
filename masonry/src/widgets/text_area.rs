@@ -411,6 +411,8 @@ pub enum TextAction {
 
 // --- MARK: IMPL WIDGET
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
+    type Action = TextAction;
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -627,7 +629,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                                 .insert_or_replace_selection("\n");
                             edited = true;
                         } else {
-                            ctx.submit_action(TextAction::Entered(self.text().to_string()));
+                            ctx.submit_action::<Self::Action>(TextAction::Entered(
+                                self.text().to_string(),
+                            ));
                         }
                     }
 
@@ -651,7 +655,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 let new_generation = self.editor.generation();
                 if new_generation != self.rendered_generation {
                     if edited {
-                        ctx.submit_action(TextAction::Changed(self.text().into_iter().collect()));
+                        ctx.submit_action::<Self::Action>(TextAction::Changed(
+                            self.text().into_iter().collect(),
+                        ));
                         ctx.request_layout();
                     } else {
                         ctx.request_render();
@@ -695,7 +701,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 ctx.set_handled();
                 if edited {
                     let text = self.text().into_iter().collect();
-                    ctx.submit_action(TextAction::Changed(text));
+                    ctx.submit_action::<Self::Action>(TextAction::Changed(text));
                 }
 
                 let new_generation = self.editor.generation();
@@ -715,7 +721,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     // TODO - Factor out with other branches
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
-                        ctx.submit_action(TextAction::Changed(self.text().into_iter().collect()));
+                        ctx.submit_action::<Self::Action>(TextAction::Changed(
+                            self.text().into_iter().collect(),
+                        ));
                         ctx.request_layout();
                         self.rendered_generation = new_generation;
                     }

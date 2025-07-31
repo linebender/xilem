@@ -7,8 +7,8 @@ use vello::Scene;
 use vello::kurbo::{Rect, Size};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, PaintCtx, PropertiesMut,
-    PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::types::UnitPoint;
 use crate::util::include_screenshot;
@@ -147,6 +147,8 @@ impl ZStack {
 
 // --- MARK: IMPL WIDGET
 impl Widget for ZStack {
+    type Action = NoAction;
+
     fn layout(
         &mut self,
         ctx: &mut LayoutCtx<'_>,

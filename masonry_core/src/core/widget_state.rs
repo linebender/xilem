@@ -1,6 +1,8 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
@@ -127,6 +129,9 @@ pub(crate) struct WidgetState {
     /// The `transform` or `scroll_translation` has changed.
     pub(crate) transform_changed: bool,
 
+    /// The `TypeId` of the widget's `Widget::Action` type.
+    pub(crate) action_type: TypeId,
+
     // --- PASSES ---
     /// `WidgetAdded` hasn't been sent to this widget yet.
     pub(crate) is_new: bool,
@@ -203,12 +208,21 @@ pub(crate) struct WidgetState {
     /// Used in some guard rails to provide richer error messages when a parent forgets
     /// to iterate over some children.
     pub(crate) trace_span: Span,
+    // TODO - Encapsulate this in WidgetStateDebugInfo struct.
     #[cfg(debug_assertions)]
     pub(crate) widget_name: &'static str,
+    #[cfg(debug_assertions)]
+    pub(crate) action_type_name: &'static str,
 }
 
 impl WidgetState {
-    pub(crate) fn new(id: WidgetId, widget_name: &'static str, options: WidgetOptions) -> Self {
+    pub(crate) fn new(
+        id: WidgetId,
+        widget_name: &'static str,
+        options: WidgetOptions,
+        action_type: TypeId,
+        #[cfg(debug_assertions)] action_type_name: &'static str,
+    ) -> Self {
         Self {
             id,
             origin: Point::ORIGIN,
@@ -225,6 +239,7 @@ impl WidgetState {
             clip_path: Option::default(),
             scroll_translation: Vec2::ZERO,
             transform_changed: false,
+            action_type,
             is_explicitly_disabled: options.disabled,
             is_explicitly_stashed: false,
             is_disabled: false,
@@ -254,6 +269,8 @@ impl WidgetState {
             needs_update_focus_chain: true,
             #[cfg(debug_assertions)]
             widget_name,
+            #[cfg(debug_assertions)]
+            action_type_name,
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
             trace_span: Span::none(),
