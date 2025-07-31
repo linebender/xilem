@@ -1266,7 +1266,7 @@ impl_context_method!(
         /// The `Action` type parameter should always be the `Self::Action` associated type
         /// of the widget you're calling this method from.
         ///
-        /// For further details see [`ErasedAction`](crate::core::ErasedAction).
+        /// For further details see [`ErasedAction`].
         pub fn submit_action<Action: AnyDebug + Send>(&mut self, action: impl Into<Action>) {
             trace!("submit_action");
             let action = action.into();
@@ -1292,10 +1292,10 @@ impl_context_method!(
         /// Submit a type-erased action.
         ///
         /// Unlike [`Self::submit_action`], this method lets you submit an action with an
-        /// arbitray type, which may not match `Self::Action`.
+        /// arbitrary type, which may not match `Self::Action`.
         /// This may act as an escape hatch in some situations.
         ///
-        /// For further details see [`ErasedAction`](crate::core::ErasedAction).
+        /// For further details see [`ErasedAction`].
         pub fn submit_untyped_action(&mut self, action: ErasedAction) {
             trace!("submit_untyped_action");
             self.global_state.emit_signal(RenderRootSignal::Action(
