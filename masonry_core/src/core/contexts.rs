@@ -1265,6 +1265,7 @@ impl_context_method!(
         ///
         /// The `Action` type parameter should always be the `Self::Action` associated type
         /// of the widget you're calling this method from.
+        /// Masonry will validate this, and this method may panic if this isn't the case.
         ///
         /// For further details see [`ErasedAction`].
         pub fn submit_action<Action: AnyDebug + Send>(&mut self, action: impl Into<Action>) {
