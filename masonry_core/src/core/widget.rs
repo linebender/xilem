@@ -264,7 +264,7 @@ pub trait Widget: AsDynWidget + Any {
     // Shadows would be a good use case.
     /// Second paint method, which paints on top of the widget's children.
     ///
-    /// This method paints outside of the clip defined in [`LayoutCtx::set_clip_path`].
+    /// This method is not constrained by the clip defined in [`LayoutCtx::set_clip_path`], and can paint things outside the clip.
     fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
     }
 

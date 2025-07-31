@@ -37,20 +37,20 @@ fn paint_widget(
     // (See WidgetState doc.)
     let is_stashed = state.is_stashed;
 
-    // TODO - Check different flags for paint and post_paint.
-
     // TODO - Handle damage regions
     // https://github.com/linebender/xilem/issues/789
-    let mut ctx = PaintCtx {
-        global_state,
-        widget_state: state,
-        children: children.reborrow_mut(),
-        debug_paint,
-    };
-    if ctx.widget_state.request_paint && !is_stashed {
+
+    if (state.request_paint || state.request_post_paint) && !is_stashed {
         if trace {
             trace!("Painting widget '{}' {}", widget.short_type_name(), id);
         }
+
+        let mut ctx = PaintCtx {
+            global_state,
+            widget_state: state,
+            children: children.reborrow_mut(),
+            debug_paint,
+        };
 
         // TODO - Reserve scene
         // https://github.com/linebender/xilem/issues/524
@@ -61,11 +61,16 @@ fn paint_widget(
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
-        widget.paint(&mut ctx, &props, scene);
-        widget.post_paint(&mut ctx, &props, postfix_scene);
+        if ctx.widget_state.request_paint {
+            widget.paint(&mut ctx, &props, scene);
+        }
+        if ctx.widget_state.request_post_paint {
+            widget.post_paint(&mut ctx, &props, postfix_scene);
+        }
     }
 
     state.request_paint = false;
+    state.request_post_paint = false;
     state.needs_paint = false;
 
     let has_clip = state.clip_path.is_some();
