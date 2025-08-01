@@ -13,9 +13,6 @@ use crate::properties::CornerRadius;
 
 // TODO - This is a first implementation of box shadows. A full version would need
 // to address the following points:
-// - Paint order: CSS shadows are drawn over neighboring boxes, which means if we want
-// to emulate them, we need to paint them after sibling widgets. This would require
-// adding some kind of post_paint pass.
 // - Inset shadows: CSS shadows can be either drop shadows (behind element) or inset
 // shadows (inside element). We should implement both and add an `inset` attribute.
 // - Spread radius: CSS shadow can change size without changing the blur level using
@@ -80,7 +77,8 @@ impl BoxShadow {
         if property_type != TypeId::of::<Self>() {
             return;
         }
-        // TODO - Call request_post_paint instead, which should be lighter?
+        // TODO - We'd like to request_post_paint instead, which should be lighter.
+        // However, box shadow affects the size of the paint rect, which is currently handled in layout.
         ctx.request_layout();
     }
 
