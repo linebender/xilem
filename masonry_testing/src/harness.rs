@@ -20,9 +20,9 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    CursorIcon, DefaultProperties, ErasedAction, Handled, Ime, NewWidget, PointerButton,
-    PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate, ScrollDelta,
-    TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WindowEvent,
+    CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, NewWidget,
+    PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,
+    ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Point, Size, Vec2};
@@ -747,6 +747,20 @@ impl<W: Widget> TestHarness<W> {
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
     ) -> R {
         let ret = self.render_root.edit_widget(id, f);
+        self.process_signals();
+        ret
+    }
+
+    /// Get a [`WidgetMut`] to the widget with the given tag.
+    ///
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
+    #[track_caller]
+    pub fn edit_widget_with_tag<R, W2: Widget + FromDynWidget + ?Sized>(
+        &mut self,
+        tag: WidgetTag<W2>,
+        f: impl FnOnce(WidgetMut<'_, W2>) -> R,
+    ) -> R {
+        let ret = self.render_root.edit_widget_with_tag(tag, f);
         self.process_signals();
         ret
     }

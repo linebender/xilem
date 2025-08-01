@@ -133,6 +133,7 @@ fn update_widget_tree(
 
     {
         let mut ctx = RegisterCtx {
+            global_state,
             children: children.reborrow_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
@@ -209,6 +210,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 
     if root.root.incomplete() {
         let mut ctx = RegisterCtx {
+            global_state: &mut root.global_state,
             children: root.widget_arena.nodes.roots_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),

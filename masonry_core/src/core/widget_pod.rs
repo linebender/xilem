@@ -4,7 +4,7 @@
 use std::any::TypeId;
 use vello::kurbo::Affine;
 
-use crate::core::{Properties, Widget, WidgetId};
+use crate::core::{Properties, Widget, WidgetId, WidgetTag};
 
 /// A container for one widget in the hierarchy.
 ///
@@ -37,6 +37,8 @@ pub struct NewWidget<W: ?Sized> {
     pub options: WidgetOptions,
     /// The properties the widget will be created with.
     pub properties: Properties,
+
+    pub(crate) tag: &'static str,
 }
 
 // TODO - Remove this and merge it into NewWidget?
@@ -78,6 +80,15 @@ impl<W: Widget> NewWidget<W> {
             action_type_name: std::any::type_name::<W::Action>(),
             options: WidgetOptions::default(),
             properties: Properties::default(),
+            tag: "",
+        }
+    }
+
+    /// Create a new widget with a [`WidgetTag`].
+    pub fn new_with_tag(inner: W, tag: WidgetTag<W>) -> Self {
+        Self {
+            tag: tag.name,
+            ..Self::new(inner)
         }
     }
 
@@ -108,6 +119,7 @@ impl<W: Widget> NewWidget<W> {
             action_type_name: std::any::type_name::<W::Action>(),
             options,
             properties: props,
+            tag: "",
         }
     }
 }
@@ -126,6 +138,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
             action_type_name: self.action_type_name,
             options: self.options,
             properties: self.properties,
+            tag: self.tag,
         }
     }
 

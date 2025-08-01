@@ -7,7 +7,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![cfg_attr(not(test), windows_subsystem = "windows")]
 
-use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId};
+use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
@@ -15,7 +15,8 @@ use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, Tex
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
-const WIDGET_SPACING: f64 = 5.0;
+const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::new("text-input");
+const LIST_TAG: WidgetTag<Flex> = WidgetTag::new("list");
 
 struct Driver {
     next_task: String,
@@ -33,17 +34,15 @@ impl AppDriver for Driver {
         debug_assert_eq!(window_id, self.window_id, "unknown window");
 
         if action.is::<ButtonPress>() {
-            ctx.render_root(window_id).edit_root_widget(|mut root| {
-                let mut portal = root.downcast::<Portal<Flex>>();
-                let mut flex = Portal::child_mut(&mut portal);
-                Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_auto_id());
+            let render_root = ctx.render_root(window_id);
 
-                let mut first_row = Flex::child_mut(&mut flex, 0).unwrap();
-                let mut first_row = first_row.downcast::<Flex>();
-                let mut text_input = Flex::child_mut(&mut first_row, 0).unwrap();
-                let mut text_input = text_input.downcast::<TextInput>();
+            render_root.edit_widget_with_tag(TEXT_INPUT_TAG, |mut text_input| {
                 let mut text_area = TextInput::text_mut(&mut text_input);
                 TextArea::reset_text(&mut text_area, "");
+            });
+            render_root.edit_widget_with_tag(LIST_TAG, |mut list| {
+                let child = Label::new(self.next_task.clone()).with_auto_id();
+                Flex::add_child(&mut list, child);
             });
         } else if action.is::<TextAction>() {
             let action = action.downcast::<TextAction>().unwrap();
@@ -59,18 +58,21 @@ impl AppDriver for Driver {
 
 /// Return initial to-do-list without items.
 pub fn make_widget_tree() -> NewWidget<impl Widget> {
-    Portal::new(
-        Flex::column()
-            .with_child(NewWidget::new_with_props(
-                Flex::row()
-                    .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
-                    .with_child(Button::with_text("Add task").with_auto_id()),
-                Properties::new().with(Padding::all(WIDGET_SPACING)),
-            ))
-            .with_spacer(WIDGET_SPACING)
-            .with_auto_id(),
-    )
-    .with_auto_id()
+    const WIDGET_SPACING: f64 = 5.0;
+
+    let text_input = NewWidget::new_with_tag(TextInput::new(""), TEXT_INPUT_TAG);
+    let button = NewWidget::new(Button::with_text("Add task"));
+
+    let list = Flex::column()
+        .with_child(NewWidget::new_with_props(
+            Flex::row()
+                .with_flex_child(text_input, 1.0)
+                .with_child(button),
+            Properties::new().with(Padding::all(WIDGET_SPACING)),
+        ))
+        .with_spacer(WIDGET_SPACING);
+
+    NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
 }
 
 fn main() {
