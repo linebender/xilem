@@ -6,7 +6,7 @@
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::style::Style;
+use crate::style::{HasProperty as _, Style};
 use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 
 pub use masonry::properties::ObjectFit;
