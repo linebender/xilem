@@ -44,7 +44,7 @@ impl Image {
     // Because this method is image-specific, we don't add it to the Style trait.
     /// Specify the object fit.
     pub fn fit(mut self, fill: ObjectFit) -> Self {
-        self.properties.0 = Some(fill);
+        *self.property() = Some(fill);
         self
     }
 }
