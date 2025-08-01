@@ -12,9 +12,9 @@ use crate::peniko::Color;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CheckmarkColor,
     CheckmarkStrokeWidth, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledTextColor, HoveredBorderColor, Padding, TextColor,
+    DisabledTextColor, HoveredBorderColor, Padding, SpinnerColor, TextColor,
 };
-use crate::widgets::{Button, Checkbox, Label, ProgressBar, TextArea, TextInput};
+use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
 pub const BORDER_WIDTH: f64 = 1.;
 
@@ -106,6 +106,9 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<ProgressBar, _>(Background::Color(ZYNC_900));
     properties.insert::<ProgressBar, _>(BorderColor { color: ZYNC_800 });
     properties.insert::<ProgressBar, _>(BarColor(ACCENT_COLOR));
+
+    // Spinner
+    properties.insert::<Spinner, _>(SpinnerColor(TEXT_COLOR));
 
     properties
 }
