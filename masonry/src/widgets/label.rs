@@ -34,6 +34,9 @@ const LABEL_X_PADDING: f64 = 2.0;
 /// This is useful for creating interactive widgets which internally
 /// need support for displaying text, such as a button.
 ///
+/// You can customize the look of this label with the
+/// [`LineBreaking`], [`TextColor`] and [`DisabledTextColor`] properties.
+///
 #[doc = include_screenshot!("label_styled_label.png", "Styled label.")]
 pub struct Label {
     text_layout: Layout<BrushIndex>,
