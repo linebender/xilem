@@ -21,6 +21,7 @@ use crate::util::include_screenshot;
 
 /// An animated spinner widget for showing a loading state.
 ///
+/// You can customize the look of this spinner with the [`SpinnerColor`] property.
 /// To customize the spinner's size, you can place it inside a [`SizedBox`]
 /// that has a fixed width and height.
 ///
