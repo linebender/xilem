@@ -14,6 +14,7 @@ mod corner_radius;
 mod padding;
 mod progress_bar;
 mod text_color;
+mod text_styles;
 
 pub mod types;
 
@@ -26,3 +27,4 @@ pub use corner_radius::CornerRadius;
 pub use padding::Padding;
 pub use progress_bar::BarColor;
 pub use text_color::{DisabledTextColor, TextColor};
+pub use text_styles::*;
