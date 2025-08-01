@@ -6,7 +6,7 @@ use masonry::widgets;
 use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::style::Style;
+use crate::style::{HasProperty, Style};
 use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 
 /// An indefinite spinner.
@@ -45,7 +45,7 @@ impl Spinner {
     /// Set the [`SpinnerColor`] property for this spinner.
     pub fn color(mut self, color: impl Into<Color>) -> Self {
         let color = SpinnerColor(color.into());
-        self.properties.0 = Some(color);
+        *self.property() = Some(color);
         self
     }
 }
