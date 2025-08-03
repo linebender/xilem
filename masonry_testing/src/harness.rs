@@ -231,7 +231,6 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Builds harness with given root widget and window size.
-    // TODO - Take NewWidget
     pub fn create_with_size(
         default_props: DefaultProperties,
         root_widget: NewWidget<W>,
@@ -285,7 +284,6 @@ impl<W: Widget> TestHarness<W> {
                 root_widget,
                 move |signal| signal_sender.send(signal).unwrap(),
                 RenderRootOptions {
-                    // TODO - Pass the default property set as an input instead.
                     default_properties: Arc::new(default_props),
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
