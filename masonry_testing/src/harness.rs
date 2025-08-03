@@ -137,6 +137,7 @@ pub struct TestHarness<W: Widget> {
     window_size: PhysicalSize<u32>,
     background_color: Color,
     screenshot_tolerance: u32,
+    panic_on_rewrite_saturation: bool,
     action_queue: VecDeque<(ErasedAction, WidgetId)>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
@@ -161,6 +162,11 @@ pub struct TestHarnessParams {
     /// The scale factor widgets are rendered at.
     /// Defaults to 1.0.
     pub scale_factor: f64,
+    /// Whether to panic when we detect a loop in [rewrite passes](masonry_core::doc::pass_system#rewrite-passes).
+    ///
+    /// A loop means a case where the passes keep running because some passes keep
+    /// invalidating flags for previous passes.
+    pub panic_on_rewrite_saturation: bool,
 }
 
 /// Assert a snapshot of a rendered frame of your app.
@@ -210,6 +216,7 @@ impl TestHarnessParams {
         background_color: Self::DEFAULT_BACKGROUND_COLOR,
         screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
+        panic_on_rewrite_saturation: true,
     };
 
     /// Default canvas size for tests.
@@ -306,6 +313,7 @@ impl<W: Widget> TestHarness<W> {
             window_size,
             background_color: params.background_color,
             screenshot_tolerance: params.screenshot_tolerance,
+            panic_on_rewrite_saturation: params.panic_on_rewrite_saturation,
             action_queue: VecDeque::new(),
             has_ime_session: false,
             ime_rect: Default::default(),
@@ -350,6 +358,9 @@ impl<W: Widget> TestHarness<W> {
     // This should be ran after any operation which runs the rewrite passes
     // (i.e. processing an event, etc.)
     fn process_signals(&mut self) {
+        if self.panic_on_rewrite_saturation && self.render_root.needs_rewrite_passes() {
+            panic!("Loop detected in rewrite passes");
+        }
         while let Some(signal) = self.signal_receiver.try_iter().next() {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {

@@ -611,14 +611,12 @@ impl RenderRoot {
             run_compose_pass(self);
             run_update_pointer_pass(self);
 
-            if !self.root_state().needs_rewrite_passes()
-                && !self.global_state.needs_rewrite_passes()
-            {
+            if !self.needs_rewrite_passes() {
                 break;
             }
         }
 
-        if self.root_state().needs_rewrite_passes() || self.global_state.needs_rewrite_passes() {
+        if self.needs_rewrite_passes() {
             warn!(
                 "All rewrite passes have run {REWRITE_PASSES_MAX} times, but invalidations are still set"
             );
@@ -763,7 +761,7 @@ impl RenderRoot {
 
     /// Returns `true` if something requires a rewrite pass or a re-render.
     pub fn needs_rewrite_passes(&self) -> bool {
-        self.root_state().needs_rewrite_passes() || self.global_state.focus_changed()
+        self.root_state().needs_rewrite_passes() || self.global_state.needs_rewrite_passes()
     }
 
     // TODO - Remove?
@@ -777,18 +775,6 @@ impl RenderRootState {
     /// Send a signal to the runner of this app, which allows global actions to be triggered by a widget.
     pub(crate) fn emit_signal(&mut self, signal: RenderRootSignal) {
         (self.signal_sink)(signal);
-    }
-
-    pub(crate) fn focus_changed(&self) -> bool {
-        self.focused_widget != self.next_focused_widget
-    }
-
-    #[expect(
-        dead_code,
-        reason = "no longer used, but may be useful again in the future"
-    )]
-    pub(crate) fn is_focused(&self, id: WidgetId) -> bool {
-        self.focused_widget == Some(id)
     }
 
     /// Does something in this state indicate that the rewrite passes need to be reran.
