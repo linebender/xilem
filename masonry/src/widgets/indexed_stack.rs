@@ -1,13 +1,16 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
-use vello::kurbo::{Affine, Line, Point, Stroke};
+use vello::Scene;
+use vello::kurbo::{Affine, Line, Point, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, ChildrenIds, NewWidget, NoAction, PropertiesRef, Widget, WidgetId, WidgetMut,
-    WidgetPod,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
+    PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
@@ -171,17 +174,13 @@ impl IndexedStack {
 impl Widget for IndexedStack {
     type Action = NoAction;
 
-    fn register_children(&mut self, ctx: &mut masonry_core::core::RegisterCtx<'_>) {
+    fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut() {
             ctx.register_child(child);
         }
     }
 
-    fn property_changed(
-        &mut self,
-        ctx: &mut masonry_core::core::UpdateCtx<'_>,
-        property_type: std::any::TypeId,
-    ) {
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
@@ -191,10 +190,10 @@ impl Widget for IndexedStack {
 
     fn layout(
         &mut self,
-        ctx: &mut masonry_core::core::LayoutCtx<'_>,
-        props: &mut masonry_core::core::PropertiesMut<'_>,
-        bc: &masonry_core::core::BoxConstraints,
-    ) -> vello::kurbo::Size {
+        ctx: &mut LayoutCtx<'_>,
+        props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let border = props.get::<BorderWidth>();
         let padding = props.get::<Padding>();
 
@@ -231,12 +230,7 @@ impl Widget for IndexedStack {
         child_size
     }
 
-    fn paint(
-        &mut self,
-        ctx: &mut masonry_core::core::PaintCtx<'_>,
-        props: &masonry_core::core::PropertiesRef<'_>,
-        scene: &mut vello::Scene,
-    ) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
         let bg = props.get::<Background>();
@@ -284,8 +278,6 @@ impl Widget for IndexedStack {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use vello::kurbo::Size;
-
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
