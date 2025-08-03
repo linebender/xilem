@@ -151,6 +151,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     if event_pos != root.last_mouse_pos {
         root.last_mouse_pos = event_pos;
     }
+    root.global_state.needs_pointer_pass = true;
 
     if root.global_state.inspector_state.is_picking_widget
         && matches!(event, PointerEvent::Move(..))
@@ -208,7 +209,6 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         },
         !is_very_frequent(event),
     );
-    root.global_state.needs_pointer_pass = true;
 
     if matches!(event, PointerEvent::Up { .. } | PointerEvent::Cancel(..)) {
         // Automatically release the pointer on pointer up or leave. If a widget holds the capture,
