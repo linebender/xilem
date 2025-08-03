@@ -100,6 +100,9 @@ pub(crate) struct RenderRootState {
     /// This is used to pick the focused widget on Tab events.
     pub(crate) most_recently_clicked_widget: Option<WidgetId>,
 
+    /// Widget which will get text events if no widget is focused.
+    pub(crate) focus_fallback: Option<WidgetId>,
+
     /// Whether the window is focused.
     pub(crate) window_focused: bool,
 
@@ -299,6 +302,7 @@ impl RenderRoot {
                 focused_path: Vec::new(),
                 next_focused_widget: None,
                 most_recently_clicked_widget: None,
+                focus_fallback: None,
                 window_focused: true,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
@@ -678,6 +682,19 @@ impl RenderRoot {
         }
         self.global_state.next_focused_widget = id;
         self.run_rewrite_passes();
+        true
+    }
+
+    /// Sets the [focus fallback](crate::doc::masonry_concepts#focus-fallback).
+    ///
+    /// Returns false if the widget is not found in the tree or can't be focused.
+    pub fn set_focus_fallback(&mut self, id: Option<WidgetId>) -> bool {
+        if let Some(id) = id
+            && !self.is_still_interactive(id)
+        {
+            return false;
+        }
+        self.global_state.focus_fallback = id;
         true
     }
 
