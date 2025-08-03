@@ -560,8 +560,7 @@ impl RenderRoot {
         for _ in 0..REWRITE_PASSES_MAX {
             // Note: this code doesn't do any short-circuiting, because each pass is
             // expected to have its own early exits.
-            // Calling a run_xxx_pass (or root_xxx) should always be very fast if
-            // the pass doesn't need to do anything.
+            // Calling a run_xxx_pass should always be very fast if the pass doesn't need to do anything.
 
             run_mutate_pass(self);
             run_update_widget_tree_pass(self);
