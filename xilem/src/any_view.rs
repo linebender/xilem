@@ -67,6 +67,10 @@ impl DynWidget {
         let old_widget = std::mem::replace(&mut this.widget.inner, widget.to_pod());
         this.ctx.remove_child(old_widget);
     }
+
+    pub(crate) fn inner_id(&self) -> WidgetId {
+        self.inner.id()
+    }
 }
 
 /// Forward all events to the child widget.

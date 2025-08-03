@@ -541,6 +541,12 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         root.global_state.focus_anchor = None;
     }
 
+    if let Some(id) = root.global_state.focus_fallback {
+        if !root.is_still_interactive(id) {
+            root.global_state.focus_fallback = None;
+        }
+    }
+
     let prev_focused = root.global_state.focused_widget;
     let was_ime_active = root.global_state.is_ime_active;
 

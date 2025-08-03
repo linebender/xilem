@@ -92,6 +92,14 @@ Active focus is the default one; inactive focus is when the window your app runs
 
 In that case, we still mark the widget as focused, but with a different color to signal that e.g. typing on the keyboard won't actually affect it.
 
+### Focus fallback
+
+Masonry drivers have the option to give set a widget as the "focus fallback".
+
+In that case, if no widget is focused, text events will get to the fallback widget instead.
+
+The focus fallback isn't considered as "focused" and will not get [`FocusChanged`] events or be visually marked as focused.
+
 
 ## Disabled
 
