@@ -1,13 +1,12 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::any::Any;
 use std::ops::Deref;
 
 use smallvec::SmallVec;
 use vello::kurbo::Point;
 
-use crate::core::{PropertiesRef, Property, QueryCtx, Widget, WidgetId};
+use crate::core::{FromDynWidget, PropertiesRef, Property, QueryCtx, Widget, WidgetId};
 
 /// A rich reference to a [`Widget`].
 ///
@@ -103,10 +102,10 @@ impl<'w, W: Widget + ?Sized> WidgetRef<'w, W> {
     }
 
     /// Attempt to downcast to `WidgetRef` of concrete widget type.
-    pub fn downcast<W2: Widget>(&self) -> Option<WidgetRef<'w, W2>> {
+    pub fn downcast<W2: Widget + FromDynWidget + ?Sized>(&self) -> Option<WidgetRef<'w, W2>> {
         Some(WidgetRef {
             ctx: self.ctx,
-            widget: (self.widget.as_dyn() as &dyn Any).downcast_ref()?,
+            widget: W2::from_dyn(self.widget.as_dyn())?,
         })
     }
 

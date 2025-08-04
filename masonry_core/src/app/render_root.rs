@@ -506,6 +506,17 @@ impl RenderRoot {
         Some(WidgetRef { ctx, widget })
     }
 
+    /// Get a [`WidgetRef`] to the widget with the given tag.
+    pub fn get_widget_with_tag<W: Widget + FromDynWidget + ?Sized>(
+        &self,
+        tag: WidgetTag<W>,
+    ) -> Option<WidgetRef<'_, W>> {
+        let id = self.global_state.widget_tags.get(tag.name)?;
+        let widget_ref = self.get_widget(*id)?;
+        let widget_ref = widget_ref.downcast().expect("wrong tag type");
+        Some(widget_ref)
+    }
+
     /// Checks if a widget with the given id is in the tree.
     pub fn has_widget(&self, id: WidgetId) -> bool {
         self.widget_arena.has(id)

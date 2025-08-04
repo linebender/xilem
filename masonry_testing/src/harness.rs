@@ -694,6 +694,21 @@ impl<W: Widget> TestHarness<W> {
             .unwrap_or_else(|| panic!("could not find widget {id}"))
     }
 
+    /// Return a [`WidgetRef`] to the widget with the given tag.
+    ///
+    /// ## Panics
+    ///
+    /// Panics if no Widget with this tag can be found.
+    #[track_caller]
+    pub fn get_widget_with_tag<W2: Widget + FromDynWidget + ?Sized>(
+        &self,
+        tag: WidgetTag<W2>,
+    ) -> WidgetRef<'_, W2> {
+        self.render_root
+            .get_widget_with_tag(tag)
+            .unwrap_or_else(|| panic!("could not find widget '{tag}'"))
+    }
+
     /// Try to return a [`WidgetRef`] to the widget with the given id.
     pub fn try_get_widget(&self, id: WidgetId) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root.get_widget(id)

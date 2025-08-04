@@ -1,6 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
 
 use crate::core::Widget;
@@ -26,5 +27,29 @@ impl<W: Widget> WidgetTag<W> {
             name,
             _marker: PhantomData,
         }
+    }
+}
+
+// Some of the impls could be derived, but then the bounds would be too restrictive.
+
+impl<W: Widget + ?Sized> Clone for WidgetTag<W> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<W: Widget + ?Sized> Copy for WidgetTag<W> {}
+
+impl<W: Widget + ?Sized> Debug for WidgetTag<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WidgetTag")
+            .field("name", &self.name)
+            .finish()
+    }
+}
+
+impl<W: Widget + ?Sized> Display for WidgetTag<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name)
     }
 }

@@ -491,8 +491,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::WidgetTag;
+
     use super::*;
-    use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::{Button, Flex, SizedBox};
 
@@ -504,7 +506,8 @@ mod tests {
 
     #[test]
     fn button_list() {
-        let [item_3_id, item_13_id] = widget_ids();
+        let button_3 = WidgetTag::new("button-3");
+        let button_13 = WidgetTag::new("button-13");
 
         let widget = Portal::new(NewWidget::new(
             Flex::column()
@@ -512,7 +515,7 @@ mod tests {
                 .with_spacer(10.0)
                 .with_child(button("Item 2").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(NewWidget::new_with_id(button("Item 3"), item_3_id))
+                .with_child(NewWidget::new_with_tag(button("Item 3"), button_3))
                 .with_spacer(10.0)
                 .with_child(button("Item 4").with_auto_id())
                 .with_spacer(10.0)
@@ -532,7 +535,7 @@ mod tests {
                 .with_spacer(10.0)
                 .with_child(button("Item 12").with_auto_id())
                 .with_spacer(10.0)
-                .with_child(NewWidget::new_with_id(button("Item 13"), item_13_id))
+                .with_child(NewWidget::new_with_tag(button("Item 13"), button_13))
                 .with_spacer(10.0)
                 .with_child(button("Item 14").with_auto_id())
                 .with_spacer(10.0),
@@ -550,14 +553,20 @@ mod tests {
 
         assert_render_snapshot!(harness, "portal_button_list_scrolled");
 
-        let item_3_rect = harness.get_widget(item_3_id).ctx().local_layout_rect();
+        let item_3_rect = harness
+            .get_widget_with_tag(button_3)
+            .ctx()
+            .local_layout_rect();
         harness.edit_root_widget(|mut portal| {
             Portal::pan_viewport_to(&mut portal, item_3_rect);
         });
 
         assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_3");
 
-        let item_13_rect = harness.get_widget(item_13_id).ctx().local_layout_rect();
+        let item_13_rect = harness
+            .get_widget_with_tag(button_13)
+            .ctx()
+            .local_layout_rect();
         harness.edit_root_widget(|mut portal| {
             Portal::pan_viewport_to(&mut portal, item_13_rect);
         });
@@ -567,14 +576,14 @@ mod tests {
 
     #[test]
     fn scroll_into_view() {
-        let [button_id] = widget_ids();
+        let button_tag = WidgetTag::new("hidden-button");
 
         let widget = Portal::new(
             Flex::column()
                 .with_spacer(500.0)
-                .with_child(NewWidget::new_with_id(
+                .with_child(NewWidget::new_with_tag(
                     Button::with_text("Fully visible"),
-                    button_id,
+                    button_tag,
                 ))
                 .with_spacer(500.0)
                 .with_auto_id(),
@@ -583,6 +592,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200., 200.));
+        let button_id = harness.get_widget_with_tag(button_tag).id();
 
         harness.scroll_into_view(button_id);
         assert_render_snapshot!(harness, "portal_scrolled_button_into_view");
