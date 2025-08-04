@@ -42,6 +42,7 @@ The to-do-list example looks like this:
 ```rust
 use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetPod};
 use masonry::dpi::LogicalSize;
+use masonry::properties::types::{Length, AsUnit};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
@@ -94,7 +95,7 @@ fn main() {
                         ).with_auto_id()
                     ),
             ))
-            .with_spacer(WIDGET_SPACING)
+            .with_spacer(Length::px(WIDGET_SPACING))
             .with_auto_id(),
     );
 
