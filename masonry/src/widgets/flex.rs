@@ -640,7 +640,7 @@ impl Widget for Flex {
 
         const MIN_FLEX_SUM: f64 = 0.0001;
         let gap_count = self.children.len().saturating_sub(1);
-        let bc_length = self.direction.major(bc.max());
+        let bc_major = self.direction.major(bc.max());
 
         // ACCUMULATORS
         let mut minor = self.direction.minor(bc.min());
@@ -692,7 +692,7 @@ impl Widget for Flex {
             }
         }
 
-        let remaining_major = (bc_length - major_non_flex).max(0.0);
+        let remaining_major = (bc_major - major_non_flex).max(0.0);
         let px_per_flex = remaining_major / flex_sum;
 
         // MEASURE FLEX CHILDREN
@@ -788,12 +788,12 @@ impl Widget for Flex {
             }
         }
 
-        if flex_sum > MIN_FLEX_SUM && bc_length.is_infinite() {
+        if flex_sum > MIN_FLEX_SUM && bc_major.is_infinite() {
             tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
         let final_major = if flex_sum > MIN_FLEX_SUM || self.fill_major_axis {
-            bc_length.max(major_non_flex)
+            bc_major.max(major_non_flex)
         } else {
             major_non_flex
         };
