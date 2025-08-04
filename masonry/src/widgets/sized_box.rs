@@ -323,7 +323,7 @@ mod tests {
 
     #[test]
     fn no_width() {
-        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(Length::px(200.));
+        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(200.px());
         let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
         let child_bc = expand.child_constraints(&bc);
         assert_eq!(child_bc.min(), Size::new(0., 200.,));
@@ -435,8 +435,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(Length::px(20.))
-            .height(Length::px(20.))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -463,8 +463,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(Length::px(20.))
-            .height(Length::px(20.))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -491,8 +491,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(Length::px(20.))
-            .height(Length::px(20.))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);

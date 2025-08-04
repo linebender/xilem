@@ -18,6 +18,7 @@ use masonry_winit::winit::window::Window;
 
 const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::new("text-input");
 const LIST_TAG: WidgetTag<Flex> = WidgetTag::new("list");
+const WIDGET_SPACING: Length = Length::const_px(5.0);
 
 struct Driver {
     next_task: String,
@@ -59,8 +60,6 @@ impl AppDriver for Driver {
 
 /// Return initial to-do-list without items.
 pub fn make_widget_tree() -> NewWidget<impl Widget> {
-    const WIDGET_SPACING: f64 = 5.0;
-
     let text_input = NewWidget::new_with_tag(TextInput::new(""), TEXT_INPUT_TAG);
     let button = NewWidget::new(Button::with_text("Add task"));
 
@@ -69,9 +68,9 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
             Flex::row()
                 .with_flex_child(text_input, 1.0)
                 .with_child(button),
-            Properties::new().with(Padding::all(WIDGET_SPACING)),
+            Properties::new().with(Padding::all(WIDGET_SPACING.value())),
         ))
-        .with_spacer(Length::px(WIDGET_SPACING));
+        .with_spacer(WIDGET_SPACING);
 
     NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
 }

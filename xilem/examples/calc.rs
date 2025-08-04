@@ -4,7 +4,7 @@
 //! A simple calculator example
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 
-use masonry::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
+use masonry::properties::types::{AsUnit, CrossAxisAlignment, Length, MainAxisAlignment};
 use masonry::widgets::GridParams;
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -258,7 +258,7 @@ pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex
         .direction(Axis::Horizontal)
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .main_axis_alignment(MainAxisAlignment::Start)
-        .gap(Length::px(5.))
+        .gap(5.px())
 }
 
 /// Returns a label intended to be used in the calculator's top display.
