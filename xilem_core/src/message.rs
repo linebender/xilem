@@ -69,7 +69,7 @@ impl DynMessage {
 
     /// Access the actual type of this [`DynMessage`].
     ///
-    /// ## Errors
+    /// # Errors
     ///
     /// If the message contained within `self` is not of type `T`, returns `self`
     /// (so that e.g. a different type can be checked).
@@ -129,7 +129,7 @@ impl SendMessage {
 
     /// Access the actual type of this [`SendMessage`].
     ///
-    /// ## Errors
+    /// # Errors
     ///
     /// If the message contained within `self` is not of type `T`, returns `self`
     /// (so that e.g. a different type can be checked).

@@ -58,7 +58,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///
 /// `TestHarness` is a type that simulates a [`RenderRoot`] for testing.
 ///
-/// ## Workflow
+/// # Workflow
 ///
 /// One of the main goals of Masonry is to provide primitives that allow application
 /// developers to test their app in a convenient and intuitive way.
@@ -77,7 +77,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// Masonry also provides the [`assert_render_snapshot`] macro, which performs snapshot testing on the
 /// rendered widget tree automatically.
 ///
-/// ## Fidelity
+/// # Fidelity
 ///
 /// `TestHarness` tries to act like the normal masonry environment. It will run the same passes as the normal app after every user event and animation.
 ///
@@ -87,7 +87,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// methods, whereas in a normal applications you could reasonably expect multiple paint calls
 /// between eg any two clicks.
 ///
-/// ## Example
+/// # Example
 ///
 /// ```rust,ignore
 /// use insta::assert_debug_snapshot;
@@ -574,7 +574,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// - If the widget is not found in the tree.
     /// - If the widget is stashed.
@@ -589,7 +589,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// - If the widget is not found in the tree.
     /// - If the widget is stashed.
@@ -650,7 +650,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// If the widget is not found in the tree or can't be focused.
     #[track_caller]
@@ -695,7 +695,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Return a [`WidgetRef`] to the widget with the given id.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// Panics if no Widget with this id can be found.
     #[track_caller]
@@ -707,7 +707,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Return a [`WidgetRef`] to the widget with the given tag.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// Panics if no Widget with this tag can be found.
     #[track_caller]

@@ -123,7 +123,7 @@ impl Flex {
     /// As such, if you're adding lots of spacers to a flex parent, you may want to set
     /// its gap to zero to make the layout more predictable.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// If `gap` is not a non-negative finite value.
     ///
@@ -237,7 +237,7 @@ impl Flex {
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// If `gap` is not a non-negative finite value.
     pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {

@@ -186,7 +186,7 @@ impl TextEvent {
     ///
     /// **selected** is the part of the preedit text that should be selected.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// If **selected** isn't a substring of **text**.
     pub fn preedit_with_cursor(text: String, selected: String) -> Self {

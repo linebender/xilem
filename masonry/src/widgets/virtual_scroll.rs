@@ -97,7 +97,7 @@ pub struct VirtualScrollAction {
 /// The Masonry example `virtual_fizzbuzz` shows how to use this widget.
 /// It creates an infinitely explorable implementation of the game [Fizz buzz](https://en.wikipedia.org/wiki/Fizz_buzz).
 ///
-/// ## Usage
+/// # Usage
 ///
 /// When you create the virtual scroll, you specify the initial "anchor"; that is an id for which the item will be on-screen.
 /// If only a subset of ids are valid, then the valid range of ids widget *must* be set.
@@ -123,12 +123,12 @@ pub struct VirtualScrollAction {
 /// As a special case, it is not possible to have an item with id [`i64::MAX`].
 /// This is because of the internal use of exclusive ranges.
 ///
-/// ## Caveats
+/// # Caveats
 ///
 /// This widget has been developed as an minimum viable solution, and so there are a number of known issues with it.
 /// These are discussed below.
 ///
-/// ### Transforms
+/// ## Transforms
 ///
 /// Widgets can be [transformed](WidgetMut::set_transform) arbitrarily from where their parent lays them out.
 /// This interacts poorly with virtual scrolling, because an item which would be visible.
@@ -141,27 +141,27 @@ pub struct VirtualScrollAction {
 /// but some widgets with transforms might not be visible - in the worst case, completely hidden).
 // TODO: Implement this.
 ///
-/// ### Focus
+/// ## Focus
 ///
 /// Currently, this widget does not correctly handle focused child widgets.
 /// This means that if (for example) the user is typing in a text box in a virtual scroll, and scrolls down,
 /// continuing to type will stop working.
 ///
-/// ### Accessibility
+/// ## Accessibility
 ///
 /// A proper virtual scrolling list needs accessibility support (such as for scrolling, but
 /// also to ensure that focus does not get trapped, that the correct set of items are reported,
 /// if/that there are more items following, etc.).
 /// This has not yet been designed, and will be a follow-up.
 ///
-/// ### Scrollbars
+/// ## Scrollbars
 ///
 /// There is not yet any integration with scrollbars for this widget.
 /// This is planned; however there is no universally correct scrollbar implementation for virtual scrolling.
 /// This widget will support user-provided scrollbar types, through some yet-to-be-determined mechanism.
 /// There will also be provided implementations of reasonable scrollbar kinds.
 ///
-/// ## Valid range
+/// # Valid range
 ///
 /// Scrolling at the end of the valid range is locked, however it is not currently supported to lock scrolling
 /// such that the bottom of the last item cannot be above the bottom of the `VirtualScroll`.
