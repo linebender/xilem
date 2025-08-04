@@ -29,7 +29,7 @@ pub trait AsyncCtx: ViewPathTracker {
 ///
 /// In the Xilem crate, this will wrap an `EventLoopProxy` from Winit.
 ///
-/// ## Lifetimes
+/// # Lifetimes
 ///
 /// It is valid for a [`RawProxy`] to outlive the [`View`] it is associated with.
 pub trait RawProxy: Send + Sync + 'static {

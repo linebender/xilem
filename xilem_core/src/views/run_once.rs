@@ -11,7 +11,7 @@ use crate::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker, Vie
 ///
 /// This is a [`NoElement`] view, and so should either be used in any sequence, or with [`fork`](crate::fork).
 ///
-/// ## Examples
+/// # Examples
 ///
 /// This can be useful for logging a value:
 ///
@@ -22,7 +22,7 @@ use crate::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker, Vie
 ///     run_once(|| eprintln!("View constructed"))
 /// }
 /// ```
-/// ## Capturing
+/// # Capturing
 ///
 /// This method cannot be used with a dynamic `once`.
 /// That is, `once` cannot be a function pointer or capture any (non-zero sized) values.

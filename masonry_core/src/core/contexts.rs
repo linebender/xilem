@@ -555,7 +555,7 @@ impl LayoutCtx<'_> {
     /// Container widgets must call this method with each non-stashed child in their
     /// layout method, after calling `ctx.run_layout(child, bc)`.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
@@ -605,7 +605,7 @@ impl LayoutCtx<'_> {
     /// propagate a child's desired paint rect, if it extends beyond the bounds
     /// of the parent's layout rect.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// This method will panic if the child's [`layout()`](LayoutCtx::run_layout) method has not been called yet
     /// and if [`LayoutCtx::place_child()`] has not been called for the child.
@@ -650,7 +650,7 @@ impl LayoutCtx<'_> {
 
     /// The distance from the bottom of the given widget to the baseline.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.
@@ -671,7 +671,7 @@ impl LayoutCtx<'_> {
 
     /// Get the given child's paint rect.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// This method will panic if [`LayoutCtx::run_layout`] and [`LayoutCtx::place_child`]
     /// have not been called yet for the child.
@@ -684,7 +684,7 @@ impl LayoutCtx<'_> {
 
     /// Get the given child's size.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// This method will panic if [`LayoutCtx::run_layout`] has not been called yet for
     /// the child.

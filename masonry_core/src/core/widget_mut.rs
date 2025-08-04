@@ -19,7 +19,7 @@ use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
 /// [`EventCtx`](crate::core::EventCtx), [`UpdateCtx`](crate::core::UpdateCtx) or from a parent
 /// `WidgetMut` with [`MutateCtx`].
 ///
-/// ## `WidgetMut` as a Receiver
+/// # `WidgetMut` as a Receiver
 ///
 /// Once the Receiver trait is stabilized, `WidgetMut` will implement it so that custom
 /// widgets in downstream crates can use `WidgetMut` as the receiver for inherent methods.
@@ -110,7 +110,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
 
     /// Downcasts to `WidgetMut` of concrete widget type.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// Panics if the downcast fails, with an error message that shows the
     /// discrepancy between the expected and actual types.
