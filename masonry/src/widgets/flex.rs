@@ -642,11 +642,10 @@ impl Widget for Flex {
         let gap_count = self.children.len().saturating_sub(1);
         let bc_length = self.direction.major(bc.max());
 
-        let mut major_flex: f64 = 0.0;
-
         // ACCUMULATORS
         let mut minor = self.direction.minor(bc.min());
         let mut major_non_flex = gap_count as f64 * self.gap;
+        let mut major_flex: f64 = 0.0;
         // We start with a small value to avoid divide-by-zero errors.
         let mut flex_sum = MIN_FLEX_SUM;
         // Values used if any child has `CrossAxisAlignment::Baseline`.
