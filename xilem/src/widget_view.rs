@@ -3,10 +3,11 @@
 
 use masonry::kurbo::Affine;
 
-use masonry::core::{FromDynWidget, Widget};
+use masonry::core::{FromDynWidget, Property, Widget};
 
 use crate::core::{View, ViewSequence};
-use crate::view::{Transformed, transformed};
+use crate::style::{HasProperty, Style};
+use crate::view::{Prop, Transformed, transformed};
 use crate::{AnyWidgetView, Pod, ViewCtx};
 
 #[expect(missing_docs, reason = "TODO - Document these items")]
@@ -45,6 +46,21 @@ pub trait WidgetView<State, Action = ()>:
         Self: Sized,
     {
         transformed(self).transform(by)
+    }
+
+    // TODO: Remove
+    /// This is a temporary test for composing properties, this won't be the final API
+    fn prop<P: Property>(self, property: P) -> Prop<P, Self, State, Action>
+    where
+        Self: Sized + Style,
+        // TODO: implement this bound on the Element of the view instead (likely directly in masonry).
+        Self: HasProperty<P>,
+    {
+        Prop {
+            property,
+            child: self,
+            phantom: std::marker::PhantomData,
+        }
     }
 }
 

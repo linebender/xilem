@@ -19,6 +19,7 @@ fn update_anim_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let changed_properties = &mut node.item.changed_properties;
     let id = state.id;
     let _span = enter_span_if(global_state.trace.anim, state);
 
@@ -41,6 +42,7 @@ fn update_anim_for_widget(
         let mut props = PropertiesMut {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            changed: changed_properties,
         };
         widget.on_anim_frame(&mut ctx, &mut props, elapsed_ns);
     }

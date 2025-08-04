@@ -47,6 +47,9 @@ pub use variable_label::*;
 mod progress_bar;
 pub use progress_bar::*;
 
+mod prop;
+pub use prop::*;
+
 mod prose;
 pub use prose::*;
 

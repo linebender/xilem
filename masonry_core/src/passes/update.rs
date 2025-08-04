@@ -66,6 +66,7 @@ fn run_targeted_update_pass(
         let widget = &mut *node.item.widget;
         let state = &mut node.item.state;
         let properties = &mut node.item.properties;
+        let changed_properties = &mut node.item.changed_properties;
 
         let mut ctx = UpdateCtx {
             global_state: &mut root.global_state,
@@ -76,6 +77,7 @@ fn run_targeted_update_pass(
         let mut props = PropertiesMut {
             map: properties,
             default_map: root.default_properties.for_widget(widget.type_id()),
+            changed: changed_properties,
         };
         pass_fn(widget, &mut ctx, &mut props);
 
@@ -102,6 +104,7 @@ fn run_single_update_pass(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let changed_properties = &mut node.item.changed_properties;
 
     let mut ctx = UpdateCtx {
         global_state: &mut root.global_state,
@@ -112,6 +115,7 @@ fn run_single_update_pass(
     let mut props = PropertiesMut {
         map: properties,
         default_map: root.default_properties.for_widget(widget.type_id()),
+        changed: changed_properties,
     };
     pass_fn(widget, &mut ctx, &mut props);
 
@@ -132,6 +136,7 @@ fn update_widget_tree(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let changed_properties = &mut node.item.changed_properties;
     let id = state.id;
 
     let trace = global_state.trace.update_tree;
@@ -194,6 +199,7 @@ fn update_widget_tree(
         let mut props = PropertiesMut {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            changed: changed_properties,
         };
         widget.update(&mut ctx, &mut props, &Update::WidgetAdded);
         if trace {
@@ -248,6 +254,7 @@ fn update_disabled_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let changed_properties = &mut node.item.changed_properties;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -267,12 +274,15 @@ fn update_disabled_for_widget(
         let mut props = PropertiesMut {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            changed: changed_properties,
         };
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
         state.is_disabled = disabled;
         state.needs_update_focusable = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
+        // TODO: Do something with the changed information?
+        props.changed.clear();
     }
 
     state.needs_update_disabled = false;
@@ -324,6 +334,7 @@ fn update_stashed_for_widget(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let changed_properties = &mut node.item.changed_properties;
     let id = state.id;
 
     let _span = enter_span(state);
@@ -343,6 +354,7 @@ fn update_stashed_for_widget(
         let mut props = PropertiesMut {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
+            changed: changed_properties,
         };
         widget.update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
         state.is_stashed = stashed;

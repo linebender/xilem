@@ -23,7 +23,7 @@ use crate::core::{
 use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
-use crate::util::get_debug_color;
+use crate::util::{AnySet, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -244,6 +244,7 @@ impl MutateCtx<'_> {
             properties: PropertiesMut {
                 map: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
+                changed: &mut node_mut.item.changed_properties,
             },
             children: node_mut.children,
             default_properties: self.default_properties,
@@ -1478,6 +1479,7 @@ impl RegisterCtx<'_> {
             widget: widget.as_box_dyn(),
             state,
             properties: properties.map,
+            changed_properties: AnySet::default(),
         };
         self.children.insert(id, node);
     }

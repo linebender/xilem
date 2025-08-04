@@ -8,10 +8,11 @@
 
 use std::time::Duration;
 
+use vello::peniko::color::AlphaColor;
 use masonry::properties::types::Length;
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
-use xilem::style::Style as _;
+use xilem::style::{Background, BorderWidth, Style as _};
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
@@ -82,6 +83,10 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
         }
     });
 
+    let background = (data.count * 4)
+        .clamp(0, u8::MAX.into())
+        .try_into()
+        .unwrap();
     provides(
         |_: &mut AppData| SomeContext(120),
         fork(
@@ -90,6 +95,11 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 flex_row((
                     label("Label").color(palette::css::REBECCA_PURPLE),
                     label("Bold Label").weight(FontWeight::BOLD),
+                    button("Styled button", |data: &mut AppData| data.count += 1)
+                        .prop(BorderWidth::all(4.0))
+                        .prop(Background::Color(AlphaColor::from_rgb8(background, 0, 0)))
+                        // Test property override
+                        .prop(Background::Color(AlphaColor::from_rgb8(0, background, 0))),
                     // TODO masonry doesn't allow setting disabled manually anymore?
                     // label("Disabled label").disabled(),
                 )),
