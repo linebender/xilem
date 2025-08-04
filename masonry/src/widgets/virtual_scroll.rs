@@ -290,7 +290,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// This is intended for sanity-checking of higher-level processes (i.e. so that inconsistencies can be caught early).
     #[expect(
         clippy::len_without_is_empty,
-        reason = "`is_empty` could be talking about valid_range, and this isn't really a traditional collection."
+        reason = "The only time the VirtualScroll unloads all children is when given an empty valid range."
     )]
     pub fn len(&self) -> usize {
         self.items.len()
