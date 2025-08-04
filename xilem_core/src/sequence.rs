@@ -620,7 +620,7 @@ where
         let (index, generation) = view_id_to_index_generation(start);
         let stored_generation = &seq_state.generations[index];
         if *stored_generation != generation {
-            // The value in the sequence i
+            // The value in the sequence is no longer the same child
             return MessageResult::Stale;
         }
         // Panics if index is out of bounds, but we know it isn't because this is the same generation
