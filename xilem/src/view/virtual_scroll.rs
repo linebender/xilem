@@ -159,7 +159,7 @@ where
             widgets::VirtualScroll::set_valid_range(&mut element, self.valid_range.clone());
         }
         // TODO: This code should be moved into `Self::message` once it becomes possible to
-        // make a build/rebuild/teardown context there
+        // make a build/rebuild/teardown context there.
         //
         // This is because we could now be requesting items which are outside the claimed "valid range".
         // Naïvely, one might expect this to be impossible (because we only request rebuild, so the `app_logic` isn't ran)
@@ -167,7 +167,7 @@ where
         // the valid range has changed. As such, we document the possibility of these requests above.
         if let Some(pending_action) = view_state.pending_action.take() {
             widgets::VirtualScroll::will_handle_action(&mut element, &pending_action);
-            // Teadown the old items.
+            // Teardown the old items
             for idx in pending_action.old_active.clone() {
                 if !pending_action.target.contains(&idx) {
                     let Some(mut child_state) = view_state.children.remove(&idx) else {
@@ -209,7 +209,7 @@ where
                     });
                 } else {
                     let new_child = (self.func)(app_state, idx);
-                    // Build the new item.
+                    // Build the new item
                     ctx.with_id(view_id_for_index(idx), |ctx| {
                         let (new_element, child_state) = new_child.build(ctx, app_state);
                         widgets::VirtualScroll::add_child(
@@ -228,9 +228,9 @@ where
                 }
             }
         } else {
+            // Rebuild all existing items
             for (&idx, child) in &mut view_state.children {
                 let next_child = (self.func)(app_state, idx);
-                // Rebuild this existing item
                 ctx.with_id(view_id_for_index(idx), |ctx| {
                     next_child.rebuild(
                         &child.view,
@@ -243,7 +243,11 @@ where
                 });
             }
         }
-        debug_assert_eq!(element.widget.len(), view_state.children.len());
+        debug_assert_eq!(
+            element.widget.len(),
+            view_state.children.len(),
+            "VirtualScroll: Child added outside of the control of Xilem."
+        );
     }
 
     fn teardown(
