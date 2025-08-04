@@ -4,7 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::core::Axis;
-use masonry::properties::types::Length;
+use masonry::properties::types::{AsUnit, Length};
 use masonry::widgets;
 
 use crate::core::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
@@ -50,8 +50,8 @@ where
         split_axis: Axis::Horizontal,
         split_point: 0.5,
         min_size: (Length::ZERO, Length::ZERO),
-        bar_size: Length::px(6.0),
-        min_bar_area: Length::px(6.0),
+        bar_size: 6.px(),
+        min_bar_area: 6.px(),
         solid_bar: false,
         draggable: true,
         child1,

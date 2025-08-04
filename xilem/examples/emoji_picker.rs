@@ -3,7 +3,7 @@
 
 //! A simple emoji picker.
 
-use masonry::properties::types::Length;
+use masonry::properties::types::{AsUnit, Length};
 use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
@@ -87,7 +87,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
         data.size.try_into().unwrap(),
         data.size.try_into().unwrap(),
     )
-    .spacing(Length::px(10.0))
+    .spacing(10.px())
     .padding(20.0)
 }
 

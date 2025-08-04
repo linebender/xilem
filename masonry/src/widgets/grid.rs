@@ -348,6 +348,7 @@ impl Widget for Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Button;
@@ -408,7 +409,7 @@ mod tests {
 
         // Change the spacing
         harness.edit_root_widget(|mut grid| {
-            Grid::set_spacing(&mut grid, Length::px(7.0));
+            Grid::set_spacing(&mut grid, 7.px());
         });
         assert_render_snapshot!(harness, "grid_with_changed_spacing");
     }
