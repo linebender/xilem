@@ -6,7 +6,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use masonry::properties::types::Length;
+use masonry::properties::types::AsUnit;
 use time::error::IndeterminateOffset;
 use time::macros::format_description;
 use time::{OffsetDateTime, UtcOffset};
@@ -42,7 +42,7 @@ struct TimeZone {
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
     let view = flex((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
-        FlexSpacer::Fixed(Length::px(40.)),
+        FlexSpacer::Fixed(40.px()),
         local_time(data),
         controls(),
         portal(flex(
@@ -155,7 +155,7 @@ impl TimeZone {
             )),
         )))
         .expand_width()
-        .height(Length::px(72.))
+        .height(72.px())
     }
 }
 

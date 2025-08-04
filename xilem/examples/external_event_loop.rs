@@ -6,7 +6,7 @@
 //! accessing raw events from winit.
 //! Support for more custom embeddings would be welcome, but needs more design work
 
-use masonry::properties::types::Length;
+use masonry::properties::types::AsUnit;
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::theme::default_property_set;
 use masonry_winit::app::{AppDriver, MasonryUserEvent};
@@ -23,8 +23,8 @@ fn big_button(
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
     sized_box(button(label, callback))
-        .width(Length::px(40.))
-        .height(Length::px(40.))
+        .width(40.px())
+        .height(40.px())
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {

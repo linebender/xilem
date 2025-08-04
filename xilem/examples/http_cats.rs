@@ -8,7 +8,7 @@
 
 use std::sync::Arc;
 
-use masonry::properties::types::{Length, UnitPoint};
+use masonry::properties::types::{AsUnit, Length, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use tokio::sync::mpsc::UnboundedSender;
 use vello::peniko::{Blob, Image};
@@ -87,7 +87,7 @@ impl HttpCats {
         fork(
             flex((
                 // Add padding to the top for Android. Still a horrible hack
-                FlexSpacer::Fixed(Length::px(40.)),
+                FlexSpacer::Fixed(40.px()),
                 split(left_column, portal(sized_box(info_area).expand_width())).split_point(0.4),
             ))
             .must_fill_major_axis(true),
@@ -176,11 +176,7 @@ impl Status {
                 prose("Failed to start fetching image. This is a bug!")
                     .text_alignment(TextAlign::Center),
             ),
-            ImageState::Pending => OneOf3::B(
-                sized_box(spinner())
-                    .width(Length::px(80.))
-                    .height(Length::px(80.)),
-            ),
+            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.px()).height(80.px())),
             // TODO: Alt text?
             ImageState::Available(image_data) => {
                 let attribution = sized_box(
@@ -210,7 +206,7 @@ impl Status {
             prose(self.message)
                 .text_size(20.)
                 .text_alignment(TextAlign::Center),
-            FlexSpacer::Fixed(Length::px(10.)),
+            FlexSpacer::Fixed(10.px()),
             image,
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)

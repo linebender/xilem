@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use megalodon::entities::Status;
-use xilem::masonry::properties::types::Length;
+use xilem::masonry::properties::types::AsUnit;
 use xilem::view::{
     CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex,
     flex_row, inline_prose, label, prose,
@@ -45,7 +45,7 @@ fn base_status(status: &Status) -> impl FlexSequence<Placehero> + use<> {
                     .flex(CrossAxisAlignment::Start),
             ))
             .main_axis_alignment(MainAxisAlignment::Start)
-            .gap(Length::px(1.)),
+            .gap(1.px()),
             FlexSpacer::Flex(1.0),
             inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
                 .text_alignment(TextAlign::End),
