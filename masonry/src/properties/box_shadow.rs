@@ -4,16 +4,15 @@
 use std::any::TypeId;
 
 use vello::Scene;
-use vello::kurbo::{Affine, Insets, Point, RoundedRect};
+use vello::kurbo::{Affine, BezPath, Insets, Point, RoundedRect, Shape as _, Size};
+use vello::peniko::Mix;
 use vello::peniko::color::{AlphaColor, Srgb};
 
 use crate::core::{Property, UpdateCtx};
+use crate::properties::CornerRadius;
 
 // TODO - This is a first implementation of box shadows. A full version would need
 // to address the following points:
-// - Paint order: CSS shadows are drawn over neighboring boxes, which means if we want
-// to emulate them, we need to paint them after sibling widgets. This would require
-// adding some kind of post_paint pass.
 // - Inset shadows: CSS shadows can be either drop shadows (behind element) or inset
 // shadows (inside element). We should implement both and add an `inset` attribute.
 // - Spread radius: CSS shadow can change size without changing the blur level using
@@ -78,7 +77,8 @@ impl BoxShadow {
         if property_type != TypeId::of::<Self>() {
             return;
         }
-        // TODO - request_paint_only?
+        // TODO - We'd like to request_post_paint instead, which should be lighter.
+        // However, box shadow affects the size of the paint rect, which is currently handled in layout.
         ctx.request_layout();
     }
 
@@ -88,6 +88,11 @@ impl BoxShadow {
     pub const fn is_visible(&self) -> bool {
         let alpha = self.color.components[3];
         alpha != 0.0
+    }
+
+    /// Creates a rounded rectangle that will cast the shadow.
+    pub fn shadow_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
+        size.to_rect().to_rounded_rect(border_radius.radius)
     }
 
     /// Helper function to paint the shadow into a scene.
@@ -104,14 +109,28 @@ impl BoxShadow {
             + rect.radii().top_left
             + rect.radii().top_right)
             / 4.;
-        scene.draw_blurred_rounded_rect(
+
+        let std_dev = blur_radius;
+
+        let kernel_size = 2.5 * std_dev;
+        let carve_out_rect = rect - self.offset.to_vec2();
+        let big_rect = rect.rect().inflate(kernel_size, kernel_size);
+        let clip_shape = BezPath::from_iter(
+            big_rect
+                .path_elements(0.1)
+                .chain(carve_out_rect.to_path(0.1).reverse_subpaths()),
+        );
+
+        scene.push_layer(Mix::Clip, 1., transform, &clip_shape);
+        scene.draw_blurred_rounded_rect_in(
+            &big_rect,
             transform,
             rect.rect(),
             self.color,
             radius,
-            // TODO - I'm not sure this is the right std_dev.
             blur_radius,
         );
+        scene.pop_layer();
     }
 
     /// Helper function that returns how much a given shadow expands the paint rect.

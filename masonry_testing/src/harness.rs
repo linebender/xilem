@@ -136,6 +136,7 @@ pub struct TestHarness<W: Widget> {
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
+    screenshot_tolerance: u32,
     action_queue: VecDeque<(ErasedAction, WidgetId)>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
@@ -154,6 +155,9 @@ pub struct TestHarnessParams {
     /// The background color of the virtual window.
     /// Defaults to [`Self::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
+    /// The maximum difference between two pixel channels before the harness will fail a screenshot test.
+    /// Defaults to [`Self::DEFAULT_SCREENSHOT_TOLERANCE`].
+    pub screenshot_tolerance: u32,
     /// The scale factor widgets are rendered at.
     /// Defaults to 1.0.
     pub scale_factor: f64,
@@ -204,11 +208,15 @@ impl TestHarnessParams {
     pub const DEFAULT: Self = Self {
         window_size: Self::DEFAULT_SIZE,
         background_color: Self::DEFAULT_BACKGROUND_COLOR,
+        screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
     };
 
     /// Default canvas size for tests.
     pub const DEFAULT_SIZE: Size = Size::new(400., 400.);
+
+    /// Default error tolerance for screenshot tests.
+    pub const DEFAULT_SCREENSHOT_TOLERANCE: u32 = 16;
 
     /// Default background color for tests.
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
@@ -297,6 +305,7 @@ impl<W: Widget> TestHarness<W> {
             mouse_state,
             window_size,
             background_color: params.background_color,
+            screenshot_tolerance: params.screenshot_tolerance,
             action_queue: VecDeque::new(),
             has_ime_session: false,
             ime_rect: Default::default(),
@@ -891,7 +900,8 @@ impl<W: Widget> TestHarness<W> {
         let ref_image = reference_file.decode().unwrap().to_rgb8();
 
         if expect_failure {
-            if get_image_diff(&ref_image, &new_image.to_rgb8()).is_some() {
+            if get_image_diff(&ref_image, &new_image.to_rgb8(), self.screenshot_tolerance).is_some()
+            {
                 return;
             } else {
                 panic!(
@@ -900,7 +910,9 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        if let Some(diff_image) = get_image_diff(&ref_image, &new_image.to_rgb8()) {
+        if let Some(diff_image) =
+            get_image_diff(&ref_image, &new_image.to_rgb8(), self.screenshot_tolerance)
+        {
             if bless_test {
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);

@@ -232,7 +232,6 @@ impl Widget for Button {
 
         let border_width = props.get::<BorderWidth>();
         let border_radius = props.get::<CornerRadius>();
-        let shadow = props.get::<BoxShadow>();
 
         let bg = if ctx.is_disabled() {
             &props.get::<DisabledBackground>().0
@@ -258,11 +257,19 @@ impl Widget for Button {
             };
         }
 
-        shadow.paint(scene, Affine::IDENTITY, bg_rect);
-
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
+    }
+
+    fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let size = ctx.size();
+        let border_radius = props.get::<CornerRadius>();
+        let shadow = props.get::<BoxShadow>();
+
+        let shadow_rect = shadow.shadow_rect(size, border_radius);
+
+        shadow.paint(scene, Affine::IDENTITY, shadow_rect);
     }
 
     fn accessibility_role(&self) -> Role {
@@ -300,7 +307,7 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use masonry_testing::TestHarnessParams;
+    use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
     use crate::core::keyboard::NamedKey;
@@ -443,6 +450,7 @@ mod tests {
 
         let mut test_params = TestHarnessParams::default();
         test_params.window_size = Size::new(300.0, 300.0);
+        test_params.screenshot_tolerance = 32;
         let mut harness =
             TestHarness::create_with(default_property_set(), root_widget, test_params);
 
@@ -473,5 +481,17 @@ mod tests {
         });
 
         assert_render_snapshot!(harness, "button_shadows");
+
+        // Check that slightly changing the blur radius makes the screenshot test fail.
+        // If it doesn't, the screenshot_tolerance param is too high.
+        harness.edit_root_widget(|mut grid| {
+            // Copy-pasted from second case above.
+            {
+                let mut button = Grid::child_mut(&mut grid, 1);
+                let mut button = button.downcast::<Button>();
+                button.insert_prop(BoxShadow::new(ORANGE, (-10., 10.)).blur(2.5));
+            }
+        });
+        assert_failing_render_snapshot!(harness, "button_shadows");
     }
 }
