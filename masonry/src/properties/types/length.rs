@@ -63,3 +63,25 @@ impl Length {
         }
     }
 }
+
+/// Utility trait for wrapping numbers in logical units.
+pub trait AsUnit {
+    /// Create a length, in logical pixels.
+    ///
+    /// # Panics
+    ///
+    /// Panics if value is negative or infinite.
+    fn px(self) -> Length;
+}
+
+impl AsUnit for f64 {
+    fn px(self) -> Length {
+        Length::px(self)
+    }
+}
+
+impl AsUnit for u64 {
+    fn px(self) -> Length {
+        Length::px(self as f64)
+    }
+}

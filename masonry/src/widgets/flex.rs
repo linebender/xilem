@@ -856,6 +856,7 @@ impl Widget for Flex {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Label;
@@ -1200,7 +1201,7 @@ mod tests {
                 // -> acdx
                 Flex::add_flex_child(&mut flex, Label::new("y").with_auto_id(), 2.0);
                 // -> acdxy
-                Flex::add_spacer(&mut flex, Length::px(5.0));
+                Flex::add_spacer(&mut flex, 5.px());
                 // -> acdxy_
                 Flex::add_flex_spacer(&mut flex, 1.0);
                 // -> acdxy__
@@ -1208,7 +1209,7 @@ mod tests {
                 // -> acidxy__
                 Flex::insert_flex_child(&mut flex, 2, Label::new("j").with_auto_id(), 2.0);
                 // -> acjidxy__
-                Flex::insert_spacer(&mut flex, 2, Length::px(5.0));
+                Flex::insert_spacer(&mut flex, 2, 5.px());
                 // -> ac_jidxy__
                 Flex::insert_flex_spacer(&mut flex, 2, 1.0);
                 // -> ac__jidxy__
@@ -1222,13 +1223,13 @@ mod tests {
                 .with_child(Label::new("a").with_auto_id())
                 .with_child(Label::new("c").with_auto_id())
                 .with_flex_spacer(1.0)
-                .with_spacer(Length::px(5.0))
+                .with_spacer(5.px())
                 .with_flex_child(Label::new("j").with_auto_id(), 2.0)
                 .with_child(Label::new("i").with_auto_id())
                 .with_child(Label::new("d").with_auto_id())
                 .with_child(Label::new("x").with_auto_id())
                 .with_flex_child(Label::new("y").with_auto_id(), 2.0)
-                .with_spacer(Length::px(5.0))
+                .with_spacer(5.px())
                 .with_flex_spacer(1.0)
                 .with_auto_id();
 
@@ -1247,7 +1248,7 @@ mod tests {
         let widget = Flex::column()
             .with_child(Label::new("hello").with_auto_id())
             .with_child(Label::new("world").with_auto_id())
-            .with_spacer(Length::px(1.0))
+            .with_spacer(1.px())
             .with_auto_id();
 
         let window_size = Size::new(200.0, 150.0);

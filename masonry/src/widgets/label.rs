@@ -409,7 +409,7 @@ mod tests {
     use super::*;
     use crate::core::Properties;
     use crate::properties::types::CrossAxisAlignment;
-    use crate::properties::types::Length;
+    use crate::properties::types::{AsUnit, Length};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Flex, SizedBox};
@@ -506,25 +506,25 @@ mod tests {
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::WordWrap)),
                 )
-                .width(Length::px(180.0))
+                .width(180.px())
                 .with_auto_id(),
             )
-            .with_spacer(Length::px(20.0))
+            .with_spacer(20.px())
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::Clip)),
                 )
-                .width(Length::px(180.0))
+                .width(180.px())
                 .with_auto_id(),
             )
-            .with_spacer(Length::px(20.0))
+            .with_spacer(20.px())
             .with_child(
                 SizedBox::new(
                     Label::new("The quick brown fox jumps over the lazy dog")
                         .with_props(Properties::new().with(LineBreaking::Overflow)),
                 )
-                .width(Length::px(180.0))
+                .width(180.px())
                 .with_auto_id(),
             )
             .with_flex_spacer(1.0)

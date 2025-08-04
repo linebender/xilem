@@ -9,7 +9,7 @@ use xilem::core::{
     MessageProxy, MessageResult, NoElement, Resource, View, fork, map_message,
     on_action_with_context, provides, with_context,
 };
-use xilem::masonry::properties::types::Length;
+use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
 use xilem::style::{Gradient, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -46,8 +46,8 @@ impl Avatars {
     // TODO: ArcStr for URL?
     pub(crate) fn avatar<State: 'static>(url: String) -> impl WidgetView<State> + use<State> {
         with_context(move |this: &mut Self, _: &mut State| {
-            let width = 50.;
-            let height = 50.;
+            let width = 50.px();
+            let height = 50.px();
             if let Some(maybe_image) = this.icons.get(&url) {
                 if let Some(image_) = maybe_image {
                     return Either::A(sized_box(image(image_)).width(width).height(height));

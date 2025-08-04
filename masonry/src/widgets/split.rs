@@ -14,7 +14,7 @@ use crate::core::{
     RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
-use crate::properties::types::Length;
+use crate::properties::types::{AsUnit, Length};
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
 
@@ -54,8 +54,8 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
             split_point_chosen: 0.5,
             split_point_effective: 0.5,
             min_size: (Length::ZERO, Length::ZERO),
-            bar_size: Length::px(6.0),
-            min_bar_area: Length::px(6.0),
+            bar_size: 6.px(),
+            min_bar_area: 6.px(),
             solid: false,
             draggable: true,
             click_offset: 0.0,
@@ -641,8 +641,8 @@ mod tests {
                 Label::new("World").with_auto_id(),
             )
             .split_point(0.3)
-            .min_size(Length::px(40.0), Length::px(10.0))
-            .bar_size(Length::px(12.0))
+            .min_size(40.px(), 10.px())
+            .bar_size(12.px())
             .draggable(true)
             .solid_bar(true)
             .with_auto_id();
@@ -671,8 +671,8 @@ mod tests {
 
             harness.edit_root_widget(|mut splitter| {
                 Split::set_split_point(&mut splitter, 0.3);
-                Split::set_min_size(&mut splitter, Length::px(40.0), Length::px(10.0));
-                Split::set_bar_size(&mut splitter, Length::px(12.0));
+                Split::set_min_size(&mut splitter, 40.px(), 10.px());
+                Split::set_bar_size(&mut splitter, 12.px());
                 Split::set_draggable(&mut splitter, true);
                 Split::set_bar_solid(&mut splitter, true);
             });

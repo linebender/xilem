@@ -306,7 +306,7 @@ mod tests {
     use super::*;
     use crate::core::Properties;
     use crate::palette;
-    use crate::properties::types::{Gradient, UnitPoint};
+    use crate::properties::types::{AsUnit, Gradient, UnitPoint};
     use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Label;
@@ -338,8 +338,8 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
 
         let widget = SizedBox::empty()
-            .width(Length::px(20.0))
-            .height(Length::px(20.0))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -373,8 +373,8 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(Length::px(20.0))
-            .height(Length::px(20.0))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -407,8 +407,8 @@ mod tests {
         box_props.insert(Background::Color(palette::css::PLUM));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(Length::px(20.0))
-            .height(Length::px(20.0))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -511,8 +511,8 @@ mod tests {
         box_props.insert(Padding::all(25.));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(Length::px(20.0))
-            .height(Length::px(20.0))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -536,8 +536,8 @@ mod tests {
         box_props.insert(BorderWidth::all(5.2));
 
         let widget = SizedBox::empty()
-            .width(Length::px(20.0))
-            .height(Length::px(20.0))
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
