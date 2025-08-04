@@ -82,7 +82,7 @@ impl AppDriver for Driver {
 }
 
 fn main() {
-    const WIDGET_SPACING: f64 = 5.0;
+    const WIDGET_SPACING: Length = Length::const_px(5.0);
 
     let main_widget = Portal::new(
         Flex::column()
@@ -95,7 +95,7 @@ fn main() {
                         ).with_auto_id()
                     ),
             ))
-            .with_spacer(Length::px(WIDGET_SPACING))
+            .with_spacer(WIDGET_SPACING)
             .with_auto_id(),
     );
 

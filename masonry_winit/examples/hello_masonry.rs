@@ -16,7 +16,7 @@ use masonry::widgets::{Button, ButtonPress, Flex, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
-const VERTICAL_WIDGET_SPACING: f64 = 20.0;
+const VERTICAL_WIDGET_SPACING: Length = Length::const_px(20.0);
 
 struct Driver {
     window_id: WindowId,
@@ -51,7 +51,7 @@ fn main() {
     // Arrange the two widgets vertically, with some padding
     let main_widget = Flex::column()
         .with_child(label.with_auto_id())
-        .with_spacer(Length::px(VERTICAL_WIDGET_SPACING))
+        .with_spacer(VERTICAL_WIDGET_SPACING)
         .with_child(button.with_auto_id());
 
     let window_size = LogicalSize::new(400.0, 400.0);
