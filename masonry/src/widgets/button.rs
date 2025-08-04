@@ -52,7 +52,7 @@ impl Button {
     ///
     /// let button = Button::new(Label::new("Increment").with_auto_id());
     /// ```
-    pub fn new(child: NewWidget<impl Widget>) -> Self {
+    pub fn new(child: NewWidget<impl Widget + ?Sized>) -> Self {
         Self {
             child: child.erased().to_pod(),
         }
