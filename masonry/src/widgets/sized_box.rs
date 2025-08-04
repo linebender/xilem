@@ -81,7 +81,7 @@ impl SizedBox {
     /// [`expand_width`]: Self::expand_width
     pub fn expand(mut self) -> Self {
         // TODO - Using infinity in layout is a code smell.
-        // Rewor these methods.
+        // Rework these methods.
         self.width = Some(f64::INFINITY);
         self.height = Some(f64::INFINITY);
         self
