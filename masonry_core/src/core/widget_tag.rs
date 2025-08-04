@@ -32,10 +32,9 @@ impl<W: Widget> WidgetTag<W> {
 
 // Some of the impls could be derived, but then the bounds would be too restrictive.
 
-#[allow(clippy::non_canonical_clone_impl, reason = "We don't need `W: Clone`")]
 impl<W: Widget + ?Sized> Clone for WidgetTag<W> {
     fn clone(&self) -> Self {
-        Self { ..*self }
+        *self
     }
 }
 
