@@ -8,7 +8,6 @@ mod box_constraints;
 mod contexts;
 mod events;
 mod layout_cache;
-mod object_fit;
 mod properties;
 mod text;
 mod widget;
@@ -30,7 +29,6 @@ pub use cursor_icon::CursorIcon;
 pub use events::{
     AccessEvent, Handled, Ime, ResizeDirection, TextEvent, Update, WindowEvent, WindowTheme,
 };
-pub use object_fit::ObjectFit;
 pub use properties::{DefaultProperties, Properties, PropertiesMut, PropertiesRef, Property};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;

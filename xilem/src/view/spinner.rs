@@ -1,11 +1,13 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::peniko::Color;
+use masonry::properties::SpinnerColor;
 use masonry::widgets;
+use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx};
+use crate::style::{HasProperty, Style};
+use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 
 /// An indefinite spinner.
 ///
@@ -33,7 +35,19 @@ use crate::{MessageResult, Pod, View, ViewCtx};
 /// }
 /// ```
 pub fn spinner() -> Spinner {
-    Spinner { color: None }
+    Spinner {
+        properties: SpinnerProps::default(),
+    }
+}
+
+impl Spinner {
+    // Because this method is spinner-specific, we don't add it to the Style trait.
+    /// Set the [`SpinnerColor`] property for this spinner.
+    pub fn color(mut self, color: impl Into<Color>) -> Self {
+        let color = SpinnerColor(color.into());
+        *self.property() = Some(color);
+        self
+    }
 }
 
 /// The [`View`] created by [`spinner`].
@@ -41,16 +55,23 @@ pub fn spinner() -> Spinner {
 /// See `spinner`'s docs for more details.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Spinner {
-    color: Option<Color>,
+    properties: SpinnerProps,
 }
 
-impl Spinner {
-    /// Set the color for this spinner.
-    pub fn color(mut self, color: impl Into<Color>) -> Self {
-        self.color = Some(color.into());
-        self
+impl Style for Spinner {
+    type Props = SpinnerProps;
+
+    fn properties(&mut self) -> &mut Self::Props {
+        &mut self.properties
     }
 }
+
+crate::declare_property_tuple!(
+    pub SpinnerProps;
+    Spinner;
+
+    SpinnerColor, 0;
+);
 
 impl ViewMarker for Spinner {}
 impl<State, Action> View<State, Action, ViewCtx> for Spinner {
@@ -58,11 +79,9 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        let mut spinner = widgets::Spinner::new();
-        if let Some(color) = self.color {
-            spinner = spinner.with_color(color);
-        }
-        let pod = ctx.create_pod(spinner);
+        let spinner = widgets::Spinner::new();
+        let mut pod = ctx.create_pod(spinner);
+        pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
     }
 
@@ -74,12 +93,8 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         mut element: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        if prev.color != self.color {
-            match self.color {
-                Some(color) => widgets::Spinner::set_color(&mut element, color),
-                None => widgets::Spinner::reset_color(&mut element),
-            };
-        }
+        self.properties
+            .rebuild_properties(&prev.properties, &mut element);
     }
 
     fn teardown(

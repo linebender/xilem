@@ -4,6 +4,8 @@
 //! An Image widget.
 //! Please consider using SVG and the SVG widget as it scales much better.
 
+use std::any::TypeId;
+
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -11,9 +13,10 @@ use vello::kurbo::{Affine, Size};
 use vello::peniko::{BlendMode, Image as ImageBuf};
 
 use crate::core::{
-    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, ObjectFit, PaintCtx,
-    PropertiesMut, PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
+    AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
+    PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::properties::ObjectFit;
 
 // TODO - Resolve name collision between masonry::Image and peniko::Image
 
@@ -24,9 +27,10 @@ use crate::core::{
 /// This currently uses bilinear interpolation, which falls down when the image is
 /// larger than its layout size (e.g. it is in a [sized box](super::SizedBox) smaller
 /// than the image size).
+///
+/// You can change the sizing of the image with the [`ObjectFit`] property.
 pub struct Image {
     image_data: ImageBuf,
-    object_fit: ObjectFit,
 }
 
 // --- MARK: BUILDERS
@@ -36,29 +40,12 @@ impl Image {
     /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
     #[inline]
     pub fn new(image_data: ImageBuf) -> Self {
-        Self {
-            image_data,
-            object_fit: ObjectFit::default(),
-        }
-    }
-
-    /// Builder-style method for specifying the object fit.
-    #[inline]
-    pub fn fit_mode(mut self, mode: ObjectFit) -> Self {
-        self.object_fit = mode;
-        self
+        Self { image_data }
     }
 }
 
 // --- MARK: WIDGETMUT
 impl Image {
-    /// Modify the widget's object fit.
-    #[inline]
-    pub fn set_fit_mode(this: &mut WidgetMut<'_, Self>, new_object_fit: ObjectFit) {
-        this.widget.object_fit = new_object_fit;
-        this.ctx.request_layout();
-    }
-
     /// Set new `ImageBuf`.
     #[inline]
     pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: ImageBuf) {
@@ -73,6 +60,10 @@ impl Widget for Image {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        ObjectFit::prop_changed(ctx, property_type);
+    }
+
     fn update(
         &mut self,
         _ctx: &mut UpdateCtx<'_>,
@@ -84,7 +75,7 @@ impl Widget for Image {
     fn layout(
         &mut self,
         _ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
         // If either the width or height is constrained calculate a value so that the image fits
@@ -96,7 +87,10 @@ impl Widget for Image {
             return size;
         }
         let image_aspect_ratio = image_size.height / image_size.width;
-        match self.object_fit {
+
+        let object_fit = props.get::<ObjectFit>();
+
+        match object_fit {
             ObjectFit::Contain => bc.constrain_aspect_ratio(image_aspect_ratio, image_size.width),
             ObjectFit::Cover => Size::new(bc.max().width, bc.max().width * image_aspect_ratio),
             ObjectFit::Fill => bc.max(),
@@ -117,9 +111,10 @@ impl Widget for Image {
         }
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let object_fit = props.get::<ObjectFit>();
         let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
-        let transform = self.object_fit.affine_to_fill(ctx.size(), image_size);
+        let transform = object_fit.affine_to_fill(ctx.size(), image_size);
 
         let clip_rect = ctx.size().to_rect();
         scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
@@ -252,43 +247,43 @@ mod tests {
 
         // Contain.
         harness.edit_root_widget(|mut image| {
-            Image::set_fit_mode(&mut image, ObjectFit::Contain);
+            image.insert_prop(ObjectFit::Contain);
         });
         assert_render_snapshot!(harness, "image_layout_contain");
 
         // Cover.
         harness.edit_root_widget(|mut image| {
-            Image::set_fit_mode(&mut image, ObjectFit::Cover);
+            image.insert_prop(ObjectFit::Cover);
         });
         assert_render_snapshot!(harness, "image_layout_cover");
 
         // Fill.
         harness.edit_root_widget(|mut image| {
-            Image::set_fit_mode(&mut image, ObjectFit::Fill);
+            image.insert_prop(ObjectFit::Fill);
         });
         assert_render_snapshot!(harness, "image_layout_fill");
 
         // FitHeight.
         harness.edit_root_widget(|mut image| {
-            Image::set_fit_mode(&mut image, ObjectFit::FitHeight);
+            image.insert_prop(ObjectFit::FitHeight);
         });
         assert_render_snapshot!(harness, "image_layout_fitheight");
 
         // FitWidth.
         harness.edit_root_widget(|mut image| {
-            Image::set_fit_mode(&mut image, ObjectFit::FitWidth);
+            image.insert_prop(ObjectFit::FitWidth);
         });
         assert_render_snapshot!(harness, "image_layout_fitwidth");
 
         // None.
         harness.edit_root_widget(|mut image| {
-            Image::set_fit_mode(&mut image, ObjectFit::None);
+            image.insert_prop(ObjectFit::None);
         });
         assert_render_snapshot!(harness, "image_layout_none");
 
         // ScaleDown.
         harness.edit_root_widget(|mut image| {
-            Image::set_fit_mode(&mut image, ObjectFit::ScaleDown);
+            image.insert_prop(ObjectFit::ScaleDown);
         });
         assert_render_snapshot!(harness, "image_layout_scaledown");
     }

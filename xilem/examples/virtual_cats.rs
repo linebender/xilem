@@ -11,8 +11,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
-use masonry::properties::Padding;
 use masonry::properties::types::UnitPoint;
+use masonry::properties::{LineBreaking, Padding};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
@@ -21,9 +21,7 @@ use xilem::style::Style as _;
 use xilem::view::{
     ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
 };
-use xilem::{
-    EventLoop, EventLoopBuilder, LineBreaking, TextAlign, WidgetView, WindowOptions, Xilem, palette,
-};
+use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 use xilem_core::one_of::Either;
 
 /// The main state of the application.
