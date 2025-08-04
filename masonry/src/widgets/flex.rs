@@ -48,14 +48,6 @@ pub struct FlexParams {
     alignment: Option<CrossAxisAlignment>,
 }
 
-struct Spacing {
-    alignment: MainAxisAlignment,
-    extra: f64,
-    n_children: usize,
-    index: usize,
-    equal_space: f64,
-}
-
 enum Child {
     Fixed {
         widget: WidgetPod<dyn Widget>,
@@ -520,84 +512,6 @@ impl FlexParams {
     }
 }
 
-impl Spacing {
-    /// Given the provided extra space and children count,
-    /// this returns an iterator of `f64` spacing,
-    /// where the first element is the spacing before any children
-    /// and all subsequent elements are the spacing after children.
-    fn new(alignment: MainAxisAlignment, extra: f64, n_children: usize) -> Self {
-        let extra = if extra.is_finite() { extra } else { 0. };
-        let equal_space = if n_children > 0 {
-            match alignment {
-                MainAxisAlignment::Center => extra / 2.,
-                MainAxisAlignment::SpaceBetween => extra / (n_children - 1).max(1) as f64,
-                MainAxisAlignment::SpaceEvenly => extra / (n_children + 1) as f64,
-                MainAxisAlignment::SpaceAround => extra / (2 * n_children) as f64,
-                _ => 0.,
-            }
-        } else {
-            0.
-        };
-        Self {
-            alignment,
-            extra,
-            n_children,
-            index: 0,
-            equal_space,
-        }
-    }
-}
-
-impl Iterator for Spacing {
-    type Item = f64;
-
-    fn next(&mut self) -> Option<f64> {
-        if self.index > self.n_children {
-            return None;
-        }
-        let result = {
-            if self.n_children == 0 {
-                self.extra
-            } else {
-                #[allow(clippy::match_bool, reason = "readability")]
-                match self.alignment {
-                    MainAxisAlignment::Start => match self.index == self.n_children {
-                        true => self.extra,
-                        false => 0.,
-                    },
-                    MainAxisAlignment::End => match self.index == 0 {
-                        true => self.extra,
-                        false => 0.,
-                    },
-                    MainAxisAlignment::Center => match self.index {
-                        0 => self.equal_space,
-                        i if i == self.n_children => self.equal_space,
-                        _ => 0.,
-                    },
-                    MainAxisAlignment::SpaceBetween => match self.index {
-                        0 => 0.,
-                        i if i != self.n_children => self.equal_space,
-                        _ => match self.n_children {
-                            1 => self.equal_space,
-                            _ => 0.,
-                        },
-                    },
-                    MainAxisAlignment::SpaceEvenly => self.equal_space,
-                    MainAxisAlignment::SpaceAround => {
-                        if self.index == 0 || self.index == self.n_children {
-                            self.equal_space
-                        } else {
-                            self.equal_space + self.equal_space
-                        }
-                    }
-                }
-            }
-        };
-        self.index += 1;
-        Some(result)
-    }
-}
-
 impl From<f64> for FlexParams {
     fn from(flex: f64) -> Self {
         Self::new(flex, None)
@@ -648,6 +562,45 @@ fn new_flex_child(params: FlexParams, child: WidgetPod<dyn Widget>) -> Child {
             alignment: params.alignment,
         }
     }
+}
+
+fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> (f64, f64) {
+    let space_before;
+    let space_between;
+    match alignment {
+        _ if child_count == 0 => {
+            space_before = 0.;
+            space_between = 0.;
+        }
+        MainAxisAlignment::Start => {
+            space_before = 0.;
+            space_between = 0.;
+        }
+        MainAxisAlignment::End => {
+            space_before = extra;
+            space_between = 0.;
+        }
+        MainAxisAlignment::Center => {
+            space_before = extra / 2.;
+            space_between = 0.;
+        }
+        MainAxisAlignment::SpaceBetween => {
+            let equal_space = extra / (child_count - 1).max(1) as f64;
+            space_before = 0.;
+            space_between = equal_space;
+        }
+        MainAxisAlignment::SpaceEvenly => {
+            let equal_space = extra / (child_count + 1) as f64;
+            space_before = equal_space;
+            space_between = equal_space;
+        }
+        MainAxisAlignment::SpaceAround => {
+            let equal_space = extra / (2 * child_count) as f64;
+            space_before = equal_space;
+            space_between = equal_space * 2.;
+        }
+    }
+    (space_before, space_between)
 }
 
 // --- MARK: IMPL WIDGET
@@ -743,7 +696,6 @@ impl Widget for Flex {
 
         let total_major = self.direction.major(bc.max());
         let remaining = (total_major - major_non_flex).max(0.0);
-        let mut remainder: f64 = 0.0;
 
         let mut major_flex: f64 = 0.0;
         let px_per_flex = remaining / flex_sum;
@@ -761,11 +713,9 @@ impl Widget for Flex {
                         let alignment = alignment.unwrap_or(self.cross_alignment);
                         any_use_baseline |= alignment == CrossAxisAlignment::Baseline;
 
-                        let desired_major = (*flex) * px_per_flex + remainder;
-                        let actual_major = desired_major;
-                        remainder = desired_major - actual_major;
+                        let desired_major = (*flex) * px_per_flex;
 
-                        let child_bc = self.direction.constraints(&loosened_bc, 0.0, actual_major);
+                        let child_bc = self.direction.constraints(&loosened_bc, 0.0, desired_major);
                         ctx.run_layout(widget, &child_bc)
                     };
 
@@ -778,9 +728,8 @@ impl Widget for Flex {
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
                 Child::FlexedSpacer(flex, calculated_size) => {
-                    let desired_major = (*flex) * px_per_flex + remainder;
+                    let desired_major = (*flex) * px_per_flex;
                     *calculated_size = desired_major;
-                    remainder = desired_major - *calculated_size;
                     major_flex += *calculated_size;
                 }
                 _ => {}
@@ -796,8 +745,6 @@ impl Widget for Flex {
             (self.direction.major(bc.min()) - (major_non_flex + major_flex)).max(0.0)
         };
 
-        let mut spacing = Spacing::new(self.main_alignment, extra, self.children.len());
-
         // the actual size needed to tightly fit the children on the minor axis.
         // Unlike the 'minor' var, this ignores the incoming constraints.
         let minor_dim = match self.direction {
@@ -807,7 +754,10 @@ impl Widget for Flex {
 
         let extra_height = minor - minor_dim.min(minor);
 
-        let mut major = spacing.next().unwrap_or(0.);
+        let (space_before, space_between) =
+            get_spacing(self.main_alignment, extra, self.children.len());
+
+        let mut major = space_before;
 
         for child in &mut self.children {
             match child {
@@ -852,7 +802,7 @@ impl Widget for Flex {
                     let child_pos = padding.place_down(child_pos);
                     ctx.place_child(widget, child_pos);
                     major += self.direction.major(child_size);
-                    major += spacing.next().unwrap_or(0.);
+                    major += space_between;
                     major += gap;
                 }
                 Child::FlexedSpacer(_, calculated_size)
@@ -863,25 +813,20 @@ impl Widget for Flex {
             }
         }
 
-        if flex_sum > 0.0 && total_major.is_infinite() {
+        if flex_sum > MIN_FLEX_SUM && total_major.is_infinite() {
             tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
-        if !self.children.is_empty() {
-            // If we have at least one child, the last child added `gap` to `major`, which means that `major` is
-            // not the total size of the flex in the major axis, it's instead where the "next widget" will be placed.
-            // However, for the rest of this value, we need the total size of the widget in the major axis.
-            major -= gap;
-        }
-
-        if flex_sum > MIN_FLEX_SUM {
-            major = total_major;
-        }
+        let final_major = if flex_sum > MIN_FLEX_SUM || self.fill_major_axis {
+            total_major.max(major_non_flex)
+        } else {
+            major_non_flex
+        };
 
         // my_size may be larger than the given constraints.
         // In which case, the Flex widget will either overflow its parent
         // or be clipped (e.g. if its parent is a Portal).
-        let my_size: Size = self.direction.pack(major, minor_dim).into();
+        let my_size: Size = self.direction.pack(final_major, minor_dim).into();
 
         let baseline = match self.direction {
             Axis::Horizontal => max_below_baseline,
@@ -967,52 +912,106 @@ mod tests {
 
     #[test]
     fn test_main_axis_alignment_spacing() {
-        // The following alignment strategy is based on how
-        // Chrome 80 handles it with CSS flex.
+        let apply_align = |align, extra, child_count| {
+            let (space_before, space_between) = get_spacing(align, extra, child_count);
+            let space_after =
+                extra - space_before - space_between * child_count.saturating_sub(1) as f64;
+            (space_before, space_between, space_after)
+        };
 
-        let vec = |a, e, n| -> Vec<f64> { Spacing::new(a, e, n).collect() };
+        // Formatting note: in the comments below:
+        // `[-]` represents a child.
+        // a number represents a non-zero amount of space.
 
-        let a = MainAxisAlignment::Start;
-        assert_eq!(vec(a, 10., 0), vec![10.]);
-        assert_eq!(vec(a, 10., 1), vec![0., 10.]);
-        assert_eq!(vec(a, 10., 2), vec![0., 0., 10.]);
-        assert_eq!(vec(a, 10., 3), vec![0., 0., 0., 10.]);
+        let align = MainAxisAlignment::Start;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: [-] 10
+        assert_eq!(before, 0.);
+        assert_eq!(after, 10.);
 
-        let a = MainAxisAlignment::End;
-        assert_eq!(vec(a, 10., 0), vec![10.]);
-        assert_eq!(vec(a, 10., 1), vec![10., 0.]);
-        assert_eq!(vec(a, 10., 2), vec![10., 0., 0.]);
-        assert_eq!(vec(a, 10., 3), vec![10., 0., 0., 0.]);
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: [-][-] 10
+        assert_eq!(before, 0.);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 10.);
 
-        let a = MainAxisAlignment::Center;
-        assert_eq!(vec(a, 10., 0), vec![10.]);
-        assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(vec(a, 10., 2), vec![5., 0., 5.]);
-        assert_eq!(vec(a, 10., 3), vec![5., 0., 0., 5.]);
-        assert_eq!(vec(a, 1., 0), vec![1.]);
-        assert_eq!(vec(a, 3., 1), vec![1.5, 1.5]);
-        assert_eq!(vec(a, 5., 2), vec![2.5, 0., 2.5]);
-        assert_eq!(vec(a, 17., 3), vec![8.5, 0., 0., 8.5]);
+        let align = MainAxisAlignment::End;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 10 [-]
+        assert_eq!(before, 10.);
+        assert_eq!(after, 0.);
 
-        let a = MainAxisAlignment::SpaceBetween;
-        assert_eq!(vec(a, 10., 0), vec![10.]);
-        assert_eq!(vec(a, 10., 1), vec![0., 10.]);
-        assert_eq!(vec(a, 10., 2), vec![0., 10., 0.]);
-        assert_eq!(vec(a, 10., 3), vec![0., 5., 5., 0.]);
-        assert_eq!(vec(a, 34., 5), vec![0., 8.5, 8.5, 8.5, 8.5, 0.]);
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: 10 [-][-]
+        assert_eq!(before, 10.);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 0.);
 
-        let a = MainAxisAlignment::SpaceEvenly;
-        assert_eq!(vec(a, 10., 0), vec![10.]);
-        assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(vec(a, 10., 2), vec![10. / 3., 10. / 3., 10. / 3.]);
-        assert_eq!(vec(a, 10., 3), vec![2.5, 2.5, 2.5, 2.5]);
+        let align = MainAxisAlignment::Center;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 5 [-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(after, 5.);
 
-        let a = MainAxisAlignment::SpaceAround;
-        assert_eq!(vec(a, 10., 0), vec![10.]);
-        assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(vec(a, 10., 2), vec![2.5, 5., 2.5]);
-        assert_eq!(vec(a, 12., 3), vec![2., 4., 4., 2.]);
-        assert_eq!(vec(a, 35., 5), vec![3.5, 7., 7., 7., 7., 3.5]);
+        let (before, between, after) = apply_align(align, 10., 3);
+        // Spacing: 5 [-][-][-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 5.);
+
+        let (before, between, after) = apply_align(align, 5., 2);
+        // Spacing: 2.5 [-][-] 2.5
+        assert_eq!(before, 2.5);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 2.5);
+
+        let align = MainAxisAlignment::SpaceBetween;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: [-] 10
+        assert_eq!(before, 0.);
+        assert_eq!(after, 10.);
+
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: [-] 10 [-]
+        assert_eq!(before, 0.);
+        assert_eq!(between, 10.);
+        assert_eq!(after, 0.);
+
+        let (before, between, after) = apply_align(align, 30., 5);
+        // Spacing: [-] 7.5 [-] 7.5 [-] 7.5 [-] 7.5 [-]
+        assert_eq!(before, 0.);
+        assert_eq!(between, 7.5);
+        assert_eq!(after, 0.);
+
+        let align = MainAxisAlignment::SpaceEvenly;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 5 [-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(after, 5.);
+
+        let (before, between, after) = apply_align(align, 10., 3);
+        // Spacing: 2.5 [-] 2.5 [-] 2.5 [-] 2.5
+        assert_eq!(before, 2.5);
+        assert_eq!(between, 2.5);
+        assert_eq!(after, 2.5);
+
+        let align = MainAxisAlignment::SpaceAround;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 5 [-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(after, 5.);
+
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: 2.5 [-] 5 [-] 2.5
+        assert_eq!(before, 2.5);
+        assert_eq!(between, 5.);
+        assert_eq!(after, 2.5);
+
+        let (before, between, after) = apply_align(align, 35., 5);
+        // Spacing: 3.5 [-] 7 [-] 7 [-] 7 [-] 7 [-] 3.5
+        assert_eq!(before, 3.5);
+        assert_eq!(between, 7.);
+        assert_eq!(after, 3.5);
     }
 
     // TODO - fix this test
