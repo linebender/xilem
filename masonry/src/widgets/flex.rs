@@ -564,11 +564,11 @@ fn new_flex_child(params: FlexParams, child: WidgetPod<dyn Widget>) -> Child {
     }
 }
 
-fn get_spacing(alignment: MainAxisAlignment, extra: f64, n_children: usize) -> (f64, f64) {
+fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> (f64, f64) {
     let space_before;
     let space_between;
     match alignment {
-        _ if n_children == 0 => {
+        _ if child_count == 0 => {
             space_before = 0.;
             space_between = 0.;
         }
@@ -585,17 +585,17 @@ fn get_spacing(alignment: MainAxisAlignment, extra: f64, n_children: usize) -> (
             space_between = 0.;
         }
         MainAxisAlignment::SpaceBetween => {
-            let equal_space = extra / (n_children - 1).max(1) as f64;
+            let equal_space = extra / (child_count - 1).max(1) as f64;
             space_before = 0.;
             space_between = equal_space;
         }
         MainAxisAlignment::SpaceEvenly => {
-            let equal_space = extra / (n_children + 1) as f64;
+            let equal_space = extra / (child_count + 1) as f64;
             space_before = equal_space;
             space_between = equal_space;
         }
         MainAxisAlignment::SpaceAround => {
-            let equal_space = extra / (2 * n_children) as f64;
+            let equal_space = extra / (2 * child_count) as f64;
             space_before = equal_space;
             space_between = equal_space * 2.;
         }
@@ -912,59 +912,106 @@ mod tests {
 
     #[test]
     fn test_main_axis_alignment_spacing() {
-        // The following alignment strategy is based on how
-        // Chrome 80 handles it with CSS flex.
-
-        let vec = |a, e, n| -> Vec<f64> {
-            let (space_before, space_between) = get_spacing(a, e, n);
-            let space_after = e - space_before - space_between * n.saturating_sub(1) as f64;
-            let mut v = Vec::with_capacity(n + 1);
-
-            v.push(space_before);
-            for _ in 1..n {
-                v.push(space_between);
-            }
-            v.push(space_after);
-            v
+        let apply_align = |align, extra, child_count| {
+            let (space_before, space_between) = get_spacing(align, extra, child_count);
+            let space_after =
+                extra - space_before - space_between * child_count.saturating_sub(1) as f64;
+            (space_before, space_between, space_after)
         };
 
-        let a = MainAxisAlignment::Start;
-        assert_eq!(vec(a, 10., 1), vec![0., 10.]);
-        assert_eq!(vec(a, 10., 2), vec![0., 0., 10.]);
-        assert_eq!(vec(a, 10., 3), vec![0., 0., 0., 10.]);
+        // Formatting note: in the comments below:
+        // `[-]` represents a child.
+        // a number represents a non-zero amount of space.
 
-        let a = MainAxisAlignment::End;
-        assert_eq!(vec(a, 10., 1), vec![10., 0.]);
-        assert_eq!(vec(a, 10., 2), vec![10., 0., 0.]);
-        assert_eq!(vec(a, 10., 3), vec![10., 0., 0., 0.]);
+        let align = MainAxisAlignment::Start;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: [-] 10
+        assert_eq!(before, 0.);
+        assert_eq!(after, 10.);
 
-        let a = MainAxisAlignment::Center;
-        assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(vec(a, 10., 2), vec![5., 0., 5.]);
-        assert_eq!(vec(a, 10., 3), vec![5., 0., 0., 5.]);
-        assert_eq!(vec(a, 3., 1), vec![1.5, 1.5]);
-        assert_eq!(vec(a, 5., 2), vec![2.5, 0., 2.5]);
-        assert_eq!(vec(a, 17., 3), vec![8.5, 0., 0., 8.5]);
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: [-][-] 10
+        assert_eq!(before, 0.);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 10.);
 
-        let a = MainAxisAlignment::SpaceBetween;
-        assert_eq!(vec(a, 10., 1), vec![0., 10.]);
-        assert_eq!(vec(a, 10., 2), vec![0., 10., 0.]);
-        assert_eq!(vec(a, 10., 3), vec![0., 5., 5., 0.]);
-        assert_eq!(vec(a, 34., 5), vec![0., 8.5, 8.5, 8.5, 8.5, 0.]);
+        let align = MainAxisAlignment::End;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 10 [-]
+        assert_eq!(before, 10.);
+        assert_eq!(after, 0.);
 
-        let a = MainAxisAlignment::SpaceEvenly;
-        assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(
-            vec(a, 10., 2),
-            vec![10. / 3., 10. / 3., 10. - 10. / 3. - 10. / 3.]
-        );
-        assert_eq!(vec(a, 10., 3), vec![2.5, 2.5, 2.5, 2.5]);
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: 10 [-][-]
+        assert_eq!(before, 10.);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 0.);
 
-        let a = MainAxisAlignment::SpaceAround;
-        assert_eq!(vec(a, 10., 1), vec![5., 5.]);
-        assert_eq!(vec(a, 10., 2), vec![2.5, 5., 2.5]);
-        assert_eq!(vec(a, 12., 3), vec![2., 4., 4., 2.]);
-        assert_eq!(vec(a, 35., 5), vec![3.5, 7., 7., 7., 7., 3.5]);
+        let align = MainAxisAlignment::Center;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 5 [-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(after, 5.);
+
+        let (before, between, after) = apply_align(align, 10., 3);
+        // Spacing: 5 [-][-][-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 5.);
+
+        let (before, between, after) = apply_align(align, 5., 2);
+        // Spacing: 2.5 [-][-] 2.5
+        assert_eq!(before, 2.5);
+        assert_eq!(between, 0.);
+        assert_eq!(after, 2.5);
+
+        let align = MainAxisAlignment::SpaceBetween;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: [-] 10
+        assert_eq!(before, 0.);
+        assert_eq!(after, 10.);
+
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: [-] 10 [-]
+        assert_eq!(before, 0.);
+        assert_eq!(between, 10.);
+        assert_eq!(after, 0.);
+
+        let (before, between, after) = apply_align(align, 30., 5);
+        // Spacing: [-] 7.5 [-] 7.5 [-] 7.5 [-] 7.5 [-]
+        assert_eq!(before, 0.);
+        assert_eq!(between, 7.5);
+        assert_eq!(after, 0.);
+
+        let align = MainAxisAlignment::SpaceEvenly;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 5 [-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(after, 5.);
+
+        let (before, between, after) = apply_align(align, 10., 3);
+        // Spacing: 2.5 [-] 2.5 [-] 2.5 [-] 2.5
+        assert_eq!(before, 2.5);
+        assert_eq!(between, 2.5);
+        assert_eq!(after, 2.5);
+
+        let align = MainAxisAlignment::SpaceAround;
+        let (before, _, after) = apply_align(align, 10., 1);
+        // Spacing: 5 [-] 5
+        assert_eq!(before, 5.);
+        assert_eq!(after, 5.);
+
+        let (before, between, after) = apply_align(align, 10., 2);
+        // Spacing: 2.5 [-] 5 [-] 2.5
+        assert_eq!(before, 2.5);
+        assert_eq!(between, 5.);
+        assert_eq!(after, 2.5);
+
+        let (before, between, after) = apply_align(align, 35., 5);
+        // Spacing: 3.5 [-] 7 [-] 7 [-] 7 [-] 7 [-] 3.5
+        assert_eq!(before, 3.5);
+        assert_eq!(between, 7.);
+        assert_eq!(after, 3.5);
     }
 
     // TODO - fix this test
