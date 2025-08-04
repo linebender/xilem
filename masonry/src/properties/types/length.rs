@@ -13,7 +13,7 @@ pub struct Length {
 
 impl Length {
     /// A length of zero.
-    pub const ZERO: Self = Length { value: 0. };
+    pub const ZERO: Self = Self { value: 0. };
 
     /// Create a length, in logical pixels.
     ///
@@ -64,6 +64,7 @@ impl Length {
     }
 }
 
+// TODO - Split off, add more impls
 /// Utility trait for wrapping numbers in logical units.
 pub trait AsUnit {
     /// Create a length, in logical pixels.
