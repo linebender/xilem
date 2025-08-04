@@ -149,14 +149,13 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
     let event_pos = try_event_position(event).map(|p| p.to_logical(root.global_state.scale_factor));
 
     if event_pos != root.last_mouse_pos {
-        root.global_state.needs_pointer_pass = true;
         root.last_mouse_pos = event_pos;
     }
+    root.global_state.needs_pointer_pass = true;
 
     if root.global_state.inspector_state.is_picking_widget
         && matches!(event, PointerEvent::Move(..))
     {
-        root.global_state.needs_pointer_pass = true;
         return Handled::Yes;
     }
 
@@ -174,7 +173,6 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
         }
         root.global_state.inspector_state.is_picking_widget = false;
         root.global_state.inspector_state.hovered_widget = None;
-        root.global_state.needs_pointer_pass = true;
         root.root_state_mut().needs_paint = true;
         return Handled::Yes;
     }
@@ -299,7 +297,6 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             root.global_state.inspector_state.is_picking_widget =
                 !root.global_state.inspector_state.is_picking_widget;
             root.global_state.inspector_state.hovered_widget = None;
-            root.global_state.needs_pointer_pass = true;
             root.root_state_mut().needs_paint = true;
             handled = Handled::Yes;
         }
