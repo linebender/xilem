@@ -644,7 +644,7 @@ impl<W: Widget> TestHarness<W> {
         }
         if self
             .render_root
-            .get_root_widget()
+            .get_layer_root(0)
             .find_widget_under_pointer(widget_center)
             .map(|w| w.id())
             != Some(id)
@@ -750,12 +750,12 @@ impl<W: Widget> TestHarness<W> {
 
     /// Return a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, W> {
-        self.render_root.get_root_widget().downcast().unwrap()
+        self.render_root.get_layer_root(0).downcast().unwrap()
     }
 
     /// Return the [`WidgetId`] of the root widget.
     pub fn root_id(&self) -> WidgetId {
-        self.render_root.get_root_widget().id()
+        self.render_root.get_layer_root(0).id()
     }
 
     /// Return a [`WidgetRef`] to the widget with the given id.
@@ -813,7 +813,7 @@ impl<W: Widget> TestHarness<W> {
     /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
-            .get_root_widget()
+            .get_layer_root(0)
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
@@ -846,14 +846,14 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        inspect(self.render_root.get_root_widget(), &mut f);
+        inspect(self.render_root.get_layer_root(0), &mut f);
     }
 
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
-        let ret = self.render_root.edit_root_widget(|mut root| {
+        let ret = self.render_root.edit_base_layer(|mut root| {
             let root = root.downcast::<W>();
             f(root)
         });

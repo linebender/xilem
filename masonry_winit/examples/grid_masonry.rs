@@ -43,7 +43,7 @@ impl AppDriver for Driver {
                 _ => 0.5,
             };
 
-            ctx.render_root(window_id).edit_root_widget(|mut root| {
+            ctx.render_root(window_id).edit_base_layer(|mut root| {
                 let mut grid = root.downcast::<Grid>();
                 Grid::set_spacing(&mut grid, Length::px(self.grid_spacing));
             });

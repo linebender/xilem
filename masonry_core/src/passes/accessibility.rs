@@ -159,7 +159,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
             .unwrap_or(root.window_node_id),
     };
 
-    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
 
     if root.rebuild_access_tree {
         debug!("Running ACCESSIBILITY pass with rebuild_all");
@@ -177,7 +177,7 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
     // TODO: make root node type customizable to support Dialog/AlertDialog roles
     // (should go hand in hand with introducing support for modal windows?)
     let mut window_node = Node::new(Role::Window);
-    window_node.set_children(vec![root.root.id().into()]);
+    window_node.set_children(vec![root.root_id().into()]);
     tree_update.nodes.push((root.window_node_id, window_node));
 
     tree_update

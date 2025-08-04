@@ -171,7 +171,7 @@ impl AppDriver for CalcState {
             CalcAction::None => (),
         }
 
-        ctx.render_root(window_id).edit_root_widget(|mut root| {
+        ctx.render_root(window_id).edit_base_layer(|mut root| {
             let mut grid = root.downcast();
             let mut flex = Grid::child_mut(&mut grid, 0);
             let mut flex = flex.downcast();
