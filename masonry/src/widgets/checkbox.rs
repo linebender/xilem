@@ -322,17 +322,17 @@ mod tests {
     use super::*;
     use crate::core::{Properties, StyleProperty};
     use crate::properties::TextColor;
-    use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
 
     #[test]
     fn simple_checkbox() {
-        let [checkbox_id] = widget_ids();
-        let widget = NewWidget::new_with_id(Checkbox::new(false, "Hello"), checkbox_id);
+        let widget = NewWidget::new(Checkbox::new(false, "Hello"));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let checkbox_id = harness.root_id();
 
         assert_render_snapshot!(harness, "checkbox_hello_unchecked");
 

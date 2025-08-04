@@ -306,18 +306,18 @@ mod tests {
     use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, Properties, StyleProperty};
     use crate::properties::TextColor;
-    use crate::testing::{TestHarness, assert_render_snapshot, widget_ids};
+    use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams, Label};
 
     #[test]
     fn simple_button() {
-        let [button_id] = widget_ids();
-        let widget = NewWidget::new_with_id(Button::with_text("Hello"), button_id);
+        let widget = NewWidget::new(Button::with_text("Hello"));
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let button_id = harness.root_id();
 
         assert_render_snapshot!(harness, "button_hello");
 

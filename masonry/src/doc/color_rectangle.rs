@@ -241,7 +241,7 @@ fn set_bg(color_rectangle_mut: WidgetMut<'_, ColorRectangle>) {
 mod tests {
     use super::*;
     use insta::assert_debug_snapshot;
-    use masonry::testing::{TestHarness, widget_ids};
+    use masonry::testing::TestHarness;
     use masonry::theme::default_property_set;
     use masonry_core::core::NewWidget;
     // ---
@@ -267,11 +267,10 @@ mod tests {
 
     #[test]
     fn hovered() {
-        let [rect_id] = widget_ids();
-        let widget =
-            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
+        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
+        let rect_id = harness.root_id();
 
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
@@ -300,11 +299,10 @@ mod tests {
 
     #[test]
     fn on_click() {
-        let [rect_id] = widget_ids();
-        let widget =
-            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
+        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
+        let rect_id = harness.root_id();
 
         harness.mouse_click_on(rect_id);
         assert!(matches!(

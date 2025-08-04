@@ -32,7 +32,7 @@ First, let's write a test module with a first unit test:
 mod tests {
     use super::*;
     use insta::assert_debug_snapshot;
-    use masonry::testing::{TestHarness, TestWidgetExt, widget_ids};
+    use masonry::testing::TestHarness;
     use masonry::theme::default_property_set;
     use masonry_core::core::NewWidget;
 
@@ -112,11 +112,10 @@ Let's create another snapshot test to check that our widget correctly changes co
 
     #[test]
     fn hovered() {
-        let [rect_id] = widget_ids();
-        let widget =
-            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
+        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
+        let rect_id = harness.root_id();
 
         // Computes the rect's layout and sends an PointerEvent
         // placing the mouse at its center.
@@ -125,7 +124,9 @@ Let's create another snapshot test to check that our widget correctly changes co
     }
 ```
 
-We use `NewWidget::new_with_id()` to create our widget a pre-drawn id.
+To tell `TestHarness` which widget to hover, we need an id.
+We use `TestHarness::root_id()` method to the id of our `ColorRectangle`.
+
 Then we move the mouse to our rectangle widget, and we check the widget's new appearance.
 
 <!-- TODO - Include screenshot. -->
@@ -172,11 +173,10 @@ The `TestHarness` is also capable of reading actions emitted by our widget with 
 
     #[test]
     fn on_click() {
-        let [rect_id] = widget_ids();
-        let widget =
-            NewWidget::new_with_id(ColorRectangle::new(Size::new(20.0, 20.0), BLUE), rect_id);
+        let widget = NewWidget::new(ColorRectangle::new(Size::new(20.0, 20.0), BLUE));
 
         let mut harness = TestHarness::create(default_property_set(), widget);
+        let rect_id = harness.root_id();
 
         harness.mouse_click_on(rect_id);
         assert!(matches!(
