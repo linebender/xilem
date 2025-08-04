@@ -13,11 +13,13 @@
 //! [`Background::Gradient`]: crate::properties::Background::Gradient
 
 mod alignment;
+mod as_unit;
 mod gradient;
 mod length;
 mod unit_point;
 
 pub use alignment::*;
+pub use as_unit::*;
 pub use gradient::*;
 pub use length::*;
 pub use unit_point::UnitPoint;
