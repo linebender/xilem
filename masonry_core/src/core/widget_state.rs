@@ -372,5 +372,7 @@ impl WidgetState {
             || self.needs_compose
             || self.needs_update_disabled
             || self.needs_update_stashed
+            || self.needs_update_focus_chain
+            || self.children_changed
     }
 }
