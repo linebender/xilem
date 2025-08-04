@@ -28,7 +28,7 @@ use crate::properties::ObjectFit;
 /// larger than its layout size (e.g. it is in a [sized box](super::SizedBox) smaller
 /// than the image size).
 ///
-/// You change change the sizing of the image with the [`ObjectFit`] property.
+/// You can change the sizing of the image with the [`ObjectFit`] property.
 pub struct Image {
     image_data: ImageBuf,
 }
