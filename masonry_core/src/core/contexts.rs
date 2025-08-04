@@ -886,6 +886,8 @@ impl_context_method!(
 );
 
 impl_context_method!(AccessCtx<'_>, EventCtx<'_>, PaintCtx<'_>, {
+    // TODO - Once Masonry uses physical coordinates, add this method everywhere.
+    // See https://github.com/linebender/xilem/issues/1264
     /// Get DPI scaling factor.
     ///
     /// This is not required for most widgets, and should be used only for precise

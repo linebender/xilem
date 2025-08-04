@@ -511,6 +511,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
     ) {
         match event {
             PointerEvent::Scroll { delta, .. } => {
+                // TODO - Remove reference to scale factor.
+                // See https://github.com/linebender/xilem/issues/1264
                 let delta = match delta {
                     ScrollDelta::PixelDelta(p) => -p.to_logical::<f64>(ctx.get_scale_factor()).y,
                     ScrollDelta::LineDelta(_, y) => -y as f64 * ctx.get_scale_factor() * 120.,

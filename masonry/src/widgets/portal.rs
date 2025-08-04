@@ -271,6 +271,8 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
 
         match *event {
             PointerEvent::Scroll { delta, .. } => {
+                // TODO - Remove reference to scale factor.
+                // See https://github.com/linebender/xilem/issues/1264
                 let delta = match delta {
                     ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x, y }) => -Vec2 { x, y },
                     ScrollDelta::LineDelta(x, y) => {

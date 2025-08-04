@@ -88,6 +88,8 @@ fn build_access_node(
     let local_translation = ctx.widget_state.scroll_translation + ctx.widget_state.origin.to_vec2();
     let mut local_transform = ctx.widget_state.transform.then_translate(local_translation);
 
+    // TODO - Remove once Masonry uses physical coordinates.
+    // See https://github.com/linebender/xilem/issues/1264
     if let Some(scale_factor) = scale_factor {
         local_transform = local_transform.pre_scale(scale_factor);
     }
