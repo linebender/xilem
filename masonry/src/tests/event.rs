@@ -7,24 +7,51 @@ use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, TestHarness, TestWidgetExt};
 use ui_events::keyboard::{Key, NamedKey};
-use ui_events::pointer::{PointerButton, PointerEvent};
+use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
 
 use crate::theme::default_property_set;
 use crate::widgets::{Button, Flex, SizedBox};
+
+fn create_capture_target() -> ModularWidget<()> {
+    ModularWidget::new(())
+        .pointer_event_fn(|_, ctx, _, event| {
+            if matches!(event, PointerEvent::Down { .. }) {
+                ctx.capture_pointer();
+            }
+        })
+        .layout_fn(|_, _, _, _| Size::new(10., 10.))
+}
+
+#[test]
+fn pointer_capture_and_cancel() {
+    let target_tag = WidgetTag::new("target");
+
+    let target = create_capture_target();
+    let target = NewWidget::new_with_tag(target, target_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), target);
+
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+
+    harness.mouse_move_to(target_id);
+    harness.mouse_button_press(PointerButton::Primary);
+    assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
+
+    harness.process_pointer_event(PointerEvent::Cancel(PointerInfo {
+        pointer_id: None,
+        persistent_device_id: None,
+        pointer_type: PointerType::default(),
+    }));
+    assert_eq!(harness.pointer_capture_target_id(), None);
+}
 
 #[test]
 fn pointer_capture_suppresses_neighbors() {
     let target_tag = WidgetTag::new("target");
     let other_tag = WidgetTag::new("other");
 
-    let target = ModularWidget::new(())
-        .pointer_event_fn(|_, ctx, _, event| {
-            if matches!(event, PointerEvent::Down { .. }) {
-                ctx.capture_pointer();
-            }
-        })
-        .layout_fn(|_, _, _, _| Size::new(10., 10.));
+    let target = create_capture_target();
     let target = NewWidget::new_with_tag(target, target_tag);
 
     let other = SizedBox::empty().width(10.).height(10.);
