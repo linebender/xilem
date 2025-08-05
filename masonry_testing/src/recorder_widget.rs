@@ -139,7 +139,7 @@ impl<W: Widget> Recorder<W> {
         &self.child
     }
 
-    /// Get a mutable reference to the child that's being recorded.
+    /// Get an exclusive reference to the child that's being recorded.
     pub fn inner_mut(&mut self) -> &mut W {
         &mut self.child
     }
