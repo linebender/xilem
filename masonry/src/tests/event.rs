@@ -1,6 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use accesskit::ActionRequest;
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
@@ -154,37 +155,6 @@ fn click_anchors_focus() {
 // TEXT EVENTS
 
 // ACCESS EVENTS
-
-use accesskit::ActionRequest;
-use assert_matches::assert_matches;
-use masonry_core::core::{NewWidget, Widget, WidgetTag};
-use masonry_testing::{Record, TestHarness, TestWidgetExt};
-
-use crate::theme::default_property_set;
-use crate::widgets::{Button, Flex, TextArea};
-
-#[test]
-fn text_event() {
-    let target_tag = WidgetTag::new("target");
-
-    let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
-
-    let mut harness = TestHarness::create(default_property_set(), target);
-    let target_id = harness.get_widget_with_tag(target_tag).id();
-    harness.flush_records_of(target_tag);
-    harness.keyboard_type_chars("A");
-    harness.flush_records_of(target_tag);
-
-    // The widget isn't focused, it doesn't get text events.
-    harness.keyboard_type_chars("A");
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
-
-    // We focus on the widget, now it gets text events.
-    harness.focus_on(Some(target_id));
-    harness.keyboard_type_chars("A");
-    let records = harness.get_records_of(target_tag);
-    assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
-}
 
 #[test]
 fn accessibility_focus() {
