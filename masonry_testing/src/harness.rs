@@ -753,6 +753,11 @@ impl<W: Widget> TestHarness<W> {
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
+    /// Return the id of the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
+    pub fn focused_widget_id(&self) -> Option<WidgetId> {
+        self.render_root.focused_widget()
+    }
+
     /// Return a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).
     pub fn pointer_capture_target(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
