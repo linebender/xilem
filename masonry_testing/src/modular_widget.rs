@@ -89,9 +89,9 @@ impl<S> ModularWidget<S> {
 
 impl<W: Widget> ModularWidget<WidgetPod<W>> {
     /// Create a new `ModularWidget` with some methods already set to handle a single child.
-    pub fn new_parent(child: NewWidget<W>) -> ModularWidget<WidgetPod<W>> {
+    pub fn new_parent(child: NewWidget<W>) -> Self {
         let child = child.to_pod();
-        ModularWidget::new(child)
+        Self::new(child)
             .register_children_fn(move |child, ctx| {
                 ctx.register_child(child);
             })

@@ -45,7 +45,7 @@ use masonry_core::vello::Scene;
 /// assert_matches!(recording.next().unwrap(), Record::RC);
 /// assert_matches!(recording.next().unwrap(), Record::U(Update::WidgetAdded));
 /// ```
-pub struct Recorder<W> {
+pub struct Recorder<W: Widget> {
     recording: Recording,
     child: W,
 }
@@ -127,6 +127,11 @@ impl<W: Widget> Recorder<W> {
             child,
             recording: recording.clone(),
         }
+    }
+
+    /// Get the events this widget recorded.
+    pub fn recording(&self) -> &Recording {
+        &self.recording
     }
 }
 

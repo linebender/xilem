@@ -37,6 +37,7 @@ use masonry_core::vello::wgpu::{
 };
 
 use crate::screenshots::get_image_diff;
+use crate::{Record, Recorder};
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
@@ -697,7 +698,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// # Panics
     ///
-    /// Panics if no Widget with this id can be found.
+    /// Panics if no widget with this id can be found.
     #[track_caller]
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
@@ -709,7 +710,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// # Panics
     ///
-    /// Panics if no Widget with this tag can be found.
+    /// Panics if no widget with this tag can be found.
     #[track_caller]
     pub fn get_widget_with_tag<W2: Widget + FromDynWidget + ?Sized>(
         &self,
@@ -718,6 +719,26 @@ impl<W: Widget> TestHarness<W> {
         self.render_root
             .get_widget_with_tag(tag)
             .unwrap_or_else(|| panic!("could not find widget '{tag}'"))
+    }
+
+    /// Return the events recorded by the [`Recorder`] widget with the given tag.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no widget with this tag can be found.
+    #[track_caller]
+    pub fn get_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) -> Vec<Record> {
+        self.get_widget_with_tag(tag).inner().recording().drain()
+    }
+
+    /// Flush the events recorded by the [`Recorder`] widget with the given tag.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no widget with this tag can be found.
+    #[track_caller]
+    pub fn flush_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) {
+        self.get_widget_with_tag(tag).inner().recording().clear()
     }
 
     /// Try to return a [`WidgetRef`] to the widget with the given id.

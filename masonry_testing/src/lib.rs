@@ -23,9 +23,18 @@ use masonry_core::core::{Widget, WidgetId};
 ///
 /// Implements helper methods useful for unit testing.
 pub trait TestWidgetExt: Widget + Sized + 'static {
+    // TODO - Remove, keep only record()
     /// Wrap this widget in a [`Recorder`] that records all method calls.
-    fn record(self, recording: &Recording) -> Recorder<Self> {
+    ///
+    /// Takes a reference to a [`Recording`] to store records in.
+    fn record_with(self, recording: &Recording) -> Recorder<Self> {
         Recorder::new(self, recording)
+    }
+
+    /// Wrap this widget in a [`Recorder`] that records all method calls.
+    fn record(self) -> Recorder<Self> {
+        let recording = Recording::default();
+        Recorder::new(self, &recording)
     }
 }
 
