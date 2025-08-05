@@ -38,7 +38,8 @@ pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> ChildrenIds;
 ///
 /// This widget is generic over its state, which is passed in at construction time.
 pub struct ModularWidget<S> {
-    state: S,
+    /// The state passed to all the callbacks of this widget
+    pub state: S,
     accepts_pointer_interaction: bool,
     accepts_focus: bool,
     accepts_text_input: bool,
