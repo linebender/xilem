@@ -4,13 +4,14 @@
 // POINTER EVENTS
 
 use assert_matches::assert_matches;
-use masonry_core::core::{NewWidget, Widget, WidgetTag};
+use masonry_core::core::{NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, TestHarness, TestWidgetExt};
+use ui_events::keyboard::{Key, NamedKey};
 use ui_events::pointer::{PointerButton, PointerEvent};
 use vello::kurbo::Size;
 
 use crate::theme::default_property_set;
-use crate::widgets::{Flex, SizedBox};
+use crate::widgets::{Button, Flex, SizedBox};
 
 #[test]
 fn pointer_capture_suppresses_neighbors() {
@@ -58,6 +59,43 @@ fn pointer_capture_suppresses_neighbors() {
 
     // Once the capture is released, 'other' should immediately register as hovered.
     assert!(harness.get_widget_with_tag(other_tag).ctx().is_hovered());
+}
+
+#[test]
+fn click_anchors_focus() {
+    let child_3 = WidgetTag::new("child_3");
+    let child_4 = WidgetTag::new("child_4");
+    let other = WidgetTag::new("other");
+
+    let parent = Flex::column()
+        .with_child(NewWidget::new_with_tag(
+            SizedBox::empty().width(5.).height(5.),
+            other,
+        ))
+        .with_child(NewWidget::new(Button::with_text("")))
+        .with_child(NewWidget::new(Button::with_text("")))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_4))
+        .with_child(NewWidget::new(Button::with_text("")))
+        .with_auto_id();
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+
+    let child_3_id = harness.get_widget_with_tag(child_3).id();
+    let child_4_id = harness.get_widget_with_tag(child_4).id();
+    let other_id = harness.get_widget_with_tag(other).id();
+
+    // Clicking a button doesn't focus it.
+    harness.mouse_click_on(child_3_id);
+    assert_eq!(harness.focused_widget_id(), None);
+
+    // But the next tab event focuses its neighbor.
+    harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
+    assert_eq!(harness.focused_widget_id(), Some(child_4_id));
+
+    // Clicking another non-focusable widget clears focus.
+    harness.mouse_click_on(other_id);
+    assert_eq!(harness.focused_widget_id(), None);
 }
 
 // TEXT EVENTS
