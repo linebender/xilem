@@ -9,7 +9,7 @@ use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
 
 use crate::theme::default_property_set;
-use crate::widgets::{Button, Flex, SizedBox};
+use crate::widgets::{Button, Flex, SizedBox, TextArea};
 
 // POINTER EVENTS
 
@@ -152,13 +152,6 @@ fn click_anchors_focus() {
 }
 
 // TEXT EVENTS
-
-use assert_matches::assert_matches;
-use masonry_core::core::{NewWidget, Widget, WidgetTag};
-use masonry_testing::{Record, TestHarness, TestWidgetExt};
-
-use crate::theme::default_property_set;
-use crate::widgets::{Button, Flex, SizedBox, TextArea};
 
 #[test]
 fn text_event() {
