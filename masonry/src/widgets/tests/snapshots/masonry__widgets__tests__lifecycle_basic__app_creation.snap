@@ -1,11 +1,11 @@
 ---
-source: masonry/src/widget/tests/lifecycle_basic.rs
-assertion_line: 22
+source: masonry/src/widgets/tests/lifecycle_basic.rs
+assertion_line: 24
 expression: record
 ---
 [
-    RC,
-    U(
+    RegisterChildren,
+    Update(
         WidgetAdded,
     ),
     Layout(

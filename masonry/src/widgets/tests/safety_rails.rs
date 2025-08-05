@@ -3,23 +3,13 @@
 
 use vello::kurbo::{Point, Size};
 
-use crate::core::{ChildrenIds, PointerButton, Update, Widget, WidgetId, WidgetPod};
+use crate::core::{PointerButton, Update, Widget, WidgetId, WidgetPod};
 use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::default_property_set;
 use crate::widgets::Flex;
 
 fn make_parent_widget<W: Widget>(child: W) -> ModularWidget<WidgetPod<W>> {
-    let child = WidgetPod::new(child);
-    ModularWidget::new(child)
-        .register_children_fn(move |child, ctx| {
-            ctx.register_child(child);
-        })
-        .layout_fn(move |child, ctx, _, bc| {
-            let size = ctx.run_layout(child, bc);
-            ctx.place_child(child, Point::ZERO);
-            size
-        })
-        .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
+    ModularWidget::new_parent(child.with_auto_id())
 }
 
 #[cfg(false)]

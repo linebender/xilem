@@ -10,7 +10,7 @@ use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
     LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
     PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetOptions, WidgetRef, find_widget_under_pointer,
+    WidgetOptions, WidgetPod, WidgetRef, find_widget_under_pointer,
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
@@ -38,7 +38,8 @@ pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> ChildrenIds;
 ///
 /// This widget is generic over its state, which is passed in at construction time.
 pub struct ModularWidget<S> {
-    state: S,
+    /// The state passed to all the callbacks of this widget
+    pub state: S,
     accepts_pointer_interaction: bool,
     accepts_focus: bool,
     accepts_text_input: bool,
@@ -84,6 +85,23 @@ impl<S> ModularWidget<S> {
             access: None,
             children: None,
         }
+    }
+}
+
+impl<W: Widget> ModularWidget<WidgetPod<W>> {
+    /// Create a new `ModularWidget` with some methods already set to handle a single child.
+    pub fn new_parent(child: NewWidget<W>) -> Self {
+        let child = child.to_pod();
+        Self::new(child)
+            .register_children_fn(move |child, ctx| {
+                ctx.register_child(child);
+            })
+            .layout_fn(move |child, ctx, _props, bc| {
+                let size = ctx.run_layout(child, bc);
+                ctx.place_child(child, Point::ZERO);
+                size
+            })
+            .children_fn(|child| ChildrenIds::from_slice(&[child.id()]))
     }
 }
 
