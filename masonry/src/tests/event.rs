@@ -225,8 +225,4 @@ fn accessibility_focus() {
         data: None,
     });
     assert_eq!(harness.focused_widget_id(), None);
-
-    /*
-    accesskit::Action::ScrollIntoView
-    */
 }
