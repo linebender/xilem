@@ -317,8 +317,6 @@ impl Widget for Checkbox {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use ui_events::keyboard::NamedKey;
-
     use super::*;
     use crate::core::{Properties, StyleProperty};
     use crate::properties::TextColor;
@@ -347,7 +345,7 @@ mod tests {
         assert_render_snapshot!(harness, "checkbox_hello_checked");
 
         harness.focus_on(None);
-        harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
+        harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(checkbox_id));
 
         harness.process_text_event(TextEvent::key_down(Key::Character(" ".into())));

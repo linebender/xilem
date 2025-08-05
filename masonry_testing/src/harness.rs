@@ -13,6 +13,7 @@ use std::sync::{Arc, mpsc};
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use masonry_core::accesskit::{Action, ActionRequest};
 use masonry_core::anymore::AnyDebug;
+use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -20,9 +21,10 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, NewWidget,
-    PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,
-    ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
+    CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, KeyboardEvent,
+    Modifiers, NewWidget, PointerButton, PointerEvent, PointerId, PointerInfo, PointerState,
+    PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef,
+    WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Point, Size, Vec2};
@@ -647,6 +649,25 @@ impl<W: Widget> TestHarness<W> {
             let event = TextEvent::Ime(Ime::Commit(c.to_string()));
             self.render_root.handle_text_event(event);
         }
+        self.process_signals();
+    }
+
+    /// Send a [`TextEvent`] representing the user pressing the `Tab` key, either with or without the `Shift` key pressed.
+    pub fn press_tab_key(&mut self, shift: bool) {
+        let modifiers = if shift {
+            Modifiers::SHIFT
+        } else {
+            Modifiers::empty()
+        };
+        let event = TextEvent::Keyboard(KeyboardEvent {
+            state: KeyState::Down,
+            key: Key::Named(NamedKey::Tab),
+            code: Code::Unidentified,
+            modifiers,
+            ..KeyboardEvent::default()
+        });
+        self.render_root.handle_text_event(event);
+        self.process_signals();
     }
 
     /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus).

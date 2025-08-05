@@ -310,7 +310,6 @@ mod tests {
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
-    use crate::core::keyboard::NamedKey;
     use crate::core::{PointerButton, Properties, StyleProperty};
     use crate::properties::TextColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -343,7 +342,7 @@ mod tests {
 
         // Check that Tab focuses on the widget
         harness.focus_on(None);
-        harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
+        harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(button_id));
 
         harness.process_text_event(TextEvent::key_down(Key::Character(" ".into())));
