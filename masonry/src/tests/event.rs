@@ -1,8 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// POINTER EVENTS
-
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
@@ -12,6 +10,8 @@ use vello::kurbo::Size;
 
 use crate::theme::default_property_set;
 use crate::widgets::{Button, Flex, SizedBox};
+
+// POINTER EVENTS
 
 fn create_capture_target() -> ModularWidget<()> {
     ModularWidget::new(())
@@ -73,11 +73,11 @@ fn pointer_capture_suppresses_neighbors() {
 
     assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
 
-    // As long as 'target' is captured, 'other' doesn't get pointer events, event when the cursor is on it.
+    // As long as 'target' is captured, 'other' doesn't get pointer events, even when the cursor is on it.
     harness.mouse_move_to(other_id);
     assert_matches!(harness.get_records_of(other_tag)[..], []);
 
-    // 'other' is considered hovered either.
+    // 'other' is not considered hovered either.
     assert!(!harness.get_widget_with_tag(other_tag).ctx().is_hovered());
 
     // We end pointer capture.
