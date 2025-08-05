@@ -16,7 +16,6 @@ fn needs_anim_flag() {
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
     let mut harness = TestHarness::create(default_property_set(), grandparent);
-    harness.animate_ms(0);
     harness.flush_records_of(target_tag);
     harness.flush_records_of(parent_tag);
 

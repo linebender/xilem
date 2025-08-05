@@ -1182,8 +1182,9 @@ impl_context_method!(
             // (rather than set imperatively), so it is likely to be set as part of passes.
             // Therefore, we avoid re-running the update_stashed_pass in most cases.
             if child_state.is_explicitly_stashed != stashed {
-                child_state.needs_update_stashed = true;
                 child_state.is_explicitly_stashed = stashed;
+                child_state.needs_update_stashed = true;
+                self.widget_state.needs_update_stashed = true;
             }
         }
 

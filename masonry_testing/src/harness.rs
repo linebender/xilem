@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use masonry_core::accesskit::{Action, ActionRequest};
+use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
@@ -131,7 +131,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
-    access_tree: Option<accesskit_consumer::Tree>,
+    access_tree: accesskit_consumer::Tree,
     render_context: Option<RenderContext>,
     vello_renderer: Option<vello::Renderer>,
     mouse_state: PointerState,
@@ -294,6 +294,15 @@ impl<W: Widget> TestHarness<W> {
 
         let (signal_sender, signal_receiver) = mpsc::channel::<RenderRootSignal>();
 
+        let dummy_tree_update = TreeUpdate {
+            nodes: vec![(0.into(), Node::new(Role::Window))],
+            tree: Some(Tree {
+                root: 0.into(),
+                toolkit_name: None,
+                toolkit_version: None,
+            }),
+            focus: 0.into(),
+        };
         let mut harness = Self {
             signal_receiver,
             render_root: RenderRoot::new(
@@ -307,7 +316,7 @@ impl<W: Widget> TestHarness<W> {
                     test_font: Some(data),
                 },
             ),
-            access_tree: None,
+            access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
             render_context: None,
             vello_renderer: None,
             mouse_state,
@@ -322,7 +331,15 @@ impl<W: Widget> TestHarness<W> {
             title: String::new(),
             _marker: PhantomData,
         };
+
+        // Set up the initial state, and clear invalidation flags.
         harness.process_window_event(WindowEvent::Resize(window_size));
+        harness.animate_ms(0);
+
+        let (_, tree_update) = harness.render_root.redraw();
+        harness
+            .access_tree
+            .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
 
         harness
     }
@@ -409,11 +426,8 @@ impl<W: Widget> TestHarness<W> {
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
         let (scene, tree_update) = self.render_root.redraw();
-        if let Some(access_tree) = &mut self.access_tree {
-            access_tree.update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
-        } else {
-            self.access_tree = Some(accesskit_consumer::Tree::new(tree_update, false));
-        }
+        self.access_tree
+            .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
@@ -521,6 +535,16 @@ impl<W: Widget> TestHarness<W> {
         self.vello_renderer = Some(renderer);
 
         RgbaImage::from_vec(width, height, result_unpadded).expect("failed to create image")
+    }
+
+    /// Get a reference to the current state of the accessibility tree.
+    pub fn access_tree(&self) -> &accesskit_consumer::Tree {
+        &self.access_tree
+    }
+
+    /// Get a reference to the current value of a node of the accessibility tree.
+    pub fn access_node(&self, id: WidgetId) -> Option<accesskit_consumer::Node<'_>> {
+        self.access_tree.state().node_by_id(id.into())
     }
 
     // --- MARK: EVENT HELPERS

@@ -126,7 +126,7 @@ fn build_access_node(
     if ctx.widget_state.clip_path.is_some() {
         node.set_clips_children();
     }
-    if ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_stashed() {
+    if ctx.accepts_focus() && !ctx.is_disabled() {
         node.add_action(accesskit::Action::Focus);
     }
     if ctx.is_focus_target() {

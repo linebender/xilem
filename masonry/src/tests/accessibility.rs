@@ -1,8 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use accesskit::NodeId;
 use assert_matches::assert_matches;
-use masonry_core::core::{NewWidget, WidgetTag};
+use masonry_core::core::{NewWidget, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 
 use crate::theme::default_property_set;
@@ -17,7 +18,6 @@ fn request_accessibility() {
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
     let mut harness = TestHarness::create(default_property_set(), grandparent);
-    let _ = harness.render();
     harness.flush_records_of(target_tag);
     harness.flush_records_of(parent_tag);
 
@@ -39,4 +39,48 @@ fn request_accessibility() {
     let _ = harness.render();
     assert_matches!(harness.get_records_of(target_tag)[..], []);
     assert_matches!(harness.get_records_of(parent_tag)[..], []);
+}
+
+#[test]
+fn access_node_children() {
+    let parent_tag = WidgetTag::new("parent");
+
+    let child_1 = NewWidget::new(SizedBox::empty());
+    let child_2 = NewWidget::new(SizedBox::empty());
+    let child_3 = NewWidget::new(SizedBox::empty());
+
+    let parent = NewWidget::new_with_tag(
+        ModularWidget::new_multi_parent(vec![child_1, child_2, child_3]),
+        parent_tag,
+    );
+    let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
+
+    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let _ = harness.render();
+
+    let parent_ref = harness.get_widget_with_tag(parent_tag);
+    let parent_node_id = parent_ref.id();
+    let [id_1, id_2, id_3] = parent_ref.inner().children_ids()[..] else {
+        unreachable!()
+    };
+
+    let parent_node = harness.access_node(parent_node_id).unwrap();
+    assert_eq!(
+        Vec::<NodeId>::from_iter(parent_node.child_ids()),
+        vec![id_1, id_2, id_3]
+    );
+
+    // We stash a child
+    harness.edit_widget_with_tag(parent_tag, |mut parent| {
+        parent.ctx.set_stashed(&mut parent.widget.state[1], true);
+        parent.ctx.request_accessibility_update();
+    });
+    let _ = harness.render();
+
+    // Stash child is not included
+    let parent_node = harness.access_node(parent_node_id).unwrap();
+    assert_eq!(
+        Vec::<NodeId>::from_iter(parent_node.child_ids()),
+        vec![id_1, id_3]
+    );
 }
