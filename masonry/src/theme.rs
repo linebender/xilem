@@ -29,9 +29,8 @@ pub const ACCENT_COLOR: Color = Color::from_rgb8(0x3b, 0x7e, 0xe4);
 pub const TEXT_COLOR: Color = Color::from_rgb8(0xf0, 0xf0, 0xea);
 pub const DISABLED_TEXT_COLOR: Color = Color::from_rgb8(0xa0, 0xa0, 0x9a);
 
-/// Added padding between each horizontal edge of the widget
-/// and the text in logical pixels.
-const LABEL_X_PADDING: f64 = 2.0;
+/// Default horizontal padding for [`Label`], in logical pixels.
+pub const LABEL_X_PADDING: f64 = 2.0;
 
 // TODO: The following constants are not being used in properties
 pub const TEXT_SIZE_NORMAL: f32 = 15.0;
