@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! We test core Masonry features and passes here instead of in `masonry_testing`,
-//! both to centralize tests in a single crateand to have access to the `masonry`
+//! both to centralize tests in a single crate and to have access to the `masonry`
 //! widget/property set in our tests if needed.
 
 // TODO - Some of these files are stubs and need to be filled out.

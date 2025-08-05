@@ -23,7 +23,10 @@ use masonry_core::core::{Widget, WidgetId};
 ///
 /// Implements helper methods useful for unit testing.
 pub trait TestWidgetExt: Widget + Sized + 'static {
-    // TODO - Remove, keep only record()
+    // TODO - Remove this method.
+    // This is the old way to record events.
+    // We need to track down existing calls and have them use `TestWidgetExt::record()` with
+    // the new `Harness::get_records_of` method, which is much more concise.
     /// Wrap this widget in a [`Recorder`] that records all method calls.
     ///
     /// Takes a reference to a [`Recording`] to store records in.
