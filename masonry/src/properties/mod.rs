@@ -17,6 +17,7 @@ mod padding;
 mod progress_bar;
 mod spinner_color;
 mod text_color;
+mod text_styles;
 
 pub mod types;
 
@@ -32,3 +33,4 @@ pub use padding::Padding;
 pub use progress_bar::BarColor;
 pub use spinner_color::SpinnerColor;
 pub use text_color::{DisabledTextColor, TextColor};
+pub use text_styles::*;
