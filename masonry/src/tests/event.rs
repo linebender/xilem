@@ -154,3 +154,79 @@ fn click_anchors_focus() {
 // TEXT EVENTS
 
 // ACCESS EVENTS
+
+use accesskit::ActionRequest;
+use assert_matches::assert_matches;
+use masonry_core::core::{NewWidget, Widget, WidgetTag};
+use masonry_testing::{Record, TestHarness, TestWidgetExt};
+
+use crate::theme::default_property_set;
+use crate::widgets::{Button, Flex, TextArea};
+
+#[test]
+fn text_event() {
+    let target_tag = WidgetTag::new("target");
+
+    let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), target);
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+    harness.flush_records_of(target_tag);
+    harness.keyboard_type_chars("A");
+    harness.flush_records_of(target_tag);
+
+    // The widget isn't focused, it doesn't get text events.
+    harness.keyboard_type_chars("A");
+    assert_matches!(harness.get_records_of(target_tag)[..], []);
+
+    // We focus on the widget, now it gets text events.
+    harness.focus_on(Some(target_id));
+    harness.keyboard_type_chars("A");
+    let records = harness.get_records_of(target_tag);
+    assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
+}
+
+#[test]
+fn accessibility_focus() {
+    let child_2 = WidgetTag::new("child_2");
+    let child_3 = WidgetTag::new("child_3");
+
+    let parent = Flex::column()
+        .with_child(NewWidget::new(Button::with_text("")))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_2))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_child(NewWidget::new(Button::with_text("")))
+        .with_auto_id();
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+    let child_2_id = harness.get_widget_with_tag(child_2).id();
+    let child_3_id = harness.get_widget_with_tag(child_3).id();
+
+    // Send focus event
+    harness.process_access_event(ActionRequest {
+        action: accesskit::Action::Focus,
+        target: child_3_id.into(),
+        data: None,
+    });
+    assert_eq!(harness.focused_widget_id(), Some(child_3_id));
+
+    // Send blur event with incorrect id
+    harness.process_access_event(ActionRequest {
+        action: accesskit::Action::Blur,
+        target: child_2_id.into(),
+        data: None,
+    });
+    assert_eq!(harness.focused_widget_id(), Some(child_3_id));
+
+    // Send blur event with correct id
+    harness.process_access_event(ActionRequest {
+        action: accesskit::Action::Blur,
+        target: child_3_id.into(),
+        data: None,
+    });
+    assert_eq!(harness.focused_widget_id(), None);
+
+    /*
+    accesskit::Action::ScrollIntoView
+    */
+}
