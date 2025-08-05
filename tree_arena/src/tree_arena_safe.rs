@@ -188,15 +188,6 @@ impl<T> TreeArena<T> {
         (roots.find_mut_inner(map.reborrow(), id.into()), map)
     }
 
-    /// TODO: Document
-    pub fn find_mut_mut_disjoint<const N: usize>(
-        &mut self,
-        _parents_map: ArenaMapMut<'_>,
-        ids: [impl Into<NodeId>; N],
-    ) -> ([Option<ArenaMut<'_, T>>; N], ArenaMapMut<'_>) {
-        todo!()
-    }
-
     /// Construct the path of items from the given item to the root of the tree.
     ///
     /// The path is in order from the bottom to the top, starting at the given item and ending at
@@ -434,7 +425,14 @@ impl<'arena, T> ArenaMutList<'arena, T> {
             .map(|child| child.arena_mut(self.parent_id))
     }
 
-    /// TODO: Document
+    /// Get several mutable handles to the elements of the list with the given id.
+    ///
+    /// Returns an array of length `N` with the results of each query.
+    /// For soundness, at most one mutable reference will be returned to any value.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any ids overlap.
     pub fn item_mut_disjoint<const N: usize>(
         &mut self,
         _parents_map: ArenaMapMut<'_>,
