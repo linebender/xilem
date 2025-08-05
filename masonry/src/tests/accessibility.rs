@@ -29,5 +29,5 @@ fn needs_accessibility_flag() {
     assert!(records.iter().any(|r| matches!(r, Record::Accessibility)));
 
     let records = harness.get_records_of(parent_tag);
-    assert!(records.iter().any(|r| matches!(r, Record::Accessibility)) == false);
+    assert!(records.iter().all(|r| !matches!(r, Record::Accessibility)));
 }

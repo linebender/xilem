@@ -33,5 +33,5 @@ fn needs_anim_flag() {
     );
 
     let records = harness.get_records_of(parent_tag);
-    assert!(records.iter().any(|r| matches!(r, Record::AnimFrame(_))) == false);
+    assert!(records.iter().all(|r| !matches!(r, Record::AnimFrame(_))));
 }
