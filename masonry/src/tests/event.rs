@@ -5,7 +5,7 @@
 
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, TextEvent, Widget, WidgetTag};
-use masonry_testing::{ModularWidget, TestHarness, TestWidgetExt};
+use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 use ui_events::keyboard::{Key, NamedKey};
 use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
@@ -86,6 +86,32 @@ fn pointer_capture_suppresses_neighbors() {
 
     // Once the capture is released, 'other' should immediately register as hovered.
     assert!(harness.get_widget_with_tag(other_tag).ctx().is_hovered());
+}
+
+#[test]
+fn pointer_cancel_on_window_blur() {
+    let target_tag = WidgetTag::new("target");
+
+    let target = create_capture_target();
+    let target = NewWidget::new_with_tag(target.record(), target_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), target);
+
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+
+    harness.mouse_move_to(target_id);
+    harness.mouse_button_press(PointerButton::Primary);
+    assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
+    harness.flush_records_of(target_tag);
+
+    harness.process_text_event(TextEvent::WindowFocusChange(false));
+
+    let records = harness.get_records_of(target_tag);
+    assert!(
+        records
+            .iter()
+            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Cancel(..))))
+    );
 }
 
 #[test]
