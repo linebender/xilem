@@ -738,7 +738,7 @@ impl<W: Widget> TestHarness<W> {
     /// Panics if no widget with this tag can be found.
     #[track_caller]
     pub fn flush_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) {
-        self.get_widget_with_tag(tag).inner().recording().clear()
+        self.get_widget_with_tag(tag).inner().recording().clear();
     }
 
     /// Try to return a [`WidgetRef`] to the widget with the given id.
