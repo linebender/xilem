@@ -133,6 +133,16 @@ impl<W: Widget> Recorder<W> {
     pub fn recording(&self) -> &Recording {
         &self.recording
     }
+
+    /// Get a reference to the child that's being recorded.
+    pub fn inner(&self) -> &W {
+        &self.child
+    }
+
+    /// Get an exclusive reference to the child that's being recorded.
+    pub fn inner_mut(&mut self) -> &mut W {
+        &mut self.child
+    }
 }
 
 #[warn(clippy::missing_trait_methods)]
