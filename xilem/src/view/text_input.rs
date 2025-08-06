@@ -79,7 +79,7 @@ impl<State, Action> TextInput<State, Action> {
         self
     }
 
-    /// Set the color of the text shown when the input is empty.
+    /// Set the [`PlaceholderColor`] property, which sets the color of the text shown when the input is empty.
     pub fn placeholder_color(mut self, color: Color) -> Self {
         *self.property() = Some(PlaceholderColor::new(color));
         self
