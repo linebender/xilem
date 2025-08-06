@@ -88,13 +88,13 @@ pub struct ArenaMutList<'arena, T> {
     children: &'arena mut HashMap<NodeId, TreeNode<T>>,
 }
 
-/// A shared reference to the parent father map
+/// A shared reference to the parent map
 #[derive(Clone, Copy, Debug)]
 pub struct ArenaMapRef<'arena> {
     parents_map: &'arena HashMap<NodeId, Option<NodeId>>,
 }
 
-/// A mutable reference to the parent father map
+/// A mutable reference to the parent map
 #[derive(Debug)]
 pub struct ArenaMapMut<'arena> {
     parents_map: &'arena mut HashMap<NodeId, Option<NodeId>>,
@@ -416,7 +416,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// Get a mutable handle to the element of the list with the given id.
     pub fn item_mut(
         &mut self,
-        _parents_map: ArenaMapMut<'_>,
+        _parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
@@ -435,7 +435,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// Panics if any ids overlap.
     pub fn item_mut_disjoint<const N: usize>(
         &mut self,
-        _parents_map: ArenaMapMut<'_>,
+        _parents_map: ArenaMapRef<'_>,
         ids: [impl Into<NodeId>; N],
     ) -> [Option<ArenaMut<'_, T>>; N] {
         let ids = ids.map(|id| id.into());
@@ -466,7 +466,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// self. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_item_mut(
         self,
-        _parents_map: ArenaMapMut<'_>,
+        _parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
@@ -659,7 +659,7 @@ impl ArenaMapRef<'_> {
         let mut path = Vec::new();
 
         if !self.parents_map.contains_key(&id) {
-            return path;
+            return Vec::new();
         }
 
         let mut current_id = Some(id);
@@ -674,8 +674,9 @@ impl ArenaMapRef<'_> {
             }
         }
 
+        // We've gone all the way to the root without finding start_id.
         if current_id != start_id {
-            path.clear();
+            return Vec::new();
         }
 
         path
