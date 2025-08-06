@@ -16,76 +16,75 @@ pub trait AsUnit {
     /// # Panics
     ///
     /// Panics if value is negative, infinite.
+    #[track_caller]
     fn px(self) -> Length;
 }
 
 impl AsUnit for f64 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self)
     }
 }
 
 impl AsUnit for f32 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for u64 {
-    fn px(self) -> Length {
-        Length::px(self as f64)
-    }
-}
-
-impl AsUnit for usize {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for u32 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for u16 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for u8 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for i64 {
-    fn px(self) -> Length {
-        Length::px(self as f64)
-    }
-}
-
-impl AsUnit for isize {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for i32 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for i16 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }
 }
 
 impl AsUnit for i8 {
+    #[track_caller]
     fn px(self) -> Length {
         Length::px(self as f64)
     }

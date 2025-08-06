@@ -26,6 +26,7 @@ impl Length {
     /// - `value` is negative.
     ///
     /// If debug assertions are off, this will return zero instead of panicking.
+    #[track_caller]
     pub fn px(value: f64) -> Self {
         if value < 0. || !value.is_finite() {
             // TODO - Make const once const formatting is allowed.
@@ -43,6 +44,7 @@ impl Length {
     /// # Panics
     ///
     /// This will always panic if value is negative or non-finite.
+    #[track_caller]
     pub const fn const_px(value: f64) -> Self {
         if value < 0. || !value.is_finite() {
             panic!("Invalid length value");
