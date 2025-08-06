@@ -3,7 +3,7 @@
 
 //! Internal passes run by Masonry every frame.
 //!
-//! See the [passes documentation](../doc/05_pass_system.md) for more information.
+//! See the [passes documentation](crate::doc::pass_system) for more information.
 //!
 //! This file includes utility functions used by multiple passes.
 

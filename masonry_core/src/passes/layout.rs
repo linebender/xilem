@@ -222,7 +222,7 @@ pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
 }
 
 // --- MARK: ROOT
-/// See the [passes documentation](../doc/05_pass_system.md#layout-pass).
+/// See the [passes documentation](crate::doc::pass_system#layout-pass).
 pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     if !root.root_state().needs_layout {
         return;

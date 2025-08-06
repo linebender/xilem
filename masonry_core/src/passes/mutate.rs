@@ -55,7 +55,7 @@ pub(crate) fn mutate_widget<R>(
 
 /// Apply any deferred mutations (created using `...Ctx::mutate_later`)
 ///
-/// See the [passes documentation](../doc/05_pass_system.md#the-mutate-pass).
+/// See the [passes documentation](crate::doc::pass_system#the-mutate-pass).
 pub(crate) fn run_mutate_pass(root: &mut RenderRoot) {
     let callbacks = std::mem::take(&mut root.global_state.mutate_callbacks);
     for callback in callbacks {
