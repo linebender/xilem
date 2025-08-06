@@ -9,7 +9,7 @@ use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
 
 use crate::theme::default_property_set;
-use crate::widgets::{Button, Flex, SizedBox};
+use crate::widgets::{Button, Flex, SizedBox, TextArea};
 
 // POINTER EVENTS
 
@@ -152,5 +152,101 @@ fn click_anchors_focus() {
 }
 
 // TEXT EVENTS
+
+#[test]
+fn text_event() {
+    let target_tag = WidgetTag::new("target");
+
+    let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), target);
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+    harness.flush_records_of(target_tag);
+    harness.keyboard_type_chars("A");
+    harness.flush_records_of(target_tag);
+
+    // The widget isn't focused, it doesn't get text events.
+    harness.keyboard_type_chars("A");
+    assert_matches!(harness.get_records_of(target_tag)[..], []);
+
+    // We focus on the widget, now it gets text events.
+    harness.focus_on(Some(target_id));
+    harness.keyboard_type_chars("A");
+    let records = harness.get_records_of(target_tag);
+    assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
+}
+
+#[test]
+fn text_event_fallback() {
+    let target_tag = WidgetTag::new("target");
+    let parent_tag = WidgetTag::new("parent");
+
+    let child = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
+    let parent = NewWidget::new_with_tag(Flex::row().with_child(child), parent_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+    harness.flush_records_of(target_tag);
+
+    // If the root widget has exactly one child, that child gets text events when no widget is focused.
+    harness.keyboard_type_chars("A");
+    let records = harness.get_records_of(target_tag);
+    assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
+
+    harness.edit_widget_with_tag(parent_tag, |mut flex| {
+        Flex::add_child(&mut flex, SizedBox::empty().with_auto_id());
+    });
+    harness.flush_records_of(target_tag);
+
+    // We've added another child, now nobody gets text events when no widget is focused.
+    harness.keyboard_type_chars("A");
+    assert_matches!(harness.get_records_of(target_tag)[..], []);
+}
+
+#[test]
+fn tab_focus() {
+    let child_1 = WidgetTag::new("child_1");
+    let child_2 = WidgetTag::new("child_2");
+    let child_3 = WidgetTag::new("child_3");
+    let child_4 = WidgetTag::new("child_4");
+    let child_5 = WidgetTag::new("child_5");
+
+    let parent = Flex::column()
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_1))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_2))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_4))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_5))
+        .with_auto_id();
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+
+    let child_1_id = harness.get_widget_with_tag(child_1).id();
+    let child_2_id = harness.get_widget_with_tag(child_2).id();
+    let child_3_id = harness.get_widget_with_tag(child_3).id();
+    let child_4_id = harness.get_widget_with_tag(child_4).id();
+    let child_5_id = harness.get_widget_with_tag(child_5).id();
+
+    assert_eq!(harness.focused_widget_id(), None);
+
+    // Tab moves focus to the next focusable widget in the tree.
+    harness.focus_on(Some(child_2_id));
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(child_3_id));
+
+    // Shift+Tab moves focus to the previous focusable widget in the tree.
+    harness.focus_on(Some(child_4_id));
+    harness.press_tab_key(true);
+    assert_eq!(harness.focused_widget_id(), Some(child_3_id));
+
+    // When nothing is focused, Tab focuses the first focusable widget in the tree.
+    harness.focus_on(None);
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(child_1_id));
+
+    // When nothing is focused, Shift+Tab focuses the last focusable widget in the tree.
+    harness.focus_on(None);
+    harness.press_tab_key(true);
+    assert_eq!(harness.focused_widget_id(), Some(child_5_id));
+}
 
 // ACCESS EVENTS
