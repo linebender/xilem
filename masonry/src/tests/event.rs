@@ -1,6 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use accesskit::ActionRequest;
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
@@ -250,3 +251,44 @@ fn tab_focus() {
 }
 
 // ACCESS EVENTS
+
+#[test]
+fn accessibility_focus() {
+    let child_2 = WidgetTag::new("child_2");
+    let child_3 = WidgetTag::new("child_3");
+
+    let parent = Flex::column()
+        .with_child(NewWidget::new(Button::with_text("")))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_2))
+        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_child(NewWidget::new(Button::with_text("")))
+        .with_auto_id();
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+    let child_2_id = harness.get_widget_with_tag(child_2).id();
+    let child_3_id = harness.get_widget_with_tag(child_3).id();
+
+    // Send focus event
+    harness.process_access_event(ActionRequest {
+        action: accesskit::Action::Focus,
+        target: child_3_id.into(),
+        data: None,
+    });
+    assert_eq!(harness.focused_widget_id(), Some(child_3_id));
+
+    // Send blur event with incorrect id
+    harness.process_access_event(ActionRequest {
+        action: accesskit::Action::Blur,
+        target: child_2_id.into(),
+        data: None,
+    });
+    assert_eq!(harness.focused_widget_id(), Some(child_3_id));
+
+    // Send blur event with correct id
+    harness.process_access_event(ActionRequest {
+        action: accesskit::Action::Blur,
+        target: child_3_id.into(),
+        data: None,
+    });
+    assert_eq!(harness.focused_widget_id(), None);
+}

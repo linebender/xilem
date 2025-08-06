@@ -375,6 +375,14 @@ impl<W: Widget> TestHarness<W> {
         handled
     }
 
+    /// Send an [`ActionRequest`] to the simulated window.
+    ///
+    /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
+    pub fn process_access_event(&mut self, event: ActionRequest) {
+        self.render_root.handle_access_event(event);
+        self.process_signals();
+    }
+
     // This should be ran after any operation which runs the rewrite passes
     // (i.e. processing an event, etc.)
     fn process_signals(&mut self) {
