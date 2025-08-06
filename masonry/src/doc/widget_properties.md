@@ -63,7 +63,7 @@ Some examples:
 - [`BorderColor`]
 - [`BorderWidth`]
 - [`Padding`]
-- [`TextColor`]
+- [`ContentColor`]
 
 Properties should *not* be used to represent an individual widget's state. The following should *not* be properties:
 
@@ -127,4 +127,4 @@ But setting a property to a given value doesn't change anything by default, unle
 [`BorderColor`]: crate::properties::BorderColor
 [`BorderWidth`]: crate::properties::BorderWidth
 [`Padding`]: crate::properties::Padding
-[`TextColor`]: crate::properties::TextColor
+[`ContentColor`]: crate::properties::ContentColor

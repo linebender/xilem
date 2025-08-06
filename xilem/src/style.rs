@@ -36,7 +36,7 @@ pub trait Style: Sized {
     /// Set the element's content color.
     ///
     /// "Content color" usually means text or text decorations.
-    fn text_color(mut self, color: Color) -> Self
+    fn color(mut self, color: Color) -> Self
     where
         Self: HasProperty<ContentColor>,
     {
@@ -47,7 +47,7 @@ pub trait Style: Sized {
     /// Set the element's content color when disabled.
     ///
     /// "Content color" usually means text or text decorations.
-    fn disabled_text_color(mut self, color: Color) -> Self
+    fn disabled_color(mut self, color: Color) -> Self
     where
         Self: HasProperty<DisabledContentColor>,
     {

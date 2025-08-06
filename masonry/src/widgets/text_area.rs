@@ -137,7 +137,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// support inline rich text.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
+    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
     /// instead overwrites any previous font stack.
     ///
@@ -254,7 +254,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
     /// support inline rich text.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
+    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     /// This is also not additive for [font stacks](parley::StyleProperty::FontStack), and
     /// instead overwrites any previous font stack.
     ///

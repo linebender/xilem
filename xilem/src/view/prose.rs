@@ -50,7 +50,7 @@ pub struct Prose {
 impl Prose {
     /// Set the text's color.
     ///
-    /// This overwrites the default `TextColor` property for the inner `TextArea` widget.
+    /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
     pub fn text_color(mut self, color: Color) -> Self {
         self.text_color = Some(color);
         self
@@ -58,7 +58,7 @@ impl Prose {
 
     /// Set the text's color when the text input is disabled.
     ///
-    /// This overwrites the default `DisabledTextColor` property for the inner `TextArea` widget.
+    /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
     pub fn disabled_text_color(mut self, color: Color) -> Self {
         self.disabled_text_color = Some(color);
         self

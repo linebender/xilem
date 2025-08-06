@@ -30,7 +30,7 @@ use crate::{TextAlign, TextAlignOptions, theme};
 /// need support for displaying text, such as a button.
 ///
 /// You can customize the look of this label with the
-/// [`Padding`], [`LineBreaking`], [`TextColor`] and [`DisabledTextColor`] properties.
+/// [`Padding`], [`LineBreaking`], [`ContentColor`] and [`DisabledContentColor`] properties.
 ///
 #[doc = include_screenshot!("label_styled_label.png", "Styled label.")]
 pub struct Label {
@@ -94,7 +94,7 @@ impl Label {
     /// Set a style property for the new label.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
+    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     ///
     /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
@@ -161,7 +161,7 @@ impl Label {
     /// The runtime equivalent of [`with_style`](Self::with_style).
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
+    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
