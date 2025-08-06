@@ -326,7 +326,7 @@ impl<T> ArenaMut<'_, T> {
 
 impl<'arena, T> ArenaRefList<'arena, T> {
     /// Returns `true` if the list has an element with the given id.
-    pub fn has(self, _parents_map: ArenaMapRef<'arena>, id: impl Into<NodeId>) -> bool {
+    pub fn has(self, _parents_map: ArenaMapRef<'_>, id: impl Into<NodeId>) -> bool {
         let id = id.into();
         self.children.contains_key(&id)
     }
@@ -334,7 +334,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// Get a handle to the element of the list with the given id.
     pub fn item(
         &self,
-        _parents_map: ArenaMapRef<'arena>,
+        _parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
@@ -349,7 +349,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// self. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_item(
         self,
-        _parents_map: ArenaMapRef<'arena>,
+        _parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
@@ -367,7 +367,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// O(Depth). In future implementations, this will be O(1).
     pub fn find(
         self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'arena, T>> {
         self.find_inner(parents_map, id.into())
@@ -396,7 +396,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
 
 impl<'arena, T> ArenaMutList<'arena, T> {
     /// Returns `true` if the list has an element with the given id.
-    pub fn has(&self, _parents_map: ArenaMapRef<'arena>, id: impl Into<NodeId>) -> bool {
+    pub fn has(&self, _parents_map: ArenaMapRef<'_>, id: impl Into<NodeId>) -> bool {
         let id = id.into();
         self.children.contains_key(&id)
     }
@@ -404,7 +404,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// Get a shared handle to the element of the list with the given id.
     pub fn item(
         &self,
-        _parents_map: ArenaMapRef<'arena>,
+        _parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
@@ -451,7 +451,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// self. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_item(
         self,
-        _parents_map: ArenaMapRef<'arena>,
+        _parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
@@ -591,7 +591,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// O(Depth).
     pub fn find(
         &self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'_, T>> {
         self.reborrow().find(parents_map, id)

@@ -385,7 +385,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// Check if id is a descendant of self
     /// O(depth) and the limiting factor for find methods
     /// not from the root
-    fn is_descendant(&self, parents_map: ArenaMapRef<'arena>, id: NodeId) -> bool {
+    fn is_descendant(&self, parents_map: ArenaMapRef<'_>, id: NodeId) -> bool {
         if !self.parent_arena.items.contains_key(&id) {
             // if the id is not in the tree, it is not a descendant
             return false;
@@ -401,7 +401,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     }
 
     /// Returns `true` if the list has an element with the given id.
-    pub fn has(&self, parents_map: ArenaMapRef<'arena>, id: impl Into<NodeId>) -> bool {
+    pub fn has(&self, parents_map: ArenaMapRef<'_>, id: impl Into<NodeId>) -> bool {
         let child_id = id.into();
         let parent_id = self.parent_id;
         parents_map
@@ -416,7 +416,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// Return a new [`ArenaRef`]
     pub fn item(
         &self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
@@ -433,7 +433,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     /// handle. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_item(
         self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
@@ -500,12 +500,12 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// Check if id is a descendant of self
     /// O(depth) and the limiting factor for find methods
     /// not from the root
-    fn is_descendant(&self, parents_map: ArenaMapRef<'arena>, id: NodeId) -> bool {
+    fn is_descendant(&self, parents_map: ArenaMapRef<'_>, id: NodeId) -> bool {
         self.reborrow().is_descendant(parents_map, id)
     }
 
     /// Returns `true` if the list has an element with the given id.
-    pub fn has(&self, parents_map: ArenaMapRef<'arena>, id: impl Into<NodeId>) -> bool {
+    pub fn has(&self, parents_map: ArenaMapRef<'_>, id: impl Into<NodeId>) -> bool {
         self.reborrow().has(parents_map, id)
     }
 
@@ -515,7 +515,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// its children.
     pub fn item(
         &self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'_, T>> {
         let id = id.into();
@@ -532,7 +532,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// its children.
     pub fn item_mut(
         &mut self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaMut<'_, T>> {
         let id = id.into();
@@ -550,7 +550,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// handle. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_item(
         self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaRef<'arena, T>> {
         let id = id.into();
@@ -567,7 +567,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     /// the handle. This is sometimes necessary to accommodate the borrow checker.
     pub fn into_item_mut(
         self,
-        parents_map: ArenaMapRef<'arena>,
+        parents_map: ArenaMapRef<'_>,
         id: impl Into<NodeId>,
     ) -> Option<ArenaMut<'arena, T>> {
         let id = id.into();
