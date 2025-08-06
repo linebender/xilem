@@ -10,12 +10,8 @@
     reason = "Deferred: Tests need to be refactored"
 )]
 
-mod ime_focused;
 mod layout;
-mod lifecycle_basic;
-mod lifecycle_disable;
 mod lifecycle_focus;
-mod safety_rails;
 mod status_change;
 mod transforms;
 mod widget_tree;

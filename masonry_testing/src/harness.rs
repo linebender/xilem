@@ -639,8 +639,8 @@ impl<W: Widget> TestHarness<W> {
         if !widget.ctx().accepts_pointer_interaction() {
             panic!("Widget {id} doesn't accept pointer events");
         }
-        if widget.ctx().is_disabled() {
-            panic!("Widget {id} is disabled");
+        if widget.ctx().is_stashed() {
+            panic!("Widget {id} is stashed");
         }
         if self
             .render_root
