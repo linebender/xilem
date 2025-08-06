@@ -30,7 +30,6 @@ use crate::{Pod, PropertyTuple as _, ViewCtx, WidgetView};
 /// ))
 /// # }
 /// ```
-/// ```
 pub fn stack<State, Action, Seq: StackSequence<State, Action>>(
     sequence: Seq,
 ) -> Stack<Seq, State, Action> {
