@@ -3,8 +3,8 @@
 
 use masonry::core::{NewWidget, Properties, WidgetId, WidgetOptions};
 use masonry::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, CornerRadius, DisabledBackground,
-    DisabledTextColor, Padding, TextColor,
+    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
+    DisabledBackground, DisabledContentColor, Padding,
 };
 use masonry::widgets::{self, TextAction};
 use vello::kurbo::Affine;
@@ -136,10 +136,10 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         // once we implement property inheritance or something like it.
         let mut props = Properties::new();
         if let Some(color) = self.text_color {
-            props.insert(TextColor { color });
+            props.insert(ContentColor { color });
         }
         if let Some(color) = self.disabled_text_color {
-            props.insert(DisabledTextColor(TextColor { color }));
+            props.insert(DisabledContentColor(ContentColor { color }));
         }
 
         let text_input = widgets::TextInput::from_text_area(NewWidget::new_with(
@@ -174,16 +174,16 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         // TODO - Replace this with properties on the TextInput view
         if self.text_color != prev.text_color {
             if let Some(color) = self.text_color {
-                element.insert_prop(TextColor { color });
+                element.insert_prop(ContentColor { color });
             } else {
-                element.remove_prop::<TextColor>();
+                element.remove_prop::<ContentColor>();
             }
         }
         if self.disabled_text_color != prev.disabled_text_color {
             if let Some(color) = self.disabled_text_color {
-                element.insert_prop(DisabledTextColor(TextColor { color }));
+                element.insert_prop(DisabledContentColor(ContentColor { color }));
             } else {
-                element.remove_prop::<DisabledTextColor>();
+                element.remove_prop::<DisabledContentColor>();
             }
         }
 

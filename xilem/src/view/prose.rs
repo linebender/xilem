@@ -3,7 +3,7 @@
 
 use masonry::core::{ArcStr, NewWidget, Properties, StyleProperty};
 use masonry::parley::FontWeight;
-use masonry::properties::{DisabledTextColor, LineBreaking, TextColor};
+use masonry::properties::{DisabledContentColor, LineBreaking, ContentColor};
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
@@ -110,10 +110,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         // once we implement property inheritance or something like it.
         let mut props = Properties::new();
         if let Some(color) = self.text_color {
-            props.insert(TextColor { color });
+            props.insert(ContentColor { color });
         }
         if let Some(color) = self.disabled_text_color {
-            props.insert(DisabledTextColor(TextColor { color }));
+            props.insert(DisabledContentColor(ContentColor { color }));
         }
         let text_area = NewWidget::new_with_props(text_area, props);
 
@@ -137,16 +137,16 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         // TODO - Replace this with properties on the Prose view
         if self.text_color != prev.text_color {
             if let Some(color) = self.text_color {
-                text_area.insert_prop(TextColor { color });
+                text_area.insert_prop(ContentColor { color });
             } else {
-                text_area.remove_prop::<TextColor>();
+                text_area.remove_prop::<ContentColor>();
             }
         }
         if self.disabled_text_color != prev.disabled_text_color {
             if let Some(color) = self.disabled_text_color {
-                text_area.insert_prop(DisabledTextColor(TextColor { color }));
+                text_area.insert_prop(DisabledContentColor(ContentColor { color }));
             } else {
-                text_area.remove_prop::<DisabledTextColor>();
+                text_area.remove_prop::<DisabledContentColor>();
             }
         }
 

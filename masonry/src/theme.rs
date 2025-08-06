@@ -11,8 +11,8 @@ use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::peniko::Color;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CheckmarkColor,
-    CheckmarkStrokeWidth, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledTextColor, HoveredBorderColor, Padding, SpinnerColor, TextColor,
+    CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
+    DisabledContentColor, HoveredBorderColor, Padding,
 };
 use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
@@ -91,15 +91,17 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextInput, _>(BorderColor { color: ZYNC_600 });
 
     // TextArea
-    properties.insert::<TextArea<false>, _>(TextColor::new(TEXT_COLOR));
-    properties.insert::<TextArea<false>, _>(DisabledTextColor(TextColor::new(DISABLED_TEXT_COLOR)));
-    properties.insert::<TextArea<true>, _>(TextColor::new(TEXT_COLOR));
-    properties.insert::<TextArea<true>, _>(DisabledTextColor(TextColor::new(DISABLED_TEXT_COLOR)));
+    properties.insert::<TextArea<false>, _>(ContentColor::new(TEXT_COLOR));
+    properties
+        .insert::<TextArea<false>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
+    properties.insert::<TextArea<true>, _>(ContentColor::new(TEXT_COLOR));
+    properties
+        .insert::<TextArea<true>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
 
     // Label
     properties.insert::<Label, _>(Padding::from_vh(0., LABEL_X_PADDING));
-    properties.insert::<Label, _>(TextColor::new(TEXT_COLOR));
-    properties.insert::<Label, _>(DisabledTextColor(TextColor::new(DISABLED_TEXT_COLOR)));
+    properties.insert::<Label, _>(ContentColor::new(TEXT_COLOR));
+    properties.insert::<Label, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
 
     // ProgressBar
     properties.insert::<ProgressBar, _>(CornerRadius { radius: 2. });
@@ -112,7 +114,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<ProgressBar, _>(BarColor(ACCENT_COLOR));
 
     // Spinner
-    properties.insert::<Spinner, _>(SpinnerColor(TEXT_COLOR));
+    properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
 
     properties
 }

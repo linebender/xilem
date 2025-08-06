@@ -19,7 +19,7 @@ use crate::core::{
     PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, render_text,
 };
-use crate::properties::{DisabledTextColor, LineBreaking, Padding, TextColor};
+use crate::properties::{DisabledContentColor, LineBreaking, Padding, ContentColor};
 use crate::theme::default_text_styles;
 use crate::util::{debug_panic, include_screenshot};
 use crate::{TextAlign, TextAlignOptions, theme};
@@ -242,8 +242,8 @@ impl Widget for Label {
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         LineBreaking::prop_changed(ctx, property_type);
-        TextColor::prop_changed(ctx, property_type);
-        DisabledTextColor::prop_changed(ctx, property_type);
+        ContentColor::prop_changed(ctx, property_type);
+        DisabledContentColor::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
     }
 
@@ -345,9 +345,9 @@ impl Widget for Label {
         let transform = Affine::translate(text_origin);
 
         let text_color = if ctx.is_disabled() {
-            &props.get::<DisabledTextColor>().0
+            &props.get::<DisabledContentColor>().0
         } else {
-            props.get::<TextColor>()
+            props.get::<ContentColor>()
         };
 
         render_text(
@@ -431,7 +431,7 @@ mod tests {
             .with_text_alignment(TextAlign::Center)
             .with_props(
                 Properties::new()
-                    .with(TextColor::new(ACCENT_COLOR))
+                    .with(ContentColor::new(ACCENT_COLOR))
                     .with(LineBreaking::WordWrap),
             );
 
@@ -544,7 +544,7 @@ mod tests {
                 .with_text_alignment(TextAlign::Center)
                 .with_props(
                     Properties::new()
-                        .with(TextColor::new(ACCENT_COLOR))
+                        .with(ContentColor::new(ACCENT_COLOR))
                         .with(LineBreaking::WordWrap),
                 );
 
@@ -563,7 +563,7 @@ mod tests {
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
-                label.insert_prop(TextColor::new(ACCENT_COLOR));
+                label.insert_prop(ContentColor::new(ACCENT_COLOR));
                 label.insert_prop(LineBreaking::WordWrap);
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));

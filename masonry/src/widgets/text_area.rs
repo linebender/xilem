@@ -19,7 +19,7 @@ use crate::core::{
     RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     render_text,
 };
-use crate::properties::{DisabledTextColor, TextColor};
+use crate::properties::{DisabledContentColor, ContentColor};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
 use crate::{TextAlign, palette, theme};
@@ -769,8 +769,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        TextColor::prop_changed(ctx, property_type);
-        DisabledTextColor::prop_changed(ctx, property_type);
+        ContentColor::prop_changed(ctx, property_type);
+        DisabledContentColor::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -861,9 +861,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
 
         let text_color = if ctx.is_disabled() {
-            &props.get::<DisabledTextColor>().0
+            &props.get::<DisabledContentColor>().0
         } else {
-            props.get::<TextColor>()
+            props.get::<ContentColor>()
         };
 
         render_text(
@@ -1013,7 +1013,7 @@ mod tests {
         let base_target = {
             let area = NewWidget::new_with_props(
                 TextArea::new_immutable("Test string"),
-                Properties::new().with(TextColor::new(palette::css::AZURE)),
+                Properties::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
             let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
@@ -1024,7 +1024,7 @@ mod tests {
         {
             let area = NewWidget::new_with_props(
                 TextArea::new_immutable("Different string"),
-                Properties::new().with(TextColor::new(palette::css::AZURE)),
+                Properties::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
             let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
@@ -1042,7 +1042,7 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut area| {
-                area.insert_prop(TextColor::new(palette::css::BROWN));
+                area.insert_prop(ContentColor::new(palette::css::BROWN));
             });
 
             let with_updated_brush = harness.render();
