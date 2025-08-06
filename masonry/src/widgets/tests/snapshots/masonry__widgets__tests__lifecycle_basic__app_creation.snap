@@ -16,4 +16,10 @@ expression: record
         400.0W×400.0H,
     ),
     Compose,
+    AnimFrame(
+        0,
+    ),
+    Paint,
+    PostPaint,
+    Accessibility,
 ]

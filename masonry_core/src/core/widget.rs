@@ -544,3 +544,15 @@ impl Display for WidgetId {
         write!(f, "#{}", self.0)
     }
 }
+
+impl PartialEq<accesskit::NodeId> for WidgetId {
+    fn eq(&self, other: &accesskit::NodeId) -> bool {
+        self.to_raw() == other.0
+    }
+}
+
+impl PartialEq<WidgetId> for accesskit::NodeId {
+    fn eq(&self, other: &WidgetId) -> bool {
+        self.0 == other.to_raw()
+    }
+}

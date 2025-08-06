@@ -105,6 +105,31 @@ impl<W: Widget> ModularWidget<WidgetPod<W>> {
     }
 }
 
+impl<W: Widget> ModularWidget<Vec<WidgetPod<W>>> {
+    /// Create a new `ModularWidget` with some methods already set to handle multiple children.
+    ///
+    /// Layout will just stack all children on the same position and return the size of the largest.
+    pub fn new_multi_parent(children: Vec<NewWidget<W>>) -> Self {
+        let children = children.into_iter().map(|child| child.to_pod()).collect();
+        Self::new(children)
+            .register_children_fn(move |children, ctx| {
+                for child in children {
+                    ctx.register_child(child);
+                }
+            })
+            .layout_fn(move |children, ctx, _props, bc| {
+                let mut size = Size::ZERO;
+                for child in children {
+                    let child_size = ctx.run_layout(child, bc);
+                    ctx.place_child(child, Point::ZERO);
+                    size = size.max(child_size);
+                }
+                size
+            })
+            .children_fn(|children| children.iter().map(|child| child.id()).collect())
+    }
+}
+
 /// Builder methods.
 ///
 /// Each method takes a flag which is then returned by the matching [`Widget`] method.
