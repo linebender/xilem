@@ -36,6 +36,7 @@ use crate::widgets::{Label, TextArea};
 pub struct TextInput {
     text: WidgetPod<TextArea<true>>,
     placeholder: WidgetPod<Label>,
+    placeholder_text: ArcStr,
 
     /// Whether to clip the contained text.
     clip: bool,
@@ -54,6 +55,7 @@ impl TextInput {
         Self {
             text: text.to_pod(),
             placeholder: NewWidget::new_with_props(Label::new(""), Properties::new()).to_pod(),
+            placeholder_text: "".into(),
             clip: false,
         }
     }
@@ -62,8 +64,11 @@ impl TextInput {
     ///
     /// To modify this on active text input, use [`set_placeholder`](Self::set_placeholder).
     pub fn with_placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
+        let placeholder_text = placeholder_text.into();
         self.placeholder =
-            NewWidget::new_with_props(Label::new(placeholder_text), Properties::new()).to_pod();
+            NewWidget::new_with_props(Label::new(placeholder_text.clone()), Properties::new())
+                .to_pod();
+        self.placeholder_text = placeholder_text;
         self
     }
 
@@ -253,8 +258,9 @@ impl Widget for TextInput {
         &mut self,
         _ctx: &mut AccessCtx<'_>,
         _props: &PropertiesRef<'_>,
-        _node: &mut Node,
+        node: &mut Node,
     ) {
+        node.set_placeholder(self.placeholder_text.to_string());
     }
 
     fn children_ids(&self) -> ChildrenIds {
