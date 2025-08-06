@@ -222,9 +222,9 @@ impl Stack {
     pub fn child_mut<'t>(
         this: &'t mut WidgetMut<'_, Self>,
         idx: usize,
-    ) -> Option<WidgetMut<'t, dyn Widget>> {
+    ) -> WidgetMut<'t, dyn Widget> {
         let child = &mut this.widget.children[idx];
-        Some(this.ctx.get_mut(&mut child.widget))
+        this.ctx.get_mut(&mut child.widget)
     }
 
     /// Updates the alignment for the child at `idx`,
@@ -629,7 +629,7 @@ mod tests {
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, window_size);
         harness.edit_root_widget(|mut stack| {
-            let mut child = Stack::child_mut(&mut stack, 1).unwrap();
+            let mut child = Stack::child_mut(&mut stack, 1);
             assert_eq!(
                 child
                     .try_downcast::<Label>()
@@ -639,9 +639,6 @@ mod tests {
                     .to_string(),
                 "world"
             );
-            std::mem::drop(child);
-
-            assert!(Stack::child_mut(&mut stack, 2).is_none());
         });
 
         // TODO - test out-of-bounds access?
