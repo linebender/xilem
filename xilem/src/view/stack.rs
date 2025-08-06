@@ -17,9 +17,20 @@ use crate::core::{
 use crate::{Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
 /// A linear container.
-
-// TODO - Add example
-
+/// ```
+/// use xilem::view::{label, stack, CrossAxisAlignment, StackExt};
+/// # use xilem::{WidgetView};
+///
+/// # fn view<State: 'static>() -> impl WidgetView<State> {
+/// stack((
+///     label("Item"),
+///     label("Another Item"),
+///     label("More items"),
+///     // ...
+/// ))
+/// # }
+/// ```
+/// ```
 pub fn stack<State, Action, Seq: StackSequence<State, Action>>(
     sequence: Seq,
 ) -> Stack<Seq, State, Action> {
@@ -34,7 +45,7 @@ pub fn stack<State, Action, Seq: StackSequence<State, Action>>(
     }
 }
 
-/// A layout where the children are laid out in a row.
+/// A linear container laid out in a row.
 ///
 /// This is equivalent to [`stack`] with a pre-applied horizontal
 /// [`direction`](Stack::direction).
@@ -59,7 +70,7 @@ pub struct Stack<Seq, State, Action = ()> {
 }
 
 impl<Seq, State, Action> Stack<Seq, State, Action> {
-    /// Set the flex direction (see [`Axis`]).
+    /// Set the direction the container grows in (see [`Axis`]).
     pub fn direction(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
@@ -360,7 +371,7 @@ impl ElementSplice<StackElement> for StackSplice<'_, '_> {
     }
 }
 
-/// `StackSequence` is what allows an input to the grid that contains all the grid elements.
+/// `StackSequence` is what allows an input to the stack that contains all the stack elements.
 pub trait StackSequence<State, Action = ()>:
     ViewSequence<State, Action, ViewCtx, StackElement>
 {
@@ -371,12 +382,25 @@ impl<Seq, State, Action> StackSequence<State, Action> for Seq where
 {
 }
 
-/// A trait which extends a [`WidgetView`] with methods to provide parameters for a grid item
+/// A trait which extends a [`WidgetView`] with methods to provide parameters for a stack item
 pub trait StackExt<State, Action>: WidgetView<State, Action> {
     /// Applies [`CrossAxisAlignment`] to this view. This allows the view
     /// to be placed as a child within a [`Stack`] [`View`].
-
-    // TODO - Example
+    ///
+    /// # Example
+    /// ```
+    /// use xilem::view::{button, prose, stack, CrossAxisAlignment, StackExt};
+    /// # use xilem::{WidgetView};
+    ///
+    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// stack((
+    ///     prose("some text"),
+    ///     prose("more text"),
+    ///     button("click me", |_| ()).stack_item(CrossAxisAlignment::Center),
+    ///     prose("footer"),
+    /// ))
+    /// # }
+    /// ```
     fn stack_item(self, alignment: CrossAxisAlignment) -> StackItem<Self, State, Action>
     where
         State: 'static,
