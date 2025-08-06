@@ -419,7 +419,7 @@ pub struct StackItem<V, State, Action> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-/// Creates a [`StackItem`] from a view and [`StackParams`].
+/// Creates a [`StackItem`] from a view and [`CrossAxisAlignment`].
 pub fn stack_item<V, State, Action>(
     view: V,
     alignment: Option<CrossAxisAlignment>,
