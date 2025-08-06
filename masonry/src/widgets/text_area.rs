@@ -19,7 +19,7 @@ use crate::core::{
     RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     render_text,
 };
-use crate::properties::{DisabledContentColor, ContentColor};
+use crate::properties::{ContentColor, DisabledContentColor};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
 use crate::{TextAlign, palette, theme};
