@@ -6,6 +6,7 @@ use masonry_testing::assert_debug_panics;
 use vello::kurbo::{Point, Size};
 
 use crate::core::Widget;
+use crate::properties::types::AsUnit;
 use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, SizedBox};
@@ -125,7 +126,10 @@ fn unstash_then_run_layout() {
 #[test]
 fn pixel_snapping() {
     let child_tag = WidgetTag::new("child");
-    let child = NewWidget::new_with_tag(SizedBox::empty().width(10.3).height(10.3), child_tag);
+    let child = NewWidget::new_with_tag(
+        SizedBox::empty().width(10.3.px()).height(10.3.px()),
+        child_tag,
+    );
     let pos = Point::new(5.1, 5.3);
     let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, bc| {
         let size = ctx.run_layout(child, &bc.loosen());
