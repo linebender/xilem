@@ -194,14 +194,7 @@ impl Widget for TextInput {
         let pos = padding.place_down(pos);
         ctx.place_child(&mut self.text, pos);
 
-        let text_is_empty = {
-            ctx.get_raw(&mut self.text)
-                .0
-                .text()
-                .chars()
-                .next()
-                .is_none()
-        };
+        let text_is_empty = ctx.get_raw(&mut self.text).0.is_empty();
 
         ctx.set_stashed(&mut self.placeholder, !text_is_empty);
         if text_is_empty {
