@@ -59,6 +59,10 @@ pub(crate) fn mutate_widget<R>(
 pub(crate) fn run_mutate_pass(root: &mut RenderRoot) {
     let callbacks = std::mem::take(&mut root.global_state.mutate_callbacks);
     for callback in callbacks {
+        // Skip callbacks whose target was removed since they were emitted.
+        if !root.widget_arena.has(callback.id) {
+            continue;
+        }
         mutate_widget(root, callback.id, callback.callback);
     }
 }
