@@ -3,6 +3,7 @@
 
 use megalodon::entities::{Context, Status};
 use xilem::WidgetView;
+use xilem::masonry::util::debug_panic;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};
 use xilem::view::{CrossAxisAlignment, FlexExt, flex, flex_row, label, portal, sized_box};
@@ -13,7 +14,8 @@ use crate::components::base_status;
 /// Display a status in the context of its thread.
 ///
 /// Notes:
-/// 1) We don't try and do anything "fancy", i.e. we just display all the items as one thing.
+/// 1) We don't try and do anything "fancy", i.e. we just display all the items in a column.
+///    That is, we don't have an "increasing depth" threading UI.
 pub(crate) fn thread(
     root_status: &Status,
     // TODO: Maybe the context should be optional (for async loading)
@@ -26,13 +28,20 @@ pub(crate) fn thread(
     for ancestor in &thread.ancestors {
         if previous_parent != ancestor.in_reply_to_id.as_deref() {
             if previous_parent.is_none() {
-                tracing::warn!("Couldn't load all ancestors, presumably due to context limits?");
+                tracing::warn!(
+                    "Couldn't load all ancestors, presumably due to unauthenticated context length limits?"
+                );
             } else {
-                // TODO: This should maybe be `debug_panic`, but that's not exposed currently.
-                panic!("For correct ordering, we currently assume that the Mastodon API gives");
+                debug_panic!(
+                    "For simplicity, we assume that ancestors are returned in reading order \
+                    from the Mastodon API, but this was violated.\n\
+                    Status {} had parent {:?}, but expected {previous_parent:?}",
+                    ancestor.id,
+                    ancestor.in_reply_to_id
+                );
             }
         }
-        previous_parent = ancestor.in_reply_to_id.as_deref();
+        previous_parent = Some(&ancestor.id);
         ancestor_views.push(thread_ancestor(ancestor));
     }
     // TODO: Determine depth; maybe turn into a "real" tree.
