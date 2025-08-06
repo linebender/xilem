@@ -204,7 +204,7 @@ fn update_widget_tree(
     });
 }
 
-/// See the [passes documentation](../doc/05_pass_system.md#update-tree-pass).
+/// See the [passes documentation](crate::doc::pass_system#update-tree-pass).
 pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
@@ -225,7 +225,7 @@ pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
 // ----------------
 
 // --- MARK: DISABLED
-/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [passes documentation](crate::doc::pass_system#update-passes).
 /// See the [disabled status documentation](../doc/06_masonry_concepts.md#disabled).
 fn update_disabled_for_widget(
     global_state: &mut RenderRootState,
@@ -301,7 +301,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
 // Scrolled-out widgets are *not* stashed.
 
 // --- MARK: STASHED
-/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [passes documentation](crate::doc::pass_system#update-passes).
 /// See the [stashed status documentation](../doc/06_masonry_concepts.md#stashed).
 fn update_stashed_for_widget(
     global_state: &mut RenderRootState,
@@ -385,7 +385,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 // TODO - This logic was copy-pasted from WidgetPod code and may need to be refactored.
 // It doesn't quite behave like other update passes (for instance, some code runs after
 // recurse_on_children), and some design decisions inherited from Druid should be reconsidered.
-/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [passes documentation](crate::doc::pass_system#update-passes).
 fn update_focus_chain_for_widget(
     global_state: &mut RenderRootState,
     node: ArenaMut<'_, WidgetArenaNode>,
@@ -445,7 +445,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
 // ----------------
 
 // --- MARK: FOCUS
-/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [passes documentation](crate::doc::pass_system#update-passes).
 /// See the [focus status documentation](../doc/06_masonry_concepts.md#text-focus).
 pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus").entered();
@@ -600,7 +600,7 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
 // Each parent that implements scrolling will update its scroll position to ensure the
 // child is visible. (If the target area is larger than the parent, the parent will try
 // to show the top left of that area.)
-/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [passes documentation](crate::doc::pass_system#update-passes).
 pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_scroll").entered();
 
@@ -626,7 +626,7 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
 // ----------------
 
 // --- MARK: POINTER
-/// See the [passes documentation](../doc/05_pass_system.md#update-passes).
+/// See the [passes documentation](crate::doc::pass_system#update-passes).
 pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if !root.global_state.needs_pointer_pass {
         return;

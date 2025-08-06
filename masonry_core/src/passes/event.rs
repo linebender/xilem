@@ -127,7 +127,7 @@ fn run_event_pass<E>(
 }
 
 // --- MARK: POINTER_EVENT
-/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
+/// See the [passes documentation](crate::doc::pass_system#event-passes).
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
@@ -229,7 +229,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 }
 
 // --- MARK: TEXT EVENT
-/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
+/// See the [passes documentation](crate::doc::pass_system#event-passes).
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::WindowFocusChange(false)) {
         run_on_pointer_event_pass(
@@ -321,7 +321,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 }
 
 // --- MARK: ACCESS EVENT
-/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
+/// See the [passes documentation](crate::doc::pass_system#event-passes).
 pub(crate) fn run_on_access_event_pass(
     root: &mut RenderRoot,
     event: &AccessEvent,
