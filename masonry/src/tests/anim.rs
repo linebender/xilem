@@ -1,6 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 
@@ -33,4 +34,9 @@ fn needs_anim_flag() {
 
     let records = harness.get_records_of(parent_tag);
     assert!(records.iter().all(|r| !matches!(r, Record::AnimFrame(_))));
+
+    harness.animate_ms(42);
+
+    // We didn't re-request an animation, so nothing should happen.
+    assert_matches!(harness.get_records_of(parent_tag)[..], []);
 }
