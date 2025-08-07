@@ -22,11 +22,11 @@ fn layout_simple() {
         .with_child(
             Flex::row()
                 .with_child(NewWidget::new_with_id(
-                    SizedBox::empty().width(box_side).height(box_side),
+                    SizedBox::empty().size(box_side, box_side),
                     id_1,
                 ))
                 .with_child(NewWidget::new_with_id(
-                    SizedBox::empty().width(box_side).height(box_side),
+                    SizedBox::empty().size(box_side, box_side),
                     id_2,
                 ))
                 .with_flex_spacer(1.0)

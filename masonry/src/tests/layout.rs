@@ -156,10 +156,7 @@ fn skip_layout_when_cached() {
 #[test]
 fn pixel_snapping() {
     let child_tag = WidgetTag::new("child");
-    let child = NewWidget::new_with_tag(
-        SizedBox::empty().width(10.3.px()).height(10.3.px()),
-        child_tag,
-    );
+    let child = NewWidget::new_with_tag(SizedBox::empty().size(10.3.px(), 10.3.px()), child_tag);
     let pos = Point::new(5.1, 5.3);
     let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, bc| {
         let size = ctx.run_layout(child, &bc.loosen());

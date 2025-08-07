@@ -133,7 +133,7 @@ fn pointer_capture_suppresses_neighbors() {
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target, target_tag);
 
-    let other = SizedBox::empty().width(10.px()).height(10.px());
+    let other = SizedBox::empty().size(10.px(), 10.px());
     let other = NewWidget::new_with_tag(other.record(), other_tag);
 
     let parent = Flex::column()
@@ -236,7 +236,7 @@ fn click_anchors_focus() {
 
     let parent = Flex::column()
         .with_child(NewWidget::new_with_tag(
-            SizedBox::empty().width(5.px()).height(5.px()),
+            SizedBox::empty().size(5.px(), 5.px()),
             other,
         ))
         .with_child(NewWidget::new(Button::with_text("")))

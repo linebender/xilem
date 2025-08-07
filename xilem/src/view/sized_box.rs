@@ -152,16 +152,10 @@ where
         self.properties
             .rebuild_properties(&prev.properties, &mut element);
         if self.width != prev.width {
-            match self.width {
-                Some(width) => widgets::SizedBox::set_width(&mut element, width),
-                None => widgets::SizedBox::unset_width(&mut element),
-            }
+            widgets::SizedBox::set_raw_width(&mut element, self.width);
         }
         if self.height != prev.height {
-            match self.height {
-                Some(height) => widgets::SizedBox::set_height(&mut element, height),
-                None => widgets::SizedBox::unset_height(&mut element),
-            }
+            widgets::SizedBox::set_raw_height(&mut element, self.height);
         }
         {
             let mut child = widgets::SizedBox::child_mut(&mut element)
