@@ -104,7 +104,7 @@ fn paint_order() {
         Size::new(SQUARE_SIZE * 3., SQUARE_SIZE * 3.),
     );
 
-    // The resulting image should have, from background to foregroud:
+    // The resulting image should have, from background to foreground:
     // - The harness's default color background.
     // - The parent's white square.
     // - The red, green, then blue square.
