@@ -22,5 +22,5 @@ fn duplicate_widget_tag() {
             Flex::add_child(&mut flex, new_child);
         }),
         "already exists in the widget tree"
-    )
+    );
 }
