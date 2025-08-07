@@ -3,7 +3,7 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::properties::{DisabledTextColor, LineBreaking, TextColor};
+use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
@@ -102,8 +102,8 @@ crate::declare_property_tuple!(
     pub LabelProps;
     Label;
 
-    TextColor, 0;
-    DisabledTextColor, 1;
+    ContentColor, 0;
+    DisabledContentColor, 1;
     LineBreaking, 2;
 );
 

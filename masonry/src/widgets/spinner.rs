@@ -15,13 +15,13 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
     PropertiesRef, RegisterCtx, Update, UpdateCtx, Widget, WidgetId,
 };
-use crate::properties::SpinnerColor;
+use crate::properties::ContentColor;
 use crate::theme;
 use crate::util::include_screenshot;
 
 /// An animated spinner widget for showing a loading state.
 ///
-/// You can customize the look of this spinner with the [`SpinnerColor`] property.
+/// You can customize the look of this spinner with the [`ContentColor`] property.
 /// To customize the spinner's size, you can place it inside a [`SizedBox`]
 /// that has a fixed width and height.
 ///
@@ -67,7 +67,7 @@ impl Widget for Spinner {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
-        SpinnerColor::prop_changed(ctx, property_type);
+        ContentColor::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -96,7 +96,7 @@ impl Widget for Spinner {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let color = props.get::<SpinnerColor>();
+        let color = props.get::<ContentColor>();
 
         let t = self.t;
         let (width, height) = (ctx.size().width, ctx.size().height);
@@ -110,7 +110,7 @@ impl Widget for Spinner {
             let angle = Vec2::from_angle((step / 12.0) * -2.0 * PI);
             let ambit_start = center + (10.0 * scale_factor * angle);
             let ambit_end = center + (20.0 * scale_factor * angle);
-            let color = color.0.multiply_alpha(fade as f32);
+            let color = color.color.multiply_alpha(fade as f32);
 
             scene.stroke(
                 &Stroke::new(3.0 * scale_factor).with_caps(Cap::Square),
@@ -173,7 +173,7 @@ mod tests {
     fn edit_spinner() {
         let image_1 = {
             let spinner =
-                Spinner::new().with_props(Properties::one(SpinnerColor(palette::css::PURPLE)));
+                Spinner::new().with_props(Properties::one(ContentColor::new(palette::css::PURPLE)));
 
             let mut harness = TestHarness::create_with_size(
                 default_property_set(),
@@ -193,7 +193,7 @@ mod tests {
             );
 
             harness.edit_root_widget(|mut spinner| {
-                spinner.insert_prop(SpinnerColor(palette::css::PURPLE));
+                spinner.insert_prop(ContentColor::new(palette::css::PURPLE));
             });
 
             harness.render()

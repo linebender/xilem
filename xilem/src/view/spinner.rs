@@ -1,12 +1,11 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::properties::SpinnerColor;
+use masonry::properties::ContentColor;
 use masonry::widgets;
-use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::style::{HasProperty, Style};
+use crate::style::Style;
 use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 
 /// An indefinite spinner.
@@ -40,16 +39,6 @@ pub fn spinner() -> Spinner {
     }
 }
 
-impl Spinner {
-    // Because this method is spinner-specific, we don't add it to the Style trait.
-    /// Set the [`SpinnerColor`] property for this spinner.
-    pub fn color(mut self, color: impl Into<Color>) -> Self {
-        let color = SpinnerColor(color.into());
-        *self.property() = Some(color);
-        self
-    }
-}
-
 /// The [`View`] created by [`spinner`].
 ///
 /// See `spinner`'s docs for more details.
@@ -70,7 +59,7 @@ crate::declare_property_tuple!(
     pub SpinnerProps;
     Spinner;
 
-    SpinnerColor, 0;
+    ContentColor, 0;
 );
 
 impl ViewMarker for Spinner {}

@@ -311,7 +311,7 @@ mod tests {
 
     use super::*;
     use crate::core::{PointerButton, Properties, StyleProperty};
-    use crate::properties::TextColor;
+    use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams, Label};
@@ -360,7 +360,7 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0));
             let label = NewWidget::new_with_props(
                 label,
-                Properties::new().with(TextColor::new(ACCENT_COLOR)),
+                Properties::new().with(ContentColor::new(ACCENT_COLOR)),
             );
 
             let button = NewWidget::new(Button::new(label));
@@ -389,7 +389,7 @@ mod tests {
 
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
 
-                label.insert_prop(TextColor::new(ACCENT_COLOR));
+                label.insert_prop(ContentColor::new(ACCENT_COLOR));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 
@@ -416,7 +416,7 @@ mod tests {
             button.insert_prop(Padding::from_vh(3., 8.));
 
             let mut label = Button::child_mut(&mut button);
-            label.insert_prop(TextColor::new(red));
+            label.insert_prop(ContentColor::new(red));
         });
 
         assert_render_snapshot!(harness, "button_set_properties");
