@@ -731,17 +731,28 @@ impl Widget for Flex {
             // means we don't have any extra, unless dictated by our constraints.
             (self.direction.major(bc.min()) - (major_non_flex + major_flex)).max(0.0)
         };
+        // We only distribute free space around widgets, not spacers.
+        let widget_count = self
+            .children
+            .iter()
+            .filter(|child| child.widget().is_some())
+            .count();
         let (space_before, space_between) =
-            get_spacing(self.main_alignment, extra_length, self.children.len());
+            get_spacing(self.main_alignment, extra_length, widget_count);
 
         // DISTRIBUTE EXTRA SPACE
         let mut major = space_before;
+        let mut previous_was_widget = false;
         for child in &mut self.children {
             match child {
                 Child::Fixed { widget, alignment }
                 | Child::Flex {
                     widget, alignment, ..
                 } => {
+                    if previous_was_widget {
+                        major += space_between;
+                    }
+
                     let child_size = ctx.child_size(widget);
                     let alignment = alignment.unwrap_or(self.cross_alignment);
                     let child_minor_offset = match alignment {
@@ -777,13 +788,14 @@ impl Widget for Flex {
                     ctx.place_child(widget, child_pos);
 
                     major += self.direction.major(child_size);
-                    major += space_between;
                     major += self.gap;
+                    previous_was_widget = true;
                 }
                 Child::FlexedSpacer(_, calculated_size)
                 | Child::FixedSpacer(_, calculated_size) => {
                     major += *calculated_size;
                     major += self.gap;
+                    previous_was_widget = false;
                 }
             }
         }
