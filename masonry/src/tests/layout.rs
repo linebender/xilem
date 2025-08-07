@@ -1,14 +1,15 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, WidgetTag};
-use masonry_testing::assert_debug_panics;
+use masonry_testing::{TestWidgetExt, assert_debug_panics};
 use vello::kurbo::{Point, Size};
 
 use crate::core::Widget;
 use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::default_property_set;
-use crate::widgets::{Flex, SizedBox};
+use crate::widgets::{Button, ChildAlignment, Flex, SizedBox, ZStack};
 
 #[test]
 fn forget_to_recurse_layout() {
@@ -120,7 +121,33 @@ fn unstash_then_run_layout() {
     });
 }
 
-// TODO - Test that `Widget::layout()` isn't called when layout is cached.
+#[test]
+fn skip_layout_when_cached() {
+    let button_tag = WidgetTag::new("button");
+    let sibling_tag = WidgetTag::new("sibling");
+
+    let button = NewWidget::new_with_tag(Button::with_text("Foobar").record(), button_tag);
+    let sibling = NewWidget::new_with_tag(SizedBox::empty().width(20.0).height(20.0), sibling_tag);
+
+    // We choose a ZStack, because it should pass down the same constraints no matter what.
+    let parent = NewWidget::new(
+        ZStack::new()
+            .with_child(button, ChildAlignment::ParentAligned)
+            .with_child(sibling, ChildAlignment::ParentAligned),
+    );
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+
+    harness.flush_records_of(button_tag);
+    harness.edit_widget_with_tag(sibling_tag, |mut sized_box| {
+        SizedBox::set_width(&mut sized_box, 30.0);
+        SizedBox::set_height(&mut sized_box, 30.0);
+    });
+
+    // The button did not request layout and its input constraints are the same:
+    // Nothing should happen to it.
+    assert_matches!(harness.get_records_of(button_tag)[..], []);
+}
 
 #[test]
 fn pixel_snapping() {
