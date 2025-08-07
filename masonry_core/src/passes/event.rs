@@ -260,8 +260,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             let only_child = root_widget_children[0].id();
             if root.is_still_interactive(only_child) {
                 Some(only_child)
-            }
-            else {
+            } else {
                 None
             }
         } else {
