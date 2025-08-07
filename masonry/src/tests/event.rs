@@ -3,7 +3,7 @@
 
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
-use masonry_core::core::{NewWidget, TextEvent, Widget, WidgetTag};
+use masonry_core::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 use ui_events::keyboard::{Key, NamedKey};
 use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
@@ -22,6 +22,54 @@ fn create_capture_target() -> ModularWidget<()> {
             }
         })
         .layout_fn(|_, _, _, _| Size::new(10., 10.))
+}
+
+#[test]
+fn pointer_event() {
+    let button_tag = WidgetTag::new("button");
+
+    let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), button);
+    let button_id = harness.get_widget_with_tag(button_tag).id();
+
+    harness.flush_records_of(button_tag);
+    harness.mouse_move_to(button_id);
+
+    let records = harness.get_records_of(button_tag);
+    assert!(
+        records
+            .iter()
+            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Move(_))))
+    );
+}
+
+#[test]
+fn pointer_event_bubbling() {
+    let button_tag = WidgetTag::new("button");
+    let parent_tag = WidgetTag::new("parent");
+    let grandparent_tag = WidgetTag::new("grandparent");
+
+    let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
+    let parent = NewWidget::new_with_tag(ModularWidget::new_parent(button).record(), parent_tag);
+    let grandparent =
+        NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let button_id = harness.get_widget_with_tag(button_tag).id();
+
+    harness.flush_records_of(button_tag);
+    harness.mouse_click_on(button_id);
+
+    let has_pointer_down = |records: Vec<_>| {
+        records
+            .iter()
+            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Down { .. })))
+    };
+
+    assert!(has_pointer_down(harness.get_records_of(button_tag)));
+    assert!(has_pointer_down(harness.get_records_of(parent_tag)));
+    assert!(has_pointer_down(harness.get_records_of(grandparent_tag)));
 }
 
 #[test]
@@ -163,8 +211,6 @@ fn text_event() {
     let mut harness = TestHarness::create(default_property_set(), target);
     let target_id = harness.get_widget_with_tag(target_tag).id();
     harness.flush_records_of(target_tag);
-    harness.keyboard_type_chars("A");
-    harness.flush_records_of(target_tag);
 
     // The widget isn't focused, it doesn't get text events.
     harness.keyboard_type_chars("A");
@@ -175,6 +221,37 @@ fn text_event() {
     harness.keyboard_type_chars("A");
     let records = harness.get_records_of(target_tag);
     assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
+}
+
+#[test]
+fn text_event_bubbling() {
+    let target_tag = WidgetTag::new("target");
+    let parent_tag = WidgetTag::new("parent");
+    let grandparent_tag = WidgetTag::new("grandparent");
+
+    let target = NewWidget::new_with_tag(
+        ModularWidget::new(()).accepts_focus(true).record(),
+        target_tag,
+    );
+    let parent = NewWidget::new_with_tag(ModularWidget::new_parent(target).record(), parent_tag);
+    let grandparent =
+        NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+
+    harness.focus_on(Some(target_id));
+    harness.process_text_event(TextEvent::key_down(Key::Character("A".into())));
+
+    let has_keyboard_event = |records: Vec<_>| {
+        records
+            .iter()
+            .any(|r| matches!(r, Record::TextEvent(TextEvent::Keyboard(_))))
+    };
+
+    assert!(has_keyboard_event(harness.get_records_of(target_tag)));
+    assert!(has_keyboard_event(harness.get_records_of(parent_tag)));
+    assert!(has_keyboard_event(harness.get_records_of(grandparent_tag)));
 }
 
 #[test]
@@ -251,6 +328,44 @@ fn tab_focus() {
 }
 
 // ACCESS EVENTS
+
+#[test]
+fn access_event_bubbling() {
+    let target_tag = WidgetTag::new("target");
+    let parent_tag = WidgetTag::new("parent");
+    let grandparent_tag = WidgetTag::new("grandparent");
+
+    let target = NewWidget::new_with_tag(ModularWidget::new(()).record(), target_tag);
+    let parent = NewWidget::new_with_tag(ModularWidget::new_parent(target).record(), parent_tag);
+    let grandparent =
+        NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+
+    // Send random event
+    harness.process_access_event(ActionRequest {
+        action: accesskit::Action::Click,
+        target: target_id.into(),
+        data: None,
+    });
+
+    let has_access_event = |records: Vec<_>| {
+        records.iter().any(|r| {
+            matches!(
+                r,
+                Record::AccessEvent(AccessEvent {
+                    action: accesskit::Action::Click,
+                    data: None
+                })
+            )
+        })
+    };
+
+    assert!(has_access_event(harness.get_records_of(target_tag)));
+    assert!(has_access_event(harness.get_records_of(parent_tag)));
+    assert!(has_access_event(harness.get_records_of(grandparent_tag)));
+}
 
 #[test]
 fn accessibility_focus() {
