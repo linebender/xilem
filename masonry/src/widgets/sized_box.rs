@@ -272,7 +272,12 @@ impl Widget for SizedBox {
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        stroke(
+            scene,
+            &border_rect,
+            border_color.color,
+            border_width.width.value(),
+        );
     }
 
     fn accessibility_role(&self) -> Role {
@@ -334,8 +339,8 @@ mod tests {
     fn empty_box() {
         let mut box_props = Properties::new();
         box_props.insert(BorderColor::new(palette::css::BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(5.0));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(5.px()));
 
         let widget = SizedBox::empty()
             .width(20.px())
@@ -353,8 +358,8 @@ mod tests {
     fn label_box_no_size() {
         let mut box_props = Properties::new();
         box_props.insert(BorderColor::new(palette::css::BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(5.0));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(5.px()));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
 
@@ -369,8 +374,8 @@ mod tests {
     fn label_box_with_size() {
         let mut box_props = Properties::new();
         box_props.insert(BorderColor::new(palette::css::BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(5.0));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(5.px()));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
             .width(20.px())
@@ -388,9 +393,9 @@ mod tests {
     fn label_box_with_padding() {
         let mut box_props = Properties::new();
         box_props.insert(BorderColor::new(palette::css::BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(5.0));
-        box_props.insert(Padding::from_vh(15., 10.));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(5.px()));
+        box_props.insert(Padding::from_vh(15.px(), 10.px()));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
 
@@ -431,8 +436,8 @@ mod tests {
         ]);
         box_props.insert(Background::Gradient(gradient));
         box_props.insert(BorderColor::new(palette::css::LIGHT_SKY_BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(10.0));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(10.px()));
 
         let widget = SizedBox::empty()
             .width(20.px())
@@ -459,8 +464,8 @@ mod tests {
         ]);
         box_props.insert(Background::Gradient(gradient));
         box_props.insert(BorderColor::new(palette::css::LIGHT_SKY_BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(10.0));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(10.px()));
 
         let widget = SizedBox::empty()
             .width(20.px())
@@ -487,8 +492,8 @@ mod tests {
         ]);
         box_props.insert(Background::Gradient(gradient));
         box_props.insert(BorderColor::new(palette::css::LIGHT_SKY_BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(10.0));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(10.px()));
 
         let widget = SizedBox::empty()
             .width(20.px())
@@ -507,8 +512,8 @@ mod tests {
         let mut box_props = Properties::new();
         box_props.insert(Background::Color(palette::css::PLUM));
         box_props.insert(BorderColor::new(palette::css::LIGHT_SKY_BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(Padding::all(25.));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(Padding::all(25.px()));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
             .width(20.px())
@@ -531,11 +536,11 @@ mod tests {
         // Copy-pasted from empty_box
         let mut box_props = Properties::new();
         box_props.insert(BorderColor::new(palette::css::BLUE));
-        box_props.insert(BorderWidth::all(5.0));
-        box_props.insert(CornerRadius::all(5.0));
+        box_props.insert(BorderWidth::all(5.px()));
+        box_props.insert(CornerRadius::all(5.px()));
 
         // This is the difference
-        box_props.insert(BorderWidth::all(5.2));
+        box_props.insert(BorderWidth::all(5.2.px()));
 
         let widget = SizedBox::empty()
             .width(20.px())

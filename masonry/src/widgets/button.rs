@@ -259,7 +259,12 @@ impl Widget for Button {
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        stroke(
+            scene,
+            &border_rect,
+            border_color.color,
+            border_width.width.value(),
+        );
     }
 
     fn post_paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
@@ -412,9 +417,9 @@ mod tests {
 
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
-            button.insert_prop(BorderWidth { width: 5.0 });
-            button.insert_prop(CornerRadius { radius: 20.0 });
-            button.insert_prop(Padding::from_vh(3., 8.));
+            button.insert_prop(BorderWidth { width: 5.px() });
+            button.insert_prop(CornerRadius { radius: 20.px() });
+            button.insert_prop(Padding::from_vh(3.px(), 8.px()));
 
             let mut label = Button::child_mut(&mut button);
             label.insert_prop(ContentColor::new(red));
@@ -446,7 +451,7 @@ mod tests {
                 GridParams::new(1, 1, 1, 1),
             );
         let root_widget =
-            NewWidget::new_with_props(grid, Properties::new().with(Padding::all(20.0)));
+            NewWidget::new_with_props(grid, Properties::new().with(Padding::all(20.px())));
 
         let mut test_params = TestHarnessParams::default();
         test_params.window_size = Size::new(300.0, 300.0);

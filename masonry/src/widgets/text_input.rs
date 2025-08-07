@@ -190,7 +190,7 @@ impl Widget for TextInput {
 
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        stroke(scene, &border_rect, border_color.color, border_width.width.value());
     }
 
     fn accessibility_role(&self) -> Role {

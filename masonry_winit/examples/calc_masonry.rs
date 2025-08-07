@@ -203,7 +203,7 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
             .with(ActiveBackground(Background::Color(LIGHT_BLUE)))
             .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
             .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0))
+            .with(BorderWidth::all(2.px()))
             .with(CalcAction::Op(op)),
     )
 }
@@ -231,7 +231,7 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
             .with(ActiveBackground(Background::Color(LIGHT_GRAY)))
             .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
             .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0))
+            .with(BorderWidth::all(2.px()))
             .with(CalcAction::Digit(digit)),
     )
 }
@@ -280,7 +280,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         root_widget,
         Properties::new()
             .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
-            .with(Padding::all(2.0)),
+            .with(Padding::all(2.px())),
     )
 }
 

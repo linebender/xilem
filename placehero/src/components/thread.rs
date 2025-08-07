@@ -60,8 +60,8 @@ pub(crate) fn thread(
         ))
         .padding(Padding {
             // Leave room for scrollbar
-            right: 20.,
-            ..Padding::all(5.0)
+            right: 20.px(),
+            ..Padding::all(5.px())
         }),
     )
 }

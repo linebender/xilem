@@ -13,7 +13,7 @@ use masonry::core::{
 };
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
-use masonry::properties::types::Length;
+use masonry::properties::types::{AsUnit, Length};
 use masonry::properties::{BorderColor, BorderWidth};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
@@ -70,7 +70,7 @@ pub fn make_grid(grid_spacing: f64) -> NewWidget<Grid> {
 
     let props = Properties::new()
         .with(BorderColor::new(Color::from_rgb8(40, 40, 80)))
-        .with(BorderWidth::all(1.0));
+        .with(BorderWidth::all(1.px()));
     let label = SizedBox::new(NewWidget::new_with(
         label,
         WidgetId::next(),

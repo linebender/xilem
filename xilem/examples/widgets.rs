@@ -68,7 +68,7 @@ fn border_box<State: 'static, Action: 'static>(
         flex((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
         FlexSpacer::Flex(1.),
     )))
-    .border(Color::WHITE, 2.)
+    .border(Color::WHITE, 2.px())
     .width(450.px())
     .height(200.px())
 }
@@ -102,7 +102,7 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
         ))
         .gap(SPACER_WIDTH),
     )
-    .padding(SPACER_WIDTH.value())
+    .padding(SPACER_WIDTH)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

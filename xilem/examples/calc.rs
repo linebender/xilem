@@ -278,7 +278,7 @@ fn expanded_button(
     sized_box(
         button(text, callback)
             .background_color(BLUE)
-            .corner_radius(10.)
+            .corner_radius(10.px())
             .border_color(Color::TRANSPARENT)
             .hovered_border_color(Color::WHITE),
     )
@@ -302,7 +302,7 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
             data.on_entered_digit(digit);
         })
         .background_color(GRAY)
-        .corner_radius(10.)
+        .corner_radius(10.px())
         .border_color(Color::TRANSPARENT),
     )
     .expand()

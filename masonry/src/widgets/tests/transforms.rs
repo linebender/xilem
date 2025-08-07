@@ -20,7 +20,7 @@ fn blue_box(inner: impl Widget) -> impl Widget {
     let mut box_props = Properties::new();
     box_props.insert(Background::Color(palette::css::BLUE));
     box_props.insert(BorderColor::new(palette::css::TEAL));
-    box_props.insert(BorderWidth::all(2.0));
+    box_props.insert(BorderWidth::all(2.px()));
 
     WrapperWidget::new(
         SizedBox::new(inner.with_auto_id())

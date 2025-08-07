@@ -71,7 +71,7 @@ impl Avatars {
                     )
                     .width(width)
                     .height(height)
-                    .padding(4.0),
+                    .padding(4.px()),
             )
         })
     }

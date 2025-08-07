@@ -51,7 +51,7 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         ))
         .flex(1.),
     ))
-    .padding(10.0);
+    .padding(10.px());
     fork(
         view,
         task(

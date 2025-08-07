@@ -3,6 +3,7 @@
 
 use megalodon::entities::Status;
 use xilem::WidgetView;
+use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};
 use xilem::view::{flex, portal, prose, sized_box};
@@ -18,8 +19,8 @@ pub(crate) fn timeline(statuses: &mut [Status]) -> impl WidgetView<Placehero> + 
     portal(
         flex(statuses.iter().map(timeline_status).collect::<Vec<_>>()).padding(Padding {
             // Leave room for scrollbar
-            right: 20.,
-            ..Padding::all(5.0)
+            right: 20.px(),
+            ..Padding::all(5.px())
         }),
     )
 }
@@ -44,7 +45,7 @@ pub(crate) fn timeline_status(status: &Status) -> impl WidgetView<Placehero> + u
         (None, status)
     };
     sized_box(flex((info_line, base_status(primary_status))))
-        .border(css::WHITE, 2.0)
-        .padding(10.0)
-        .corner_radius(5.)
+        .border(css::WHITE, 2.px())
+        .padding(10.px())
+        .corner_radius(5.px())
 }

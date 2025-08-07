@@ -72,7 +72,7 @@ fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use
         state_machine(app_data),
         // TODO: When we have a canvas widget, visualise the entire state machine here.
     ))
-    .padding(15.0)
+    .padding(15.px())
 }
 
 fn main() -> Result<(), EventLoopError> {

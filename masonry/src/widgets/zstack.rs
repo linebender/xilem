@@ -234,12 +234,12 @@ mod tests {
         let mut bg_props = Properties::new();
         bg_props.insert(Background::Color(palette::css::BLUE));
         bg_props.insert(BorderColor::new(palette::css::TEAL));
-        bg_props.insert(BorderWidth::all(2.0));
+        bg_props.insert(BorderWidth::all(2.px()));
 
         let mut fg_props = Properties::new();
         fg_props.insert(Background::Color(palette::css::RED));
         fg_props.insert(BorderColor::new(palette::css::PINK));
-        fg_props.insert(BorderWidth::all(2.0));
+        fg_props.insert(BorderWidth::all(2.px()));
 
         let widget = ZStack::new()
             .with_child(

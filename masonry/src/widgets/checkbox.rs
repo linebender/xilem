@@ -250,7 +250,12 @@ impl Widget for Checkbox {
         }
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        stroke(
+            scene,
+            &border_rect,
+            border_color.color,
+            border_width.width.value(),
+        );
 
         if self.checked {
             let checkmark_width = props.get::<CheckmarkStrokeWidth>();
@@ -267,7 +272,7 @@ impl Widget for Checkbox {
             path.line_to((14.0, 5.0));
 
             let style = Stroke {
-                width: checkmark_width.width,
+                width: checkmark_width.width.value(),
                 join: Join::Round,
                 miter_limit: 10.0,
                 start_cap: Cap::Round,
