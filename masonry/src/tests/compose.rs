@@ -75,3 +75,23 @@ fn request_compose() {
         Vec2::new(7., 7.) + Point::new(30., 30.).to_vec2() + Vec2::new(8., 8.)
     );
 }
+
+#[test]
+fn scroll_pixel_snap() {
+    let child_tag = WidgetTag::new("child");
+    let child = NewWidget::new_with_tag(SizedBox::empty(), child_tag);
+
+    let parent = ModularWidget::new_parent(child)
+        .compose_fn(|state, ctx| {
+            let offset = Vec2::new(0.1, 0.9);
+
+            ctx.set_child_scroll_translation(state, offset);
+        })
+        .with_auto_id();
+
+    let harness = TestHarness::create(default_property_set(), parent);
+
+    // Origin should be rounded to (0., 1.) by pixel-snapping.
+    let origin = harness.get_widget_with_tag(child_tag).ctx().window_origin();
+    assert_eq!(origin, Point::new(0., 1.));
+}
