@@ -3,10 +3,16 @@
 
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, WidgetTag};
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
+use masonry_core::palette::css::{BLUE, GREEN, RED};
+use masonry_core::util::{fill, stroke};
+use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_render_snapshot};
+use vello::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
+use vello::peniko::Color;
 
+use crate::properties::Background;
+use crate::properties::types::MainAxisAlignment;
 use crate::theme::default_property_set;
-use crate::widgets::SizedBox;
+use crate::widgets::{Flex, SizedBox};
 
 #[test]
 fn request_paint() {
@@ -50,8 +56,101 @@ fn request_paint() {
     assert_matches!(harness.get_records_of(target_tag)[..], []);
 }
 
-// TODO - Test painting order for widget with multiple children.
+#[test]
+fn paint_order() {
+    const SQUARE_SIZE: f64 = 30.;
+    let child1 = NewWidget::new_with_props(
+        SizedBox::empty().width(SQUARE_SIZE).height(SQUARE_SIZE),
+        (Background::Color(RED),).into(),
+    );
+    let child2 = NewWidget::new_with_props(
+        SizedBox::empty().width(SQUARE_SIZE).height(SQUARE_SIZE),
+        (Background::Color(GREEN),).into(),
+    );
+    let child3 = NewWidget::new_with_props(
+        SizedBox::empty().width(SQUARE_SIZE).height(SQUARE_SIZE),
+        (Background::Color(BLUE),).into(),
+    );
+    let children = vec![child1, child2, child3];
+    let parent = NewWidget::new(
+        ModularWidget::new_multi_parent(children)
+            .layout_fn(move |children, ctx, _props, bc| {
+                let mut pos = Point::ZERO;
+                for child in children {
+                    let _ = ctx.run_layout(child, bc);
 
-// TODO - Check that the widget's clip restricts what the widget paints.
+                    ctx.place_child(child, pos);
+                    pos += Vec2::new(SQUARE_SIZE / 2., SQUARE_SIZE / 2.);
+                }
+                Size::new(SQUARE_SIZE * 2., SQUARE_SIZE * 2.)
+            })
+            .paint_fn(|_, ctx, _, scene| {
+                fill(scene, &ctx.size().to_rect(), Color::WHITE);
+            })
+            .post_paint_fn(|_, ctx, _, scene| {
+                let rect = ctx.size().to_rect().inset(-0.5);
+                stroke(scene, &rect, Color::BLACK, 1.0);
+            }),
+    );
+    let grandparent = NewWidget::new(
+        Flex::column()
+            .main_axis_alignment(MainAxisAlignment::Center)
+            .with_child(parent),
+    );
 
-// TODO - Check that `Widget::post_paint()` can paint outside the widget's clip.
+    let mut harness = TestHarness::create_with_size(
+        default_property_set(),
+        grandparent,
+        Size::new(SQUARE_SIZE * 3., SQUARE_SIZE * 3.),
+    );
+
+    // The resulting image should have, from background to foreground:
+    // - The harness's default color background.
+    // - The parent's white square.
+    // - The red, green, then blue square.
+    // - The parent's post-paint black square.
+    assert_render_snapshot!(harness, "paint_order");
+}
+
+#[test]
+fn paint_clipping() {
+    const SQUARE_SIZE: f64 = 80.;
+
+    let circle = Circle::new((SQUARE_SIZE / 2., SQUARE_SIZE / 2.), SQUARE_SIZE * 0.60);
+
+    let parent = NewWidget::new(
+        ModularWidget::new(())
+            .layout_fn(|_, ctx, _, _| {
+                let size = Size::new(SQUARE_SIZE, SQUARE_SIZE);
+                ctx.set_clip_path(size.to_rect());
+                size
+            })
+            .paint_fn(move |_, ctx, _, scene| {
+                fill(scene, &ctx.size().to_rect(), Color::WHITE);
+                fill(scene, &circle, RED);
+            })
+            .post_paint_fn(move |_, _, _, scene| {
+                let style = Stroke {
+                    width: 4.0,
+                    dash_pattern: Dashes::from_slice(&[12.0, 12.0]),
+                    ..Default::default()
+                };
+                scene.stroke(&style, Affine::IDENTITY, Color::BLACK, None, &circle);
+            }),
+    );
+    let parent = NewWidget::new(
+        Flex::column()
+            .main_axis_alignment(MainAxisAlignment::Center)
+            .with_child(parent),
+    );
+
+    let mut harness = TestHarness::create_with_size(
+        default_property_set(),
+        parent,
+        Size::new(SQUARE_SIZE * 2., SQUARE_SIZE * 2.),
+    );
+
+    // The red circle should be clipped by the square.
+    // The dashed circle shouldn't.
+    assert_render_snapshot!(harness, "paint_clipping");
+}
