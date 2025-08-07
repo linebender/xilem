@@ -747,7 +747,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     // Check if hovered widget is disabled
     if let Some(id) = next_hovered_widget {
         let state = root.widget_arena.get_state(id);
-        if state.item.is_disabled {
+        if state.is_disabled {
             next_hovered_widget = None;
         }
     }

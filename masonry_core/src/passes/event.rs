@@ -88,7 +88,7 @@ fn run_event_pass<E>(
     if let Some(id) = target {
         let state = root.widget_arena.get_state(id);
 
-        if state.item.is_disabled && skip_if_disabled {
+        if state.is_disabled && skip_if_disabled {
             return Handled::No;
         }
     }
