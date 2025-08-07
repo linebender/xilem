@@ -103,15 +103,19 @@ where
         render_root: &mut RenderRoot,
         app_state: &mut State,
     ) {
+        let mut root_id = None;
         render_root.edit_root_widget(|mut root| {
+            let mut root = root.downcast();
             self.root_widget_view.rebuild(
                 &prev.root_widget_view,
                 root_widget_view_state,
                 ctx,
-                root.downcast(),
+                root.reborrow_mut(),
                 app_state,
             );
+            root_id = Some(root.widget.inner_id());
         });
+        render_root.set_focus_fallback(root_id);
         if cfg!(debug_assertions) && !render_root.needs_rewrite_passes() {
             tracing::debug!("Widget tree didn't change as result of rebuild");
         }
