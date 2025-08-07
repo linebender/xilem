@@ -11,7 +11,7 @@ use crate::peniko::color::{AlphaColor, Srgb};
 /// **IMPORTANT:** This property is defined for [`Label`] and [`TextArea`], *not*
 /// for widgets embedding them such as [`Button`], [`Checkbox`], [`TextInput`], [`Prose`], etc.
 ///
-/// This widget is also defined for [`Spinner`].
+/// This property is also defined for [`Spinner`].
 ///
 /// [`Label`]: crate::widgets::Label
 /// [`TextArea`]: crate::widgets::TextArea
