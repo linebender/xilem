@@ -32,6 +32,17 @@ fn get_id_path(root: &RenderRoot, widget_id: Option<WidgetId>) -> Vec<WidgetId> 
         .collect()
 }
 
+fn is_ancestor_of(root: &RenderRoot, ancestor_id: WidgetId, widget_id: Option<WidgetId>) -> bool {
+    let Some(id) = widget_id else {
+        return false;
+    };
+    root.widget_arena
+        .nodes
+        .get_id_path(id)
+        .iter()
+        .any(|id| *id == ancestor_id.to_raw())
+}
+
 /// Make a dummy [`PointerEvent::Cancel`].
 fn dummy_pointer_cancel() -> PointerEvent {
     PointerEvent::Cancel(PointerInfo {
@@ -398,10 +409,6 @@ fn update_focus_chain_for_widget(
 
     let _span = enter_span(state);
 
-    // Replace has_focused to check if the value changed in the meantime
-    state.has_focus_target = global_state.focused_widget == Some(id);
-    let had_focus = state.has_focus_target;
-
     if state.needs_update_focus_chain {
         state.focus_chain.clear();
         if state.accepts_focus {
@@ -423,15 +430,6 @@ fn update_focus_chain_for_widget(
     if !state.is_disabled && !state.is_stashed {
         parent_focus_chain.extend(&state.focus_chain);
     }
-
-    // had_focus is the old focus value. state.has_focused was replaced with parent_ctx.is_focused().
-    // Therefore if had_focus is true but state.has_focused is false then the widget which is
-    // currently focused is not part of the functional tree anymore and should resign the focus.
-    if had_focus && !state.has_focus_target {
-        // Not sure about this logic, might remove
-        global_state.next_focused_widget = None;
-    }
-    state.has_focus_target = had_focus;
 }
 
 pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
@@ -704,7 +702,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         // TODO - Add unit test to check items are iterated from the bottom up.
         for widget_id in prev_active_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).is_active
+                && root.widget_arena.get_state_mut(widget_id).has_active
                     != active_set.contains(&widget_id)
             {
                 update_active_status_of(root, widget_id, &active_set);
@@ -712,7 +710,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         }
         for widget_id in next_active_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).is_active
+                && root.widget_arena.get_state_mut(widget_id).has_active
                     != active_set.contains(&widget_id)
             {
                 update_active_status_of(root, widget_id, &active_set);
@@ -742,7 +740,11 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     // If the pointer is captured, it can either hover its capture target or nothing.
     if let Some(capture_target) = root.global_state.pointer_capture_target {
         if next_hovered_widget != Some(capture_target) {
-            next_hovered_widget = None;
+            if is_ancestor_of(root, capture_target, next_hovered_widget) {
+                next_hovered_widget = Some(capture_target);
+            } else {
+                next_hovered_widget = None;
+            }
         }
     }
 
@@ -788,7 +790,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         // TODO - Add unit test to check items are iterated from the bottom up.
         for widget_id in prev_hovered_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).is_hovered
+                && root.widget_arena.get_state_mut(widget_id).has_hovered
                     != hovered_set.contains(&widget_id)
             {
                 update_hovered_status_of(root, widget_id, &hovered_set);
@@ -796,7 +798,7 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         }
         for widget_id in next_hovered_path.iter().copied() {
             if root.widget_arena.has(widget_id)
-                && root.widget_arena.get_state_mut(widget_id).is_hovered
+                && root.widget_arena.get_state_mut(widget_id).has_hovered
                     != hovered_set.contains(&widget_id)
             {
                 update_hovered_status_of(root, widget_id, &hovered_set);
