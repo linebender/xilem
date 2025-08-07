@@ -82,10 +82,10 @@ fn scroll_pixel_snap() {
     let child = NewWidget::new_with_tag(SizedBox::empty(), child_tag);
 
     let parent = ModularWidget::new_parent(child)
-        .compose_fn(|mut state, ctx| {
+        .compose_fn(|state, ctx| {
             let offset = Vec2::new(0.1, 0.9);
 
-            ctx.set_child_scroll_translation(&mut state, offset);
+            ctx.set_child_scroll_translation(state, offset);
         })
         .with_auto_id();
 
