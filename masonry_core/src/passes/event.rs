@@ -257,7 +257,12 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         // (since the root widget cannot be swapped).
         let root_widget_children = root.get_root_widget().children();
         if root_widget_children.len() == 1 {
-            Some(root_widget_children[0].id())
+            let only_child = root_widget_children[0].id();
+            if root.is_still_interactive(only_child) {
+                Some(only_child)
+            } else {
+                None
+            }
         } else {
             tracing::warn!(
                 widget_id = root.root.id().trace(),

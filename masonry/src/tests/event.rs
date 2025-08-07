@@ -270,6 +270,17 @@ fn text_event_fallback() {
     let records = harness.get_records_of(target_tag);
     assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
 
+    // Unless it's disabled.
+    harness.edit_widget_with_tag(target_tag, |mut target| {
+        target.ctx.set_disabled(true);
+    });
+    harness.flush_records_of(target_tag);
+    harness.keyboard_type_chars("A");
+    assert_matches!(harness.get_records_of(target_tag)[..], []);
+
+    harness.edit_widget_with_tag(target_tag, |mut target| {
+        target.ctx.set_disabled(false);
+    });
     harness.edit_widget_with_tag(parent_tag, |mut flex| {
         Flex::add_child(&mut flex, SizedBox::empty().with_auto_id());
     });
