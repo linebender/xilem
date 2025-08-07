@@ -33,6 +33,11 @@ When one of these statuses changes, the `update` method is called on the widget.
 However, `update` can be called for reasons other than status changes.
 
 
+## Hovered
+
+A widget is "hovered" when a pointer is placed in the widget's hitbox, but not in the hitbox of its children.
+
+
 ## Pointer capture
 
 When a user starts a pointer click on a widget, the widget can "capture" the pointer.
@@ -90,9 +95,21 @@ In that case, we still mark the widget as focused, but with a different color to
 
 ## Disabled
 
-A disabled widget is one which is visibly marked as non-interactive.
+A disabled widget is one which is made non-interactive, and should affect the state of the application.
 
-It is usually grayed out, and can't receive pointer or text events.
+For an example the decrease button of a counter of type `usize` should be disabled if the value is `0`.
+
+A disabled widget cannot have active status, cannot get or keep text focus, and cannot get text events (except [`Ime::Disabled`]).
+It cannot get pointer events (except [`PointerEvent::Cancel`]) or have hovered status either.
+Its pointer icon will be the default one.
+
+<!-- TODO: What about accessibility events? -->
+
+(Note: The above is not how browsers handle disabled form inputs, but it matches how most frameworks handle disable widgets.)
+
+While a widget is marked as disabled, all its children are automatically considered disabled.
+
+Interactive widgets (e.g. buttons) should have a way to indicate when they are disabled, usually by showing a grayed-out appearance.
 
 
 ## Stashed
@@ -181,6 +198,8 @@ DPI-aware pixel snapping is a future feature.
 
 
 [`Cancel`]: ui_events::pointer::PointerEvent::Cancel
+[`PointerEvent::Cancel`]: ui_events::pointer::PointerEvent::Cancel
+[`Ime::Disabled`]: crate::core::Ime::Disabled
 [`FocusChanged`]: crate::core::Update::FocusChanged
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
 [`EventCtx::request_focus`]: crate::core::EventCtx::request_focus
