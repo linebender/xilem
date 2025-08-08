@@ -12,7 +12,7 @@ use crate::peniko::Color;
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, HoveredBorderColor, Padding,
+    DisabledContentColor, HoveredBorderColor, Padding, PlaceholderColor,
 };
 use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
@@ -28,6 +28,7 @@ pub const ZYNC_500: Color = Color::from_rgb8(0x71, 0x71, 0x7a);
 pub const ACCENT_COLOR: Color = Color::from_rgb8(0x3b, 0x7e, 0xe4);
 pub const TEXT_COLOR: Color = Color::from_rgb8(0xf0, 0xf0, 0xea);
 pub const DISABLED_TEXT_COLOR: Color = Color::from_rgb8(0xa0, 0xa0, 0x9a);
+const PLACEHOLDER_COLOR: Color = Color::from_rgba8(0xFF, 0xFF, 0xFF, 0x8F);
 
 /// Default horizontal padding for [`Label`], in logical pixels.
 pub const LABEL_X_PADDING: f64 = 2.0;
@@ -87,6 +88,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextInput, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
+    properties.insert::<TextInput, _>(PlaceholderColor::new(PLACEHOLDER_COLOR));
 
     properties.insert::<TextInput, _>(BorderColor { color: ZYNC_600 });
 

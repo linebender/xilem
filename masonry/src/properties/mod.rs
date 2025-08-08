@@ -15,6 +15,7 @@ mod corner_radius;
 mod line_breaking;
 mod object_fit;
 mod padding;
+mod placeholder_color;
 mod progress_bar;
 
 pub mod types;
@@ -29,4 +30,5 @@ pub use corner_radius::CornerRadius;
 pub use line_breaking::LineBreaking;
 pub use object_fit::ObjectFit;
 pub use padding::Padding;
+pub use placeholder_color::PlaceholderColor;
 pub use progress_bar::BarColor;

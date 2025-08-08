@@ -1,10 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{NewWidget, Properties, WidgetId, WidgetOptions};
+use masonry::core::{ArcStr, NewWidget, Properties, WidgetId, WidgetOptions};
 use masonry::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
-    DisabledBackground, DisabledContentColor, Padding,
+    DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
 };
 use masonry::widgets::{self, TextAction};
 use vello::kurbo::Affine;
@@ -12,7 +12,7 @@ use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, View, ViewMarker};
 use crate::property_tuple::PropertyTuple;
-use crate::style::Style;
+use crate::style::{HasProperty, Style};
 use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
@@ -26,13 +26,13 @@ pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInpu
 where
     F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
 {
-    // TODO: Allow setting a placeholder
     TextInput {
         contents,
         on_changed: Box::new(on_changed),
         on_enter: None,
         text_color: None,
         disabled_text_color: None,
+        placeholder: ArcStr::default(),
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
@@ -48,6 +48,7 @@ pub struct TextInput<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_color: Option<Color>,
     disabled_text_color: Option<Color>,
+    placeholder: ArcStr,
     text_alignment: TextAlign,
     insert_newline: InsertNewline,
     disabled: bool,
@@ -69,6 +70,18 @@ impl<State, Action> TextInput<State, Action> {
     /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
     pub fn disabled_text_color(mut self, color: Color) -> Self {
         self.disabled_text_color = Some(color);
+        self
+    }
+
+    /// Set the string which is shown when the input is empty.
+    pub fn placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
+        self.placeholder = placeholder_text.into();
+        self
+    }
+
+    /// Set the [`PlaceholderColor`] property, which sets the color of the text shown when the input is empty.
+    pub fn placeholder_color(mut self, color: Color) -> Self {
+        *self.property() = Some(PlaceholderColor::new(color));
         self
     }
 
@@ -119,6 +132,7 @@ crate::declare_property_tuple!(
     BoxShadow, 4;
     CornerRadius, 5;
     Padding, 6;
+    PlaceholderColor, 7;
 );
 
 impl<State, Action> ViewMarker for TextInput<State, Action> {}
@@ -151,6 +165,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             },
             props,
         ));
+        let text_input = text_input.with_placeholder(self.placeholder.clone());
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
@@ -185,6 +200,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             } else {
                 element.remove_prop::<DisabledContentColor>();
             }
+        }
+        if self.placeholder != prev.placeholder {
+            widgets::TextInput::set_placeholder(&mut element, self.placeholder.clone());
         }
 
         if element.ctx.is_disabled() != self.disabled {
