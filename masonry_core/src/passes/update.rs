@@ -422,11 +422,16 @@ pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Optio
     // The idea of this algorithm is that we iterate through the entire tree in preorder
     // (or reversed post-order), skipping everything before the ancestors of the anchor.
     // We return the first focusable widget we find that way *except* the anchor widget,
-    // which we've temporarily made non-focusable.
+    // which we've temporarily "yanked" out of the search.
     if let Some(id) = focus_anchor_id {
         let anchor_state = root.widget_arena.get_state_mut(id);
         let anchor_was_focusable = anchor_state.accepts_focus;
-        anchor_state.accepts_focus = false;
+        let anchor_had_focusable = anchor_state.descendant_is_focusable;
+        if forward {
+            anchor_state.accepts_focus = false;
+        } else {
+            anchor_state.descendant_is_focusable = false;
+        }
 
         // The list of items to skip, from the anchor to the root (which we immediately pop).
         let mut anchor_path = get_id_path(root, focus_anchor_id);
@@ -435,7 +440,9 @@ pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Optio
         let found = find_first_focusable(root, &anchor_path, root.root.id(), forward);
 
         // Restore the anchor.
-        root.widget_arena.get_state_mut(id).accepts_focus = anchor_was_focusable;
+        let anchor_state = root.widget_arena.get_state_mut(id);
+        anchor_state.accepts_focus = anchor_was_focusable;
+        anchor_state.descendant_is_focusable = anchor_had_focusable;
 
         if found.is_some() {
             return found;
