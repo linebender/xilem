@@ -1,7 +1,7 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::collections::{HashSet, VecDeque};
+use std::collections::HashSet;
 
 use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
@@ -416,56 +416,43 @@ pub(crate) fn run_update_focusable_pass(root: &mut RenderRoot) {
     update_focusable_for_widget(root_node);
 }
 
-pub(crate) fn find_next_in_focusable(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
-    let focus_anchor = root.global_state.focus_anchor;
+pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
+    let focus_anchor_id = root.global_state.focus_anchor;
 
-    // If the anchor isn't already focused, try to find its first focusable descendant.
-    if focus_anchor != root.global_state.focused_widget
-        && let Some(focus_anchor) = focus_anchor
-    {
-        if let Some(found) = find_first_focusable(root, focus_anchor, forward) {
-            return Some(found);
+    // The idea of this algorithm is that we iterate through the entire tree in preorder
+    // (or reversed post-order), skipping everything before the ancestors of the anchor.
+    // We return the first focusable widget we find that way *except* the anchor widget,
+    // which we've temporarily made non-focusable.
+    if let Some(id) = focus_anchor_id {
+        let anchor_state = root.widget_arena.get_state_mut(id);
+        let anchor_was_focusable = anchor_state.accepts_focus;
+        anchor_state.accepts_focus = false;
+
+        // The list of items to skip, from the anchor to the root (which we immediately pop).
+        let mut anchor_path = get_id_path(root, focus_anchor_id);
+        let _ = anchor_path.pop();
+
+        let found = find_first_focusable(root, &anchor_path, root.root.id(), forward);
+
+        // Restore the anchor.
+        root.widget_arena.get_state_mut(id).accepts_focus = anchor_was_focusable;
+
+        if found.is_some() {
+            return found;
         }
     }
 
-    // Else find its first ancestor with a `descendant_is_focusable == true` sibling
-    let mut anchor_path = VecDeque::from(get_id_path(root, focus_anchor));
-    while let Some(anchor) = anchor_path.pop_front() {
-        if let Some(sibling) = find_next_focusable_sibling(root, anchor, forward) {
-            return find_first_focusable(root, sibling, forward);
-        }
-    }
-
-    // Else start from the root
-    find_first_focusable(root, root.root.id(), forward)
+    // If nothing is focused, or if we haven't found anything after the anchor,
+    // we iterate through the entire tree again, this time without the anchor path.
+    find_first_focusable(root, &[], root.root.id(), forward)
 }
 
-fn find_next_focusable_sibling(
+fn find_first_focusable(
     root: &mut RenderRoot,
-    anchor: WidgetId,
+    anchor_path: &[WidgetId],
+    node: WidgetId,
     forward: bool,
 ) -> Option<WidgetId> {
-    let parent_id = root.widget_arena.parent_of(anchor)?;
-    let parent_widget = &*root.widget_arena.get_node(parent_id).item.widget;
-    let siblings = parent_widget.children_ids();
-
-    let anchor_idx = siblings.iter().position(|id| *id == anchor).unwrap();
-
-    if forward {
-        siblings[anchor_idx + 1..]
-            .iter()
-            .find(|id| root.widget_arena.get_state(**id).descendant_is_focusable)
-            .copied()
-    } else {
-        siblings[..anchor_idx]
-            .iter()
-            .rev()
-            .find(|id| root.widget_arena.get_state(**id).descendant_is_focusable)
-            .copied()
-    }
-}
-
-fn find_first_focusable(root: &mut RenderRoot, node: WidgetId, forward: bool) -> Option<WidgetId> {
     let item = root.widget_arena.get_node_mut(node);
     let widget = &mut *item.item.widget;
     let state = &mut item.item.state;
@@ -473,22 +460,50 @@ fn find_first_focusable(root: &mut RenderRoot, node: WidgetId, forward: bool) ->
     if !state.descendant_is_focusable {
         return None;
     }
-    if state.accepts_focus {
+
+    let accepts_focus = state.accepts_focus;
+    if forward && accepts_focus {
         return Some(node);
     }
 
+    let children = widget.children_ids();
+    let children = if let Some((anchor, anchor_path)) = anchor_path.split_last() {
+        let anchor_idx = children.iter().position(|id| *id == *anchor).unwrap();
+
+        // First we try the anchor
+        if let Some(found) = find_first_focusable(root, anchor_path, children[anchor_idx], forward)
+        {
+            return Some(found);
+        }
+
+        // Then everything after, at which point we're outside the anchor path.
+        if forward {
+            &children[anchor_idx + 1..]
+        } else {
+            &children[..anchor_idx]
+        }
+    } else {
+        // If our parent didn't get an anchor path,
+        // or went past it, just check all children.
+        &children[..]
+    };
+
     if forward {
-        for child in widget.children_ids() {
-            if let Some(found) = find_first_focusable(root, child, forward) {
+        for child in children.into_iter() {
+            if let Some(found) = find_first_focusable(root, &[], *child, forward) {
                 return Some(found);
             }
         }
     } else {
-        for child in widget.children_ids().into_iter().rev() {
-            if let Some(found) = find_first_focusable(root, child, forward) {
+        for child in children.into_iter().rev() {
+            if let Some(found) = find_first_focusable(root, &[], *child, forward) {
                 return Some(found);
             }
         }
+    }
+
+    if !forward && accepts_focus {
+        return Some(node);
     }
 
     None
