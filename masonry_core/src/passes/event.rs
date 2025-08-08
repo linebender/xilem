@@ -12,7 +12,7 @@ use crate::core::{
 };
 use crate::debug_panic;
 use crate::dpi::{LogicalPosition, PhysicalPosition};
-use crate::passes::update::find_next_in_focusable;
+use crate::passes::update::find_next_focusable;
 use crate::passes::{enter_span, merge_state_up};
 
 // --- MARK: HELPERS
@@ -291,7 +291,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             && handled == Handled::No
         {
             let forward = !key.modifiers.shift();
-            let next_focused_widget = find_next_in_focusable(root, forward);
+            let next_focused_widget = find_next_focusable(root, forward);
             root.global_state.next_focused_widget = next_focused_widget;
             handled = Handled::Yes;
         }
