@@ -58,7 +58,7 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 - **update_widget_tree:** Updates the tree when widgets are added or removed.
 - **update_disabled:** Updates the disabled status of widgets.
 - **update_stashed:** Updates the stashed status of widgets.
-- **update_focus_chain:** Updates the focus chain. (Internal-only, doesn't call widget methods.)
+- **update_focusable:** Updates the focus chain. (Internal-only, doesn't call widget methods.)
 - **update_focus:** Updates the focused status of widgets.
 - **layout:** Computes the layout of the widget tree.
 - **update_scrolls:** Updates the scroll positions of widgets.
