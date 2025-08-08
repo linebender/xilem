@@ -702,7 +702,8 @@ impl RenderRoot {
         self.global_state.pointer_capture_target
     }
 
-    /// Sets the [focused widget](crate::doc::masonry_concepts#text-focus).
+    /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus)
+    /// and the [focus anchor](masonry_core::doc::masonry_concepts#focus-anchor).
     ///
     /// Returns false if the widget is not found in the tree or can't be focused.
     pub fn focus_on(&mut self, id: Option<WidgetId>) -> bool {
@@ -712,6 +713,7 @@ impl RenderRoot {
             return false;
         }
         self.global_state.next_focused_widget = id;
+        self.global_state.focus_anchor = id;
         self.run_rewrite_passes();
         true
     }
