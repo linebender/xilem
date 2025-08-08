@@ -327,8 +327,7 @@ impl MasonryState<'_> {
     ) {
         if self.window_id_to_handle_id.contains_key(&window_id) {
             panic!(
-                "attempted to create a window with id {:?} but a window with that id already exists",
-                window_id
+                "attempted to create a window with id {window_id:?} but a window with that id already exists",
             );
         }
 
