@@ -32,6 +32,9 @@ pub use sized_box::*;
 mod spinner;
 pub use spinner::*;
 
+mod stack;
+pub use stack::*;
+
 mod image;
 pub use image::*;
 
