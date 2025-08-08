@@ -379,11 +379,7 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 // --- MARK: FOCUSABLE
 
-fn update_focusable_for_widget(
-    widget: ArenaMut<'_, Box<dyn Widget>>,
-    mut state: ArenaMut<'_, WidgetState>,
-    properties: ArenaMut<'_, AnyMap>,
-) {
+fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
     let children = node.children;
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
@@ -402,10 +398,10 @@ fn update_focusable_for_widget(
     }
 
     let parent_state = &mut *state;
-    recurse_on_children(id, widget, children, |widget, mut state, properties| {
-        update_focusable_for_widget(widget, state.reborrow_mut(), properties);
+    recurse_on_children(id, widget, children, |mut node| {
+        update_focusable_for_widget(node.reborrow_mut());
 
-        if state.item.descendant_is_focusable {
+        if node.item.state.descendant_is_focusable {
             parent_state.descendant_is_focusable = true;
         }
     });
@@ -416,8 +412,8 @@ fn update_focusable_for_widget(
 pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus_chain").entered();
 
-    let (root_widget, root_state, root_properties) = root.widget_arena.get_all_mut(root.root.id());
-    update_focusable_for_widget(root_widget, root_state, root_properties);
+    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    update_focusable_for_widget(root_node);
 }
 
 pub(crate) fn find_next_in_focus_chain(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
@@ -450,53 +446,45 @@ fn find_next_focusable_sibling(
     forward: bool,
 ) -> Option<WidgetId> {
     let parent_id = root.widget_arena.parent_of(anchor)?;
-    let parent_widget = root.widget_arena.get_widget(parent_id);
-    let siblings = parent_widget.item.children_ids();
+    let parent_widget = &*root.widget_arena.get_node(parent_id).item.widget;
+    let siblings = parent_widget.children_ids();
 
     let anchor_idx = siblings.iter().position(|id| *id == anchor).unwrap();
 
     if forward {
         siblings[anchor_idx + 1..]
             .iter()
-            .find(|id| {
-                root.widget_arena
-                    .get_state(**id)
-                    .item
-                    .descendant_is_focusable
-            })
+            .find(|id| root.widget_arena.get_state(**id).descendant_is_focusable)
             .copied()
     } else {
         siblings[..anchor_idx]
             .iter()
             .rev()
-            .find(|id| {
-                root.widget_arena
-                    .get_state(**id)
-                    .item
-                    .descendant_is_focusable
-            })
+            .find(|id| root.widget_arena.get_state(**id).descendant_is_focusable)
             .copied()
     }
 }
 
 fn find_first_focusable(root: &mut RenderRoot, node: WidgetId, forward: bool) -> Option<WidgetId> {
-    let (widget, state, _) = root.widget_arena.get_all(node);
+    let item = root.widget_arena.get_node_mut(node);
+    let widget = &mut *item.item.widget;
+    let state = &mut item.item.state;
 
-    if !state.item.descendant_is_focusable {
+    if !state.descendant_is_focusable {
         return None;
     }
-    if state.item.accepts_focus {
+    if state.accepts_focus {
         return Some(node);
     }
 
     if forward {
-        for child in widget.item.children_ids() {
+        for child in widget.children_ids() {
             if let Some(found) = find_first_focusable(root, child, forward) {
                 return Some(found);
             }
         }
     } else {
-        for child in widget.item.children_ids().into_iter().rev() {
+        for child in widget.children_ids().into_iter().rev() {
             if let Some(found) = find_first_focusable(root, child, forward) {
                 return Some(found);
             }
