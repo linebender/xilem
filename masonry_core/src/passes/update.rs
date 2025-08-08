@@ -398,7 +398,6 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 // recurse_on_children), and some design decisions inherited from Druid should be reconsidered.
 /// See the [passes documentation](../doc/05_pass_system.md#update-passes).
 fn update_focus_chain_for_widget(
-    global_state: &mut RenderRootState,
     node: ArenaMut<'_, WidgetArenaNode>,
     parent_focus_chain: &mut Vec<WidgetId>,
 ) {
@@ -418,11 +417,7 @@ fn update_focus_chain_for_widget(
 
         let parent_state = &mut *state;
         recurse_on_children(id, widget, children, |mut node| {
-            update_focus_chain_for_widget(
-                global_state,
-                node.reborrow_mut(),
-                &mut parent_state.focus_chain,
-            );
+            update_focus_chain_for_widget(node.reborrow_mut(), &mut parent_state.focus_chain);
             parent_state.merge_up(&mut node.item.state);
         });
     }
@@ -437,7 +432,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
     let mut dummy_focus_chain = Vec::new();
 
     let root_node = root.widget_arena.get_node_mut(root.root.id());
-    update_focus_chain_for_widget(&mut root.global_state, root_node, &mut dummy_focus_chain);
+    update_focus_chain_for_widget(root_node, &mut dummy_focus_chain);
 }
 
 // ----------------
