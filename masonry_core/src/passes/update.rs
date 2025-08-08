@@ -208,17 +208,18 @@ fn update_widget_tree(
 pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
-    if root.root.incomplete() {
+    // REROOT
+    if root.layer_stack.incomplete() {
         let mut ctx = RegisterCtx {
             global_state: &mut root.global_state,
             children: root.widget_arena.nodes.roots_mut(),
             #[cfg(debug_assertions)]
             registered_ids: Vec::new(),
         };
-        ctx.register_child(&mut root.root);
+        ctx.register_child(&mut root.layer_stack);
     }
 
-    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_widget_tree(&mut root.global_state, &root.default_properties, root_node);
 }
 
@@ -286,7 +287,7 @@ pub(crate) fn run_update_disabled_pass(root: &mut RenderRoot) {
         root.global_state.needs_pointer_pass = true;
     }
 
-    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_disabled_for_widget(
         &mut root.global_state,
         &root.default_properties,
@@ -366,7 +367,7 @@ fn update_stashed_for_widget(
 pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_stashed").entered();
 
-    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_stashed_for_widget(
         &mut root.global_state,
         &root.default_properties,
@@ -438,7 +439,7 @@ pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus_chain").entered();
     let mut dummy_focus_chain = Vec::new();
 
-    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
     update_focus_chain_for_widget(&mut root.global_state, root_node, &mut dummy_focus_chain);
 }
 
@@ -640,7 +641,8 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     if root.global_state.inspector_state.is_picking_widget {
         if let Some(pos) = pointer_pos {
             root.global_state.inspector_state.hovered_widget = root
-                .get_root_widget()
+                .get_widget(root.root_id())
+                .expect("root widget not in widget tree")
                 .find_widget_under_pointer(pos)
                 .map(|widget| widget.id());
         }
@@ -733,7 +735,8 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
 
     // -- UPDATE HOVERED --
     let mut next_hovered_widget = if let Some(pos) = pointer_pos {
-        root.get_root_widget()
+        root.get_widget(root.root_id())
+            .expect("root widget not in widget tree")
             .find_widget_under_pointer(pos)
             .map(|widget| widget.id())
     } else {
