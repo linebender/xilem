@@ -343,7 +343,6 @@ fn focus_order() {
     next_focusable_widgets.push(*focusable_widgets.first().unwrap());
 
     for (&id, &next_id) in std::iter::zip(&focusable_widgets, &next_focusable_widgets) {
-        println!("hello");
         harness.focus_on(Some(id));
         harness.press_tab_key(false);
         let focused = harness.focused_widget_id();

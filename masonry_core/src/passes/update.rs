@@ -424,7 +424,6 @@ pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Optio
     // We return the first focusable widget we find that way *except* the anchor widget,
     // which we've temporarily "yanked" out of the search.
     if let Some(id) = focus_anchor_id {
-        println!("foo");
         let anchor_state = root.widget_arena.get_state_mut(id);
         let anchor_was_focusable = anchor_state.accepts_focus;
         let anchor_had_focusable = anchor_state.descendant_is_focusable;
@@ -449,7 +448,6 @@ pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Optio
             return found;
         }
     }
-    println!("bar");
 
     // If nothing is focused, or if we haven't found anything after the anchor,
     // we iterate through the entire tree again, this time without the anchor path.
@@ -497,13 +495,13 @@ fn find_first_focusable(
         if anchor_path.is_empty() && accepts_focus {
             return Some(node);
         }
-        for child in children.into_iter() {
+        for child in children.iter() {
             if let Some(found) = find_first_focusable(root, &[], *child, forward) {
                 return Some(found);
             }
         }
     } else {
-        for child in children.into_iter().rev() {
+        for child in children.iter().rev() {
             if let Some(found) = find_first_focusable(root, &[], *child, forward) {
                 return Some(found);
             }
