@@ -3,7 +3,8 @@
 
 use masonry::core::{ArcStr, NewWidget, Properties, WidgetId, WidgetOptions};
 use masonry::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius, DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
+    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
+    DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
 };
 use masonry::widgets::{self, TextAction};
 use vello::kurbo::Affine;
