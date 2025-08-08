@@ -90,7 +90,7 @@ impl<S> ModularWidget<S> {
     }
 }
 
-impl<W: Widget> ModularWidget<WidgetPod<W>> {
+impl<W: Widget + ?Sized> ModularWidget<WidgetPod<W>> {
     /// Create a new `ModularWidget` with some methods already set to handle a single child.
     pub fn new_parent(child: NewWidget<W>) -> Self {
         let child = child.to_pod();
@@ -107,7 +107,7 @@ impl<W: Widget> ModularWidget<WidgetPod<W>> {
     }
 }
 
-impl<W: Widget> ModularWidget<Vec<WidgetPod<W>>> {
+impl<W: Widget + ?Sized> ModularWidget<Vec<WidgetPod<W>>> {
     /// Create a new `ModularWidget` with some methods already set to handle multiple children.
     ///
     /// Layout will just stack all children on the same position and return the size of the largest.
