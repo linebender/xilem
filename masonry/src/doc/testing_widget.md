@@ -168,7 +168,7 @@ The `TestHarness` is also capable of reading actions emitted by our widget with 
 
 <!-- TODO - Explain this. -->
 
-```rust
+```rust,ignore
     // ...
 
     #[test]
@@ -192,8 +192,6 @@ In general, `TestHarness` tries to implement methods matching every kind of beha
 
 Read the [`TestHarness`] documentation for a full overview of its API.
 
-[`Button`]: crate::widgets::Button
 [`TestHarness`]: crate::testing::TestHarness
-[`WrapperWidget`]: crate::testing::TestHarness
 [`WidgetRef`]: crate::core::WidgetRef
 [`assert_render_snapshot!`]: crate::testing::assert_render_snapshot
