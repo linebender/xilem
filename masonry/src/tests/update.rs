@@ -401,11 +401,8 @@ fn disable_focusable() {
     let mut harness = TestHarness::create(default_property_set(), parent);
 
     let button1_id = harness.get_widget_with_tag(button1_tag).id();
-    dbg!(button1_id);
     let button2_id = harness.get_widget_with_tag(button2_tag).id();
-    dbg!(button2_id);
     let button3_id = harness.get_widget_with_tag(button3_tag).id();
-    dbg!(button3_id);
 
     harness.focus_on(Some(button2_id));
     harness.edit_widget_with_tag(button2_tag, |mut button| {
@@ -481,11 +478,8 @@ fn remove_focusable() {
     let mut harness = TestHarness::create(default_property_set(), parent);
 
     let button1_id = harness.get_widget_with_tag(button1_tag).id();
-    dbg!(button1_id);
     let button2_id = harness.get_widget_with_tag(button2_tag).id();
-    dbg!(button2_id);
     let button3_id = harness.get_widget_with_tag(button3_tag).id();
-    dbg!(button3_id);
 
     harness.focus_on(Some(button2_id));
     harness.edit_root_widget(|mut parent| {
