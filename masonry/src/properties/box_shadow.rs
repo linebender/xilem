@@ -32,8 +32,7 @@ pub struct BoxShadow {
 
     /// The distance between the shadow's "inner edge" and the closest fully-transparent point.
     ///
-    /// A value of zero means the shadow's edge will be shard.
-    /// Negative values will be treated as zero.
+    /// A value of zero means the shadow's edge will be hard.
     pub blur_radius: f64,
 }
 
@@ -92,7 +91,7 @@ impl BoxShadow {
 
     /// Creates a rounded rectangle that will cast the shadow.
     pub fn shadow_rect(&self, size: Size, border_radius: &CornerRadius) -> RoundedRect {
-        size.to_rect().to_rounded_rect(border_radius.radius)
+        size.to_rect().to_rounded_rect(border_radius.radius.value())
     }
 
     /// Helper function to paint the shadow into a scene.

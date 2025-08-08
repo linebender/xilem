@@ -7,7 +7,7 @@ use vello::kurbo::{Point, Rect};
 
 use crate::peniko::color::{ColorSpaceTag, HueDirection};
 use crate::peniko::{ColorStops, ColorStopsSource, Extend};
-use crate::properties::types::UnitPoint;
+use crate::properties::types::{Length, UnitPoint};
 
 /// Properties for the supported [`Gradient`] types.
 ///
@@ -100,10 +100,10 @@ pub enum RadialGradientShape {
     /// A circle defined based on the box size.
     CircleTo(RadialGradientExtent),
     /// A circle with a fixed radius in logical pixels.
-    FixedCircle(f64),
+    FixedCircle(Length),
     // TODO - Add following and remove #[non_exhaustive]:
     // EllipseTo(RadialGradientExtent),
-    // FixedEllipse(f64),
+    // FixedEllipse(Length),
     // EllipsePercentage(f64),
 }
 
@@ -314,7 +314,7 @@ impl GradientShape {
             RadialGradientShape::CircleTo(RadialGradientExtent::FarthestCorner) => {
                 dist_to_corners.into_iter().reduce(f64::max).unwrap()
             }
-            RadialGradientShape::FixedCircle(radius) => radius,
+            RadialGradientShape::FixedCircle(radius) => radius.value(),
         }
     }
 

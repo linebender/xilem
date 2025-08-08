@@ -9,6 +9,7 @@ use parley::{GenericFamily, LineHeight};
 
 use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::peniko::Color;
+use crate::properties::types::{AsUnit, Length};
 use crate::properties::{
     ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
@@ -16,7 +17,7 @@ use crate::properties::{
 };
 use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
-pub const BORDER_WIDTH: f64 = 1.;
+pub const BORDER_WIDTH: Length = Length::const_px(1.);
 
 // Zync color variations from https://tailwindcss.com/docs/colors
 pub const ZYNC_900: Color = Color::from_rgb8(0x18, 0x18, 0x1b);
@@ -30,7 +31,7 @@ pub const TEXT_COLOR: Color = Color::from_rgb8(0xf0, 0xf0, 0xea);
 pub const DISABLED_TEXT_COLOR: Color = Color::from_rgb8(0xa0, 0xa0, 0x9a);
 
 /// Default horizontal padding for [`Label`], in logical pixels.
-pub const LABEL_X_PADDING: f64 = 2.0;
+pub const LABEL_X_PADDING: Length = Length::const_px(2.0);
 
 // TODO: The following constants are not being used in properties
 pub const TEXT_SIZE_NORMAL: f32 = 15.0;
@@ -43,16 +44,16 @@ pub const SCROLLBAR_PAD: f64 = 2.;
 pub const SCROLLBAR_MIN_SIZE: f64 = 45.;
 pub const SCROLLBAR_RADIUS: f64 = 5.;
 pub const SCROLLBAR_EDGE_WIDTH: f64 = 1.;
-pub const DEFAULT_GAP: f64 = 10.0;
-pub const DEFAULT_SPACER_LEN: f64 = 10.0;
-pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.0;
+pub const DEFAULT_GAP: Length = Length::const_px(10.);
+pub const DEFAULT_SPACER_LEN: Length = Length::const_px(10.);
+pub const WIDGET_CONTROL_COMPONENT_PADDING: f64 = 4.;
 
 pub fn default_property_set() -> DefaultProperties {
     let mut properties = DefaultProperties::new();
 
     // Button
-    properties.insert::<Button, _>(Padding::from_vh(6., 16.));
-    properties.insert::<Button, _>(CornerRadius { radius: 6. });
+    properties.insert::<Button, _>(Padding::from_vh(6.px(), 16.px()));
+    properties.insert::<Button, _>(CornerRadius { radius: 6.px() });
     properties.insert::<Button, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -64,7 +65,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Button, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
 
     // Checkbox
-    properties.insert::<Checkbox, _>(CornerRadius { radius: 4. });
+    properties.insert::<Checkbox, _>(CornerRadius { radius: 4.px() });
     properties.insert::<Checkbox, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -75,15 +76,15 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<Checkbox, _>(BorderColor { color: ZYNC_700 });
     properties.insert::<Checkbox, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
 
-    properties.insert::<Checkbox, _>(CheckmarkStrokeWidth { width: 2.0 });
+    properties.insert::<Checkbox, _>(CheckmarkStrokeWidth { width: 2.px() });
     properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
     properties.insert::<Checkbox, _>(DisabledCheckmarkColor(CheckmarkColor {
         color: DISABLED_TEXT_COLOR,
     }));
 
     // TextInput
-    properties.insert::<TextInput, _>(Padding::from_vh(6., 12.));
-    properties.insert::<TextInput, _>(CornerRadius { radius: 4. });
+    properties.insert::<TextInput, _>(Padding::from_vh(6.px(), 12.px()));
+    properties.insert::<TextInput, _>(CornerRadius { radius: 4.px() });
     properties.insert::<TextInput, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
@@ -99,12 +100,12 @@ pub fn default_property_set() -> DefaultProperties {
         .insert::<TextArea<true>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
 
     // Label
-    properties.insert::<Label, _>(Padding::from_vh(0., LABEL_X_PADDING));
+    properties.insert::<Label, _>(Padding::from_vh(0.px(), LABEL_X_PADDING));
     properties.insert::<Label, _>(ContentColor::new(TEXT_COLOR));
     properties.insert::<Label, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
 
     // ProgressBar
-    properties.insert::<ProgressBar, _>(CornerRadius { radius: 2. });
+    properties.insert::<ProgressBar, _>(CornerRadius { radius: 2.px() });
     properties.insert::<ProgressBar, _>(BorderWidth {
         width: BORDER_WIDTH,
     });

@@ -3,6 +3,7 @@
 
 //! A state machine to detect whether the button was pressed an even or an odd number of times.
 
+use masonry::properties::types::AsUnit;
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::style::Style as _;
@@ -67,11 +68,11 @@ fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use
         prose(&*app_data.history),
         label(format!("Current state: {:?}", app_data.state)),
         // TODO: Make `spinner` not need a `sized_box` to appear.
-        sized_box(spinner()).height(40.).width(40.),
+        sized_box(spinner()).height(40.px()).width(40.px()),
         state_machine(app_data),
         // TODO: When we have a canvas widget, visualise the entire state machine here.
     ))
-    .padding(15.0)
+    .padding(15.px())
 }
 
 fn main() -> Result<(), EventLoopError> {

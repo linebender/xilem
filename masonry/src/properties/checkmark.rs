@@ -5,6 +5,7 @@ use std::any::TypeId;
 
 use crate::core::{Property, UpdateCtx};
 use crate::peniko::color::{AlphaColor, Srgb};
+use crate::properties::types::Length;
 
 // TODO - This is technically BaselineCheckmarkColor, since it won't  be used
 // when the checkbox is disabled.
@@ -44,12 +45,14 @@ impl Property for DisabledCheckmarkColor {
 #[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CheckmarkStrokeWidth {
-    pub width: f64,
+    pub width: Length,
 }
 
 impl Property for CheckmarkStrokeWidth {
     fn static_default() -> &'static Self {
-        static DEFAULT: CheckmarkStrokeWidth = CheckmarkStrokeWidth { width: 1. };
+        static DEFAULT: CheckmarkStrokeWidth = CheckmarkStrokeWidth {
+            width: Length::const_px(1.),
+        };
         &DEFAULT
     }
 }

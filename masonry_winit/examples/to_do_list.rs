@@ -10,6 +10,7 @@
 use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
+use masonry::properties::types::Length;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
@@ -17,6 +18,7 @@ use masonry_winit::winit::window::Window;
 
 const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::new("text-input");
 const LIST_TAG: WidgetTag<Flex> = WidgetTag::new("list");
+const WIDGET_SPACING: Length = Length::const_px(5.0);
 
 struct Driver {
     next_task: String,
@@ -58,8 +60,6 @@ impl AppDriver for Driver {
 
 /// Return initial to-do-list without items.
 pub fn make_widget_tree() -> NewWidget<impl Widget> {
-    const WIDGET_SPACING: f64 = 5.0;
-
     let text_input = NewWidget::new_with_tag(TextInput::new(""), TEXT_INPUT_TAG);
     let button = NewWidget::new(Button::with_text("Add task"));
 

@@ -6,6 +6,7 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use masonry::properties::types::AsUnit;
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{Axis, button, checkbox, flex, flex_row, text_input};
@@ -71,7 +72,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         })
         .collect::<Vec<_>>();
 
-    flex((first_line, tasks)).padding(50.)
+    flex((first_line, tasks)).padding(50.px())
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

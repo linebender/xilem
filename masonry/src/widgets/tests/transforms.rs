@@ -10,7 +10,7 @@ use vello::kurbo::{Affine, Vec2};
 use vello::peniko::color::palette;
 
 use crate::core::{NewWidget, PointerButton, Properties, Widget, WidgetOptions};
-use crate::properties::types::UnitPoint;
+use crate::properties::types::{AsUnit, UnitPoint};
 use crate::properties::{Background, BorderColor, BorderWidth};
 use crate::testing::{TestHarness, assert_render_snapshot};
 use crate::theme::default_property_set;
@@ -20,12 +20,12 @@ fn blue_box(inner: impl Widget) -> impl Widget {
     let mut box_props = Properties::new();
     box_props.insert(Background::Color(palette::css::BLUE));
     box_props.insert(BorderColor::new(palette::css::TEAL));
-    box_props.insert(BorderWidth::all(2.0));
+    box_props.insert(BorderWidth::all(2.px()));
 
     WrapperWidget::new(
         SizedBox::new(inner.with_auto_id())
-            .width(200.)
-            .height(100.)
+            .width(200.px())
+            .height(100.px())
             .with_props(box_props),
     )
 }

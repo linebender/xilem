@@ -4,6 +4,7 @@
 //! Traits used to set custom styles on views.
 
 use masonry::core::Property;
+use masonry::properties::types::Length;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use vello::peniko::Color;
 
@@ -137,7 +138,7 @@ pub trait Style: Sized {
     }
 
     /// Set the element's border color and width.
-    fn border(mut self, color: Color, width: f64) -> Self
+    fn border(mut self, color: Color, width: Length) -> Self
     where
         Self: HasProperty<BorderColor>,
         Self: HasProperty<BorderWidth>,
@@ -166,7 +167,7 @@ pub trait Style: Sized {
     }
 
     /// Set the element's border width.
-    fn border_width(mut self, width: f64) -> Self
+    fn border_width(mut self, width: Length) -> Self
     where
         Self: HasProperty<BorderWidth>,
     {
@@ -184,7 +185,7 @@ pub trait Style: Sized {
     }
 
     /// Set the element's corner radius.
-    fn corner_radius(mut self, radius: f64) -> Self
+    fn corner_radius(mut self, radius: Length) -> Self
     where
         Self: HasProperty<CornerRadius>,
     {

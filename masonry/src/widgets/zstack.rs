@@ -223,6 +223,7 @@ mod tests {
 
     use super::*;
     use crate::core::Properties;
+    use crate::properties::types::AsUnit;
     use crate::properties::{Background, BorderColor, BorderWidth};
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
@@ -233,19 +234,19 @@ mod tests {
         let mut bg_props = Properties::new();
         bg_props.insert(Background::Color(palette::css::BLUE));
         bg_props.insert(BorderColor::new(palette::css::TEAL));
-        bg_props.insert(BorderWidth::all(2.0));
+        bg_props.insert(BorderWidth::all(2.px()));
 
         let mut fg_props = Properties::new();
         fg_props.insert(Background::Color(palette::css::RED));
         fg_props.insert(BorderColor::new(palette::css::PINK));
-        fg_props.insert(BorderWidth::all(2.0));
+        fg_props.insert(BorderWidth::all(2.px()));
 
         let widget = ZStack::new()
             .with_child(
                 NewWidget::new_with_props(
                     SizedBox::new(Label::new("Background").with_auto_id())
-                        .width(200.)
-                        .height(100.),
+                        .width(200.px())
+                        .height(100.px()),
                     bg_props,
                 ),
                 ChildAlignment::ParentAligned,

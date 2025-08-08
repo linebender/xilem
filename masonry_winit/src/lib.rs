@@ -19,6 +19,7 @@
 //! ```rust
 //! use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetPod};
 //! use masonry::dpi::LogicalSize;
+//! use masonry::properties::types::{Length, AsUnit};
 //! use masonry::theme::default_property_set;
 //! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextInput};
 //! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
@@ -58,7 +59,7 @@
 //! }
 //!
 //! fn main() {
-//!     const WIDGET_SPACING: f64 = 5.0;
+//!     const WIDGET_SPACING: Length = Length::const_px(5.0);
 //!
 //!     let main_widget = Portal::new(
 //!         Flex::column()

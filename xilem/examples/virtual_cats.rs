@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
-use masonry::properties::types::UnitPoint;
+use masonry::properties::types::{AsUnit, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
@@ -99,22 +99,22 @@ impl VirtualCats {
                         .line_break_mode(LineBreaking::Clip)
                         .text_alignment(TextAlign::End),
                 )
-                .padding(4.)
-                .corner_radius(4.)
+                .padding(4.px())
+                .corner_radius(4.px())
                 .background_color(palette::css::BLACK.multiply_alpha(0.5)),
             )
             .padding(Padding {
-                left: 0.,
-                right: 42.,
-                top: 30.,
-                bottom: 0.,
+                left: 0.px(),
+                right: 42.px(),
+                top: 30.px(),
+                bottom: 0.px(),
             });
             Either::A(zstack((
                 image(img).fit(ObjectFit::FitWidth),
                 attribution.alignment(UnitPoint::TOP_RIGHT),
             )))
         } else {
-            Either::B(sized_box(spinner()).width(80.).height(80.))
+            Either::B(sized_box(spinner()).width(80.px()).height(80.px()))
         };
         fork(flex((prose(item.message.clone()), img)), task)
     }
@@ -124,7 +124,7 @@ impl VirtualCats {
             0..self.statuses.len() as i64,
             Self::virtual_item,
         ))
-        .padding(Padding::horizontal(10.0))
+        .padding(Padding::horizontal(10.px()))
     }
 }
 

@@ -8,7 +8,7 @@
 
 use std::sync::Arc;
 
-use masonry::properties::types::UnitPoint;
+use masonry::properties::types::{AsUnit, Length, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use tokio::sync::mpsc::UnboundedSender;
 use vello::peniko::{Blob, Image};
@@ -58,7 +58,7 @@ impl HttpCats {
                     .map(Status::list_view)
                     .collect::<Vec<_>>(),
             ))
-            .padding(Padding::left(5.)),
+            .padding(Padding::left(5.px())),
         );
 
         let info_area = if let Some(selected_code) = self.selected_code {
@@ -87,7 +87,7 @@ impl HttpCats {
         fork(
             flex((
                 // Add padding to the top for Android. Still a horrible hack
-                FlexSpacer::Fixed(40.),
+                FlexSpacer::Fixed(40.px()),
                 split(left_column, portal(sized_box(info_area).expand_width())).split_point(0.4),
             ))
             .must_fill_major_axis(true),
@@ -166,7 +166,7 @@ impl Status {
 
                 state.selected_code = Some(code);
             }),
-            FlexSpacer::Fixed(masonry::theme::SCROLLBAR_WIDTH),
+            FlexSpacer::Fixed(Length::px(masonry::theme::SCROLLBAR_WIDTH)),
         ))
     }
 
@@ -176,7 +176,7 @@ impl Status {
                 prose("Failed to start fetching image. This is a bug!")
                     .text_alignment(TextAlign::Center),
             ),
-            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.).height(80.)),
+            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.px()).height(80.px())),
             // TODO: Alt text?
             ImageState::Available(image_data) => {
                 let attribution = sized_box(
@@ -185,15 +185,15 @@ impl Status {
                             .line_break_mode(LineBreaking::Clip)
                             .text_alignment(TextAlign::End),
                     )
-                    .padding(4.)
-                    .corner_radius(4.)
+                    .padding(4.px())
+                    .corner_radius(4.px())
                     .background_color(palette::css::BLACK.multiply_alpha(0.5)),
                 )
                 .padding(Padding {
-                    left: 0.,
-                    right: 42.,
-                    top: 30.,
-                    bottom: 0.,
+                    left: 0.px(),
+                    right: 42.px(),
+                    top: 30.px(),
+                    bottom: 0.px(),
                 });
                 OneOf3::C(zstack((
                     image(image_data),
@@ -206,7 +206,7 @@ impl Status {
             prose(self.message)
                 .text_size(20.)
                 .text_alignment(TextAlign::Center),
-            FlexSpacer::Fixed(10.),
+            FlexSpacer::Fixed(10.px()),
             image,
         ))
         .main_axis_alignment(xilem::view::MainAxisAlignment::Start)

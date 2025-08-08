@@ -165,7 +165,12 @@ impl Widget for ProgressBar {
         fill(scene, &bg_rect, &brush);
         fill(scene, &progress_rect, bar_color.0);
 
-        stroke(scene, &border_rect, border_color.color, border_width.width);
+        stroke(
+            scene,
+            &border_rect,
+            border_color.color,
+            border_width.width.value(),
+        );
     }
 
     fn accessibility_role(&self) -> Role {

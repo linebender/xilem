@@ -19,7 +19,7 @@ use masonry::core::{
 use masonry::dpi::LogicalSize;
 use masonry::peniko::Color;
 use masonry::peniko::color::AlphaColor;
-use masonry::properties::types::CrossAxisAlignment;
+use masonry::properties::types::{AsUnit, CrossAxisAlignment};
 use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, HoveredBorderColor, Padding,
 };
@@ -203,7 +203,7 @@ fn op_button_with_label(op: char, label: String) -> NewWidget<Button> {
             .with(ActiveBackground(Background::Color(LIGHT_BLUE)))
             .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
             .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0))
+            .with(BorderWidth::all(2.px()))
             .with(CalcAction::Op(op)),
     )
 }
@@ -231,7 +231,7 @@ fn digit_button(digit: u8) -> NewWidget<Button> {
             .with(ActiveBackground(Background::Color(LIGHT_GRAY)))
             .with(HoveredBorderColor(BorderColor::new(Color::WHITE)))
             .with(BorderColor::new(Color::TRANSPARENT))
-            .with(BorderWidth::all(2.0))
+            .with(BorderWidth::all(2.px()))
             .with(CalcAction::Digit(digit)),
     )
 }
@@ -250,7 +250,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
     }
 
     let root_widget = Grid::with_dimensions(4, 6)
-        .with_spacing(1.0)
+        .with_spacing(1.px())
         .with_child(display.with_auto_id(), GridParams::new(0, 0, 4, 1))
         .with_child(
             op_button_with_label('c', "CE".to_string()),
@@ -280,7 +280,7 @@ pub fn build_calc() -> NewWidget<impl Widget> {
         root_widget,
         Properties::new()
             .with(Background::Color(AlphaColor::from_str("#794869").unwrap()))
-            .with(Padding::all(2.0)),
+            .with(Padding::all(2.px())),
     )
 }
 
