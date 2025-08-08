@@ -138,7 +138,7 @@ fn pointer_capture_suppresses_neighbors() {
 }
 
 #[test]
-fn try_capture_pointer_on_pointer_up() {
+fn try_capture_pointer_on_pointer_move() {
     let widget = ModularWidget::new(())
         .pointer_event_fn(|_, ctx, _, _event| {
             ctx.capture_pointer();
