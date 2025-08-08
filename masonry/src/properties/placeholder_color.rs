@@ -4,7 +4,7 @@
 use crate::core::Property;
 use crate::peniko::color::{AlphaColor, Srgb};
 
-/// The color of a `TextInput`'s placeholder text.
+/// The color of a [`TextInput`]'s placeholder text.
 ///
 /// [`TextInput`]: crate::widgets::TextInput
 #[expect(missing_docs, reason = "field names are self-descriptive")]
