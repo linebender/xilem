@@ -417,7 +417,13 @@ pub(crate) fn run_update_focusable_pass(root: &mut RenderRoot) {
 }
 
 pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
-    let focus_anchor_id = root.global_state.focus_anchor;
+    let mut focus_anchor_id = root.global_state.focus_anchor;
+
+    if let Some(id) = focus_anchor_id
+        && !root.is_still_interactive(id)
+    {
+        focus_anchor_id = None;
+    }
 
     // The idea of this algorithm is that we iterate through the entire tree in preorder
     // (or reversed post-order), skipping everything before the ancestors of the anchor.
