@@ -13,7 +13,6 @@ use winit::event_loop::ActiveEventLoop;
 use winit::window::{Window as WindowHandle, WindowAttributes};
 
 use crate::app::MasonryState;
-use crate::event_loop_runner::WindowState;
 
 /// A unique and persistent identifier for a window.
 ///
@@ -98,35 +97,23 @@ impl DriverCtx<'_, '_> {
     ///
     /// # Panics
     ///
-    /// Panics if the window cannot be found or the window is not in the rendering state.
+    /// Panics if the window cannot be found.
     pub fn window_handle(&self, window_id: WindowId) -> &WindowHandle {
         let window = self.state.window(window_id);
-        let WindowState::Rendering { handle: window, .. } = &window.state else {
-            panic!(
-                "window with id {window_id:?} is in {:?} state, expected Rendering state",
-                window.state
-            );
-        };
-        window
+        &window.handle
     }
 
     /// Access the [`WindowHandle`] and [`RenderRoot`] of the given window.
     ///
     /// # Panics
     ///
-    /// Panics if the window cannot be found or the window is not in the rendering state.
+    /// Panics if the window cannot be found.
     pub fn window_handle_and_render_root(
         &mut self,
         window_id: WindowId,
     ) -> (&WindowHandle, &mut RenderRoot) {
         let window = self.state.window_mut(window_id);
-        let WindowState::Rendering { handle, .. } = &window.state else {
-            panic!(
-                "window with id {window_id:?} is in {:?} state, expected Rendering state",
-                window.state
-            );
-        };
-        (handle, &mut window.render_root)
+        (&window.handle, &mut window.render_root)
     }
 
     /// Creates a new window.
