@@ -4,7 +4,7 @@
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
 use masonry_core::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
+use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_debug_panics};
 use ui_events::keyboard::{Key, NamedKey};
 use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
@@ -135,6 +135,41 @@ fn pointer_capture_suppresses_neighbors() {
 
     // Once the capture is released, 'other' should immediately register as hovered.
     assert!(harness.get_widget_with_tag(other_tag).ctx().is_hovered());
+}
+
+#[test]
+fn try_capture_pointer_on_pointer_move() {
+    let widget = ModularWidget::new(())
+        .pointer_event_fn(|_, ctx, _, _event| {
+            ctx.capture_pointer();
+        })
+        .with_auto_id();
+
+    let mut harness = TestHarness::create(default_property_set(), widget);
+
+    assert_debug_panics!(
+        harness.mouse_move((10.0, 10.0)),
+        "event does not allow pointer capture"
+    );
+}
+
+#[test]
+fn try_capture_pointer_on_text_event() {
+    let widget = ModularWidget::new(())
+        .accepts_focus(true)
+        .text_event_fn(|_, ctx, _, _event| {
+            ctx.capture_pointer();
+        })
+        .with_auto_id();
+
+    let mut harness = TestHarness::create(default_property_set(), widget);
+    let id = harness.root_id();
+    harness.focus_on(Some(id));
+
+    assert_debug_panics!(
+        harness.keyboard_type_chars("a"),
+        "event does not allow pointer capture"
+    );
 }
 
 #[test]
