@@ -702,7 +702,8 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
-    /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
+    /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus)
+    /// and the [focus anchor](masonry_core::doc::masonry_concepts#focus-anchor).
     ///
     /// # Panics
     ///
