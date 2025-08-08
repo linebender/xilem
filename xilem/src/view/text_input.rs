@@ -25,7 +25,6 @@ pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInpu
 where
     F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
 {
-    // TODO: Allow setting a placeholder
     TextInput {
         contents,
         on_changed: Box::new(on_changed),
