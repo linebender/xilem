@@ -445,10 +445,10 @@ pub fn find_widget_under_pointer<'c>(
 
     let local_pos = ctx.window_transform().inverse() * pos;
 
-    if let Some(clip) = ctx.clip_path() {
-        if !clip.contains(local_pos) {
-            return None;
-        }
+    if let Some(clip) = ctx.clip_path()
+        && !clip.contains(local_pos)
+    {
+        return None;
     }
 
     // Assumes `Self::children_ids` is in increasing "z-order", picking the last child in case
