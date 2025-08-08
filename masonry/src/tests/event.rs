@@ -96,6 +96,35 @@ fn pointer_capture_and_cancel() {
 }
 
 #[test]
+fn synthetic_cancel() {
+    let target_tag = WidgetTag::new("target");
+
+    let target = create_capture_target();
+    let target = NewWidget::new_with_tag(target.record(), target_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), target);
+
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+
+    harness.mouse_move_to(target_id);
+    harness.mouse_button_press(PointerButton::Primary);
+    assert_eq!(harness.pointer_capture_target_id(), Some(target_id));
+
+    // When we disable a widget with pointer capture, it gets a
+    // synthetic PointerCancel event.
+    harness.edit_widget_with_tag(target_tag, |mut target| {
+        target.ctx.set_disabled(true);
+    });
+
+    let records = harness.get_records_of(target_tag);
+    assert!(
+        records
+            .iter()
+            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Cancel(_))))
+    );
+}
+
+#[test]
 fn pointer_capture_suppresses_neighbors() {
     let target_tag = WidgetTag::new("target");
     let other_tag = WidgetTag::new("other");

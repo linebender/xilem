@@ -40,6 +40,7 @@ pub(crate) type ChildrenFn<S> = dyn Fn(&S) -> ChildrenIds;
 pub struct ModularWidget<S> {
     /// The state passed to all the callbacks of this widget
     pub state: S,
+    icon: CursorIcon,
     accepts_pointer_interaction: bool,
     accepts_focus: bool,
     accepts_text_input: bool,
@@ -67,6 +68,7 @@ impl<S> ModularWidget<S> {
     pub fn new(state: S) -> Self {
         Self {
             state,
+            icon: CursorIcon::Default,
             accepts_pointer_interaction: true,
             accepts_focus: false,
             accepts_text_input: false,
@@ -134,6 +136,12 @@ impl<W: Widget> ModularWidget<Vec<WidgetPod<W>>> {
 ///
 /// Each method takes a flag which is then returned by the matching [`Widget`] method.
 impl<S> ModularWidget<S> {
+    /// See [`Widget::get_cursor`]
+    pub fn cursor_icon(mut self, icon: CursorIcon) -> Self {
+        self.icon = icon;
+        self
+    }
+
     /// See [`Widget::accepts_pointer_interaction`]
     pub fn accepts_pointer_interaction(mut self, flag: bool) -> Self {
         self.accepts_pointer_interaction = flag;
@@ -421,7 +429,7 @@ impl<S: 'static> Widget for ModularWidget<S> {
     }
 
     fn get_cursor(&self, _ctx: &QueryCtx<'_>, _pos: Point) -> CursorIcon {
-        CursorIcon::Default
+        self.icon
     }
 
     fn find_widget_under_pointer<'c>(
