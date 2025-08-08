@@ -16,15 +16,8 @@ use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
 use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
 use masonry_winit::winit::window::Window;
 
-/// The widget kind contained in the scroll area. This is a type parameter (`W`) of [`VirtualScroll`],
-/// although note that [`dyn Widget`](masonry::core::Widget) can also be used for dynamic children kinds.
-///
-/// We use a type alias for this, as when we downcast to the `VirtualScroll`, we need to be sure to
-/// always use the same type for `W`.
-type ScrollContents = Label;
-
 /// Function to create the virtual scroll area.
-fn init() -> VirtualScroll<ScrollContents> {
+fn init() -> VirtualScroll {
     // We start our fizzbuzzing with the top of the screen at item 0
     VirtualScroll::new(0)
 }
@@ -54,7 +47,7 @@ impl AppDriver for Driver {
                 .downcast::<VirtualScrollAction>()
                 .expect("Only expected Virtual Scroll actions");
             ctx.render_root(window_id).edit_root_widget(|mut root| {
-                let mut scroll = root.downcast::<VirtualScroll<ScrollContents>>();
+                let mut scroll = root.downcast::<VirtualScroll>();
                 // We need to tell the `VirtualScroll` which request this is associated with
                 // This is so that the controller knows which actions have been handled.
                 VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -78,7 +71,8 @@ impl AppDriver for Driver {
                             idx,
                             NewWidget::new(Label::new(label).with_style(StyleProperty::FontSize(
                                 if idx % 100 == 0 { 40. } else { 20. },
-                            ))),
+                            )))
+                            .erased(),
                         );
                     }
                 }

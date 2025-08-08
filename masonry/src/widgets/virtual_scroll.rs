@@ -10,9 +10,9 @@ use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
-    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx,
-    ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
+    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::util::debug_panic;
 
@@ -24,20 +24,18 @@ use crate::util::debug_panic;
 /// The recommended approach is just to use the two loops, as the ranges are expected to be relatively small:
 ///
 /// ```rust
-/// # use masonry::core::ErasedAction;
+/// # use masonry::core::{ErasedAction, Widget, NewWidget};
 /// # use masonry::widgets::{VirtualScrollAction, Label};
 /// # use core::marker::PhantomData;
 /// # let action: ErasedAction = Box::new(VirtualScrollAction { old_active: 0..4, target: 3..7 });
-/// # struct NewWidget<W>(W);
-/// # impl<W> NewWidget<W> { fn new(val: W) -> Self { Self(val) } }
 /// # // A fake VirtualScroll, as setting up a full Masonry context for this example would also be very verbose
-/// # struct VirtualScroll<W>(PhantomData<W>);
-/// # impl<W> VirtualScroll<W> {
+/// # struct VirtualScroll;
+/// # impl VirtualScroll {
 /// #    fn remove_child(&mut self, idx: i64) {}
-/// #    fn add_child(&mut self, idx: i64, pod: NewWidget<W>) {}
+/// #    fn add_child(&mut self, idx: i64, pod: NewWidget<dyn Widget>) {}
 /// #    fn will_handle_action(&mut self, action: &VirtualScrollAction) {}
 /// # }
-/// # let mut scroll = VirtualScroll::<Label>(PhantomData);
+/// # let mut scroll = VirtualScroll;
 /// let action = action.downcast::<VirtualScrollAction>().unwrap();
 /// // We tell the scroll area which action we're about to handle
 /// VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -52,7 +50,7 @@ use crate::util::debug_panic;
 ///         VirtualScroll::add_child(
 ///             &mut scroll,
 ///             idx,
-///             NewWidget::new(label),
+///             NewWidget::new(label).erased(),
 ///         );
 ///     }
 /// }
@@ -131,7 +129,8 @@ pub struct VirtualScrollAction {
 /// ## Transforms
 ///
 /// Widgets can be [transformed](WidgetMut::set_transform) arbitrarily from where their parent lays them out.
-/// This interacts poorly with virtual scrolling, because an item which would be visible.
+/// This interacts poorly with virtual scrolling, because an item which would be visible due to its
+/// transform can be devirtualised, as its layout rectangle is far enough off-screen.
 /// Currently, the virtual scrolling controller ignores this case.
 /// The long term plan is for each child to be clipped to a reasonable range around itself.
 /// The details of how large this clipping area will be have not been decided.
@@ -161,6 +160,11 @@ pub struct VirtualScrollAction {
 /// This widget will support user-provided scrollbar types, through some yet-to-be-determined mechanism.
 /// There will also be provided implementations of reasonable scrollbar kinds.
 ///
+/// ## Scroll Gestures
+///
+/// Like [`Portal`](crate::widgets::Portal), this widget does not handle scroll gestures (i.e. with
+/// touch screens).
+///
 /// # Valid range
 ///
 /// Scrolling at the end of the valid range is locked, however it is not currently supported to lock scrolling
@@ -170,8 +174,7 @@ pub struct VirtualScrollAction {
 ///
 /// If the valid range is empty, i.e. the start and the end are equal, then there is jank which we haven't
 /// resolved. However, this case should not cause crashes.
-pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
-    // TODO: Should `W` be a generic, or just always be `dyn Widget`?
+pub struct VirtualScroll {
     /// The range of items in the "id" space which are able to be used.
     ///
     /// This is used to cap scrolling; items outside of this range will never be loaded[^1][^2][^3].
@@ -199,10 +202,10 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     action_handled: bool,
 
     /// All children of the virtual scroller.
-    items: HashMap<i64, WidgetPod<W>>,
+    items: HashMap<i64, WidgetPod<dyn Widget>>,
     // TODO: Handle focus even if the focused item scrolls off-screen.
     // TODO: Maybe this should be the focused items and its two neighbours, so tab focusing works?
-    // focused_item: Option<(i64, WidgetPod<W>)>,
+    // focused_item: Option<(i64, WidgetPod<dyn Widget>)>,
 
     // Question: For a given scroll position, should the anchor always be the same?
     // Answer: Let's say yes for now, and re-evaluate if it becomes necessary.
@@ -228,7 +231,7 @@ pub struct VirtualScroll<W: Widget + FromDynWidget + ?Sized> {
     missed_actions_count: u32,
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
+impl std::fmt::Debug for VirtualScroll {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VirtualScroll")
             .field("valid_range", &self.valid_range)
@@ -245,7 +248,7 @@ impl<W: Widget + FromDynWidget + ?Sized> std::fmt::Debug for VirtualScroll<W> {
     }
 }
 
-impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
+impl VirtualScroll {
     /// Create a new virtual scrolling list.
     ///
     /// The item at `initial_anchor` will have its top aligned with the top of
@@ -315,7 +318,7 @@ enum PostScrollResult {
 }
 
 // --- MARK: WIDGETMUT
-impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
+impl VirtualScroll {
     /// Indicates that `action` is about to be handled by the driver (which is calling this method).
     ///
     /// This is required because if multiple actions stack up, `VirtualScroll` would assume that they have all been handled.
@@ -349,7 +352,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     /// This should be done only in the handling of a [`VirtualScrollAction`].
     /// This must be called after [`VirtualScroll::will_handle_action`].
     #[track_caller]
-    pub fn add_child(this: &mut WidgetMut<'_, Self>, idx: i64, child: NewWidget<W>) {
+    pub fn add_child(this: &mut WidgetMut<'_, Self>, idx: i64, child: NewWidget<dyn Widget>) {
         // TODO: Maybe just warn?
         debug_assert!(
             this.widget.action_handled,
@@ -402,7 +405,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
     ///
     /// If the widget at `idx` is not in the scroll area.
     #[track_caller]
-    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>, idx: i64) -> WidgetMut<'t, W> {
+    pub fn child_mut<'t>(this: &'t mut WidgetMut<'_, Self>, idx: i64) -> WidgetMut<'t, dyn Widget> {
         let child = this.widget.items.get_mut(&idx).unwrap_or_else(|| {
             panic!(
                 "`VirtualScroll::child_mut` called with non-present index {idx}.\n\
@@ -511,7 +514,7 @@ impl<W: Widget + FromDynWidget + ?Sized> VirtualScroll<W> {
 /// too few items, that will be sorted relatively quickly.
 const DEFAULT_MEAN_ITEM_HEIGHT: f64 = 60.;
 
-impl<W: Widget + FromDynWidget + ?Sized> Widget for VirtualScroll<W> {
+impl Widget for VirtualScroll {
     type Action = VirtualScrollAction;
 
     fn on_pointer_event(
@@ -1032,8 +1035,7 @@ mod tests {
     use vello::kurbo::Size;
 
     use crate::core::{
-        FromDynWidget, NewWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId,
-        WidgetMut,
+        NewWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId, WidgetMut,
     };
     use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
@@ -1078,14 +1080,12 @@ mod tests {
 
     #[test]
     fn sensible_driver() {
-        type ScrollContents = Label;
-
-        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
-        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
                 if !action.target.contains(&idx) {
@@ -1099,18 +1099,19 @@ mod tests {
                         idx,
                         NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
-                        ),
+                        )
+                        .erased(),
                     );
                 }
             }
         }
 
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_basic");
         harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 100);
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_moved");
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::Scroll {
@@ -1118,7 +1119,7 @@ mod tests {
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 25. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_scrolled");
     }
 
@@ -1126,14 +1127,12 @@ mod tests {
     /// We shouldn't panic or loop if there are small gaps in the items provided by the driver.
     /// Again, this isn't valid code for a user to write, but we should just warn and deal with it
     fn small_gaps() {
-        type ScrollContents = Label;
-
-        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
-        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
                 if !action.target.contains(&idx) {
@@ -1147,38 +1146,37 @@ mod tests {
                         idx,
                         NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
-                        ),
+                        )
+                        .erased(),
                     );
                 }
             }
         }
 
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 100);
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::Scroll {
             pointer: PRIMARY_MOUSE,
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
     #[test]
     /// We shouldn't panic or loop if there are big gaps in the items provided by the driver.
     /// Note that we don't test rendering in this case, because this is a driver which breaks our contract.
     fn big_gaps() {
-        type ScrollContents = Label;
-
-        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
-        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
                 if !action.target.contains(&idx) {
@@ -1192,38 +1190,37 @@ mod tests {
                         idx,
                         NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
-                        ),
+                        )
+                        .erased(),
                     );
                 }
             }
         }
 
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 200);
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::Scroll {
             pointer: PRIMARY_MOUSE,
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
     #[test]
     /// We shouldn't panic or loop if the driver is very poorly written (doesn't set `valid_range` correctly)
     /// Note that we don't test rendering in this case, because this is a driver which breaks our contract.
     fn degenerate_driver() {
-        type ScrollContents = Label;
-
-        let widget = VirtualScroll::<ScrollContents>::new(0).with_auto_id();
+        let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
-        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
                 if !action.target.contains(&idx) {
@@ -1237,40 +1234,39 @@ mod tests {
                         idx,
                         NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
-                        ),
+                        )
+                        .erased(),
                     );
                 }
             }
         }
 
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.edit_root_widget(|mut scroll| {
             VirtualScroll::overwrite_anchor(&mut scroll, 200);
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
         harness.process_pointer_event(PointerEvent::Scroll {
             pointer: PRIMARY_MOUSE,
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
     #[test]
     /// If there's a minimum to the valid range, we should behave in a sensible way.
     fn limited_up() {
-        type ScrollContents = Label;
-
         const MIN: i64 = 10;
-        let widget = VirtualScroll::<ScrollContents>::new(0)
+        let widget = VirtualScroll::new(0)
             .with_valid_range(MIN..i64::MAX)
             .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
-        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
                 if !action.target.contains(&idx) {
@@ -1288,14 +1284,15 @@ mod tests {
                         idx,
                         NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
-                        ),
+                        )
+                        .erased(),
                     );
                 }
             }
         }
 
         let original_range;
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_eq!(
@@ -1314,7 +1311,7 @@ mod tests {
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: -50. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_ne!(widget.anchor_index, MIN);
@@ -1325,7 +1322,7 @@ mod tests {
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 60. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_eq!(widget.anchor_index, MIN);
@@ -1336,17 +1333,15 @@ mod tests {
     #[test]
     /// If there's a maximum to the valid range, we should behave in a sensible way.
     fn limited_down() {
-        type ScrollContents = Label;
-
         const MAX: i64 = 10;
-        let widget = VirtualScroll::<ScrollContents>::new(100)
+        let widget = VirtualScroll::new(100)
             .with_valid_range(i64::MIN..MAX)
             .with_auto_id();
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
-        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll<Label>>) {
+        fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
             for idx in action.old_active.clone() {
                 if !action.target.contains(&idx) {
@@ -1364,7 +1359,8 @@ mod tests {
                         idx,
                         NewWidget::new(
                             Label::new(format!("{idx}")).with_style(StyleProperty::FontSize(30.)),
-                        ),
+                        )
+                        .erased(),
                     );
                 }
             }
@@ -1372,7 +1368,7 @@ mod tests {
 
         let original_range;
         let original_scroll;
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_eq!(
@@ -1392,7 +1388,7 @@ mod tests {
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 5. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_ne!(widget.anchor_index, MAX);
@@ -1403,7 +1399,7 @@ mod tests {
             delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: -6. }),
             state: PointerState::default(),
         });
-        drive_to_fixpoint::<ScrollContents>(&mut harness, virtual_scroll_id, driver);
+        drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_eq!(widget.anchor_index, MAX - 1);
@@ -1414,10 +1410,10 @@ mod tests {
         }
     }
 
-    fn drive_to_fixpoint<T: Widget + FromDynWidget + ?Sized>(
-        harness: &mut TestHarness<VirtualScroll<T>>,
+    fn drive_to_fixpoint(
+        harness: &mut TestHarness<VirtualScroll>,
         virtual_scroll_id: WidgetId,
-        mut f: impl FnMut(VirtualScrollAction, WidgetMut<'_, VirtualScroll<T>>),
+        mut f: impl FnMut(VirtualScrollAction, WidgetMut<'_, VirtualScroll>),
     ) {
         let mut iteration = 0;
         let mut old_active = None;
