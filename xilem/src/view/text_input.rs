@@ -36,6 +36,9 @@ where
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
+        // Since we don't support setting the word wrapping, we can default to
+        // not clipping
+        clip: true,
         properties: TextInputProps::default(),
     }
 }
@@ -51,6 +54,7 @@ pub struct TextInput<State, Action> {
     text_alignment: TextAlign,
     insert_newline: InsertNewline,
     disabled: bool,
+    clip: bool,
     properties: TextInputProps,
     // TODO: add more attributes of `masonry::widgets::TextInput`
 }
@@ -96,6 +100,22 @@ impl<State, Action> TextInput<State, Action> {
     /// Set the disabled state of the widget.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
+        self
+    }
+
+    /// Set whether the contained text will be clipped to the box if it overflows.
+    ///
+    /// Please note:
+    /// 1) We don't currently support scrolling within a text area, so this can make some content
+    ///    unviewable (without the user adding spaces and/or copy/pasting to extract content).
+    ///    You should probably set this to false for small text inputs (and probably also lower
+    ///    the default padding).
+    /// 2) This view currently always uses word wrapping, so if there are any linebreaking
+    ///    opportunities in the text, they will be taken.
+    ///
+    /// The default value is true (i.e. clipping is enabled).
+    pub fn clip(mut self, clip: bool) -> Self {
+        self.clip = clip;
         self
     }
 }
@@ -150,7 +170,8 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
                 transform: Affine::default(),
             },
             props,
-        ));
+        ))
+        .with_clip(self.clip);
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
@@ -189,6 +210,10 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
 
         if element.ctx.is_disabled() != self.disabled {
             element.ctx.set_disabled(self.disabled);
+        }
+
+        if self.clip != prev.clip {
+            widgets::TextInput::set_clip(&mut element, self.clip);
         }
 
         let mut text_area = widgets::TextInput::text_mut(&mut element);
