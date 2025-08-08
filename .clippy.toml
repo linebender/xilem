@@ -10,8 +10,29 @@ trivial-copy-size-limit = 16
 # END LINEBENDER LINT SET
 
 # Don't warn about these identifiers when using clippy::doc_markdown.
-# (`".."` means the default configuration built-in to Clippy)
-doc-valid-idents = ["FizzBuzz", "MathML", "RustNL", ".."]
+doc-valid-idents = [
+    "FizzBuzz",
+    "MathML",
+    "RustNL",
+    # TODO: Get this allowed in upstream clippy?
+    "BiDi",
+    # For better or for worse, we don't treat pass names as identifiers in our docs.
+    # TODO: Maybe we should?
+    "update_xxx",
+    "update_pointer",
+    "update_scrolls",
+    "update_focus",
+    "update_focus_chain",
+    "update_disabled",
+    "update_anim",
+    "update_stashed",
+    "update_widget_tree",
+    "on_access_event",
+    "on_text_event",
+    "on_pointer_event",
+    # `".."` means the default configuration built-in to Clippy.
+    "..",
+]
 
 # The default clippy value for this is 250, which causes warnings for rather simple types
 # like Box<dyn Fn(&mut Env, &T)>, which seems overly strict. The new value of 400 is
