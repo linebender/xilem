@@ -29,7 +29,7 @@ use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::run_paint_pass;
 use crate::passes::update::{
-    run_update_disabled_pass, run_update_focus_chain_pass, run_update_focus_pass,
+    run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
     run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
     run_update_widget_tree_pass,
 };
@@ -604,7 +604,7 @@ impl RenderRoot {
             run_update_widget_tree_pass(self);
             run_update_disabled_pass(self);
             run_update_stashed_pass(self);
-            run_update_focus_chain_pass(self);
+            run_update_focusable_pass(self);
             run_update_focus_pass(self);
             run_layout_pass(self);
             run_update_scroll_pass(self);

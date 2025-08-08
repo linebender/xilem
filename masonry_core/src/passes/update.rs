@@ -409,14 +409,14 @@ fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
     state.needs_update_focusable = false;
 }
 
-pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
-    let _span = info_span!("update_focus_chain").entered();
+pub(crate) fn run_update_focusable_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_focusable").entered();
 
     let root_node = root.widget_arena.get_node_mut(root.root.id());
     update_focusable_for_widget(root_node);
 }
 
-pub(crate) fn find_next_in_focus_chain(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
+pub(crate) fn find_next_in_focusable(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
     let focus_anchor = root.global_state.focus_anchor;
 
     // If the anchor isn't already focused, try to find its first focusable descendant.
