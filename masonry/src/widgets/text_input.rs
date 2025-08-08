@@ -140,6 +140,7 @@ impl Widget for TextInput {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
+        // TODO: Draw shadows in post_paint.
         BoxShadow::prop_changed(ctx, property_type);
 
         // FIXME - Find more elegant way to propagate property to child.
@@ -212,6 +213,11 @@ impl Widget for TextInput {
         }
 
         if self.clip {
+            // TODO: Ideally, this clip would be the "inside edge" of our border path
+            // In the current implementation, that would currently clip our own border
+            // and so isn't viable.
+            // The BorderColor (etc.) properties don't currently support the border
+            // being drawn in post_post, which I think would be ideal for this use case.
             ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
         }
 
