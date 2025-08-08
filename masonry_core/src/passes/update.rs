@@ -393,7 +393,7 @@ fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
 
     state.descendant_is_focusable = false;
 
-    if state.accepts_focus {
+    if state.accepts_focus && !state.is_disabled && !state.is_stashed {
         state.descendant_is_focusable = true;
     }
 
@@ -527,6 +527,12 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         && !root.is_still_interactive(id)
     {
         root.global_state.next_focused_widget = None;
+    }
+    // Same thing for the anchor.
+    if let Some(id) = root.global_state.focus_anchor {
+        if !root.is_still_interactive(id) {
+            root.global_state.focus_anchor = None;
+        }
     }
 
     let prev_focused = root.global_state.focused_widget;

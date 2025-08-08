@@ -384,6 +384,128 @@ fn focus_order() {
     assert_eq!(focused, focusable_widgets.last().copied());
 }
 
+#[test]
+fn disable_focusable() {
+    let button1_tag = WidgetTag::new("button1");
+    let button2_tag = WidgetTag::new("button2");
+    let button3_tag = WidgetTag::new("button3");
+
+    let button1 = NewWidget::new_with_tag(Button::with_text(""), button1_tag);
+    let button2 = NewWidget::new_with_tag(Button::with_text(""), button2_tag);
+    let button3 = NewWidget::new_with_tag(Button::with_text(""), button3_tag);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![
+        button1, button2, button3,
+    ]));
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+
+    let button1_id = harness.get_widget_with_tag(button1_tag).id();
+    dbg!(button1_id);
+    let button2_id = harness.get_widget_with_tag(button2_tag).id();
+    dbg!(button2_id);
+    let button3_id = harness.get_widget_with_tag(button3_tag).id();
+    dbg!(button3_id);
+
+    harness.focus_on(Some(button2_id));
+    harness.edit_widget_with_tag(button2_tag, |mut button| {
+        button.ctx.set_disabled(true);
+    });
+
+    // The focus anchor should have reset to the parent flex, so we select button1
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+
+    // We skip button2 and jump from button1 to button3.
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(button3_id));
+
+    // Same thing the other way.
+    harness.press_tab_key(true);
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+}
+
+#[test]
+fn stash_focusable() {
+    let button1_tag = WidgetTag::new("button1");
+    let button2_tag = WidgetTag::new("button2");
+    let button3_tag = WidgetTag::new("button3");
+
+    let button1 = NewWidget::new_with_tag(Button::with_text(""), button1_tag);
+    let button2 = NewWidget::new_with_tag(Button::with_text(""), button2_tag);
+    let button3 = NewWidget::new_with_tag(Button::with_text(""), button3_tag);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![
+        button1, button2, button3,
+    ]));
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+
+    let button1_id = harness.get_widget_with_tag(button1_tag).id();
+    let button2_id = harness.get_widget_with_tag(button2_tag).id();
+    let button3_id = harness.get_widget_with_tag(button3_tag).id();
+
+    harness.focus_on(Some(button2_id));
+
+    harness.edit_root_widget(|mut parent| {
+        parent.ctx.set_stashed(&mut parent.widget.state[1], true);
+    });
+
+    // The focus anchor should have reset to the parent flex, so we select button1
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+
+    // We skip button2 and jump from button1 to button3.
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(button3_id));
+
+    // Same thing the other way.
+    harness.press_tab_key(true);
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+}
+
+#[test]
+fn remove_focusable() {
+    let button1_tag = WidgetTag::new("button1");
+    let button2_tag = WidgetTag::new("button2");
+    let button3_tag = WidgetTag::new("button3");
+
+    let button1 = NewWidget::new_with_tag(Button::with_text(""), button1_tag);
+    let button2 = NewWidget::new_with_tag(Button::with_text(""), button2_tag);
+    let button3 = NewWidget::new_with_tag(Button::with_text(""), button3_tag);
+
+    let parent = NewWidget::new(ModularWidget::new_multi_parent(vec![
+        button1, button2, button3,
+    ]));
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+
+    let button1_id = harness.get_widget_with_tag(button1_tag).id();
+    dbg!(button1_id);
+    let button2_id = harness.get_widget_with_tag(button2_tag).id();
+    dbg!(button2_id);
+    let button3_id = harness.get_widget_with_tag(button3_tag).id();
+    dbg!(button3_id);
+
+    harness.focus_on(Some(button2_id));
+    harness.edit_root_widget(|mut parent| {
+        let child = parent.widget.state.remove(1);
+        parent.ctx.remove_child(child);
+    });
+
+    // The focus anchor should have reset to the parent flex, so we select button1
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+
+    // We go from button1 to button3.
+    harness.press_tab_key(false);
+    assert_eq!(harness.focused_widget_id(), Some(button3_id));
+
+    // Same thing the other way.
+    harness.press_tab_key(true);
+    assert_eq!(harness.focused_widget_id(), Some(button1_id));
+}
+
 // FOCUS
 
 #[test]
