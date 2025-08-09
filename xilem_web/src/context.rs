@@ -153,8 +153,9 @@ impl ViewCtx {
         if let Some(node) = self.hydration_node_stack.last() {
             if let Some(child) = node.first_child() {
                 self.hydration_node_stack.push(child);
+            } else {
+                // TODO: panic? Probably not, e.g. because of empty view sequences...
             }
-            // TODO panic else? Probably not, e.g. because of empty view sequences...
         }
     }
 

@@ -593,33 +593,32 @@ impl MasonryState<'_> {
                 is_synthetic: true,
                 ..
             }
-        ) {
-            if let Some(wet) = window.event_reducer.reduce(&event) {
-                match wet {
-                    WindowEventTranslation::Keyboard(k) => {
-                        // TODO - Detect in Masonry code instead
-                        let action_mod = if cfg!(target_os = "macos") {
-                            k.modifiers.meta()
-                        } else {
-                            k.modifiers.ctrl()
-                        };
-                        if let Key::Character(c) = &k.key
-                            && c.as_str().eq_ignore_ascii_case("v")
-                            && action_mod
-                            && k.state == KeyState::Down
-                        {
-                            window
-                                .render_root
-                                .handle_text_event(TextEvent::ClipboardPaste(
-                                    self.clipboard_cx.get_contents().unwrap(),
-                                ));
-                        } else {
-                            window.render_root.handle_text_event(TextEvent::Keyboard(k));
-                        }
+        ) && let Some(wet) = window.event_reducer.reduce(&event)
+        {
+            match wet {
+                WindowEventTranslation::Keyboard(k) => {
+                    // TODO - Detect in Masonry code instead
+                    let action_mod = if cfg!(target_os = "macos") {
+                        k.modifiers.meta()
+                    } else {
+                        k.modifiers.ctrl()
+                    };
+                    if let Key::Character(c) = &k.key
+                        && c.as_str().eq_ignore_ascii_case("v")
+                        && action_mod
+                        && k.state == KeyState::Down
+                    {
+                        window
+                            .render_root
+                            .handle_text_event(TextEvent::ClipboardPaste(
+                                self.clipboard_cx.get_contents().unwrap(),
+                            ));
+                    } else {
+                        window.render_root.handle_text_event(TextEvent::Keyboard(k));
                     }
-                    WindowEventTranslation::Pointer(p) => {
-                        window.render_root.handle_pointer_event(p);
-                    }
+                }
+                WindowEventTranslation::Pointer(p) => {
+                    window.render_root.handle_pointer_event(p);
                 }
             }
         }
