@@ -13,10 +13,6 @@
 </div>
 
 
-<!-- TODO - This doc is located in masonry, but gives a tutorial for Masonry. -->
-<!-- Because the `masonry` doc has several links to this folder, -->
-<!-- we can't easily move it to `masonry_winit`. We need to sort that out. -->
-
 **TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
 
 This tutorial explains how to build a simple Masonry app, step by step.
