@@ -29,7 +29,7 @@ use crate::passes::layout::run_layout_pass;
 use crate::passes::mutate::{mutate_widget, run_mutate_pass};
 use crate::passes::paint::run_paint_pass;
 use crate::passes::update::{
-    run_update_disabled_pass, run_update_focus_chain_pass, run_update_focus_pass,
+    run_update_disabled_pass, run_update_focus_pass, run_update_focusable_pass,
     run_update_pointer_pass, run_update_scroll_pass, run_update_stashed_pass,
     run_update_widget_tree_pass,
 };
@@ -96,10 +96,10 @@ pub(crate) struct RenderRootState {
     /// Widget that will be focused once the `update_focus` pass is run.
     pub(crate) next_focused_widget: Option<WidgetId>,
 
-    /// Most recently clicked widget.
+    /// Most recently clicked/focused widget.
     ///
     /// This is used to pick the focused widget on Tab events.
-    pub(crate) most_recently_clicked_widget: Option<WidgetId>,
+    pub(crate) focus_anchor: Option<WidgetId>,
 
     /// Whether the window is focused.
     pub(crate) window_focused: bool,
@@ -301,7 +301,7 @@ impl RenderRoot {
                 focused_widget: None,
                 focused_path: Vec::new(),
                 next_focused_widget: None,
-                most_recently_clicked_widget: None,
+                focus_anchor: None,
                 window_focused: true,
                 scroll_request_targets: Vec::new(),
                 hovered_path: Vec::new(),
@@ -604,7 +604,7 @@ impl RenderRoot {
             run_update_widget_tree_pass(self);
             run_update_disabled_pass(self);
             run_update_stashed_pass(self);
-            run_update_focus_chain_pass(self);
+            run_update_focusable_pass(self);
             run_update_focus_pass(self);
             run_layout_pass(self);
             run_update_scroll_pass(self);
@@ -702,7 +702,8 @@ impl RenderRoot {
         self.global_state.pointer_capture_target
     }
 
-    /// Sets the [focused widget](crate::doc::masonry_concepts#text-focus).
+    /// Sets the [focused widget](crate::doc::masonry_concepts#text-focus)
+    /// and the [focus anchor](crate::doc::masonry_concepts#focus-anchor).
     ///
     /// Returns false if the widget is not found in the tree or can't be focused.
     pub fn focus_on(&mut self, id: Option<WidgetId>) -> bool {
@@ -712,46 +713,9 @@ impl RenderRoot {
             return false;
         }
         self.global_state.next_focused_widget = id;
+        self.global_state.focus_anchor = id;
         self.run_rewrite_passes();
         true
-    }
-
-    pub(crate) fn widget_from_focus_chain(&mut self, forward: bool) -> Option<WidgetId> {
-        let focused_widget = self
-            .global_state
-            .focused_widget
-            .or(self.global_state.most_recently_clicked_widget);
-        let focused_idx = focused_widget.and_then(|focused_widget| {
-            self.focus_chain()
-                .iter()
-                // Find where the focused widget is in the focus chain
-                .position(|id| id == &focused_widget)
-        });
-
-        if let Some(idx) = focused_idx {
-            // Return the id that's next to it in the focus chain
-            let len = self.focus_chain().len();
-            let new_idx = if forward {
-                (idx + 1) % len
-            } else {
-                (idx + len - 1) % len
-            };
-            Some(self.focus_chain()[new_idx])
-        } else {
-            // If no widget is currently focused or the
-            // currently focused widget isn't in the focus chain,
-            // then we'll just return the first/last entry of the chain, if any.
-            if forward {
-                self.focus_chain().first().copied()
-            } else {
-                self.focus_chain().last().copied()
-            }
-        }
-    }
-
-    // TODO - Store in RenderRootState
-    pub(crate) fn focus_chain(&mut self) -> &[WidgetId] {
-        &self.root_state().focus_chain
     }
 
     /// Returns true if the widget tree is waiting for an animation frame.

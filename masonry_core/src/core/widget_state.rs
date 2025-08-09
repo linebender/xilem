@@ -171,9 +171,10 @@ pub(crate) struct WidgetState {
     /// This widget or a descendant changed its `is_explicitly_stashed` value
     pub(crate) needs_update_stashed: bool,
 
-    pub(crate) needs_update_focus_chain: bool,
-
-    pub(crate) focus_chain: Vec<WidgetId>,
+    /// This widget or a descendant has `accepts_focus == true`
+    pub(crate) descendant_is_focusable: bool,
+    /// A focusable widget was added, removed, stashed, disabled, etc.
+    pub(crate) needs_update_focusable: bool,
 
     pub(crate) children_changed: bool,
 
@@ -267,9 +268,9 @@ impl WidgetState {
             needs_anim: true,
             needs_update_disabled: true,
             needs_update_stashed: true,
-            focus_chain: Vec::new(),
             children_changed: true,
-            needs_update_focus_chain: true,
+            descendant_is_focusable: false,
+            needs_update_focusable: true,
             #[cfg(debug_assertions)]
             widget_name,
             #[cfg(debug_assertions)]
@@ -296,7 +297,7 @@ impl WidgetState {
         self.needs_accessibility |= child_state.needs_accessibility;
         self.needs_update_disabled |= child_state.needs_update_disabled;
         self.children_changed |= child_state.children_changed;
-        self.needs_update_focus_chain |= child_state.needs_update_focus_chain;
+        self.needs_update_focusable |= child_state.needs_update_focusable;
         self.needs_update_stashed |= child_state.needs_update_stashed;
     }
 
@@ -372,7 +373,7 @@ impl WidgetState {
             || self.needs_compose
             || self.needs_update_disabled
             || self.needs_update_stashed
-            || self.needs_update_focus_chain
+            || self.needs_update_focusable
             || self.children_changed
     }
 }

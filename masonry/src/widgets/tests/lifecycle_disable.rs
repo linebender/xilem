@@ -148,7 +148,6 @@ fn disable_tree() {
         get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
         [false, false]
     );
-    assert_eq!(harness.window().focus_chain().len(), 2);
 
     // Disable root -> All widgets disabled
     harness.submit_command(CHANGE_DISABLED.with(true).to(root_id));
@@ -160,7 +159,6 @@ fn disable_tree() {
         get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
         [true, true]
     );
-    assert_eq!(harness.window().focus_chain().len(), 0);
 
     // Disable group_1 -> All widgets still disabled
     harness.submit_command(CHANGE_DISABLED.with(true).to(group_1_id));
@@ -172,7 +170,6 @@ fn disable_tree() {
         get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
         [true, true]
     );
-    assert_eq!(harness.window().focus_chain().len(), 0);
 
     // Enable group_2 -> No effect
     harness.submit_command(CHANGE_DISABLED.with(false).to(group_2_id));
@@ -184,7 +181,6 @@ fn disable_tree() {
         get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
         [true, true]
     );
-    assert_eq!(harness.window().focus_chain().len(), 0);
 
     // Enable root -> Children of group_1 still disabled, all others enabled
     harness.submit_command(CHANGE_DISABLED.with(false).to(root_id));
@@ -196,5 +192,4 @@ fn disable_tree() {
         get_disabled_states(&harness, &[leaf_1_id, leaf_2_id]),
         [true, false]
     );
-    assert_eq!(harness.window().focus_chain().len(), 1);
 }
