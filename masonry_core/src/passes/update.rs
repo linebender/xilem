@@ -608,7 +608,6 @@ pub(crate) fn run_update_scroll_pass(root: &mut RenderRoot) {
     for (target, rect) in scroll_request_targets {
         let mut target_rect = rect;
 
-        // TODO - Run top-down instead of bottom-up.
         run_targeted_update_pass(root, Some(target), |widget, ctx, props| {
             let event = Update::RequestPanToChild(rect);
             widget.update(ctx, props, &event);

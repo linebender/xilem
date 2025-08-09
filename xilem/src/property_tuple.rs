@@ -3,7 +3,10 @@
 
 use masonry::core::{Properties, Widget, WidgetMut};
 
-/// Helper trait implemented for all tuples of `Option<SomeProperty>` up to 12 items.
+/// Helper trait usually implemented on tuple structs with `Option<SomeProperty>` fields.
+///
+/// In most cases, you should implement this trait through [`declare_property_tuple!`](crate::declare_property_tuple)
+/// when authoring views.
 pub trait PropertyTuple {
     /// Helper method for [`xilem_core::View::build`].
     ///

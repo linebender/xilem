@@ -82,7 +82,6 @@ impl ZStack {
     /// The child are placed back to front, in the order they are added.
     pub fn with_child(
         mut self,
-        // TODO: +?Sized
         child: NewWidget<impl Widget + ?Sized>,
         alignment: impl Into<ChildAlignment>,
     ) -> Self {
