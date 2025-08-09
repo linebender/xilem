@@ -9,8 +9,8 @@ use accesskit::{Node, Role, Toggled};
 use tracing::{Span, trace, trace_span};
 use ui_events::keyboard::Key;
 use vello::Scene;
+use vello::kurbo::Rect;
 use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Size, Stroke};
-use vello::peniko::Color;
 
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget,
@@ -237,21 +237,18 @@ impl Widget for Checkbox {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let mut border_color = if is_hovered && !ctx.is_disabled() {
+        let border_color = if is_hovered && !ctx.is_disabled() {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()
         };
-        // FIXME - Handle this properly
-        if ctx.is_focus_target() {
-            border_color = &BorderColor {
-                color: Color::WHITE,
-            };
-        }
+
+        // Paint the checkbox box background and border
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
 
+        // Paint the checkmark if checked
         if self.checked {
             let checkmark_width = props.get::<CheckmarkStrokeWidth>();
             let brush = if ctx.is_disabled() {
@@ -260,7 +257,6 @@ impl Widget for Checkbox {
                 props.get::<CheckmarkColor>()
             };
 
-            // Paint the checkmark
             let mut path = BezPath::new();
             path.move_to((4.0, 9.0));
             path.line_to((8.0, 13.0));
@@ -276,6 +272,36 @@ impl Widget for Checkbox {
                 dash_offset: 0.0,
             };
             scene.stroke(&style, Affine::IDENTITY, brush.color, None, &path);
+        }
+        // Paint focus indicator around the entire widget (box + label)
+        if ctx.is_focus_target() {
+            let widget_size = ctx.size();
+
+            let focus_rect = Rect::new(0.0, 0.0, widget_size.width, widget_size.height);
+
+            let focus_rect = focus_rect.inflate(2.0, 2.0);
+
+            let focus_color = theme::FOCUS_COLOR;
+            let focus_width = 2.0;
+            let focus_radius = 4.0;
+
+            let focus_stroke = Stroke {
+                width: focus_width,
+                join: Join::Round,
+                miter_limit: 10.0,
+                start_cap: Cap::Round,
+                end_cap: Cap::Round,
+                dash_pattern: Dashes::default(),
+                dash_offset: 0.0,
+            };
+            let focus_path = focus_rect.to_rounded_rect(focus_radius);
+            scene.stroke(
+                &focus_stroke,
+                Affine::IDENTITY,
+                focus_color,
+                None,
+                &focus_path,
+            );
         }
     }
 
