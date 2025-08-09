@@ -4,6 +4,7 @@
 use std::marker::PhantomData;
 
 use masonry::core::Axis;
+use masonry::properties::types::{AsUnit, Length};
 use masonry::widgets;
 
 use crate::core::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
@@ -48,9 +49,9 @@ where
     Split {
         split_axis: Axis::Horizontal,
         split_point: 0.5,
-        min_size: (0.0, 0.0),
-        bar_size: 6.0,
-        min_bar_area: 6.0,
+        min_size: (Length::ZERO, Length::ZERO),
+        bar_size: 6.px(),
+        min_bar_area: 6.px(),
         solid_bar: false,
         draggable: true,
         child1,
@@ -66,9 +67,9 @@ where
 pub struct Split<ChildA, ChildB, State, Action = ()> {
     split_axis: Axis,
     split_point: f64,
-    min_size: (f64, f64), // Integers only
-    bar_size: f64,        // Integers only
-    min_bar_area: f64,    // Integers only
+    min_size: (Length, Length), // Integers only
+    bar_size: Length,           // Integers only
+    min_bar_area: Length,       // Integers only
     solid_bar: bool,
     draggable: bool,
     child1: ChildA,
@@ -104,23 +105,18 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
 
     /// Set the minimum size for both sides of the split axis in logical pixels.
     ///
-    /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
-    pub fn min_size(mut self, first: f64, second: f64) -> Self {
-        assert!(first >= 0.0);
-        assert!(second >= 0.0);
+    pub fn min_size(mut self, first: Length, second: Length) -> Self {
         self.min_size = (first.ceil(), second.ceil());
         self
     }
 
     /// Set the size of the splitter bar in logical pixels.
     ///
-    /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
     #[track_caller]
-    pub fn bar_size(mut self, bar_size: f64) -> Self {
-        assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater!");
+    pub fn bar_size(mut self, bar_size: Length) -> Self {
         self.bar_size = bar_size.ceil();
         self
     }
@@ -134,12 +130,10 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
-    /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
     #[track_caller]
-    pub fn min_bar_area(mut self, min_bar_area: f64) -> Self {
-        assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater!");
+    pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
         self.min_bar_area = min_bar_area.ceil();
         self
     }
