@@ -38,6 +38,7 @@ pub const BASIC_WIDGET_HEIGHT: f64 = 18.0;
 pub const BORDERED_WIDGET_HEIGHT: f64 = 24.0;
 pub const SCROLLBAR_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 pub const SCROLLBAR_BORDER_COLOR: Color = Color::from_rgb8(0x77, 0x77, 0x77);
+pub const FOCUS_COLOR: Color = Color::from_rgb8(0xff, 0xff, 0xff);
 pub const SCROLLBAR_WIDTH: f64 = 8.;
 pub const SCROLLBAR_PAD: f64 = 2.;
 pub const SCROLLBAR_MIN_SIZE: f64 = 45.;
