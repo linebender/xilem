@@ -6,6 +6,7 @@
 use vello::kurbo::{Insets, Size};
 
 use crate::core::{NewWidget, Widget as _};
+use crate::properties::types::Length;
 use crate::testing::{ModularWidget, TestHarness, widget_ids};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, SizedBox};
@@ -15,16 +16,17 @@ fn layout_simple() {
     const BOX_WIDTH: f64 = 50.;
 
     let [id_1, id_2] = widget_ids();
+    let box_side = Length::px(BOX_WIDTH);
 
     let widget = Flex::column()
         .with_child(
             Flex::row()
                 .with_child(NewWidget::new_with_id(
-                    SizedBox::empty().width(BOX_WIDTH).height(BOX_WIDTH),
+                    SizedBox::empty().width(box_side).height(box_side),
                     id_1,
                 ))
                 .with_child(NewWidget::new_with_id(
-                    SizedBox::empty().width(BOX_WIDTH).height(BOX_WIDTH),
+                    SizedBox::empty().width(box_side).height(box_side),
                     id_2,
                 ))
                 .with_flex_spacer(1.0)
