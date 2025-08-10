@@ -38,7 +38,7 @@ pub use crate::debug_panic;
 // ---
 
 pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
-pub(crate) type AnySet = std::collections::HashSet<
+pub(crate) type TypeSet = std::collections::HashSet<
     std::any::TypeId,
     std::hash::BuildHasherDefault<anymap3::TypeIdHasher>,
 >;

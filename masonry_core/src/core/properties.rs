@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::default::Default;
 
 use crate::core::Widget;
-use crate::util::{AnyMap, AnySet};
+use crate::util::{AnyMap, TypeSet};
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -55,7 +55,7 @@ pub struct PropertiesRef<'a> {
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
     pub(crate) default_map: &'a AnyMap,
-    pub(crate) changed: &'a mut AnySet,
+    pub(crate) changed: &'a mut TypeSet,
 }
 
 // TODO - Better document local vs default properties.
