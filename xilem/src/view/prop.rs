@@ -42,7 +42,7 @@ where
     P: Property + PartialEq + Clone,
     Child: WidgetView<State, Action>,
     // TODO implement this on the element/widget
-    // Child::Widget: HasProperty<P>,
+    Child::Widget: masonry::core::HasProperty<P>,
     State: 'static,
     Action: 'static,
 {
