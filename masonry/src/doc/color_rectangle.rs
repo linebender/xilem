@@ -126,6 +126,7 @@ impl Widget for ColorRectangle {
         _interval: u64,
     ) {
     }
+    #[cfg(false)] // We show two `update` implementations; check that both parse.
     fn update(
         &mut self,
         _ctx: &mut UpdateCtx<'_>,
@@ -188,7 +189,8 @@ impl Widget for ColorRectangle {
     // ---
 
     // Second implementation from "Creating a new widget" tutorial.
-    // We use this one in the trait, so that hovering is detected in our unit tests.
+    // We use these methods in the trait, so that hovering is detected in our unit tests.
+
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         let rect = ctx.size().to_rect();
         let color = if ctx.is_hovered() {
@@ -203,6 +205,15 @@ impl Widget for ColorRectangle {
             Some(Affine::IDENTITY),
             &rect,
         );
+    }
+
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        match event {
+            Update::HoveredChanged(_) => {
+                ctx.request_render();
+            }
+            _ => {}
+        }
     }
 }
 

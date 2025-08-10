@@ -220,7 +220,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
             .grid_item(GridParams::new(0, 0, 4, 1)),
             // Top row
             expanded_button(
-                label("CE").text_color(if data.get_current_number().is_empty() {
+                label("CE").color(if data.get_current_number().is_empty() {
                     palette::css::MEDIUM_VIOLET_RED
                 } else {
                     palette::css::WHITE

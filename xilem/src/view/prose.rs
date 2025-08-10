@@ -3,7 +3,7 @@
 
 use masonry::core::{ArcStr, NewWidget, Properties, StyleProperty};
 use masonry::parley::FontWeight;
-use masonry::properties::{DisabledTextColor, LineBreaking, TextColor};
+use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
@@ -50,7 +50,7 @@ pub struct Prose {
 impl Prose {
     /// Set the text's color.
     ///
-    /// This overwrites the default `TextColor` property for the inner `TextArea` widget.
+    /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
     pub fn text_color(mut self, color: Color) -> Self {
         self.text_color = Some(color);
         self
@@ -58,7 +58,7 @@ impl Prose {
 
     /// Set the text's color when the text input is disabled.
     ///
-    /// This overwrites the default `DisabledTextColor` property for the inner `TextArea` widget.
+    /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
     pub fn disabled_text_color(mut self, color: Color) -> Self {
         self.disabled_text_color = Some(color);
         self
@@ -110,10 +110,10 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         // once we implement property inheritance or something like it.
         let mut props = Properties::new();
         if let Some(color) = self.text_color {
-            props.insert(TextColor { color });
+            props.insert(ContentColor { color });
         }
         if let Some(color) = self.disabled_text_color {
-            props.insert(DisabledTextColor(TextColor { color }));
+            props.insert(DisabledContentColor(ContentColor { color }));
         }
         let text_area = NewWidget::new_with_props(text_area, props);
 
@@ -137,16 +137,16 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         // TODO - Replace this with properties on the Prose view
         if self.text_color != prev.text_color {
             if let Some(color) = self.text_color {
-                text_area.insert_prop(TextColor { color });
+                text_area.insert_prop(ContentColor { color });
             } else {
-                text_area.remove_prop::<TextColor>();
+                text_area.remove_prop::<ContentColor>();
             }
         }
         if self.disabled_text_color != prev.disabled_text_color {
             if let Some(color) = self.disabled_text_color {
-                text_area.insert_prop(DisabledTextColor(TextColor { color }));
+                text_area.insert_prop(DisabledContentColor(ContentColor { color }));
             } else {
-                text_area.remove_prop::<DisabledTextColor>();
+                text_area.remove_prop::<DisabledContentColor>();
             }
         }
 

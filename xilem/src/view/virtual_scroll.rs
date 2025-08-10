@@ -3,7 +3,7 @@
 
 use std::{collections::HashMap, marker::PhantomData, ops::Range};
 
-use masonry::core::{FromDynWidget, Widget, WidgetPod};
+use masonry::core::{Widget, WidgetPod};
 use masonry::util::debug_panic;
 use masonry::widgets::{self, VirtualScrollAction};
 use private::VirtualScrollState;
@@ -14,8 +14,8 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// The view type for [`virtual_scroll`].
 ///
 /// See its documentation for details.
-pub struct VirtualScroll<State, Action, ChildrenViews, F, Element: ?Sized> {
-    phantom: PhantomData<fn() -> (WidgetPod<Element>, State, Action, ChildrenViews)>,
+pub struct VirtualScroll<State, Action, ChildrenViews, F> {
+    phantom: PhantomData<fn() -> (WidgetPod<dyn Widget>, State, Action, ChildrenViews)>,
     func: F,
     valid_range: Range<i64>,
 }
@@ -46,14 +46,13 @@ pub struct VirtualScroll<State, Action, ChildrenViews, F, Element: ?Sized> {
 /// changing the valid range. We expect this limitation to be lifted in the future.
 ///
 /// For full details, see the documentation on the [view type](VirtualScroll).
-pub fn virtual_scroll<State, Action, ChildrenViews, F, Element>(
+pub fn virtual_scroll<State, Action, ChildrenViews, F>(
     valid_range: Range<i64>,
     func: F,
-) -> VirtualScroll<State, Action, ChildrenViews, F, Element>
+) -> VirtualScroll<State, Action, ChildrenViews, F>
 where
-    ChildrenViews: WidgetView<State, Action, Widget = Element>,
+    ChildrenViews: WidgetView<State, Action>,
     F: Fn(&mut State, i64) -> ChildrenViews + 'static,
-    Element: Widget + FromDynWidget + ?Sized,
 {
     VirtualScroll {
         phantom: PhantomData,
@@ -69,11 +68,11 @@ where
 ///   It is provided with the app's state and the index of the child.
 ///
 /// For full details, see the documentation on the [view type](VirtualScroll).
-pub fn unlimited_virtual_scroll<State, Action, ChildrenViews, F, Element>(
+pub fn unlimited_virtual_scroll<State, Action, ChildrenViews, F>(
     func: F,
-) -> VirtualScroll<State, Action, ChildrenViews, F, Element>
+) -> VirtualScroll<State, Action, ChildrenViews, F>
 where
-    ChildrenViews: WidgetView<State, Action, Widget = Element>,
+    ChildrenViews: WidgetView<State, Action>,
     F: Fn(&mut State, i64) -> ChildrenViews + 'static,
 {
     VirtualScroll {
@@ -113,29 +112,27 @@ const fn index_for_view_id(id: ViewId) -> i64 {
     id.routing_id().cast_signed()
 }
 
-impl<State, Action, ChildrenViews, F, Element: Widget + FromDynWidget + ?Sized> ViewMarker
-    for VirtualScroll<State, Action, ChildrenViews, F, Element>
+impl<State, Action, ChildrenViews, F> ViewMarker
+    for VirtualScroll<State, Action, ChildrenViews, F>
 {
 }
-impl<State, Action, Element, ChildrenViews, F> View<State, Action, ViewCtx>
-    for VirtualScroll<State, Action, ChildrenViews, F, Element>
+impl<State, Action, ChildrenViews, F> View<State, Action, ViewCtx>
+    for VirtualScroll<State, Action, ChildrenViews, F>
 where
     State: 'static,
     Action: 'static,
-    ChildrenViews: WidgetView<State, Action, Widget = Element>,
+    ChildrenViews: WidgetView<State, Action>,
     F: Fn(&mut State, i64) -> ChildrenViews + 'static,
-    Element: Widget + FromDynWidget + ?Sized,
 {
-    type Element = Pod<widgets::VirtualScroll<Element>>;
+    type Element = Pod<widgets::VirtualScroll>;
 
     type ViewState = VirtualScrollState<ChildrenViews, ChildrenViews::ViewState>;
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         // TODO: How does the anchor interact with Xilem?
         // Setting that seems like an imperative action?
-        let pod = Pod::new(
-            widgets::VirtualScroll::<Element>::new(0).with_valid_range(self.valid_range.clone()),
-        );
+        let pod =
+            Pod::new(widgets::VirtualScroll::new(0).with_valid_range(self.valid_range.clone()));
         ctx.record_action(pod.new_widget.id());
         (
             pod,
@@ -180,7 +177,7 @@ where
                         child_state.view.teardown(
                             &mut child_state.state,
                             ctx,
-                            widgets::VirtualScroll::child_mut(&mut element, idx),
+                            widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
                             app_state,
                         );
                         widgets::VirtualScroll::remove_child(&mut element, idx);
@@ -202,7 +199,7 @@ where
                             &child.view,
                             &mut child.state,
                             ctx,
-                            widgets::VirtualScroll::child_mut(&mut element, idx),
+                            widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
                             app_state,
                         );
                         child.view = next_child;
@@ -215,7 +212,7 @@ where
                         widgets::VirtualScroll::add_child(
                             &mut element,
                             idx,
-                            new_element.new_widget,
+                            new_element.new_widget.erased(),
                         );
                         view_state.children.insert(
                             idx,
@@ -236,7 +233,7 @@ where
                         &child.view,
                         &mut child.state,
                         ctx,
-                        widgets::VirtualScroll::child_mut(&mut element, idx),
+                        widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
                         app_state,
                     );
                     child.view = next_child;
@@ -262,7 +259,7 @@ where
                 child.view.teardown(
                     &mut child.state,
                     ctx,
-                    widgets::VirtualScroll::child_mut(&mut element, idx),
+                    widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
                     app_state,
                 );
             });
@@ -287,7 +284,7 @@ where
                 let result = target.view.message(
                     &mut target.state,
                     message,
-                    widgets::VirtualScroll::child_mut(&mut element, child_idx),
+                    widgets::VirtualScroll::child_mut(&mut element, child_idx).downcast(),
                     app_state,
                 );
                 return result;

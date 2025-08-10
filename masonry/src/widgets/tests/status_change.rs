@@ -15,7 +15,7 @@ use crate::widgets::{Button, Flex, SizedBox};
 fn next_pointer_event(recording: &Recording) -> Option<PointerEvent> {
     while let Some(event) = recording.next() {
         match event {
-            Record::PE(event) => {
+            Record::PointerEvent(event) => {
                 return Some(event);
             }
             _ => {}
@@ -35,7 +35,7 @@ fn has_hovered(harness: &TestHarness<impl Widget>, id: WidgetId) -> bool {
 fn next_hovered_changed(recording: &Recording) -> Option<bool> {
     while let Some(event) = recording.next() {
         match event {
-            Record::U(Update::HoveredChanged(hovered)) => return Some(hovered),
+            Record::Update(Update::HoveredChanged(hovered)) => return Some(hovered),
             _ => {}
         }
     }
@@ -60,14 +60,14 @@ fn propagate_hovered() {
             Flex::column()
                 .with_spacer(100.0)
                 .with_child(NewWidget::new_with_id(
-                    Button::with_text("hovered").record(&button_rec),
+                    Button::with_text("hovered").record_with(&button_rec),
                     button,
                 ))
                 .with_spacer(10.0)
-                .record(&padding_rec),
+                .record_with(&padding_rec),
             pad,
         ))
-        .record(&root_rec)
+        .record_with(&root_rec)
         .with_id(root);
 
     let mut harness = TestHarness::create(default_property_set(), widget);
@@ -163,7 +163,7 @@ fn update_hovered_on_mouse_leave() {
     let button_rec = Recording::default();
 
     let widget = Button::with_text("hello")
-        .record(&button_rec)
+        .record_with(&button_rec)
         .with_id(button_id);
 
     let mut harness = TestHarness::create(default_property_set(), widget);
@@ -247,7 +247,7 @@ fn get_pointer_events_while_active() {
             empty_2,
         ))
         .with_child(NewWidget::new_with_id(
-            Button::with_text("hello").record(&button_rec),
+            Button::with_text("hello").record_with(&button_rec),
             button,
         ))
         .with_id(root);
@@ -327,7 +327,7 @@ fn automatically_lose_pointer_on_pointer_lost() {
             empty,
         ))
         .with_child(NewWidget::new_with_id(
-            Button::with_text("hello").record(&button_rec),
+            Button::with_text("hello").record_with(&button_rec),
             button,
         ))
         .with_id(root);

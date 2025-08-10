@@ -16,7 +16,7 @@ use crate::*;
 #[test]
 fn app_creation() {
     let record = Recording::default();
-    let widget = SizedBox::empty().record(&record).with_auto_id();
+    let widget = SizedBox::empty().record_with(&record).with_auto_id();
 
     let _harness = TestHarness::create(default_property_set(), widget);
 

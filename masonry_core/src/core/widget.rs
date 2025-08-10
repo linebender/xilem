@@ -30,7 +30,7 @@ use crate::core::{
 /// A widget can retrieve its id via methods on the various contexts, such as
 /// [`UpdateCtx::widget_id`].
 ///
-/// ## Explicit `WidgetId`s.
+/// # Explicit `WidgetId`s.
 ///
 /// Sometimes, you may want to construct a widget, in a way that lets you know its id,
 /// so you can refer to the widget later. You can use [`NewWidget::new_with_id`](crate::core::NewWidget::new_with_id) to pass
@@ -542,5 +542,17 @@ impl From<WidgetId> for accesskit::NodeId {
 impl Display for WidgetId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "#{}", self.0)
+    }
+}
+
+impl PartialEq<accesskit::NodeId> for WidgetId {
+    fn eq(&self, other: &accesskit::NodeId) -> bool {
+        self.to_raw() == other.0
+    }
+}
+
+impl PartialEq<WidgetId> for accesskit::NodeId {
+    fn eq(&self, other: &WidgetId) -> bool {
+        self.0 == other.to_raw()
     }
 }

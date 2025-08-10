@@ -25,7 +25,7 @@ impl TransformsGame {
 
         let status = if everything_correct {
             label("Great success!")
-                .text_color(Color::new([0.0, 0.0, 1.0, 1.0]))
+                .color(Color::new([0.0, 0.0, 1.0, 1.0]))
                 .text_size(30.0)
         } else {
             let rotation_mark = if rotation_correct { "✓" } else { "⨯" };

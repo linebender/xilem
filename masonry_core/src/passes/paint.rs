@@ -136,7 +136,7 @@ fn paint_widget(
 }
 
 // --- MARK: ROOT
-/// See the [passes documentation](../doc/05_pass_system.md#render-passes).
+/// See the [passes documentation](crate::doc::pass_system#render-passes).
 pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     let _span = info_span!("paint").entered();
 

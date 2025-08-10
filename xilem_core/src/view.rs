@@ -19,7 +19,7 @@ use crate::{MessageContext, Mut, ViewElement};
 /// impl<...> View<...> for Button<...> {...}
 /// ```
 ///
-/// ## Details
+/// # Details
 ///
 /// Because `View` is generic, Rust [allows you](https://doc.rust-lang.org/reference/items/implementations.html#orphan-rules) to implement this trait for certain non-local types.
 /// These non-local types can include `Vec<_>` and `Option<_>`.

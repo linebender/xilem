@@ -10,13 +10,12 @@ mod border_color;
 mod border_width;
 mod box_shadow;
 mod checkmark;
+mod content_color;
 mod corner_radius;
 mod line_breaking;
 mod object_fit;
 mod padding;
 mod progress_bar;
-mod spinner_color;
-mod text_color;
 
 pub mod types;
 
@@ -25,10 +24,9 @@ pub use border_color::{BorderColor, HoveredBorderColor};
 pub use border_width::BorderWidth;
 pub use box_shadow::BoxShadow;
 pub use checkmark::{CheckmarkColor, CheckmarkStrokeWidth, DisabledCheckmarkColor};
+pub use content_color::{ContentColor, DisabledContentColor};
 pub use corner_radius::CornerRadius;
 pub use line_breaking::LineBreaking;
 pub use object_fit::ObjectFit;
 pub use padding::Padding;
 pub use progress_bar::BarColor;
-pub use spinner_color::SpinnerColor;
-pub use text_color::{DisabledTextColor, TextColor};

@@ -171,7 +171,7 @@ impl BoxConstraints {
     /// Use this function when maintaining an aspect ratio is more important than minimizing the
     /// distance between input and output size width and height.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// Panics if `aspect_ratio` or `width` are NaN, infinite or negative.
     #[track_caller]

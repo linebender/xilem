@@ -317,11 +317,9 @@ impl Widget for Checkbox {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
-    use ui_events::keyboard::NamedKey;
-
     use super::*;
     use crate::core::{Properties, StyleProperty};
-    use crate::properties::TextColor;
+    use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
 
@@ -347,7 +345,7 @@ mod tests {
         assert_render_snapshot!(harness, "checkbox_hello_checked");
 
         harness.focus_on(None);
-        harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::Tab)));
+        harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(checkbox_id));
 
         harness.process_text_event(TextEvent::key_down(Key::Character(" ".into())));
@@ -365,7 +363,7 @@ mod tests {
                 .with_style(StyleProperty::FontSize(20.0));
             let label = NewWidget::new_with_props(
                 label,
-                Properties::new().with(TextColor::new(ACCENT_COLOR)),
+                Properties::new().with(ContentColor::new(ACCENT_COLOR)),
             );
             let checkbox = NewWidget::new(Checkbox::from_label(true, label));
 
@@ -395,7 +393,7 @@ mod tests {
                 );
 
                 let mut label = Checkbox::label_mut(&mut checkbox);
-                label.insert_prop(TextColor::new(ACCENT_COLOR));
+                label.insert_prop(ContentColor::new(ACCENT_COLOR));
                 Label::insert_style(&mut label, StyleProperty::FontSize(20.0));
             });
 

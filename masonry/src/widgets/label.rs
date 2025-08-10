@@ -11,7 +11,7 @@ use masonry_core::core::NoAction;
 use parley::{Layout, LayoutAccessibility};
 use tracing::{Span, trace_span};
 use vello::Scene;
-use vello::kurbo::{Affine, Size};
+use vello::kurbo::{Affine, Point, Size};
 use vello::peniko::BlendMode;
 
 use crate::core::{
@@ -19,15 +19,10 @@ use crate::core::{
     PropertiesRef, RegisterCtx, StyleProperty, StyleSet, Update, UpdateCtx, Widget, WidgetId,
     WidgetMut, render_text,
 };
-use crate::properties::{DisabledTextColor, LineBreaking, TextColor};
+use crate::properties::{ContentColor, DisabledContentColor, LineBreaking, Padding};
 use crate::theme::default_text_styles;
 use crate::util::{debug_panic, include_screenshot};
 use crate::{TextAlign, TextAlignOptions, theme};
-
-// TODO - Replace with Padding property.
-/// Added padding between each horizontal edge of the widget
-/// and the text in logical pixels.
-const LABEL_X_PADDING: f64 = 2.0;
 
 /// A widget displaying non-interactive text.
 ///
@@ -35,7 +30,7 @@ const LABEL_X_PADDING: f64 = 2.0;
 /// need support for displaying text, such as a button.
 ///
 /// You can customize the look of this label with the
-/// [`LineBreaking`], [`TextColor`] and [`DisabledTextColor`] properties.
+/// [`Padding`], [`LineBreaking`], [`ContentColor`] and [`DisabledContentColor`] properties.
 ///
 #[doc = include_screenshot!("label_styled_label.png", "Styled label.")]
 pub struct Label {
@@ -99,7 +94,7 @@ impl Label {
     /// Set a style property for the new label.
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
+    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     ///
     /// To set a style property on an active label, use [`insert_style`](Self::insert_style).
     pub fn with_style(mut self, property: impl Into<StyleProperty>) -> Self {
@@ -166,7 +161,7 @@ impl Label {
     /// The runtime equivalent of [`with_style`](Self::with_style).
     ///
     /// Setting [`StyleProperty::Brush`](parley::StyleProperty::Brush) is not supported.
-    /// Use [`TextColor`] and [`DisabledTextColor`] properties instead.
+    /// Use [`ContentColor`] and [`DisabledContentColor`] properties instead.
     pub fn insert_style(
         this: &mut WidgetMut<'_, Self>,
         property: impl Into<StyleProperty>,
@@ -247,8 +242,9 @@ impl Widget for Label {
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
         LineBreaking::prop_changed(ctx, property_type);
-        TextColor::prop_changed(ctx, property_type);
-        DisabledTextColor::prop_changed(ctx, property_type);
+        ContentColor::prop_changed(ctx, property_type);
+        DisabledContentColor::prop_changed(ctx, property_type);
+        Padding::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -266,17 +262,16 @@ impl Widget for Label {
         props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let available_width = if bc.max().width.is_finite() {
-            Some((bc.max().width as f32 - 2. * LABEL_X_PADDING as f32).max(0.))
-        } else {
-            None
-        };
+        let padding = *props.get::<Padding>();
+        let line_break_mode = *props.get::<LineBreaking>();
+
+        let bc = padding.layout_down(*bc);
+
+        let available_width = Some(bc.max().width as f32);
         if available_width != self.last_available_width {
             self.last_available_width = available_width;
             self.needs_text_alignment = true;
         }
-
-        let line_break_mode = *props.get::<LineBreaking>();
 
         let max_advance = if line_break_mode == LineBreaking::WordWrap {
             available_width
@@ -330,28 +325,29 @@ impl Widget for Label {
             );
             self.needs_text_alignment = false;
         }
-        let text_size = Size::new(alignment_width.into(), self.text_layout.height().into());
 
-        let label_size = Size {
-            height: text_size.height,
-            width: text_size.width + 2. * LABEL_X_PADDING,
-        };
-        bc.constrain(label_size)
+        let size = Size::new(alignment_width.into(), self.text_layout.height().into());
+        let size = bc.constrain(size);
+        let (size, baseline) = padding.layout_up(size, 0.);
+        ctx.set_baseline_offset(baseline);
+        size
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        let padding = *props.get::<Padding>();
         let line_break_mode = *props.get::<LineBreaking>();
 
         if line_break_mode == LineBreaking::Clip {
             let clip_rect = ctx.size().to_rect();
             scene.push_layer(BlendMode::default(), 1., Affine::IDENTITY, &clip_rect);
         }
-        let transform = Affine::translate((LABEL_X_PADDING, 0.));
+        let text_origin = padding.place_down(Point::ZERO).to_vec2();
+        let transform = Affine::translate(text_origin);
 
         let text_color = if ctx.is_disabled() {
-            &props.get::<DisabledTextColor>().0
+            &props.get::<DisabledContentColor>().0
         } else {
-            props.get::<TextColor>()
+            props.get::<ContentColor>()
         };
 
         render_text(
@@ -374,17 +370,20 @@ impl Widget for Label {
     fn accessibility(
         &mut self,
         ctx: &mut AccessCtx<'_>,
-        _props: &PropertiesRef<'_>,
+        props: &PropertiesRef<'_>,
         node: &mut Node,
     ) {
+        let padding = *props.get::<Padding>();
+
+        let text_origin = padding.place_down(Point::ZERO).to_vec2();
         self.accessibility.build_nodes(
             self.text.as_ref(),
             &self.text_layout,
             ctx.tree_update(),
             node,
             || NodeId::from(WidgetId::next()),
-            LABEL_X_PADDING,
-            0.0,
+            text_origin.x,
+            text_origin.y,
         );
     }
 
@@ -432,7 +431,7 @@ mod tests {
             .with_text_alignment(TextAlign::Center)
             .with_props(
                 Properties::new()
-                    .with(TextColor::new(ACCENT_COLOR))
+                    .with(ContentColor::new(ACCENT_COLOR))
                     .with(LineBreaking::WordWrap),
             );
 
@@ -545,7 +544,7 @@ mod tests {
                 .with_text_alignment(TextAlign::Center)
                 .with_props(
                     Properties::new()
-                        .with(TextColor::new(ACCENT_COLOR))
+                        .with(ContentColor::new(ACCENT_COLOR))
                         .with(LineBreaking::WordWrap),
                 );
 
@@ -564,7 +563,7 @@ mod tests {
                 TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
-                label.insert_prop(TextColor::new(ACCENT_COLOR));
+                label.insert_prop(ContentColor::new(ACCENT_COLOR));
                 label.insert_prop(LineBreaking::WordWrap);
                 Label::set_text(&mut label, "The quick brown fox jumps over the lazy dog");
                 Label::insert_style(&mut label, FontFamily::Generic(GenericFamily::Monospace));

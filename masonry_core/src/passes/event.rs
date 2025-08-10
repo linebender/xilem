@@ -128,7 +128,7 @@ fn run_event_pass<E>(
 }
 
 // --- MARK: POINTER_EVENT
-/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
+/// See the [passes documentation](crate::doc::pass_system#event-passes).
 pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEvent) -> Handled {
     let _span = info_span!("dispatch_pointer_event").entered();
 
@@ -230,7 +230,7 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 }
 
 // --- MARK: TEXT EVENT
-/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
+/// See the [passes documentation](crate::doc::pass_system#event-passes).
 pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -> Handled {
     if matches!(event, TextEvent::WindowFocusChange(false)) {
         run_on_pointer_event_pass(
@@ -258,7 +258,12 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
         // (since the root widget cannot be swapped).
         let root_widget_children = root.get_root_widget().children();
         if root_widget_children.len() == 1 {
-            Some(root_widget_children[0].id())
+            let only_child = root_widget_children[0].id();
+            if root.is_still_interactive(only_child) {
+                Some(only_child)
+            } else {
+                None
+            }
         } else {
             tracing::warn!(
                 widget_id = root.root.id().trace(),
@@ -322,7 +327,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
 }
 
 // --- MARK: ACCESS EVENT
-/// See the [passes documentation](../doc/05_pass_system.md#event-passes).
+/// See the [passes documentation](crate::doc::pass_system#event-passes).
 pub(crate) fn run_on_access_event_pass(
     root: &mut RenderRoot,
     event: &AccessEvent,

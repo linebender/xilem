@@ -11,8 +11,9 @@ use std::path::PathBuf;
 use std::sync::{Arc, mpsc};
 
 use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
-use masonry_core::accesskit::{Action, ActionRequest};
+use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
+use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -20,9 +21,10 @@ use masonry_core::app::{
     RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
 };
 use masonry_core::core::{
-    CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, NewWidget,
-    PointerButton, PointerEvent, PointerId, PointerInfo, PointerState, PointerType, PointerUpdate,
-    ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
+    CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, KeyboardEvent,
+    Modifiers, NewWidget, PointerButton, PointerEvent, PointerId, PointerInfo, PointerState,
+    PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef,
+    WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
 use masonry_core::kurbo::{Point, Size, Vec2};
@@ -37,6 +39,7 @@ use masonry_core::vello::wgpu::{
 };
 
 use crate::screenshots::get_image_diff;
+use crate::{Record, Recorder};
 
 /// A [`PointerInfo`] for a primary mouse, for testing.
 pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
@@ -58,7 +61,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 ///
 /// `TestHarness` is a type that simulates a [`RenderRoot`] for testing.
 ///
-/// ## Workflow
+/// # Workflow
 ///
 /// One of the main goals of Masonry is to provide primitives that allow application
 /// developers to test their app in a convenient and intuitive way.
@@ -77,7 +80,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// Masonry also provides the [`assert_render_snapshot`] macro, which performs snapshot testing on the
 /// rendered widget tree automatically.
 ///
-/// ## Fidelity
+/// # Fidelity
 ///
 /// `TestHarness` tries to act like the normal masonry environment. It will run the same passes as the normal app after every user event and animation.
 ///
@@ -87,7 +90,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 /// methods, whereas in a normal applications you could reasonably expect multiple paint calls
 /// between eg any two clicks.
 ///
-/// ## Example
+/// # Example
 ///
 /// ```rust,ignore
 /// use insta::assert_debug_snapshot;
@@ -130,7 +133,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
-    access_tree: Option<accesskit_consumer::Tree>,
+    access_tree: accesskit_consumer::Tree,
     render_context: Option<RenderContext>,
     vello_renderer: Option<vello::Renderer>,
     mouse_state: PointerState,
@@ -293,6 +296,15 @@ impl<W: Widget> TestHarness<W> {
 
         let (signal_sender, signal_receiver) = mpsc::channel::<RenderRootSignal>();
 
+        let dummy_tree_update = TreeUpdate {
+            nodes: vec![(0.into(), Node::new(Role::Window))],
+            tree: Some(Tree {
+                root: 0.into(),
+                toolkit_name: None,
+                toolkit_version: None,
+            }),
+            focus: 0.into(),
+        };
         let mut harness = Self {
             signal_receiver,
             render_root: RenderRoot::new(
@@ -306,7 +318,7 @@ impl<W: Widget> TestHarness<W> {
                     test_font: Some(data),
                 },
             ),
-            access_tree: None,
+            access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
             render_context: None,
             vello_renderer: None,
             mouse_state,
@@ -321,7 +333,15 @@ impl<W: Widget> TestHarness<W> {
             title: String::new(),
             _marker: PhantomData,
         };
+
+        // Set up the initial state, and clear invalidation flags.
         harness.process_window_event(WindowEvent::Resize(window_size));
+        harness.animate_ms(0);
+
+        let (_, tree_update) = harness.render_root.redraw();
+        harness
+            .access_tree
+            .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
 
         harness
     }
@@ -353,6 +373,14 @@ impl<W: Widget> TestHarness<W> {
         let handled = self.render_root.handle_text_event(event);
         self.process_signals();
         handled
+    }
+
+    /// Send an [`ActionRequest`] to the simulated window.
+    ///
+    /// This will run [rewrite passes](masonry_core::doc::pass_system#rewrite-passes) after the event is processed.
+    pub fn process_access_event(&mut self, event: ActionRequest) {
+        self.render_root.handle_access_event(event);
+        self.process_signals();
     }
 
     // This should be ran after any operation which runs the rewrite passes
@@ -408,11 +436,8 @@ impl<W: Widget> TestHarness<W> {
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
         let (scene, tree_update) = self.render_root.redraw();
-        if let Some(access_tree) = &mut self.access_tree {
-            access_tree.update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
-        } else {
-            self.access_tree = Some(accesskit_consumer::Tree::new(tree_update, false));
-        }
+        self.access_tree
+            .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
             return RgbaImage::from_pixel(1, 1, Rgba([255, 255, 255, 255]));
         }
@@ -522,6 +547,16 @@ impl<W: Widget> TestHarness<W> {
         RgbaImage::from_vec(width, height, result_unpadded).expect("failed to create image")
     }
 
+    /// Get a reference to the current state of the accessibility tree.
+    pub fn access_tree(&self) -> &accesskit_consumer::Tree {
+        &self.access_tree
+    }
+
+    /// Get a reference to the current value of a node of the accessibility tree.
+    pub fn access_node(&self, id: WidgetId) -> Option<accesskit_consumer::Node<'_>> {
+        self.access_tree.state().node_by_id(id.into())
+    }
+
     // --- MARK: EVENT HELPERS
 
     /// Move an internal mouse state, and send a [`Move`](PointerEvent::Move) event to the window.
@@ -574,7 +609,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Combines [`mouse_move`](Self::mouse_move), [`mouse_button_press`](Self::mouse_button_press), and [`mouse_button_release`](Self::mouse_button_release).
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// - If the widget is not found in the tree.
     /// - If the widget is stashed.
@@ -589,7 +624,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// - If the widget is not found in the tree.
     /// - If the widget is stashed.
@@ -646,11 +681,30 @@ impl<W: Widget> TestHarness<W> {
             let event = TextEvent::Ime(Ime::Commit(c.to_string()));
             self.render_root.handle_text_event(event);
         }
+        self.process_signals();
+    }
+
+    /// Send a [`TextEvent`] representing the user pressing the `Tab` key, either with or without the `Shift` key pressed.
+    pub fn press_tab_key(&mut self, shift: bool) {
+        let modifiers = if shift {
+            Modifiers::SHIFT
+        } else {
+            Modifiers::empty()
+        };
+        let event = TextEvent::Keyboard(KeyboardEvent {
+            state: KeyState::Down,
+            key: Key::Named(NamedKey::Tab),
+            code: Code::Unidentified,
+            modifiers,
+            ..KeyboardEvent::default()
+        });
+        self.render_root.handle_text_event(event);
+        self.process_signals();
     }
 
     /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// If the widget is not found in the tree or can't be focused.
     #[track_caller]
@@ -695,9 +749,9 @@ impl<W: Widget> TestHarness<W> {
 
     /// Return a [`WidgetRef`] to the widget with the given id.
     ///
-    /// ## Panics
+    /// # Panics
     ///
-    /// Panics if no Widget with this id can be found.
+    /// Panics if no widget with this id can be found.
     #[track_caller]
     pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
@@ -707,9 +761,9 @@ impl<W: Widget> TestHarness<W> {
 
     /// Return a [`WidgetRef`] to the widget with the given tag.
     ///
-    /// ## Panics
+    /// # Panics
     ///
-    /// Panics if no Widget with this tag can be found.
+    /// Panics if no widget with this tag can be found.
     #[track_caller]
     pub fn get_widget_with_tag<W2: Widget + FromDynWidget + ?Sized>(
         &self,
@@ -718,6 +772,26 @@ impl<W: Widget> TestHarness<W> {
         self.render_root
             .get_widget_with_tag(tag)
             .unwrap_or_else(|| panic!("could not find widget '{tag}'"))
+    }
+
+    /// Return the events recorded by the [`Recorder`] widget with the given tag.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no widget with this tag can be found.
+    #[track_caller]
+    pub fn get_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) -> Vec<Record> {
+        self.get_widget_with_tag(tag).inner().recording().drain()
+    }
+
+    /// Flush the events recorded by the [`Recorder`] widget with the given tag.
+    ///
+    /// # Panics
+    ///
+    /// Panics if no widget with this tag can be found.
+    #[track_caller]
+    pub fn flush_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) {
+        self.get_widget_with_tag(tag).inner().recording().clear();
     }
 
     /// Try to return a [`WidgetRef`] to the widget with the given id.
@@ -730,6 +804,11 @@ impl<W: Widget> TestHarness<W> {
         self.render_root
             .get_root_widget()
             .find_widget_by_id(self.render_root.focused_widget()?)
+    }
+
+    /// Return the id of the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
+    pub fn focused_widget_id(&self) -> Option<WidgetId> {
+        self.render_root.focused_widget()
     }
 
     /// Return a [`WidgetRef`] to the widget which [captures pointer events](masonry_core::doc::masonry_concepts#pointer-capture).

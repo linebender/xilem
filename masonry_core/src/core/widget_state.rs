@@ -25,7 +25,7 @@ use crate::core::{LayoutCache, WidgetId, WidgetOptions};
 /// [`WidgetMut`]. Both should reborrow the parent widget state and call
 /// [`WidgetState::merge_up`] at the end so that invalidations are always bubbled up.
 ///
-/// ## Naming scheme
+/// # Naming scheme
 ///
 /// Some fields follow a naming scheme:
 /// - `request_xxx`: this specific widget has requested the xxx pass to run on it.
@@ -33,7 +33,7 @@ use crate::core::{LayoutCache, WidgetId, WidgetOptions};
 /// - `is_xxx`: this widget has the xxx property.
 /// - `has_xxx`: this widget or a descendant has the xxx property.
 ///
-/// ## Resetting flags
+/// # Resetting flags
 ///
 /// Generally, the `needs_foobar` and `request_foobar` flags will be reset to
 /// false during the "foobar" pass after calling the "foobar" method.
@@ -42,7 +42,7 @@ use crate::core::{LayoutCache, WidgetId, WidgetOptions};
 /// able to request themselves. The exception is the anim pass: an anim frame can
 /// (and usually will) request a new anim frame.
 ///
-/// ## Zombie flags
+/// # Zombie flags
 ///
 /// Masonry's passes should be designed to avoid what we'll call "zombie flags".
 ///

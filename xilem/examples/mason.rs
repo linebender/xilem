@@ -92,7 +92,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
             flex((
                 env_using(),
                 flex_row((
-                    label("Label").text_color(palette::css::REBECCA_PURPLE),
+                    label("Label").color(palette::css::REBECCA_PURPLE),
                     label("Bold Label").weight(FontWeight::BOLD),
                     button("Styled button", |data: &mut AppData| data.count += 1)
                         .prop(BorderWidth::all(4.0))

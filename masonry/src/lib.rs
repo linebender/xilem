@@ -31,6 +31,9 @@
 // TODO - re-add #[doc(hidden)]
 pub mod doc;
 
+#[cfg(test)]
+mod tests;
+
 // TODO - Add logo
 pub mod properties;
 pub mod theme;

@@ -126,7 +126,7 @@ fn build_access_node(
     if ctx.widget_state.clip_path.is_some() {
         node.set_clips_children();
     }
-    if ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_stashed() {
+    if ctx.accepts_focus() && !ctx.is_disabled() {
         node.add_action(accesskit::Action::Focus);
     }
     if ctx.is_focus_target() {
@@ -141,7 +141,7 @@ fn to_accesskit_rect(r: Rect) -> accesskit::Rect {
 }
 
 // --- MARK: ROOT
-/// See the [passes documentation](../doc/05_pass_system.md#render-passes).
+/// See the [passes documentation](crate::doc::pass_system#render-passes).
 pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -> TreeUpdate {
     let _span = info_span!("accessibility").entered();
 

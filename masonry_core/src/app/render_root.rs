@@ -591,7 +591,7 @@ impl RenderRoot {
     /// Rewrite passes are passes which occur after external events, and
     /// update flags and internal values to a consistent state.
     ///
-    /// See the [passes documentation](../doc/05_pass_system.md) for details.
+    /// See the [passes documentation](crate::doc::pass_system) for details.
     pub(crate) fn run_rewrite_passes(&mut self) {
         const REWRITE_PASSES_MAX: usize = 4;
 

@@ -134,7 +134,7 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     ///
     /// Leave unset to use the default spacing which is [`DEFAULT_GAP`].
     ///
-    /// ## Panics
+    /// # Panics
     ///
     /// If `gap` is not a non-negative finite value.
     ///

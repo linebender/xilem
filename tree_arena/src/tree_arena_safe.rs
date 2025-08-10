@@ -163,7 +163,7 @@ impl<T> TreeArena<T> {
     ///
     /// Returns a shared reference to the item if present.
     ///
-    /// ## Complexity
+    /// # Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
@@ -174,7 +174,7 @@ impl<T> TreeArena<T> {
     ///
     /// Returns a mutable reference to the item if present.
     ///
-    /// ## Complexity
+    /// # Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
     pub fn find_mut(&mut self, id: impl Into<NodeId>) -> Option<ArenaMut<'_, T>> {
@@ -347,7 +347,7 @@ impl<'arena, T> ArenaRefList<'arena, T> {
     ///
     /// Returns a shared reference to the item if present.
     ///
-    /// ## Complexity
+    /// # Complexity
     ///
     /// O(Depth). In future implementations, this will be O(1).
     pub fn find(self, id: impl Into<NodeId>) -> Option<ArenaRef<'arena, T>> {
@@ -513,7 +513,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     ///
     /// Returns a shared reference to the item if present.
     ///
-    /// ## Complexity
+    /// # Complexity
     ///
     /// O(Depth).
     pub fn find(&self, id: impl Into<NodeId>) -> Option<ArenaRef<'_, T>> {
@@ -524,7 +524,7 @@ impl<'arena, T> ArenaMutList<'arena, T> {
     ///
     /// Returns a mutable reference to the item if present.
     ///
-    /// ## Complexity
+    /// # Complexity
     ///
     /// O(Depth).
     pub fn find_mut(self, id: impl Into<NodeId>) -> Option<ArenaMut<'arena, T>> {
