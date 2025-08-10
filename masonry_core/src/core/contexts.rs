@@ -23,7 +23,7 @@ use crate::core::{
 use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{AnySet, get_debug_color};
+use crate::util::{TypeSet, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -1479,7 +1479,7 @@ impl RegisterCtx<'_> {
             widget: widget.as_box_dyn(),
             state,
             properties: properties.map,
-            changed_properties: AnySet::default(),
+            changed_properties: TypeSet::default(),
         };
         self.children.insert(id, node);
     }
