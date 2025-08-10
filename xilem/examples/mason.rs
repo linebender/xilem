@@ -12,7 +12,8 @@ use vello::peniko::color::AlphaColor;
 use masonry::properties::types::Length;
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
-use xilem::style::{Background, BorderWidth, Style as _};
+use xilem::palette::css;
+use xilem::style::{Background, BorderColor, BorderWidth, Style as _};
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
@@ -99,7 +100,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                         .prop(BorderWidth::all(4.0))
                         .prop(Background::Color(AlphaColor::from_rgb8(background, 0, 0)))
                         // Test property override
-                        .prop(Background::Color(AlphaColor::from_rgb8(0, background, 0))),
+                        .prop(Background::Color(AlphaColor::from_rgb8(0, background, 0)))
+                        .border_color_(BorderColor { color: css::WHITE }),
                     // TODO masonry doesn't allow setting disabled manually anymore?
                     // label("Disabled label").disabled(),
                 )),

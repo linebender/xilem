@@ -4,9 +4,10 @@
 use masonry::kurbo::Affine;
 
 use masonry::core::{FromDynWidget, Property, Widget};
+use masonry::properties::BorderColor;
 
 use crate::core::{View, ViewSequence};
-use crate::style::{HasProperty, Style};
+use crate::style::Style;
 use crate::view::{Prop, Transformed, transformed};
 use crate::{AnyWidgetView, Pod, ViewCtx};
 
@@ -54,10 +55,24 @@ pub trait WidgetView<State, Action = ()>:
     where
         Self: Sized + Style,
         // TODO: implement this bound on the Element of the view instead (likely directly in masonry).
-        Self: HasProperty<P>,
+        Self: crate::style::HasProperty<P>,
     {
         Prop {
             property,
+            child: self,
+            phantom: std::marker::PhantomData,
+        }
+    }
+
+    // TODO: Rename to `border_color`
+    // TODO: Should this be in its separate `Style<State, Action>: Sized` trait (unrelated to the existing)?
+    fn border_color_(self, color: BorderColor) -> Prop<BorderColor, Self, State, Action>
+    where
+        Self: Sized,
+        Self::Widget: masonry::core::HasProperty<BorderColor>,
+    {
+        Prop {
+            property: color,
             child: self,
             phantom: std::marker::PhantomData,
         }

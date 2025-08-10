@@ -71,6 +71,9 @@ pub struct DefaultProperties {
     pub(crate) dummy_map: AnyMap,
 }
 
+/// TODO
+pub trait HasProperty<P: Property> {}
+
 impl Properties {
     /// Create an empty collection of properties.
     pub fn new() -> Self {
