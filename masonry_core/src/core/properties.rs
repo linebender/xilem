@@ -17,7 +17,7 @@ use crate::util::{AnyMap, TypeSet};
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Default + Clone + Send + Sync + 'static {
+pub trait Property: Default + Send + Sync + 'static {
     /// A static reference to a default value.
     ///
     /// Should be the same as [`Default::default()`].

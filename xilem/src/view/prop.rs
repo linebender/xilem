@@ -11,7 +11,7 @@ use crate::core::{View, ViewMarker};
 use crate::style::{HasProperty, Style};
 use crate::{Pod, ViewCtx, WidgetView};
 
-/// The view for [`property`].
+/// A view that adds a property `P` or overrides a previously defined property `P`.
 pub struct Prop<P, V, State, Action> {
     pub(crate) property: P,
     pub(crate) child: V,
@@ -39,7 +39,7 @@ impl<P: Property, Pe: Property, V: HasProperty<Pe>, State, Action> HasProperty<P
 impl<P, V, State, Action> ViewMarker for Prop<P, V, State, Action> {}
 impl<P, Child, State, Action> View<State, Action, ViewCtx> for Prop<P, Child, State, Action>
 where
-    P: Property + PartialEq,
+    P: Property + PartialEq + Clone,
     Child: WidgetView<State, Action>,
     // TODO implement this on the element/widget
     // Child::Widget: HasProperty<P>,
