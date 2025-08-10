@@ -519,8 +519,6 @@ mod tests {
         assert_render_snapshot!(harness, "sized_box_label_box_with_background_and_padding");
     }
 
-    // TODO - add screenshot tests for different brush types
-
     // --- MARK: INVALID SCREENSHOT TESTS
 
     #[test]

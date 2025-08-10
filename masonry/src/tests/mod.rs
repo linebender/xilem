@@ -5,8 +5,6 @@
 //! both to centralize tests in a single crate and to have access to the `masonry`
 //! widget/property set in our tests if needed.
 
-// TODO - Some of these files are stubs and need to be filled out.
-
 mod accessibility;
 mod anim;
 mod compose;
