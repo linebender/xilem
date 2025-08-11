@@ -45,19 +45,6 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
     }
 }
 
-/// The state of the current app.
-#[expect(unnameable_types, reason = "TODO")]
-#[derive(Default, Debug)]
-pub enum AppState {
-    /// The app is currently in suspended state,
-    /// usually set during [`ApplicationHandler::suspended()`].
-    #[default]
-    Suspended,
-    /// The app is currently in resumed state,
-    /// usually set during [`ApplicationHandler::resumed()`].
-    Resumed,
-}
-
 /// Per-Window state
 pub(crate) struct Window {
     id: WindowId,
@@ -105,7 +92,9 @@ impl Window {
 /// `MasonryState` via [`MasonryState::new`] and forward events to it via the appropriate method (e.g.,
 /// calling [`handle_window_event`](MasonryState::handle_window_event) in [`window_event`](ApplicationHandler::window_event)).
 pub struct MasonryState<'a> {
-    app_state: AppState,
+    /// True if in suspended state (usually set during [`ApplicationHandler::suspended()`]).
+    /// Fales if in resumed state (usually set during [`ApplicationHandler::resumed()`]).
+    is_suspended: bool,
     render_cx: RenderContext,
     renderer: Option<Renderer>,
     // TODO: Winit doesn't seem to let us create these proxies from within the loop
@@ -266,7 +255,7 @@ impl MasonryState<'_> {
             std::sync::mpsc::channel::<(WindowId, RenderRootSignal)>();
 
         MasonryState {
-            app_state: AppState::Suspended,
+            is_suspended: true,
             render_cx,
             renderer: None,
             event_loop_proxy,
@@ -291,7 +280,7 @@ impl MasonryState<'_> {
 
     // --- MARK: RESUMED
     pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
-        self.app_state = AppState::Resumed;
+        self.is_suspended = false;
 
         // Create initial windows.
         if !self.initial_windows.is_empty() {
@@ -311,7 +300,7 @@ impl MasonryState<'_> {
 
     // --- MARK: SUSPENDED
     pub fn handle_suspended(&mut self, _event_loop: &ActiveEventLoop) {
-        self.app_state = AppState::Suspended;
+        self.is_suspended = true;
 
         // All surfaces needs to be cleared when suspended.
         // They will be recreated when resumed.
@@ -384,7 +373,7 @@ impl MasonryState<'_> {
         // HACK: When we exit, on some systems (known to happen with Wayland on KDE),
         // the IME state gets preserved until the app next opens. We work around this by force-deleting
         // the IME state just before exiting.
-        if let AppState::Resumed = self.app_state {
+        if !self.is_suspended {
             window.handle.set_ime_allowed(false);
         }
     }
@@ -501,7 +490,7 @@ impl MasonryState<'_> {
         event: WinitWindowEvent,
         app_driver: &mut dyn AppDriver,
     ) {
-        if let AppState::Suspended = self.app_state {
+        if self.is_suspended {
             tracing::warn!(
                 ?event,
                 "Got window event whilst suspended or before window created"
@@ -703,7 +692,7 @@ impl MasonryState<'_> {
 
     // --- MARK: SIGNALS
     fn handle_signals(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
-        if let AppState::Suspended = self.app_state {
+        if self.is_suspended {
             tracing::warn!("Tried to handle a signal whilst suspended");
             return;
         }
@@ -846,8 +835,8 @@ impl MasonryState<'_> {
         self.windows.get_mut(&handle_id).unwrap()
     }
 
-    pub fn app_state(&self) -> &AppState {
-        &self.app_state
+    pub fn is_suspended(&self) -> bool {
+        self.is_suspended
     }
 
     // TODO: remove (currently only exists to call register_fonts, font context should be moved out of render root)
