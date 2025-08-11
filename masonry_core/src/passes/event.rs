@@ -20,10 +20,10 @@ fn get_pointer_target(
     pointer_pos: Option<LogicalPosition<f64>>,
 ) -> Option<WidgetId> {
     // See the [pointer capture documentation](../doc/06_masonry_concepts.md#pointer-capture).
-    if let Some(capture_target) = root.global_state.pointer_capture_target {
-        if root.widget_arena.has(capture_target) {
-            return Some(capture_target);
-        }
+    if let Some(capture_target) = root.global_state.pointer_capture_target
+        && root.widget_arena.has(capture_target)
+    {
+        return Some(capture_target);
     }
 
     if let Some(pointer_pos) = pointer_pos {
@@ -179,22 +179,22 @@ pub(crate) fn run_on_pointer_event_pass(root: &mut RenderRoot, event: &PointerEv
 
     let target_widget_id = get_pointer_target(root, event_pos);
 
-    if matches!(event, PointerEvent::Down { .. }) {
-        if let Some(target_widget_id) = target_widget_id {
-            // The next tab event assign focus around this widget.
-            root.global_state.most_recently_clicked_widget = Some(target_widget_id);
+    if matches!(event, PointerEvent::Down { .. })
+        && let Some(target_widget_id) = target_widget_id
+    {
+        // The next tab event assign focus around this widget.
+        root.global_state.most_recently_clicked_widget = Some(target_widget_id);
 
-            // If we click outside of the focused widget, we clear the focus.
-            if let Some(focused_widget) = root.global_state.focused_widget {
-                // Focused_widget isn't ancestor of target_widget_id
-                if !root
-                    .widget_arena
-                    .nodes
-                    .get_id_path(target_widget_id)
-                    .contains(&focused_widget.to_raw())
-                {
-                    root.global_state.next_focused_widget = None;
-                }
+        // If we click outside of the focused widget, we clear the focus.
+        if let Some(focused_widget) = root.global_state.focused_widget {
+            // Focused_widget isn't ancestor of target_widget_id
+            if !root
+                .widget_arena
+                .nodes
+                .get_id_path(target_widget_id)
+                .contains(&focused_widget.to_raw())
+            {
+                root.global_state.next_focused_widget = None;
             }
         }
     }

@@ -451,10 +451,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_focus").entered();
     // If the next-focused widget is disabled, stashed or removed, we set
     // the focused id to None
-    if let Some(id) = root.global_state.next_focused_widget {
-        if !root.is_still_interactive(id) {
-            root.global_state.next_focused_widget = None;
-        }
+    if let Some(id) = root.global_state.next_focused_widget
+        && !root.is_still_interactive(id)
+    {
+        root.global_state.next_focused_widget = None;
     }
 
     let prev_focused = root.global_state.focused_widget;
@@ -491,10 +491,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         // handle this as above to avoid loops.
         //
         // First do the disabled, stashed or removed check again.
-        if let Some(id) = root.global_state.next_focused_widget {
-            if !root.is_still_interactive(id) {
-                root.global_state.next_focused_widget = None;
-            }
+        if let Some(id) = root.global_state.next_focused_widget
+            && !root.is_still_interactive(id)
+        {
+            root.global_state.next_focused_widget = None;
         }
         if prev_focused == root.global_state.next_focused_widget {
             tracing::warn!(
@@ -648,11 +648,11 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
     }
 
     // Release pointer capture if target can no longer hold it.
-    if let Some(id) = root.global_state.pointer_capture_target {
-        if !root.is_still_interactive(id) {
-            // The event pass will set pointer_capture_target to None.
-            run_on_pointer_event_pass(root, &dummy_pointer_cancel());
-        }
+    if let Some(id) = root.global_state.pointer_capture_target
+        && !root.is_still_interactive(id)
+    {
+        // The event pass will set pointer_capture_target to None.
+        run_on_pointer_event_pass(root, &dummy_pointer_cancel());
     }
 
     // -- UPDATE ACTIVE --
@@ -739,10 +739,10 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
         None
     };
     // If the pointer is captured, it can either hover its capture target or nothing.
-    if let Some(capture_target) = root.global_state.pointer_capture_target {
-        if next_hovered_widget != Some(capture_target) {
-            next_hovered_widget = None;
-        }
+    if let Some(capture_target) = root.global_state.pointer_capture_target
+        && next_hovered_widget != Some(capture_target)
+    {
+        next_hovered_widget = None;
     }
 
     // "Hovered path" means the widget which is considered hovered, and all its parents.

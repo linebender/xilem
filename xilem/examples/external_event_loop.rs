@@ -88,13 +88,12 @@ impl ApplicationHandler<MasonryUserEvent> for ExternalApp {
         event: winit::event::DeviceEvent,
     ) {
         // Handle the escape key to exit the app outside of masonry/xilem
-        if let winit::event::DeviceEvent::Key(key) = &event {
-            if key.state == ElementState::Pressed
-                && key.physical_key == PhysicalKey::Code(KeyCode::Escape)
-            {
-                event_loop.exit();
-                return;
-            }
+        if let winit::event::DeviceEvent::Key(key) = &event
+            && key.state == ElementState::Pressed
+            && key.physical_key == PhysicalKey::Code(KeyCode::Escape)
+        {
+            event_loop.exit();
+            return;
         }
 
         self.masonry_state.handle_device_event(
