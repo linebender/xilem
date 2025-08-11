@@ -280,6 +280,12 @@ impl MasonryState<'_> {
 
     // --- MARK: RESUMED
     pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
+        if !self.is_suspended {
+            // Short-circuiting since we have already
+            // handled the resumed event before this.
+            return;
+        }
+
         self.is_suspended = false;
 
         // Create initial windows.
@@ -300,6 +306,12 @@ impl MasonryState<'_> {
 
     // --- MARK: SUSPENDED
     pub fn handle_suspended(&mut self, _event_loop: &ActiveEventLoop) {
+        if self.is_suspended {
+            // Short-circuiting since we have already
+            // handled the suspended event before this.
+            return;
+        }
+
         self.is_suspended = true;
 
         // All surfaces needs to be cleared when suspended.
