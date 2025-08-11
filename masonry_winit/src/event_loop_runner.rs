@@ -288,17 +288,17 @@ impl MasonryState<'_> {
 
         self.is_suspended = false;
 
+        //  Recreate surfaces for all existing windows.
+        for (handle_id, window) in self.windows.iter() {
+            let surface = create_surface(&mut self.render_cx, window.handle.clone());
+            self.surfaces.insert(*handle_id, surface);
+        }
+
         // Create initial windows.
         if !self.initial_windows.is_empty() {
             for (id, attrs, widget) in std::mem::take(&mut self.initial_windows) {
                 self.create_window(event_loop, id, attrs, widget);
             }
-        }
-
-        //  Recreate surfaces for all windows.
-        for (handle_id, window) in self.windows.iter() {
-            let surface = create_surface(&mut self.render_cx, window.handle.clone());
-            self.surfaces.insert(*handle_id, surface);
         }
 
         self.handle_signals(event_loop, app_driver);
