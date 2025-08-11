@@ -117,7 +117,8 @@ pub struct MasonryState<'a> {
     signal_sender: Sender<(WindowId, RenderRootSignal)>,
     default_properties: Arc<DefaultProperties>,
     pub(crate) exit: bool,
-    initial_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
+    /// Windows that are scheduled to be created in the next resumed event.
+    new_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
     need_first_frame: Vec<HandleId>,
 }
 
@@ -246,7 +247,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 impl MasonryState<'_> {
     pub fn new(
         event_loop_proxy: EventLoopProxy,
-        initial_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
+        new_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
         default_properties: DefaultProperties,
     ) -> Self {
         let render_cx = RenderContext::new();
@@ -273,7 +274,7 @@ impl MasonryState<'_> {
             signal_sender,
             default_properties: Arc::new(default_properties),
             exit: false,
-            initial_windows,
+            new_windows,
             need_first_frame: Vec::new(),
         }
     }
@@ -294,9 +295,9 @@ impl MasonryState<'_> {
             self.surfaces.insert(*handle_id, surface);
         }
 
-        // Create initial windows.
-        if !self.initial_windows.is_empty() {
-            for (id, attrs, widget) in std::mem::take(&mut self.initial_windows) {
+        // Create new windows.
+        if !self.new_windows.is_empty() {
+            for (id, attrs, widget) in std::mem::take(&mut self.new_windows) {
                 self.create_window(event_loop, id, attrs, widget);
             }
         }
@@ -334,8 +335,7 @@ impl MasonryState<'_> {
 
         if self.is_suspended {
             // Wait until resumed before creating the windows.
-            self.initial_windows
-                .push((window_id, attributes, root_widget));
+            self.new_windows.push((window_id, attributes, root_widget));
 
             return;
         }
