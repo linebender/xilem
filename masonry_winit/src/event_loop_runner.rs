@@ -332,6 +332,14 @@ impl MasonryState<'_> {
             );
         }
 
+        if self.is_suspended {
+            // Wait until resumed before creating the windows.
+            self.initial_windows
+                .push((window_id, attributes, root_widget));
+
+            return;
+        }
+
         let visible = attributes.visible;
         // We always create the window as invisible so that we can
         // render the first frame before showing it to avoid flashing.
@@ -385,9 +393,7 @@ impl MasonryState<'_> {
         // HACK: When we exit, on some systems (known to happen with Wayland on KDE),
         // the IME state gets preserved until the app next opens. We work around this by force-deleting
         // the IME state just before exiting.
-        if !self.is_suspended {
-            window.handle.set_ime_allowed(false);
-        }
+        window.handle.set_ime_allowed(false);
     }
 
     // --- MARK: RENDER
@@ -398,10 +404,6 @@ impl MasonryState<'_> {
         render_cx: &RenderContext,
         renderer: &mut Option<Renderer>,
     ) {
-        // let WindowState::Rendering { handle, .. } = &mut window.state else {
-        //     tracing::warn!("Tried to render whilst suspended or before window created");
-        //     return;
-        // };
         let scale_factor = window.handle.scale_factor();
         // https://github.com/rust-windowing/winit/issues/2308
         #[cfg(target_os = "ios")]
@@ -600,13 +602,6 @@ impl MasonryState<'_> {
                 );
                 #[cfg(feature = "tracy")]
                 drop(self.frame.take());
-                // let WindowState::Rendering {
-                //     accesskit_adapter, ..
-                // } = &mut window.state
-                // else {
-                //     error!("Suspended inside event");
-                //     return;
-                // };
                 window.accesskit_adapter.update_if_active(|| tree_update);
             }
             WinitWindowEvent::CloseRequested => {
