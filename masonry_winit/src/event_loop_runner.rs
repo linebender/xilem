@@ -405,7 +405,7 @@ impl MasonryState<'_> {
         let scale_factor = window.handle.scale_factor();
         // https://github.com/rust-windowing/winit/issues/2308
         #[cfg(target_os = "ios")]
-        let size = handle.outer_size();
+        let size = window.handle.outer_size();
         #[cfg(not(target_os = "ios"))]
         let size = window.handle.inner_size();
         let width = size.width;
