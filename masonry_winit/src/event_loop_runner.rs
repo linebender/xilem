@@ -92,8 +92,8 @@ impl Window {
 /// `MasonryState` via [`MasonryState::new`] and forward events to it via the appropriate method (e.g.,
 /// calling [`handle_window_event`](MasonryState::handle_window_event) in [`window_event`](ApplicationHandler::window_event)).
 pub struct MasonryState<'a> {
-    /// True if in suspended state (usually set during [`ApplicationHandler::suspended()`]).
-    /// Fales if in resumed state (usually set during [`ApplicationHandler::resumed()`]).
+    /// The event loop is suspended when the app is e.g. in the background on Android.
+    /// We aren't allowed to have any `Surface`s, and we also don't expect to receive any events.
     is_suspended: bool,
     render_cx: RenderContext,
     renderer: Option<Renderer>,
