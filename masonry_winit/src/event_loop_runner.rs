@@ -359,11 +359,9 @@ impl MasonryState<'_> {
         let scale_factor = handle.scale_factor();
         let handle_id = handle.id();
 
-        // Surface.
         let surface = create_surface(&mut self.render_cx, handle.clone());
         self.surfaces.insert(handle_id, surface);
 
-        // Window.
         let mut window = Window::new(
             window_id,
             handle,
