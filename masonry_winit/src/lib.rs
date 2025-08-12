@@ -21,7 +21,7 @@
 //! use masonry::dpi::LogicalSize;
 //! use masonry::theme::default_property_set;
 //! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextInput};
-//! use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+//! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 //! use masonry_winit::winit::window::Window;
 //!
 //! struct Driver {
@@ -91,11 +91,11 @@
 //!         .unwrap();
 //!     masonry_winit::app::run_with(
 //!         event_loop,
-//!         vec![(
-//!             driver.window_id,
-//!             window_attributes,
-//!             NewWidget::new(main_widget).erased(),
-//!         )],
+//!         vec![NewWindow {
+//!             id: driver.window_id,
+//!             attributes: window_attributes,
+//!             root_widget: NewWidget::new(main_widget).erased(),
+//!         }],
 //!         driver,
 //!         default_property_set(),
 //!     )
@@ -158,7 +158,8 @@ pub use winit;
 pub mod app {
     pub use super::app_driver::{AppDriver, DriverCtx, WindowId};
     pub use super::event_loop_runner::{
-        EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, run, run_with,
+        EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, NewWindow,
+        run, run_with,
     };
 
     pub(crate) use super::convert_winit_event::{

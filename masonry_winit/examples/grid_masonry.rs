@@ -16,7 +16,7 @@ use masonry::peniko::Color;
 use masonry::properties::{BorderColor, BorderWidth};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 struct Driver {
@@ -149,7 +149,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(driver.window_id, window_attributes, main_widget.erased())],
+        vec![NewWindow {
+            id: driver.window_id,
+            attributes: window_attributes,
+            root_widget: main_widget.erased(),
+        }],
         driver,
         default_property_set(),
     )

@@ -22,7 +22,7 @@ use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::{TextAlign, TextAlignOptions};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 use tracing::{Span, trace_span};
 
@@ -196,11 +196,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(
-            WindowId::next(),
-            window_attributes,
-            NewWidget::new(CustomWidget(my_string)).erased(),
-        )],
+        vec![NewWindow {
+            id: WindowId::next(),
+            attributes: window_attributes,
+            root_widget: NewWidget::new(CustomWidget(my_string)).erased(),
+        }],
         Driver,
         default_property_set(),
     )

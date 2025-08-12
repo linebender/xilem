@@ -12,7 +12,7 @@ use masonry::dpi::LogicalSize;
 use masonry::properties::Padding;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::new("text-input");
@@ -91,11 +91,11 @@ fn main() {
         .unwrap();
     masonry_winit::app::run_with(
         event_loop,
-        vec![(
-            driver.window_id,
-            window_attributes,
-            make_widget_tree().erased(),
-        )],
+        vec![NewWindow {
+            id: driver.window_id,
+            attributes: window_attributes,
+            root_widget: make_widget_tree().erased(),
+        }],
         driver,
         default_property_set(),
     )

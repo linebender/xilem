@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::peniko::Blob;
-use masonry_winit::app::{EventLoopBuilder, WindowId};
+use masonry_winit::app::{EventLoopBuilder, NewWindow, WindowId};
 
 use std::iter::Once;
 use std::sync::Arc;
 
-use masonry::core::{DefaultProperties, NewWidget, Widget};
+use masonry::core::DefaultProperties;
 use masonry::theme::default_property_set;
 use masonry_winit::app::MasonryUserEvent;
 use winit::error::EventLoopError;
-use winit::window::WindowAttributes;
 use xilem_core::map_state;
 
 use crate::window_options::WindowCallbacks;
@@ -166,10 +165,7 @@ where
     pub fn into_driver_and_windows(
         self,
         proxy: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
-    ) -> (
-        MasonryDriver<State, Logic>,
-        Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
-    ) {
+    ) -> (MasonryDriver<State, Logic>, Vec<NewWindow>) {
         MasonryDriver::new(self.state, self.logic, proxy, self.runtime, self.fonts)
     }
 }

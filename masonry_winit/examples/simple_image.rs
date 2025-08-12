@@ -14,7 +14,7 @@ use masonry::peniko::{Image as ImageBuf, ImageFormat};
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::widgets::Image;
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 struct Driver;
@@ -54,7 +54,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(WindowId::next(), window_attributes, make_image().erased())],
+        vec![NewWindow {
+            id: WindowId::next(),
+            attributes: window_attributes,
+            root_widget: make_image().erased(),
+        }],
         Driver,
         default_property_set(),
     )
