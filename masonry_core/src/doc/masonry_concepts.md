@@ -119,7 +119,8 @@ When the user presses `Tab` or `Shift+Tab`, Masonry will look for the closest si
 The focus anchor is generally either the focused widget, or the most recently clicked widget.
 
 What happens if the focus anchor is removed from the tree or stashed/disabled is currently unspecified.
-<!-- TODO - Ideally, the parent widget should become the new focus anchor in all three cases. -->
+
+<!-- TODO - Ideally, the closest ancestor widget still interactive should become the new focus anchor in all three cases. -->
 
 This behavior exists so that when the user clicks somewhere and then presses `Tab`, the focused widget is more likely to be close to whatever the user clicked.
 

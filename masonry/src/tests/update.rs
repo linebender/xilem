@@ -448,11 +448,8 @@ fn stash_focusable() {
         parent.ctx.set_stashed(&mut parent.widget.state[1], true);
     });
 
-    // The focus anchor should have reset to the parent flex, so we select button1
-    harness.press_tab_key(false);
-    assert_eq!(harness.focused_widget_id(), Some(button1_id));
-
     // We skip button2 and jump from button1 to button3.
+    harness.focus_on(Some(button1_id));
     harness.press_tab_key(false);
     assert_eq!(harness.focused_widget_id(), Some(button3_id));
 
