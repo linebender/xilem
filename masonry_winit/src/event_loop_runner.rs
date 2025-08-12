@@ -45,6 +45,9 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
     }
 }
 
+/// A container for a window yet to be created.
+///
+/// This is stored inside [`MasonryState`] and will be created during the `resumed` event.
 pub struct NewWindow {
     pub id: WindowId,
     pub attributes: WindowAttributes,
