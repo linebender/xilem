@@ -535,10 +535,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         root.global_state.next_focused_widget = None;
     }
     // Same thing for the anchor.
-    if let Some(id) = root.global_state.focus_anchor {
-        if !root.is_still_interactive(id) {
-            root.global_state.focus_anchor = None;
-        }
+    if let Some(id) = root.global_state.focus_anchor
+        && !root.is_still_interactive(id)
+    {
+        root.global_state.focus_anchor = None;
     }
 
     let prev_focused = root.global_state.focused_widget;
