@@ -110,6 +110,7 @@ impl Widget for TextInput {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
+        // TODO: Draw shadows in post_paint.
         BoxShadow::prop_changed(ctx, property_type);
     }
 
@@ -155,6 +156,11 @@ impl Widget for TextInput {
         }
 
         if self.clip {
+            // TODO: Ideally, this clip would be the "inside edge" of our border path
+            // In the current implementation, that would currently clip our own border
+            // and so isn't viable.
+            // The BorderColor (etc.) properties don't currently support the border
+            // being drawn in post_post, which I think would be ideal for this use case.
             ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
         }
 
@@ -254,5 +260,25 @@ mod tests {
         harness.focus_on(text_area_id);
 
         assert_render_snapshot!(harness, "text_input_selection");
+    }
+
+    #[test]
+    fn text_input_clips() {
+        let text_input = NewWidget::new(
+            TextInput::from_text_area(
+                TextArea::new_editable("TextInput contents")
+                    .with_style(StyleProperty::FontSize(14.0))
+                    .with_word_wrap(false)
+                    .with_auto_id(),
+            )
+            .with_clip(true),
+        );
+        let mut harness = TestHarness::create_with_size(
+            default_property_set(),
+            text_input,
+            Size::new(80.0, 30.0),
+        );
+
+        assert_render_snapshot!(harness, "text_input_clip");
     }
 }
