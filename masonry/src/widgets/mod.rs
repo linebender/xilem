@@ -3,9 +3,6 @@
 
 //! Common widgets.
 
-#[cfg(test)]
-mod tests;
-
 mod align;
 mod button;
 mod checkbox;
