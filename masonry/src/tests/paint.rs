@@ -10,7 +10,7 @@ use vello::kurbo::{Affine, Circle, Dashes, Point, Size, Stroke, Vec2};
 use vello::peniko::Color;
 
 use crate::properties::Background;
-use crate::properties::types::MainAxisAlignment;
+use crate::properties::types::{Length, MainAxisAlignment};
 use crate::theme::default_property_set;
 use crate::widgets::{Flex, SizedBox};
 
@@ -59,16 +59,17 @@ fn request_paint() {
 #[test]
 fn paint_order() {
     const SQUARE_SIZE: f64 = 30.;
+    const SQURE_LENGTH: Length = Length::const_px(SQUARE_SIZE);
     let child1 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQUARE_SIZE).height(SQUARE_SIZE),
+        SizedBox::empty().width(SQURE_LENGTH).height(SQURE_LENGTH),
         (Background::Color(RED),).into(),
     );
     let child2 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQUARE_SIZE).height(SQUARE_SIZE),
+        SizedBox::empty().width(SQURE_LENGTH).height(SQURE_LENGTH),
         (Background::Color(GREEN),).into(),
     );
     let child3 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQUARE_SIZE).height(SQUARE_SIZE),
+        SizedBox::empty().width(SQURE_LENGTH).height(SQURE_LENGTH),
         (Background::Color(BLUE),).into(),
     );
     let children = vec![child1, child2, child3];

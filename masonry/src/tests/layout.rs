@@ -128,7 +128,10 @@ fn skip_layout_when_cached() {
     let sibling_tag = WidgetTag::new("sibling");
 
     let button = NewWidget::new_with_tag(Button::with_text("Foobar").record(), button_tag);
-    let sibling = NewWidget::new_with_tag(SizedBox::empty().width(20.0).height(20.0), sibling_tag);
+    let sibling = NewWidget::new_with_tag(
+        SizedBox::empty().width(20.px()).height(20.px()),
+        sibling_tag,
+    );
 
     // We choose a ZStack, because it should pass down the same constraints no matter what.
     let parent = NewWidget::new(
