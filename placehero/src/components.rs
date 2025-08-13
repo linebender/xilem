@@ -8,7 +8,8 @@ use xilem::view::{
 };
 use xilem::{FontWeight, TextAlign};
 
-use crate::{Avatars, Placehero, status_html_to_plaintext};
+use crate::actions::Navigation;
+use crate::{Avatars, status_html_to_plaintext};
 
 mod timeline;
 pub(crate) use timeline::timeline;
@@ -22,7 +23,9 @@ pub(crate) use thread::thread;
 // TODO: Determine our UX for boosting/reblogging.
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
-fn base_status(status: &Status) -> impl FlexSequence<Placehero> + use<> {
+fn base_status<State: 'static>(
+    status: &Status,
+) -> impl FlexSequence<State, Navigation> + use<State> {
     // TODO: This really should be Arced or something.
     let status_clone: Status = status.clone();
     // TODO: In theory, it's possible to reblog a reblog; it's not clear what happens in this case.
@@ -55,15 +58,8 @@ fn base_status(status: &Status) -> impl FlexSequence<Placehero> + use<> {
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            button("View Replies", move |state: &mut Placehero| {
-                state
-                    .context_sender
-                    .as_ref()
-                    .unwrap()
-                    .send(status_clone.id.clone())
-                    .unwrap();
-                state.show_context = Some(status_clone.clone());
-                state.context = None;
+            button("View Replies", move |_| {
+                Navigation::LoadContext(status_clone.clone())
             }),
         ))
         // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.

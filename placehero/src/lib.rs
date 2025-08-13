@@ -16,12 +16,13 @@ use megalodon::entities::{Account, Context, Instance, Status};
 use megalodon::megalodon::GetAccountStatusesInputOptions;
 use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf4};
-use xilem::core::{NoElement, View, fork};
+use xilem::core::{NoElement, View, fork, map_action};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{button, flex, label, prose, split, task_raw, worker_raw};
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
 
+mod actions;
 mod avatars;
 mod components;
 mod html_content;
@@ -29,6 +30,7 @@ mod html_content;
 pub(crate) use avatars::Avatars;
 pub(crate) use html_content::status_html_to_plaintext;
 
+use crate::actions::Navigation;
 use crate::components::thread;
 
 /// Our shared API client type.
@@ -37,7 +39,8 @@ use crate::components::thread;
 /// has the advantage that go-to-definition works.
 ///
 /// We also do not plan to support non-Mastodon servers at the moment.
-/// However, keeping this type definition means a greater chance of.
+/// However, keeping this type definition means a greater chance of a port to
+/// outside Mastodon working.
 #[expect(
     clippy::disallowed_types,
     reason = "We want to allow using the type only through this path"
@@ -56,6 +59,7 @@ struct Placehero {
 
 /// Execute the app in the given winit event loop.
 pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+    // TODO: Configurable server?
     let base_url = "https://mastodon.online".to_string();
     // TODO: Determine what user agent we want to send.
     // Currently we send "megalodon", as that is the default in the library.
@@ -87,15 +91,12 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 }
 
 impl Placehero {
-    fn sidebar(&mut self) -> impl WidgetView<Self> + use<> {
+    fn sidebar(&mut self) -> impl WidgetView<Self, Navigation> + use<> {
         if let Some(instance) = &self.instance {
             let back = if self.show_context.is_some() {
                 // TODO: Make the ⬅️ arrow not be available to screen readers.
-                Some(button("⬅️ Back to Timeline", |app_state: &mut Self| {
-                    // TODO: Maintain scroll state in the timeline.
-                    // TODO: More of a back stack.
-                    app_state.show_context = None;
-                    app_state.context = None;
+                Some(button("⬅️ Back to Timeline", |_: &mut Self| {
+                    Navigation::Home
                 }))
             } else {
                 None
@@ -111,7 +112,7 @@ impl Placehero {
         }
     }
 
-    fn main_view(&mut self) -> impl WidgetView<Self> + use<> {
+    fn main_view(&mut self) -> impl WidgetView<Self, Navigation> + use<> {
         if let Some(show_context) = self.show_context.as_ref() {
             if let Some(context) = self.context.as_ref() {
                 // TODO: Display the status until the entire thread loads; this is hard because
@@ -130,7 +131,25 @@ impl Placehero {
 
 fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
     Avatars::provide(fork(
-        split(app_state.sidebar(), app_state.main_view()).split_point(0.2),
+        map_action(
+            split(app_state.sidebar(), app_state.main_view()).split_point(0.2),
+            |state, action| match action {
+                Navigation::LoadContext(status) => {
+                    state
+                        .context_sender
+                        .as_ref()
+                        .unwrap()
+                        .send(status.id.clone())
+                        .unwrap();
+                    state.show_context = Some(status);
+                    state.context = None;
+                }
+                Navigation::Home => {
+                    state.context = None;
+                    state.show_context = None;
+                }
+            },
+        ),
         (
             load_instance(app_state.mastodon.clone()),
             load_account(app_state.mastodon.clone()),
