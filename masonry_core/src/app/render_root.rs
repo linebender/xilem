@@ -395,6 +395,9 @@ impl RenderRoot {
             }
             WindowEvent::EnableAccessTree => {
                 self.global_state.access_tree_active = true;
+                // AccessKit expects the next update to have include
+                // a description of every single node.
+                self.request_access_all();
                 self.global_state
                     .emit_signal(RenderRootSignal::RequestRedraw);
                 Handled::Yes
@@ -659,6 +662,29 @@ impl RenderRoot {
                     .emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
             }
         }
+    }
+
+    // TODO - Factor out into "visit_all" method?
+
+    pub(crate) fn request_access_all(&mut self) {
+        fn request_access_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
+            let children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
+
+            state.needs_accessibility = true;
+            state.request_accessibility = true;
+
+            let id = state.id;
+            recurse_on_children(id, widget, children, |node| {
+                request_access_all_in(node);
+            });
+        }
+
+        let root_node = self.widget_arena.get_node_mut(self.root.id());
+        request_access_all_in(root_node);
+        self.global_state
+            .emit_signal(RenderRootSignal::RequestRedraw);
     }
 
     pub(crate) fn request_render_all(&mut self) {
