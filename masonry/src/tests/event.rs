@@ -113,9 +113,7 @@ fn synthetic_cancel() {
 
     // When we disable a widget with pointer capture, it gets a
     // synthetic PointerCancel event.
-    harness.edit_widget_with_tag(target_tag, |mut target| {
-        target.ctx.set_disabled(true);
-    });
+    harness.set_disabled(target_tag, true);
 
     let records = harness.get_records_of(target_tag);
     assert!(
@@ -347,9 +345,7 @@ fn text_event_fallback() {
     assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
 
     // Unless it's disabled.
-    harness.edit_widget_with_tag(target_tag, |mut target| {
-        target.ctx.set_disabled(true);
-    });
+    harness.set_disabled(target_tag, true);
     harness.flush_records_of(target_tag);
     harness.keyboard_type_chars("A");
     assert_matches!(harness.get_records_of(target_tag)[..], []);
