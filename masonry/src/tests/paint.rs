@@ -28,7 +28,7 @@ fn request_paint() {
     harness.flush_records_of(parent_tag);
 
     // Paint
-    harness.edit_widget_with_tag(target_tag, |mut widget| {
+    harness.edit_widget(target_tag, |mut widget| {
         widget.ctx.request_paint_only();
     });
     let _ = harness.render();
@@ -39,7 +39,7 @@ fn request_paint() {
     assert_matches!(harness.get_records_of(parent_tag)[..], []);
 
     // Post-paint
-    harness.edit_widget_with_tag(target_tag, |mut widget| {
+    harness.edit_widget(target_tag, |mut widget| {
         widget.ctx.request_post_paint();
     });
     let _ = harness.render();

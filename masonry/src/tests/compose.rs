@@ -46,7 +46,7 @@ fn request_compose() {
     harness.flush_records_of(parent_tag);
 
     // Changing pos should lead to a layout and a compose pass.
-    harness.edit_widget_with_tag(parent_tag, |mut parent| {
+    harness.edit_widget(parent_tag, |mut parent| {
         parent.widget.inner_mut().state.pos = Point::new(30., 30.);
         parent.ctx.request_layout();
     });
@@ -56,20 +56,20 @@ fn request_compose() {
     );
 
     // Changing scroll offset only should lead to a compose pass.
-    harness.edit_widget_with_tag(parent_tag, |mut parent| {
+    harness.edit_widget(parent_tag, |mut parent| {
         parent.widget.inner_mut().state.offset = Vec2::new(8., 8.);
         parent.ctx.request_compose();
     });
     assert_matches!(harness.get_records_of(parent_tag)[..], [Record::Compose]);
 
-    harness.edit_widget_with_tag(parent_tag, |mut parent| {
+    harness.edit_widget(parent_tag, |mut parent| {
         parent
             .ctx
             .set_transform(Affine::translate(Vec2::new(7., 7.)));
     });
 
     // Origin should be "parent_origin + pos + scroll_offset"
-    let origin = harness.get_widget_with_tag(child_tag).ctx().window_origin();
+    let origin = harness.get_widget(child_tag).ctx().window_origin();
     assert_eq!(
         origin.to_vec2(),
         Vec2::new(7., 7.) + Point::new(30., 30.).to_vec2() + Vec2::new(8., 8.)
@@ -92,6 +92,6 @@ fn scroll_pixel_snap() {
     let harness = TestHarness::create(default_property_set(), parent);
 
     // Origin should be rounded to (0., 1.) by pixel-snapping.
-    let origin = harness.get_widget_with_tag(child_tag).ctx().window_origin();
+    let origin = harness.get_widget(child_tag).ctx().window_origin();
     assert_eq!(origin, Point::new(0., 1.));
 }

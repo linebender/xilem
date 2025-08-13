@@ -20,7 +20,7 @@ fn needs_anim_flag() {
     harness.flush_records_of(target_tag);
     harness.flush_records_of(parent_tag);
 
-    harness.edit_widget_with_tag(target_tag, |mut widget| {
+    harness.edit_widget(target_tag, |mut widget| {
         widget.ctx.request_anim_frame();
     });
     harness.animate_ms(42);

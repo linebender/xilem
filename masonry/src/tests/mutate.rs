@@ -22,7 +22,7 @@ fn mutate_order() {
     let sender3 = sender;
 
     let mut harness = TestHarness::create(default_property_set(), grandparent);
-    harness.edit_widget_with_tag(parent_tag, move |mut parent| {
+    harness.edit_widget(parent_tag, move |mut parent| {
         parent.ctx.mutate_self_later(move |_| {
             sender2.send(2).unwrap();
         });
@@ -45,7 +45,7 @@ fn cancel_mutate() {
     let parent = NewWidget::new_with_tag(SizedBox::new(child), parent_tag);
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    harness.edit_widget_with_tag(parent_tag, move |mut parent| {
+    harness.edit_widget(parent_tag, move |mut parent| {
         {
             let mut child = SizedBox::child_mut(&mut parent).unwrap();
 

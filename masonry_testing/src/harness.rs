@@ -632,7 +632,7 @@ impl<W: Widget> TestHarness<W> {
     /// - If the widget is scrolled out of view.
     #[track_caller]
     pub fn mouse_move_to(&mut self, id: WidgetId) {
-        let widget = self.get_widget(id);
+        let widget = self.get_widget_with_id(id);
         let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
@@ -748,7 +748,7 @@ impl<W: Widget> TestHarness<W> {
 
     /// Helper method to directly enable/disable a widget.
     pub fn set_disabled(&mut self, widget: WidgetTag<impl Widget>, disabled: bool) {
-        self.edit_widget_with_tag(widget, |mut target| {
+        self.edit_widget(widget, |mut target| {
             target.ctx.set_disabled(disabled);
         });
     }
@@ -771,7 +771,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Panics if no widget with this id can be found.
     #[track_caller]
-    pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
+    pub fn get_widget_with_id(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
             .get_widget(id)
             .unwrap_or_else(|| panic!("could not find widget {id}"))
@@ -783,7 +783,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Panics if no widget with this tag can be found.
     #[track_caller]
-    pub fn get_widget_with_tag<W2: Widget + FromDynWidget + ?Sized>(
+    pub fn get_widget<W2: Widget + FromDynWidget + ?Sized>(
         &self,
         tag: WidgetTag<W2>,
     ) -> WidgetRef<'_, W2> {
@@ -799,7 +799,7 @@ impl<W: Widget> TestHarness<W> {
     /// Panics if no widget with this tag can be found.
     #[track_caller]
     pub fn get_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) -> Vec<Record> {
-        self.get_widget_with_tag(tag).inner().recording().drain()
+        self.get_widget(tag).inner().recording().drain()
     }
 
     /// Flush the events recorded by the [`Recorder`] widget with the given tag.
@@ -809,7 +809,7 @@ impl<W: Widget> TestHarness<W> {
     /// Panics if no widget with this tag can be found.
     #[track_caller]
     pub fn flush_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) {
-        self.get_widget_with_tag(tag).inner().recording().clear();
+        self.get_widget(tag).inner().recording().clear();
     }
 
     /// Try to return a [`WidgetRef`] to the widget with the given id.
@@ -871,7 +871,7 @@ impl<W: Widget> TestHarness<W> {
     /// Get a [`WidgetMut`] to a specific widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_widget<R>(
+    pub fn edit_widget_with_id<R>(
         &mut self,
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
@@ -885,7 +885,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     #[track_caller]
-    pub fn edit_widget_with_tag<R, W2: Widget + FromDynWidget + ?Sized>(
+    pub fn edit_widget<R, W2: Widget + FromDynWidget + ?Sized>(
         &mut self,
         tag: WidgetTag<W2>,
         f: impl FnOnce(WidgetMut<'_, W2>) -> R,
