@@ -430,7 +430,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
 
         match event {
             PointerEvent::Down { button, state, .. } => {
-                if !ctx.is_disabled() && matches!(button, None | Some(PointerButton::Primary)) {
+                if matches!(button, None | Some(PointerButton::Primary)) {
                     let cursor_pos = ctx.local_position(state.position);
                     let (fctx, lctx) = ctx.text_contexts();
                     let mut drv = self.editor.driver(fctx, lctx);
@@ -450,7 +450,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 }
             }
             PointerEvent::Move(u) => {
-                if !ctx.is_disabled() && ctx.is_active() {
+                if ctx.is_active() {
                     let cursor_pos = ctx.local_position(u.current.position);
                     let (fctx, lctx) = ctx.text_contexts();
                     self.editor

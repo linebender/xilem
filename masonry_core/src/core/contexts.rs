@@ -1008,24 +1008,18 @@ impl_context_method!(
             self.widget_state.accepts_text_input
         }
 
-        /// The disabled state of a widget.
+        /// Whether this widget is [disabled].
         ///
         /// Returns `true` if this widget or any of its ancestors is explicitly disabled.
         /// To make this widget explicitly disabled use [`set_disabled`].
         ///
-        /// Disabled means that this widget should not change the state of the application. What
-        /// that means is not entirely clear but in any case it should not change its data. Therefore
-        /// others can use this as a safety mechanism to prevent the application from entering an
-        /// illegal state.
-        /// For an example the decrease button of a counter of type `usize` should be disabled if the
-        /// value is `0`.
-        ///
+        /// [disabled]: crate::doc::masonry_concepts#disabled
         /// [`set_disabled`]: EventCtx::set_disabled
         pub fn is_disabled(&self) -> bool {
             self.widget_state.is_disabled
         }
 
-        /// Check is widget is [stashed]().
+        /// Whether this widget is [stashed].
         ///
         /// [stashed]: crate::doc::masonry_concepts#stashed
         pub fn is_stashed(&self) -> bool {

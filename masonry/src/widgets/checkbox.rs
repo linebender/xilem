@@ -94,15 +94,13 @@ impl Widget for Checkbox {
     ) {
         match event {
             PointerEvent::Down { .. } => {
-                if !ctx.is_disabled() {
-                    ctx.capture_pointer();
-                    // Checked state impacts appearance and accessibility node
-                    ctx.request_render();
-                    trace!("Checkbox {:?} pressed", ctx.widget_id());
-                }
+                ctx.capture_pointer();
+                // Checked state impacts appearance and accessibility node
+                ctx.request_render();
+                trace!("Checkbox {:?} pressed", ctx.widget_id());
             }
             PointerEvent::Up { .. } => {
-                if ctx.is_active() && ctx.is_hovered() && !ctx.is_disabled() {
+                if ctx.is_active() && ctx.is_hovered() {
                     self.checked = !self.checked;
                     ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
@@ -217,7 +215,7 @@ impl Widget for Checkbox {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_pressed = ctx.is_active() && !ctx.is_disabled();
+        let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
 
         let check_size = theme::BASIC_WIDGET_HEIGHT;
@@ -237,7 +235,7 @@ impl Widget for Checkbox {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let border_color = if is_hovered && !ctx.is_disabled() {
+        let border_color = if is_hovered {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()

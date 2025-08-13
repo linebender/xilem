@@ -102,15 +102,13 @@ impl Widget for Button {
     ) {
         match event {
             PointerEvent::Down { .. } => {
-                if !ctx.is_disabled() {
-                    ctx.capture_pointer();
-                    // Changes in pointer capture impact appearance, but not accessibility node
-                    ctx.request_paint_only();
-                    trace!("Button {:?} pressed", ctx.widget_id());
-                }
+                ctx.capture_pointer();
+                // Changes in pointer capture impact appearance, but not accessibility node
+                ctx.request_paint_only();
+                trace!("Button {:?} pressed", ctx.widget_id());
             }
             PointerEvent::Up { button, .. } => {
-                if ctx.is_active() && ctx.is_hovered() && !ctx.is_disabled() {
+                if ctx.is_active() && ctx.is_hovered() {
                     ctx.submit_action::<Self::Action>(ButtonPress { button: *button });
                     trace!("Button {:?} released", ctx.widget_id());
                 }
@@ -226,7 +224,7 @@ impl Widget for Button {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
-        let is_pressed = ctx.is_active() && !ctx.is_disabled();
+        let is_pressed = ctx.is_active();
         let is_hovered = ctx.is_hovered();
         let size = ctx.size();
 
@@ -244,7 +242,7 @@ impl Widget for Button {
         let bg_rect = border_width.bg_rect(size, border_radius);
         let border_rect = border_width.border_rect(size, border_radius);
 
-        let mut border_color = if is_hovered && !ctx.is_disabled() {
+        let mut border_color = if is_hovered {
             &props.get::<HoveredBorderColor>().0
         } else {
             props.get::<BorderColor>()

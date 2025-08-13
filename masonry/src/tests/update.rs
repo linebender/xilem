@@ -115,13 +115,8 @@ fn disabled_widget_gets_no_event() {
         ]
     );
 
-    #[cfg(false)]
-    {
-        // TODO - Suppress events for disabled widgets.
-        // See https://github.com/linebender/xilem/pull/1224
-        harness.mouse_click_on(button_id);
-        assert_matches!(harness.get_records_of(button_tag)[..], []);
-    }
+    harness.mouse_click_on(button_id);
+    assert_matches!(harness.get_records_of(button_tag)[..], []);
 
     assert_matches!(harness.focused_widget_id(), None);
 

@@ -303,21 +303,25 @@ pub trait Widget: AsDynWidget + Any {
     /// responsible for visiting all their children during `layout` and `register_children`.
     fn children_ids(&self) -> ChildrenIds;
 
-    /// Whether this widget gets pointer events and hovered status. True by default.
+    /// Whether this widget gets pointer events and [hovered] status. True by default.
     ///
     /// If false, the widget will be treated as "transparent" for the pointer, meaning
     /// that the pointer will be considered as hovering whatever is under this widget.
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    ///
+    /// [hovered]: crate::doc::masonry_concepts#hovered
     fn accepts_pointer_interaction(&self) -> bool {
         true
     }
 
-    /// Whether this widget gets text focus. False by default.
+    /// Whether this widget gets [text focus]. False by default.
     ///
     /// If true, pressing Tab can focus this widget.
     ///
     /// **Note:** The value returned by this method is cached at widget creation and can't be changed.
+    ///
+    /// [text focus]: crate::doc::masonry_concepts#text-focus
     fn accepts_focus(&self) -> bool {
         false
     }
