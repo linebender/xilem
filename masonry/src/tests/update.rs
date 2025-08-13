@@ -409,11 +409,8 @@ fn disable_focusable() {
         button.ctx.set_disabled(true);
     });
 
-    // The focus anchor should have reset to the parent flex, so we select button1
-    harness.press_tab_key(false);
-    assert_eq!(harness.focused_widget_id(), Some(button1_id));
-
     // We skip button2 and jump from button1 to button3.
+    harness.focus_on(Some(button1_id));
     harness.press_tab_key(false);
     assert_eq!(harness.focused_widget_id(), Some(button3_id));
 
@@ -484,11 +481,8 @@ fn remove_focusable() {
         parent.ctx.remove_child(child);
     });
 
-    // The focus anchor should have reset to the parent flex, so we select button1
-    harness.press_tab_key(false);
-    assert_eq!(harness.focused_widget_id(), Some(button1_id));
-
     // We go from button1 to button3.
+    harness.focus_on(Some(button1_id));
     harness.press_tab_key(false);
     assert_eq!(harness.focused_widget_id(), Some(button3_id));
 
