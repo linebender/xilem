@@ -339,7 +339,7 @@ impl RenderRoot {
         if let Some(test_font_data) = test_font {
             // We don't use `register_fonts` here because that requests a global relayout.
             // However, because we are not yet fully initialised (we are before the below call
-            // to `run_rewrite_passes`), `request_layout_all` will fail, as the root hasn't
+            // to `run_rewrite_passes`), `request_layout_all` will panic, as the root hasn't
             // been inserted into the arena yet.
             let families = root
                 .global_state
