@@ -49,8 +49,19 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
 ///
 /// This is stored inside [`MasonryState`] and will be created during the `resumed` event.
 pub struct NewWindow {
+    /// The id is set by the App, and can be created using the [`WindowId::next()`] method.
+    ///
+    /// Once the window is created, it can be accessed using this `id` through the
+    /// [`DriverCtx::window_handle()`] method.
     pub id: WindowId,
+    /// Window attributes for the winit's [`Window`].
+    ///
+    /// A default attribute can be created using [`Window::default_attributes()`].
+    ///
+    /// [`Window`]: crate::winit::window::Window
+    /// [`Window::default_attributes()`]: crate::winit::window::Window::default_attributes()
     pub attributes: WindowAttributes,
+    /// The widget which will take up the entire contents of the new window.
     pub root_widget: NewWidget<dyn Widget>,
 }
 
