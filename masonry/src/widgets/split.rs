@@ -137,6 +137,14 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 }
 
 // --- MARK: INTERNALS
+// TODO - Remove this block, and remove pixel-snapping code from this file.
+impl Length {
+    #[doc(hidden)]
+    pub fn ceil(self) -> Self {
+        Self::px(self.get().ceil())
+    }
+}
+
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the size of the splitter bar area.
     #[inline]

@@ -68,12 +68,4 @@ impl Length {
     pub const fn get(self) -> f64 {
         self.value
     }
-
-    #[doc(hidden)]
-    // TODO - Remove once pixel-snapping is merged.
-    pub fn ceil(self) -> Self {
-        Self {
-            value: self.value.ceil(),
-        }
-    }
 }
