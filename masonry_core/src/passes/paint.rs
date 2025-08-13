@@ -21,7 +21,6 @@ fn paint_widget(
     complete_scene: &mut Scene,
     scene_cache: &mut HashMap<WidgetId, (Scene, Scene)>,
     node: ArenaMut<'_, WidgetArenaNode>,
-    debug_paint: bool,
 ) {
     let mut children = node.children;
     let widget = &mut *node.item.widget;
@@ -49,7 +48,6 @@ fn paint_widget(
             global_state,
             widget_state: state,
             children: children.reborrow_mut(),
-            debug_paint,
         };
 
         // TODO - Reserve scene
@@ -103,7 +101,6 @@ fn paint_widget(
             complete_scene,
             scene_cache,
             node.reborrow_mut(),
-            debug_paint,
         );
         parent_state.merge_up(&mut node.item.state);
     });
@@ -113,7 +110,7 @@ fn paint_widget(
         let bounding_rect = state.bounding_rect;
 
         // draw the global axis aligned bounding rect of the widget
-        if debug_paint {
+        if global_state.debug_paint {
             const BORDER_WIDTH: f64 = 1.0;
             let color = get_debug_color(id.to_raw());
             let rect = bounding_rect.inset(BORDER_WIDTH / -2.0);
@@ -156,7 +153,6 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
         &mut complete_scene,
         &mut scene_cache,
         root_node,
-        root.debug_paint,
     );
     root.global_state.scene_cache = scene_cache;
 

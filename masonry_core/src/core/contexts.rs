@@ -128,7 +128,6 @@ pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) debug_paint: bool,
 }
 
 /// A context passed to [`Widget::accessibility`] method.
@@ -1476,7 +1475,7 @@ impl PaintCtx<'_> {
     ///
     /// Debug paint can be enabled by setting the environment variable `MASONRY_DEBUG_PAINT`.
     pub fn debug_paint_enabled(&self) -> bool {
-        self.debug_paint
+        self.global_state.debug_paint
     }
 
     /// A color used for debug painting in this widget.
