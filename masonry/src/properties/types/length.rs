@@ -6,9 +6,21 @@ use masonry_core::debug_panic;
 /// A value representing a width, height, or similar distance value.
 ///
 /// Its value is always finite and non-negative.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Length {
     value: f64,
+}
+
+impl std::fmt::Debug for Length {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+impl std::fmt::Display for Length {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}px", self.value)
+    }
 }
 
 impl Length {
