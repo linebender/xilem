@@ -337,7 +337,14 @@ impl RenderRoot {
         };
 
         if let Some(test_font_data) = test_font {
-            let families = root.register_fonts(test_font_data);
+            // We don't use `register_fonts` here because that requests a global relayout.
+            // However, because we are not yet fully initialised (we are before the below call
+            // to `run_rewrite_passes`), `request_layout_all`
+            let families = root
+                .global_state
+                .font_context
+                .collection
+                .register_fonts(test_font_data, None);
             // Make sure that all of these fonts are in the fallback chain for the Latin script.
             // <https://en.wikipedia.org/wiki/Script_(Unicode)#Latn>
             root.global_state
@@ -684,6 +691,12 @@ impl RenderRoot {
             .emit_signal(RenderRootSignal::RequestRedraw);
     }
 
+    /// Require that each widget gets relayouted is.
+    ///
+    /// This is used if something ambient changes and we expect that
+    /// many widgets will depend on in it their layout.
+    ///
+    /// Currently only used for font loading.
     pub(crate) fn request_layout_all(&mut self) {
         fn request_layout_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
             let children = node.children;
