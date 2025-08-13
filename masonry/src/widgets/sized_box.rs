@@ -76,8 +76,8 @@ impl SizedBox {
 
     /// Set container's width and height.
     pub fn size(mut self, width: Length, height: Length) -> Self {
-        self.width = Some(width.value());
-        self.height = Some(height.value());
+        self.width = Some(width.get());
+        self.height = Some(height.get());
         self
     }
 
@@ -151,20 +151,20 @@ impl SizedBox {
 
     /// Set container's width.
     pub fn set_width(this: &mut WidgetMut<'_, Self>, width: Length) {
-        this.widget.width = Some(width.value());
+        this.widget.width = Some(width.get());
         this.ctx.request_layout();
     }
 
     /// Set container's height.
     pub fn set_height(this: &mut WidgetMut<'_, Self>, height: Length) {
-        this.widget.height = Some(height.value());
+        this.widget.height = Some(height.get());
         this.ctx.request_layout();
     }
 
     /// Set container's width and height.
     pub fn set_size(this: &mut WidgetMut<'_, Self>, width: Length, height: Length) {
-        this.widget.width = Some(width.value());
-        this.widget.height = Some(height.value());
+        this.widget.width = Some(width.get());
+        this.widget.height = Some(height.get());
         this.ctx.request_layout();
     }
 
