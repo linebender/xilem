@@ -14,7 +14,7 @@ use crate::core::{
     AccessCtx, Axis, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
-use crate::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::theme::DEFAULT_GAP;
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
@@ -34,7 +34,7 @@ pub struct Stack {
     cross_alignment: CrossAxisAlignment,
     main_alignment: MainAxisAlignment,
     children: Vec<Child>,
-    gap: f64,
+    gap: Length,
 }
 
 struct Child {
@@ -88,16 +88,8 @@ impl Stack {
     ///
     /// Similar to the css [gap] property.
     ///
-    /// # Panics
-    ///
-    /// If `gap` is not a non-negative finite value.
-    ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    pub fn with_gap(mut self, mut gap: f64) -> Self {
-        if !gap.is_finite() || gap < 0.0 {
-            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
-            gap = 0.0;
-        }
+    pub fn with_gap(mut self, gap: Length) -> Self {
         self.gap = gap;
         self
     }
@@ -154,15 +146,7 @@ impl Stack {
     /// Similar to the css [gap] property.
     ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
-    ///
-    /// # Panics
-    ///
-    /// If `gap` is not a non-negative finite value.
-    pub fn set_gap(this: &mut WidgetMut<'_, Self>, mut gap: f64) {
-        if !gap.is_finite() || gap < 0.0 {
-            debug_panic!("Invalid gap value '{gap}', expected a non-negative finite value.");
-            gap = 0.0;
-        }
+    pub fn set_gap(this: &mut WidgetMut<'_, Self>, gap: Length) {
         this.widget.gap = gap;
         this.ctx.request_layout();
     }
@@ -298,7 +282,7 @@ impl Widget for Stack {
 
         // ACCUMULATORS
         let mut minor = self.direction.minor(bc.min());
-        let mut major = gap_count as f64 * self.gap;
+        let mut major = gap_count as f64 * self.gap.get();
         // Values used if any child has `CrossAxisAlignment::Baseline`.
         let mut max_above_baseline = 0_f64;
         let mut max_below_baseline = 0_f64;
@@ -362,7 +346,7 @@ impl Widget for Stack {
 
             major_progress += self.direction.major(child_size);
             major_progress += space_between;
-            major_progress += self.gap;
+            major_progress += self.gap.get();
         }
 
         let my_size: Size = self.direction.pack(major, minor).into();
