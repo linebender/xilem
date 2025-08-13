@@ -11,7 +11,7 @@ use masonry_testing::{
     assert_debug_panics,
 };
 use ui_events::pointer::{PointerButton, PointerEvent};
-use vello::kurbo::Size;
+use vello::kurbo::{Point, Size};
 
 use crate::properties::types::Length;
 use crate::theme::default_property_set;
@@ -667,11 +667,15 @@ fn change_hovered_when_widget_changes() {
     let parent_tag = WidgetTag::new("parent");
 
     let child = NewWidget::new_with_tag(
-        SizedBox::empty().width(BOX_SIZE).height(BOX_SIZE),
+        ModularWidget::new(BOX_SIZE).layout_fn(|size, _, _, _| Size::new(size.get(), size.get())),
         child_tag,
     );
     let parent = NewWidget::new_with_tag(
-        SizedBox::new(child).width(BOX_SIZE).height(BOX_SIZE),
+        ModularWidget::new_parent(child).layout_fn(move |child, ctx, _props, bc| {
+            let _ = ctx.run_layout(child, bc);
+            ctx.place_child(child, Point::ZERO);
+            Size::new(BOX_SIZE.get(), BOX_SIZE.get())
+        }),
         parent_tag,
     );
 
@@ -683,17 +687,18 @@ fn change_hovered_when_widget_changes() {
     assert!(!harness.get_widget_with_tag(parent_tag).ctx().is_hovered());
 
     harness.edit_widget_with_tag(child_tag, |mut child| {
-        SizedBox::set_width(&mut child, 0.);
-        SizedBox::set_height(&mut child, 0.);
+        child.widget.state = Length::ZERO;
+        child.ctx.request_layout();
     });
+
     // The pointer hasn't moved, but no longer covers the child.
     // The parent should now be the widget which is hovered.
     assert!(!harness.get_widget_with_tag(child_tag).ctx().is_hovered());
     assert!(harness.get_widget_with_tag(parent_tag).ctx().is_hovered());
 
     harness.edit_widget_with_tag(child_tag, |mut child| {
-        SizedBox::set_width(&mut child, 50.);
-        SizedBox::set_height(&mut child, 50.);
+        child.widget.state = BOX_SIZE;
+        child.ctx.request_layout();
     });
     // We reverted the child to the old size. It should be hovered again.
     assert!(harness.get_widget_with_tag(child_tag).ctx().is_hovered());
