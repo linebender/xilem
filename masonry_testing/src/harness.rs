@@ -729,7 +729,7 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
-    /// Sets the [focus fallback](crate::doc::masonry_concepts#focus-fallback).
+    /// Sets the [focus fallback](masonry_core::doc::masonry_concepts#focus-fallback).
     pub fn set_focus_fallback(&mut self, id: Option<WidgetId>) {
         if let Some(id) = id {
             let Some(_) = self.render_root.get_widget(id) else {
