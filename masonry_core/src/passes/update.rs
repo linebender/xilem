@@ -853,6 +853,12 @@ pub(crate) fn run_update_pointer_pass(root: &mut RenderRoot) {
             next_hovered_widget = None;
         }
     }
+    // Check if hovered widget is disabled
+    if let Some(id) = next_hovered_widget
+        && root.widget_arena.get_state(id).is_disabled
+    {
+        next_hovered_widget = None;
+    }
 
     // "Hovered path" means the widget which is considered hovered, and all its parents.
     let prev_hovered_path = std::mem::take(&mut root.global_state.hovered_path);
