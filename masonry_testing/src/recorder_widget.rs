@@ -50,6 +50,8 @@ pub struct Recorder<W: Widget> {
     child: W,
 }
 
+// TODO - Remove interior mutability, which is no longer needed.
+// Store a VecDequeue directly.
 /// A recording of widget method calls.
 ///
 /// Internally stores a queue of [`Records`](Record).

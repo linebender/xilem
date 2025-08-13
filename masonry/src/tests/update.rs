@@ -7,11 +7,13 @@ use masonry_core::core::{
     WidgetTag,
 };
 use masonry_testing::{
-    DebugName, ModularWidget, Record, TestHarness, TestWidgetExt, assert_debug_panics,
+    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt,
+    assert_debug_panics,
 };
 use ui_events::pointer::{PointerButton, PointerEvent};
 use vello::kurbo::Size;
 
+use crate::properties::types::Length;
 use crate::theme::default_property_set;
 use crate::widgets::{Button, Flex, SizedBox, TextArea};
 
@@ -611,4 +613,89 @@ fn pointer_capture_affects_pointer_icon() {
 
     harness.mouse_button_release(PointerButton::Primary);
     assert_eq!(harness.cursor_icon(), CursorIcon::Default);
+}
+
+#[test]
+fn lose_hovered_on_pointer_leave_or_cancel() {
+    let button_tag = WidgetTag::new("button");
+
+    let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), button);
+    let button_id = harness.get_widget_with_tag(button_tag).id();
+
+    // Hover button
+    harness.mouse_move_to(button_id);
+    assert!(harness.get_widget_with_tag(button_tag).ctx().is_hovered());
+
+    // POINTER LEAVE
+    harness.flush_records_of(button_tag);
+    harness.process_pointer_event(PointerEvent::Leave(PRIMARY_MOUSE));
+
+    assert!(!harness.get_widget_with_tag(button_tag).ctx().is_hovered());
+
+    let records = harness.get_records_of(button_tag);
+    assert!(
+        records
+            .iter()
+            .any(|r| matches!(r, Record::Update(Update::HoveredChanged(false))))
+    );
+
+    // Hover button again
+    harness.mouse_move_to(button_id);
+    assert!(harness.get_widget_with_tag(button_tag).ctx().is_hovered());
+
+    // POINTER CANCEL
+    harness.flush_records_of(button_tag);
+    harness.process_pointer_event(PointerEvent::Cancel(PRIMARY_MOUSE));
+
+    assert!(!harness.get_widget_with_tag(button_tag).ctx().is_hovered());
+
+    let records = harness.get_records_of(button_tag);
+    assert!(
+        records
+            .iter()
+            .any(|r| matches!(r, Record::Update(Update::HoveredChanged(false))))
+    );
+}
+
+#[test]
+fn change_hovered_when_widget_changes() {
+    const BOX_SIZE: Length = Length::const_px(50.);
+
+    let child_tag = WidgetTag::new("child");
+    let parent_tag = WidgetTag::new("parent");
+
+    let child = NewWidget::new_with_tag(
+        SizedBox::empty().width(BOX_SIZE).height(BOX_SIZE),
+        child_tag,
+    );
+    let parent = NewWidget::new_with_tag(
+        SizedBox::new(child).width(BOX_SIZE).height(BOX_SIZE),
+        parent_tag,
+    );
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+    let child_id = harness.get_widget_with_tag(child_tag).id();
+
+    harness.mouse_move_to(child_id);
+    assert!(harness.get_widget_with_tag(child_tag).ctx().is_hovered());
+    assert!(!harness.get_widget_with_tag(parent_tag).ctx().is_hovered());
+
+    harness.edit_widget_with_tag(child_tag, |mut child| {
+        SizedBox::set_width(&mut child, 0.);
+        SizedBox::set_height(&mut child, 0.);
+    });
+    // The pointer hasn't moved, but no longer covers the child.
+    // The parent should now be the widget which is hovered.
+    assert!(!harness.get_widget_with_tag(child_tag).ctx().is_hovered());
+    assert!(harness.get_widget_with_tag(parent_tag).ctx().is_hovered());
+
+    harness.edit_widget_with_tag(child_tag, |mut child| {
+        SizedBox::set_width(&mut child, 50.);
+        SizedBox::set_height(&mut child, 50.);
+    });
+    // We reverted the child to the old size. It should be hovered again.
+    assert!(harness.get_widget_with_tag(child_tag).ctx().is_hovered());
+    assert!(!harness.get_widget_with_tag(parent_tag).ctx().is_hovered());
 }

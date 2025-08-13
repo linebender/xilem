@@ -4,13 +4,54 @@
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, WidgetTag};
 use masonry_testing::{TestWidgetExt, assert_debug_panics};
-use vello::kurbo::{Point, Size};
+use vello::kurbo::{Insets, Point, Size};
 
 use crate::core::Widget;
-use crate::properties::types::AsUnit;
+use crate::properties::types::{AsUnit, Length};
 use crate::testing::{ModularWidget, TestHarness};
 use crate::theme::default_property_set;
 use crate::widgets::{Button, ChildAlignment, Flex, SizedBox, ZStack};
+
+#[test]
+fn layout_simple() {
+    const BOX_WIDTH: f64 = 50.;
+
+    let tag_1 = WidgetTag::new("box1");
+    let tag_2 = WidgetTag::new("box2");
+    let box_side = Length::px(BOX_WIDTH);
+
+    let widget = Flex::column()
+        .with_child(
+            Flex::row()
+                .with_child(NewWidget::new_with_tag(
+                    SizedBox::empty().width(box_side).height(box_side),
+                    tag_1,
+                ))
+                .with_child(NewWidget::new_with_tag(
+                    SizedBox::empty().width(box_side).height(box_side),
+                    tag_2,
+                ))
+                .with_flex_spacer(1.0)
+                .with_auto_id(),
+        )
+        .with_flex_spacer(1.0)
+        .with_auto_id();
+
+    let harness = TestHarness::create(default_property_set(), widget);
+
+    let first_box_rect = harness.get_widget_with_tag(tag_1).ctx().local_layout_rect();
+    let first_box_paint_rect = harness.get_widget_with_tag(tag_1).ctx().paint_rect();
+
+    assert_eq!(first_box_rect.x0, 0.0);
+    assert_eq!(first_box_rect.y0, 0.0);
+    assert_eq!(first_box_rect.x1, BOX_WIDTH);
+    assert_eq!(first_box_rect.y1, BOX_WIDTH);
+
+    assert_eq!(first_box_paint_rect.x0, 0.0);
+    assert_eq!(first_box_paint_rect.y0, 0.0);
+    assert_eq!(first_box_paint_rect.x1, BOX_WIDTH);
+    assert_eq!(first_box_paint_rect.y1, BOX_WIDTH);
+}
 
 #[test]
 fn forget_to_recurse_layout() {
@@ -172,4 +213,38 @@ fn pixel_snapping() {
 
     assert_eq!(child_pos, Point::new(5.0, 5.0));
     assert_eq!(child_size, Size::new(10., 11.));
+}
+
+#[test]
+fn layout_insets() {
+    const BOX_WIDTH: f64 = 50.;
+
+    let child_tag = WidgetTag::new("child");
+    let parent_tag = WidgetTag::new("parent");
+
+    let child_widget = ModularWidget::new(()).layout_fn(|_, ctx, _, _| {
+        // this widget paints twenty points above and below its layout bounds
+        ctx.set_paint_insets(Insets::uniform_xy(0., 20.));
+        Size::new(BOX_WIDTH, BOX_WIDTH)
+    });
+
+    let parent_widget = NewWidget::new_with_tag(
+        SizedBox::new(NewWidget::new_with_tag(child_widget, child_tag)),
+        parent_tag,
+    );
+
+    let harness = TestHarness::create(default_property_set(), parent_widget);
+
+    let child_paint_rect = harness.get_widget_with_tag(child_tag).ctx().paint_rect();
+    let parent_paint_rect = harness.get_widget_with_tag(parent_tag).ctx().paint_rect();
+
+    assert_eq!(child_paint_rect.x0, 0.0);
+    assert_eq!(child_paint_rect.y0, -20.0);
+    assert_eq!(child_paint_rect.x1, BOX_WIDTH);
+    assert_eq!(child_paint_rect.y1, BOX_WIDTH + 20.0);
+
+    assert_eq!(parent_paint_rect.x0, 0.0);
+    assert_eq!(parent_paint_rect.y0, -20.0);
+    assert_eq!(parent_paint_rect.x1, BOX_WIDTH);
+    assert_eq!(parent_paint_rect.y1, BOX_WIDTH + 20.0);
 }
