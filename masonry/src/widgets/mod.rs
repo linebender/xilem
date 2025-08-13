@@ -41,7 +41,7 @@ pub use self::prose::Prose;
 pub use self::scroll_bar::ScrollBar;
 pub use self::sized_box::SizedBox;
 pub use self::spinner::Spinner;
-pub use self::split::Split;
+pub use self::split::{Split, ceil_length};
 pub use self::text_area::{InsertNewline, TextAction, TextArea};
 pub use self::text_input::TextInput;
 pub use self::variable_label::VariableLabel;

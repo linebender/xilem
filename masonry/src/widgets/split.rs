@@ -92,7 +92,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     ///
     /// The value will be rounded up to the nearest integer.
     pub fn min_size(mut self, first: Length, second: Length) -> Self {
-        self.min_size = (first.ceil(), second.ceil());
+        self.min_size = (ceil_length(first), ceil_length(second));
         self
     }
 
@@ -101,7 +101,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
     pub fn bar_size(mut self, bar_size: Length) -> Self {
-        self.bar_size = bar_size.ceil();
+        self.bar_size = ceil_length(bar_size);
         self
     }
 
@@ -117,7 +117,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
     pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
-        self.min_bar_area = min_bar_area.ceil();
+        self.min_bar_area = ceil_length(min_bar_area);
         self
     }
 
@@ -137,12 +137,10 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 }
 
 // --- MARK: INTERNALS
-// TODO - Remove this block, and remove pixel-snapping code from this file.
-impl Length {
-    #[doc(hidden)]
-    pub fn ceil(self) -> Self {
-        Self::px(self.get().ceil())
-    }
+// TODO - Remove this function, and remove pixel-snapping code from this file.
+#[doc(hidden)]
+pub fn ceil_length(l: Length) -> Length {
+    Length::px(l.get().ceil())
 }
 
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
@@ -334,7 +332,7 @@ where
     ///
     /// The value will be rounded up to the nearest integer.
     pub fn set_min_size(this: &mut WidgetMut<'_, Self>, first: Length, second: Length) {
-        this.widget.min_size = (first.ceil(), second.ceil());
+        this.widget.min_size = (ceil_length(first), ceil_length(second));
         this.ctx.request_layout();
     }
 
@@ -343,7 +341,7 @@ where
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
     pub fn set_bar_size(this: &mut WidgetMut<'_, Self>, bar_size: Length) {
-        this.widget.bar_size = bar_size.ceil();
+        this.widget.bar_size = ceil_length(bar_size);
         this.ctx.request_layout();
     }
 
@@ -359,7 +357,7 @@ where
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
     pub fn set_min_bar_area(this: &mut WidgetMut<'_, Self>, min_bar_area: Length) {
-        this.widget.min_bar_area = min_bar_area.ceil();
+        this.widget.min_bar_area = ceil_length(min_bar_area);
         this.ctx.request_layout();
     }
 
