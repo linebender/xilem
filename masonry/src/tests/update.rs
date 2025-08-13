@@ -735,7 +735,7 @@ fn status_flag_update_order() {
     let parent3 = NewWidget::new(make_reporter_parent(parent2, sender3, 3));
 
     let mut harness = TestHarness::create(default_property_set(), parent3);
-    let parent1_id = harness.get_widget_with_tag(parent1_tag).id();
+    let parent1_id = harness.get_widget(parent1_tag).id();
     // Flush initial events
     let _ = receiver.try_iter().count();
 
@@ -750,8 +750,8 @@ fn status_flag_update_order() {
             ("HoveredChanged(true)".into(), 1)
         ]
     );
-    assert!(harness.get_widget_with_tag(parent1_tag).ctx().is_hovered());
-    assert!(harness.get_widget_with_tag(parent1_tag).ctx().has_hovered());
+    assert!(harness.get_widget(parent1_tag).ctx().is_hovered());
+    assert!(harness.get_widget(parent1_tag).ctx().has_hovered());
 
     harness.mouse_button_press(PointerButton::Primary);
     let events: Vec<_> = receiver.try_iter().collect();
@@ -764,8 +764,8 @@ fn status_flag_update_order() {
             ("ActiveChanged(true)".into(), 1)
         ]
     );
-    assert!(harness.get_widget_with_tag(parent1_tag).ctx().is_active());
-    assert!(harness.get_widget_with_tag(parent1_tag).ctx().has_active());
+    assert!(harness.get_widget(parent1_tag).ctx().is_active());
+    assert!(harness.get_widget(parent1_tag).ctx().has_active());
 
     harness.mouse_button_release(PointerButton::Primary);
     let events: Vec<_> = receiver.try_iter().collect();
@@ -778,8 +778,8 @@ fn status_flag_update_order() {
             ("ActiveChanged(false)".into(), 1)
         ]
     );
-    assert!(!harness.get_widget_with_tag(parent1_tag).ctx().is_active());
-    assert!(!harness.get_widget_with_tag(parent1_tag).ctx().has_active());
+    assert!(!harness.get_widget(parent1_tag).ctx().is_active());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_active());
 
     harness.mouse_move((-10., -10.));
     let events: Vec<_> = receiver.try_iter().collect();
@@ -792,8 +792,8 @@ fn status_flag_update_order() {
             ("HoveredChanged(false)".into(), 1)
         ]
     );
-    assert!(!harness.get_widget_with_tag(parent1_tag).ctx().is_hovered());
-    assert!(!harness.get_widget_with_tag(parent1_tag).ctx().has_hovered());
+    assert!(!harness.get_widget(parent1_tag).ctx().is_hovered());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_hovered());
 
     harness.focus_on(Some(parent1_id));
     let events: Vec<_> = receiver.try_iter().collect();
@@ -806,18 +806,8 @@ fn status_flag_update_order() {
             ("FocusChanged(true)".into(), 1)
         ]
     );
-    assert!(
-        harness
-            .get_widget_with_tag(parent1_tag)
-            .ctx()
-            .is_focus_target()
-    );
-    assert!(
-        harness
-            .get_widget_with_tag(parent1_tag)
-            .ctx()
-            .has_focus_target()
-    );
+    assert!(harness.get_widget(parent1_tag).ctx().is_focus_target());
+    assert!(harness.get_widget(parent1_tag).ctx().has_focus_target());
 
     harness.focus_on(None);
     let events: Vec<_> = receiver.try_iter().collect();
@@ -830,16 +820,6 @@ fn status_flag_update_order() {
             ("FocusChanged(false)".into(), 1)
         ]
     );
-    assert!(
-        !harness
-            .get_widget_with_tag(parent1_tag)
-            .ctx()
-            .is_focus_target()
-    );
-    assert!(
-        !harness
-            .get_widget_with_tag(parent1_tag)
-            .ctx()
-            .has_focus_target()
-    );
+    assert!(!harness.get_widget(parent1_tag).ctx().is_focus_target());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_focus_target());
 }
