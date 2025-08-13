@@ -17,7 +17,7 @@ use crate::core::{
 use crate::properties::types::{CrossAxisAlignment, Length, MainAxisAlignment};
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::theme::DEFAULT_GAP;
-use crate::util::{debug_panic, fill, include_screenshot, stroke};
+use crate::util::{fill, include_screenshot, stroke};
 use crate::widgets::flex::get_spacing;
 
 /// A container with either horizontal or vertical layout.
