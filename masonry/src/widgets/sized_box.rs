@@ -31,6 +31,9 @@ use crate::util::{fill, include_screenshot, stroke};
 #[doc = include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
 pub struct SizedBox {
     child: Option<WidgetPod<dyn Widget>>,
+    // TODO - Right now width and height can't be stored as Length values,
+    // because they use f64::INFINITY as a sentinel value when using the `expand()` methods.
+    // Using float infinity as a sentinel value is somewhat of an anti-pattern and should be removed.
     width: Option<f64>,
     height: Option<f64>,
 }
