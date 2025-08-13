@@ -554,20 +554,14 @@ mod tests {
 
         assert_render_snapshot!(harness, "portal_button_list_scrolled");
 
-        let item_3_rect = harness
-            .get_widget_with_tag(button_3)
-            .ctx()
-            .local_layout_rect();
+        let item_3_rect = harness.get_widget(button_3).ctx().local_layout_rect();
         harness.edit_root_widget(|mut portal| {
             Portal::pan_viewport_to(&mut portal, item_3_rect);
         });
 
         assert_render_snapshot!(harness, "portal_button_list_scroll_to_item_3");
 
-        let item_13_rect = harness
-            .get_widget_with_tag(button_13)
-            .ctx()
-            .local_layout_rect();
+        let item_13_rect = harness.get_widget(button_13).ctx().local_layout_rect();
         harness.edit_root_widget(|mut portal| {
             Portal::pan_viewport_to(&mut portal, item_13_rect);
         });
@@ -593,7 +587,7 @@ mod tests {
 
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200., 200.));
-        let button_id = harness.get_widget_with_tag(button_tag).id();
+        let button_id = harness.get_widget(button_tag).id();
 
         harness.scroll_into_view(button_id);
         assert_render_snapshot!(harness, "portal_scrolled_button_into_view");

@@ -21,7 +21,7 @@ fn request_accessibility() {
     harness.flush_records_of(target_tag);
     harness.flush_records_of(parent_tag);
 
-    harness.edit_widget_with_tag(target_tag, |mut widget| {
+    harness.edit_widget(target_tag, |mut widget| {
         widget.ctx.request_accessibility_update();
     });
     let _ = harness.render();
@@ -58,7 +58,7 @@ fn access_node_children() {
     let mut harness = TestHarness::create(default_property_set(), grandparent);
     let _ = harness.render();
 
-    let parent_ref = harness.get_widget_with_tag(parent_tag);
+    let parent_ref = harness.get_widget(parent_tag);
     let parent_node_id = parent_ref.id();
     let [id_1, id_2, id_3] = parent_ref.inner().children_ids()[..] else {
         unreachable!()
@@ -71,7 +71,7 @@ fn access_node_children() {
     );
 
     // We stash a child
-    harness.edit_widget_with_tag(parent_tag, |mut parent| {
+    harness.edit_widget(parent_tag, |mut parent| {
         parent.ctx.set_stashed(&mut parent.widget.state[1], true);
         parent.ctx.request_accessibility_update();
     });

@@ -39,8 +39,8 @@ fn layout_simple() {
 
     let harness = TestHarness::create(default_property_set(), widget);
 
-    let first_box_rect = harness.get_widget_with_tag(tag_1).ctx().local_layout_rect();
-    let first_box_paint_rect = harness.get_widget_with_tag(tag_1).ctx().paint_rect();
+    let first_box_rect = harness.get_widget(tag_1).ctx().local_layout_rect();
+    let first_box_paint_rect = harness.get_widget(tag_1).ctx().paint_rect();
 
     assert_eq!(first_box_rect.x0, 0.0);
     assert_eq!(first_box_rect.y0, 0.0);
@@ -113,7 +113,7 @@ fn run_layout_on_stashed() {
     let mut harness = TestHarness::create(default_property_set(), widget);
 
     assert_debug_panics!(
-        harness.edit_widget_with_tag(parent_tag, |mut parent| {
+        harness.edit_widget(parent_tag, |mut parent| {
             parent.ctx.set_stashed(&mut parent.widget.state, true);
             parent.ctx.request_layout();
         }),
@@ -157,7 +157,7 @@ fn unstash_then_run_layout() {
 
     let mut harness = TestHarness::create(default_property_set(), widget);
 
-    harness.edit_widget_with_tag(parent_tag, |mut parent| {
+    harness.edit_widget(parent_tag, |mut parent| {
         parent.ctx.set_stashed(&mut parent.widget.state, true);
         parent.ctx.request_layout();
     });
@@ -184,7 +184,7 @@ fn skip_layout_when_cached() {
     let mut harness = TestHarness::create(default_property_set(), parent);
 
     harness.flush_records_of(button_tag);
-    harness.edit_widget_with_tag(sibling_tag, |mut sized_box| {
+    harness.edit_widget(sibling_tag, |mut sized_box| {
         SizedBox::set_width(&mut sized_box, 30.px());
         SizedBox::set_height(&mut sized_box, 30.px());
     });
@@ -208,8 +208,8 @@ fn pixel_snapping() {
 
     let harness = TestHarness::create(default_property_set(), parent);
 
-    let child_pos = harness.get_widget_with_tag(child_tag).ctx().window_origin();
-    let child_size = harness.get_widget_with_tag(child_tag).ctx().size();
+    let child_pos = harness.get_widget(child_tag).ctx().window_origin();
+    let child_size = harness.get_widget(child_tag).ctx().size();
 
     assert_eq!(child_pos, Point::new(5.0, 5.0));
     assert_eq!(child_size, Size::new(10., 11.));
@@ -235,8 +235,8 @@ fn layout_insets() {
 
     let harness = TestHarness::create(default_property_set(), parent_widget);
 
-    let child_paint_rect = harness.get_widget_with_tag(child_tag).ctx().paint_rect();
-    let parent_paint_rect = harness.get_widget_with_tag(parent_tag).ctx().paint_rect();
+    let child_paint_rect = harness.get_widget(child_tag).ctx().paint_rect();
+    let parent_paint_rect = harness.get_widget(parent_tag).ctx().paint_rect();
 
     assert_eq!(child_paint_rect.x0, 0.0);
     assert_eq!(child_paint_rect.y0, -20.0);
