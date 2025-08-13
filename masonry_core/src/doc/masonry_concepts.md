@@ -129,11 +129,17 @@ A widget is considered "interactive" if it can still get text and/or pointer eve
 Stashed and disabled widget are non-interactive.
 
 
-## Focus chain
+## Focus anchor
 
-Masonry stores an array of all the ids of widgets which can be focused.
+When the user presses `Tab` or `Shift+Tab`, Masonry will look for the closest sibling of the focus anchor which accepts focus, and focus it.
 
-This array is called the focus chain, and is used by Masonry to move focus when the user presses `Tab` or `Shift+Tab`.
+The focus anchor is generally either the focused widget, or the most recently clicked widget.
+
+What happens if the focus anchor is removed from the tree or stashed/disabled is currently unspecified.
+
+<!-- TODO - Ideally, the closest ancestor widget still interactive should become the new focus anchor in all three cases. -->
+
+This behavior exists so that when the user clicks somewhere and then presses `Tab`, the focused widget is more likely to be close to whatever the user clicked.
 
 
 ## Properties / Props

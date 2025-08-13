@@ -22,7 +22,7 @@ doc-valid-idents = [
     "update_pointer",
     "update_scrolls",
     "update_focus",
-    "update_focus_chain",
+    "update_focusable",
     "update_disabled",
     "update_anim",
     "update_stashed",

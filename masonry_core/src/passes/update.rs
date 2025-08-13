@@ -259,7 +259,7 @@ fn update_disabled_for_widget(
         };
         widget.update(&mut ctx, &mut props, &Update::DisabledChanged(disabled));
         state.is_disabled = disabled;
-        state.needs_update_focus_chain = true;
+        state.needs_update_focusable = true;
         state.request_accessibility = true;
         state.needs_accessibility = true;
     }
@@ -335,7 +335,7 @@ fn update_stashed_for_widget(
         };
         widget.update(&mut ctx, &mut props, &Update::StashedChanged(stashed));
         state.is_stashed = stashed;
-        state.needs_update_focus_chain = true;
+        state.needs_update_focusable = true;
 
         // Items may have been changed while they were stashed in ways that require a
         // relayout and a re-render.
@@ -377,20 +377,9 @@ pub(crate) fn run_update_stashed_pass(root: &mut RenderRoot) {
 
 // ----------------
 
-// --- MARK: FOCUS CHAIN
+// --- MARK: FOCUSABLE
 
-// TODO https://github.com/linebender/xilem/issues/376 - Some implicit invariants:
-// - A widget only receives BuildFocusChain if none of its parents are hidden.
-
-// TODO - This logic was copy-pasted from WidgetPod code and may need to be refactored.
-// It doesn't quite behave like other update passes (for instance, some code runs after
-// recurse_on_children), and some design decisions inherited from Druid should be reconsidered.
-/// See the [passes documentation](crate::doc::pass_system#update-passes).
-fn update_focus_chain_for_widget(
-    global_state: &mut RenderRootState,
-    node: ArenaMut<'_, WidgetArenaNode>,
-    parent_focus_chain: &mut Vec<WidgetId>,
-) {
+fn update_focusable_for_widget(node: ArenaMut<'_, WidgetArenaNode>) {
     let children = node.children;
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
@@ -398,48 +387,137 @@ fn update_focus_chain_for_widget(
 
     let _span = enter_span(state);
 
-    // Replace has_focused to check if the value changed in the meantime
-    state.has_focus_target = global_state.focused_widget == Some(id);
-    let had_focus = state.has_focus_target;
+    if !state.needs_update_focusable {
+        return;
+    }
 
-    if state.needs_update_focus_chain {
-        state.focus_chain.clear();
-        if state.accepts_focus {
-            state.focus_chain.push(id);
+    state.descendant_is_focusable = false;
+
+    if state.accepts_focus && !state.is_disabled && !state.is_stashed {
+        state.descendant_is_focusable = true;
+    }
+
+    let parent_state = &mut *state;
+    recurse_on_children(id, widget, children, |mut node| {
+        update_focusable_for_widget(node.reborrow_mut());
+
+        if node.item.state.descendant_is_focusable {
+            parent_state.descendant_is_focusable = true;
         }
-        state.needs_update_focus_chain = false;
+    });
 
-        let parent_state = &mut *state;
-        recurse_on_children(id, widget, children, |mut node| {
-            update_focus_chain_for_widget(
-                global_state,
-                node.reborrow_mut(),
-                &mut parent_state.focus_chain,
-            );
-            parent_state.merge_up(&mut node.item.state);
-        });
-    }
-
-    if !state.is_disabled && !state.is_stashed {
-        parent_focus_chain.extend(&state.focus_chain);
-    }
-
-    // had_focus is the old focus value. state.has_focused was replaced with parent_ctx.is_focused().
-    // Therefore if had_focus is true but state.has_focused is false then the widget which is
-    // currently focused is not part of the functional tree anymore and should resign the focus.
-    if had_focus && !state.has_focus_target {
-        // Not sure about this logic, might remove
-        global_state.next_focused_widget = None;
-    }
-    state.has_focus_target = had_focus;
+    state.needs_update_focusable = false;
 }
 
-pub(crate) fn run_update_focus_chain_pass(root: &mut RenderRoot) {
-    let _span = info_span!("update_focus_chain").entered();
-    let mut dummy_focus_chain = Vec::new();
+pub(crate) fn run_update_focusable_pass(root: &mut RenderRoot) {
+    let _span = info_span!("update_focusable").entered();
 
     let root_node = root.widget_arena.get_node_mut(root.root.id());
-    update_focus_chain_for_widget(&mut root.global_state, root_node, &mut dummy_focus_chain);
+    update_focusable_for_widget(root_node);
+}
+
+pub(crate) fn find_next_focusable(root: &mut RenderRoot, forward: bool) -> Option<WidgetId> {
+    let mut focus_anchor_id = root.global_state.focus_anchor;
+
+    if let Some(id) = focus_anchor_id
+        && !root.is_still_interactive(id)
+    {
+        focus_anchor_id = None;
+    }
+
+    // The idea of this algorithm is that we iterate through the entire tree in preorder
+    // (or reversed post-order), skipping everything before the ancestors of the anchor.
+    // We return the first focusable widget we find that way *except* the anchor widget,
+    // which we've temporarily "yanked" out of the search.
+    if let Some(id) = focus_anchor_id {
+        let anchor_state = root.widget_arena.get_state_mut(id);
+        let anchor_was_focusable = anchor_state.accepts_focus;
+        let anchor_had_focusable = anchor_state.descendant_is_focusable;
+        if forward {
+            anchor_state.accepts_focus = false;
+        } else {
+            anchor_state.descendant_is_focusable = false;
+        }
+
+        // The list of items to skip, from the anchor to the root (which we immediately pop).
+        let mut anchor_path = get_id_path(root, focus_anchor_id);
+        let _ = anchor_path.pop();
+
+        let found = find_first_focusable(root, &anchor_path, root.root.id(), forward);
+
+        // Restore the anchor.
+        let anchor_state = root.widget_arena.get_state_mut(id);
+        anchor_state.accepts_focus = anchor_was_focusable;
+        anchor_state.descendant_is_focusable = anchor_had_focusable;
+
+        if found.is_some() {
+            return found;
+        }
+    }
+
+    // If nothing is focused, or if we haven't found anything after the anchor,
+    // we iterate through the entire tree again, this time without the anchor path.
+    find_first_focusable(root, &[], root.root.id(), forward)
+}
+
+fn find_first_focusable(
+    root: &mut RenderRoot,
+    anchor_path: &[WidgetId],
+    node: WidgetId,
+    forward: bool,
+) -> Option<WidgetId> {
+    let item = root.widget_arena.get_node_mut(node);
+    let widget = &mut *item.item.widget;
+    let state = &mut item.item.state;
+    let accepts_focus = state.accepts_focus;
+
+    if !state.descendant_is_focusable {
+        return None;
+    }
+
+    let children = widget.children_ids();
+    let children = if let Some((anchor, anchor_path)) = anchor_path.split_last() {
+        let anchor_idx = children.iter().position(|id| *id == *anchor).unwrap();
+
+        // First we try the anchor
+        if let Some(found) = find_first_focusable(root, anchor_path, children[anchor_idx], forward)
+        {
+            return Some(found);
+        }
+
+        // Then everything after, at which point we're outside the anchor path.
+        if forward {
+            &children[anchor_idx + 1..]
+        } else {
+            &children[..anchor_idx]
+        }
+    } else {
+        // If our parent didn't get an anchor path,
+        // or went past it, just check all children.
+        &children[..]
+    };
+
+    if forward {
+        if anchor_path.is_empty() && accepts_focus {
+            return Some(node);
+        }
+        for child in children.iter() {
+            if let Some(found) = find_first_focusable(root, &[], *child, forward) {
+                return Some(found);
+            }
+        }
+    } else {
+        for child in children.iter().rev() {
+            if let Some(found) = find_first_focusable(root, &[], *child, forward) {
+                return Some(found);
+            }
+        }
+        if accepts_focus {
+            return Some(node);
+        }
+    }
+
+    None
 }
 
 // ----------------
@@ -455,6 +533,12 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         && !root.is_still_interactive(id)
     {
         root.global_state.next_focused_widget = None;
+    }
+    // Same thing for the anchor.
+    if let Some(id) = root.global_state.focus_anchor
+        && !root.is_still_interactive(id)
+    {
+        root.global_state.focus_anchor = None;
     }
 
     let prev_focused = root.global_state.focused_widget;
@@ -586,6 +670,10 @@ pub(crate) fn run_update_focus_pass(root: &mut RenderRoot) {
         } else {
             root.global_state.is_ime_active = false;
         }
+    }
+
+    if next_focused.is_some() {
+        root.global_state.focus_anchor = next_focused;
     }
 
     root.global_state.focused_widget = next_focused;

@@ -58,7 +58,7 @@ To address these invalidations, Masonry runs a set of **rewrite passes** over th
 - **update_widget_tree:** Updates the tree when widgets are added or removed.
 - **update_disabled:** Updates the disabled status of widgets.
 - **update_stashed:** Updates the stashed status of widgets.
-- **update_focus_chain:** Updates the focus chain. (Internal-only, doesn't call widget methods.)
+- **update_focusable:** Updates whether widgets have focusable children. (Internal-only, doesn't call widget methods.)
 - **update_focus:** Updates the focused status of widgets.
 - **layout:** Computes the layout of the widget tree.
 - **update_scrolls:** Updates the scroll positions of widgets.
@@ -120,9 +120,9 @@ This pass is ran when widgets are [stashed] or un-stashed.
 
 It's very similar to the "update disabled" pass, and takes care of propagating stashed flags.
 
-#### "Update focus chain" pass
+#### "Update focusable" pass
 
-This pass rebuilds the [focus chain] whenever it might be out of date.
+This pass updates flags used to determine whether a widget has any descendant accepting focus.
 
 It runs whenever a widget that accepts tab focus is added, removed, enabled, disabled, stashed or unstashed.
 This makes sure that tab-browsing always lands on the right widget.
@@ -235,5 +235,4 @@ They can access the layout of children if they have already been laid out.
 [disabled]: crate::doc::internals_02_masonry_concepts#disabled
 [stashed]: crate::doc::internals_02_masonry_concepts#stashed
 [active]: crate::doc::internals_02_masonry_concepts#active
-[focus chain]: crate::doc::internals_02_masonry_concepts#focus-chain
 [text focus]: crate::doc::internals_02_masonry_concepts#text-focus

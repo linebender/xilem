@@ -702,7 +702,8 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
-    /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
+    /// Sets the [focused widget](masonry_core::doc::masonry_concepts#text-focus)
+    /// and the [focus anchor](masonry_core::doc::masonry_concepts#focus-anchor).
     ///
     /// # Panics
     ///
@@ -824,10 +825,10 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Call the provided visitor on every widget in the widget tree.
-    pub fn inspect_widgets(&mut self, f: impl Fn(WidgetRef<'_, dyn Widget>) + 'static) {
+    pub fn inspect_widgets(&mut self, mut f: impl FnMut(WidgetRef<'_, dyn Widget>)) {
         fn inspect(
             widget: WidgetRef<'_, dyn Widget>,
-            f: &(impl Fn(WidgetRef<'_, dyn Widget>) + 'static),
+            f: &mut impl FnMut(WidgetRef<'_, dyn Widget>),
         ) {
             f(widget);
             for child in widget.children() {
@@ -835,7 +836,7 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        inspect(self.render_root.get_root_widget(), &f);
+        inspect(self.render_root.get_root_widget(), &mut f);
     }
 
     /// Get a [`WidgetMut`] to the root widget.
