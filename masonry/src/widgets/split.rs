@@ -14,6 +14,7 @@ use crate::core::{
     RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::peniko::Color;
+use crate::properties::types::{AsUnit, Length};
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
 
@@ -31,9 +32,9 @@ where
     split_axis: Axis,
     split_point_chosen: f64,
     split_point_effective: f64,
-    min_size: (f64, f64), // Integers only
-    bar_size: f64,        // Integers only
-    min_bar_area: f64,    // Integers only
+    min_size: (Length, Length), // Integers only
+    bar_size: Length,           // Integers only
+    min_bar_area: Length,       // Integers only
     solid: bool,
     draggable: bool,
     /// Offset from the split point (bar center) to the actual mouse position when the
@@ -52,9 +53,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
             split_axis: Axis::Horizontal,
             split_point_chosen: 0.5,
             split_point_effective: 0.5,
-            min_size: (0.0, 0.0),
-            bar_size: 6.0,
-            min_bar_area: 6.0,
+            min_size: (Length::ZERO, Length::ZERO),
+            bar_size: 6.px(),
+            min_bar_area: 6.px(),
             solid: false,
             draggable: true,
             click_offset: 0.0,
@@ -89,23 +90,18 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 
     /// Builder-style method to set the minimum size for both sides of the split axis.
     ///
-    /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
-    pub fn min_size(mut self, first: f64, second: f64) -> Self {
-        assert!(first >= 0.0, "minimum size must be 0.0 or greater");
-        assert!(second >= 0.0, "minimum size must be 0.0 or greater");
-        self.min_size = (first.ceil(), second.ceil());
+    pub fn min_size(mut self, first: Length, second: Length) -> Self {
+        self.min_size = (ceil_length(first), ceil_length(second));
         self
     }
 
     /// Builder-style method to set the size of the splitter bar.
     ///
-    /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
-    pub fn bar_size(mut self, bar_size: f64) -> Self {
-        assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater");
-        self.bar_size = bar_size.ceil();
+    pub fn bar_size(mut self, bar_size: Length) -> Self {
+        self.bar_size = ceil_length(bar_size);
         self
     }
 
@@ -118,12 +114,10 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
-    /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
-    pub fn min_bar_area(mut self, min_bar_area: f64) -> Self {
-        assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater");
-        self.min_bar_area = min_bar_area.ceil();
+    pub fn min_bar_area(mut self, min_bar_area: Length) -> Self {
+        self.min_bar_area = ceil_length(min_bar_area);
         self
     }
 
@@ -143,17 +137,23 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
 }
 
 // --- MARK: INTERNALS
+// TODO - Remove this function, and remove pixel-snapping code from this file.
+#[doc(hidden)]
+pub fn ceil_length(l: Length) -> Length {
+    Length::px(l.get().ceil())
+}
+
 impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the size of the splitter bar area.
     #[inline]
     fn bar_area(&self) -> f64 {
-        self.bar_size.max(self.min_bar_area)
+        self.bar_size.get().max(self.min_bar_area.get())
     }
 
     /// Returns the padding size added to each side of the splitter bar.
     #[inline]
     fn bar_padding(&self) -> f64 {
-        (self.bar_area() - self.bar_size) / 2.0
+        (self.bar_area() - self.bar_size.get()) / 2.0
     }
 
     /// Returns the position of the split point (split bar center).
@@ -206,7 +206,9 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     fn split_side_limits(&self, size: Size) -> (f64, f64) {
         let split_axis_size = self.split_axis.major(size);
 
-        let (mut min_limit, min_second) = self.min_size;
+        let (min_limit, min_second) = self.min_size;
+        let mut min_limit = min_limit.get();
+        let min_second = min_second.get();
         let mut max_limit = (split_axis_size - min_second).max(0.0);
 
         if min_limit > max_limit {
@@ -257,7 +259,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let size = ctx.size();
         // Set the line width to a third of the splitter bar size,
         // because we'll paint two equal lines at the edges.
-        let line_width = (self.bar_size / 3.0).floor();
+        let line_width = (self.bar_size.get() / 3.0).floor();
         let line_midpoint = line_width / 2.0;
         let (edge1, edge2) = self.bar_edges(size);
         let padding = self.bar_padding();
@@ -328,23 +330,18 @@ where
 
     /// Set the minimum size for both sides of the split axis.
     ///
-    /// The value must be greater than or equal to `0.0`.
     /// The value will be rounded up to the nearest integer.
-    pub fn set_min_size(this: &mut WidgetMut<'_, Self>, first: f64, second: f64) {
-        assert!(first >= 0.0, "minimum size must be 0.0 or greater");
-        assert!(second >= 0.0, "minimum size must be 0.0 or greater");
-        this.widget.min_size = (first.ceil(), second.ceil());
+    pub fn set_min_size(this: &mut WidgetMut<'_, Self>, first: Length, second: Length) {
+        this.widget.min_size = (ceil_length(first), ceil_length(second));
         this.ctx.request_layout();
     }
 
     /// Set the size of the splitter bar.
     ///
-    /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default splitter bar size is `6.0`.
-    pub fn set_bar_size(this: &mut WidgetMut<'_, Self>, bar_size: f64) {
-        assert!(bar_size >= 0.0, "bar_size must be 0.0 or greater");
-        this.widget.bar_size = bar_size.ceil();
+    pub fn set_bar_size(this: &mut WidgetMut<'_, Self>, bar_size: Length) {
+        this.widget.bar_size = ceil_length(bar_size);
         this.ctx.request_layout();
     }
 
@@ -357,12 +354,10 @@ where
     /// This can be useful when you want to use a very narrow visual splitter bar,
     /// but don't want to sacrifice user experience by making it hard to click on.
     ///
-    /// The value must be positive or zero.
     /// The value will be rounded up to the nearest integer.
     /// The default minimum splitter bar area is `6.0`.
-    pub fn set_min_bar_area(this: &mut WidgetMut<'_, Self>, min_bar_area: f64) {
-        assert!(min_bar_area >= 0.0, "min_bar_area must be 0.0 or greater");
-        this.widget.min_bar_area = min_bar_area.ceil();
+    pub fn set_min_bar_area(this: &mut WidgetMut<'_, Self>, min_bar_area: Length) {
+        this.widget.min_bar_area = ceil_length(min_bar_area);
         this.ctx.request_layout();
     }
 
@@ -652,8 +647,8 @@ mod tests {
                 Label::new("World").with_auto_id(),
             )
             .split_point(0.3)
-            .min_size(40.0, 10.0)
-            .bar_size(12.0)
+            .min_size(40.px(), 10.px())
+            .bar_size(12.px())
             .draggable(true)
             .solid_bar(true)
             .with_auto_id();
@@ -682,8 +677,8 @@ mod tests {
 
             harness.edit_root_widget(|mut splitter| {
                 Split::set_split_point(&mut splitter, 0.3);
-                Split::set_min_size(&mut splitter, 40.0, 10.0);
-                Split::set_bar_size(&mut splitter, 12.0);
+                Split::set_min_size(&mut splitter, 40.px(), 10.px());
+                Split::set_bar_size(&mut splitter, 12.px());
                 Split::set_draggable(&mut splitter, true);
                 Split::set_bar_solid(&mut splitter, true);
             });

@@ -3,6 +3,7 @@
 
 //! Flex properties can be set in Xilem.
 
+use masonry::properties::types::AsUnit;
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
 use xilem::view::{FlexExt as _, FlexSpacer, Label, button, flex_row, label, sized_box};
@@ -13,12 +14,14 @@ fn big_button(
     label: impl Into<Label>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
-    sized_box(button(label, callback)).width(40.).height(40.)
+    sized_box(button(label, callback))
+        .width(40.px())
+        .height(40.px())
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
     flex_row((
-        FlexSpacer::Fixed(30.0),
+        FlexSpacer::Fixed(30.px()),
         big_button("-", |data| {
             *data -= 1;
         }),
@@ -28,7 +31,7 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
         big_button("+", |data| {
             *data += 1;
         }),
-        FlexSpacer::Fixed(30.0),
+        FlexSpacer::Fixed(30.px()),
     ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .main_axis_alignment(MainAxisAlignment::Center)

@@ -4,6 +4,7 @@
 //! A widget gallery for xilem/masonry
 
 use masonry::dpi::LogicalSize;
+use masonry::properties::types::{AsUnit, Length};
 use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
@@ -13,7 +14,7 @@ use xilem::view::{
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::lens;
 
-const SPACER_WIDTH: f64 = 10.;
+const SPACER_WIDTH: Length = Length::const_px(10.);
 
 /// The state of the entire application.
 ///
@@ -68,8 +69,8 @@ fn border_box<State: 'static, Action: 'static>(
         FlexSpacer::Flex(1.),
     )))
     .border(Color::WHITE, 2.)
-    .width(450.)
-    .height(200.)
+    .width(450.px())
+    .height(200.px())
 }
 
 /// Top-level view
@@ -101,7 +102,7 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
         ))
         .gap(SPACER_WIDTH),
     )
-    .padding(SPACER_WIDTH)
+    .padding(SPACER_WIDTH.get())
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

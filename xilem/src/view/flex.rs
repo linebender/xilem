@@ -6,6 +6,7 @@ use std::marker::PhantomData;
 use crate::style::Style;
 
 use masonry::core::{Axis, FromDynWidget, Widget, WidgetMut};
+use masonry::properties::types::Length;
 pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 pub use masonry::widgets::FlexParams;
@@ -21,7 +22,7 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 ///
 /// # Example
 /// ```rust,no_run
-/// use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
+/// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
 /// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
@@ -31,12 +32,12 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 ///     label: impl Into<Label>,
 ///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 /// ) -> impl WidgetView<i32> {
-///     sized_box(button(label, callback)).width(40.).height(40.)
+///     sized_box(button(label, callback)).width(40.px()).height(40.px())
 /// }
 ///
 /// fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
 ///     flex((
-///         FlexSpacer::Fixed(30.0),
+///         FlexSpacer::Fixed(30.px()),
 ///         big_button("-", |data| {
 ///             *data -= 1;
 ///         }),
@@ -46,7 +47,7 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 ///         big_button("+", |data| {
 ///             *data += 1;
 ///         }),
-///         FlexSpacer::Fixed(30.0),
+///         FlexSpacer::Fixed(30.px()),
 ///     ))
 ///     .direction(Axis::Horizontal)
 ///     .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -94,7 +95,7 @@ pub struct Flex<Seq, State, Action = ()> {
     cross_axis_alignment: CrossAxisAlignment,
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
-    gap: f64,
+    gap: Length,
     properties: FlexProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
@@ -134,20 +135,11 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
     ///
     /// Leave unset to use the default spacing which is [`DEFAULT_GAP`].
     ///
-    /// # Panics
-    ///
-    /// If `gap` is not a non-negative finite value.
-    ///
     /// [gap]: https://developer.mozilla.org/en-US/docs/Web/CSS/gap
     /// [`DEFAULT_GAP`]: masonry::theme::DEFAULT_GAP
     #[track_caller]
-    pub fn gap(mut self, gap: f64) -> Self {
-        if gap.is_finite() && gap >= 0.0 {
-            self.gap = gap;
-        } else {
-            // TODO: Don't panic here, for future editor scenarios.
-            panic!("Invalid `gap` {gap}, expected a non-negative finite value.")
-        }
+    pub fn gap(mut self, gap: Length) -> Self {
+        self.gap = gap;
         self
     }
 }
@@ -318,7 +310,7 @@ pub enum FlexElement {
     /// Child widget.
     Child(Pod<dyn Widget>, FlexParams),
     /// Child spacer with fixed size.
-    FixedSpacer(f64),
+    FixedSpacer(Length),
     /// Child spacer with flex size.
     FlexSpacer(f64),
 }
@@ -498,15 +490,16 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::{view::{button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex((
     ///     button("click me", |_| ()).flex(2.0),
-    ///     FlexSpacer::Fixed(2.0),
+    ///     FlexSpacer::Fixed(2.px()),
     ///     label("a label").flex(CrossAxisAlignment::Fill),
-    ///     FlexSpacer::Fixed(2.0),
+    ///     FlexSpacer::Fixed(2.px()),
     /// ))
     /// # }
     ///
@@ -525,11 +518,12 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # Examples
     /// ```
+    /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::{view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// flex([label("a label").into_any_flex(), AnyFlexChild::Spacer(FlexSpacer::Fixed(1.0))])
+    /// flex([label("a label").into_any_flex(), AnyFlexChild::Spacer(FlexSpacer::Fixed(1.px()))])
     /// # }
     ///
     /// ```
@@ -556,15 +550,16 @@ pub struct FlexItem<V, State, Action> {
 ///
 /// # Examples
 /// ```
+/// use xilem::masonry::properties::types::AsUnit;
 /// use xilem::view::{button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
 /// # use xilem::{WidgetView};
 ///
 /// # fn view<State: 'static>() -> impl WidgetView<State> {
 /// flex((
 ///     flex_item(button("click me", |_| ()), 2.0),
-///     FlexSpacer::Fixed(2.0),
+///     FlexSpacer::Fixed(2.px()),
 ///     flex_item(label("a label"), CrossAxisAlignment::Fill),
-///     FlexSpacer::Fixed(2.0),
+///     FlexSpacer::Fixed(2.px()),
 /// ))
 /// # }
 ///
@@ -666,7 +661,7 @@ where
 #[derive(Copy, Clone, PartialEq)]
 #[expect(missing_docs, reason = "TODO - Need to document units used.")]
 pub enum FlexSpacer {
-    Fixed(f64),
+    Fixed(Length),
     Flex(f64),
 }
 
@@ -746,11 +741,12 @@ impl FlexSpacer {
     ///
     /// # Examples
     /// ```
+    /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::{view::{flex, FlexSpacer}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// flex(FlexSpacer::Fixed(2.0).into_any_flex())
+    /// flex(FlexSpacer::Fixed(2.px()).into_any_flex())
     /// # }
     ///
     /// ```

@@ -12,6 +12,7 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::types::Length;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
@@ -22,7 +23,7 @@ pub struct Grid {
     children: Vec<Child>,
     grid_width: i32,
     grid_height: i32,
-    grid_spacing: f64,
+    grid_spacing: Length,
 }
 
 struct Child {
@@ -54,12 +55,12 @@ impl Grid {
             children: Vec::new(),
             grid_width: width,
             grid_height: height,
-            grid_spacing: 0.0,
+            grid_spacing: Length::ZERO,
         }
     }
 
     /// Builder-style method for setting the spacing between grid items.
-    pub fn with_spacing(mut self, spacing: f64) -> Self {
+    pub fn with_spacing(mut self, spacing: Length) -> Self {
         self.grid_spacing = spacing;
         self
     }
@@ -173,7 +174,7 @@ impl Grid {
     }
 
     /// Set the spacing between grid items.
-    pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: f64) {
+    pub fn set_spacing(this: &mut WidgetMut<'_, Self>, spacing: Length) {
         this.widget.grid_spacing = spacing;
         this.ctx.request_layout();
     }
@@ -275,12 +276,13 @@ impl Widget for Grid {
                 total_size
             );
         }
-        let width_unit = (total_size.width + self.grid_spacing) / (self.grid_width as f64);
-        let height_unit = (total_size.height + self.grid_spacing) / (self.grid_height as f64);
+        let gap = self.grid_spacing.get();
+        let width_unit = (total_size.width + gap) / (self.grid_width as f64);
+        let height_unit = (total_size.height + gap) / (self.grid_height as f64);
         for child in &mut self.children {
             let cell_size = Size::new(
-                (child.width as f64 * width_unit - self.grid_spacing).max(0.0),
-                (child.height as f64 * height_unit - self.grid_spacing).max(0.0),
+                (child.width as f64 * width_unit - gap).max(0.0),
+                (child.height as f64 * height_unit - gap).max(0.0),
             );
             let child_bc = BoxConstraints::new(cell_size, cell_size);
             let _ = ctx.run_layout(&mut child.widget, &child_bc);
@@ -346,6 +348,7 @@ impl Widget for Grid {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Button;
@@ -406,15 +409,9 @@ mod tests {
 
         // Change the spacing
         harness.edit_root_widget(|mut grid| {
-            Grid::set_spacing(&mut grid, 7.0);
+            Grid::set_spacing(&mut grid, 7.px());
         });
         assert_render_snapshot!(harness, "grid_with_changed_spacing");
-
-        // Make the spacing negative
-        harness.edit_root_widget(|mut grid| {
-            Grid::set_spacing(&mut grid, -4.0);
-        });
-        assert_render_snapshot!(harness, "grid_with_negative_spacing");
     }
 
     #[test]

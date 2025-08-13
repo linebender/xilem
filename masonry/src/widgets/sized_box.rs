@@ -14,6 +14,7 @@ use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NewWidget, NoAction, PaintCtx,
     PropertiesMut, PropertiesRef, RegisterCtx, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
+use crate::properties::types::Length;
 use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use crate::util::{fill, include_screenshot, stroke};
 
@@ -30,6 +31,9 @@ use crate::util::{fill, include_screenshot, stroke};
 #[doc = include_screenshot!("sized_box_label_box_with_outer_padding.png", "Box with blue border, pink background and a child label.")]
 pub struct SizedBox {
     child: Option<WidgetPod<dyn Widget>>,
+    // TODO - Right now width and height can't be stored as Length values,
+    // because they use f64::INFINITY as a sentinel value when using the `expand()` methods.
+    // Using float infinity as a sentinel value is somewhat of an anti-pattern and should be removed.
     width: Option<f64>,
     height: Option<f64>,
 }
@@ -59,14 +63,14 @@ impl SizedBox {
     }
 
     /// Set container's width.
-    pub fn width(mut self, width: f64) -> Self {
-        self.width = Some(width);
+    pub fn width(mut self, width: Length) -> Self {
+        self.width = Some(width.get());
         self
     }
 
     /// Set container's height.
-    pub fn height(mut self, height: f64) -> Self {
-        self.height = Some(height);
+    pub fn height(mut self, height: Length) -> Self {
+        self.height = Some(height.get());
         self
     }
 
@@ -79,6 +83,8 @@ impl SizedBox {
     /// [`expand_height`]: Self::expand_height
     /// [`expand_width`]: Self::expand_width
     pub fn expand(mut self) -> Self {
+        // TODO - Using infinity in layout is a code smell.
+        // Rework these methods.
         self.width = Some(f64::INFINITY);
         self.height = Some(f64::INFINITY);
         self
@@ -303,7 +309,7 @@ mod tests {
     use super::*;
     use crate::core::Properties;
     use crate::palette;
-    use crate::properties::types::{Gradient, UnitPoint};
+    use crate::properties::types::{AsUnit, Gradient, UnitPoint};
     use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
     use crate::theme::default_property_set;
     use crate::widgets::Label;
@@ -320,7 +326,7 @@ mod tests {
 
     #[test]
     fn no_width() {
-        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(200.);
+        let expand = SizedBox::new(Label::new("hello!").with_auto_id()).height(200.px());
         let bc = BoxConstraints::tight(Size::new(400., 400.)).loosen();
         let child_bc = expand.child_constraints(&bc);
         assert_eq!(child_bc.min(), Size::new(0., 200.,));
@@ -335,8 +341,8 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
 
         let widget = SizedBox::empty()
-            .width(20.0)
-            .height(20.0)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -370,8 +376,8 @@ mod tests {
         box_props.insert(CornerRadius::all(5.0));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(20.0)
-            .height(20.0)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -404,8 +410,8 @@ mod tests {
         box_props.insert(Background::Color(palette::css::PLUM));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(20.0)
-            .height(20.0)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -432,8 +438,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(20.)
-            .height(20.)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -460,8 +466,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(20.)
-            .height(20.)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -488,8 +494,8 @@ mod tests {
         box_props.insert(CornerRadius::all(10.0));
 
         let widget = SizedBox::empty()
-            .width(20.)
-            .height(20.)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -508,8 +514,8 @@ mod tests {
         box_props.insert(Padding::all(25.));
 
         let widget = SizedBox::new(Label::new("hello").with_auto_id())
-            .width(20.0)
-            .height(20.0)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
@@ -533,8 +539,8 @@ mod tests {
         box_props.insert(BorderWidth::all(5.2));
 
         let widget = SizedBox::empty()
-            .width(20.0)
-            .height(20.0)
+            .width(20.px())
+            .height(20.px())
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);

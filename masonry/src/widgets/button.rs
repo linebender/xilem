@@ -310,6 +310,7 @@ mod tests {
     use super::*;
     use crate::core::{PointerButton, Properties, StyleProperty};
     use crate::properties::ContentColor;
+    use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
     use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::{Grid, GridParams, Label};
@@ -425,7 +426,7 @@ mod tests {
         use crate::palette::css::ORANGE;
 
         let grid = Grid::with_dimensions(2, 2)
-            .with_spacing(40.0)
+            .with_spacing(40.px())
             .with_child(
                 Button::with_text("A").with_auto_id(),
                 GridParams::new(0, 0, 1, 1),
