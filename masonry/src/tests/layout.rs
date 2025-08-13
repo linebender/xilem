@@ -144,8 +144,8 @@ fn skip_layout_when_cached() {
 
     harness.flush_records_of(button_tag);
     harness.edit_widget_with_tag(sibling_tag, |mut sized_box| {
-        SizedBox::set_width(&mut sized_box, 30.0);
-        SizedBox::set_height(&mut sized_box, 30.0);
+        SizedBox::set_width(&mut sized_box, 30.px());
+        SizedBox::set_height(&mut sized_box, 30.px());
     });
 
     // The button did not request layout and its input constraints are the same:
