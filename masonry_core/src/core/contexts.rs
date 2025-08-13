@@ -11,7 +11,7 @@ use anymore::AnyDebug;
 use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
-use tree_arena::{ArenaMutList, ArenaRefList};
+use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
@@ -1126,24 +1126,50 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.needs_update_focusable = true;
         self.request_layout();
     }
-
     /// Indicate that a child is about to be removed from the tree.
     ///
     /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
     /// pass them to this method.
     pub fn remove_child(&mut self, child: WidgetPod<impl Widget + ?Sized>) {
-        // TODO - Send recursive event to child
-        let id = child.id();
-        let _ = self
-            .children
-            .remove(id)
-            .expect("remove_child: child not found");
-        self.global_state.scene_cache.remove(&child.id());
+        fn remove_node(
+            global_state: &mut RenderRootState,
+            parent_state: &mut WidgetState,
+            node: ArenaMut<'_, WidgetArenaNode>,
+        ) {
+            let mut children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
 
-        // If we remove the focus anchor, its parent becomes the anchor.
-        if self.global_state.focus_anchor == Some(id) {
-            self.global_state.focus_anchor = Some(self.widget_state.id);
+            // TODO - Send event to widget
+
+            let parent_name = widget.short_type_name();
+            let parent_id = state.id;
+            for child_id in widget.children_ids() {
+                let Some(node) = children.item_mut(child_id) else {
+                    panic!(
+                        "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
+                    );
+                };
+
+                remove_node(global_state, state, node);
+            }
+
+            // If we remove the focus anchor, its parent becomes the anchor.
+            if global_state.focus_anchor == Some(state.id) {
+                global_state.focus_anchor = Some(parent_state.id);
+            }
+
+            global_state.scene_cache.remove(&state.id);
         }
+
+        let id = child.id();
+        let node = self
+            .children
+            .item_mut(id)
+            .expect("remove_child: child not found");
+        remove_node(self.global_state, self.widget_state, node);
+
+        let _ = self.children.remove(id).unwrap();
 
         self.children_changed();
     }
