@@ -123,6 +123,13 @@ pub(crate) struct RenderRootState {
     // TODO: move font context out of RenderRootState so that we only have it once per app
     pub(crate) font_context: FontContext,
 
+    /// Whether the loaded fonts have changed since the last layout pass.
+    ///
+    /// This is present so that child widgets can cache a Parley Layout, whilst
+    /// still updating text properly if fonts have changed.
+    // TODO: Should this be an `update` instead?
+    pub(crate) fonts_changed: bool,
+
     /// Cache for Parley text layout data.
     pub(crate) text_layout_context: LayoutContext<BrushIndex>,
 
@@ -315,6 +322,7 @@ impl RenderRoot {
                     }),
                     source_cache: SourceCache::default(),
                 },
+                fonts_changed: false,
                 text_layout_context: LayoutContext::new(),
                 mutate_callbacks: Vec::new(),
                 is_ime_active: false,
@@ -466,6 +474,7 @@ impl RenderRoot {
             .font_context
             .collection
             .register_fonts(data, None);
+        self.global_state.fonts_changed = true;
         self.request_layout_all();
         ret
     }
@@ -692,11 +701,12 @@ impl RenderRoot {
             .emit_signal(RenderRootSignal::RequestRedraw);
     }
 
-    /// Require that each widget gets relayouted is.
+    /// Require that each widget gets relayouted.
     ///
     /// This is used if something ambient changes and we expect that
     /// many widgets will depend on in it their layout.
     ///
+    /// This also runs the rewrite passes (i.e. it actions the relayout as well)
     /// Currently only used for font loading.
     pub(crate) fn request_layout_all(&mut self) {
         fn request_layout_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
@@ -715,8 +725,9 @@ impl RenderRoot {
 
         let root_node = self.widget_arena.get_node_mut(self.root.id());
         request_layout_all_in(root_node);
-        self.global_state
-            .emit_signal(RenderRootSignal::RequestRedraw);
+        // We need to perform a relayout before the next pointer/keyboard input event.
+        // So we do it now, rather than deferring it until a redraw.
+        self.run_rewrite_passes();
     }
 
     /// Checks whether the given id points to a widget that is "interactive".

@@ -247,6 +247,8 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
     );
     place_widget(&mut root_node.item.state, Point::ORIGIN);
 
+    root.global_state.fonts_changed = false;
+
     if let WindowSizePolicy::Content = root.size_policy {
         let new_size =
             LogicalSize::new(size.width, size.height).to_physical(root.global_state.scale_factor);

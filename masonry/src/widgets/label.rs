@@ -278,8 +278,8 @@ impl Widget for Label {
         } else {
             None
         };
-        let styles_changed = self.styles_changed;
-        if self.styles_changed {
+        let styles_changed = self.styles_changed || ctx.fonts_changed();
+        if styles_changed {
             let (font_ctx, layout_ctx) = ctx.text_contexts();
             // TODO: Should we use a different scale?
             // See https://github.com/linebender/xilem/issues/1264

@@ -813,6 +813,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.rendered_generation = new_generation;
         }
 
+        if ctx.fonts_changed() {
+            // HACK: We force the editor to relayout by pretending to edit the styles.
+            // We know that the lifecycle of dirty tracking in Parley's
+            // editor will need to change eventually anyway...
+            let _ = self.editor.edit_styles();
+        }
         let (fctx, lctx) = ctx.text_contexts();
         let layout = self.editor.layout(fctx, lctx);
         let text_width = max_advance.unwrap_or(layout.full_width());
