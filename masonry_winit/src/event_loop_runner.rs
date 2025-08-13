@@ -169,9 +169,6 @@ pub fn run_with(
         masonry_state: MasonryState::new(event_loop.create_proxy(), windows, default_properties),
         app_driver: Box::new(app_driver),
     };
-    main_state
-        .app_driver
-        .on_start(&mut main_state.masonry_state);
 
     event_loop.run_app(&mut main_state)
 }
@@ -300,6 +297,9 @@ impl MasonryState<'_> {
             for (id, attrs, widget) in std::mem::take(&mut self.new_windows) {
                 self.create_window(event_loop, id, attrs, widget);
             }
+            // TODO: This is wrong in the case where the driver tries to create a window whilst suspended
+            // The on_start would be called twice.
+            app_driver.on_start(self);
         }
 
         self.handle_signals(event_loop, app_driver);
