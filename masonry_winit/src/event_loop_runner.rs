@@ -863,7 +863,8 @@ impl MasonryState<'_> {
         self.is_suspended
     }
 
-    // TODO: remove (currently only exists to call register_fonts, font context should be moved out of render root)
+    // TODO: Remove this method.
+    // It's currently used to call register_fonts and set_focus_fallback.
     pub fn roots(&mut self) -> impl Iterator<Item = &mut RenderRoot> {
         self.windows
             .values_mut()

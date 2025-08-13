@@ -14,6 +14,7 @@ use masonry_winit::app::{
 };
 use winit::window::WindowAttributes;
 
+use crate::any_view::DynWidget;
 use crate::core::{
     AnyViewState, DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage,
     View, ViewId, ViewPathTracker,
@@ -338,6 +339,11 @@ where
         let fonts = std::mem::take(&mut self.fonts);
 
         for root in state.roots() {
+            if let Some(root_widget) = root.get_root_widget().downcast::<DynWidget>() {
+                let fallback = root_widget.inner().inner_id();
+                root.set_focus_fallback(Some(fallback));
+            }
+
             // Register all provided fonts
             for font in &fonts {
                 // We currently don't do anything with the resulting family information,
