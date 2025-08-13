@@ -322,15 +322,26 @@ fn text_event_bubbling() {
 #[test]
 fn text_event_fallback() {
     let target_tag = WidgetTag::new("target");
-    let parent_tag = WidgetTag::new("parent");
+    let other_tag = WidgetTag::new("other");
 
-    let child = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
-    let parent = NewWidget::new_with_tag(Flex::row().with_child(child), parent_tag);
+    let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
+    let other = NewWidget::new_with_tag(TextArea::new_editable(""), other_tag);
+    let parent = Flex::row()
+        .with_child(target)
+        .with_child(other)
+        .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), parent);
+    let target_id = harness.get_widget_with_tag(target_tag).id();
+    let other_id = harness.get_widget_with_tag(other_tag).id();
     harness.flush_records_of(target_tag);
+    harness.set_focus_fallback(Some(target_id));
 
-    // If the root widget has exactly one child, that child gets text events when no widget is focused.
+    harness.focus_on(Some(other_id));
+    assert_matches!(harness.get_records_of(target_tag)[..], []);
+
+    // If a widget is set as focus fallback, that widget gets text events when no widget is focused.
+    harness.focus_on(None);
     harness.keyboard_type_chars("A");
     let records = harness.get_records_of(target_tag);
     assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
@@ -340,18 +351,6 @@ fn text_event_fallback() {
         target.ctx.set_disabled(true);
     });
     harness.flush_records_of(target_tag);
-    harness.keyboard_type_chars("A");
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
-
-    harness.edit_widget_with_tag(target_tag, |mut target| {
-        target.ctx.set_disabled(false);
-    });
-    harness.edit_widget_with_tag(parent_tag, |mut flex| {
-        Flex::add_child(&mut flex, SizedBox::empty().with_auto_id());
-    });
-    harness.flush_records_of(target_tag);
-
-    // We've added another child, now nobody gets text events when no widget is focused.
     harness.keyboard_type_chars("A");
     assert_matches!(harness.get_records_of(target_tag)[..], []);
 }

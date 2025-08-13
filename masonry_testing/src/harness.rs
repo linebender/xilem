@@ -729,6 +729,16 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
+    /// Sets the [focus fallback](masonry_core::doc::masonry_concepts#focus-fallback).
+    pub fn set_focus_fallback(&mut self, id: Option<WidgetId>) {
+        if let Some(id) = id {
+            let Some(_) = self.render_root.get_widget(id) else {
+                panic!("Cannot set widget {id} as focus fallback: widget not found in tree");
+            };
+        }
+        let _ = self.render_root.set_focus_fallback(id);
+    }
+
     /// Run an animation pass on the widget tree.
     pub fn animate_ms(&mut self, ms: u64) {
         self.render_root

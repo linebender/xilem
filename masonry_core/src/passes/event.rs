@@ -263,23 +263,11 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
     }
 
     let target = root.global_state.focused_widget.or_else(|| {
-        // In case no widget is focused target the root widget only child.
-        // We're targeting the child instead of the root widget to accommodate
-        // Xilem, which wraps the main widget in another widget so that it can be swapped
-        // (since the root widget cannot be swapped).
-        let root_widget_children = root.get_root_widget().children();
-        if root_widget_children.len() == 1 {
-            let only_child = root_widget_children[0].id();
-            if root.is_still_interactive(only_child) {
-                Some(only_child)
-            } else {
-                None
-            }
+        if let Some(focus_fallback) = root.global_state.focus_fallback
+            && root.is_still_interactive(focus_fallback)
+        {
+            Some(focus_fallback)
         } else {
-            tracing::warn!(
-                widget_id = root.root.id().trace(),
-                "text event without focused widget dropped because root widget doesn't have exactly one child"
-            );
             None
         }
     });
