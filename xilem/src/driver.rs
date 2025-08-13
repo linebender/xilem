@@ -9,7 +9,9 @@ use std::sync::Arc;
 
 use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId};
 use masonry::peniko::Blob;
-use masonry_winit::app::{AppDriver, DriverCtx, MasonryState, MasonryUserEvent, WindowId};
+use masonry_winit::app::{
+    AppDriver, DriverCtx, MasonryState, MasonryUserEvent, NewWindow, WindowId,
+};
 use winit::window::WindowAttributes;
 
 use crate::core::{
@@ -50,10 +52,7 @@ where
         event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
         runtime: tokio::runtime::Runtime,
         fonts: Vec<Blob<u8>>,
-    ) -> (
-        Self,
-        Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
-    ) {
+    ) -> (Self, Vec<NewWindow>) {
         let mut driver = Self {
             state,
             logic,
@@ -66,8 +65,13 @@ where
         let windows: Vec<_> = (driver.logic)(&mut driver.state)
             .map(|(id, attrs, root_widget_view)| {
                 let view = WindowView::new(attrs, root_widget_view);
-                let (attrs, root_widget) = driver.build_window(id, view);
-                (id, attrs, root_widget)
+                let (attributes, root_widget) = driver.build_window(id, view);
+
+                NewWindow {
+                    id,
+                    attributes,
+                    root_widget,
+                }
             })
             .collect();
         (driver, windows)
@@ -173,8 +177,12 @@ where
         window_id: WindowId,
         view: WindowView<State>,
     ) {
-        let (attrs, root_widget) = self.build_window(window_id, view);
-        driver_ctx.create_window(window_id, attrs, root_widget);
+        let (attributes, root_widget) = self.build_window(window_id, view);
+        driver_ctx.create_window(NewWindow {
+            id: window_id,
+            attributes,
+            root_widget,
+        });
     }
 
     fn close_window(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {

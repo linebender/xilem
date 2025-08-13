@@ -13,7 +13,7 @@ use masonry::core::{ArcStr, ErasedAction, NewWidget, StyleProperty, WidgetId};
 use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 /// Function to create the virtual scroll area.
@@ -101,7 +101,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(driver.window_id, window_attributes, main_widget)],
+        vec![NewWindow {
+            id: driver.window_id,
+            attributes: window_attributes,
+            root_widget: main_widget,
+        }],
         driver,
         default_property_set(),
     )

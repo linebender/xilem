@@ -45,6 +45,26 @@ impl From<accesskit_winit::Event> for MasonryUserEvent {
     }
 }
 
+/// A container for a window yet to be created.
+///
+/// This is stored inside [`MasonryState`] and will be created during the `resumed` event.
+pub struct NewWindow {
+    /// The id is set by the App, and can be created using the [`WindowId::next()`] method.
+    ///
+    /// Once the window is created, it can be accessed using this `id` through the
+    /// [`DriverCtx::window_handle()`] method.
+    pub id: WindowId,
+    /// Window attributes for the winit's [`Window`].
+    ///
+    /// A default attribute can be created using [`Window::default_attributes()`].
+    ///
+    /// [`Window`]: crate::winit::window::Window
+    /// [`Window::default_attributes()`]: crate::winit::window::Window::default_attributes()
+    pub attributes: WindowAttributes,
+    /// The widget which will take up the entire contents of the new window.
+    pub root_widget: NewWidget<dyn Widget>,
+}
+
 /// Per-Window state
 pub(crate) struct Window {
     id: WindowId,
@@ -118,7 +138,7 @@ pub struct MasonryState<'a> {
     default_properties: Arc<DefaultProperties>,
     pub(crate) exit: bool,
     /// Windows that are scheduled to be created in the next resumed event.
-    new_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
+    new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
 }
 
@@ -144,18 +164,18 @@ pub fn run(
     // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
     // This is passed in mostly to allow configuring the Android app
     mut loop_builder: EventLoopBuilder,
-    windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
+    new_windows: Vec<NewWindow>,
     app_driver: impl AppDriver + 'static,
     default_property_set: DefaultProperties,
 ) -> Result<(), EventLoopError> {
     let event_loop = loop_builder.build()?;
 
-    run_with(event_loop, windows, app_driver, default_property_set)
+    run_with(event_loop, new_windows, app_driver, default_property_set)
 }
 
 pub fn run_with(
     event_loop: EventLoop,
-    windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
+    new_windows: Vec<NewWindow>,
     app_driver: impl AppDriver + 'static,
     default_properties: DefaultProperties,
 ) -> Result<(), EventLoopError> {
@@ -166,7 +186,11 @@ pub fn run_with(
     let _ = masonry_core::app::try_init_tracing();
 
     let mut main_state = MainState {
-        masonry_state: MasonryState::new(event_loop.create_proxy(), windows, default_properties),
+        masonry_state: MasonryState::new(
+            event_loop.create_proxy(),
+            new_windows,
+            default_properties,
+        ),
         app_driver: Box::new(app_driver),
     };
 
@@ -244,7 +268,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 impl MasonryState<'_> {
     pub fn new(
         event_loop_proxy: EventLoopProxy,
-        new_windows: Vec<(WindowId, WindowAttributes, NewWidget<dyn Widget>)>,
+        new_windows: Vec<NewWindow>,
         default_properties: DefaultProperties,
     ) -> Self {
         let render_cx = RenderContext::new();
@@ -294,8 +318,8 @@ impl MasonryState<'_> {
 
         // Create new windows.
         if !self.new_windows.is_empty() {
-            for (id, attrs, widget) in std::mem::take(&mut self.new_windows) {
-                self.create_window(event_loop, id, attrs, widget);
+            for new_window in std::mem::take(&mut self.new_windows) {
+                self.create_window(event_loop, new_window);
             }
             // TODO: This is wrong in the case where the driver tries to create a window whilst suspended
             // The on_start would be called twice.
@@ -320,31 +344,26 @@ impl MasonryState<'_> {
         self.surfaces.clear();
     }
 
-    pub(crate) fn create_window(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        window_id: WindowId,
-        attributes: WindowAttributes,
-        root_widget: NewWidget<dyn Widget>,
-    ) {
-        if self.window_id_to_handle_id.contains_key(&window_id) {
+    pub(crate) fn create_window(&mut self, event_loop: &ActiveEventLoop, new_window: NewWindow) {
+        if self.window_id_to_handle_id.contains_key(&new_window.id) {
             panic!(
-                "attempted to create a window with id {window_id:?} but a window with that id already exists",
+                "attempted to create a window with id {:?} but a window with that id already exists",
+                new_window.id
             );
         }
 
         if self.is_suspended {
             // Wait until resumed before creating the windows.
-            self.new_windows.push((window_id, attributes, root_widget));
+            self.new_windows.push(new_window);
 
             return;
         }
 
-        let visible = attributes.visible;
+        let visible = new_window.attributes.visible;
         // We always create the window as invisible so that we can
         // render the first frame before showing it to avoid flashing.
         let handle = event_loop
-            .create_window(attributes.with_visible(false))
+            .create_window(new_window.attributes.with_visible(false))
             .unwrap();
         if visible {
             // We defer the rendering of the first frame to the handle_signals method because
@@ -363,10 +382,10 @@ impl MasonryState<'_> {
         self.surfaces.insert(handle_id, surface);
 
         let mut window = Window::new(
-            window_id,
+            new_window.id,
             handle,
             adapter,
-            root_widget,
+            new_window.root_widget,
             self.signal_sender.clone(),
             self.default_properties.clone(),
         );

@@ -25,7 +25,7 @@ use masonry::properties::{
 };
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, Label};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 #[derive(Clone)]
@@ -305,11 +305,11 @@ fn main() {
         .unwrap();
     masonry_winit::app::run_with(
         event_loop,
-        vec![(
-            calc_state.window_id,
-            window_attributes,
-            build_calc().erased(),
-        )],
+        vec![NewWindow {
+            id: calc_state.window_id,
+            attributes: window_attributes,
+            root_widget: build_calc().erased(),
+        }],
         calc_state,
         default_property_set(),
     )

@@ -7,12 +7,13 @@ use std::num::NonZeroU64;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
-use masonry_core::core::{ErasedAction, NewWidget, Widget, WidgetId};
+use masonry_core::core::{ErasedAction, WidgetId};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
-use winit::window::{Window as WindowHandle, WindowAttributes};
+use winit::window::Window as WindowHandle;
 
 use crate::app::MasonryState;
+use crate::event_loop_runner::NewWindow;
 
 /// A unique and persistent identifier for a window.
 ///
@@ -127,14 +128,8 @@ impl DriverCtx<'_, '_> {
     /// # Panics
     ///
     /// Panics if the window id is already used by another window.
-    pub fn create_window(
-        &mut self,
-        window_id: WindowId,
-        attributes: WindowAttributes,
-        root_widget: NewWidget<dyn Widget>,
-    ) {
-        self.state
-            .create_window(self.event_loop, window_id, attributes, root_widget);
+    pub fn create_window(&mut self, new_window: NewWindow) {
+        self.state.create_window(self.event_loop, new_window);
     }
 
     /// Closes the given window.

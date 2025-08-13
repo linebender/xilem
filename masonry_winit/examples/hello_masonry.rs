@@ -12,7 +12,7 @@ use masonry::dpi::LogicalSize;
 use masonry::parley::style::FontWeight;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label};
-use masonry_winit::app::{AppDriver, DriverCtx, WindowId};
+use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 
 const VERTICAL_WIDGET_SPACING: f64 = 20.0;
@@ -65,11 +65,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![(
-            driver.window_id,
-            window_attributes,
-            NewWidget::new(main_widget).erased(),
-        )],
+        vec![NewWindow {
+            id: driver.window_id,
+            attributes: window_attributes,
+            root_widget: NewWidget::new(main_widget).erased(),
+        }],
         driver,
         default_property_set(),
     )
