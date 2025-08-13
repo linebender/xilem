@@ -610,7 +610,7 @@ impl Widget for Flex {
 
         // ACCUMULATORS
         let mut minor = self.direction.minor(bc.min());
-        let mut major_non_flex = gap_count as f64 * self.gap.value();
+        let mut major_non_flex = gap_count as f64 * self.gap.get();
         let mut major_flex: f64 = 0.0;
         // We start with a small value to avoid divide-by-zero errors.
         let mut flex_sum = MIN_FLEX_SUM;
@@ -647,7 +647,7 @@ impl Widget for Flex {
                     max_below_baseline = max_below_baseline.max(baseline_offset);
                 }
                 Child::FixedSpacer(kv, calculated_size) => {
-                    *calculated_size = kv.value();
+                    *calculated_size = kv.get();
                     if *calculated_size < 0.0 {
                         tracing::warn!("Length provided to fixed spacer was less than 0");
                     }
@@ -754,13 +754,13 @@ impl Widget for Flex {
                     ctx.place_child(widget, child_pos);
 
                     major += self.direction.major(child_size);
-                    major += self.gap.value();
+                    major += self.gap.get();
                     previous_was_widget = true;
                 }
                 Child::FlexedSpacer(_, calculated_size)
                 | Child::FixedSpacer(_, calculated_size) => {
                     major += *calculated_size;
-                    major += self.gap.value();
+                    major += self.gap.get();
                     previous_was_widget = false;
                 }
             }

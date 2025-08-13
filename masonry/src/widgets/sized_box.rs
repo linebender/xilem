@@ -64,13 +64,13 @@ impl SizedBox {
 
     /// Set container's width.
     pub fn width(mut self, width: Length) -> Self {
-        self.width = Some(width.value());
+        self.width = Some(width.get());
         self
     }
 
     /// Set container's height.
     pub fn height(mut self, height: Length) -> Self {
-        self.height = Some(height.value());
+        self.height = Some(height.get());
         self
     }
 

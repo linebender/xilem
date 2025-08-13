@@ -65,7 +65,7 @@ impl Length {
     }
 
     /// Get the value, in logical pixels.
-    pub const fn value(self) -> f64 {
+    pub const fn get(self) -> f64 {
         self.value
     }
 

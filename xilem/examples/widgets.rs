@@ -102,7 +102,7 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
         ))
         .gap(SPACER_WIDTH),
     )
-    .padding(SPACER_WIDTH.value())
+    .padding(SPACER_WIDTH.get())
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

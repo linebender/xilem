@@ -276,7 +276,7 @@ impl Widget for Grid {
                 total_size
             );
         }
-        let gap = self.grid_spacing.value();
+        let gap = self.grid_spacing.get();
         let width_unit = (total_size.width + gap) / (self.grid_width as f64);
         let height_unit = (total_size.height + gap) / (self.grid_height as f64);
         for child in &mut self.children {

@@ -71,7 +71,7 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
             Flex::row()
                 .with_flex_child(text_input, 1.0)
                 .with_child(button),
-            Properties::new().with(Padding::all(WIDGET_SPACING.value())),
+            Properties::new().with(Padding::all(WIDGET_SPACING.get())),
         ))
         .with_spacer(WIDGET_SPACING);
 

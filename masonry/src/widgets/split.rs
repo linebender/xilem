@@ -141,13 +141,13 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
     /// Returns the size of the splitter bar area.
     #[inline]
     fn bar_area(&self) -> f64 {
-        self.bar_size.value().max(self.min_bar_area.value())
+        self.bar_size.get().max(self.min_bar_area.get())
     }
 
     /// Returns the padding size added to each side of the splitter bar.
     #[inline]
     fn bar_padding(&self) -> f64 {
-        (self.bar_area() - self.bar_size.value()) / 2.0
+        (self.bar_area() - self.bar_size.get()) / 2.0
     }
 
     /// Returns the position of the split point (split bar center).
@@ -201,8 +201,8 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let split_axis_size = self.split_axis.major(size);
 
         let (min_limit, min_second) = self.min_size;
-        let mut min_limit = min_limit.value();
-        let min_second = min_second.value();
+        let mut min_limit = min_limit.get();
+        let min_second = min_second.get();
         let mut max_limit = (split_axis_size - min_second).max(0.0);
 
         if min_limit > max_limit {
@@ -253,7 +253,7 @@ impl<ChildA: Widget + ?Sized, ChildB: Widget + ?Sized> Split<ChildA, ChildB> {
         let size = ctx.size();
         // Set the line width to a third of the splitter bar size,
         // because we'll paint two equal lines at the edges.
-        let line_width = (self.bar_size.value() / 3.0).floor();
+        let line_width = (self.bar_size.get() / 3.0).floor();
         let line_midpoint = line_width / 2.0;
         let (edge1, edge2) = self.bar_edges(size);
         let padding = self.bar_padding();
