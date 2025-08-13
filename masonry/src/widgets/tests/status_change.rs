@@ -54,7 +54,7 @@ fn propagate_hovered() {
 
     let widget = Flex::column()
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.px()).height(10.px()),
+            SizedBox::empty().size(10.px(), 10.px()),
             empty,
         ))
         .with_child(NewWidget::new_with_id(
@@ -240,11 +240,11 @@ fn get_pointer_events_while_active() {
 
     let widget = Flex::column()
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.px()).height(10.px()),
+            SizedBox::empty().size(10.px(), 10.px()),
             empty,
         ))
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.px()).height(10.px()),
+            SizedBox::empty().size(10.px(), 10.px()),
             empty_2,
         ))
         .with_child(NewWidget::new_with_id(
@@ -324,7 +324,7 @@ fn automatically_lose_pointer_on_pointer_lost() {
 
     let widget = Flex::column()
         .with_child(NewWidget::new_with_id(
-            SizedBox::empty().width(10.px()).height(10.px()),
+            SizedBox::empty().size(10.px(), 10.px()),
             empty,
         ))
         .with_child(NewWidget::new_with_id(

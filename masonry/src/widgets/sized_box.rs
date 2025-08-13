@@ -74,6 +74,13 @@ impl SizedBox {
         self
     }
 
+    /// Set container's width and height.
+    pub fn size(mut self, width: Length, height: Length) -> Self {
+        self.width = Some(width.get());
+        self.height = Some(height.get());
+        self
+    }
+
     /// Expand container to fit the parent.
     ///
     /// Only call this method if you want your widget to occupy all available
@@ -106,13 +113,17 @@ impl SizedBox {
         self
     }
 
-    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`
+    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
     pub fn raw_width(mut self, value: Option<f64>) -> Self {
         self.width = value;
         self
     }
 
-    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`
+    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
     pub fn raw_height(mut self, value: Option<f64>) -> Self {
         self.height = value;
         self
@@ -143,14 +154,21 @@ impl SizedBox {
     }
 
     /// Set container's width.
-    pub fn set_width(this: &mut WidgetMut<'_, Self>, width: f64) {
-        this.widget.width = Some(width);
+    pub fn set_width(this: &mut WidgetMut<'_, Self>, width: Length) {
+        this.widget.width = Some(width.get());
         this.ctx.request_layout();
     }
 
     /// Set container's height.
-    pub fn set_height(this: &mut WidgetMut<'_, Self>, height: f64) {
-        this.widget.height = Some(height);
+    pub fn set_height(this: &mut WidgetMut<'_, Self>, height: Length) {
+        this.widget.height = Some(height.get());
+        this.ctx.request_layout();
+    }
+
+    /// Set container's width and height.
+    pub fn set_size(this: &mut WidgetMut<'_, Self>, width: Length, height: Length) {
+        this.widget.width = Some(width.get());
+        this.widget.height = Some(height.get());
         this.ctx.request_layout();
     }
 
@@ -163,6 +181,22 @@ impl SizedBox {
     /// Unset container's height.
     pub fn unset_height(this: &mut WidgetMut<'_, Self>) {
         this.widget.height = None;
+        this.ctx.request_layout();
+    }
+
+    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
+    pub fn set_raw_width(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
+        this.widget.width = value;
+        this.ctx.request_layout();
+    }
+
+    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
+    pub fn set_raw_height(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
+        this.widget.height = value;
         this.ctx.request_layout();
     }
 

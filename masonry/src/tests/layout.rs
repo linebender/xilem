@@ -144,8 +144,8 @@ fn skip_layout_when_cached() {
 
     harness.flush_records_of(button_tag);
     harness.edit_widget_with_tag(sibling_tag, |mut sized_box| {
-        SizedBox::set_width(&mut sized_box, 30.0);
-        SizedBox::set_height(&mut sized_box, 30.0);
+        SizedBox::set_width(&mut sized_box, 30.px());
+        SizedBox::set_height(&mut sized_box, 30.px());
     });
 
     // The button did not request layout and its input constraints are the same:
@@ -156,10 +156,7 @@ fn skip_layout_when_cached() {
 #[test]
 fn pixel_snapping() {
     let child_tag = WidgetTag::new("child");
-    let child = NewWidget::new_with_tag(
-        SizedBox::empty().width(10.3.px()).height(10.3.px()),
-        child_tag,
-    );
+    let child = NewWidget::new_with_tag(SizedBox::empty().size(10.3.px(), 10.3.px()), child_tag);
     let pos = Point::new(5.1, 5.3);
     let parent = ModularWidget::new_parent(child).layout_fn(move |child, ctx, _, bc| {
         let size = ctx.run_layout(child, &bc.loosen());
