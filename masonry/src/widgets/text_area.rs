@@ -128,6 +128,11 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
         self.editor.text()
     }
 
+    /// Check if this text area holds nothing, including IME preedit content.
+    pub fn is_empty(&self) -> bool {
+        self.editor.raw_text().is_empty()
+    }
+
     /// Set a style property for the new text area.
     ///
     /// Style properties set by this method include [text size](parley::StyleProperty::FontSize),
