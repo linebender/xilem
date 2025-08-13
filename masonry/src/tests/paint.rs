@@ -59,17 +59,17 @@ fn request_paint() {
 #[test]
 fn paint_order() {
     const SQUARE_SIZE: f64 = 30.;
-    const SQURE_LENGTH: Length = Length::const_px(SQUARE_SIZE);
+    const SQUARE_LENGTH: Length = Length::const_px(SQUARE_SIZE);
     let child1 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQURE_LENGTH).height(SQURE_LENGTH),
+        SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
         (Background::Color(RED),).into(),
     );
     let child2 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQURE_LENGTH).height(SQURE_LENGTH),
+        SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
         (Background::Color(GREEN),).into(),
     );
     let child3 = NewWidget::new_with_props(
-        SizedBox::empty().width(SQURE_LENGTH).height(SQURE_LENGTH),
+        SizedBox::empty().width(SQUARE_LENGTH).height(SQUARE_LENGTH),
         (Background::Color(BLUE),).into(),
     );
     let children = vec![child1, child2, child3];
