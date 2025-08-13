@@ -746,6 +746,13 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
+    /// Helper method to directly enable/disable a widget.
+    pub fn set_disabled(&mut self, widget: WidgetTag<impl Widget>, disabled: bool) {
+        self.edit_widget_with_tag(widget, |mut target| {
+            target.ctx.set_disabled(disabled);
+        });
+    }
+
     // --- MARK: GETTERS
 
     /// Return a [`WidgetRef`] to the root widget.

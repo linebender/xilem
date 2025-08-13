@@ -108,9 +108,7 @@ fn disabled_widget_gets_no_event() {
     harness.focus_on(Some(button_id));
     harness.flush_records_of(button_tag);
 
-    harness.edit_widget_with_tag(button_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
+    harness.set_disabled(button_tag, true);
     assert_matches!(
         harness.get_records_of(button_tag)[..],
         [
@@ -141,9 +139,7 @@ fn disable_parent() {
     harness.flush_records_of(button_tag);
 
     // First we disable the parent: the button should get a "DisabledChanged" event.
-    harness.edit_widget_with_tag(parent_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
+    harness.set_disabled(parent_tag, true);
     assert_matches!(
         harness.get_records_of(button_tag)[..],
         [Record::Update(Update::DisabledChanged(true))]
@@ -153,31 +149,23 @@ fn disable_parent() {
 
     // Then we disable the grandparent: nothing should happen,
     // the parent is already disabled.
-    harness.edit_widget_with_tag(grandparent_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
+    harness.set_disabled(grandparent_tag, true);
     assert_matches!(harness.get_records_of(button_tag)[..], []);
 
     // Then we re-enable the parent: nothing should happen,
     // the parent is still disabled through the grandparent.
-    harness.edit_widget_with_tag(parent_tag, |mut widget| {
-        widget.ctx.set_disabled(false);
-    });
+    harness.set_disabled(parent_tag, false);
     assert_matches!(harness.get_records_of(button_tag)[..], []);
 
     // Then we re-enable the grandparent: the button should get a "DisabledChanged" event.
-    harness.edit_widget_with_tag(grandparent_tag, |mut widget| {
-        widget.ctx.set_disabled(false);
-    });
+    harness.set_disabled(grandparent_tag, false);
     assert_matches!(
         harness.get_records_of(button_tag)[..],
         [Record::Update(Update::DisabledChanged(false))]
     );
 
     // Finally we re-enable the button: no effect, it's already enabled.
-    harness.edit_widget_with_tag(button_tag, |mut widget| {
-        widget.ctx.set_disabled(false);
-    });
+    harness.set_disabled(button_tag, false);
     assert_matches!(harness.get_records_of(button_tag)[..], []);
 }
 
@@ -402,9 +390,7 @@ fn disable_focusable() {
     let button3_id = harness.get_widget_with_tag(button3_tag).id();
 
     harness.focus_on(Some(button2_id));
-    harness.edit_widget_with_tag(button2_tag, |mut button| {
-        button.ctx.set_disabled(true);
-    });
+    harness.set_disabled(button2_tag, true);
 
     // We skip button2 and jump from button1 to button3.
     harness.focus_on(Some(button1_id));
@@ -546,9 +532,7 @@ fn ime_start_stop() {
     assert!(harness.has_ime_session());
 
     harness.flush_records_of(textbox_tag);
-    harness.edit_widget_with_tag(textbox_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
+    harness.set_disabled(textbox_tag, true);
 
     let records = harness.get_records_of(textbox_tag);
     assert!(
