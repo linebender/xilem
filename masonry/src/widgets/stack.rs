@@ -22,6 +22,12 @@ use crate::widgets::flex::get_spacing;
 
 /// A container with either horizontal or vertical layout.
 ///
+/// All the children of this widget will be laid out with the same constraints,
+/// then placed one after the other depending on the set alignment.
+///
+/// If you want a container with more advanced spacing, or children that take
+/// a given portion of the available space, use [`Flex`](crate::widgets::Flex)
+/// instead.
 #[doc = include_screenshot!("stack_col_main_axis_spaceAround.png", "Column with multiple labels.")]
 pub struct Stack {
     direction: Axis,
@@ -52,7 +58,6 @@ impl Stack {
     /// Create a new horizontal stack.
     ///
     /// The child widgets are laid out horizontally, from left to right.
-    ///
     pub fn row() -> Self {
         Self::for_axis(Axis::Horizontal)
     }

@@ -24,6 +24,9 @@ use crate::util::{debug_panic, fill, include_screenshot, stroke};
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
 ///
+/// That said, if you don't need children with a size based on available space or spacers,
+/// you can use the simpler [`Stack`](crate::widgets::Stack) instead.
+///
 #[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
     direction: Axis,
