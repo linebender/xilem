@@ -113,13 +113,17 @@ impl SizedBox {
         self
     }
 
-    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`
+    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
     pub fn raw_width(mut self, value: Option<f64>) -> Self {
         self.width = value;
         self
     }
 
-    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`
+    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
     pub fn raw_height(mut self, value: Option<f64>) -> Self {
         self.height = value;
         self
@@ -180,13 +184,17 @@ impl SizedBox {
         this.ctx.request_layout();
     }
 
-    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`
+    /// Set the width directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
     pub fn set_raw_width(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
         this.widget.width = value;
         this.ctx.request_layout();
     }
 
-    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`
+    /// Set the height directly. Intended for toolkits abstracting over `SizedBox`.
+    ///
+    /// If `Some`, the value should be non-negative and not NaN.
     pub fn set_raw_height(this: &mut WidgetMut<'_, Self>, value: Option<f64>) {
         this.widget.height = value;
         this.ctx.request_layout();
