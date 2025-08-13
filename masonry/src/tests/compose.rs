@@ -51,7 +51,7 @@ fn request_compose() {
         parent.ctx.request_layout();
     });
     assert_matches!(
-        harness.get_records_of(parent_tag)[..],
+        harness.take_records_of(parent_tag)[..],
         [Record::Layout(_), Record::Compose,]
     );
 
@@ -60,7 +60,7 @@ fn request_compose() {
         parent.widget.inner_mut().state.offset = Vec2::new(8., 8.);
         parent.ctx.request_compose();
     });
-    assert_matches!(harness.get_records_of(parent_tag)[..], [Record::Compose]);
+    assert_matches!(harness.take_records_of(parent_tag)[..], [Record::Compose]);
 
     harness.edit_widget(parent_tag, |mut parent| {
         parent

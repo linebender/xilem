@@ -37,7 +37,7 @@ fn pointer_event() {
     harness.flush_records_of(button_tag);
     harness.mouse_move_to(button_id);
 
-    let records = harness.get_records_of(button_tag);
+    let records = harness.take_records_of(button_tag);
     assert!(
         records
             .iter()
@@ -68,9 +68,9 @@ fn pointer_event_bubbling() {
             .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Down { .. })))
     };
 
-    assert!(has_pointer_down(harness.get_records_of(button_tag)));
-    assert!(has_pointer_down(harness.get_records_of(parent_tag)));
-    assert!(has_pointer_down(harness.get_records_of(grandparent_tag)));
+    assert!(has_pointer_down(harness.take_records_of(button_tag)));
+    assert!(has_pointer_down(harness.take_records_of(parent_tag)));
+    assert!(has_pointer_down(harness.take_records_of(grandparent_tag)));
 }
 
 #[test]
@@ -115,7 +115,7 @@ fn synthetic_cancel() {
     // synthetic PointerCancel event.
     harness.set_disabled(target_tag, true);
 
-    let records = harness.get_records_of(target_tag);
+    let records = harness.take_records_of(target_tag);
     assert!(
         records
             .iter()
@@ -152,7 +152,7 @@ fn pointer_capture_suppresses_neighbors() {
 
     // As long as 'target' is captured, 'other' doesn't get pointer events, even when the cursor is on it.
     harness.mouse_move_to(other_id);
-    assert_matches!(harness.get_records_of(other_tag)[..], []);
+    assert_matches!(harness.take_records_of(other_tag)[..], []);
 
     // 'other' is not considered hovered either.
     assert!(!harness.get_widget(other_tag).ctx().is_hovered());
@@ -218,7 +218,7 @@ fn pointer_cancel_on_window_blur() {
 
     harness.process_text_event(TextEvent::WindowFocusChange(false));
 
-    let records = harness.get_records_of(target_tag);
+    let records = harness.take_records_of(target_tag);
     assert!(
         records
             .iter()
@@ -277,12 +277,12 @@ fn text_event() {
 
     // The widget isn't focused, it doesn't get text events.
     harness.keyboard_type_chars("A");
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
 
     // We focus on the widget, now it gets text events.
     harness.focus_on(Some(target_id));
     harness.keyboard_type_chars("A");
-    let records = harness.get_records_of(target_tag);
+    let records = harness.take_records_of(target_tag);
     assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
 }
 
@@ -312,9 +312,9 @@ fn text_event_bubbling() {
             .any(|r| matches!(r, Record::TextEvent(TextEvent::Keyboard(_))))
     };
 
-    assert!(has_keyboard_event(harness.get_records_of(target_tag)));
-    assert!(has_keyboard_event(harness.get_records_of(parent_tag)));
-    assert!(has_keyboard_event(harness.get_records_of(grandparent_tag)));
+    assert!(has_keyboard_event(harness.take_records_of(target_tag)));
+    assert!(has_keyboard_event(harness.take_records_of(parent_tag)));
+    assert!(has_keyboard_event(harness.take_records_of(grandparent_tag)));
 }
 
 #[test]
@@ -336,19 +336,19 @@ fn text_event_fallback() {
     harness.set_focus_fallback(Some(target_id));
 
     harness.focus_on(Some(other_id));
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
 
     // If a widget is set as focus fallback, that widget gets text events when no widget is focused.
     harness.focus_on(None);
     harness.keyboard_type_chars("A");
-    let records = harness.get_records_of(target_tag);
+    let records = harness.take_records_of(target_tag);
     assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
 
     // Unless it's disabled.
     harness.set_disabled(target_tag, true);
     harness.flush_records_of(target_tag);
     harness.keyboard_type_chars("A");
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
 }
 
 #[test]
@@ -433,9 +433,9 @@ fn access_event_bubbling() {
         })
     };
 
-    assert!(has_access_event(harness.get_records_of(target_tag)));
-    assert!(has_access_event(harness.get_records_of(parent_tag)));
-    assert!(has_access_event(harness.get_records_of(grandparent_tag)));
+    assert!(has_access_event(harness.take_records_of(target_tag)));
+    assert!(has_access_event(harness.take_records_of(parent_tag)));
+    assert!(has_access_event(harness.take_records_of(grandparent_tag)));
 }
 
 #[test]

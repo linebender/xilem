@@ -29,7 +29,7 @@ fn app_creation() {
     let harness = TestHarness::create(default_property_set(), widget);
 
     assert_matches!(
-        harness.get_records_of(widget_tag)[..],
+        harness.take_records_of(widget_tag)[..],
         [
             Record::RegisterChildren,
             Record::Update(Update::WidgetAdded),
@@ -59,7 +59,7 @@ fn new_widget() {
     });
 
     assert_matches!(
-        harness.get_records_of(widget_tag)[0..2],
+        harness.take_records_of(widget_tag)[0..2],
         [
             Record::RegisterChildren,
             Record::Update(Update::WidgetAdded)
@@ -112,7 +112,7 @@ fn disabled_widget_gets_no_event() {
 
     harness.set_disabled(button_tag, true);
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [
             Record::Update(Update::DisabledChanged(true)),
             Record::Update(Update::ChildFocusChanged(false)),
@@ -121,7 +121,7 @@ fn disabled_widget_gets_no_event() {
     );
 
     harness.mouse_click_on(button_id);
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     assert_matches!(harness.focused_widget_id(), None);
 
@@ -143,7 +143,7 @@ fn disable_parent() {
     // First we disable the parent: the button should get a "DisabledChanged" event.
     harness.set_disabled(parent_tag, true);
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [Record::Update(Update::DisabledChanged(true))]
     );
 
@@ -152,23 +152,23 @@ fn disable_parent() {
     // Then we disable the grandparent: nothing should happen,
     // the parent is already disabled.
     harness.set_disabled(grandparent_tag, true);
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we re-enable the parent: nothing should happen,
     // the parent is still disabled through the grandparent.
     harness.set_disabled(parent_tag, false);
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we re-enable the grandparent: the button should get a "DisabledChanged" event.
     harness.set_disabled(grandparent_tag, false);
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [Record::Update(Update::DisabledChanged(false))]
     );
 
     // Finally we re-enable the button: no effect, it's already enabled.
     harness.set_disabled(button_tag, false);
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 }
 
 // STASHED
@@ -189,7 +189,7 @@ fn stashed_widget_loses_focus() {
         widget.ctx.set_stashed(&mut widget.widget.state, true);
     });
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [
             Record::Update(Update::StashedChanged(true)),
             Record::Update(Update::ChildFocusChanged(false)),
@@ -219,7 +219,7 @@ fn stash_parent() {
         widget.ctx.set_stashed(&mut widget.widget.state, true);
     });
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [Record::Update(Update::StashedChanged(true))]
     );
 
@@ -230,21 +230,21 @@ fn stash_parent() {
     harness.edit_widget(grandparent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, true);
     });
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we un-stash the button: nothing should happen,
     // the button is still stashed through the parent.
     harness.edit_widget(parent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, false);
     });
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we un-stash the parent: the button should get a "StashedChanged" event.
     harness.edit_widget(grandparent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, false);
     });
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [
             Record::Update(Update::StashedChanged(false)),
             // Un-stashing also requests a layout pass.
@@ -539,7 +539,7 @@ fn ime_start_stop() {
     harness.flush_records_of(textbox_tag);
     harness.set_disabled(textbox_tag, true);
 
-    let records = harness.get_records_of(textbox_tag);
+    let records = harness.take_records_of(textbox_tag);
     assert!(
         records
             .iter()
@@ -623,7 +623,7 @@ fn lose_hovered_on_pointer_leave_or_cancel() {
 
     assert!(!harness.get_widget(button_tag).ctx().is_hovered());
 
-    let records = harness.get_records_of(button_tag);
+    let records = harness.take_records_of(button_tag);
     assert!(
         records
             .iter()
@@ -640,7 +640,7 @@ fn lose_hovered_on_pointer_leave_or_cancel() {
 
     assert!(!harness.get_widget(button_tag).ctx().is_hovered());
 
-    let records = harness.get_records_of(button_tag);
+    let records = harness.take_records_of(button_tag);
     assert!(
         records
             .iter()

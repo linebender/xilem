@@ -191,7 +191,7 @@ fn skip_layout_when_cached() {
 
     // The button did not request layout and its input constraints are the same:
     // Nothing should happen to it.
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 }
 
 #[test]

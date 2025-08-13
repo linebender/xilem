@@ -25,18 +25,18 @@ fn needs_anim_flag() {
     });
     harness.animate_ms(42);
 
-    let records = harness.get_records_of(target_tag);
+    let records = harness.take_records_of(target_tag);
     assert!(
         records
             .iter()
             .any(|r| matches!(r, Record::AnimFrame(42_000_000)))
     );
 
-    let records = harness.get_records_of(parent_tag);
+    let records = harness.take_records_of(parent_tag);
     assert!(records.iter().all(|r| !matches!(r, Record::AnimFrame(_))));
 
     harness.animate_ms(42);
 
     // We didn't re-request an animation, so nothing should happen.
-    assert_matches!(harness.get_records_of(parent_tag)[..], []);
+    assert_matches!(harness.take_records_of(parent_tag)[..], []);
 }

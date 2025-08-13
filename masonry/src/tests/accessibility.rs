@@ -28,17 +28,17 @@ fn request_accessibility() {
 
     // Check that `Widget::accessibility()` is called for the child (which did request it)
     // but not the parent (which did not).
-    let records = harness.get_records_of(target_tag);
+    let records = harness.take_records_of(target_tag);
     assert!(records.iter().any(|r| matches!(r, Record::Accessibility)));
 
-    let records = harness.get_records_of(parent_tag);
+    let records = harness.take_records_of(parent_tag);
     assert!(records.iter().all(|r| !matches!(r, Record::Accessibility)));
 
     // Check that `Widget::accessibility()` is not called: neither node has requested
     // an accessibility update.
     let _ = harness.render();
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
-    assert_matches!(harness.get_records_of(parent_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(parent_tag)[..], []);
 }
 
 #[test]
