@@ -13,7 +13,7 @@ pub struct Length {
 
 impl std::fmt::Debug for Length {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{self}")
     }
 }
 
