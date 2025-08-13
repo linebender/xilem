@@ -1,6 +1,8 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::mpsc;
+
 use assert_matches::assert_matches;
 use masonry_core::core::{
     CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
@@ -15,7 +17,7 @@ use vello::kurbo::{Point, Size};
 
 use crate::properties::types::Length;
 use crate::theme::default_property_set;
-use crate::widgets::{Button, Flex, SizedBox, TextArea};
+use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
 // TREE
 
@@ -690,4 +692,134 @@ fn change_hovered_when_widget_changes() {
     // We reverted the child to the old size. It should be hovered again.
     assert!(harness.get_widget(child_tag).ctx().is_hovered());
     assert!(!harness.get_widget(parent_tag).ctx().is_hovered());
+}
+
+// STATUS FLAGS
+
+fn make_reporter_parent(
+    child: NewWidget<impl Widget>,
+    sender: mpsc::Sender<(String, u32)>,
+    n: u32,
+) -> impl Widget {
+    ModularWidget::new_parent(child)
+        .accepts_focus(true)
+        .pointer_event_fn(|_, ctx, _, event| {
+            if matches!(event, PointerEvent::Down { .. }) {
+                // Makes widget active
+                ctx.capture_pointer();
+                ctx.set_handled();
+            }
+        })
+        .layout_fn(move |child, ctx, _props, bc| {
+            let _ = ctx.run_layout(child, bc);
+            ctx.place_child(child, Point::ZERO);
+            Size::new(100., 100.)
+        })
+        .update_fn(move |_, _, _, event| {
+            sender.send((event.short_name().to_string(), n)).unwrap();
+        })
+}
+
+#[test]
+fn status_flag_update_order() {
+    let (sender, receiver) = mpsc::channel::<(String, u32)>();
+    let sender1 = sender.clone();
+    let sender2 = sender.clone();
+    let sender3 = sender;
+
+    let parent1_tag = WidgetTag::new("parent1");
+
+    let child = NewWidget::new(Label::new(""));
+    let parent1 = NewWidget::new_with_tag(make_reporter_parent(child, sender1, 1), parent1_tag);
+    let parent2 = NewWidget::new(make_reporter_parent(parent1, sender2, 2));
+    let parent3 = NewWidget::new(make_reporter_parent(parent2, sender3, 3));
+
+    let mut harness = TestHarness::create(default_property_set(), parent3);
+    let parent1_id = harness.get_widget(parent1_tag).id();
+    // Flush initial events
+    let _ = receiver.try_iter().count();
+
+    harness.mouse_move_to(parent1_id);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildHoveredChanged(true)".into(), 1),
+            ("ChildHoveredChanged(true)".into(), 2),
+            ("ChildHoveredChanged(true)".into(), 3),
+            ("HoveredChanged(true)".into(), 1)
+        ]
+    );
+    assert!(harness.get_widget(parent1_tag).ctx().is_hovered());
+    assert!(harness.get_widget(parent1_tag).ctx().has_hovered());
+
+    harness.mouse_button_press(PointerButton::Primary);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildActiveChanged(true)".into(), 1),
+            ("ChildActiveChanged(true)".into(), 2),
+            ("ChildActiveChanged(true)".into(), 3),
+            ("ActiveChanged(true)".into(), 1)
+        ]
+    );
+    assert!(harness.get_widget(parent1_tag).ctx().is_active());
+    assert!(harness.get_widget(parent1_tag).ctx().has_active());
+
+    harness.mouse_button_release(PointerButton::Primary);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildActiveChanged(false)".into(), 1),
+            ("ChildActiveChanged(false)".into(), 2),
+            ("ChildActiveChanged(false)".into(), 3),
+            ("ActiveChanged(false)".into(), 1)
+        ]
+    );
+    assert!(!harness.get_widget(parent1_tag).ctx().is_active());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_active());
+
+    harness.mouse_move((-10., -10.));
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildHoveredChanged(false)".into(), 1),
+            ("ChildHoveredChanged(false)".into(), 2),
+            ("ChildHoveredChanged(false)".into(), 3),
+            ("HoveredChanged(false)".into(), 1)
+        ]
+    );
+    assert!(!harness.get_widget(parent1_tag).ctx().is_hovered());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_hovered());
+
+    harness.focus_on(Some(parent1_id));
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildFocusChanged(true)".into(), 1),
+            ("ChildFocusChanged(true)".into(), 2),
+            ("ChildFocusChanged(true)".into(), 3),
+            ("FocusChanged(true)".into(), 1)
+        ]
+    );
+    assert!(harness.get_widget(parent1_tag).ctx().is_focus_target());
+    assert!(harness.get_widget(parent1_tag).ctx().has_focus_target());
+
+    harness.focus_on(None);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildFocusChanged(false)".into(), 1),
+            ("ChildFocusChanged(false)".into(), 2),
+            ("ChildFocusChanged(false)".into(), 3),
+            ("FocusChanged(false)".into(), 1)
+        ]
+    );
+    assert!(!harness.get_widget(parent1_tag).ctx().is_focus_target());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_focus_target());
 }
