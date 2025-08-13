@@ -453,10 +453,13 @@ impl RenderRoot {
     /// Returns a list of pairs each containing the family identifier and fonts
     /// added to that family.
     pub fn register_fonts(&mut self, data: Blob<u8>) -> Vec<(FamilyId, Vec<FontInfo>)> {
-        self.global_state
+        let ret = self
+            .global_state
             .font_context
             .collection
-            .register_fonts(data, None)
+            .register_fonts(data, None);
+        self.request_layout_all();
+        ret
     }
 
     /// Redraw the window.
@@ -667,6 +670,7 @@ impl RenderRoot {
             state.needs_accessibility = true;
             state.request_paint = true;
             state.request_accessibility = true;
+            state.request_post_paint = true;
 
             let id = state.id;
             recurse_on_children(id, widget, children, |node| {
@@ -676,6 +680,27 @@ impl RenderRoot {
 
         let root_node = self.widget_arena.get_node_mut(self.root.id());
         request_render_all_in(root_node);
+        self.global_state
+            .emit_signal(RenderRootSignal::RequestRedraw);
+    }
+
+    pub(crate) fn request_layout_all(&mut self) {
+        fn request_layout_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
+            let children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
+
+            state.needs_layout = true;
+            state.request_layout = true;
+
+            let id = state.id;
+            recurse_on_children(id, widget, children, |node| {
+                request_layout_all_in(node);
+            });
+        }
+
+        let root_node = self.widget_arena.get_node_mut(self.root.id());
+        request_layout_all_in(root_node);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
     }
