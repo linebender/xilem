@@ -855,6 +855,8 @@ impl Widget for Flex {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_testing::assert_debug_panics;
+
     use super::*;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -965,19 +967,11 @@ mod tests {
         assert_eq!(after, 3.5);
     }
 
-    // TODO - fix this test
     #[test]
-    #[ignore = "Unclear what test is trying to validate"]
-    fn test_invalid_flex_params() {
-        use float_cmp::approx_eq;
-        let params = FlexParams::new(0.0, None);
-        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
-
-        let params = FlexParams::new(-0.0, None);
-        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
-
-        let params = FlexParams::new(-1.0, None);
-        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
+    fn invalid_flex_params() {
+        assert_debug_panics!(FlexParams::new(0.0, None), "Flex value should be > 0.0");
+        assert_debug_panics!(FlexParams::new(-0.0, None), "Flex value should be > 0.0");
+        assert_debug_panics!(FlexParams::new(-1.0, None), "Flex value should be > 0.0");
     }
 
     // TODO - Reduce copy-pasting?
