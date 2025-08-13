@@ -313,4 +313,24 @@ mod tests {
 
         assert_render_snapshot!(harness, "text_input_selection");
     }
+
+    #[test]
+    fn placeholder() {
+        let text_input = NewWidget::new(
+            TextInput::from_text_area(
+                TextArea::new_editable("")
+                    .with_style(StyleProperty::FontSize(14.0))
+                    .with_auto_id(),
+            )
+            .with_placeholder("HELLO WORLD"),
+        );
+
+        let mut harness = TestHarness::create_with_size(
+            default_property_set(),
+            text_input,
+            Size::new(150.0, 40.0),
+        );
+
+        assert_render_snapshot!(harness, "text_input_placeholder");
+    }
 }
