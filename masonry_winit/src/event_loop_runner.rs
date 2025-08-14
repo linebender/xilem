@@ -63,9 +63,7 @@ pub struct NewWindow {
     pub attributes: WindowAttributes,
     /// The widget which will take up the entire contents of the new window.
     pub root_widget: NewWidget<dyn Widget>,
-    /// The initial base color of the window.
-    ///
-    /// You can change the base color later using [`DriverCtx::set_window_base_color()`].
+    /// The base color of the window.
     pub base_color: Color,
 }
 
