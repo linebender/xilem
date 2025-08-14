@@ -73,13 +73,12 @@ pub struct RenderRoot {
 
     /// The widget tree; stores widgets and their states.
     pub(crate) widget_arena: WidgetArena,
-    pub(crate) debug_paint: bool,
 }
 
 /// State shared between passes.
 pub(crate) struct RenderRootState {
     /// Sink for signals to be processed by the event loop.
-    signal_sink: Box<dyn FnMut(RenderRootSignal)>,
+    pub(crate) signal_sink: Box<dyn FnMut(RenderRootSignal)>,
 
     /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
@@ -149,6 +148,8 @@ pub(crate) struct RenderRootState {
 
     /// Pass tracing configuration, used to skip tracing to limit overhead.
     pub(crate) trace: PassTracing,
+
+    /// Internal state of the widget inspector.
     pub(crate) inspector_state: InspectorState,
 
     /// Whether the next accessibility pass tree should be updated during `render()`.
@@ -158,6 +159,9 @@ pub(crate) struct RenderRootState {
     ///
     /// Kurbo coordinates are assumed to be in logical pixels
     pub(crate) scale_factor: f64,
+
+    /// Whether to paint widget's bounding boxes and other visual helpers.
+    pub(crate) debug_paint: bool,
 }
 
 pub(crate) struct MutateCallback {
@@ -338,11 +342,11 @@ impl RenderRoot {
                 },
                 access_tree_active: false,
                 scale_factor,
+                debug_paint,
             },
             widget_arena: WidgetArena {
                 nodes: TreeArena::new(),
             },
-            debug_paint,
         };
 
         if let Some(test_font_data) = test_font {
