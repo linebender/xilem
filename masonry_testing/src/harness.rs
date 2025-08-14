@@ -795,13 +795,13 @@ impl<W: Widget> TestHarness<W> {
             .unwrap_or_else(|| panic!("could not find widget '{tag}'"))
     }
 
-    /// Return the events recorded by the [`Recorder`] widget with the given tag.
+    /// Drain the events recorded by the [`Recorder`] widget with the given tag.
     ///
     /// # Panics
     ///
     /// Panics if no widget with this tag can be found.
     #[track_caller]
-    pub fn get_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) -> Vec<Record> {
+    pub fn take_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) -> Vec<Record> {
         self.get_widget(tag).inner().recording().drain()
     }
 
