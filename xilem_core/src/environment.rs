@@ -26,6 +26,7 @@ pub struct EnvironmentItem {
     pub value: Box<dyn AnyDebug>,
     // TODO: Can we/do we want to make these share an allocation?
     // TODO: How do we GC this?
+    // TODO: The change listeners currently aren't ever notified.
     change_listeners: Vec<Option<Arc<[ViewId]>>>,
 }
 

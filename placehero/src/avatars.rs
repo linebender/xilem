@@ -44,7 +44,9 @@ impl Avatars {
     ///
     ///  Requires that this View is within a [`Self::provide`] call.
     // TODO: ArcStr for URL?
-    pub(crate) fn avatar<State: 'static>(url: String) -> impl WidgetView<State> + use<State> {
+    pub(crate) fn avatar<State: 'static, Action: 'static>(
+        url: String,
+    ) -> impl WidgetView<State, Action> + use<State, Action> {
         with_context(move |this: &mut Self, _: &mut State| {
             let width = 50.px();
             let height = 50.px();
