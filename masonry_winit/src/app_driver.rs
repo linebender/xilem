@@ -8,7 +8,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
-use masonry_core::peniko::Color;
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::Window as WindowHandle;
