@@ -11,12 +11,10 @@
 
 use std::sync::Arc;
 
-use components::timeline;
-use megalodon::entities::{Account, Context, Instance, Status};
-use megalodon::megalodon::GetAccountStatusesInputOptions;
+use megalodon::entities::{Context, Instance, Status};
 use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf4};
-use xilem::core::{NoElement, View, fork, map_action};
+use xilem::core::{NoElement, View, fork, map_action, map_state};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{button, flex, label, prose, split, task_raw, worker_raw};
 use xilem::winit::error::EventLoopError;
@@ -31,7 +29,7 @@ pub(crate) use avatars::Avatars;
 pub(crate) use html_content::status_html_to_plaintext;
 
 use crate::actions::Navigation;
-use crate::components::thread;
+use crate::components::{Timeline, thread, timeline};
 
 /// Our shared API client type.
 ///
@@ -50,8 +48,7 @@ type Mastodon = Arc<mastodon::Mastodon>;
 struct Placehero {
     mastodon: Mastodon,
     instance: Option<Instance>,
-    thread_statuses: Vec<Status>,
-    account: Option<Account>,
+    timeline: Option<Timeline>,
     show_context: Option<Status>,
     context: Option<Context>,
     context_sender: Option<UnboundedSender<String>>,
@@ -75,8 +72,7 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let app_state = Placehero {
         mastodon: Arc::new(mastodon),
         instance: None,
-        account: None,
-        thread_statuses: Vec::new(),
+        timeline: None,
         show_context: None,
         context: None,
         context_sender: None,
@@ -121,8 +117,11 @@ impl Placehero {
             } else {
                 OneOf::B(prose("Loading thread"))
             }
-        } else if !self.thread_statuses.is_empty() {
-            OneOf::C(timeline(&mut self.thread_statuses))
+        } else if let Some(tl) = self.timeline.as_mut() {
+            OneOf::C(map_state(
+                timeline(tl, self.mastodon.clone()),
+                |this: &mut Self| this.timeline.as_mut().unwrap(),
+            ))
         } else {
             OneOf::D(prose("No statuses yet loaded"))
         }
@@ -148,17 +147,13 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
                     state.context = None;
                     state.show_context = None;
                 }
+                Navigation::None => {}
             },
         ),
         (
             load_instance(app_state.mastodon.clone()),
             load_account(app_state.mastodon.clone()),
             load_contexts(app_state.mastodon.clone()),
-            app_state
-                .account
-                .as_ref()
-                .map(|it| it.id.clone())
-                .map(|id| load_statuses(app_state.mastodon.clone(), id)),
         ),
     ))
 }
@@ -252,46 +247,7 @@ fn load_account(
             }
         },
         |app_state: &mut Placehero, event| match event {
-            Ok(instance) => app_state.account = Some(instance.json),
-            Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
-                todo!()
-            }
-            Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
-                todo!()
-            }
-            Err(e) => {
-                todo!("handle {e}")
-            }
-        },
-    )
-}
-
-fn load_statuses(
-    mastodon: Mastodon,
-    id: String,
-) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
-    task_raw(
-        move |result| {
-            let mastodon = mastodon.clone();
-            let id = id.clone();
-            async move {
-                // We choose not to handle the case where the event loop has ended
-                let instance_result = mastodon
-                    .get_account_statuses(
-                        id,
-                        Some(&GetAccountStatusesInputOptions {
-                            exclude_reblogs: Some(false),
-                            exclude_replies: Some(true),
-                            ..Default::default()
-                        }),
-                    )
-                    .await;
-                // Note that error handling is deferred to the on_event handler
-                drop(result.message(instance_result));
-            }
-        },
-        |app_state: &mut Placehero, event| match event {
-            Ok(instance) => app_state.thread_statuses = instance.json,
+            Ok(instance) => app_state.timeline = Some(Timeline::new_for_account(instance.json)),
             Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
                 todo!()
             }

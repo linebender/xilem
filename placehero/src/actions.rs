@@ -13,4 +13,9 @@ pub(crate) enum Navigation {
     // TODO: Maintain scroll state in the timeline.
     // TODO: More of a back stack.
     Home,
+    /// HACK: The null navigation, because Xilem's handling of optional/None actions is not good.
+    ///
+    /// We're considering something like Xilem Web's `OptionalAction` (plus
+    /// [#xilem > View Generic Action = !](https://xi.zulipchat.com/#narrow/channel/354396-xilem/topic/View.20Generic.20Action.20.3D.20!/with/534016260))
+    None,
 }
