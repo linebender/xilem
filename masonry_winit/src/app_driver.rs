@@ -111,15 +111,6 @@ impl DriverCtx<'_, '_> {
         &window.handle
     }
 
-    /// Set the base color of the window.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the window cannot be found.
-    pub fn set_window_base_color(&mut self, window_id: WindowId, base_color: Color) {
-        self.state.window_mut(window_id).base_color = base_color;
-    }
-
     /// Access the [`WindowHandle`] and [`RenderRoot`] of the given window.
     ///
     /// # Panics
