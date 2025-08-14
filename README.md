@@ -193,6 +193,19 @@ The [Rust code of conduct] applies.
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache 2.0 license, shall be licensed as noted in the [License](#license) section, without any additional terms or conditions.
 
+## Recommended Reading
+
+Throughout Xilem you will find usage a rust syntax many people are not familiar with, the `+ use<>`.
+Here's a snippet from the xilem examples:
+
+```rust
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+   // ...
+}
+```
+
+You can read more about it in [this document](https://github.com/rust-lang/rfcs/blob/master/text/3617-precise-capturing.md).
+
 ## License
 
 Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
