@@ -6,6 +6,7 @@
 // TODO: Remove any items listed as "Deferred"
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 
+mod assert_any;
 mod assert_debug_panics;
 mod debug_name;
 mod harness;
@@ -14,6 +15,7 @@ mod recorder_widget;
 mod screenshots;
 mod wrapper_widget;
 
+pub use assert_any::{assert_all_inner, assert_any_inner, assert_none_inner};
 pub use assert_debug_panics::assert_debug_panics_inner;
 pub use debug_name::DebugName;
 pub use harness::{PRIMARY_MOUSE, TestHarness, TestHarnessParams};

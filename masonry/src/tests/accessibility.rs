@@ -4,7 +4,7 @@
 use accesskit::NodeId;
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, Widget, WidgetTag};
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
+use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
 use crate::theme::default_property_set;
 use crate::widgets::SizedBox;
@@ -29,10 +29,10 @@ fn request_accessibility() {
     // Check that `Widget::accessibility()` is called for the child (which did request it)
     // but not the parent (which did not).
     let records = harness.take_records_of(target_tag);
-    assert!(records.iter().any(|r| matches!(r, Record::Accessibility)));
+    assert_any!(records, |r| matches!(r, Record::Accessibility));
 
     let records = harness.take_records_of(parent_tag);
-    assert!(records.iter().all(|r| !matches!(r, Record::Accessibility)));
+    assert_none!(records, |r| matches!(r, Record::Accessibility));
 
     // Check that `Widget::accessibility()` is not called: neither node has requested
     // an accessibility update.

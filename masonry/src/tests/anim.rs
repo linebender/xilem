@@ -3,7 +3,7 @@
 
 use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, WidgetTag};
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
+use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
 use crate::theme::default_property_set;
 use crate::widgets::SizedBox;
@@ -26,14 +26,10 @@ fn needs_anim_flag() {
     harness.animate_ms(42);
 
     let records = harness.take_records_of(target_tag);
-    assert!(
-        records
-            .iter()
-            .any(|r| matches!(r, Record::AnimFrame(42_000_000)))
-    );
+    assert_any!(records, |r| matches!(r, Record::AnimFrame(42_000_000)));
 
     let records = harness.take_records_of(parent_tag);
-    assert!(records.iter().all(|r| !matches!(r, Record::AnimFrame(_))));
+    assert_none!(records, |r| matches!(r, Record::AnimFrame(_)));
 
     harness.animate_ms(42);
 
