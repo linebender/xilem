@@ -65,9 +65,8 @@ pub struct NewWindow {
     pub root_widget: NewWidget<dyn Widget>,
     /// The initial base color of the window.
     ///
-    /// You can change the base color later using ...
+    /// You can change the base color later using [`DriverCtx::set_window_base_color()`].
     pub base_color: Color,
-    // TODO: Complete the docs above!
 }
 
 impl NewWindow {
