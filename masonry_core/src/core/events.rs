@@ -20,8 +20,10 @@ pub enum WindowEvent {
     Resize(PhysicalSize<u32>),
     /// The animation frame requested by this window must run.
     AnimFrame(Duration),
-    /// The accessibility tree must be rebuilt.
-    RebuildAccessTree,
+    /// The accessibility tree must be updated when rendering the app.
+    EnableAccessTree,
+    /// The accessibility tree is no longer updated when rendering the app.
+    DisableAccessTree,
 }
 
 /// A text-related event.

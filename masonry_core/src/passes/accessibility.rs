@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use accesskit::{Node, NodeId, Role, Tree, TreeUpdate};
-use tracing::{debug, info_span, trace};
+use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
@@ -16,7 +16,6 @@ fn build_accessibility_tree(
     default_properties: &DefaultProperties,
     tree_update: &mut TreeUpdate,
     node: ArenaMut<'_, WidgetArenaNode>,
-    rebuild_all: bool,
     scale_factor: Option<f64>,
 ) {
     let mut children = node.children;
@@ -26,11 +25,11 @@ fn build_accessibility_tree(
     let id = state.id;
     let _span = enter_span_if(global_state.trace.access, state);
 
-    if !rebuild_all && !state.needs_accessibility {
+    if !state.needs_accessibility {
         return;
     }
 
-    if (rebuild_all || state.request_accessibility) && !state.is_stashed {
+    if state.request_accessibility && !state.is_stashed {
         if global_state.trace.access {
             trace!(
                 "Building accessibility node for widget '{}' {}",
@@ -69,7 +68,6 @@ fn build_accessibility_tree(
             default_properties,
             tree_update,
             node.reborrow_mut(),
-            rebuild_all,
             None,
         );
         parent_state.merge_up(&mut node.item.state);
@@ -161,18 +159,13 @@ pub(crate) fn run_accessibility_pass(root: &mut RenderRoot, scale_factor: f64) -
 
     let root_node = root.widget_arena.get_node_mut(root.root.id());
 
-    if root.rebuild_access_tree {
-        debug!("Running ACCESSIBILITY pass with rebuild_all");
-    }
     build_accessibility_tree(
         &mut root.global_state,
         &root.default_properties,
         &mut tree_update,
         root_node,
-        root.rebuild_access_tree,
         Some(scale_factor),
     );
-    root.rebuild_access_tree = false;
 
     // TODO: make root node type customizable to support Dialog/AlertDialog roles
     // (should go hand in hand with introducing support for modal windows?)

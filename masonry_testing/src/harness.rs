@@ -336,9 +336,11 @@ impl<W: Widget> TestHarness<W> {
 
         // Set up the initial state, and clear invalidation flags.
         harness.process_window_event(WindowEvent::Resize(window_size));
+        harness.process_window_event(WindowEvent::EnableAccessTree);
         harness.animate_ms(0);
 
         let (_, tree_update) = harness.render_root.redraw();
+        let tree_update = tree_update.unwrap();
         harness
             .access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
@@ -436,6 +438,7 @@ impl<W: Widget> TestHarness<W> {
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
         let (scene, tree_update) = self.render_root.redraw();
+        let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
