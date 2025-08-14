@@ -94,11 +94,11 @@ fn main() {
         .unwrap();
     masonry_winit::app::run_with(
         event_loop,
-        vec![NewWindow {
-            id: driver.window_id,
-            attributes: window_attributes,
-            root_widget: make_widget_tree().erased(),
-        }],
+        vec![NewWindow::new(
+            driver.window_id,
+            window_attributes,
+            make_widget_tree().erased(),
+        )],
         driver,
         default_property_set(),
     )
