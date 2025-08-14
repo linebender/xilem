@@ -606,7 +606,8 @@ impl Widget for Flex {
 
         const MIN_FLEX_SUM: f64 = 0.0001;
         let gap_count = self.children.len().saturating_sub(1);
-        let bc_major = self.direction.major(bc.max());
+        let bc_major_min = self.direction.major(bc.min());
+        let bc_major_max = self.direction.major(bc.max());
 
         // ACCUMULATORS
         let mut minor = self.direction.minor(bc.min());
@@ -658,7 +659,7 @@ impl Widget for Flex {
             }
         }
 
-        let remaining_major = (bc_major - major_non_flex).max(0.0);
+        let remaining_major = (bc_major_max - major_non_flex).max(0.0);
         let px_per_flex = remaining_major / flex_sum;
 
         // MEASURE FLEX CHILDREN
@@ -766,14 +767,14 @@ impl Widget for Flex {
             }
         }
 
-        if flex_sum > MIN_FLEX_SUM && bc_major.is_infinite() {
+        if flex_sum > MIN_FLEX_SUM && bc_major_max.is_infinite() {
             tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
         let final_major = if flex_sum > MIN_FLEX_SUM || self.fill_major_axis {
-            bc_major.max(major_non_flex)
+            bc_major_max.max(major_non_flex)
         } else {
-            major_non_flex
+            bc_major_min.max(major_non_flex)
         };
 
         let my_size: Size = self.direction.pack(final_major, minor).into();
@@ -860,7 +861,7 @@ mod tests {
     use super::*;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::Label;
 
     #[test]
@@ -974,18 +975,66 @@ mod tests {
         assert_debug_panics!(FlexParams::new(-1.0, None), "Flex value should be > 0.0");
     }
 
+    #[test]
+    fn flex_row_fixed_size_only() {
+        let widget = NewWidget::new_with_props(
+            Flex::row()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_child(Label::new("world").with_auto_id())
+                .with_child(Label::new("foo").with_auto_id())
+                .with_child(Label::new("bar").with_auto_id()),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
+
+        let window_size = Size::new(200.0, 150.0);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Start);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_start");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Center);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_center");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::End);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_end");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceBetween);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_spaceBetween");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceEvenly);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_spaceEvenly");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_spaceAround");
+    }
+
     // TODO - Reduce copy-pasting?
     #[test]
     fn flex_row_cross_axis_snapshots() {
-        let widget = Flex::row()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::row()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1019,15 +1068,17 @@ mod tests {
 
     #[test]
     fn flex_row_main_axis_snapshots() {
-        let widget = Flex::row()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::row()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1076,15 +1127,17 @@ mod tests {
 
     #[test]
     fn flex_col_cross_axis_snapshots() {
-        let widget = Flex::column()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::column()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1118,15 +1171,17 @@ mod tests {
 
     #[test]
     fn flex_col_main_axis_snapshots() {
-        let widget = Flex::column()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::column()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
