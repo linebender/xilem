@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
+use masonry_core::peniko::Color;
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
 use winit::window::Window as WindowHandle;
@@ -108,6 +109,15 @@ impl DriverCtx<'_, '_> {
     pub fn window_handle(&self, window_id: WindowId) -> &WindowHandle {
         let window = self.state.window(window_id);
         &window.handle
+    }
+
+    /// Set the base color of the window.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the window cannot be found.
+    pub fn set_window_base_color(&mut self, window_id: WindowId, base_color: Color) {
+        self.state.window_mut(window_id).base_color = base_color;
     }
 
     /// Access the [`WindowHandle`] and [`RenderRoot`] of the given window.
