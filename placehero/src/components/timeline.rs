@@ -168,7 +168,7 @@ impl Timeline {
     }
 }
 
-/// The component for a single status in a [`timeline`].
+/// The component for a single status in a [`Timeline`].
 ///
 /// These statuses are currently not currently rendered with a reply indicator, media, etc.
 /// This is planned. Reblogged statuses are also not currently handled correctly.
