@@ -100,7 +100,7 @@ impl Timeline {
                     } else {
                         // We would like to cache the status, but this is currently not supported due to `Avatars`
                         // (and everything environment-system) not being properly rebuild aware.
-                        // This is planned, but doesn't happen
+                        // This is planned, but the infra isn't in place yet.
                         // match timeline.cached_statuses.entry(idx) {
                         //     hash_map::Entry::Occupied(occupied_entry) => occupied_entry.get().clone(),
                         //     hash_map::Entry::Vacant(vacant_entry) => vacant_entry
