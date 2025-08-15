@@ -8,8 +8,8 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, Axis, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx,
-    NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut,
+    NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut,
+    PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
@@ -129,7 +129,7 @@ impl Widget for ScrollBar {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { state, .. } => {
+            PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
@@ -147,20 +147,20 @@ impl Widget for ScrollBar {
                 };
                 ctx.request_render();
             }
-            PointerEvent::Move(u) => {
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if let Some(grab_anchor) = self.grab_anchor {
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     self.cursor_progress = self.progress_from_mouse_pos(
                         ctx.size(),
                         cursor_min_length,
                         grab_anchor,
-                        ctx.local_position(u.current.position),
+                        ctx.local_position(current.position),
                     );
                     self.moved = true;
                 }
                 ctx.request_render();
             }
-            PointerEvent::Up { .. } | PointerEvent::Cancel(..) => {
+            PointerEvent::Up(..) | PointerEvent::Cancel(..) => {
                 self.grab_anchor = None;
                 ctx.request_render();
             }

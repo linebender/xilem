@@ -10,8 +10,9 @@ use vello::kurbo::{Line, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
-    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::peniko::Color;
 use crate::properties::types::{AsUnit, Length};
@@ -395,7 +396,7 @@ where
     ) {
         if self.draggable {
             match event {
-                PointerEvent::Down { state, .. } => {
+                PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                     let pos = ctx.local_position(state.position);
                     if self.bar_hit_test(ctx.size(), pos) {
                         ctx.set_handled();
@@ -407,9 +408,9 @@ where
                         } - self.bar_position(ctx.size());
                     }
                 }
-                PointerEvent::Move(u) => {
+                PointerEvent::Move(PointerUpdate { current, .. }) => {
                     if ctx.is_active() {
-                        let pos = ctx.local_position(u.current.position);
+                        let pos = ctx.local_position(current.position);
                         // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => Point {
