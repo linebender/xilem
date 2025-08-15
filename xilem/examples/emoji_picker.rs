@@ -8,7 +8,7 @@ use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
 use xilem::view::{
-    Axis, FlexExt, FlexSpacer, GridExt, button, column, grid, label, prose, row, sized_box,
+    FlexExt, FlexSpacer, GridExt, button, column, grid, label, prose, row, sized_box,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,

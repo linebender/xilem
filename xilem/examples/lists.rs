@@ -4,7 +4,7 @@
 //! Displaying a variable length list is achieved using a [Vec] `FlexSequence`.
 
 use winit::error::EventLoopError;
-use xilem::view::{Axis, MainAxisAlignment, button, column, prose};
+use xilem::view::{MainAxisAlignment, button, column, prose};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 #[derive(Default)]
