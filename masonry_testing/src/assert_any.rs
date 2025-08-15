@@ -1,35 +1,13 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-/// Helper macro, checks that at least one item of the given `IntoIterator` matches the given predicate.
-#[macro_export]
-macro_rules! assert_any {
-    ($iter:expr, $pred:expr $(,)?) => {
-        $crate::assert_any_inner($iter, $pred)
-    };
-}
-
-/// Helper macro, checks that all items of the given `IntoIterator` match the given predicate.
-#[macro_export]
-macro_rules! assert_all {
-    ($iter:expr, $pred:expr $(,)?) => {
-        $crate::assert_all_inner($iter, $pred)
-    };
-}
-
-/// Helper macro, checks that no item of the given `IntoIterator` matches the given predicate.
-#[macro_export]
-macro_rules! assert_none {
-    ($iter:expr, $pred:expr $(,)?) => {
-        $crate::assert_none_inner($iter, $pred)
-    };
-}
-
 use std::fmt::{Debug, Write};
 
+/// Assert that `pred` returns true for at least one item in `iter`.
+///
+/// This provides a panic message showing the values, to aid debugging.
 #[track_caller]
-#[doc(hidden)]
-pub fn assert_any_inner<I: IntoIterator>(iter: I, mut pred: impl FnMut(I::Item) -> bool)
+pub fn assert_any<I: IntoIterator>(iter: I, mut pred: impl FnMut(I::Item) -> bool)
 where
     I::Item: Debug,
 {
@@ -46,9 +24,11 @@ where
     panic!("assertion failed: no item matched predicate in [\n{list_contents}]");
 }
 
+/// Assert that `pred` returns true for every item in `iter`.
+///
+/// This provides an error message showing which values failed the condition, to aid debugging.
 #[track_caller]
-#[doc(hidden)]
-pub fn assert_all_inner<I: IntoIterator>(iter: I, mut pred: impl FnMut(I::Item) -> bool)
+pub fn assert_all<I: IntoIterator>(iter: I, mut pred: impl FnMut(I::Item) -> bool)
 where
     I::Item: Debug,
 {
@@ -73,9 +53,11 @@ where
     }
 }
 
+/// Assert that `pred` returns false for every item in `iter`.
+///
+/// This provides an error message showing which values succeeded the condition, to aid debugging.
 #[track_caller]
-#[doc(hidden)]
-pub fn assert_none_inner<I: IntoIterator>(iter: I, mut pred: impl FnMut(I::Item) -> bool)
+pub fn assert_none<I: IntoIterator>(iter: I, mut pred: impl FnMut(I::Item) -> bool)
 where
     I::Item: Debug,
 {
