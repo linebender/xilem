@@ -19,7 +19,7 @@ use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::style::Style as _;
 use xilem::view::{
-    ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
+    ObjectFit, ZStackExt, column, image, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 use xilem_core::one_of::Either;
@@ -116,7 +116,7 @@ impl VirtualCats {
         } else {
             Either::B(sized_box(spinner()).width(80.px()).height(80.px()))
         };
-        fork(flex((prose(item.message.clone()), img)), task)
+        fork(column((prose(item.message.clone()), img)), task)
     }
 
     fn view(&mut self) -> impl WidgetView<Self> + use<> {

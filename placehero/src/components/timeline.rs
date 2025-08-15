@@ -11,7 +11,7 @@ use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
 use xilem::style::Style;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use xilem::view::{flex, prose, sized_box, spinner, virtual_scroll, worker_raw};
+use xilem::view::{column, prose, sized_box, spinner, virtual_scroll, worker_raw};
 use xilem::{TextAlign, WidgetView};
 
 use super::base_status;
@@ -187,7 +187,7 @@ pub(crate) fn timeline_status(status: &Status) -> impl WidgetView<Timeline, Navi
     } else {
         (None, status)
     };
-    sized_box(flex((info_line, base_status(primary_status))))
+    sized_box(column((info_line, base_status(primary_status))))
         .border(css::WHITE, 2.0)
         .padding(10.0)
         .corner_radius(5.)

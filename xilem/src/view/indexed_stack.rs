@@ -28,7 +28,7 @@ use crate::style::Style;
 /// # Example
 /// ```
 /// use xilem::view::{
-///     button, indexed_stack, label, flex
+///     button, column, indexed_stack, label
 /// };
 ///
 /// #[derive(Default)]
@@ -40,11 +40,11 @@ use crate::style::Style;
 ///
 /// indexed_stack(
 ///     (   
-///         flex((
+///         column((
 ///             label("Tab A"),
 ///             button("Move to tab B", |state: &mut State| state.tab = 1)
 ///         )),
-///         flex((
+///         column((
 ///             label("Tab B"),
 ///             button("Move to tab A", |state: &mut State| state.tab = 0)
 ///         )),

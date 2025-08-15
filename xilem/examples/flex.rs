@@ -6,7 +6,7 @@
 use masonry::properties::types::AsUnit;
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::view::{FlexExt as _, FlexSpacer, Label, button, flex_row, label, sized_box};
+use xilem::view::{FlexExt as _, FlexSpacer, Label, button, label, row, sized_box};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
@@ -20,7 +20,7 @@ fn big_button(
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
-    flex_row((
+    row((
         FlexSpacer::Fixed(30.px()),
         big_button("-", |data| {
             *data -= 1;
