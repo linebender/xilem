@@ -196,11 +196,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![NewWindow {
-            id: WindowId::next(),
-            attributes: window_attributes,
-            root_widget: NewWidget::new(CustomWidget(my_string)).erased(),
-        }],
+        vec![NewWindow::new(
+            WindowId::next(),
+            window_attributes,
+            NewWidget::new(CustomWidget(my_string)).erased(),
+        )],
         Driver,
         default_property_set(),
     )
