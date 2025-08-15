@@ -3,6 +3,7 @@
 
 //! Types needed for running a Masonry app.
 
+mod layer_stack;
 mod render_root;
 mod tracing_backend;
 
