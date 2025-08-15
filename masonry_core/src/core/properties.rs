@@ -4,6 +4,7 @@
 use std::any::TypeId;
 use std::collections::HashMap;
 use std::default::Default;
+use std::fmt::Debug;
 
 use crate::core::Widget;
 use crate::util::AnyMap;
@@ -17,7 +18,7 @@ use crate::util::AnyMap;
 /// as a property.
 /// That information is deliberately not encoded in the type system.
 /// We might change that in a future version.
-pub trait Property: Default + Send + Sync + 'static {
+pub trait Property: Debug + Default + Send + Sync + 'static {
     /// A static reference to a default value.
     ///
     /// Should be the same as [`Default::default()`].
@@ -102,6 +103,18 @@ impl Properties {
     /// Remove property `P`. Returns the previous value if `P` was set.
     pub fn remove<P: Property>(&mut self) -> Option<P> {
         self.map.remove::<P>()
+    }
+}
+
+impl Debug for Properties {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut map = f.debug_map();
+
+        for (key, value) in self.map.as_raw().iter() {
+            map.entry(key, value);
+        }
+
+        map.finish()
     }
 }
 
