@@ -20,9 +20,12 @@ use crate::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padd
 use crate::theme::DEFAULT_GAP;
 use crate::util::{debug_panic, fill, include_screenshot, stroke};
 
-/// A container with either horizontal or vertical layout.
+/// A flexible container with either horizontal or vertical layout.
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
+///
+/// That said, if you don't need children with a size based on available space or spacers,
+/// you can use the simpler [`Stack`](crate::widgets::Stack) instead.
 ///
 #[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
@@ -530,7 +533,11 @@ fn new_flex_child(params: FlexParams, child: WidgetPod<dyn Widget>) -> Child {
     }
 }
 
-fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> (f64, f64) {
+pub(crate) fn get_spacing(
+    alignment: MainAxisAlignment,
+    extra: f64,
+    child_count: usize,
+) -> (f64, f64) {
     let space_before;
     let space_between;
     match alignment {
