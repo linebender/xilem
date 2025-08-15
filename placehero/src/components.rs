@@ -13,7 +13,7 @@ use crate::actions::Navigation;
 use crate::{Avatars, status_html_to_plaintext};
 
 mod timeline;
-pub(crate) use timeline::timeline;
+pub(crate) use timeline::Timeline;
 
 mod thread;
 pub(crate) use thread::thread;
