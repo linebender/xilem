@@ -136,7 +136,7 @@ impl Timeline {
                     }
                 },
                 |timeline: &mut Self, sender| {
-                    // `worker` creates a channel pair for us; we need to keep out own track
+                    // `worker` creates a channel pair for us; we need to keep our own track
                     // of the sender
                     timeline.requests = Some(sender);
                 },
