@@ -29,7 +29,7 @@ pub(crate) use avatars::Avatars;
 pub(crate) use html_content::status_html_to_plaintext;
 
 use crate::actions::Navigation;
-use crate::components::{Timeline, thread, timeline};
+use crate::components::{Timeline, thread};
 
 /// Our shared API client type.
 ///
@@ -117,9 +117,12 @@ impl Placehero {
             } else {
                 OneOf::B(prose("Loading thread"))
             }
-        } else if let Some(tl) = self.timeline.as_mut() {
+        } else if let Some(timline) = self.timeline.as_mut() {
             OneOf::C(map_state(
-                timeline(tl, self.mastodon.clone()),
+                timline.view(self.mastodon.clone()),
+                // In the current edition of the app, the timeline is never removed
+                // If it ever is, we'll need to be more careful here.
+                // The patterns are still in flux.
                 |this: &mut Self| this.timeline.as_mut().unwrap(),
             ))
         } else {

@@ -4,14 +4,18 @@
 use megalodon::Megalodon;
 use megalodon::entities::{Account, Status};
 use megalodon::megalodon::GetAccountStatusesInputOptions;
-use xilem::WidgetView;
 use xilem::core::fork;
+use xilem::core::one_of::{OneOf, OneOf3};
+use xilem::masonry::core::ArcStr;
+use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
 use xilem::style::Style;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use xilem::view::{flex, prose, sized_box, virtual_scroll, worker_raw};
+use xilem::view::{flex, prose, sized_box, spinner, virtual_scroll, worker_raw};
+use xilem::{TextAlign, WidgetView};
 
 use super::base_status;
+use crate::Mastodon;
 use crate::actions::Navigation;
 
 const BUFFER: usize = 3;
@@ -30,13 +34,15 @@ pub(crate) struct Timeline {
     start_index: i64,
     /// Whether we're currently expecting a response.
     pending_id: bool,
+    /// Whether we've reached the end of this timeline
+    at_end: bool,
     /// The sender for newly requested items.
     requests: Option<UnboundedSender<TimelineContinuationRequest>>,
     // We can't cache here due to Avatars not being cache busting ready.
     // /// Cached views for each status, as their input won't change.
     // cached_statuses: HashMap<i64, Arc<AnyWidgetView<Timeline, Navigation>>>,
     // TODO: Generalise to e.g. the explore page.
-    user_id: String,
+    user_id: ArcStr,
 }
 
 impl Timeline {
@@ -46,102 +52,120 @@ impl Timeline {
             start_index: 0,
             pending_id: false,
             requests: None,
-            user_id: account.id,
+            user_id: account.id.into(),
+            at_end: false,
         }
     }
-}
 
-/// A single timeline, i.e. the posts sent by a single user.
-///
-/// These statuses are currently not rendered with a reply indicator, etc.
-/// and own their own boxes
-pub(crate) fn timeline(
-    timeline: &mut Timeline,
-    mastodon: crate::Mastodon,
-) -> impl WidgetView<Timeline, Navigation> + use<> {
-    let user = timeline.user_id.clone();
-    fork(
-        virtual_scroll(
-            timeline.start_index
-                ..(timeline.start_index + i64::try_from(timeline.statuses.len()).unwrap()),
-            |timeline: &mut Timeline, idx| {
-                let local_idx = usize::try_from(idx - timeline.start_index).unwrap();
-                if local_idx + BUFFER >= timeline.statuses.len() && !timeline.pending_id {
-                    timeline.pending_id = true;
-                    timeline
-                        .requests
-                        .as_ref()
-                        .unwrap()
-                        .send(TimelineContinuationRequest {
-                            max_id: Some(timeline.statuses.last().unwrap().id.clone()),
-                        })
-                        .unwrap();
-                }
-                timeline_status(&timeline.statuses[local_idx])
-                // match timeline.cached_statuses.entry(idx) {
-                //     hash_map::Entry::Occupied(occupied_entry) => occupied_entry.get().clone(),
-                //     hash_map::Entry::Vacant(vacant_entry) => vacant_entry
-                //         .insert(Arc::new(timeline_status(&timeline.statuses[local_idx])))
-                //         .clone(),
-                // }
-            },
-        ),
-        worker_raw(
-            move |proxy, mut recv: UnboundedReceiver<TimelineContinuationRequest>| {
-                let user = user.clone();
-                let mastodon = mastodon.clone();
-                async move {
-                    while let Some(next) = recv.recv().await {
-                        let result = mastodon
-                            .get_account_statuses(
-                                user.clone(),
-                                Some(&GetAccountStatusesInputOptions {
-                                    max_id: next.max_id,
-                                    exclude_reblogs: Some(false),
-                                    exclude_replies: Some(true),
-                                    ..Default::default()
-                                }),
-                            )
-                            .await;
-                        drop(proxy.message(result));
+    pub(crate) fn view(&mut self, mastodon: Mastodon) -> impl WidgetView<Self, Navigation> + use<> {
+        // We clone the relevant user id for use in `worker_raw`
+        // (We plan for the function which makes the future to have access to the app state, but that hasn't happened yet)
+        let user = self.user_id.clone();
+        fork(
+            virtual_scroll(
+                // Show the statuses which have been loaded
+                // We currently never unload previous statuses (note that the widgets but not the remainder are)
+                // +1 to allow room for the spinner.
+                // Note that we also launch the very first initial request from the spinner
+                self.start_index
+                    ..(self.start_index + i64::try_from(self.statuses.len()).unwrap() + 1),
+                |timeline: &mut Self, idx| {
+                    let local_idx = usize::try_from(idx - timeline.start_index).unwrap();
+                    // If we're "close" to the last downloaded item.
+                    if local_idx + BUFFER >= timeline.statuses.len()
+                        // And don't already have a request in flight
+                        && !timeline.pending_id
+                        && !timeline.at_end
+                    {
+                        // Kick off the next request
+                        timeline.pending_id = true;
+                        timeline
+                            .requests
+                            .as_ref()
+                            .unwrap()
+                            .send(TimelineContinuationRequest {
+                                // The max id is the newest status which will be excluded; i.e. we request
+                                // all the statuses from before the last loaded one
+                                // (If we haven't loaded any yet, we just load the first n)
+                                max_id: timeline.statuses.last().map(|it| it.id.clone()),
+                            })
+                            .unwrap();
                     }
-                }
-            },
-            |timeline: &mut Timeline, sender| {
-                timeline.requests = Some(sender);
-                if timeline.statuses.is_empty() {
-                    // TODO: This is a nasty hack
-                    timeline
-                        .requests
-                        .as_ref()
-                        .unwrap()
-                        .send(TimelineContinuationRequest { max_id: None })
-                        .unwrap();
-                }
-            },
-            |timeline: &mut Timeline, resp| {
-                match resp {
-                    Ok(mut instance) => {
-                        // If we're at the oldest post, there's no use making the same request again
-                        if !instance.json.is_empty() {
-                            timeline.pending_id = false;
+                    if local_idx == timeline.statuses.len() {
+                        if timeline.at_end {
+                            OneOf3::A(prose("End of timeline.").text_alignment(TextAlign::Center))
+                        } else {
+                            OneOf::B(sized_box(spinner()).width(50.px()).height(50.px()))
                         }
-                        timeline.statuses.append(&mut instance.json);
+                    } else {
+                        // We would like to cache the status, but this is currently not supported due to `Avatars`
+                        // (and everything environment-system) not being properly rebuild aware.
+                        // This is planned, but doesn't happen
+                        // match timeline.cached_statuses.entry(idx) {
+                        //     hash_map::Entry::Occupied(occupied_entry) => occupied_entry.get().clone(),
+                        //     hash_map::Entry::Vacant(vacant_entry) => vacant_entry
+                        //         .insert(Arc::new(timeline_status(&timeline.statuses[local_idx])))
+                        //         .clone(),
+                        // }
+                        OneOf::C(timeline_status(&timeline.statuses[local_idx]))
                     }
-                    Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
-                        todo!()
+                },
+            ),
+            worker_raw(
+                move |proxy, mut recv: UnboundedReceiver<TimelineContinuationRequest>| {
+                    let user = user.clone();
+                    let mastodon = mastodon.clone();
+                    async move {
+                        // For every request we receive (there should only ever be one
+                        // at a time, but worker only supports unbounded queues at the moment)
+                        // we load the requested statuses
+                        while let Some(next) = recv.recv().await {
+                            let result = mastodon
+                                .get_account_statuses(
+                                    (*user).into(),
+                                    Some(&GetAccountStatusesInputOptions {
+                                        max_id: next.max_id,
+                                        exclude_reblogs: Some(false),
+                                        exclude_replies: Some(true),
+                                        ..Default::default()
+                                    }),
+                                )
+                                .await;
+                            drop(proxy.message(result));
+                        }
                     }
-                    Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
-                        todo!()
+                },
+                |timeline: &mut Self, sender| {
+                    // `worker` creates a channel pair for us; we need to keep out own track
+                    // of the sender
+                    timeline.requests = Some(sender);
+                },
+                |timeline: &mut Self, resp| {
+                    match resp {
+                        Ok(mut instance) => {
+                            // If we get an empty response, that means we're at the end of
+                            // the timeline (...probably, this is undocumented)
+                            if instance.json.is_empty() {
+                                timeline.at_end = true;
+                            }
+                            timeline.pending_id = false;
+                            timeline.statuses.append(&mut instance.json);
+                        }
+                        Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
+                            todo!()
+                        }
+                        Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
+                            todo!()
+                        }
+                        Err(e) => {
+                            todo!("handle {e}")
+                        }
                     }
-                    Err(e) => {
-                        todo!("handle {e}")
-                    }
-                }
-                Navigation::None
-            },
-        ),
-    )
+                    Navigation::None
+                },
+            ),
+        )
+    }
 }
 
 /// The component for a single status in a [`timeline`].
