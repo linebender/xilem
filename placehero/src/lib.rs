@@ -16,7 +16,7 @@ use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf4};
 use xilem::core::{NoElement, View, fork, map_action, map_state};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use xilem::view::{button, flex, label, prose, split, task_raw, worker_raw};
+use xilem::view::{button, column, label, prose, split, task_raw, worker_raw};
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
 
@@ -97,7 +97,7 @@ impl Placehero {
             } else {
                 None
             };
-            Either::A(flex((
+            Either::A(column((
                 label("Connected to:"),
                 // TODO: We should probably use an ArcStr for this?
                 prose(instance.title.as_str()),

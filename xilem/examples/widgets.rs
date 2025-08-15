@@ -9,7 +9,7 @@ use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, button, checkbox, flex, flex_row, indexed_stack, progress_bar, sized_box,
+    FlexSpacer, button, checkbox, column, indexed_stack, progress_bar, row, sized_box,
 };
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::lens;
@@ -33,7 +33,7 @@ enum GalleryTab {
 }
 
 fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
-    flex((
+    column((
         progress_bar(data),
         checkbox(
             "set indeterminate progress",
@@ -63,9 +63,9 @@ fn checkbox_view(data: bool) -> impl WidgetView<bool> {
 fn border_box<State: 'static, Action: 'static>(
     inner: impl WidgetView<State, Action>,
 ) -> impl WidgetView<State, Action> {
-    sized_box(flex_row((
+    sized_box(row((
         FlexSpacer::Flex(1.),
-        flex((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
+        column((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
         FlexSpacer::Flex(1.),
     )))
     .border(Color::WHITE, 2.)
@@ -77,8 +77,8 @@ fn border_box<State: 'static, Action: 'static>(
 fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
-        flex((
-            flex_row((
+        column((
+            row((
                 button("Progress", |data: &mut WidgetGallery| {
                     data.tab = GalleryTab::Progress;
                 })

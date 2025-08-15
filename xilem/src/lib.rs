@@ -26,7 +26,7 @@
 //!
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
-//! use xilem::view::{button, flex, label};
+//! use xilem::view::{Axis, button, flex, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 //!
 //! #[derive(Default)]
@@ -35,7 +35,7 @@
 //! }
 //!
 //! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
-//!     flex((
+//!     flex(Axis::Vertical, (
 //!         label(format!("{}", data.num)),
 //!         button("increment", |data: &mut Counter| data.num += 1),
 //!     ))
