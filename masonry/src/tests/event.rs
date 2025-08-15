@@ -40,10 +40,9 @@ fn pointer_event() {
     harness.mouse_move_to(button_id);
 
     let records = harness.take_records_of(button_tag);
-    assert_any!(records, |r| matches!(
-        r,
-        Record::PointerEvent(PointerEvent::Move(_))
-    ));
+    assert_any(records, |r| {
+        matches!(r, Record::PointerEvent(PointerEvent::Move(_)))
+    });
 }
 
 #[test]
@@ -67,9 +66,9 @@ fn pointer_event_bubbling() {
         matches!(record, Record::PointerEvent(PointerEvent::Down { .. }))
     }
 
-    assert_any!(harness.take_records_of(button_tag), is_pointer_down);
-    assert_any!(harness.take_records_of(parent_tag), is_pointer_down);
-    assert_any!(harness.take_records_of(grandparent_tag), is_pointer_down);
+    assert_any(harness.take_records_of(button_tag), is_pointer_down);
+    assert_any(harness.take_records_of(parent_tag), is_pointer_down);
+    assert_any(harness.take_records_of(grandparent_tag), is_pointer_down);
 }
 
 #[test]
@@ -115,10 +114,9 @@ fn synthetic_cancel() {
     harness.set_disabled(target_tag, true);
 
     let records = harness.take_records_of(target_tag);
-    assert_any!(records, |r| matches!(
-        r,
-        Record::PointerEvent(PointerEvent::Cancel(_))
-    ));
+    assert_any(records, |r| {
+        matches!(r, Record::PointerEvent(PointerEvent::Cancel(_)))
+    });
 }
 
 #[test]
@@ -217,10 +215,9 @@ fn pointer_cancel_on_window_blur() {
     harness.process_text_event(TextEvent::WindowFocusChange(false));
 
     let records = harness.take_records_of(target_tag);
-    assert_any!(records, |r| matches!(
-        r,
-        Record::PointerEvent(PointerEvent::Cancel(..))
-    ));
+    assert_any(records, |r| {
+        matches!(r, Record::PointerEvent(PointerEvent::Cancel(..)))
+    });
 }
 
 #[test]
@@ -280,7 +277,7 @@ fn text_event() {
     harness.focus_on(Some(target_id));
     harness.keyboard_type_chars("A");
     let records = harness.take_records_of(target_tag);
-    assert_any!(records, |r| matches!(r, Record::TextEvent(_)));
+    assert_any(records, |r| matches!(r, Record::TextEvent(_)));
 }
 
 #[test]
@@ -307,9 +304,9 @@ fn text_event_bubbling() {
         matches!(record, Record::TextEvent(TextEvent::Keyboard(_)))
     }
 
-    assert_any!(harness.take_records_of(target_tag), is_keyboard_event);
-    assert_any!(harness.take_records_of(parent_tag), is_keyboard_event);
-    assert_any!(harness.take_records_of(grandparent_tag), is_keyboard_event);
+    assert_any(harness.take_records_of(target_tag), is_keyboard_event);
+    assert_any(harness.take_records_of(parent_tag), is_keyboard_event);
+    assert_any(harness.take_records_of(grandparent_tag), is_keyboard_event);
 }
 
 #[test]
@@ -337,7 +334,7 @@ fn text_event_fallback() {
     harness.focus_on(None);
     harness.keyboard_type_chars("A");
     let records = harness.take_records_of(target_tag);
-    assert_any!(records, |r| matches!(r, Record::TextEvent(_)));
+    assert_any(records, |r| matches!(r, Record::TextEvent(_)));
 
     // Unless it's disabled.
     harness.set_disabled(target_tag, true);
@@ -426,9 +423,9 @@ fn access_event_bubbling() {
         )
     }
 
-    assert_any!(harness.take_records_of(target_tag), is_access_click);
-    assert_any!(harness.take_records_of(parent_tag), is_access_click);
-    assert_any!(harness.take_records_of(grandparent_tag), is_access_click);
+    assert_any(harness.take_records_of(target_tag), is_access_click);
+    assert_any(harness.take_records_of(parent_tag), is_access_click);
+    assert_any(harness.take_records_of(grandparent_tag), is_access_click);
 }
 
 #[test]

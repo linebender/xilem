@@ -26,10 +26,10 @@ fn needs_anim_flag() {
     harness.animate_ms(42);
 
     let records = harness.take_records_of(target_tag);
-    assert_any!(records, |r| matches!(r, Record::AnimFrame(42_000_000)));
+    assert_any(records, |r| matches!(r, Record::AnimFrame(42_000_000)));
 
     let records = harness.take_records_of(parent_tag);
-    assert_none!(records, |r| matches!(r, Record::AnimFrame(_)));
+    assert_none(records, |r| matches!(r, Record::AnimFrame(_)));
 
     harness.animate_ms(42);
 

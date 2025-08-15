@@ -540,10 +540,9 @@ fn ime_start_stop() {
     harness.set_disabled(textbox_tag, true);
 
     let records = harness.take_records_of(textbox_tag);
-    assert_any!(records, |r| matches!(
-        r,
-        Record::TextEvent(TextEvent::Ime(Ime::Disabled))
-    ));
+    assert_any(records, |r| {
+        matches!(r, Record::TextEvent(TextEvent::Ime(Ime::Disabled)))
+    });
 
     assert!(!harness.has_ime_session());
 }
@@ -623,10 +622,9 @@ fn lose_hovered_on_pointer_leave_or_cancel() {
     assert!(!harness.get_widget(button_tag).ctx().is_hovered());
 
     let records = harness.take_records_of(button_tag);
-    assert_any!(records, |r| matches!(
-        r,
-        Record::Update(Update::HoveredChanged(false))
-    ));
+    assert_any(records, |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(false)))
+    });
 
     // Hover button again
     harness.mouse_move_to(button_id);
@@ -639,10 +637,9 @@ fn lose_hovered_on_pointer_leave_or_cancel() {
     assert!(!harness.get_widget(button_tag).ctx().is_hovered());
 
     let records = harness.take_records_of(button_tag);
-    assert_any!(records, |r| matches!(
-        r,
-        Record::Update(Update::HoveredChanged(false))
-    ));
+    assert_any(records, |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(false)))
+    });
 }
 
 #[test]
