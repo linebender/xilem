@@ -11,7 +11,7 @@
 //! use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetPod};
 //! use masonry::dpi::LogicalSize;
 //! use masonry::theme::default_property_set;
-//! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow};
+//! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 //! use masonry_winit::winit::window::Window;
 //!
 //! struct Driver {
@@ -51,8 +51,7 @@
 //!         .unwrap();
 //!     masonry_winit::app::run_with(
 //!         event_loop,
-//!         vec![NewWindow::new_with_id(
-//!             driver.window_id,
+//!         vec![NewWindow::new(
 //!             window_attributes,
 //!             NewWidget::new(main_widget).erased(),
 //!         )],
