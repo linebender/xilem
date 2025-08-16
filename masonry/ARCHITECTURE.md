@@ -2,7 +2,7 @@
 
 Masonry is a framework that aims to provide the foundation for Rust GUI libraries.
 
-Developers trying to write immediate-mode GUIs, Elm-architecture GUIs, functional reactive GUIs, etc, can import Masonry and get a platform to create windows (using Winit as a backend) each with a tree of widgets. Each widget has to implement the `Widget` trait that Masonry provides.
+Developers trying to write immediate-mode GUIs, Elm-architecture GUIs, functional reactive GUIs, etc, can import Masonry and get a platform to create windows (often using Winit as a backend) each with a tree of widgets. Each widget has to implement the `Widget` trait that Masonry provides.
 
 
 ## High-level goals
@@ -11,53 +11,77 @@ Masonry has some opinionated design goals:
 
 - **Be dumb.** As a general rule, Masonry doesn't do "algorithms". It has no reconciliation logic, no behind-the-scenes dataflow, no clever optimizations, etc. It tries to be efficient, but that efficiency comes from well-designed interfaces and well-placed abstraction boundaries. High-level logic should be implemented in downstream crates.
 - **No mutability tricks.** Masonry uses no unsafe code and as few cells/mutexes as possible. It's designed to work within Rust's ownership system, not to bypass it. While it relies on the `tree_arena` crate in this repository which *does* perform some mutability tricks, the resulting usage patterns are still very rust-like.
-- **Facilitate testing.** Masonry implements a `TestHarness` type that helps users write unit tests, including tests with simulated user interactions and screenshot tests. In general, every feature should be designed with easy-to-write high-reliability tests in mind.
+- **Facilitate testing.** The `masonry_testing` crate provides a `TestHarness` type that helps users write unit tests, including tests with simulated user interactions and screenshot tests. In general, every feature should be designed with easy-to-write high-reliability tests in mind.
 - **Facilitate debugging.** GUI app bugs are often easy to fix, but extremely painful to track down. GUI framework bugs are worse. Masonry should facilitate reproducing bugs and pinpointing which bit of code they come from.
 - **Provide reflection.** Masonry should help developers surface some of the inherent structure in GUI programs. It should provide tools out-of-the-box to get information about the widget tree, performance indicators, etc. It should also provide accessibility data out-of-the-box.
+- **Be well-tested:** Masonry doesn't just provide lots of testing tools, it also has a lot of tests. These are a core part of the Masonry development experience.
 
 
 ## Code layout
 
-### `src/core/`
+The Masonry project includes these crates in the Xilem repository:
+
+- **`masonry_core`:** includes the core traits, types and abstractions.
+- **`masonry_testing`:** includes a harness, helper macros and functions, etc, for testing apps builts with Masonry.
+- **`masonry`:** includes a baseline set of widgets and properties, a default theme, unit tests for widgets, and unit tests for `masonry_core`.
+- **`masonry_winit`:** the winit backend.
+
+### `masonry_core/src/core/`
 
 Most widget-related code, including the `Widget` trait, its context types, event types, and the `WidgetRef`, `WidgetMut`, and `WidgetPod` types.
 
-#### `src/core/widget_state.rs`
+#### `masonry_core/src/core/widget_state.rs`
 
 Contains the WidgetState type, around which a lot of internal code is based.
 
 `WidgetState` is one of the most important internal types in Masonry.
 Understanding Masonry pass code will likely be easier if you read `WidgetState` documentation first.
 
-### `src/app/`
+### `masonry_core/src/app/tracing_backend.rs`
 
-Code for creating a Masonry app, including:
+Code for setting up a default configuration of the `tracing` crate.
 
-- `event_loop_runner.rs` - glue code between Masonry and winit.
-- `render_root.rs` - Masonry's composition root. See **General architecture** section.
+### `masonry_core/src/app/render_root.rs`
 
-### `src/passes/`
+Masonry's composition root. See **General architecture** section.
+
+### `masonry_core/src/passes/`
 
 Masonry's passes are computations that run on the entire widget tree (iff invalidation flags are set) once per frame.
 
 `event.rs` and `update.rs` include a bunch of related passes. Every other file only includes one pass. `mod.rs` has a utility functions shared between multiple passes.
 
-### `src/doc/`
+### `masonry_core/src/doc/`
 
-Documentation for the entire crate. In other projects, this would be an `mdbook` doc, but we choose to directly inline the doc, so that `cargo test` runs on it.
+Low-level documentation for masonry's cross-cutting concepts.
+Includes documentation for the pass system, and definitions for various terms used in other places.
 
-### `src/testing/`
+### `masonry_core/src/`
 
 Contains the TestHarness type, various helper widgets for writing tests, and the snapshot testing code.
 
-### `src/widgets/`
+### `masonry/src/widgets/`
 
 A list of basic widgets, each defined in a single file.
 
+### `masonry/src/properties/`
+
+A list of properties, which are small plain-old-data types used to customize a widget's look and behavior.
+
+#### `masonry/src/properties/types/`
+
+A list of vocabulary types used in multiple properties.
+
+### `masonry/src/doc/`
+
+High-level tutorial for Masonry. In other projects, this would be an `mdbook` doc, but we choose to directly inline the doc, so that `cargo test` runs on it directly.
+
+### `masonry_winit/src/event_loop_runner.rs`
+
+The bulk of the integration between Masonry and winit.
+
 
 ## Module organization principles
-
-(Some of these principles aren't actually applied in the codebase yet. See <https://github.com/linebender/xilem/issues/367>.)
 
 ### Module structure
 
@@ -99,7 +123,7 @@ The **Widget** trait is defined in `src/widget/widget.rs`. Most of the widget-re
 
 A **WidgetPod** is the main way to store a child for container widgets. In general, the widget hierarchy looks like a tree of container widgets, with each container owning a WidgetPod or a Vec of WidgetPod or something similar.
 
-When RenderRoot runs a pass (on_xxx_event/update_xxx/paint), it usually iterates over the widget tree in depth-first pre-order, and calls the matching method is called on the root WidgetPod, which recurses to its widget, which calls the same method on each of its children.
+When RenderRoot runs a pass (on_xxx_event/update_xxx/paint), it iterates over the widget tree, usually in depth-first pre-order, and calls the matching method on each concerned widget.
 
 There is one exception to this pattern: the layout pass requires widgets to "manually" recurse to their children.
 
@@ -132,11 +156,24 @@ In most cases, the WidgetMut holds a reference to a WidgetState that will be upd
 WidgetMut gives direct mutable access to the widget tree. This can be used by GUI frameworks in their tree update methods, and it can be used in tests to make specific local modifications and test their result.
 
 
+### Properties
+
+Properties (often abbreviated to props) are values of arbitrary static types stored alongside each widget.
+
+Properties are a way for widgets to store arbitrary state, not behavior; they're similar to the "Component" part of ECS.
+
+They can be things like Background, BorderColor, BorderWidth, Padding, ContentColor, etc.
+
+Almost all widget methods take a `PropertiesRef` or `PropertiesMut` parameter that lets them access their properties.
+
+See [masonry/src/doc/widget_properties.md] for details.
+
+
 ### Tests
 
 Masonry is designed to make unit tests easy to write, as if the test function were a mouse-and-keyboard user.
 
-Testing is provided by the **TestHarness** type implemented in the `src/testing/harness.rs` file.
+Testing is provided by the **TestHarness** type implemented in the `masonry_testing` crate.
 
 Ideally, the harness should provide ways to emulate absolutely every feature that Masonry apps can use. Besides the widget tree, that means keyboard events, mouse events, IME, timers, communication with background threads, animations, accessibility info, etc.
 
@@ -158,6 +195,16 @@ We include some of the screenshots in the documentation; because `docs.rs` doesn
 We've had problems with the `docsrs` flag and Github's handling of LFS files.
 See also https://github.com/linebender/xilem/issues/851.
 
+#### Tests Are Important
+
+Testing is a core element of Masonry.
+
+While we don't follow TDD, we have a lot of tests, and *that matters*.
+Extensive testing has helped us catch bugs, find corner cases in our features, and lets us do complex refactors without worrying about breaking something without anyone realizing for years.
+
+We test individual widgets, Masonry internals, and we even include a screenshot test in most examples.
+
+
 ## VS Code markers
 
 Masonry uses VS Code markers to help users browse code with the minimap:
@@ -172,4 +219,4 @@ These markers look like this:
 
 By convention, we write them in all caps with three dashes. Markers don't need to follow strict naming conventions, but their names should be a shorthand for the area of the code they're in. Names should be short enough not to overflow the VS Code minimap.
 
-Small files shouldn't have markers, except for files following a general template (widget implementations, view implementations). Generally files should have between 50 and 200 lines between markers. If a file has any markers, it should have enough split the file into distinct regions.
+Small files shouldn't have markers, except for files following a general template (widget implementations, view implementations). Generally files should have between 50 and 200 lines between markers. If a file has any markers, it should have enough to split the file into distinct regions.
