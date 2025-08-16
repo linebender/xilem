@@ -14,6 +14,7 @@ Masonry has some opinionated design goals:
 - **Facilitate testing.** The `masonry_testing` crate provides a `TestHarness` type that helps users write unit tests, including tests with simulated user interactions and screenshot tests. In general, every feature should be designed with easy-to-write high-reliability tests in mind.
 - **Facilitate debugging.** GUI app bugs are often easy to fix, but extremely painful to track down. GUI framework bugs are worse. Masonry should facilitate reproducing bugs and pinpointing which bit of code they come from.
 - **Provide reflection.** Masonry should help developers surface some of the inherent structure in GUI programs. It should provide tools out-of-the-box to get information about the widget tree, performance indicators, etc. It should also provide accessibility data out-of-the-box.
+- **Be well-tested:** Masonry doesn't just provide lots of testing tools, it also has a lot of tests. These are a core part of the Masonry development experience.
 
 
 ## Code layout
@@ -193,6 +194,16 @@ We include some of the screenshots in the documentation; because `docs.rs` doesn
 **Note:** The above may or may not be true at the time you read this document.
 We've had problems with the `docsrs` flag and Github's handling of LFS files.
 See also https://github.com/linebender/xilem/issues/851.
+
+#### Tests Are Important
+
+Testing is a core element of Masonry.
+
+While we don't follow TDD, we have a lot of tests, and *that matters*.
+Extensive testing has helped us catch bugs, find corner cases in our features, and lets us do complex refactors without worrying about breaking something without anyone realizing for years.
+
+We test individual widgets, Masonry internals, and we even include a screenshot test in most examples.
+
 
 ## VS Code markers
 
