@@ -160,6 +160,10 @@
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
+#![expect(
+    clippy::needless_doctest_main,
+    reason = "Having a main function is a deliberate part of the root doc."
+)]
 
 // TODO - Add logo
 
