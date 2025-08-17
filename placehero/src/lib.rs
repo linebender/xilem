@@ -91,7 +91,7 @@ impl Placehero {
         if let Some(instance) = &self.instance {
             let back = if self.show_context.is_some() {
                 // TODO: Make the ⬅️ arrow not be available to screen readers.
-                Some(button("⬅️ Back to Timeline", |_: &mut Self| {
+                Some(button(label("⬅️ Back to Timeline"), |_: &mut Self| {
                     Navigation::Home
                 }))
             } else {

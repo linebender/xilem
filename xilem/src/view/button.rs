@@ -4,17 +4,10 @@
 use std::any::type_name;
 
 pub use masonry::core::PointerButton;
-use masonry::properties::{
-    ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
-    DisabledBackground, HoveredBorderColor, Padding,
-};
 use masonry::widgets::{self, ButtonPress};
 
 use crate::core::{MessageContext, Mut, View, ViewMarker, ViewPathTracker};
-use crate::property_tuple::PropertyTuple;
-use crate::style::Style;
-use crate::view::Label;
-use crate::{MessageResult, Pod, ViewCtx, ViewId};
+use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///
@@ -59,35 +52,35 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId};
 ///     state.increase();
 /// })
 /// ```
-pub fn button<State, Action>(
-    label: impl Into<Label>,
+pub fn button<State, Action, V: WidgetView<State, Action>>(
+    child: V,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<
     impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    V,
 > {
     Button {
-        label: label.into(),
+        child,
         callback: move |state: &mut State, button| match button {
             None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
         disabled: false,
-        properties: ButtonProps::default(),
     }
 }
 
 /// A button which calls `callback` when pressed.
-pub fn button_any_pointer<State, Action>(
-    label: impl Into<Label>,
+pub fn button_any_pointer<State, Action, V: WidgetView<State, Action>>(
+    child: V,
     callback: impl Fn(&mut State, Option<PointerButton>) -> Action + Send + 'static,
 ) -> Button<
     impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    V,
 > {
     Button {
-        label: label.into(),
+        child,
         callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
         disabled: false,
-        properties: ButtonProps::default(),
     }
 }
 
@@ -95,16 +88,13 @@ pub fn button_any_pointer<State, Action>(
 ///
 /// See `button` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Button<F> {
-    // N.B. This widget is *implemented* to handle any kind of view with an element
-    // type of `Label` even though it currently does not do so.
-    label: Label,
+pub struct Button<F, V> {
+    child: V,
     callback: F,
     disabled: bool,
-    properties: ButtonProps,
 }
 
-impl<F> Button<F> {
+impl<F, V> Button<F, V> {
     /// Set the disabled state of the widget.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
@@ -114,47 +104,27 @@ impl<F> Button<F> {
 
 const LABEL_VIEW_ID: ViewId = ViewId::new(0);
 
-impl<F> Style for Button<F> {
-    type Props = ButtonProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub ButtonProps;
-    Button<F>;
-
-    Background, 0;
-    BorderColor, 1;
-    BorderWidth, 2;
-    BoxShadow, 3;
-    CornerRadius, 4;
-    Padding, 5;
-    ActiveBackground, 6;
-    DisabledBackground, 7;
-    HoveredBorderColor, 8;
-);
-
-impl<F> ViewMarker for Button<F> {}
-impl<F, State, Action> View<State, Action, ViewCtx> for Button<F>
+impl<F, V> ViewMarker for Button<F, V> {}
+impl<F, V, State, Action> View<State, Action, ViewCtx> for Button<F, V>
 where
+    V: WidgetView<State, Action>,
     F: Fn(&mut State, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Button>;
-    type ViewState = ();
+    type ViewState = V::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
-        let (child, ()) = ctx.with_id(LABEL_VIEW_ID, |ctx| {
-            View::<State, Action, _>::build(&self.label, ctx, app_state)
+        let (child, child_state) = ctx.with_id(LABEL_VIEW_ID, |ctx| {
+            View::<State, Action, _>::build(&self.child, ctx, app_state)
         });
-        ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx.create_pod(widgets::Button::new(child.new_widget));
-            pod.new_widget.properties = self.properties.build_properties();
-            pod.new_widget.options.disabled = self.disabled;
-            pod
-        })
+        (
+            ctx.with_action_widget(|ctx| {
+                let mut pod = ctx.create_pod(widgets::Button::new(child.new_widget));
+                pod.new_widget.options.disabled = self.disabled;
+                pod
+            }),
+            child_state,
+        )
     }
 
     fn rebuild(
@@ -165,15 +135,13 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }
         ctx.with_id(LABEL_VIEW_ID, |ctx| {
             View::<State, Action, _>::rebuild(
-                &self.label,
-                &prev.label,
+                &self.child,
+                &prev.child,
                 state,
                 ctx,
                 widgets::Button::child_mut(&mut element).downcast(),
@@ -184,15 +152,15 @@ where
 
     fn teardown(
         &self,
-        _: &mut Self::ViewState,
+        view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
         ctx.with_id(LABEL_VIEW_ID, |ctx| {
             View::<State, Action, _>::teardown(
-                &self.label,
-                &mut (),
+                &self.child,
+                view_state,
                 ctx,
                 widgets::Button::child_mut(&mut element).downcast(),
                 app_state,
@@ -203,14 +171,14 @@ where
 
     fn message(
         &self,
-        _: &mut Self::ViewState,
+        view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         match message.take_first() {
-            Some(LABEL_VIEW_ID) => self.label.message(
-                &mut (),
+            Some(LABEL_VIEW_ID) => self.child.message(
+                view_state,
                 message,
                 widgets::Button::child_mut(&mut element).downcast(),
                 app_state,

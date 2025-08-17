@@ -59,7 +59,7 @@ fn base_status<State: 'static>(
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            button("View Replies", move |_| {
+            button(label("View Replies"), move |_| {
                 Navigation::LoadContext(status_clone.clone())
             }),
         ))

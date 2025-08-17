@@ -38,16 +38,6 @@ pub struct Button {
     child: WidgetPod<dyn Widget>,
 }
 
-impl HasProperty<DisabledBackground> for Button {}
-impl HasProperty<ActiveBackground> for Button {}
-impl HasProperty<Background> for Button {}
-impl HasProperty<HoveredBorderColor> for Button {}
-impl HasProperty<BorderColor> for Button {}
-impl HasProperty<BorderWidth> for Button {}
-impl HasProperty<CornerRadius> for Button {}
-impl HasProperty<Padding> for Button {}
-impl HasProperty<BoxShadow> for Button {}
-
 // --- MARK: BUILDERS
 impl Button {
     /// Create a new button with a child widget.
@@ -312,6 +302,16 @@ impl Widget for Button {
         trace_span!("Button", id = id.trace())
     }
 }
+
+impl HasProperty<DisabledBackground> for Button {}
+impl HasProperty<ActiveBackground> for Button {}
+impl HasProperty<Background> for Button {}
+impl HasProperty<HoveredBorderColor> for Button {}
+impl HasProperty<BorderColor> for Button {}
+impl HasProperty<BorderWidth> for Button {}
+impl HasProperty<CornerRadius> for Button {}
+impl HasProperty<Padding> for Button {}
+impl HasProperty<BoxShadow> for Button {}
 
 // --- MARK: TESTS
 #[cfg(test)]

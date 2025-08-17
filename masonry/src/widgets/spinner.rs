@@ -7,6 +7,7 @@ use std::any::TypeId;
 use std::f64::consts::PI;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Cap, Line, Point, Size, Stroke, Vec2};
@@ -142,6 +143,8 @@ impl Widget for Spinner {
         trace_span!("Spinner", id = id.trace())
     }
 }
+
+impl HasProperty<ContentColor> for Spinner {}
 
 // --- MARK: TESTS
 #[cfg(test)]

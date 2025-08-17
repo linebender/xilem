@@ -9,7 +9,7 @@ use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::masonry::core::ArcStr;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
-use xilem::style::Style;
+use xilem::style::Style as _;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{flex, prose, sized_box, spinner, virtual_scroll, worker_raw};
 use xilem::{TextAlign, WidgetView};

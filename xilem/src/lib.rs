@@ -147,7 +147,6 @@ mod app;
 mod driver;
 mod one_of;
 mod pod;
-mod property_tuple;
 mod view_ctx;
 mod widget_view;
 mod window_options;
@@ -157,7 +156,6 @@ pub mod style;
 pub mod view;
 pub use any_view::AnyWidgetView;
 pub use driver::{ASYNC_MARKER_WIDGET, MasonryDriver, async_action};
-pub use property_tuple::PropertyTuple;
 
 pub use app::{AppState, ExitOnClose, Xilem};
 pub use pod::Pod;

@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
@@ -275,6 +276,15 @@ impl Widget for TextInput {
         self.clip.then(|| "(clip)".into())
     }
 }
+
+impl HasProperty<Background> for TextInput {}
+impl HasProperty<DisabledBackground> for TextInput {}
+impl HasProperty<BorderColor> for TextInput {}
+impl HasProperty<BorderWidth> for TextInput {}
+impl HasProperty<BoxShadow> for TextInput {}
+impl HasProperty<CornerRadius> for TextInput {}
+impl HasProperty<Padding> for TextInput {}
+impl HasProperty<PlaceholderColor> for TextInput {}
 
 // TODO - Add more tests
 #[cfg(test)]

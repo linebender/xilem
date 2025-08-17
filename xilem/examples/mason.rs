@@ -8,12 +8,12 @@
 
 use std::time::Duration;
 
-use vello::peniko::color::AlphaColor;
 use masonry::properties::types::Length;
+use vello::peniko::color::AlphaColor;
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
 use xilem::palette::css;
-use xilem::style::{Background, BorderColor, BorderWidth, Style as _};
+use xilem::style::{Background, BorderWidth, Style as _};
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
@@ -37,9 +37,12 @@ impl Resource for SomeContext {}
 /// Requires the `SomeContext` resource to be [provided](provides).
 fn env_using() -> impl WidgetView<AppData> + use<> {
     with_context(|context: &mut SomeContext, _: &mut AppData| {
-        button(format!("Context: {}", context.0), |_: &mut AppData| {
-            tracing::warn!("Does nothing");
-        })
+        button(
+            label(format!("Context: {}", context.0)),
+            |_: &mut AppData| {
+                tracing::warn!("Does nothing");
+            },
+        )
     })
 }
 
@@ -63,7 +66,9 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     let flex_sequence = (0..count)
         .map(|x| {
             (
-                button(format!("+{x}"), move |data: &mut AppData| data.count += x),
+                button(label(format!("+{x}")), move |data: &mut AppData| {
+                    data.count += x
+                }),
                 if data.active {
                     FlexSpacer::Flex(x as f64)
                 } else {
@@ -75,7 +80,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
 
     let fizz_buzz_flex_sequence = [(3, "Fizz"), (5, "Buzz")].map(|c| {
         if data.count.abs() % c.0 == 0 {
-            button(c.1, move |data: &mut AppData| {
+            button(label(c.1), move |data: &mut AppData| {
                 data.count += 1;
             })
             .into_any_flex()
@@ -84,10 +89,6 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
         }
     });
 
-    let background = (data.count * 4)
-        .clamp(0, u8::MAX.into())
-        .try_into()
-        .unwrap();
     provides(
         |_: &mut AppData| SomeContext(120),
         fork(
@@ -96,12 +97,6 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 flex_row((
                     label("Label").color(palette::css::REBECCA_PURPLE),
                     label("Bold Label").weight(FontWeight::BOLD),
-                    button("Styled button", |data: &mut AppData| data.count += 1)
-                        .prop(BorderWidth::all(4.0))
-                        .prop(Background::Color(AlphaColor::from_rgb8(background, 0, 0)))
-                        // Test property override
-                        .prop(Background::Color(AlphaColor::from_rgb8(0, background, 0)))
-                        .border_color_(BorderColor { color: css::WHITE }),
                     // TODO masonry doesn't allow setting disabled manually anymore?
                     // label("Disabled label").disabled(),
                 )),
@@ -119,22 +114,25 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 prose(LOREM)
                     .text_alignment(TextAlign::Center)
                     .text_size(18.),
-                button_any_pointer(button_label, |data: &mut AppData, button| match button {
-                    None => {
-                        // Usually this is a touch.
-                    }
-                    Some(PointerButton::Primary) => data.count += 1,
-                    Some(PointerButton::Secondary) => data.count -= 1,
-                    Some(PointerButton::Auxiliary) => data.count *= 2,
-                    _ => (),
-                }),
+                button_any_pointer(
+                    label(button_label),
+                    |data: &mut AppData, button| match button {
+                        None => {
+                            // Usually this is a touch.
+                        }
+                        Some(PointerButton::Primary) => data.count += 1,
+                        Some(PointerButton::Secondary) => data.count -= 1,
+                        Some(PointerButton::Auxiliary) => data.count *= 2,
+                        _ => (),
+                    },
+                ),
                 checkbox("Check me", data.active, |data: &mut AppData, checked| {
                     data.active = checked;
                 }),
                 toggleable(data),
                 env_using(),
-                button("Decrement", |data: &mut AppData| data.count -= 1),
-                button("Reset", |data: &mut AppData| data.count = 0),
+                button(label("Decrement"), |data: &mut AppData| data.count -= 1),
+                button(label("Reset"), |data: &mut AppData| data.count = 0),
                 flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
             ))
             .padding(8.0),
@@ -165,10 +163,10 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
         provides(
             |_| SomeContext(777),
             flex_row((
-                button("Deactivate", |data: &mut AppData| {
+                button(label("Deactivate"), |data: &mut AppData| {
                     data.active = false;
                 }),
-                button("Unlimited Power", |data: &mut AppData| {
+                button(label("Unlimited Power"), |data: &mut AppData| {
                     data.count = -1_000_000;
                 }),
                 without_elements(run_once(|| {
@@ -179,7 +177,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
         )
         .boxed()
     } else {
-        button("Activate", |data: &mut AppData| data.active = true).boxed()
+        button(label("Activate"), |data: &mut AppData| data.active = true).boxed()
     }
 }
 

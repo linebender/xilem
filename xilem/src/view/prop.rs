@@ -8,31 +8,23 @@ use masonry::core::Property;
 use xilem_core::{MessageContext, Mut};
 
 use crate::core::{View, ViewMarker};
-use crate::style::{HasProperty, Style};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that adds a property `P` or overrides a previously defined property `P`.
 pub struct Prop<P, V, State, Action> {
     pub(crate) property: P,
     pub(crate) child: V,
-    pub(crate) phantom: PhantomData<(State, Action)>,
+    pub(crate) phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-// TODO: (likely) Remove
-impl<P, V: Style, State, Action> Style for Prop<P, V, State, Action> {
-    type Props = V::Props;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        self.child.properties()
-    }
-}
-
-// TODO: (likely) Remove
-impl<P: Property, Pe: Property, V: HasProperty<Pe>, State, Action> HasProperty<Pe>
-    for Prop<P, V, State, Action>
-{
-    fn property(&mut self) -> &mut Option<Pe> {
-        self.child.property()
+impl<P, V, State, Action> Prop<P, V, State, Action> {
+    /// TODO
+    pub fn new(widget: V, property: P) -> Self {
+        Self {
+            property,
+            child: widget,
+            phantom: std::marker::PhantomData,
+        }
     }
 }
 
@@ -41,7 +33,6 @@ impl<P, Child, State, Action> View<State, Action, ViewCtx> for Prop<P, Child, St
 where
     P: Property + PartialEq + Clone,
     Child: WidgetView<State, Action>,
-    // TODO implement this on the element/widget
     Child::Widget: masonry::core::HasProperty<P>,
     State: 'static,
     Action: 'static,
