@@ -88,6 +88,26 @@
 //! * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 //! * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 //!
+//! ## Precise Capturing
+//!
+//! Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
+//! This is new syntax in the 2024 edition, and so it might be unfamiliar.
+//! Here's a snippet from the Xilem examples:
+//!
+//! ```rust,no_run
+//! # struct EmojiPagination;
+//! # use xilem::WidgetView;
+//! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+//!    // ...
+//!    # xilem::view::label("Not meaningful!")
+//! }
+//! ```
+//!
+//! The precise capturing syntax in this case indicates that the returned view does not make use of the lifetime of `data`.
+//! This is required because the view types in Xilem must be `'static`, but as of the 2024 edition, when `impl Trait` is used
+//! for return types, Rust assumes that the return value will use the parameter's lifetimes.
+//! That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
+//!
 //! [accesskit_docs]: masonry::accesskit
 //! [AccessKit]: https://accesskit.dev/
 //! [Druid]: https://crates.io/crates/druid
