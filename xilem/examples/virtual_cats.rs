@@ -17,12 +17,16 @@ use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
+use xilem::palette::css::{BLACK, WHITE};
 use xilem::style::Style as _;
 use xilem::view::{
-    ObjectFit, ZStackExt, flex, image, prose, sized_box, spinner, virtual_scroll, zstack,
+    Axis, ObjectFit, ZStackExt, flex, flex_row, image, label, prose, sized_box, spinner,
+    virtual_scroll, zstack,
 };
-use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
-use xilem_core::one_of::Either;
+use xilem::{
+    Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
+};
+use xilem_core::one_of::{Either, OneOf3};
 
 /// The main state of the application.
 struct VirtualCats {
@@ -42,6 +46,7 @@ enum ImageState {
     Pending,
     // Error(?),
     Available(Image),
+    Error(anyhow::Error),
 }
 
 impl VirtualCats {
@@ -51,11 +56,11 @@ impl VirtualCats {
             .statuses
             .get_mut(index)
             .expect("VirtualScroll bounds set correctly.");
-        let img = match &item.image {
-            ImageState::Pending => None,
-            ImageState::Available(image) => Some(image),
+        let spawn_task = match &item.image {
+            ImageState::Pending | ImageState::Error(_) => true,
+            ImageState::Available(_) => false,
         };
-        let task = if img.is_none() {
+        let task = if spawn_task {
             // Capturing the code is valid here, because this will never change for this view.
             let code = item.code;
             // If the cat is not loaded yet, we create a task to load it.
@@ -71,50 +76,74 @@ impl VirtualCats {
                         let result = image_from_url(&url).await;
                         match result {
                             // We choose not to handle the case where the event loop has ended
-                            Ok(image) => drop(proxy.message(image)),
-                            // TODO: Report in the frontend
+                            Ok(image) => drop(proxy.message(Ok(image))),
                             Err(err) => {
                                 tracing::warn!(
                                     "Loading image for HTTP status code {code} from {url} failed: {err:?}"
                                 );
+                                drop(proxy.message(Err(err)));
                             }
                         }
                     }
                 },
-                move |state: &mut Self, image| {
-                    if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
-                        status.image = ImageState::Available(image);
-                    } else {
+                move |state: &mut Self, message| {
+                    let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) else {
                         unreachable!("We never remove items from `statuses`")
+                    };
+                    match message {
+                        Ok(image) => {
+                            status.image = ImageState::Available(image);
+                        }
+                        Err(err) => status.image = ImageState::Error(err),
                     }
                 },
             ))
         } else {
             None
         };
-        let img = if let Some(img) = img {
-            let attribution = sized_box(
-                sized_box(
-                    prose("Copyright ©️ https://http.cat")
-                        .line_break_mode(LineBreaking::Clip)
-                        .text_alignment(TextAlign::End),
+        let img = match &item.image {
+            ImageState::Available(img) => {
+                let attribution = sized_box(
+                    sized_box(
+                        prose("Copyright ©️ https://http.cat")
+                            .line_break_mode(LineBreaking::Clip)
+                            .text_alignment(TextAlign::End),
+                    )
+                    .padding(4.)
+                    .corner_radius(4.)
+                    .background_color(palette::css::BLACK.multiply_alpha(0.5)),
                 )
-                .padding(4.)
-                .corner_radius(4.)
-                .background_color(palette::css::BLACK.multiply_alpha(0.5)),
-            )
-            .padding(Padding {
-                left: 0.,
-                right: 42.,
-                top: 30.,
-                bottom: 0.,
-            });
-            Either::A(zstack((
-                image(img).fit(ObjectFit::FitWidth),
-                attribution.alignment(UnitPoint::TOP_RIGHT),
-            )))
-        } else {
-            Either::B(sized_box(spinner()).width(80.px()).height(80.px()))
+                .padding(Padding {
+                    left: 0.,
+                    right: 42.,
+                    top: 30.,
+                    bottom: 0.,
+                });
+                let imgview = zstack((
+                    image(img).fit(ObjectFit::FitWidth),
+                    attribution.alignment(UnitPoint::TOP_RIGHT),
+                ));
+                OneOf3::A(imgview)
+            }
+            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.px()).height(80.px())),
+            ImageState::Error(err) => {
+                // the people deserve their cat.
+                // It is vital that the cat explains what went wrong.
+                let asciicat = label(
+                    "
+                  /\\_/\\  !
+                 ( o.o )
+                  > ^ <",
+                )
+                .color(BLACK);
+                let errorstring = prose(err.to_string()).text_color(Color::from_rgb8(255, 0, 0));
+                let view = flex((errorstring, asciicat))
+                    .background_color(WHITE)
+                    .cross_axis_alignment(xilem::view::CrossAxisAlignment::Start)
+                    .padding(16.0)
+                    .corner_radius(8.0);
+                OneOf3::C(view)
+            }
         };
         fork(flex((prose(item.message.clone()), img)), task)
     }
