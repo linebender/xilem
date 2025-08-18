@@ -196,7 +196,7 @@ Unless you explicitly state otherwise, any contribution intentionally submitted 
 ## Recommended Reading
 
 Throughout Xilem you will find usage a rust syntax many people are not familiar with, the `+ use<>`.
-Here's a snippet from the xilem examples:
+Here's a snippet from the Xilem examples:
 
 ```rust
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
