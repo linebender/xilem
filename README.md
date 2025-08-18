@@ -128,7 +128,7 @@ Nonetheless, it is possible.
 
 ## Precise Capturing
 
-Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing]((https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing)).
+Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
 This is new syntax in the 2024 edition, and so it might be unfamiliar.
 Here's a snippet from the Xilem examples:
 
