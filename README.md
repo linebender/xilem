@@ -126,10 +126,10 @@ The type erasure of View nodes is not an easy trick, as the trait has two associ
 Nonetheless, it is possible.
 (As far as I know, Olivier Faure was the first to demonstrate this technique, in [Panoramix], but I'm happy to be further enlightened)
 
-
 ## Precise Capturing
 
-Throughout Xilem you will find usage a rust syntax many people are not familiar with, the `+ use<>`.
+Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing]((https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing)).
+This is new syntax in the 2024 edition, and so it might be unfamiliar.
 Here's a snippet from the Xilem examples:
 
 ```rust
@@ -138,13 +138,10 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
 }
 ```
 
-This is the precise capturing syntax, which indicates that the returned view does not make use of the lifetime of data.
-This is required because the view types in Xilem must be 'static, but as of Rust's edition 2024, impl Trait
-assumes that parameter's lifetimes will be used in the return value.
-That is a good assumption for most Rust code, but this is mismatched with how Xilem works.
-
-You can read more about it in [this document](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
-
+The precise capturing syntax in this case indicates that the returned view does not make use of the lifetime of `data`.
+This is required because the view types in Xilem must be `'static`, but as of the 2024 edition, when `impl Trait` is used
+for return types, Rust assumes that the return value will use the parameter's lifetimes.
+That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
 
 ## Prerequisites
 
