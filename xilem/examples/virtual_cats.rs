@@ -20,13 +20,12 @@ use xilem::core::fork;
 use xilem::palette::css::{BLACK, WHITE};
 use xilem::style::Style as _;
 use xilem::view::{
-    Axis, ObjectFit, ZStackExt, flex, flex_row, image, label, prose, sized_box, spinner,
-    virtual_scroll, zstack,
+    ObjectFit, ZStackExt, flex, image, label, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
 };
-use xilem_core::one_of::{Either, OneOf3};
+use xilem_core::one_of::OneOf3;
 
 /// The main state of the application.
 struct VirtualCats {
