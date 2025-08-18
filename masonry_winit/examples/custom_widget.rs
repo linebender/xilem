@@ -197,7 +197,6 @@ fn main() {
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
         vec![NewWindow::new(
-            WindowId::next(),
             window_attributes,
             NewWidget::new(CustomWidget(my_string)).erased(),
         )],

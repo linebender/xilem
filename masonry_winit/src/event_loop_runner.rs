@@ -68,7 +68,13 @@ pub struct NewWindow {
 }
 
 impl NewWindow {
-    pub fn new(
+    /// Create a new window with auto assigned [`WindowId::next()`].
+    pub fn new(attributes: WindowAttributes, root_widget: NewWidget<dyn Widget + 'static>) -> Self {
+        Self::new_with_id(WindowId::next(), attributes, root_widget)
+    }
+
+    /// Create a new window with a custom assigned [`WindowId`].
+    pub fn new_with_id(
         id: WindowId,
         attributes: WindowAttributes,
         root_widget: NewWidget<dyn Widget + 'static>,
@@ -79,14 +85,6 @@ impl NewWindow {
             root_widget,
             base_color: Color::BLACK,
         }
-    }
-
-    /// Create a new window with auto assigned [`WindowId::next()`].
-    pub fn new_with_auto_id(
-        attributes: WindowAttributes,
-        root_widget: NewWidget<dyn Widget + 'static>,
-    ) -> Self {
-        Self::new(WindowId::next(), attributes, root_widget)
     }
 
     /// Set the base color of the new window.

@@ -96,7 +96,7 @@ fn main() {
     masonry_winit::app::run_with(
         event_loop,
         vec![
-            NewWindow::new(
+            NewWindow::new_with_id(
                 driver.window_id,
                 window_attributes,
                 make_widget_tree().erased(),

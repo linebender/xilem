@@ -150,7 +150,7 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![NewWindow::new(
+        vec![NewWindow::new_with_id(
             driver.window_id,
             window_attributes,
             main_widget.erased(),

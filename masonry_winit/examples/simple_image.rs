@@ -54,11 +54,7 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![NewWindow::new(
-            WindowId::next(),
-            window_attributes,
-            make_image().erased(),
-        )],
+        vec![NewWindow::new(window_attributes, make_image().erased())],
         Driver,
         default_property_set(),
     )

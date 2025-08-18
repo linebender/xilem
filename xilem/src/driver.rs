@@ -68,7 +68,7 @@ where
                 let view = WindowView::new(attrs, root_widget_view);
                 let (attributes, root_widget) = driver.build_window(id, view);
 
-                NewWindow::new(id, attributes, root_widget)
+                NewWindow::new_with_id(id, attributes, root_widget)
             })
             .collect();
         (driver, windows)
@@ -175,7 +175,7 @@ where
         view: WindowView<State>,
     ) {
         let (attributes, root_widget) = self.build_window(window_id, view);
-        driver_ctx.create_window(NewWindow::new(window_id, attributes, root_widget));
+        driver_ctx.create_window(NewWindow::new_with_id(window_id, attributes, root_widget));
     }
 
     fn close_window(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
