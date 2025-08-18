@@ -95,8 +95,11 @@
 //! Here's a snippet from the Xilem examples:
 //!
 //! ```rust,no_run
+//! # struct EmojiPagination;
+//! # use xilem::WidgetView;
 //! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
 //!    // ...
+//!    # xilem::view::label("Not meaningful!")
 //! }
 //! ```
 //!
