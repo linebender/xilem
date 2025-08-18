@@ -9,6 +9,7 @@
 
 use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
 use masonry::dpi::LogicalSize;
+use masonry::peniko::color::AlphaColor;
 use masonry::properties::Padding;
 use masonry::properties::types::Length;
 use masonry::theme::default_property_set;
@@ -94,11 +95,14 @@ fn main() {
         .unwrap();
     masonry_winit::app::run_with(
         event_loop,
-        vec![NewWindow {
-            id: driver.window_id,
-            attributes: window_attributes,
-            root_widget: make_widget_tree().erased(),
-        }],
+        vec![
+            NewWindow::new_with_id(
+                driver.window_id,
+                window_attributes,
+                make_widget_tree().erased(),
+            )
+            .with_base_color(AlphaColor::from_rgb8(2, 6, 23)),
+        ],
         driver,
         default_property_set(),
     )

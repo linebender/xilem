@@ -63,6 +63,35 @@ pub struct NewWindow {
     pub attributes: WindowAttributes,
     /// The widget which will take up the entire contents of the new window.
     pub root_widget: NewWidget<dyn Widget>,
+    /// The base color of the window.
+    pub base_color: Color,
+}
+
+impl NewWindow {
+    /// Create a new window with auto assigned [`WindowId::next()`].
+    pub fn new(attributes: WindowAttributes, root_widget: NewWidget<dyn Widget + 'static>) -> Self {
+        Self::new_with_id(WindowId::next(), attributes, root_widget)
+    }
+
+    /// Create a new window with a custom assigned [`WindowId`].
+    pub fn new_with_id(
+        id: WindowId,
+        attributes: WindowAttributes,
+        root_widget: NewWidget<dyn Widget + 'static>,
+    ) -> Self {
+        Self {
+            id,
+            attributes,
+            root_widget,
+            base_color: Color::BLACK,
+        }
+    }
+
+    /// Set the base color of the new window.
+    pub fn with_base_color(mut self, base_color: Color) -> Self {
+        self.base_color = base_color;
+        self
+    }
 }
 
 /// Per-Window state
@@ -72,6 +101,7 @@ pub(crate) struct Window {
     pub(crate) accesskit_adapter: Adapter,
     event_reducer: WindowEventReducer,
     pub(crate) render_root: RenderRoot,
+    pub(crate) base_color: Color,
 }
 
 impl Window {
@@ -82,6 +112,7 @@ impl Window {
         root_widget: NewWidget<dyn Widget>,
         signal_sender: Sender<(WindowId, RenderRootSignal)>,
         default_properties: Arc<DefaultProperties>,
+        base_color: Color,
     ) -> Self {
         // TODO: We can't know this scale factor until later?
         let scale_factor = 1.0;
@@ -104,6 +135,7 @@ impl Window {
                     test_font: None,
                 },
             ),
+            base_color,
         }
     }
 }
@@ -388,6 +420,7 @@ impl MasonryState<'_> {
             new_window.root_widget,
             self.signal_sender.clone(),
             self.default_properties.clone(),
+            new_window.base_color,
         );
         window
             .render_root
@@ -451,7 +484,7 @@ impl MasonryState<'_> {
             ..Default::default()
         };
         let render_params = RenderParams {
-            base_color: Color::BLACK,
+            base_color: window.base_color,
             width,
             height,
             antialiasing_method: AaConfig::Area,
