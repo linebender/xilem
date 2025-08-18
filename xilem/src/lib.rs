@@ -94,7 +94,7 @@
 //! This is new syntax in the 2024 edition, and so it might be unfamiliar.
 //! Here's a snippet from the Xilem examples:
 //!
-//! ```rust
+//! ```rust,no_run
 //! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
 //!    // ...
 //! }
