@@ -174,8 +174,8 @@ pub struct TestHarnessParams {
     pub panic_on_rewrite_saturation: bool,
     /// The largest size a screenshot file is allowed to be in this test.
     /// Defaults to `8KiB`.
-    /// You can use [`KIBIBYTE`] to help set this.
     ///
+    /// You can use [`TestHarnessParams::KIBIBYTE`] to help set this.
     /// Keeping screenshot files small avoids clones of this repository taking too long.
     /// Masonry testing uses [oxipng] to optimise the size of screenshots.
     pub max_screenshot_size: u32,
