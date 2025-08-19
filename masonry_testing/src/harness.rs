@@ -1019,7 +1019,7 @@ impl<W: Widget> TestHarness<W> {
             {
                 panic!(
                     "New screenshot file ({saved_len} bytes) was larger than the supported file size ({max_size} bytes).\
-                        Consider increasing `max_screenshot_size` when creating the test harness.",
+                        Consider increasing `TestHarnessParams::max_screenshot_size` when creating the test harness.",
                 );
             }
         }
@@ -1089,7 +1089,7 @@ impl<W: Widget> TestHarness<W> {
             if reference_size > u64::from(self.max_screenshot_size) {
                 panic!(
                     "Existing file ({reference_size}) was larger than the supported file size ({}).\
-                    Consider increasing `max_screenshot_size` when creating the test harness.",
+                    Consider increasing `TestHarnessParams::max_screenshot_size` when creating the test harness.",
                     self.max_screenshot_size
                 );
             }
