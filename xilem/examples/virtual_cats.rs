@@ -17,6 +17,7 @@ use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
+use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::palette::css::{BLACK, WHITE};
 use xilem::style::Style as _;
 use xilem::view::{
@@ -25,7 +26,6 @@ use xilem::view::{
 use xilem::{
     Color, EventLoop, EventLoopBuilder, FontWeight, TextAlign, WidgetView, WindowOptions, Xilem,
 };
-use xilem_core::one_of::OneOf3;
 
 /// The main state of the application.
 struct VirtualCats {
@@ -112,7 +112,7 @@ impl VirtualCats {
                 ));
                 OneOf3::A(imgview)
             }
-            ImageState::Pending => OneOf3::B(sized_box(spinner()).width(80.px()).height(80.px())),
+            ImageState::Pending => OneOf::B(sized_box(spinner()).width(80.px()).height(80.px())),
             ImageState::Error(err) => {
                 // the people deserve their cat.
                 // It is vital that the cat explains what went wrong.
@@ -127,7 +127,7 @@ impl VirtualCats {
                     .cross_axis_alignment(xilem::view::CrossAxisAlignment::Start)
                     .padding(16.0)
                     .corner_radius(8.0);
-                OneOf3::C(view)
+                OneOf::C(view)
             }
         };
         fork(flex((prose(item.message.clone()), img)), task)
