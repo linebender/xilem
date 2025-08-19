@@ -9,6 +9,8 @@ pub(crate) enum Navigation {
     /// Load the context (i.e. replies and ancestors) of a given
     /// (non-repost) status.
     LoadContext(Status),
+    /// Load the timeline of the user with the given account id.
+    LoadUser(String),
     /// Return to the main timeline.
     // TODO: Maintain scroll state in the timeline.
     // TODO: More of a back stack.
