@@ -154,9 +154,6 @@ impl Timeline {
                         Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
                             todo!()
                         }
-                        Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
-                            todo!()
-                        }
                         Err(e) => {
                             todo!("handle {e}")
                         }
