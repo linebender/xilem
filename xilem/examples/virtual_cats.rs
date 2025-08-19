@@ -116,13 +116,13 @@ impl VirtualCats {
             ImageState::Error(err) => {
                 // the people deserve their cat.
                 // It is vital that the cat explains what went wrong.
-                let asciicat = label("😿").text_size(48.);
+                let emojicat = label("😿").text_size(48.);
                 let errorstring = prose(err.to_string())
                     .text_size(18.0)
                     .text_color(Color::from_rgb8(0x85, 0, 0))
                     .weight(FontWeight::BOLD);
 
-                let view = flex((errorstring, asciicat))
+                let view = flex((errorstring, emojicat))
                     .background_color(WHITE)
                     .cross_axis_alignment(xilem::view::CrossAxisAlignment::Start)
                     .padding(16.0)
