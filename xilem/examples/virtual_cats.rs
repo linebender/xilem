@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
-use masonry::properties::types::{AsUnit, UnitPoint};
+use masonry::properties::types::{AsUnit, Length, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
@@ -23,7 +23,7 @@ use xilem::view::{
     ObjectFit, ZStackExt, flex, image, label, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{
-    Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
+    Color, EventLoop, EventLoopBuilder, FontWeight, TextAlign, WidgetView, WindowOptions, Xilem,
 };
 use xilem_core::one_of::OneOf3;
 
@@ -43,7 +43,6 @@ struct Status {
 /// The state of the download of an image from a URL
 enum ImageState {
     Pending,
-    // Error(?),
     Available(Image),
     Error(anyhow::Error),
 }
@@ -73,28 +72,17 @@ impl VirtualCats {
                         // Add an artificial delay to show how variable sizes work
                         tokio::time::sleep(Duration::from_millis(300)).await;
                         let result = image_from_url(&url).await;
-                        match result {
-                            // We choose not to handle the case where the event loop has ended
-                            Ok(image) => drop(proxy.message(Ok(image))),
-                            Err(err) => {
-                                tracing::warn!(
-                                    "Loading image for HTTP status code {code} from {url} failed: {err:?}"
-                                );
-                                drop(proxy.message(Err(err)));
-                            }
-                        }
+                        drop(proxy.message(result));
                     }
                 },
                 move |state: &mut Self, message| {
                     let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) else {
                         unreachable!("We never remove items from `statuses`")
                     };
-                    match message {
-                        Ok(image) => {
-                            status.image = ImageState::Available(image);
-                        }
-                        Err(err) => status.image = ImageState::Error(err),
-                    }
+                    status.image = match message {
+                        Ok(image) => ImageState::Available(image),
+                        Err(err) => ImageState::Error(err),
+                    };
                 },
             ))
         } else {
@@ -110,7 +98,7 @@ impl VirtualCats {
                     )
                     .padding(4.)
                     .corner_radius(4.)
-                    .background_color(palette::css::BLACK.multiply_alpha(0.5)),
+                    .background_color(BLACK.multiply_alpha(0.5)),
                 )
                 .padding(Padding {
                     left: 0.,
@@ -128,14 +116,12 @@ impl VirtualCats {
             ImageState::Error(err) => {
                 // the people deserve their cat.
                 // It is vital that the cat explains what went wrong.
-                let asciicat = label(
-                    "
-                  /\\_/\\  !
-                 ( o.o )
-                  > ^ <",
-                )
-                .color(BLACK);
-                let errorstring = prose(err.to_string()).text_color(Color::from_rgb8(255, 0, 0));
+                let asciicat = label("😿").text_size(48.);
+                let errorstring = prose(err.to_string())
+                    .text_size(18.0)
+                    .text_color(Color::from_rgb8(0x85, 0, 0))
+                    .weight(FontWeight::BOLD);
+
                 let view = flex((errorstring, asciicat))
                     .background_color(WHITE)
                     .cross_axis_alignment(xilem::view::CrossAxisAlignment::Start)
