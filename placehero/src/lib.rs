@@ -14,7 +14,7 @@ use std::sync::Arc;
 use megalodon::entities::{Context, Instance, Status};
 use megalodon::error::{Kind, OwnError};
 use megalodon::{Megalodon, mastodon};
-use xilem::core::one_of::{Either, OneOf, OneOf5};
+use xilem::core::one_of::{Either, OneOf, OneOf6};
 use xilem::core::{NoElement, View, fork, map_action, map_state};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -59,6 +59,7 @@ struct Placehero {
     account_sender: Option<UnboundedSender<String>>,
     timeline_box_contents: String,
     loading_timeline: bool,
+    not_found_acct: Option<String>,
 }
 
 /// Execute the app in the given winit event loop.
@@ -86,6 +87,7 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         account_sender: None,
         timeline_box_contents: "raph".to_string(),
         loading_timeline: false,
+        not_found_acct: None,
     };
 
     Xilem::new_simple(
@@ -140,15 +142,20 @@ impl Placehero {
             if let Some(context) = self.context.as_ref() {
                 // TODO: Display the status until the entire thread loads; this is hard because
                 // the thread's scroll position would jump.
-                OneOf5::A(thread(show_context, context))
+                OneOf6::A(thread(show_context, context))
             } else {
                 OneOf::B(prose("Loading thread"))
             }
         } else if self.loading_timeline {
             // Hack: Flex allows the sized box to not take up the full size.
             OneOf::C(flex(sized_box(spinner()).width(50.px()).height(50.px())))
+        } else if let Some(acct) = self.not_found_acct.as_ref() {
+            OneOf::D(prose(format!(
+                "Could not find account @{acct} on this server.\
+                 You might need to include the server name of the account, if it's on a different server."
+            )))
         } else if let Some(timline) = self.timeline.as_mut() {
-            OneOf::D(map_state(
+            OneOf::E(map_state(
                 timline.view(self.mastodon.clone()),
                 // In the current edition of the app, the timeline is never removed
                 // If it ever is, we'll need to be more careful here.
@@ -156,7 +163,7 @@ impl Placehero {
                 |this: &mut Self| this.timeline.as_mut().unwrap(),
             ))
         } else {
-            OneOf::E(prose("No statuses yet loaded"))
+            OneOf::F(prose("No statuses yet loaded"))
         }
     }
 }
@@ -276,22 +283,23 @@ fn load_account(
     mastodon: Mastodon,
 ) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
     worker_raw(
-        move |result, mut recv| {
+        move |result, mut recv: UnboundedReceiver<String>| {
             let mastodon = mastodon.clone();
             async move {
                 while let Some(req) = recv.recv().await {
-                    let instance_result = mastodon.lookup_account(req).await;
+                    let instance_result = mastodon.lookup_account(req.clone()).await;
                     // We choose not to handle the case where the event loop has ended
                     // Note that error handling is deferred to the on_event handler
-                    drop(result.message(instance_result));
+                    drop(result.message((instance_result, req)));
                 }
             }
         },
         |app_state: &mut Placehero, sender| app_state.account_sender = Some(sender),
-        |app_state: &mut Placehero, event| match event {
+        |app_state: &mut Placehero, (event, acct)| match event {
             Ok(instance) => {
                 app_state.timeline = Some(Timeline::new_for_account(instance.json));
                 app_state.loading_timeline = false;
+                app_state.not_found_acct = None;
             }
             Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
                 todo!()
@@ -302,12 +310,13 @@ fn load_account(
                     ..
                 },
             )) => {
-                tracing::error!("Failed to load account: {e}. It probably doesn't exist!");
+                tracing::error!("Failure to to load account: {e}.");
                 // TODO: Handle more gracefully/surface to the user.
                 // This at least lets the user retry.
                 // Note that we don't unset the timeline here, because it's technically
                 // possible for this response to arrive extremely quickly
                 app_state.loading_timeline = false;
+                app_state.not_found_acct = Some(acct);
             }
             Err(e) => {
                 todo!("handle {e}")
