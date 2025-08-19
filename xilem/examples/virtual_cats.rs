@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use masonry::core::ArcStr;
-use masonry::properties::types::{AsUnit, Length, UnitPoint};
+use masonry::properties::types::{AsUnit, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use vello::peniko::{Blob, Image};
 use winit::dpi::LogicalSize;
