@@ -151,7 +151,7 @@ impl Placehero {
             OneOf::C(flex(sized_box(spinner()).width(50.px()).height(50.px())))
         } else if let Some(acct) = self.not_found_acct.as_ref() {
             OneOf::D(prose(format!(
-                "Could not find account @{acct} on this server.\
+                "Could not find account @{acct} on this server. \
                  You might need to include the server name of the account, if it's on a different server."
             )))
         } else if let Some(timline) = self.timeline.as_mut() {
