@@ -1,13 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, NewWidget, Properties, WidgetId, WidgetOptions};
+use masonry::core::{ArcStr, NewWidget, Properties};
 use masonry::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
     DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
 };
 use masonry::widgets::{self, TextAction};
-use vello::kurbo::Affine;
 use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, View, ViewMarker};
@@ -221,7 +220,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         }
 
         if prev.disabled != self.disabled {
-            eprintln!("Set to {}", self.disabled);
             element.ctx.set_disabled(self.disabled);
         }
 
