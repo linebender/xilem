@@ -9,7 +9,7 @@ use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::masonry::core::ArcStr;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
-use xilem::style::Style;
+use xilem::style::{Padding, Style};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{flex, prose, sized_box, spinner, virtual_scroll, worker_raw};
 use xilem::{TextAlign, WidgetView};
@@ -184,8 +184,12 @@ pub(crate) fn timeline_status(status: &Status) -> impl WidgetView<Timeline, Navi
     } else {
         (None, status)
     };
-    sized_box(flex((info_line, base_status(primary_status))))
-        .border(css::WHITE, 2.0)
-        .padding(10.0)
-        .corner_radius(5.)
+    // Use a wrapping sized box for margin
+    sized_box(
+        sized_box(flex((info_line, base_status(primary_status))))
+            .border(css::WHITE, 2.0)
+            .padding(10.0)
+            .corner_radius(5.),
+    )
+    .padding(Padding::from_vh(5., 4.))
 }
