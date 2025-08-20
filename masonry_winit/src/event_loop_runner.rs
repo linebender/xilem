@@ -93,6 +93,13 @@ impl NewWindow {
     }
 
     /// Set the base color of the new window.
+    ///
+    /// The base color is the color of the background which all widgets in the window draw on top of.
+    /// Masonry's current default theme assumes that this will be a very dark color for sufficient contrast.
+    /// This is most useful for apps which want to for example support light mode.
+    ///
+    /// Please note that it is not currently supported to modify this once the app is running.
+    /// This is not a fundamental limitation, and is only due to missing api design.
     pub fn with_base_color(mut self, base_color: Color) -> Self {
         self.base_color = base_color;
         self
