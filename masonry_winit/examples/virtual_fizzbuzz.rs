@@ -46,7 +46,7 @@ impl AppDriver for Driver {
             let action = action
                 .downcast::<VirtualScrollAction>()
                 .expect("Only expected Virtual Scroll actions");
-            ctx.render_root(window_id).edit_root_widget(|mut root| {
+            ctx.render_root(window_id).edit_base_layer(|mut root| {
                 let mut scroll = root.downcast::<VirtualScroll>();
                 // We need to tell the `VirtualScroll` which request this is associated with
                 // This is so that the controller knows which actions have been handled.
