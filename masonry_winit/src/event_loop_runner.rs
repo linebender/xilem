@@ -68,12 +68,19 @@ pub struct NewWindow {
 }
 
 impl NewWindow {
-    /// Create a new window with auto assigned [`WindowId::next()`].
+    /// A default `NewWindow`.
+    ///
+    /// Further properties of the window which will be created using
+    /// builder-style methods on this type.
+    /// See the documentation on the fields of this type for details of the parameters.
     pub fn new(attributes: WindowAttributes, root_widget: NewWidget<dyn Widget + 'static>) -> Self {
         Self::new_with_id(WindowId::next(), attributes, root_widget)
     }
 
-    /// Create a new window with a custom assigned [`WindowId`].
+    /// Create a `NewWindow` with a custom assigned [`WindowId`].
+    ///
+    /// Use this when you need to specify a unique ID for the window, for example,
+    /// for external tracking or state management.
     pub fn new_with_id(
         id: WindowId,
         attributes: WindowAttributes,
