@@ -20,6 +20,7 @@ fn big_button(
 }
 
 fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
+    // This is the flex view, alternatives are `column` or `flex` which allows dynamically switching the axis
     row((
         FlexSpacer::Fixed(30.px()),
         big_button("-", |data| {
