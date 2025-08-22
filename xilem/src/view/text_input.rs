@@ -1,13 +1,12 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, NewWidget, Properties, WidgetId, WidgetOptions};
+use masonry::core::{ArcStr, NewWidget, Properties};
 use masonry::properties::{
     Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
     DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
 };
 use masonry::widgets::{self, TextAction};
-use vello::kurbo::Affine;
 use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, View, ViewMarker};
@@ -176,22 +175,16 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             props.insert(DisabledContentColor(ContentColor { color }));
         }
 
-        let text_input = widgets::TextInput::from_text_area(NewWidget::new_with(
-            text_area,
-            WidgetId::next(),
-            WidgetOptions {
-                disabled: self.disabled,
-                transform: Affine::default(),
-            },
-            props,
-        ))
-        .with_clip(self.clip)
-        .with_placeholder(self.placeholder.clone());
+        let text_input =
+            widgets::TextInput::from_text_area(NewWidget::new_with_props(text_area, props))
+                .with_clip(self.clip)
+                .with_placeholder(self.placeholder.clone());
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
         ctx.record_action(id);
         let mut pod = ctx.create_pod(text_input);
+        pod.new_widget.options.disabled = self.disabled;
         pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
     }
