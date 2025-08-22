@@ -72,5 +72,5 @@ fn main() {
     };
 
     let app = Xilem::new_simple(data, app_logic, WindowOptions::new("Memoization"));
-    app.run_in(EventLoop::with_user_event()).unwrap();
+    app.run_in(EventLoop::builder()).unwrap();
 }

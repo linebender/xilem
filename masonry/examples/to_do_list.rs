@@ -15,7 +15,6 @@ use masonry::properties::types::Length;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
-use masonry_winit::winit::window::Window;
 
 const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::new("text-input");
 const LIST_TAG: WidgetTag<Flex> = WidgetTag::new("list");
@@ -81,20 +80,23 @@ pub fn make_widget_tree() -> NewWidget<impl Widget> {
 
 fn main() {
     let window_size = LogicalSize::new(400.0, 400.0);
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("To-do list")
         .with_resizable(true)
-        .with_min_inner_size(window_size);
+        .with_min_surface_size(window_size);
     let driver = Driver {
         next_task: String::new(),
         window_id: WindowId::next(),
     };
 
-    let event_loop = masonry_winit::app::EventLoop::with_user_event()
-        .build()
-        .unwrap();
+    let (event_sender, event_receiver) =
+        std::sync::mpsc::channel::<masonry_winit::app::MasonryUserEvent>();
+
+    let event_loop = masonry_winit::app::EventLoop::builder().build().unwrap();
     masonry_winit::app::run_with(
         event_loop,
+        event_sender,
+        event_receiver,
         vec![
             NewWindow::new_with_id(
                 driver.window_id,

@@ -122,7 +122,7 @@ fn main() {
     );
 
     let window_size = LogicalSize::new(400.0, 400.0);
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("To-do list")
         .with_resizable(true)
         .with_min_inner_size(window_size);
@@ -131,7 +131,7 @@ fn main() {
         next_task: String::new(),
         window_id: WindowId::next(),
     };
-    let event_loop = masonry_winit::app::EventLoop::with_user_event()
+    let event_loop = masonry_winit::app::EventLoop::builder()
         .build()
         .unwrap();
     masonry_winit::app::run_with(

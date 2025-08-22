@@ -20,7 +20,6 @@ members = [
     "xilem_web/web_examples/svgtoy",
     "xilem_web/web_examples/svgdraw",
     "tree_arena",
-    "placehero",
 ]
 
 [workspace.package]
@@ -46,26 +45,25 @@ masonry_winit = { version = "0.3.0", path = "masonry_winit" }
 xilem_core = { version = "0.3.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
 
+winit = { git = "https://github.com/Hennzau/winit" }
+
 anymore = "1.0.0"
-vello = { version = "0.5.0", git = "https://github.com/linebender/vello", rev = "2e74f202aed09f273fe7e84234e9b564f99ff9bc" }
+vello = { version = "0.5.0", git = "https://github.com/Hennzau/vello" }
 kurbo = "0.11.3"
-parley = { git = "https://github.com/linebender/parley", rev = "587b7634ae8601c10de7f0361bfd56085a5b7b4e", features = [
-    "accesskit",
-] }
+parley = { git = "https://github.com/Hennzau/parley", features = ["accesskit"] }
 peniko = "0.4.0"
-winit = "0.30.10"
 tracing = { version = "0.1.41", default-features = false }
-ui-events = "0.1.0"
-ui-events-winit = "0.1.0"
+ui-events = { git = "https://github.com/Hennzau/ui-events" }
+ui-events-winit = { git = "https://github.com/Hennzau/ui-events" }
 smallvec = "1.15.0"
 hashbrown = "0.15.3"
-dpi = "0.1.2"
+dpi = { git = "https://github.com/Hennzau/winit" }
 image = { version = "0.25.6", default-features = false }
 web-time = "1.1.0"
 bitflags = "2.9.1"
-accesskit = "0.21.0"
-accesskit_winit = "0.29.0"
-accesskit_consumer = "0.30.0"
+accesskit = { git = "https://github.com/Hennzau/accesskit" }
+accesskit_winit = { git = "https://github.com/Hennzau/accesskit" }
+accesskit_consumer = { git = "https://github.com/Hennzau/accesskit" }
 time = "0.3.41"
 reqwest = { version = "0.12.20", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl

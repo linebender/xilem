@@ -135,7 +135,7 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 // This hackery is required because Cargo doesn't care to support this use case, of one
 // example which works across Android and desktop
 fn main() -> Result<(), EventLoopError> {
-    run(EventLoop::with_user_event())
+    run(EventLoop::builder())
 }
 #[cfg(target_os = "android")]
 // Safety: We are following `android_activity`'s docs here
@@ -147,7 +147,7 @@ fn main() -> Result<(), EventLoopError> {
 fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use winit::platform::android::EventLoopBuilderExtAndroid;
 
-    let mut event_loop = EventLoop::with_user_event();
+    let mut event_loop = EventLoop::builder();
     event_loop.with_android_app(app);
 
     run(event_loop).expect("Can create app");

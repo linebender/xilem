@@ -18,7 +18,6 @@ use masonry::properties::{BorderColor, BorderWidth};
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Grid, GridParams, Prose, SizedBox, TextArea};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
-use masonry_winit::winit::window::Window;
 
 struct Driver {
     grid_spacing: f64,
@@ -143,13 +142,18 @@ fn main() {
     let main_widget = make_grid(driver.grid_spacing);
 
     let window_size = LogicalSize::new(800.0, 500.0);
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("Grid Layout")
         .with_resizable(true)
-        .with_min_inner_size(window_size);
+        .with_min_surface_size(window_size);
+
+    let (event_sender, event_receiver) =
+        std::sync::mpsc::channel::<masonry_winit::app::MasonryUserEvent>();
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+        masonry_winit::app::EventLoop::builder(),
+        event_sender,
+        event_receiver,
         vec![NewWindow::new_with_id(
             driver.window_id,
             window_attributes,

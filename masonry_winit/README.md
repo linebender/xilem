@@ -63,7 +63,7 @@ fn main() {
     };
 
     let window_size = LogicalSize::new(400.0, 400.0);
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("My Masonry App")
         .with_resizable(true)
         .with_min_inner_size(window_size);
@@ -71,7 +71,7 @@ fn main() {
     let driver = Driver {
         // ...
     };
-    let event_loop = masonry_winit::app::EventLoop::with_user_event()
+    let event_loop = masonry_winit::app::EventLoop::builder()
         .build()
         .unwrap();
     masonry_winit::app::run_with(

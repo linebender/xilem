@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace, trace_span};
-use ui_events::pointer::PointerButton;
+use ui_events::pointer::{PointerButton, PointerButtonEvent};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Color;
@@ -107,7 +107,7 @@ impl Widget for Button {
                 ctx.request_paint_only();
                 trace!("Button {:?} pressed", ctx.widget_id());
             }
-            PointerEvent::Up { button, .. } => {
+            PointerEvent::Up(PointerButtonEvent { button, .. }) => {
                 if ctx.is_active() && ctx.is_hovered() {
                     ctx.submit_action::<Self::Action>(ButtonPress { button: *button });
                     trace!("Button {:?} released", ctx.widget_id());

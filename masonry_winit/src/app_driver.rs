@@ -44,11 +44,14 @@ impl WindowId {
 /// Context for the [`AppDriver`] trait.
 pub struct DriverCtx<'a, 's> {
     state: &'a mut MasonryState<'s>,
-    event_loop: &'a ActiveEventLoop,
+    event_loop: &'a dyn ActiveEventLoop,
 }
 
 impl<'a, 's> DriverCtx<'a, 's> {
-    pub(crate) fn new(state: &'a mut MasonryState<'s>, event_loop: &'a ActiveEventLoop) -> Self {
+    pub(crate) fn new(
+        state: &'a mut MasonryState<'s>,
+        event_loop: &'a dyn ActiveEventLoop,
+    ) -> Self {
         Self { state, event_loop }
     }
 }
@@ -105,9 +108,9 @@ impl DriverCtx<'_, '_> {
     /// # Panics
     ///
     /// Panics if the window cannot be found.
-    pub fn window_handle(&self, window_id: WindowId) -> &WindowHandle {
+    pub fn window_handle(&self, window_id: WindowId) -> &dyn WindowHandle {
         let window = self.state.window(window_id);
-        &window.handle
+        window.handle.as_ref()
     }
 
     /// Access the [`WindowHandle`] and [`RenderRoot`] of the given window.
@@ -118,9 +121,9 @@ impl DriverCtx<'_, '_> {
     pub fn window_handle_and_render_root(
         &mut self,
         window_id: WindowId,
-    ) -> (&WindowHandle, &mut RenderRoot) {
+    ) -> (&dyn WindowHandle, &mut RenderRoot) {
         let window = self.state.window_mut(window_id);
-        (&window.handle, &mut window.render_root)
+        (window.handle.as_ref(), &mut window.render_root)
     }
 
     /// Creates a new window.

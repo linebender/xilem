@@ -5,7 +5,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
-use std::sync::mpsc::Sender;
+use std::sync::mpsc::{Receiver, Sender};
 use std::sync::{Arc, mpsc};
 
 use accesskit_winit::Adapter;
@@ -23,10 +23,14 @@ use masonry_core::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererO
 use tracing::{debug, info, info_span};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
+use winit::cursor::Cursor;
+use winit::dpi::Size;
 use winit::error::EventLoopError;
 use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
 use winit::event_loop::ActiveEventLoop;
-use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as HandleId};
+use winit::window::{
+    ImeRequestData, Window as WindowHandle, WindowAttributes, WindowId as HandleId,
+};
 
 use crate::app::{AppDriver, DriverCtx, masonry_resize_direction_to_winit, winit_ime_to_masonry};
 use crate::app_driver::WindowId;
@@ -55,10 +59,10 @@ pub struct NewWindow {
     pub id: WindowId,
     /// Window attributes for the winit's [`Window`].
     ///
-    /// A default attribute can be created using [`Window::default_attributes()`].
+    /// A default attribute can be created using [`masonry_winit::winit::window::WindowAttributes::default()`].
     ///
     /// [`Window`]: crate::winit::window::Window
-    /// [`Window::default_attributes()`]: crate::winit::window::Window::default_attributes()
+    /// [`masonry_winit::winit::window::WindowAttributes::default()`]: crate::winit::window::masonry_winit::winit::window::WindowAttributes::default()
     pub attributes: WindowAttributes,
     /// The widget which will take up the entire contents of the new window.
     pub root_widget: NewWidget<dyn Widget>,
@@ -108,7 +112,7 @@ impl NewWindow {
 /// Per-Window state
 pub(crate) struct Window {
     id: WindowId,
-    pub(crate) handle: Arc<WindowHandle>,
+    pub(crate) handle: Arc<dyn WindowHandle>,
     pub(crate) accesskit_adapter: Adapter,
     event_reducer: WindowEventReducer,
     pub(crate) render_root: RenderRoot,
@@ -118,7 +122,7 @@ pub(crate) struct Window {
 impl Window {
     pub(crate) fn new(
         window_id: WindowId,
-        handle: Arc<WindowHandle>,
+        handle: Arc<dyn WindowHandle>,
         accesskit_adapter: Adapter,
         root_widget: NewWidget<dyn Widget>,
         signal_sender: Sender<(WindowId, RenderRootSignal)>,
@@ -181,6 +185,9 @@ pub struct MasonryState<'a> {
     /// Windows that are scheduled to be created in the next resumed event.
     new_windows: Vec<NewWindow>,
     need_first_frame: Vec<HandleId>,
+
+    event_sender: Sender<MasonryUserEvent>,
+    event_receiver: Receiver<MasonryUserEvent>,
 }
 
 struct MainState<'a> {
@@ -191,31 +198,42 @@ struct MainState<'a> {
 /// The type of the event loop used by Masonry.
 ///
 /// This *will* be changed to allow custom event types, but is implemented this way for expedience
-pub type EventLoop = winit::event_loop::EventLoop<MasonryUserEvent>;
+pub type EventLoop = winit::event_loop::EventLoop;
 /// The type of the event loop builder used by Masonry.
 ///
 /// This *will* be changed to allow custom event types, but is implemented this way for expedience
-pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder<MasonryUserEvent>;
+pub type EventLoopBuilder = winit::event_loop::EventLoopBuilder;
 
 /// A proxy used to send events to the event loop
-pub type EventLoopProxy = winit::event_loop::EventLoopProxy<MasonryUserEvent>;
+pub type EventLoopProxy = winit::event_loop::EventLoopProxy;
 
 // --- MARK: RUN
 pub fn run(
     // Clearly, this API needs to be refactored, so we don't mind forcing this to be passed in here directly
     // This is passed in mostly to allow configuring the Android app
     mut loop_builder: EventLoopBuilder,
+    event_sender: Sender<MasonryUserEvent>,
+    event_receiver: Receiver<MasonryUserEvent>,
     new_windows: Vec<NewWindow>,
     app_driver: impl AppDriver + 'static,
     default_property_set: DefaultProperties,
 ) -> Result<(), EventLoopError> {
     let event_loop = loop_builder.build()?;
 
-    run_with(event_loop, new_windows, app_driver, default_property_set)
+    run_with(
+        event_loop,
+        event_sender,
+        event_receiver,
+        new_windows,
+        app_driver,
+        default_property_set,
+    )
 }
 
 pub fn run_with(
     event_loop: EventLoop,
+    event_sender: Sender<MasonryUserEvent>,
+    event_receiver: Receiver<MasonryUserEvent>,
     new_windows: Vec<NewWindow>,
     app_driver: impl AppDriver + 'static,
     default_properties: DefaultProperties,
@@ -231,6 +249,8 @@ pub fn run_with(
             event_loop.create_proxy(),
             new_windows,
             default_properties,
+            event_sender,
+            event_receiver,
         ),
         app_driver: Box::new(app_driver),
     };
@@ -238,19 +258,24 @@ pub fn run_with(
     event_loop.run_app(&mut main_state)
 }
 
-impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+impl ApplicationHandler for MainState<'_> {
+    fn can_create_surfaces(&mut self, event_loop: &dyn ActiveEventLoop) {
         self.masonry_state
             .handle_resumed(event_loop, &mut *self.app_driver);
     }
 
-    fn suspended(&mut self, event_loop: &ActiveEventLoop) {
+    fn resumed(&mut self, event_loop: &dyn ActiveEventLoop) {
+        self.masonry_state
+            .handle_resumed(event_loop, &mut *self.app_driver);
+    }
+
+    fn suspended(&mut self, event_loop: &dyn ActiveEventLoop) {
         self.masonry_state.handle_suspended(event_loop);
     }
 
     fn window_event(
         &mut self,
-        event_loop: &ActiveEventLoop,
+        event_loop: &dyn ActiveEventLoop,
         handle_id: HandleId,
         event: WinitWindowEvent,
     ) {
@@ -264,8 +289,8 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
 
     fn device_event(
         &mut self,
-        event_loop: &ActiveEventLoop,
-        device_id: DeviceId,
+        event_loop: &dyn ActiveEventLoop,
+        device_id: Option<DeviceId>,
         event: WinitDeviceEvent,
     ) {
         self.masonry_state.handle_device_event(
@@ -276,32 +301,34 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
         );
     }
 
-    fn user_event(&mut self, event_loop: &ActiveEventLoop, event: MasonryUserEvent) {
-        self.masonry_state
-            .handle_user_event(event_loop, event, self.app_driver.as_mut());
+    fn proxy_wake_up(&mut self, event_loop: &dyn ActiveEventLoop) {
+        while let Ok(event) = self.masonry_state.event_receiver.try_recv() {
+            self.masonry_state
+                .handle_user_event(event_loop, event, self.app_driver.as_mut());
+        }
     }
 
     // The following have empty handlers, but adding this here for future proofing. E.g., memory
     // warning is very likely to be handled for mobile and we in particular want to make sure
     // external event loops can let masonry handle these callbacks.
 
-    fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn about_to_wait(&mut self, event_loop: &dyn winit::event_loop::ActiveEventLoop) {
         self.masonry_state.handle_about_to_wait(event_loop);
     }
 
     fn new_events(
         &mut self,
-        event_loop: &winit::event_loop::ActiveEventLoop,
+        event_loop: &dyn winit::event_loop::ActiveEventLoop,
         cause: winit::event::StartCause,
     ) {
         self.masonry_state.handle_new_events(event_loop, cause);
     }
 
-    fn exiting(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn destroy_surfaces(&mut self, event_loop: &dyn winit::event_loop::ActiveEventLoop) {
         self.masonry_state.handle_exiting(event_loop);
     }
 
-    fn memory_warning(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn memory_warning(&mut self, event_loop: &dyn winit::event_loop::ActiveEventLoop) {
         self.masonry_state.handle_memory_warning(event_loop);
     }
 }
@@ -311,6 +338,8 @@ impl MasonryState<'_> {
         event_loop_proxy: EventLoopProxy,
         new_windows: Vec<NewWindow>,
         default_properties: DefaultProperties,
+        event_sender: Sender<MasonryUserEvent>,
+        event_receiver: Receiver<MasonryUserEvent>,
     ) -> Self {
         let render_cx = RenderContext::new();
 
@@ -336,11 +365,18 @@ impl MasonryState<'_> {
             exit: false,
             new_windows,
             need_first_frame: Vec::new(),
+
+            event_sender,
+            event_receiver,
         }
     }
 
     // --- MARK: RESUMED
-    pub fn handle_resumed(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
+    pub fn handle_resumed(
+        &mut self,
+        event_loop: &dyn ActiveEventLoop,
+        app_driver: &mut dyn AppDriver,
+    ) {
         if !self.is_suspended {
             // Short-circuiting since we have already
             // handled the resumed event before this.
@@ -369,7 +405,7 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: SUSPENDED
-    pub fn handle_suspended(&mut self, _event_loop: &ActiveEventLoop) {
+    pub fn handle_suspended(&mut self, _event_loop: &dyn ActiveEventLoop) {
         if self.is_suspended {
             // Short-circuiting since we have already
             // handled the suspended event before this.
@@ -383,7 +419,11 @@ impl MasonryState<'_> {
         self.surfaces.clear();
     }
 
-    pub(crate) fn create_window(&mut self, event_loop: &ActiveEventLoop, new_window: NewWindow) {
+    pub(crate) fn create_window(
+        &mut self,
+        event_loop: &dyn ActiveEventLoop,
+        new_window: NewWindow,
+    ) {
         if self.window_id_to_handle_id.contains_key(&new_window.id) {
             panic!(
                 "attempted to create a window with id {:?} but a window with that id already exists",
@@ -410,9 +450,14 @@ impl MasonryState<'_> {
             self.need_first_frame.push(handle.id());
         }
 
-        let adapter =
-            Adapter::with_event_loop_proxy(event_loop, &handle, self.event_loop_proxy.clone());
-        let handle = Arc::new(handle);
+        let adapter = Adapter::with_event_loop_proxy(
+            event_loop,
+            handle.as_ref(),
+            self.event_sender.clone(),
+            self.event_loop_proxy.clone(),
+        );
+
+        let handle: Arc<dyn WindowHandle> = Arc::from(handle);
 
         let scale_factor = handle.scale_factor();
         let handle_id = handle.id();
@@ -450,6 +495,7 @@ impl MasonryState<'_> {
         // HACK: When we exit, on some systems (known to happen with Wayland on KDE),
         // the IME state gets preserved until the app next opens. We work around this by force-deleting
         // the IME state just before exiting.
+        #[allow(deprecated)]
         window.handle.set_ime_allowed(false);
     }
 
@@ -466,7 +512,7 @@ impl MasonryState<'_> {
         #[cfg(target_os = "ios")]
         let size = window.handle.outer_size();
         #[cfg(not(target_os = "ios"))]
-        let size = window.handle.inner_size();
+        let size = window.handle.surface_size();
         let width = size.width;
         let height = size.height;
 
@@ -556,7 +602,7 @@ impl MasonryState<'_> {
     // --- MARK: WINDOW_EVENT
     pub fn handle_window_event(
         &mut self,
-        event_loop: &ActiveEventLoop,
+        event_loop: &dyn ActiveEventLoop,
         handle_id: HandleId,
         event: WinitWindowEvent,
         app_driver: &mut dyn AppDriver,
@@ -585,7 +631,7 @@ impl MasonryState<'_> {
         }
         window
             .accesskit_adapter
-            .process_event(&window.handle, &event);
+            .process_event(window.handle.as_ref(), &event);
 
         if !matches!(
             event,
@@ -661,7 +707,7 @@ impl MasonryState<'_> {
             WinitWindowEvent::CloseRequested => {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
             }
-            WinitWindowEvent::Resized(size) => {
+            WinitWindowEvent::SurfaceResized(size) => {
                 window
                     .render_root
                     .handle_window_event(WindowEvent::Resize(size));
@@ -687,8 +733,8 @@ impl MasonryState<'_> {
     // --- MARK: DEVICE_EVENT
     pub fn handle_device_event(
         &mut self,
-        _: &ActiveEventLoop,
-        _: DeviceId,
+        _: &dyn ActiveEventLoop,
+        _: Option<DeviceId>,
         _: WinitDeviceEvent,
         _: &mut dyn AppDriver,
     ) {
@@ -697,7 +743,7 @@ impl MasonryState<'_> {
     // --- MARK: USER_EVENT
     pub fn handle_user_event(
         &mut self,
-        event_loop: &ActiveEventLoop,
+        event_loop: &dyn ActiveEventLoop,
         event: MasonryUserEvent,
         app_driver: &mut dyn AppDriver,
     ) {
@@ -747,16 +793,16 @@ impl MasonryState<'_> {
     }
 
     // --- MARK: EMPTY WINIT HANDLERS
-    pub fn handle_about_to_wait(&mut self, _: &ActiveEventLoop) {}
+    pub fn handle_about_to_wait(&mut self, _: &dyn ActiveEventLoop) {}
 
-    pub fn handle_new_events(&mut self, _: &ActiveEventLoop, _: winit::event::StartCause) {}
+    pub fn handle_new_events(&mut self, _: &dyn ActiveEventLoop, _: winit::event::StartCause) {}
 
-    pub fn handle_exiting(&mut self, _: &ActiveEventLoop) {}
+    pub fn handle_exiting(&mut self, _: &dyn ActiveEventLoop) {}
 
-    pub fn handle_memory_warning(&mut self, _: &ActiveEventLoop) {}
+    pub fn handle_memory_warning(&mut self, _: &dyn ActiveEventLoop) {}
 
     // --- MARK: SIGNALS
-    fn handle_signals(&mut self, event_loop: &ActiveEventLoop, app_driver: &mut dyn AppDriver) {
+    fn handle_signals(&mut self, event_loop: &dyn ActiveEventLoop, app_driver: &mut dyn AppDriver) {
         if self.is_suspended {
             tracing::warn!("Tried to handle a signal whilst suspended");
             return;
@@ -789,13 +835,22 @@ impl MasonryState<'_> {
                     );
                 }
                 RenderRootSignal::StartIme => {
+                    #[allow(deprecated)]
                     handle.set_ime_allowed(true);
                 }
                 RenderRootSignal::EndIme => {
+                    #[allow(deprecated)]
                     handle.set_ime_allowed(false);
                 }
                 RenderRootSignal::ImeMoved(position, size) => {
-                    handle.set_ime_cursor_area(position, size);
+                    handle
+                        .request_ime_update(winit::window::ImeRequest::Update(
+                            ImeRequestData::default().with_cursor_area(
+                                winit::dpi::Position::Logical(position),
+                                winit::dpi::Size::Logical(size),
+                            ),
+                        ))
+                        .unwrap();
                 }
                 RenderRootSignal::ClipboardStore(_) => {}
                 RenderRootSignal::RequestRedraw => {
@@ -809,11 +864,11 @@ impl MasonryState<'_> {
                     handle.focus_window();
                 }
                 RenderRootSignal::SetCursor(cursor) => {
-                    handle.set_cursor(cursor);
+                    handle.set_cursor(Cursor::Icon(cursor));
                 }
                 RenderRootSignal::SetSize(size) => {
                     // TODO - Handle return value?
-                    let _ = handle.request_inner_size(size);
+                    let _ = handle.request_surface_size(Size::Physical(size));
                 }
                 RenderRootSignal::SetTitle(title) => {
                     handle.set_title(&title);
@@ -837,7 +892,7 @@ impl MasonryState<'_> {
                     event_loop.exit();
                 }
                 RenderRootSignal::ShowWindowMenu(position) => {
-                    handle.show_window_menu(position);
+                    handle.show_window_menu(winit::dpi::Position::Logical(position));
                 }
                 RenderRootSignal::WidgetSelectedInInspector(widget_id) => {
                     let Some(widget) = window.render_root.get_widget(widget_id) else {
@@ -922,13 +977,13 @@ impl MasonryState<'_> {
 
 fn create_surface<'s>(
     render_cx: &mut RenderContext,
-    handle: Arc<WindowHandle>,
+    handle: Arc<dyn WindowHandle>,
 ) -> RenderSurface<'s> {
     // https://github.com/rust-windowing/winit/issues/2308
     #[cfg(target_os = "ios")]
     let size = handle.outer_size();
     #[cfg(not(target_os = "ios"))]
-    let size = handle.inner_size();
+    let size = handle.surface_size();
 
     pollster::block_on(render_cx.create_surface(
         handle.clone(),

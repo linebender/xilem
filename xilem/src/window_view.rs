@@ -28,7 +28,7 @@ impl<State> WindowView<State> {
 pub(crate) struct CreateWindow(pub WindowAttributes, pub NewWidget<dyn Widget>);
 
 impl ViewElement for CreateWindow {
-    type Mut<'a> = (&'a Window, &'a mut RenderRoot);
+    type Mut<'a> = (&'a dyn Window, &'a mut RenderRoot);
 }
 
 impl<State> ViewMarker for WindowView<State> where State: 'static {}

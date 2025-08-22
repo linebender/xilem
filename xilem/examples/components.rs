@@ -41,6 +41,6 @@ fn main() -> Result<(), EventLoopError> {
         app_logic,
         WindowOptions::new("Components"),
     );
-    app.run_in(EventLoop::with_user_event())?;
+    app.run_in(EventLoop::builder())?;
     Ok(())
 }

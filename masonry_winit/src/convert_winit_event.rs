@@ -24,5 +24,9 @@ pub(crate) fn winit_ime_to_masonry(event: WinitIme) -> Ime {
         WinitIme::Disabled => Ime::Disabled,
         WinitIme::Preedit(text, cursor) => Ime::Preedit(text, cursor),
         WinitIme::Commit(text) => Ime::Commit(text),
+        WinitIme::DeleteSurrounding {
+            before_bytes: _,
+            after_bytes: _,
+        } => Ime::Enabled, // For now as I don't know what to do with this TODO
     }
 }

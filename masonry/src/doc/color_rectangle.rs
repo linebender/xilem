@@ -42,6 +42,7 @@ use masonry::core::{ChildrenIds, RegisterCtx};
 use masonry::core::WidgetMut;
 // ---
 use masonry::properties::Background;
+use ui_events::pointer::PointerButtonEvent;
 
 // ---
 
@@ -85,10 +86,10 @@ impl Widget for ColorRectangle {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down {
+            PointerEvent::Down(PointerButtonEvent {
                 button: Some(PointerButton::Primary),
                 ..
-            } => {
+            }) => {
                 ctx.submit_action::<Self::Action>(ColorRectanglePress);
             }
             _ => {}

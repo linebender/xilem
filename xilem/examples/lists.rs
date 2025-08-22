@@ -31,6 +31,6 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
 
 fn main() -> Result<(), EventLoopError> {
     let app = Xilem::new_simple(AppState::default(), app_logic, WindowOptions::new("Lists"));
-    app.run_in(EventLoop::with_user_event())?;
+    app.run_in(EventLoop::builder())?;
     Ok(())
 }

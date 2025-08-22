@@ -23,7 +23,6 @@ use masonry::theme::default_property_set;
 use masonry::vello::Scene;
 use masonry::{TextAlign, TextAlignOptions};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
-use masonry_winit::winit::window::Window;
 use tracing::{Span, trace_span};
 
 struct Driver;
@@ -192,10 +191,16 @@ impl Widget for CustomWidget {
 
 fn main() {
     let my_string = "Masonry + Vello".to_string();
-    let window_attributes = Window::default_attributes().with_title("Fancy colors");
+    let window_attributes =
+        masonry_winit::winit::window::WindowAttributes::default().with_title("Fancy colors");
+
+    let (event_sender, event_receiver) =
+        std::sync::mpsc::channel::<masonry_winit::app::MasonryUserEvent>();
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+        masonry_winit::app::EventLoop::builder(),
+        event_sender,
+        event_receiver,
         vec![NewWindow::new(
             window_attributes,
             NewWidget::new(CustomWidget(my_string)).erased(),

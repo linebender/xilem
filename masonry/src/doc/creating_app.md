@@ -169,13 +169,13 @@ The last step is to create our Winit window and start our main loop.
     use masonry::dpi::LogicalSize;
     use masonry_winit::winit::window::Window;
 
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("To-do list")
         .with_resizable(true)
         .with_min_inner_size(LogicalSize::new(400.0, 400.0));
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+        masonry_winit::app::EventLoop::builder(),
         window_attributes,
         main_widget,
         driver,
@@ -240,7 +240,7 @@ fn main() {
     use masonry::dpi::LogicalSize;
     use masonry_winit::winit::window::Window;
 
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("To-do list")
         .with_resizable(true)
         .with_min_inner_size(LogicalSize::new(400.0, 400.0));
@@ -248,7 +248,7 @@ fn main() {
     # return;
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+        masonry_winit::app::EventLoop::builder(),
         window_attributes,
         main_widget,
         driver,

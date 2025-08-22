@@ -105,6 +105,6 @@ fn main() -> Result<(), EventLoopError> {
         TransformsGame::view,
         WindowOptions::new("Transforms"),
     );
-    app.run_in(EventLoop::with_user_event())?;
+    app.run_in(EventLoop::builder())?;
     Ok(())
 }

@@ -202,5 +202,5 @@ const STATUS_CODES_CSV: &str = include_str!(concat!(
 
 // TODO: This example doesn't support Android because the virtual scroll component doesn't have gesture support.
 fn main() -> Result<(), EventLoopError> {
-    run(EventLoop::with_user_event())
+    run(EventLoop::builder())
 }

@@ -3,6 +3,7 @@
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
+use ui_events::pointer::PointerButtonEvent;
 use vello::Scene;
 use vello::kurbo::{Point, Rect, Size};
 
@@ -129,7 +130,7 @@ impl Widget for ScrollBar {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { state, .. } => {
+            PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;

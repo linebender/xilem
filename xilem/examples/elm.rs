@@ -102,6 +102,6 @@ fn main() -> Result<(), EventLoopError> {
         app_logic,
         WindowOptions::new("Elm").with_min_inner_size(LogicalSize::new(600., 800.)),
     );
-    app.run_in(EventLoop::with_user_event())?;
+    app.run_in(EventLoop::builder())?;
     Ok(())
 }

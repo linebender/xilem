@@ -12,6 +12,7 @@
 )]
 
 use std::str::FromStr;
+use std::sync::mpsc;
 
 use masonry::core::{
     ErasedAction, NewWidget, Properties, Property, StyleProperty, Widget, WidgetId, WidgetOptions,
@@ -26,7 +27,6 @@ use masonry::properties::{
 use masonry::theme::default_property_set;
 use masonry::widgets::{Button, ButtonPress, Flex, Grid, GridParams, Label};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
-use masonry_winit::winit::window::Window;
 
 #[derive(Clone)]
 struct CalcState {
@@ -287,10 +287,10 @@ pub fn build_calc() -> NewWidget<impl Widget> {
 fn main() {
     let window_size = LogicalSize::new(223., 300.);
 
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("Simple Calculator")
         .with_resizable(true)
-        .with_min_inner_size(window_size);
+        .with_min_surface_size(window_size);
 
     let calc_state = CalcState {
         value: "0".to_string(),
@@ -300,11 +300,13 @@ fn main() {
         window_id: WindowId::next(),
     };
 
-    let event_loop = masonry_winit::app::EventLoop::with_user_event()
-        .build()
-        .unwrap();
+    let event_loop = masonry_winit::app::EventLoop::new().unwrap();
+    let (event_sender, event_receiver) = mpsc::channel::<masonry_winit::app::MasonryUserEvent>();
+
     masonry_winit::app::run_with(
         event_loop,
+        event_sender,
+        event_receiver,
         vec![NewWindow::new_with_id(
             calc_state.window_id,
             window_attributes,

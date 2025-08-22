@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::{debug, info_span, trace};
-use ui_events::pointer::PointerType;
+use ui_events::pointer::{PointerButtonEvent, PointerScrollEvent, PointerType};
 
 use crate::app::{RenderRoot, RenderRootSignal};
 use crate::core::keyboard::{Key, KeyState, NamedKey};
@@ -60,10 +60,10 @@ fn pointer_event_short_name(e: &PointerEvent) -> &'static str {
 /// A position if the event has one.
 fn try_event_position(event: &PointerEvent) -> Option<PhysicalPosition<f64>> {
     match event {
-        PointerEvent::Down { state, .. }
-        | PointerEvent::Up { state, .. }
+        PointerEvent::Down(PointerButtonEvent { state, .. })
+        | PointerEvent::Up(PointerButtonEvent { state, .. })
         | PointerEvent::Move(PointerUpdate { current: state, .. })
-        | PointerEvent::Scroll { state, .. } => Some(state.position),
+        | PointerEvent::Scroll(PointerScrollEvent { state, .. }) => Some(state.position),
         _ => None,
     }
 }

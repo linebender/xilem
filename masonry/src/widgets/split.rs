@@ -5,6 +5,7 @@
 
 use accesskit::{Node, Role};
 use tracing::{Span, trace_span, warn};
+use ui_events::pointer::PointerButtonEvent;
 use vello::Scene;
 use vello::kurbo::{Line, Point, Rect, Size};
 
@@ -395,7 +396,7 @@ where
     ) {
         if self.draggable {
             match event {
-                PointerEvent::Down { state, .. } => {
+                PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                     let pos = ctx.local_position(state.position);
                     if self.bar_hit_test(ctx.size(), pos) {
                         ctx.set_handled();

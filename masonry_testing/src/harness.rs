@@ -15,6 +15,7 @@ use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
+use masonry_core::core::pointer::{PointerButtonEvent, PointerScrollEvent};
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -596,30 +597,30 @@ impl<W: Widget> TestHarness<W> {
     /// Send a [`Down`](PointerEvent::Down) event to the window.
     pub fn mouse_button_press(&mut self, button: PointerButton) {
         self.mouse_state.buttons.insert(button);
-        self.process_pointer_event(PointerEvent::Down {
+        self.process_pointer_event(PointerEvent::Down(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
             button: button.into(),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send an [`Up`](PointerEvent::Up) event to the window.
     pub fn mouse_button_release(&mut self, button: PointerButton) {
         self.mouse_state.buttons.remove(button);
-        self.process_pointer_event(PointerEvent::Up {
+        self.process_pointer_event(PointerEvent::Down(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
             button: button.into(),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send a [`Scroll`](PointerEvent::Scroll) event to the window.
     pub fn mouse_wheel(&mut self, Vec2 { x, y }: Vec2) {
-        self.process_pointer_event(PointerEvent::Scroll {
+        self.process_pointer_event(PointerEvent::Scroll(PointerScrollEvent {
             pointer: PRIMARY_MOUSE,
             delta: ScrollDelta::PixelDelta(PhysicalPosition { x, y }),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send events that lead to a given widget being clicked.

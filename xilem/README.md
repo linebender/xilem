@@ -88,7 +88,7 @@ fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
 
 fn main() -> Result<(), EventLoopError> {
     let app = Xilem::new_simple(Counter::default(), app_logic, WindowOptions::new("Counter app"));
-    app.run_in(EventLoop::with_user_event())?;
+    app.run_in(EventLoop::builder())?;
     Ok(())
 }
 ```

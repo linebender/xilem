@@ -113,5 +113,5 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
 }
 
 fn main() -> Result<(), EventLoopError> {
-    run(EventLoop::with_user_event())
+    run(EventLoop::builder())
 }

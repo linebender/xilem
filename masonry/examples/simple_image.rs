@@ -15,7 +15,6 @@ use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::widgets::Image;
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
-use masonry_winit::winit::window::Window;
 
 struct Driver;
 
@@ -47,13 +46,18 @@ pub fn make_image() -> NewWidget<Image> {
 
 fn main() {
     let window_size = LogicalSize::new(650.0, 450.0);
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("Simple image example")
-        .with_min_inner_size(window_size)
-        .with_max_inner_size(window_size);
+        .with_min_surface_size(window_size)
+        .with_max_surface_size(window_size);
+
+    let (event_sender, event_receiver) =
+        std::sync::mpsc::channel::<masonry_winit::app::MasonryUserEvent>();
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+        masonry_winit::app::EventLoop::builder(),
+        event_sender,
+        event_receiver,
         vec![NewWindow::new(window_attributes, make_image().erased())],
         Driver,
         default_property_set(),

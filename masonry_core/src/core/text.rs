@@ -111,7 +111,7 @@ pub fn render_text(
                         let gy = y - glyph.y;
                         x += glyph.advance;
                         vello::Glyph {
-                            id: glyph.id as _,
+                            id: glyph.id,
                             x: gx,
                             y: gy,
                         }

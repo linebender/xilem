@@ -6,6 +6,7 @@ use std::ops::Range;
 use accesskit::{Node, Role};
 use dpi::PhysicalPosition;
 use tracing::{Span, trace_span};
+use ui_events::pointer::PointerScrollEvent;
 use vello::Scene;
 use vello::kurbo::{Point, Rect, Size, Vec2};
 
@@ -270,7 +271,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let content_size = self.content_size;
 
         match *event {
-            PointerEvent::Scroll { delta, .. } => {
+            PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
                 let delta = match delta {

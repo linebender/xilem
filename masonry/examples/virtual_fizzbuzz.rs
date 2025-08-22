@@ -14,7 +14,6 @@ use masonry::dpi::LogicalSize;
 use masonry::theme::default_property_set;
 use masonry::widgets::{Label, VirtualScroll, VirtualScrollAction};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
-use masonry_winit::winit::window::Window;
 
 /// Function to create the virtual scroll area.
 fn init() -> VirtualScroll {
@@ -94,13 +93,18 @@ fn main() {
         window_id: WindowId::next(),
     };
     let window_size = LogicalSize::new(800.0, 500.0);
-    let window_attributes = Window::default_attributes()
+    let window_attributes = masonry_winit::winit::window::WindowAttributes::default()
         .with_title("Infinite FizzBuzz")
         .with_resizable(true)
-        .with_min_inner_size(window_size);
+        .with_min_surface_size(window_size);
+
+    let (event_sender, event_receiver) =
+        std::sync::mpsc::channel::<masonry_winit::app::MasonryUserEvent>();
 
     masonry_winit::app::run(
-        masonry_winit::app::EventLoop::with_user_event(),
+        masonry_winit::app::EventLoop::builder(),
+        event_sender,
+        event_receiver,
         vec![NewWindow::new_with_id(
             driver.window_id,
             window_attributes,

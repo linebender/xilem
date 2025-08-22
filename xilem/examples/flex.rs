@@ -39,6 +39,6 @@ fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
 
 fn main() -> Result<(), EventLoopError> {
     let app = Xilem::new_simple(0, app_logic, WindowOptions::new("Centered Flex"));
-    app.run_in(EventLoop::with_user_event())?;
+    app.run_in(EventLoop::builder())?;
     Ok(())
 }

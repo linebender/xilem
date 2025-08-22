@@ -148,14 +148,32 @@ where
     /// Run app with custom window attributes.
     pub fn run_in(mut self, mut event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         let event_loop = event_loop.build()?;
+
         let proxy = event_loop.create_proxy();
+
+        let (event_sender, event_receiver) = std::sync::mpsc::channel::<MasonryUserEvent>();
+
         let default_properties = self
             .default_properties
             .take()
             .unwrap_or_else(default_property_set);
-        let (driver, windows) =
-            self.into_driver_and_windows(move |event| proxy.send_event(event).map_err(|err| err.0));
-        masonry_winit::app::run_with(event_loop, windows, driver, default_properties)
+
+        let sender = event_sender.clone();
+        let (driver, windows) = self.into_driver_and_windows(move |event| {
+            sender.send(event).map_err(|err| err.0)?;
+            proxy.wake_up();
+
+            Ok(())
+        });
+
+        masonry_winit::app::run_with(
+            event_loop,
+            event_sender,
+            event_receiver,
+            windows,
+            driver,
+            default_properties,
+        )
     }
 
     /// Builds the [`MasonryDriver`] and the initial windows.

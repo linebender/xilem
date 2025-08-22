@@ -1,8 +1,10 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use winit::cursor::Cursor;
 use winit::dpi::{Position, Size};
-use winit::window::{Cursor, Icon, Window, WindowAttributes};
+use winit::icon::Icon;
+use winit::window::{Window, WindowAttributes};
 
 // TODO: make this a type-state builder to force Xilem::new apps to define on_close?
 /// Attributes and callbacks of a window.
@@ -126,23 +128,23 @@ impl<State> WindowOptions<State> {
             .with_window_icon(self.initial.window_icon.clone());
 
         if let Some(min_inner_size) = self.reactive.min_inner_size {
-            attrs = attrs.with_min_inner_size(min_inner_size);
+            attrs = attrs.with_min_surface_size(min_inner_size);
         }
         if let Some(max_inner_size) = self.reactive.max_inner_size {
-            attrs = attrs.with_max_inner_size(max_inner_size);
+            attrs = attrs.with_max_surface_size(max_inner_size);
         }
         if let Some(inner_size) = self.initial.inner_size {
-            attrs = attrs.with_inner_size(inner_size);
+            attrs = attrs.with_surface_size(inner_size);
         }
         attrs
     }
 
-    pub(crate) fn rebuild(&self, prev: &Self, window: &Window) {
+    pub(crate) fn rebuild(&self, prev: &Self, window: &dyn Window) {
         self.rebuild_reactive_window_attributes(prev, window);
         self.warn_for_changed_initial_attributes(prev);
     }
 
-    fn rebuild_reactive_window_attributes(&self, prev: &Self, window: &Window) {
+    fn rebuild_reactive_window_attributes(&self, prev: &Self, window: &dyn Window) {
         let current = &self.reactive;
         let prev = &prev.reactive;
 
@@ -156,10 +158,10 @@ impl<State> WindowOptions<State> {
             window.set_cursor(current.cursor.clone());
         }
         if current.min_inner_size != prev.min_inner_size {
-            window.set_min_inner_size(current.min_inner_size);
+            window.set_min_surface_size(current.min_inner_size);
         }
         if current.max_inner_size != prev.max_inner_size {
-            window.set_max_inner_size(current.max_inner_size);
+            window.set_max_surface_size(current.max_inner_size);
         }
     }
 

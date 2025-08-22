@@ -81,6 +81,6 @@ fn main() -> Result<(), EventLoopError> {
         history: String::new(),
     };
     let app = Xilem::new_simple(app_data, app_logic, WindowOptions::new("Centered Flex"));
-    app.run_in(EventLoop::with_user_event())?;
+    app.run_in(EventLoop::builder())?;
     Ok(())
 }
