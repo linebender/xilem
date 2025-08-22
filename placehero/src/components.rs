@@ -29,6 +29,7 @@ fn base_status<State: 'static>(
 ) -> impl FlexSequence<State, Navigation> + use<State> {
     // TODO: This really should be Arced or something.
     let status_clone: Status = status.clone();
+    let acct_clone = status.account.acct.clone();
     // TODO: In theory, it's possible to reblog a reblog; it's not clear what happens in this case.
     debug_assert!(status.reblog.is_none(), "`base_status` can't show reblogs.");
     // We return a child list.
@@ -42,7 +43,7 @@ fn base_status<State: 'static>(
                     .text_alignment(TextAlign::Start)
                     .text_size(20.)
                     .flex(CrossAxisAlignment::Start),
-                inline_prose(status.account.username.as_str())
+                inline_prose(status.account.acct.as_str())
                     .weight(FontWeight::SEMI_LIGHT)
                     .text_alignment(TextAlign::Start)
                     .flex(CrossAxisAlignment::Start),
@@ -50,6 +51,11 @@ fn base_status<State: 'static>(
             .main_axis_alignment(MainAxisAlignment::Start)
             .gap(1.px()),
             FlexSpacer::Flex(1.0),
+            button(label("Open Profile"), move |_| {
+                // TODO: We already actually just have the "account" here, so maybe
+                // short-circuit re-loading the account?
+                Navigation::LoadUser(acct_clone.clone())
+            }),
             inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
                 .text_alignment(TextAlign::End),
         ))

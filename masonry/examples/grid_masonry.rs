@@ -150,11 +150,11 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![NewWindow {
-            id: driver.window_id,
-            attributes: window_attributes,
-            root_widget: main_widget.erased(),
-        }],
+        vec![NewWindow::new_with_id(
+            driver.window_id,
+            window_attributes,
+            main_widget.erased(),
+        )],
         driver,
         default_property_set(),
     )
@@ -165,13 +165,17 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use masonry::theme::default_property_set;
-    use masonry_testing::{TestHarness, assert_render_snapshot};
+    use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(default_property_set(), make_grid(1.0));
+        let mut test_params = TestHarnessParams::default();
+        // This is a screenshot of an example, so it being slightly larger than a normal test is expected.
+        test_params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
+        let mut harness =
+            TestHarness::create_with(default_property_set(), make_grid(1.0), test_params);
         assert_render_snapshot!(harness, "example_grid_masonry_initial");
 
         // TODO - Test clicking buttons

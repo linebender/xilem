@@ -12,11 +12,15 @@
 use std::sync::Arc;
 
 use megalodon::entities::{Context, Instance, Status};
+use megalodon::error::{Kind, OwnError};
 use megalodon::{Megalodon, mastodon};
-use xilem::core::one_of::{Either, OneOf, OneOf4};
+use xilem::core::one_of::{Either, OneOf, OneOf6};
 use xilem::core::{NoElement, View, fork, map_action, map_state};
+use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use xilem::view::{button, flex, label, prose, split, task_raw, worker_raw};
+use xilem::view::{
+    button, flex, label, prose, sized_box, spinner, split, task_raw, text_input, worker_raw,
+};
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
 
@@ -52,6 +56,10 @@ struct Placehero {
     show_context: Option<Status>,
     context: Option<Context>,
     context_sender: Option<UnboundedSender<String>>,
+    account_sender: Option<UnboundedSender<String>>,
+    timeline_box_contents: String,
+    loading_timeline: bool,
+    not_found_acct: Option<String>,
 }
 
 /// Execute the app in the given winit event loop.
@@ -76,6 +84,10 @@ pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         show_context: None,
         context: None,
         context_sender: None,
+        account_sender: None,
+        timeline_box_contents: "raph".to_string(),
+        loading_timeline: false,
+        not_found_acct: None,
     };
 
     Xilem::new_simple(
@@ -91,11 +103,28 @@ impl Placehero {
         if let Some(instance) = &self.instance {
             let back = if self.show_context.is_some() {
                 // TODO: Make the ⬅️ arrow not be available to screen readers.
-                Some(button(label("⬅️ Back to Timeline"), |_: &mut Self| {
+                Either::A(button(label("⬅️ Back to Timeline"), |_: &mut Self| {
                     Navigation::Home
                 }))
             } else {
-                None
+                // Sized box of a flex because nested flexes aren't supported (? is this true)
+                // TODO: Ideally, we'd be able to use Either with fragments here
+                Either::B(sized_box(flex((
+                    text_input(
+                        self.timeline_box_contents.clone(),
+                        |state: &mut Self, string| {
+                            state.timeline_box_contents = string;
+                            Navigation::None
+                        },
+                    )
+                    .on_enter(|_, user| Navigation::LoadUser(user))
+                    .disabled(self.loading_timeline),
+                    self.loading_timeline
+                        .then(|| sized_box(spinner()).width(50.px()).height(50.px())),
+                    button(label("Go"), |state: &mut Self| {
+                        Navigation::LoadUser(state.timeline_box_contents.clone())
+                    }),
+                ))))
             };
             Either::A(flex((
                 label("Connected to:"),
@@ -113,12 +142,20 @@ impl Placehero {
             if let Some(context) = self.context.as_ref() {
                 // TODO: Display the status until the entire thread loads; this is hard because
                 // the thread's scroll position would jump.
-                OneOf4::A(thread(show_context, context))
+                OneOf6::A(thread(show_context, context))
             } else {
                 OneOf::B(prose("Loading thread"))
             }
+        } else if self.loading_timeline {
+            // Hack: Flex allows the sized box to not take up the full size.
+            OneOf::C(flex(sized_box(spinner()).width(50.px()).height(50.px())))
+        } else if let Some(acct) = self.not_found_acct.as_ref() {
+            OneOf::D(prose(format!(
+                "Could not find account @{acct} on this server. \
+                 You might need to include the server name of the account, if it's on a different server."
+            )))
         } else if let Some(timline) = self.timeline.as_mut() {
-            OneOf::C(map_state(
+            OneOf::E(map_state(
                 timline.view(self.mastodon.clone()),
                 // In the current edition of the app, the timeline is never removed
                 // If it ever is, we'll need to be more careful here.
@@ -126,7 +163,7 @@ impl Placehero {
                 |this: &mut Self| this.timeline.as_mut().unwrap(),
             ))
         } else {
-            OneOf::D(prose("No statuses yet loaded"))
+            OneOf::F(prose("No statuses yet loaded"))
         }
     }
 }
@@ -145,6 +182,18 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
                         .unwrap();
                     state.show_context = Some(status);
                     state.context = None;
+                }
+                Navigation::LoadUser(user) => {
+                    // It's fine to set `timeline_box_contents` manually here, because we
+                    // set state.loading_timeline (i.e. the box will become disabled).
+                    state.timeline_box_contents = user.clone();
+                    state.account_sender.as_ref().unwrap().send(user).unwrap();
+                    // In theory, we should set the Timeline to None here. However,
+                    // it currently runs into `teardown` requiring the state to be available
+                    // state.timeline = None;
+                    state.loading_timeline = true;
+                    state.context = None;
+                    state.show_context = None;
                 }
                 Navigation::Home => {
                     state.context = None;
@@ -198,9 +247,6 @@ fn load_contexts(
             Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
                 todo!()
             }
-            Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
-                todo!()
-            }
             Err(e) => {
                 todo!("handle {e}")
             }
@@ -226,9 +272,6 @@ fn load_instance(
             Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
                 todo!()
             }
-            Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
-                todo!()
-            }
             Err(e) => {
                 todo!("handle {e}")
             }
@@ -239,23 +282,41 @@ fn load_instance(
 fn load_account(
     mastodon: Mastodon,
 ) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
-    task_raw(
-        move |result| {
+    worker_raw(
+        move |result, mut recv: UnboundedReceiver<String>| {
             let mastodon = mastodon.clone();
             async move {
-                // We choose not to handle the case where the event loop has ended
-                let instance_result = mastodon.lookup_account("raph".to_string()).await;
-                // Note that error handling is deferred to the on_event handler
-                drop(result.message(instance_result));
+                while let Some(req) = recv.recv().await {
+                    let instance_result = mastodon.lookup_account(req.clone()).await;
+                    // We choose not to handle the case where the event loop has ended
+                    // Note that error handling is deferred to the on_event handler
+                    drop(result.message((instance_result, req)));
+                }
             }
         },
-        |app_state: &mut Placehero, event| match event {
-            Ok(instance) => app_state.timeline = Some(Timeline::new_for_account(instance.json)),
+        |app_state: &mut Placehero, sender| app_state.account_sender = Some(sender),
+        |app_state: &mut Placehero, (event, acct)| match event {
+            Ok(instance) => {
+                app_state.timeline = Some(Timeline::new_for_account(instance.json));
+                app_state.loading_timeline = false;
+                app_state.not_found_acct = None;
+            }
             Err(megalodon::error::Error::RequestError(e)) if e.is_connect() => {
                 todo!()
             }
-            Err(megalodon::error::Error::RequestError(e)) if e.is_status() => {
-                todo!()
+            Err(megalodon::error::Error::OwnError(
+                e @ OwnError {
+                    kind: Kind::HTTPStatusError,
+                    ..
+                },
+            )) => {
+                tracing::error!("Failure to to load account: {e}.");
+                // TODO: Handle more gracefully/surface to the user.
+                // This at least lets the user retry.
+                // Note that we don't unset the timeline here, because it's technically
+                // possible for this response to arrive extremely quickly
+                app_state.loading_timeline = false;
+                app_state.not_found_acct = Some(acct);
             }
             Err(e) => {
                 todo!("handle {e}")

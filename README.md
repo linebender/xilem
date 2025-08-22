@@ -126,6 +126,23 @@ The type erasure of View nodes is not an easy trick, as the trait has two associ
 Nonetheless, it is possible.
 (As far as I know, Olivier Faure was the first to demonstrate this technique, in [Panoramix], but I'm happy to be further enlightened)
 
+## Precise Capturing
+
+Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
+This is new syntax in the 2024 edition, and so it might be unfamiliar.
+Here's a snippet from the Xilem examples:
+
+```rust
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+   // ...
+}
+```
+
+The precise capturing syntax in this case indicates that the returned view does not make use of the lifetime of `data`.
+This is required because the view types in Xilem must be `'static`, but as of the 2024 edition, when `impl Trait` is used
+for return types, Rust assumes that the return value will use the parameter's lifetimes.
+That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
+
 ## Prerequisites
 
 ### Linux and BSD
@@ -148,7 +165,7 @@ sudo apt-get install clang libwayland-dev libxkbcommon-x11-dev libvulkan-dev
 There's a Nix flake in `docs/` which may be used for developing on NixOS:
 
 > [!INFO]
-> 
+>
 > This flake is provided as a starting point, and we do not routinely validate its correctness.
 > We do not require contributors to ensure that this accurately reflects the build requirements, as we expect most contributors (and indeed many maintainers) will not be using NixOS.
 > If it is out of date, please let us know by opening an issue or PR.

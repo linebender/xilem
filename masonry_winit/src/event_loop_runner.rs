@@ -63,6 +63,47 @@ pub struct NewWindow {
     pub attributes: WindowAttributes,
     /// The widget which will take up the entire contents of the new window.
     pub root_widget: NewWidget<dyn Widget>,
+    /// The base color of the window.
+    pub base_color: Color,
+}
+
+impl NewWindow {
+    /// Create a new window with an automatically assigned [`WindowId`].
+    ///
+    /// See the documentation on the fields of this type for details of the parameters.
+    pub fn new(attributes: WindowAttributes, root_widget: NewWidget<dyn Widget + 'static>) -> Self {
+        Self::new_with_id(WindowId::next(), attributes, root_widget)
+    }
+
+    /// Create a new window with a custom assigned [`WindowId`].
+    ///
+    /// Use this when you need to specify a unique ID for the window, for example,
+    /// for external tracking or state management.
+    pub fn new_with_id(
+        id: WindowId,
+        attributes: WindowAttributes,
+        root_widget: NewWidget<dyn Widget + 'static>,
+    ) -> Self {
+        Self {
+            id,
+            attributes,
+            root_widget,
+            base_color: Color::BLACK,
+        }
+    }
+
+    /// Set the base color of the new window.
+    ///
+    /// The base color is the color of the background which all widgets in the window draw on top of.
+    /// Masonry's current default theme assumes that this will be a very dark color for sufficient contrast.
+    /// This is most useful for apps which want to for example support light mode.
+    ///
+    /// Please note that it is not currently supported to modify this once the app is running.
+    /// This is not a fundamental limitation, and is only due to missing api design.
+    pub fn with_base_color(mut self, base_color: Color) -> Self {
+        self.base_color = base_color;
+        self
+    }
 }
 
 /// Per-Window state
@@ -72,6 +113,7 @@ pub(crate) struct Window {
     pub(crate) accesskit_adapter: Adapter,
     event_reducer: WindowEventReducer,
     pub(crate) render_root: RenderRoot,
+    pub(crate) base_color: Color,
 }
 
 impl Window {
@@ -82,6 +124,7 @@ impl Window {
         root_widget: NewWidget<dyn Widget>,
         signal_sender: Sender<(WindowId, RenderRootSignal)>,
         default_properties: Arc<DefaultProperties>,
+        base_color: Color,
     ) -> Self {
         // TODO: We can't know this scale factor until later?
         let scale_factor = 1.0;
@@ -104,6 +147,7 @@ impl Window {
                     test_font: None,
                 },
             ),
+            base_color,
         }
     }
 }
@@ -388,6 +432,7 @@ impl MasonryState<'_> {
             new_window.root_widget,
             self.signal_sender.clone(),
             self.default_properties.clone(),
+            new_window.base_color,
         );
         window
             .render_root
@@ -451,7 +496,7 @@ impl MasonryState<'_> {
             ..Default::default()
         };
         let render_params = RenderParams {
-            base_color: Color::BLACK,
+            base_color: window.base_color,
             width,
             height,
             antialiasing_method: AaConfig::Area,

@@ -196,11 +196,10 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![NewWindow {
-            id: WindowId::next(),
-            attributes: window_attributes,
-            root_widget: NewWidget::new(CustomWidget(my_string)).erased(),
-        }],
+        vec![NewWindow::new(
+            window_attributes,
+            NewWidget::new(CustomWidget(my_string)).erased(),
+        )],
         Driver,
         default_property_set(),
     )
@@ -225,7 +224,7 @@ fn make_image_data(width: usize, height: usize) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use masonry::theme::default_property_set;
-    use masonry_testing::{TestHarness, assert_render_snapshot};
+    use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
 
     use super::*;
 
@@ -233,9 +232,14 @@ mod tests {
     fn screenshot_test() {
         let my_string = "Masonry + Vello".to_string();
 
-        let mut harness = TestHarness::create(
+        let mut test_params = TestHarnessParams::default();
+        // This is a screenshot of an example, so it being slightly larger than a normal test is expected.
+        test_params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
+
+        let mut harness = TestHarness::create_with(
             default_property_set(),
             NewWidget::new(CustomWidget(my_string)),
+            test_params,
         );
         assert_render_snapshot!(harness, "example_custom_widget_initial");
     }

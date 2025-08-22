@@ -54,11 +54,7 @@ fn main() {
 
     masonry_winit::app::run(
         masonry_winit::app::EventLoop::with_user_event(),
-        vec![NewWindow {
-            id: WindowId::next(),
-            attributes: window_attributes,
-            root_widget: make_image().erased(),
-        }],
+        vec![NewWindow::new(window_attributes, make_image().erased())],
         Driver,
         default_property_set(),
     )
@@ -69,13 +65,19 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use masonry::theme::default_property_set;
-    use masonry_testing::{TestHarness, assert_render_snapshot};
+    use masonry_testing::{TestHarness, TestHarnessParams, assert_render_snapshot};
 
     use super::*;
 
     #[test]
     fn screenshot_test() {
-        let mut harness = TestHarness::create(default_property_set(), make_image());
+        let mut test_params = TestHarnessParams::default();
+        // The way that the anti-aliasing/bilinear filtering lines up in this test
+        // makes the output image surprisingly large.
+        test_params.max_screenshot_size = 16 * TestHarnessParams::KIBIBYTE;
+
+        let mut harness =
+            TestHarness::create_with(default_property_set(), make_image(), test_params);
         assert_render_snapshot!(harness, "example_simple_image_initial");
     }
 }

@@ -9,11 +9,9 @@
 use std::time::Duration;
 
 use masonry::properties::types::Length;
-use vello::peniko::color::AlphaColor;
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
-use xilem::palette::css;
-use xilem::style::{Background, BorderWidth, Style as _};
+use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
@@ -67,7 +65,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
         .map(|x| {
             (
                 button(label(format!("+{x}")), move |data: &mut AppData| {
-                    data.count += x
+                    data.count += x;
                 }),
                 if data.active {
                     FlexSpacer::Flex(x as f64)
