@@ -11,18 +11,22 @@ use crate::{MessageResult, Pod, TextAlign, View, ViewCtx};
 /// A non-interactive text element.
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use xilem::palette;
 /// use xilem::view::label;
-/// use masonry::TextAlign;
-/// use masonry::parley::fontique;
+/// use xilem::style::Style as _;
+/// use xilem::{FontWeight, TextAlign};
+/// use xilem::masonry::parley::fontique;
+/// # use xilem::WidgetView;
 ///
+/// # fn view() -> impl WidgetView<()> {
 /// label("Text example.")
-///     .text_color(palette::css::RED)
-///     .text_alignment(TextAlign::Middle)
+///     .text_alignment(TextAlign::Center)
 ///     .text_size(24.0)
 ///     .weight(FontWeight::BOLD)
-///     .with_font(fontique::GenericFamily::Serif)
+///     .font(fontique::GenericFamily::Serif)
+///     .color(palette::css::RED)
+/// # }
 /// ```
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {

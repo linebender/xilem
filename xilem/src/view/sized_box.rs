@@ -18,12 +18,12 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// # Example
 /// See more methods for `sized_box` on [`SizedBox`] page.
 /// ```ignore
-/// use xilem::view::{sized_box, button};
+/// use xilem::view::{sized_box, button, label};
 /// use xilem::palette;
 /// use vello::kurbo::RoundedRectRadii;
 /// use masonry::properties::Padding;
 ///
-/// sized_box(button("Button", |data: &mut i32| *data+=1))
+/// sized_box(button(label("Button"), |data: &mut i32| *data+=1))
 ///     .expand()
 ///     .background(palette::css::RED)
 ///     .border(palette::css::YELLOW, 20.)

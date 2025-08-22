@@ -37,7 +37,7 @@
 //! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
 //!     flex((
 //!         label(format!("{}", data.num)),
-//!         button("increment", |data: &mut Counter| data.num += 1),
+//!         button(label("increment"), |data: &mut Counter| data.num += 1),
 //!     ))
 //! }
 //!

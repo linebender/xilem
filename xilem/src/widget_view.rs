@@ -3,7 +3,7 @@
 
 use masonry::kurbo::Affine;
 
-use masonry::core::{FromDynWidget, Property, Widget};
+use masonry::core::{FromDynWidget, HasProperty, Property, Widget};
 
 use crate::core::{View, ViewSequence};
 use crate::view::{Prop, Transformed, transformed};
@@ -47,12 +47,28 @@ pub trait WidgetView<State, Action = ()>:
         transformed(self).transform(by)
     }
 
-    // TODO: Remove?
-    /// This is a temporary test for composing properties, this won't (?) be the final API
+    /// Set a [Property] on this view, when the underlying widget [supports](HasProperty) it.
+    ///
+    /// This overrides previous set properties of the same type.
+    ///
+    /// It can be used to create syntax-sugar extension traits with more documentation, as seen in [Style](crate::style::Style)
+    ///
+    /// # Examples
+    /// ```
+    /// use xilem::{masonry::properties::CornerRadius, view::{button, label}, WidgetView};
+    ///
+    /// # fn view<State: 'static>() -> impl WidgetView<State> + use<State> {
+    /// button(label("click me"), |_| {})
+    ///     .prop(CornerRadius { radius: 20.0 })
+    ///     .prop(CornerRadius { radius: 5.0 })
+    /// // The corner radius of this button will be 5.0
+    /// # }
+    ///
+    /// ```
     fn prop<P: Property>(self, property: P) -> Prop<P, Self, State, Action>
     where
         Self: Sized,
-        Self::Widget: masonry::core::HasProperty<P>,
+        Self::Widget: HasProperty<P>,
     {
         Prop {
             property,

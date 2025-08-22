@@ -182,7 +182,7 @@ impl<InitView, State, Action> Debug for Frozen<InitView, State, Action> {
 ///
 /// ```ignore
 /// fn frozen_button() -> impl WidgetView<i32> {
-///     frozen(|| button("doesn't access any external state", |count| { count += 1; })),
+///     frozen(|| button(label("doesn't access any external state"), |count| { count += 1; })),
 /// }
 /// ```
 pub fn frozen<State, Action, Context, V, InitView>(

@@ -28,7 +28,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// fn view<State: 'static>() -> impl WidgetView<State> {
 ///     zstack((
 ///         label("Background"),
-///         button("Click me", |_| {})
+///         button(label("Click me"), |_| {})
 ///     ))
 /// }
 /// ```

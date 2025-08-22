@@ -17,17 +17,6 @@ pub struct Prop<P, V, State, Action> {
     pub(crate) phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-impl<P, V, State, Action> Prop<P, V, State, Action> {
-    /// TODO
-    pub fn new(widget: V, property: P) -> Self {
-        Self {
-            property,
-            child: widget,
-            phantom: std::marker::PhantomData,
-        }
-    }
-}
-
 impl<P, V, State, Action> ViewMarker for Prop<P, V, State, Action> {}
 impl<P, Child, State, Action> View<State, Action, ViewCtx> for Prop<P, Child, State, Action>
 where

@@ -11,10 +11,13 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///
+/// `child` should be a non-interactive widget, like a [`label`](crate::view::label)
+///
 /// # Examples
 /// To use button provide it with a button text and a closure.
-/// ```ignore
-/// use xilem::view::button;
+/// ```
+/// use xilem::view::{button, label};
+/// # use xilem::WidgetView;
 ///
 /// struct State {
 ///     int: i32,
@@ -26,15 +29,18 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 ///     }
 /// }
 ///
-/// button("Button", |state: &mut State| {
+/// # fn view() -> impl WidgetView<State> {
+/// button(label("Button"), |state: &mut State| {
 ///      state.increase();
 /// })
+/// # }
 /// ```
 ///
 /// Create a `button` with a custom `label`.
 ///
-/// ```ignore
-/// use xilem::view::{button, label};
+/// ```
+/// use xilem::{view::{button, label}, FontWeight};
+/// # use xilem::WidgetView;
 ///
 /// struct State {
 ///     int: i32,
@@ -46,11 +52,13 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 ///     }
 /// }
 ///
+/// # fn view() -> impl WidgetView<State> {
 /// let label = label("Button").weight(FontWeight::BOLD);
 ///
 /// button(label, |state: &mut State| {
 ///     state.increase();
 /// })
+/// # }
 /// ```
 pub fn button<State, Action, V: WidgetView<State, Action>>(
     child: V,

@@ -71,7 +71,7 @@ pub struct DefaultProperties {
     pub(crate) dummy_map: AnyMap,
 }
 
-/// TODO
+/// A marker trait that should be implemented for all properties that a widget supports
 pub trait HasProperty<P: Property> {}
 
 impl Properties {

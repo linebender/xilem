@@ -47,8 +47,8 @@ where
 /// fn count_view(count: i32) -> impl WidgetView<i32> {
 ///     flex((
 ///         label(format!("count: {}", count)),
-///         button("+", |count| *count += 1),
-///         button("-", |count| *count -= 1),
+///         button(label("+"), |count| *count += 1),
+///         button(label("-"), |count| *count -= 1),
 ///     ))
 /// }
 ///
