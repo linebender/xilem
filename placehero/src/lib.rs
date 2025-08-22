@@ -19,7 +19,7 @@ use xilem::core::{NoElement, View, fork, map_action, map_state};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
-    button, column, label, prose, sized_box, spinner, split, task_raw, text_input, worker_raw,
+    button, flex_v, label, prose, sized_box, spinner, split, task_raw, text_input, worker_raw,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
@@ -109,7 +109,7 @@ impl Placehero {
             } else {
                 // Sized box of a flex because nested flexes aren't supported (? is this true)
                 // TODO: Ideally, we'd be able to use Either with fragments here
-                Either::B(sized_box(column((
+                Either::B(sized_box(flex_v((
                     text_input(
                         self.timeline_box_contents.clone(),
                         |state: &mut Self, string| {
@@ -126,7 +126,7 @@ impl Placehero {
                     }),
                 ))))
             };
-            Either::A(column((
+            Either::A(flex_v((
                 label("Connected to:"),
                 // TODO: We should probably use an ArcStr for this?
                 prose(instance.title.as_str()),
@@ -148,7 +148,7 @@ impl Placehero {
             }
         } else if self.loading_timeline {
             // Hack: Flex allows the sized box to not take up the full size.
-            OneOf::C(column(sized_box(spinner()).width(50.px()).height(50.px())))
+            OneOf::C(flex_v(sized_box(spinner()).width(50.px()).height(50.px())))
         } else if let Some(acct) = self.not_found_acct.as_ref() {
             OneOf::D(prose(format!(
                 "Could not find account @{acct} on this server. \

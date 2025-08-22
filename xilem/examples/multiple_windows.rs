@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use winit::error::EventLoopError;
-use xilem::view::{button, column, label, text_input};
+use xilem::view::{button, flex_v, label, text_input};
 use xilem::{
     AnyWidgetView, AppState, EventLoop, EventLoopBuilder, WidgetView, WindowId, WindowOptions,
     Xilem,
@@ -41,7 +41,7 @@ fn app_logic(
         WindowOptions::new("Multiple windows").on_close(|state: &mut State| {
             state.running = false;
         }),
-        column((
+        flex_v((
             label(format!(
                 "{:#?}",
                 state
@@ -84,7 +84,7 @@ fn app_logic(
                     WindowOptions::new(name).on_close(move |state: &mut State| {
                         state.counters.remove(&window_id);
                     }),
-                    column((
+                    flex_v((
                         label(format!("count: {value}")),
                         button("+".to_string(), move |state: &mut State| {
                             state.counters.get_mut(&window_id).unwrap().value += 1;

@@ -14,8 +14,8 @@ use xilem::core::{Resource, fork, provides, run_once, with_context, without_elem
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
-    Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, column,
-    flex, label, prose, row, task, text_input,
+    Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
+    flex_h, flex_v, label, prose, task, text_input,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView, WindowOptions,
@@ -85,21 +85,23 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     provides(
         |_: &mut AppData| SomeContext(120),
         fork(
-            column((
+            flex_v((
                 env_using(),
-                row((
+                flex_h((
                     label("Label").color(palette::css::REBECCA_PURPLE),
                     label("Bold Label").weight(FontWeight::BOLD),
                     // TODO masonry doesn't allow setting disabled manually anymore?
                     // label("Disabled label").disabled(),
                 )),
-                row(text_input(
-                    data.text_input_contents.clone(),
-                    |data: &mut AppData, new_value| {
-                        data.text_input_contents = new_value;
-                    },
-                )
-                .insert_newline(InsertNewline::OnEnter)),
+                flex_h(
+                    text_input(
+                        data.text_input_contents.clone(),
+                        |data: &mut AppData, new_value| {
+                            data.text_input_contents = new_value;
+                        },
+                    )
+                    .insert_newline(InsertNewline::OnEnter),
+                ),
                 prose(LOREM)
                     .text_alignment(TextAlign::Center)
                     .text_size(18.),
@@ -148,7 +150,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     if data.active {
         provides(
             |_| SomeContext(777),
-            row((
+            flex_h((
                 button("Deactivate", |data: &mut AppData| {
                     data.active = false;
                 }),

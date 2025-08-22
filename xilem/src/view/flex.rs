@@ -79,7 +79,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
 ///
 /// This is equivalent to [`flex`] with a pre-applied horizontal
 /// [`direction`](Flex::direction).
-pub fn row<State, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_h<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Horizontal, sequence)
@@ -89,7 +89,7 @@ pub fn row<State, Action, Seq: FlexSequence<State, Action>>(
 ///
 /// This is equivalent to [`flex`] with a pre-applied vertical
 /// [`direction`](Flex::direction).
-pub fn column<State, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_v<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Vertical, sequence)

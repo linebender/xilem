@@ -8,16 +8,16 @@ use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, GridExt, button, column, grid, label, prose, row, sized_box,
+    FlexExt, FlexSpacer, GridExt, button, flex_h, flex_v, grid, label, prose, sized_box,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
 };
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
-    column((
+    flex_v((
         FlexSpacer::Fixed(50.px()), // Padding because of the info bar on Android
-        row((
+        flex_h((
             // TODO: Expose that this is a "zoom out" button accessibly
             button("🔍-", |data: &mut EmojiPagination| {
                 data.size = (data.size + 1).min(5);
@@ -54,7 +54,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
                 // There are no more emoji, no point still looping
                 break 'outer;
             };
-            let view = column((
+            let view = flex_v((
                 // TODO: Expose that this button corresponds to the label below for accessibility?
                 sized_box(button(
                     label(emoji.display).text_size(200.0 / data.size as f32),
@@ -99,7 +99,7 @@ fn paginate(
     let percentage_start = (current_start * 100) / max_count;
     let percentage_end = (current_end * 100) / max_count;
 
-    row((
+    flex_h((
         // TODO: Expose that this is a previous page button to accessibility
         button(label("⬅️").text_size(24.0), move |data| {
             *data = current_start.saturating_sub(count_per_page);

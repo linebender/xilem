@@ -21,7 +21,7 @@ use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::palette::css::{BLACK, WHITE};
 use xilem::style::Style as _;
 use xilem::view::{
-    ObjectFit, ZStackExt, column, image, label, prose, sized_box, spinner, virtual_scroll, zstack,
+    ObjectFit, ZStackExt, flex_v, image, label, prose, sized_box, spinner, virtual_scroll, zstack,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, FontWeight, TextAlign, WidgetView, WindowOptions, Xilem,
@@ -122,7 +122,7 @@ impl VirtualCats {
                     .text_color(Color::from_rgb8(0x85, 0, 0))
                     .weight(FontWeight::BOLD);
 
-                let view = column((errorstring, emojicat))
+                let view = flex_v((errorstring, emojicat))
                     .background_color(WHITE)
                     .cross_axis_alignment(xilem::view::CrossAxisAlignment::Start)
                     .padding(16.0)
@@ -130,7 +130,7 @@ impl VirtualCats {
                 OneOf::C(view)
             }
         };
-        fork(column((prose(item.message.clone()), img)), task)
+        fork(flex_v((prose(item.message.clone()), img)), task)
     }
 
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
