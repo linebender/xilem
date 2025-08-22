@@ -8,6 +8,7 @@ use std::any::TypeId;
 use accesskit::{Node, Role, Toggled};
 use tracing::{Span, trace, trace_span};
 use ui_events::keyboard::Key;
+use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::Rect;
 use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Size, Stroke};
@@ -93,13 +94,19 @@ impl Widget for Checkbox {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { .. } => {
+            PointerEvent::Down {
+                button: Some(PointerButton::Primary),
+                ..
+            } => {
                 ctx.capture_pointer();
                 // Checked state impacts appearance and accessibility node
                 ctx.request_render();
                 trace!("Checkbox {:?} pressed", ctx.widget_id());
             }
-            PointerEvent::Up { .. } => {
+            PointerEvent::Up {
+                button: Some(PointerButton::Primary),
+                ..
+            } => {
                 if ctx.is_active() && ctx.is_hovered() {
                     self.checked = !self.checked;
                     ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
@@ -107,6 +114,10 @@ impl Widget for Checkbox {
                 }
                 // Checked state impacts appearance and accessibility node
                 ctx.request_render();
+            }
+            PointerEvent::Down { .. } => {
+                // Any non-primary click event should lead to this widget getting focused.
+                ctx.request_focus();
             }
             _ => (),
         }
@@ -341,6 +352,8 @@ impl Widget for Checkbox {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use assert_matches::assert_matches;
+
     use super::*;
     use crate::core::{Properties, StyleProperty};
     use crate::properties::ContentColor;
@@ -399,6 +412,20 @@ mod tests {
         harness.focus_on(Some(checkbox_id));
         assert_render_snapshot!(harness, "checkbox_focus_focused");
     }
+
+    #[test]
+    fn checkbox_right_click() {
+        let checkbox = NewWidget::new(Checkbox::new(true, "Hello"));
+
+        let mut harness = TestHarness::create(default_property_set(), checkbox);
+        let checkbox_id = harness.root_id();
+
+        harness.mouse_move_to(checkbox_id);
+        harness.mouse_button_press(PointerButton::Secondary);
+        assert_eq!(harness.focused_widget_id(), Some(checkbox_id));
+        assert_matches!(harness.pop_action_erased(), None);
+    }
+
     #[test]
     fn edit_checkbox() {
         let image_1 = {
