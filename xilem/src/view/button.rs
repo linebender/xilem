@@ -11,7 +11,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///
-/// `child` should be a non-interactive widget, like a [`label`](crate::view::label)
+/// `child` should be a non-interactive widget, like a [`label`](crate::view::label::label)
 ///
 /// # Examples
 /// To use button provide it with a button text and a closure.
