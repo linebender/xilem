@@ -9,7 +9,7 @@
 //! Masonry gives you a platform-independent manager, which owns and maintains a widget tree.
 //! It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
 //!
-//! The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
+//! The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc., on top of Masonry.
 //!
 //! It *is* opinionated about its internals: things like text focus, pointer interactions and accessibility events are often handled in a centralized way.
 //!
@@ -19,10 +19,14 @@
 //! - [Parley][parley] for the text stack.
 //! - [AccessKit][accesskit] for plugging into accessibility APIs.
 //!
-//! There are currently two backends for creating windows:
+//! Masonry can be used with any windowing library which allows the window content to be rendered using `wgpu`.
+//! There are currently two backends for using Masonry to create operating system windows:
 //!
 //! - [masonry_winit] for most platforms.
-//! - `masonry_android_view` for Android.
+//! - `masonry_android_view` for Android. This can currently be found in the [Android View repository](https://github.com/rust-mobile/android-view),
+//!   and is not yet generally usable.
+//!
+//! <!-- TODO: Document that Masonry is a set of baseline widgets and properties built on Masonry core, which can also be used completely independently -->
 //!
 //! # Example
 //!
@@ -116,12 +120,13 @@
 //! }
 //! ```
 //!
-//! # Crate feature flags
+//! # Feature flags
 //!
-//! The following feature flags are available:
+//! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 //!
 //! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
 //!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
+//! - `testing`: Re-exports the test harness from [`masonry_testing`].
 //!
 //! # Debugging features
 //!
