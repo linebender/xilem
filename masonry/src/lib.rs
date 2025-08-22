@@ -12,9 +12,9 @@
 //!
 //! Masonry is built on top of:
 //!
-//! - [Vello] and [wgpu] for 2D graphics.
-//! - [Parley] for the text stack.
-//! - [AccessKit] for plugging into accessibility APIs.
+//! - [Vello][vello] and [wgpu][vello::wgpu] for 2D graphics.
+//! - [Parley][parley] for the text stack.
+//! - [AccessKit][accesskit] for plugging into accessibility APIs.
 //!
 //! There are currently two backends for creating windows:
 //!
@@ -115,25 +115,23 @@
 //! }
 //! ```
 //!
-//! ### Crate feature flags
+//! # Crate feature flags
 //!
 //! The following feature flags are available:
 //!
 //! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
 //!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 //!
-//! ### Debugging features
+//! # Debugging features
 //!
-//! Masonry apps currently ship with two debugging features built in:
-//! - A rudimentary widget inspector - toggled by F11 key.
-//! - A debug mode painting widget layout rectangles - toggled by F12 key.
+//! Masonry apps currently ship with several debugging features built in:
+//!
+//! - A rudimentary widget inspector - toggled by the F11 key.
+//! - A debug mode painting widget layout rectangles - toggled by the F12 key.
+//! - Automatic registration of a [tracing] subscriber, which outputs to the console and to a file in the dev profile.
 //!
 //! [masonry_winit]: https://crates.io/crates/masonry_winit
-//! [Vello]: https://crates.io/crates/vello
-//! [wgpu]: https://crates.io/crates/wgpu
-//! [Parley]: https://crates.io/crates/parley
-//! [AccessKit]: https://crates.io/crates/accesskit
-//! [Xilem]: https://crates.io/crates/xilem
+//! [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 // TODO: Add screenshot. This can't use include_screenshot as that doesn't work with cargo-rdme

@@ -16,19 +16,23 @@
 
 <!-- We use cargo-rdme to update the README with the contents of lib.rs.
 To edit the following section, update it in lib.rs, then run:
-cargo rdme --workspace-project=masonry_winit --heading-base-level=0
+cargo rdme --workspace-project=masonry_winit --heading-base-level=1
 Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
 
+<!-- TODO: Standardise on docs.rs or crates.io pages here? -->
+
+[winit]: https://crates.io/crates/winit
+
 <!-- cargo-rdme start -->
 
-This is the [Winit] backend for the [Masonry] GUI framework.
+This is the [Winit][winit] backend for the [Masonry] GUI framework.
 
 See [Masonry's documentation] for more details, examples and resources.
 
-# Example
+## Example
 
 ```rust
 use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetPod};
@@ -86,7 +90,6 @@ fn main() {
 (See the Masonry documentation for more detailed examples.)
 
 [Masonry's documentation]: https://docs.rs/masonry
-[Winit]: https://crates.io/crates/winit
 [Masonry]: https://crates.io/crates/masonry
 
 <!-- cargo-rdme end -->

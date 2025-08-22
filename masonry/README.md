@@ -16,12 +16,24 @@
 
 <!-- We use cargo-rdme to update the README with the contents of lib.rs.
 To edit the following section, update it in lib.rs, then run:
-cargo rdme --workspace-project=masonry --heading-base-level=0
+cargo rdme --workspace-project=masonry --heading-base-level=1
 Full documentation at https://github.com/orium/cargo-rdme -->
+
+<!-- Intra-doc links used in lib.rs are evaluated here.
+See https://linebender.org/blog/doc-include/ for related discussion. -->
+
+[vello]: https://crates.io/crates/vello
+[vello::wgpu]: https://crates.io/crates/wgpu
+[parley]: https://crates.io/crates/parley
+[accesskit]: https://crates.io/crates/accesskit
+[tracing]: https://crates.io/crates/tracing
 
 <!-- cargo-rdme start -->
 
 Masonry is a foundational framework for building GUI libraries in Rust.
+
+The developers of Masonry are developing [Xilem], a reactive UI library built on top of Masonry.
+Masonry's API is geared towards creating GUI libraries; if you are creating an application, we recommend also considering Xilem.
 
 Masonry gives you a platform-independent manager, which owns and maintains a widget tree.
 It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
@@ -32,18 +44,16 @@ It *is* opinionated about its internals: things like text focus, pointer interac
 
 Masonry is built on top of:
 
-- [Vello] and [wgpu] for 2D graphics.
-- [Parley] for the text stack.
-- [AccessKit] for plugging into accessibility APIs.
+- [Vello][vello] and [wgpu][vello::wgpu] for 2D graphics.
+- [Parley][parley] for the text stack.
+- [AccessKit][accesskit] for plugging into accessibility APIs.
 
 There are currently two backends for creating windows:
 
 - [masonry_winit] for most platforms.
 - `masonry_android_view` for Android.
 
-See [Xilem] as an example of a reactive UI library built on top of Masonry.
-
-# Example
+## Example
 
 The to-do-list example looks like this, using `masonry_winit` as the backend:
 
@@ -134,24 +144,22 @@ fn main() {
 }
 ```
 
-### Crate feature flags
+## Crate feature flags
 
 The following feature flags are available:
 
 - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 
-### Debugging features
+## Debugging features
 
-Masonry apps currently ship with two debugging features built in:
-- A rudimentary widget inspector - toggled by F11 key.
-- A debug mode painting widget layout rectangles - toggled by F12 key.
+Masonry apps currently ship with several debugging features built in:
+
+- A rudimentary widget inspector - toggled by the F11 key.
+- A debug mode painting widget layout rectangles - toggled by the F12 key.
+- Automatic [tracing] output, both to console and to a file in debug mode.
 
 [masonry_winit]: https://crates.io/crates/masonry_winit
-[Vello]: https://crates.io/crates/vello
-[wgpu]: https://crates.io/crates/wgpu
-[Parley]: https://crates.io/crates/parley
-[AccessKit]: https://crates.io/crates/accesskit
 [Xilem]: https://crates.io/crates/xilem
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
 

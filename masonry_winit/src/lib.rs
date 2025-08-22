@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! This is the [Winit] backend for the [Masonry] GUI framework.
+//! This is the [Winit][winit] backend for the [Masonry] GUI framework.
 //!
 //! See [Masonry's documentation] for more details, examples and resources.
 //!
@@ -65,7 +65,6 @@
 //! (See the Masonry documentation for more detailed examples.)
 //!
 //! [Masonry's documentation]: https://docs.rs/masonry
-//! [Winit]: https://crates.io/crates/winit
 //! [Masonry]: https://crates.io/crates/masonry
 
 // LINEBENDER LINT SET - lib.rs - v3
