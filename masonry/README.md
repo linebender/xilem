@@ -157,10 +157,10 @@ Masonry apps currently ship with several debugging features built in:
 
 - A rudimentary widget inspector - toggled by the F11 key.
 - A debug mode painting widget layout rectangles - toggled by the F12 key.
-- Automatic [tracing] output, both to console and to a file in debug mode.
+- Automatic registration of a [tracing] subscriber, which outputs to the console and to a file in the dev profile.
 
 [masonry_winit]: https://crates.io/crates/masonry_winit
-[Xilem]: https://crates.io/crates/xilem
+[Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 <!-- cargo-rdme end -->

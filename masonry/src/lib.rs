@@ -3,6 +3,9 @@
 
 //! Masonry is a foundational framework for building GUI libraries in Rust.
 //!
+//! The developers of Masonry are developing [Xilem], a reactive UI library built on top of Masonry.
+//! Masonry's API is geared towards creating GUI libraries; if you are creating an application, we recommend also considering Xilem.
+//!
 //! Masonry gives you a platform-independent manager, which owns and maintains a widget tree.
 //! It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
 //!
@@ -20,8 +23,6 @@
 //!
 //! - [masonry_winit] for most platforms.
 //! - `masonry_android_view` for Android.
-//!
-//! See [Xilem] as an example of a reactive UI library built on top of Masonry.
 //!
 //! # Example
 //!
