@@ -124,6 +124,7 @@ fn run_event_pass<E>(
             let mut props = PropertiesMut {
                 map: &mut node.item.properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
+                changed: &mut node.item.changed_properties,
             };
             pass_fn(widget, &mut ctx, &mut props, event);
             is_handled = ctx.is_handled;

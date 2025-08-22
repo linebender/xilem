@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
@@ -343,6 +344,12 @@ impl Widget for Grid {
         trace_span!("Grid", id = id.trace())
     }
 }
+
+impl HasProperty<Background> for Grid {}
+impl HasProperty<BorderColor> for Grid {}
+impl HasProperty<BorderWidth> for Grid {}
+impl HasProperty<CornerRadius> for Grid {}
+impl HasProperty<Padding> for Grid {}
 
 // --- MARK: TESTS
 #[cfg(test)]

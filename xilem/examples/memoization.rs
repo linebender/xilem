@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use xilem::core::{frozen, memoize};
-use xilem::view::{button, flex};
+use xilem::view::{button, flex, label};
 use xilem::{AnyWidgetView, EventLoop, WidgetView, WindowOptions, Xilem};
 
 // There are currently two ways to do memoization
@@ -27,7 +27,7 @@ struct MemoizedArcView<D> {
 fn increase_button(state: &mut AppState) -> Arc<AnyWidgetView<AppState>> {
     if state.count != state.increase_button.data || state.increase_button.view.is_none() {
         let view = Arc::new(button(
-            format!("current count is {}", state.count),
+            label(format!("current count is {}", state.count)),
             |state: &mut AppState| {
                 state.count += 1;
             },
@@ -45,7 +45,7 @@ fn increase_button(state: &mut AppState) -> Arc<AnyWidgetView<AppState>> {
 fn decrease_button(state: &AppState) -> impl WidgetView<AppState> + use<> {
     memoize(state.count, |count| {
         button(
-            format!("decrease the count: {count}"),
+            label(format!("decrease the count: {count}")),
             |data: &mut AppState| data.count -= 1,
         )
     })
@@ -54,7 +54,7 @@ fn decrease_button(state: &AppState) -> impl WidgetView<AppState> + use<> {
 fn reset_button() -> impl WidgetView<AppState> {
     // The contents of this view never changes, so we use `frozen` to avoid unnecessary rebuilds.
     // This is a special case of memoization for when the view doesn't depend on any data.
-    frozen(|| button("reset", |data: &mut AppState| data.count = 0))
+    frozen(|| button(label("reset"), |data: &mut AppState| data.count = 0))
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {

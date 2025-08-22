@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role, Toggled};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
 use ui_events::keyboard::Key;
 use vello::Scene;
@@ -337,6 +338,18 @@ impl Widget for Checkbox {
         }
     }
 }
+
+impl HasProperty<DisabledBackground> for Checkbox {}
+impl HasProperty<ActiveBackground> for Checkbox {}
+impl HasProperty<Background> for Checkbox {}
+impl HasProperty<HoveredBorderColor> for Checkbox {}
+impl HasProperty<BorderColor> for Checkbox {}
+impl HasProperty<BorderWidth> for Checkbox {}
+impl HasProperty<CornerRadius> for Checkbox {}
+impl HasProperty<Padding> for Checkbox {}
+impl HasProperty<CheckmarkStrokeWidth> for Checkbox {}
+impl HasProperty<DisabledCheckmarkColor> for Checkbox {}
+impl HasProperty<CheckmarkColor> for Checkbox {}
 
 // --- MARK: TESTS
 #[cfg(test)]

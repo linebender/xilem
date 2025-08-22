@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
@@ -274,6 +275,12 @@ impl Widget for IndexedStack {
         trace_span!("IndexedStack", id = id.trace())
     }
 }
+
+impl HasProperty<Background> for IndexedStack {}
+impl HasProperty<BorderColor> for IndexedStack {}
+impl HasProperty<BorderWidth> for IndexedStack {}
+impl HasProperty<CornerRadius> for IndexedStack {}
+impl HasProperty<Padding> for IndexedStack {}
 
 // --- MARK: TESTS
 #[cfg(test)]

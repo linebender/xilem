@@ -6,15 +6,15 @@
 use masonry::properties::types::AsUnit;
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use winit::error::EventLoopError;
-use xilem::view::{FlexExt as _, FlexSpacer, Label, button, flex_row, label, sized_box};
+use xilem::view::{FlexExt as _, FlexSpacer, button, flex_row, label, sized_box};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
 fn big_button(
-    label: impl Into<Label>,
+    content: &'static str,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
-    sized_box(button(label, callback))
+    sized_box(button(label(content), callback))
         .width(40.px())
         .height(40.px())
 }

@@ -2,17 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, NewWidget, Properties};
-use masonry::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
-    DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
-};
+use masonry::properties::{ContentColor, DisabledContentColor, PlaceholderColor};
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, View, ViewMarker};
-use crate::property_tuple::PropertyTuple;
-use crate::style::{HasProperty, Style};
-use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx};
+use crate::view::Prop;
+use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as _};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -38,7 +34,6 @@ where
         // Since we don't support setting the word wrapping, we can default to
         // not clipping
         clip: true,
-        properties: TextInputProps::default(),
     }
 }
 
@@ -55,11 +50,10 @@ pub struct TextInput<State, Action> {
     insert_newline: InsertNewline,
     disabled: bool,
     clip: bool,
-    properties: TextInputProps,
     // TODO: add more attributes of `masonry::widgets::TextInput`
 }
 
-impl<State, Action> TextInput<State, Action> {
+impl<State: 'static, Action: 'static> TextInput<State, Action> {
     /// Set the text's color.
     ///
     /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
@@ -83,9 +77,8 @@ impl<State, Action> TextInput<State, Action> {
     }
 
     /// Set the [`PlaceholderColor`] property, which sets the color of the text shown when the input is empty.
-    pub fn placeholder_color(mut self, color: Color) -> Self {
-        *self.property() = Some(PlaceholderColor::new(color));
-        self
+    pub fn placeholder_color(self, color: Color) -> Prop<PlaceholderColor, Self, State, Action> {
+        self.prop(PlaceholderColor::new(color))
     }
 
     /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
@@ -132,28 +125,6 @@ impl<State, Action> TextInput<State, Action> {
     }
 }
 
-impl<S, A> Style for TextInput<S, A> {
-    type Props = TextInputProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub TextInputProps;
-    TextInput<S, A>;
-
-    Background, 0;
-    DisabledBackground, 1;
-    BorderColor, 2;
-    BorderWidth, 3;
-    BoxShadow, 4;
-    CornerRadius, 5;
-    Padding, 6;
-    PlaceholderColor, 7;
-);
-
 impl<State, Action> ViewMarker for TextInput<State, Action> {}
 impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput<State, Action> {
     type Element = Pod<widgets::TextInput>;
@@ -183,9 +154,9 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
         ctx.record_action(id);
+
         let mut pod = ctx.create_pod(text_input);
         pod.new_widget.options.disabled = self.disabled;
-        pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
     }
 
@@ -197,9 +168,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         mut element: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
-
         // TODO - Replace this with properties on the TextInput view
         if self.text_color != prev.text_color {
             if let Some(color) = self.text_color {

@@ -7,6 +7,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
@@ -143,6 +144,8 @@ impl Widget for Image {
         trace_span!("Image", id = id.trace())
     }
 }
+
+impl HasProperty<ObjectFit> for Image {}
 
 // FIXME - remove cfg?
 #[cfg(not(target_arch = "wasm32"))]

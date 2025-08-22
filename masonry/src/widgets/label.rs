@@ -7,7 +7,7 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
-use masonry_core::core::NoAction;
+use masonry_core::core::{HasProperty, NoAction};
 use parley::{Layout, LayoutAccessibility};
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -399,6 +399,10 @@ impl Widget for Label {
         Some(self.text.to_string())
     }
 }
+
+impl HasProperty<ContentColor> for Label {}
+impl HasProperty<DisabledContentColor> for Label {}
+impl HasProperty<LineBreaking> for Label {}
 
 // --- MARK: TESTS
 #[cfg(test)]

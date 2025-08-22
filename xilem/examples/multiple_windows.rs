@@ -56,7 +56,7 @@ fn app_logic(
                     state.new_counter_name = new_name;
                 },
             ),
-            button("Add".to_string(), |state: &mut State| {
+            button(label("Add".to_string()), |state: &mut State| {
                 if state
                     .counters
                     .values()
@@ -86,10 +86,10 @@ fn app_logic(
                     }),
                     flex((
                         label(format!("count: {value}")),
-                        button("+".to_string(), move |state: &mut State| {
+                        button(label("+".to_string()), move |state: &mut State| {
                             state.counters.get_mut(&window_id).unwrap().value += 1;
                         }),
-                        button("-".to_string(), move |state: &mut State| {
+                        button(label("-".to_string()), move |state: &mut State| {
                             state.counters.get_mut(&window_id).unwrap().value -= 1;
                         }),
                     ))

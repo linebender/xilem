@@ -123,8 +123,8 @@ impl VirtualCats {
                     .weight(FontWeight::BOLD);
 
                 let view = flex((errorstring, emojicat))
-                    .background_color(WHITE)
                     .cross_axis_alignment(xilem::view::CrossAxisAlignment::Start)
+                    .background_color(WHITE)
                     .padding(16.0)
                     .corner_radius(8.0);
                 OneOf::C(view)

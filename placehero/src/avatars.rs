@@ -11,7 +11,7 @@ use xilem::core::{
 };
 use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
-use xilem::style::{Gradient, Style};
+use xilem::style::{Gradient, Style as _};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{env_worker, image, sized_box, spinner};
 use xilem::{Blob, Image, ImageFormat, ViewCtx, WidgetView, tokio};
@@ -64,6 +64,8 @@ impl Avatars {
             }
             Either::B(
                 sized_box(spinner().color(css::BLACK))
+                    .width(width)
+                    .height(height)
                     .background_gradient(
                         Gradient::new_linear(
                             // down-right
@@ -71,8 +73,6 @@ impl Avatars {
                         )
                         .with_stops([css::YELLOW, css::LIME]),
                     )
-                    .width(width)
-                    .height(height)
                     .padding(4.0),
             )
         })

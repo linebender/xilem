@@ -1,12 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::properties::ContentColor;
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::style::Style;
-use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
+use crate::{MessageResult, Pod, View, ViewCtx};
 
 /// An indefinite spinner.
 ///
@@ -34,33 +32,14 @@ use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 /// }
 /// ```
 pub fn spinner() -> Spinner {
-    Spinner {
-        properties: SpinnerProps::default(),
-    }
+    Spinner
 }
 
 /// The [`View`] created by [`spinner`].
 ///
 /// See `spinner`'s docs for more details.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Spinner {
-    properties: SpinnerProps,
-}
-
-impl Style for Spinner {
-    type Props = SpinnerProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub SpinnerProps;
-    Spinner;
-
-    ContentColor, 0;
-);
+pub struct Spinner;
 
 impl ViewMarker for Spinner {}
 impl<State, Action> View<State, Action, ViewCtx> for Spinner {
@@ -68,22 +47,17 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        let spinner = widgets::Spinner::new();
-        let mut pod = ctx.create_pod(spinner);
-        pod.new_widget.properties = self.properties.build_properties();
-        (pod, ())
+        (ctx.create_pod(widgets::Spinner::new()), ())
     }
 
     fn rebuild(
         &self,
-        prev: &Self,
+        _: &Self,
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
-        mut element: Mut<'_, Self::Element>,
+        _: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
     }
 
     fn teardown(

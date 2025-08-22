@@ -3,7 +3,7 @@
 
 //! Traits used to set custom styles on views.
 
-use masonry::core::Property;
+use masonry::core::HasProperty;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use vello::peniko::Color;
 
@@ -13,200 +13,196 @@ pub use masonry::properties::{
     DisabledBackground, HoveredBorderColor, Padding,
 };
 
-/// Trait implemented by views to signal that a given property can be set on them.
+use crate::WidgetView;
+use crate::view::Prop;
+
+/// Trait implemented by most widget views that lets you style their properties.
 ///
-/// In most cases, you should implement this trait through [`declare_property_tuple!`](crate::declare_property_tuple)
-/// when authoring views.
-pub trait HasProperty<P: Property>: Style {
-    /// Return a mutable reference to the specific property.
-    fn property(&mut self) -> &mut Option<P>;
-}
-
-/// Trait implemented by most views that lets you set some styling properties on them.
-///
-/// Which methods you can use will depend on which parameter the element implements [`HasProperty`] with,
-/// which matches which [`Properties`](masonry::core::Properties) the underlying widget handles.
-pub trait Style: Sized {
-    /// The tuple type used by the element to store properties.
-    type Props;
-
-    /// Return a mutable reference to the element's property storage.
-    fn properties(&mut self) -> &mut Self::Props;
-
+/// Which methods you can use will depend whether the underlying widget implements [`HasProperty`].
+pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Sized {
     /// Set the element's content color.
     ///
     /// "Content color" usually means text or text decorations.
-    fn color(mut self, color: Color) -> Self
+    fn color(self, color: Color) -> Prop<ContentColor, Self, State, Action>
     where
-        Self: HasProperty<ContentColor>,
+        Self::Widget: HasProperty<ContentColor>,
     {
-        *self.property() = Some(ContentColor { color });
-        self
+        self.prop(ContentColor { color })
     }
 
     /// Set the element's content color when disabled.
     ///
     /// "Content color" usually means text or text decorations.
-    fn disabled_color(mut self, color: Color) -> Self
+    fn disabled_color(self, color: Color) -> Prop<DisabledContentColor, Self, State, Action>
     where
-        Self: HasProperty<DisabledContentColor>,
+        Self::Widget: HasProperty<DisabledContentColor>,
     {
-        *self.property() = Some(DisabledContentColor(ContentColor { color }));
-        self
+        self.prop(DisabledContentColor(ContentColor { color }))
     }
 
     /// Set the element's background to a color/gradient.
-    fn background(mut self, background: Background) -> Self
+    fn background(self, background: Background) -> Prop<Background, Self, State, Action>
     where
-        Self: HasProperty<Background>,
+        Self::Widget: HasProperty<Background>,
     {
-        *self.property() = Some(background);
-        self
+        self.prop(background)
     }
 
     /// Set the element's background to a color.
-    fn background_color(mut self, color: Color) -> Self
+    fn background_color(self, color: Color) -> Prop<Background, Self, State, Action>
     where
-        Self: HasProperty<Background>,
+        Self::Widget: HasProperty<Background>,
     {
-        *self.property() = Some(Background::Color(color));
-        self
+        self.prop(Background::Color(color))
     }
 
     /// Set the element's background to a gradient.
-    fn background_gradient(mut self, gradient: Gradient) -> Self
+    fn background_gradient(self, gradient: Gradient) -> Prop<Background, Self, State, Action>
     where
-        Self: HasProperty<Background>,
+        Self::Widget: HasProperty<Background>,
     {
-        *self.property() = Some(Background::Gradient(gradient));
-        self
+        self.prop(Background::Gradient(gradient))
     }
 
     /// Set the element's background when pressed to a color/gradient.
-    fn active_background(mut self, background: Background) -> Self
+    fn active_background(
+        self,
+        background: Background,
+    ) -> Prop<ActiveBackground, Self, State, Action>
     where
-        Self: HasProperty<ActiveBackground>,
+        Self::Widget: HasProperty<ActiveBackground>,
     {
-        *self.property() = Some(ActiveBackground(background));
-        self
+        self.prop(ActiveBackground(background))
     }
 
     /// Set the element's background when pressed to a color.
-    fn active_background_color(mut self, color: Color) -> Self
+    fn active_background_color(self, color: Color) -> Prop<ActiveBackground, Self, State, Action>
     where
-        Self: HasProperty<ActiveBackground>,
+        Self::Widget: HasProperty<ActiveBackground>,
     {
-        *self.property() = Some(ActiveBackground(Background::Color(color)));
-        self
+        self.prop(ActiveBackground(Background::Color(color)))
     }
 
     /// Set the element's background when pressed to a gradient.
-    fn active_background_gradient(mut self, gradient: Gradient) -> Self
+    fn active_background_gradient(
+        self,
+        gradient: Gradient,
+    ) -> Prop<ActiveBackground, Self, State, Action>
     where
-        Self: HasProperty<ActiveBackground>,
+        Self::Widget: HasProperty<ActiveBackground>,
     {
-        *self.property() = Some(ActiveBackground(Background::Gradient(gradient)));
-        self
+        self.prop(ActiveBackground(Background::Gradient(gradient)))
     }
 
     /// Set the element's background when disabled to a color/gradient.
-    fn disabled_background(mut self, background: Background) -> Self
+    fn disabled_background(
+        self,
+        background: Background,
+    ) -> Prop<DisabledBackground, Self, State, Action>
     where
-        Self: HasProperty<DisabledBackground>,
+        Self::Widget: HasProperty<DisabledBackground>,
     {
-        *self.property() = Some(DisabledBackground(background));
-        self
+        self.prop(DisabledBackground(background))
     }
 
     /// Set the element's background when disabled to a color.
-    fn disabled_background_color(mut self, color: Color) -> Self
+    fn disabled_background_color(
+        self,
+        color: Color,
+    ) -> Prop<DisabledBackground, Self, State, Action>
     where
-        Self: HasProperty<DisabledBackground>,
+        Self::Widget: HasProperty<DisabledBackground>,
     {
-        *self.property() = Some(DisabledBackground(Background::Color(color)));
-        self
+        self.prop(DisabledBackground(Background::Color(color)))
     }
 
     /// Set the element's background when disabled to a gradient.
-    fn disabled_background_gradient(mut self, gradient: Gradient) -> Self
+    fn disabled_background_gradient(
+        self,
+        gradient: Gradient,
+    ) -> Prop<DisabledBackground, Self, State, Action>
     where
-        Self: HasProperty<DisabledBackground>,
+        Self::Widget: HasProperty<DisabledBackground>,
     {
-        *self.property() = Some(DisabledBackground(Background::Gradient(gradient)));
-        self
+        self.prop(DisabledBackground(Background::Gradient(gradient)))
     }
 
     /// Set the element's border color and width.
-    fn border(mut self, color: Color, width: f64) -> Self
+    fn border(
+        self,
+        color: Color,
+        width: f64,
+    ) -> Prop<BorderWidth, Prop<BorderColor, Self, State, Action>, State, Action>
     where
-        Self: HasProperty<BorderColor>,
-        Self: HasProperty<BorderWidth>,
+        Self::Widget: HasProperty<BorderColor> + HasProperty<BorderWidth>,
     {
-        *self.property() = Some(BorderColor { color });
-        *self.property() = Some(BorderWidth { width });
-        self
+        self.prop(BorderColor { color }).prop(BorderWidth { width })
     }
 
     /// Set the element's border color.
-    fn border_color(mut self, color: Color) -> Self
+    fn border_color(self, color: Color) -> Prop<BorderColor, Self, State, Action>
     where
-        Self: HasProperty<BorderColor>,
+        Self::Widget: HasProperty<BorderColor>,
     {
-        *self.property() = Some(BorderColor { color });
-        self
+        self.prop(BorderColor { color })
     }
 
     /// Set the element's border color when hovered.
-    fn hovered_border_color(mut self, color: Color) -> Self
+    fn hovered_border_color(self, color: Color) -> Prop<HoveredBorderColor, Self, State, Action>
     where
-        Self: HasProperty<HoveredBorderColor>,
+        Self::Widget: HasProperty<HoveredBorderColor>,
     {
-        *self.property() = Some(HoveredBorderColor(BorderColor { color }));
-        self
+        self.prop(HoveredBorderColor(BorderColor { color }))
     }
 
     /// Set the element's border width.
-    fn border_width(mut self, width: f64) -> Self
+    fn border_width(self, width: f64) -> Prop<BorderWidth, Self, State, Action>
     where
-        Self: HasProperty<BorderWidth>,
+        Self::Widget: HasProperty<BorderWidth>,
     {
-        *self.property() = Some(BorderWidth { width });
-        self
+        self.prop(BorderWidth { width })
     }
 
     /// Set the element's box shadow.
-    fn box_shadow(mut self, box_shadow: BoxShadow) -> Self
+    fn box_shadow(self, box_shadow: BoxShadow) -> Prop<BoxShadow, Self, State, Action>
     where
-        Self: HasProperty<BoxShadow>,
+        Self::Widget: HasProperty<BoxShadow>,
     {
-        *self.property() = Some(box_shadow);
-        self
+        self.prop(box_shadow)
     }
 
     /// Set the element's corner radius.
-    fn corner_radius(mut self, radius: f64) -> Self
+    fn corner_radius(self, radius: f64) -> Prop<CornerRadius, Self, State, Action>
     where
-        Self: HasProperty<CornerRadius>,
+        Self::Widget: HasProperty<CornerRadius>,
     {
-        *self.property() = Some(CornerRadius { radius });
-        self
+        self.prop(CornerRadius { radius })
     }
 
     /// Set the element's padding.
-    fn padding(mut self, padding: impl Into<Padding>) -> Self
+    fn padding(self, padding: impl Into<Padding>) -> Prop<Padding, Self, State, Action>
     where
-        Self: HasProperty<Padding>,
+        Self::Widget: HasProperty<Padding>,
     {
-        *self.property() = Some(padding.into());
-        self
+        self.prop(padding.into())
     }
 
     /// Set how line breaks will be handled when text overflows the available space.
-    fn line_break_mode(mut self, line_break_mode: LineBreaking) -> Self
+    fn line_break_mode(
+        self,
+        line_break_mode: LineBreaking,
+    ) -> Prop<LineBreaking, Self, State, Action>
     where
-        Self: HasProperty<LineBreaking>,
+        Self::Widget: HasProperty<LineBreaking>,
     {
-        *self.property() = Some(line_break_mode);
-        self
+        self.prop(line_break_mode)
     }
+}
+
+impl<State, Action, V> Style<State, Action> for V
+where
+    State: 'static,
+    Action: 'static,
+    V: WidgetView<State, Action> + Sized,
+{
 }

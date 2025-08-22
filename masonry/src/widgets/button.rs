@@ -7,6 +7,7 @@ use std::any::TypeId;
 use std::sync::Arc;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
 use ui_events::pointer::PointerButton;
 use vello::Scene;
@@ -301,6 +302,16 @@ impl Widget for Button {
         trace_span!("Button", id = id.trace())
     }
 }
+
+impl HasProperty<DisabledBackground> for Button {}
+impl HasProperty<ActiveBackground> for Button {}
+impl HasProperty<Background> for Button {}
+impl HasProperty<HoveredBorderColor> for Button {}
+impl HasProperty<BorderColor> for Button {}
+impl HasProperty<BorderWidth> for Button {}
+impl HasProperty<CornerRadius> for Button {}
+impl HasProperty<Padding> for Button {}
+impl HasProperty<BoxShadow> for Button {}
 
 // --- MARK: TESTS
 #[cfg(test)]

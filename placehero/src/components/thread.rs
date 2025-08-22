@@ -6,7 +6,7 @@ use xilem::WidgetView;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::masonry::util::debug_panic;
 use xilem::palette::css;
-use xilem::style::{Padding, Style};
+use xilem::style::{Padding, Style as _};
 use xilem::view::{CrossAxisAlignment, FlexExt, flex, flex_row, label, portal, sized_box};
 
 use crate::Placehero;
