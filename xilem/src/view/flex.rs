@@ -20,6 +20,7 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
 /// A layout which defines how items will be arranged in rows or columns.
 ///
+/// Its simplified forms are [`flex_h()`] and [`flex_v()`].
 /// # Example
 /// ```rust,no_run
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
