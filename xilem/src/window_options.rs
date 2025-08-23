@@ -4,6 +4,7 @@
 use winit::cursor::Cursor;
 use winit::dpi::{Position, Size};
 use winit::icon::Icon;
+use winit::platform::wayland::{Anchor, KeyboardInteractivity, Layer, WindowAttributesWayland};
 use winit::window::{Window, WindowAttributes};
 
 // TODO: make this a type-state builder to force Xilem::new apps to define on_close?
@@ -28,6 +29,8 @@ pub(crate) struct ReactiveWindowAttrs {
     cursor: Cursor,
     min_inner_size: Option<Size>,
     max_inner_size: Option<Size>,
+
+    wayland: WindowAttributesWayland,
 }
 
 /// These are attributes the user can change, so we cannot make them reactive.
@@ -58,6 +61,7 @@ impl<State> WindowOptions<State> {
                 cursor: Cursor::default(),
                 min_inner_size: None,
                 max_inner_size: None,
+                wayland: WindowAttributesWayland::default(),
             },
             initial: InitialAttrs {
                 inner_size: None,
@@ -120,12 +124,55 @@ impl<State> WindowOptions<State> {
         self
     }
 
+    /// Enable Wayland layer shell support for this window.
+    pub fn with_layer_shell(mut self) -> Self {
+        self.reactive.wayland = self.reactive.wayland.with_layer_shell();
+        self
+    }
+
+    /// Sets the anchor for a Wayland layer shell window.
+    pub fn with_anchor(mut self, anchor: Anchor) -> Self {
+        self.reactive.wayland = self.reactive.wayland.with_anchor(anchor);
+        self
+    }
+
+    /// Sets the exclusive zone for a Wayland layer shell window.
+    pub fn with_exclusive_zone(mut self, exclusive_zone: i32) -> Self {
+        self.reactive.wayland = self.reactive.wayland.with_exclusive_zone(exclusive_zone);
+        self
+    }
+
+    /// Sets the margin for a Wayland layer shell window.
+    pub fn with_margin(mut self, top: i32, right: i32, bottom: i32, left: i32) -> Self {
+        self.reactive.wayland = self.reactive.wayland.with_margin(top, right, bottom, left);
+        self
+    }
+
+    /// Sets the keyboard interactivity for a Wayland layer shell window.
+    pub fn with_keyboard_interactivity(
+        mut self,
+        keyboard_interactivity: KeyboardInteractivity,
+    ) -> Self {
+        self.reactive.wayland = self
+            .reactive
+            .wayland
+            .with_keyboard_interactivity(keyboard_interactivity);
+        self
+    }
+
+    /// Sets the layer for a Wayland layer shell window.
+    pub fn with_layer(mut self, layer: Layer) -> Self {
+        self.reactive.wayland = self.reactive.wayland.with_layer(layer);
+        self
+    }
+
     pub(crate) fn build_initial_attrs(&self) -> WindowAttributes {
         let mut attrs = WindowAttributes::default()
             .with_title(self.reactive.title.clone())
             .with_cursor(self.reactive.cursor.clone())
             .with_resizable(self.reactive.resizable)
-            .with_window_icon(self.initial.window_icon.clone());
+            .with_window_icon(self.initial.window_icon.clone())
+            .with_platform_attributes(Box::new(self.reactive.wayland.clone()));
 
         if let Some(min_inner_size) = self.reactive.min_inner_size {
             attrs = attrs.with_min_surface_size(min_inner_size);
