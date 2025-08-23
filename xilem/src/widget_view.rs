@@ -67,8 +67,11 @@ pub trait WidgetView<State, Action = ()>:
     /// ```
     fn prop<P: Property>(self, property: P) -> Prop<P, Self, State, Action>
     where
+        State: 'static,
+        Action: 'static,
         Self: Sized,
         Self::Widget: HasProperty<P>,
+        P: Property + PartialEq + Clone,
     {
         Prop {
             property,

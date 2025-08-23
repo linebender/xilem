@@ -110,7 +110,7 @@ impl<F, V> Button<F, V> {
     }
 }
 
-const LABEL_VIEW_ID: ViewId = ViewId::new(0);
+const BUTTON_CONTENT_VIEW_ID: ViewId = ViewId::new(0);
 
 impl<F, V> ViewMarker for Button<F, V> {}
 impl<F, V, State, Action> View<State, Action, ViewCtx> for Button<F, V>
@@ -122,7 +122,7 @@ where
     type ViewState = V::ViewState;
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
-        let (child, child_state) = ctx.with_id(LABEL_VIEW_ID, |ctx| {
+        let (child, child_state) = ctx.with_id(BUTTON_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::build(&self.child, ctx, app_state)
         });
         (
@@ -146,7 +146,7 @@ where
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }
-        ctx.with_id(LABEL_VIEW_ID, |ctx| {
+        ctx.with_id(BUTTON_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::rebuild(
                 &self.child,
                 &prev.child,
@@ -165,7 +165,7 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        ctx.with_id(LABEL_VIEW_ID, |ctx| {
+        ctx.with_id(BUTTON_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::teardown(
                 &self.child,
                 view_state,
@@ -185,7 +185,7 @@ where
         app_state: &mut State,
     ) -> MessageResult<Action> {
         match message.take_first() {
-            Some(LABEL_VIEW_ID) => self.child.message(
+            Some(BUTTON_CONTENT_VIEW_ID) => self.child.message(
                 view_state,
                 message,
                 widgets::Button::child_mut(&mut element).downcast(),

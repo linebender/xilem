@@ -41,7 +41,7 @@ pub struct Image {
 impl Image {
     // Because this method is image-specific, we don't add it to the Style trait.
     /// Specify the object fit.
-    pub fn fit<State, Action>(self, fill: ObjectFit) -> Prop<ObjectFit, Self, State, Action> {
+    pub fn fit<State: 'static, Action: 'static>(self, fill: ObjectFit) -> Prop<ObjectFit, Self, State, Action> {
         self.prop(fill)
     }
 }
