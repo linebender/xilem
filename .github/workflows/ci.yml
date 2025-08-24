@@ -106,13 +106,13 @@ jobs:
           tool: cargo-rdme@1.4.8
 
       - name: Run cargo rdme (masonry)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry
+        run: cargo rdme --check --workspace-project=masonry
 
       - name: Run cargo rdme (masonry_core)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_core
 
       - name: Run cargo rdme (masonry_winit)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_winit
+        run: cargo rdme --check --workspace-project=masonry_winit
     
       - name: Run cargo rdme (tree_arena)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
