@@ -109,7 +109,7 @@ macro_rules! __declare_property_tuple_loop {
             }
         }
 
-        impl $crate::property_tuple::PropertyTuple for $Props
+        impl $crate::PropertyTuple for $Props
         {
             fn build_properties(&self) -> $crate::masonry::core::Properties {
                 let mut props = $crate::masonry::core::Properties::new();
