@@ -77,15 +77,13 @@ where
         (active_state, alongside_state): &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             self.alongside_view
-                .seq_teardown(alongside_state, ctx, &mut NoElements, app_state);
+                .seq_teardown(alongside_state, ctx, &mut NoElements);
         });
         ctx.with_id(ViewId::new(1), |ctx| {
-            self.active_view
-                .teardown(active_state, ctx, element, app_state);
+            self.active_view.teardown(active_state, ctx, element);
         });
     }
 

@@ -64,11 +64,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let child_element = widgets::Portal::child_mut(&mut element);
-        self.child
-            .teardown(view_state, ctx, child_element, app_state);
+        self.child.teardown(view_state, ctx, child_element);
     }
 
     fn message(

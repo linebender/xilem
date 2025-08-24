@@ -96,11 +96,6 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        // TODO: If the app state no longer exists (e.g. if we're a view over some data, and
-        // that data has been removed) what do we do?
-        // There is potential value in the app state still being available, but maybe
-        // those use cases should migrate to the environment?
-        app_state: &mut State,
     );
 
     /// Route `message` to `id_path`, if that is still a valid path.
@@ -201,9 +196,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.deref().teardown(view_state, ctx, element, app_state);
+        self.deref().teardown(view_state, ctx, element);
     }
 
     fn message(
@@ -270,10 +264,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         self.deref()
-            .teardown(&mut view_state.view_state, ctx, element, app_state);
+            .teardown(&mut view_state.view_state, ctx, element);
     }
 
     fn message(
@@ -334,10 +327,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         self.deref()
-            .teardown(&mut view_state.view_state, ctx, element, app_state);
+            .teardown(&mut view_state.view_state, ctx, element);
     }
 
     fn message(

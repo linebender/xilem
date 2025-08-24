@@ -51,7 +51,6 @@ pub trait AnyView<State, Action, Context, Element: ViewElement> {
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         element: Element::Mut<'el>,
-        app_state: &mut State,
     ) -> Element::Mut<'el>;
 
     /// Type erased [`View::message`].
@@ -117,7 +116,7 @@ where
             // Otherwise, teardown the old element, then replace the value
             // Note that we need to use `dyn_teardown` here, because `prev`
             // is of a different type.
-            element = prev.dyn_teardown(dyn_state, ctx, element, app_state);
+            element = prev.dyn_teardown(dyn_state, ctx, element);
 
             // Increase the generation, because the underlying widget has been swapped out.
             // Overflow condition: Impossible to overflow, as u64 only ever incremented by 1
@@ -135,7 +134,6 @@ where
         dyn_state: &mut AnyViewState,
         ctx: &mut Context,
         element: DynamicElement::Mut<'el>,
-        app_state: &mut State,
     ) -> DynamicElement::Mut<'el> {
         let state = dyn_state
             .inner_state
@@ -145,7 +143,7 @@ where
         // We only need to teardown the inner value - there's no other state to cleanup in this widget
         DynamicElement::with_downcast(element, |element| {
             ctx.with_id(ViewId::new(dyn_state.generation), |ctx| {
-                self.teardown(state, ctx, element, app_state);
+                self.teardown(state, ctx, element);
             });
         })
     }
@@ -219,9 +217,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element, app_state);
+        self.dyn_teardown(view_state, ctx, element);
     }
 
     fn message(
@@ -274,9 +271,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element, app_state);
+        self.dyn_teardown(view_state, ctx, element);
     }
 
     fn message(
@@ -327,9 +323,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element, app_state);
+        self.dyn_teardown(view_state, ctx, element);
     }
 
     fn message(
@@ -380,9 +375,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.dyn_teardown(view_state, ctx, element, app_state);
+        self.dyn_teardown(view_state, ctx, element);
     }
 
     fn message(

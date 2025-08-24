@@ -69,9 +69,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.0.teardown(view_state, ctx, element, app_state);
+        self.0.teardown(view_state, ctx, element);
     }
 
     fn message(

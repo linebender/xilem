@@ -132,7 +132,6 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
-        _: &mut State,
     ) {
         clear_interval(view_state.interval_handle);
     }

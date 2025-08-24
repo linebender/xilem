@@ -67,7 +67,6 @@ impl<State: 'static, Action: 'static> OrphanView<Line, State, Action> for ViewCt
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<'_, Self::OrphanElement>,
-        _: &mut State,
     ) {
     }
 
@@ -125,7 +124,6 @@ impl<State: 'static, Action: 'static> OrphanView<Rect, State, Action> for ViewCt
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<'_, Self::OrphanElement>,
-        _: &mut State,
     ) {
     }
 
@@ -180,7 +178,6 @@ impl<State: 'static, Action: 'static> OrphanView<Circle, State, Action> for View
         (): &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<'_, Self::OrphanElement>,
-        _: &mut State,
     ) {
     }
 
@@ -237,7 +234,6 @@ impl<State: 'static, Action: 'static> OrphanView<BezPath, State, Action> for Vie
         _view_state: &mut Self::OrphanViewState,
         _ctx: &mut Self,
         _element: Mut<'_, Self::OrphanElement>,
-        _: &mut State,
     ) {
     }
 

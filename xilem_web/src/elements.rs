@@ -47,7 +47,6 @@ pub(crate) trait DomViewSequence<State, Action>: 'static {
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
-        app_state: &mut State,
     );
 
     /// Propagate a message.
@@ -104,14 +103,8 @@ where
         seq_state: &mut Box<dyn Any>,
         ctx: &mut ViewCtx,
         elements: &mut DomChildrenSplice<'_, '_, '_, '_>,
-        app_state: &mut State,
     ) {
-        self.seq_teardown(
-            seq_state.downcast_mut().unwrap_throw(),
-            ctx,
-            elements,
-            app_state,
-        );
+        self.seq_teardown(seq_state.downcast_mut().unwrap_throw(), ctx, elements);
     }
 
     fn dyn_seq_message(
@@ -313,7 +306,6 @@ pub(crate) fn teardown_element<State, Action, Element>(
     element: Mut<'_, Pod<Element>>,
     state: &mut ElementState,
     ctx: &mut ViewCtx,
-    app_state: &mut State,
 ) where
     State: 'static,
     Action: 'static,
@@ -329,12 +321,7 @@ pub(crate) fn teardown_element<State, Action, Element>(
         true,
         ctx.is_hydrating(),
     );
-    children.dyn_seq_teardown(
-        &mut state.seq_state,
-        ctx,
-        &mut dom_children_splice,
-        app_state,
-    );
+    children.dyn_seq_teardown(&mut state.seq_state, ctx, &mut dom_children_splice);
 }
 
 pub(crate) fn message_element<State, Action, Element>(
@@ -448,9 +435,8 @@ where
         element_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        teardown_element(&*self.children, element, element_state, ctx, app_state);
+        teardown_element(&*self.children, element, element_state, ctx);
     }
 
     fn message(
@@ -529,9 +515,8 @@ macro_rules! define_element {
                 element_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
                 element: Mut<'_, Self::Element>,
-                app_state: &mut State,
             ) {
-                teardown_element(&*self.children, element, element_state, ctx, app_state);
+                teardown_element(&*self.children, element, element_state, ctx);
             }
 
             fn message(
