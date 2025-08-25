@@ -135,10 +135,8 @@ where
         (child, child_view_state): &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut ParentState,
     ) {
-        let child_state = (self.access_state)(app_state);
-        child.teardown(child_view_state, ctx, element, child_state);
+        child.teardown(child_view_state, ctx, element);
     }
 
     fn message(

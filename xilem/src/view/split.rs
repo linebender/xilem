@@ -255,15 +255,12 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let child1_element = widgets::Split::child1_mut(&mut element);
-        self.child1
-            .teardown(&mut view_state.0, ctx, child1_element, app_state);
+        self.child1.teardown(&mut view_state.0, ctx, child1_element);
 
         let child2_element = widgets::Split::child2_mut(&mut element);
-        self.child2
-            .teardown(&mut view_state.1, ctx, child2_element, app_state);
+        self.child2.teardown(&mut view_state.1, ctx, child2_element);
     }
 
     fn message(

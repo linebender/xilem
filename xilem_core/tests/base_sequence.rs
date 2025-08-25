@@ -57,7 +57,7 @@ fn one_element_sequence_passthrough() {
         assert_action(result, 2);
     });
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     assert_eq!(
         element.operations,
         &[
@@ -108,7 +108,7 @@ fn option_none_none() {
     assert!(seq_children.deleted.is_empty());
     assert!(seq_children.active.is_empty());
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -158,7 +158,7 @@ fn option_some_some() {
         &[Operation::Build(0), Operation::Rebuild { from: 0, to: 2 }]
     );
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -211,7 +211,7 @@ fn option_none_some() {
     let child = seq_children.active.first().unwrap();
     assert_eq!(child.operations, &[Operation::Build(1)]);
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -268,7 +268,7 @@ fn option_some_none() {
         &[Operation::Build(0), Operation::Teardown(0)]
     );
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
