@@ -80,6 +80,8 @@ mod any_view;
 pub use any_view::{AnyView, AnyViewState};
 
 mod sequence;
-pub use sequence::{AppendVec, ElementSplice, ViewSequence, WithoutElements, without_elements};
+pub use sequence::{
+    AppendVec, Count, ElementSplice, ViewSequence, WithoutElements, without_elements,
+};
 
 pub mod docs;
