@@ -188,11 +188,9 @@ where
         GridState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut splice = GridSplice::new(element, scratch);
-        self.sequence
-            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        self.sequence.seq_teardown(seq_state, ctx, &mut splice);
         debug_assert!(scratch.is_empty());
     }
 
@@ -497,11 +495,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
-        self.view
-            .teardown(view_state, ctx, child.downcast(), app_state);
+        self.view.teardown(view_state, ctx, child.downcast());
     }
 
     fn message(

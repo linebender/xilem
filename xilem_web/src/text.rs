@@ -45,7 +45,6 @@ macro_rules! impl_string_view {
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 _element: Mut<'_, Self::OrphanElement>,
-                _: &mut State,
             ) {
             }
 
@@ -105,7 +104,6 @@ macro_rules! impl_to_string_view {
                 _view_state: &mut Self::OrphanViewState,
                 _ctx: &mut ViewCtx,
                 _element: Mut<'_, Pod<web_sys::Text>>,
-                _: &mut State,
             ) {
             }
 

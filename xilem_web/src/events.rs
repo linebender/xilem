@@ -200,7 +200,6 @@ fn teardown_event_listener<State, Action, V>(
     state: &mut OnEventState<V::ViewState>,
     _capture: bool,
     ctx: &mut ViewCtx,
-    app_state: &mut State,
 ) where
     State: 'static,
     Action: 'static,
@@ -209,7 +208,7 @@ fn teardown_event_listener<State, Action, V>(
     // TODO: is this really needed (as the element will be removed anyway)?
     // remove_event_listener(element.as_ref(), event, &state.callback, capture);
     ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
-        element_view.teardown(&mut state.child_state, ctx, element, app_state);
+        element_view.teardown(&mut state.child_state, ctx, element);
     });
 }
 
@@ -322,7 +321,6 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         teardown_event_listener(
             &self.dom_view,
@@ -331,7 +329,6 @@ where
             view_state,
             self.capture,
             ctx,
-            app_state,
         );
     }
 
@@ -452,9 +449,8 @@ macro_rules! event_definitions {
                 view_state: &mut Self::ViewState,
                 ctx: &mut ViewCtx,
                 element: Mut<'_, Self::Element>,
-                app_state: &mut State
             ) {
-                teardown_event_listener(&self.dom_view, element, $event_name, view_state, self.capture, ctx, app_state);
+                teardown_event_listener(&self.dom_view, element, $event_name, view_state, self.capture, ctx);
             }
 
             fn message(
@@ -635,12 +631,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         ctx.with_id(ON_EVENT_VIEW_ID, |ctx| {
             view_state.observer.disconnect();
             self.dom_view
-                .teardown(&mut view_state.child_state, ctx, element, app_state);
+                .teardown(&mut view_state.child_state, ctx, element);
         });
     }
 

@@ -87,7 +87,7 @@ fn arc_passthrough_teardown() {
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    view1.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view1.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -164,7 +164,7 @@ fn box_passthrough_teardown() {
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(0)]);
 
-    view1.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view1.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,

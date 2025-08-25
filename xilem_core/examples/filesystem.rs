@@ -192,7 +192,6 @@ impl<State, Action> View<State, Action, ViewCtx> for File {
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        _app_state: &mut State,
     ) {
         let _ = std::fs::remove_file(element);
     }

@@ -63,7 +63,6 @@ impl<State, Action> OrphanView<&'static str, State, Action> for TestCtx {
         generation: &mut Self::OrphanViewState,
         _ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
-        _app_state: &mut State,
     ) {
         element.operations.push(Operation::Teardown(*generation));
     }
@@ -96,6 +95,6 @@ fn str_as_orphan_view() {
         &mut (),
     );
     assert_eq!(element.operations[1], Operation::Rebuild { from: 0, to: 1 });
-    View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, &mut element, &mut ());
+    View::<(), (), TestCtx>::teardown(&view1, &mut generation, &mut ctx, &mut element);
     assert_eq!(element.operations[2], Operation::Teardown(1));
 }

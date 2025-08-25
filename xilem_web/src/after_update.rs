@@ -140,9 +140,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         el: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.element.teardown(view_state, ctx, el, app_state);
+        self.element.teardown(view_state, ctx, el);
     }
 
     fn message(
@@ -196,9 +195,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         el: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.element.teardown(view_state, ctx, el, app_state);
+        self.element.teardown(view_state, ctx, el);
     }
 
     fn message(
@@ -245,10 +243,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         el: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         (self.callback)(el.node);
-        self.element.teardown(view_state, ctx, el, app_state);
+        self.element.teardown(view_state, ctx, el);
     }
 
     fn message(

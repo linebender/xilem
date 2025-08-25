@@ -234,13 +234,7 @@ where
         }
     }
 
-    fn teardown(
-        &self,
-        state: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        (): Mut<'_, Self::Element>,
-        _: &mut State,
-    ) {
+    fn teardown(&self, state: &mut Self::ViewState, _: &mut ViewCtx, (): Mut<'_, Self::Element>) {
         state.clear_update_timeout();
     }
 

@@ -148,7 +148,6 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.id));
@@ -157,8 +156,7 @@ where
             ix: 0,
             scratch: &mut view_state.1,
         };
-        self.seq
-            .seq_teardown(&mut view_state.0, ctx, &mut elements, app_state);
+        self.seq.seq_teardown(&mut view_state.0, ctx, &mut elements);
     }
 
     fn message(
@@ -215,7 +213,6 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         _: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
-        (): &mut (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Teardown(self.0));

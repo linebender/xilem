@@ -69,11 +69,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         (_, render_root): Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         render_root.edit_root_widget(|mut root| {
             self.root_widget_view
-                .teardown(view_state, ctx, root.downcast(), app_state);
+                .teardown(view_state, ctx, root.downcast());
         });
     }
 

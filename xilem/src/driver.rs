@@ -184,7 +184,6 @@ where
             &mut window.view_state,
             &mut window.view_ctx,
             ctx.window_handle_and_render_root(window_id),
-            &mut self.state,
         );
         self.windows.remove(&window_id);
         ctx.close_window(window_id);

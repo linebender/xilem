@@ -281,11 +281,9 @@ where
         FlexState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut splice = FlexSplice::new(element, scratch);
-        self.sequence
-            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        self.sequence.seq_teardown(seq_state, ctx, &mut splice);
         debug_assert!(scratch.is_empty());
     }
 
@@ -635,12 +633,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
             .expect("FlexWrapper always has a widget child");
-        self.view
-            .teardown(view_state, ctx, child.downcast(), app_state);
+        self.view.teardown(view_state, ctx, child.downcast());
     }
 
     fn message(
@@ -707,14 +703,7 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         }
     }
 
-    fn teardown(
-        &self,
-        _: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: Mut<'_, Self::Element>,
-        _: &mut State,
-    ) {
-    }
+    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,
@@ -846,7 +835,6 @@ where
                             parent: element.parent.reborrow_mut(),
                             idx: element.idx,
                         },
-                        app_state,
                     );
                 });
                 widgets::Flex::remove_child(&mut element.parent, element.idx);
@@ -880,7 +868,6 @@ where
                         parent: element.parent.reborrow_mut(),
                         idx: element.idx,
                     },
-                    &mut (),
                 );
                 widgets::Flex::remove_child(&mut element.parent, element.idx);
 
@@ -908,14 +895,13 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         match self {
             Self::Item(flex_item) => {
-                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element, app_state);
+                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element);
             }
             Self::Spacer(spacer) => {
-                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element, &mut ());
+                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element);
             }
         }
     }

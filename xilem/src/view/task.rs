@@ -111,7 +111,6 @@ where
         join_handle: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
-        _: &mut State,
     ) {
         join_handle.abort();
     }

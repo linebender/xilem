@@ -129,7 +129,6 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
     );
 
     /// Propagate a message.
@@ -228,11 +227,10 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
     ) {
         elements.delete(|this_element| {
             Element::with_downcast(this_element, |element| {
-                self.teardown(seq_state, ctx, element, app_state);
+                self.teardown(seq_state, ctx, element);
             });
         });
     }
@@ -349,7 +347,7 @@ where
             (None, Some((prev, inner_state))) => {
                 // Run teardown with the old path
                 ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                    prev.seq_teardown(inner_state, ctx, elements, app_state);
+                    prev.seq_teardown(inner_state, ctx, elements);
                 });
                 // The sequence has just been destroyed, teardown the old view
                 // We increment the generation only on the falling edge by convention
@@ -371,7 +369,6 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
     ) {
         assert_eq!(
             self.is_some(),
@@ -380,7 +377,7 @@ where
         );
         if let Some((seq, inner_state)) = self.as_ref().zip(seq_state.inner.as_mut()) {
             ctx.with_id(ViewId::new(seq_state.generation), |ctx| {
-                seq.seq_teardown(inner_state, ctx, elements, app_state);
+                seq.seq_teardown(inner_state, ctx, elements);
             });
         }
     }
@@ -538,7 +535,7 @@ where
             {
                 let id = create_generational_view_id(index + n, *generation);
                 ctx.with_id(id, |ctx| {
-                    old_seq.seq_teardown(&mut inner_state, ctx, elements, app_state);
+                    old_seq.seq_teardown(&mut inner_state, ctx, elements);
                 });
                 // We increment the generation on the "falling edge" by convention
                 *generation = generation.checked_add(1).unwrap_or_else(|| {
@@ -593,7 +590,6 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
     ) {
         for (index, ((seq, (_, state)), generation)) in self
             .iter()
@@ -602,7 +598,7 @@ where
             .enumerate()
         {
             let id = create_generational_view_id(index, *generation);
-            ctx.with_id(id, |ctx| seq.seq_teardown(state, ctx, elements, app_state));
+            ctx.with_id(id, |ctx| seq.seq_teardown(state, ctx, elements));
         }
     }
 
@@ -713,7 +709,6 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
     ) {
         for (idx, (seq, (_, state))) in self.iter().zip(seq_state).enumerate() {
             ctx.with_id(
@@ -721,7 +716,7 @@ where
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
                 )),
                 |ctx| {
-                    seq.seq_teardown(state, ctx, elements, app_state);
+                    seq.seq_teardown(state, ctx, elements);
                 },
             );
         }
@@ -760,7 +755,6 @@ where
         _seq_state: &mut Self::SeqState,
         _ctx: &mut Context,
         _elements: &mut impl ElementSplice<Element>,
-        _: &mut State,
     ) {
     }
 
@@ -811,9 +805,8 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
     ) {
-        self.0.seq_teardown(seq_state, ctx, elements, app_state);
+        self.0.seq_teardown(seq_state, ctx, elements);
     }
 
     fn seq_message(
@@ -885,11 +878,10 @@ macro_rules! impl_view_tuple {
                 seq_state: &mut Self::SeqState,
                 ctx: &mut Context,
                 elements: &mut impl ElementSplice<Element>,
-                app_state: &mut State,
             ) {
                 $(
                     ctx.with_id(ViewId::new($idx), |ctx| {
-                        self.$idx.seq_teardown(&mut seq_state.$idx.1, ctx, elements, app_state)
+                        self.$idx.seq_teardown(&mut seq_state.$idx.1, ctx, elements)
                     });
                 )+
             }
@@ -1048,10 +1040,8 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         _elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
     ) {
-        self.seq
-            .seq_teardown(seq_state, ctx, &mut NoElements, app_state);
+        self.seq.seq_teardown(seq_state, ctx, &mut NoElements);
     }
 
     fn seq_message(

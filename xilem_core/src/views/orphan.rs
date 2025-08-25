@@ -35,7 +35,6 @@ pub trait OrphanView<V, State, Action>: ViewPathTracker + Sized {
         view_state: &mut Self::OrphanViewState,
         ctx: &mut Self,
         element: Mut<'_, Self::OrphanElement>,
-        app_state: &mut State,
     );
 
     /// See [`View::message`]
@@ -84,9 +83,8 @@ macro_rules! impl_orphan_view_for {
                 view_state: &mut Self::ViewState,
                 ctx: &mut Context,
                 element: Mut<'_, Self::Element>,
-                app_state: &mut State,
             ) {
-                Context::orphan_teardown(self, view_state, ctx, element, app_state);
+                Context::orphan_teardown(self, view_state, ctx, element);
             }
 
             fn message(

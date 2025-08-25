@@ -207,13 +207,7 @@ where
     ) {
     }
 
-    fn teardown(
-        &self,
-        handle: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: Mut<'_, Self::Element>,
-        _: &mut State,
-    ) {
+    fn teardown(&self, handle: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {
         handle.abort();
     }
 

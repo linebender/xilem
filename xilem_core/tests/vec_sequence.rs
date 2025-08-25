@@ -36,7 +36,7 @@ fn zero_zero() {
     assert!(seq_children.deleted.is_empty());
     assert!(seq_children.active.is_empty());
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -86,7 +86,7 @@ fn one_zero() {
         &[Operation::Build(0), Operation::Teardown(0)]
     );
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -145,7 +145,7 @@ fn one_two() {
     assert_eq!(second_child.operations, &[Operation::Build(3)]);
     assert_eq!(second_child.view_path.len(), 1);
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     ctx.assert_empty();
     assert_eq!(
         element.operations,
