@@ -85,5 +85,3 @@ pub use sequence::{
 };
 
 pub mod docs;
-
-mod view2;
