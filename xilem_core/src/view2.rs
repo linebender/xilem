@@ -6,8 +6,8 @@
 use core::marker::PhantomData;
 
 use crate::{
-    AppendVec, ElementSplice, MessageContext, MessageResult, SuperElement, ViewElement, ViewMarker,
-    ViewPathTracker,
+    AppendVec, ElementSplice, MessageContext, MessageResult, SuperElement, View, ViewElement,
+    ViewMarker, ViewPathTracker,
 };
 
 #[expect(unreachable_pub)]
@@ -37,26 +37,23 @@ impl Count {
 // 1) If we have Views<Element>, we want it to also implement `Views<DynElement>`
 //    For sequences (e.g. tuples, etc.), it's not viable to make that an explicit `.as()`
 // 2) Corrolery: If we have `Views<!>`, it should be includable everywhere
-pub trait Views<M: Marker, State, Action, Context>: 'static
+pub trait Views<State, Action, Context, Element>: 'static
 where
     Context: ViewPathTracker,
 {
-    type Element: ViewElement;
     const COUNT: u8;
 }
 
-impl<V, State, Action, Context, Element> Views<Converted<Element>, State, Action, Context> for V
+impl<V, State, Action, Context, Element> Views<State, Action, Context, Element> for V
 where
     Context: ViewPathTracker,
     Element: SuperElement<V::Element, Context>,
-    V: Views<Base, State, Action, Context> + ViewMarker,
+    V: View<State, Action, Context> + ViewMarker,
 {
-    type Element = Element;
-
-    const COUNT: u8 = V::COUNT;
+    const COUNT: u8 = Count::ONE;
 }
 
-impl<V, State, Action, Context, Element> Views<Converted<Element>, State, Action, Context> for (V,)
+impl<V, State, Action, Context, Element> Views<State, Action, Context, Element> for (V,)
 where
     Context: ViewPathTracker,
     Element: ViewElement,
