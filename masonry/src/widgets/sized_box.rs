@@ -236,6 +236,12 @@ impl SizedBox {
     }
 }
 
+impl HasProperty<Background> for SizedBox {}
+impl HasProperty<BorderColor> for SizedBox {}
+impl HasProperty<BorderWidth> for SizedBox {}
+impl HasProperty<CornerRadius> for SizedBox {}
+impl HasProperty<Padding> for SizedBox {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for SizedBox {
     type Action = NoAction;
@@ -337,12 +343,6 @@ impl Widget for SizedBox {
         trace_span!("SizedBox", id = id.trace())
     }
 }
-
-impl HasProperty<Background> for SizedBox {}
-impl HasProperty<BorderColor> for SizedBox {}
-impl HasProperty<BorderWidth> for SizedBox {}
-impl HasProperty<CornerRadius> for SizedBox {}
-impl HasProperty<Padding> for SizedBox {}
 
 // --- MARK: TESTS
 #[cfg(test)]

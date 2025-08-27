@@ -125,6 +125,15 @@ impl TextInput {
     }
 }
 
+impl HasProperty<Background> for TextInput {}
+impl HasProperty<DisabledBackground> for TextInput {}
+impl HasProperty<BorderColor> for TextInput {}
+impl HasProperty<BorderWidth> for TextInput {}
+impl HasProperty<BoxShadow> for TextInput {}
+impl HasProperty<CornerRadius> for TextInput {}
+impl HasProperty<Padding> for TextInput {}
+impl HasProperty<PlaceholderColor> for TextInput {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for TextInput {
     type Action = NoAction;
@@ -282,15 +291,6 @@ impl Widget for TextInput {
         self.clip.then(|| "(clip)".into())
     }
 }
-
-impl HasProperty<Background> for TextInput {}
-impl HasProperty<DisabledBackground> for TextInput {}
-impl HasProperty<BorderColor> for TextInput {}
-impl HasProperty<BorderWidth> for TextInput {}
-impl HasProperty<BoxShadow> for TextInput {}
-impl HasProperty<CornerRadius> for TextInput {}
-impl HasProperty<Padding> for TextInput {}
-impl HasProperty<PlaceholderColor> for TextInput {}
 
 // TODO - Add more tests
 #[cfg(test)]

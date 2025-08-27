@@ -234,6 +234,12 @@ impl Grid {
     }
 }
 
+impl HasProperty<Background> for Grid {}
+impl HasProperty<BorderColor> for Grid {}
+impl HasProperty<BorderWidth> for Grid {}
+impl HasProperty<CornerRadius> for Grid {}
+impl HasProperty<Padding> for Grid {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Grid {
     type Action = NoAction;
@@ -344,12 +350,6 @@ impl Widget for Grid {
         trace_span!("Grid", id = id.trace())
     }
 }
-
-impl HasProperty<Background> for Grid {}
-impl HasProperty<BorderColor> for Grid {}
-impl HasProperty<BorderWidth> for Grid {}
-impl HasProperty<CornerRadius> for Grid {}
-impl HasProperty<Padding> for Grid {}
 
 // --- MARK: TESTS
 #[cfg(test)]

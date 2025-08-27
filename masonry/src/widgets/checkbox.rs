@@ -83,6 +83,18 @@ impl Checkbox {
     }
 }
 
+impl HasProperty<DisabledBackground> for Checkbox {}
+impl HasProperty<ActiveBackground> for Checkbox {}
+impl HasProperty<Background> for Checkbox {}
+impl HasProperty<HoveredBorderColor> for Checkbox {}
+impl HasProperty<BorderColor> for Checkbox {}
+impl HasProperty<BorderWidth> for Checkbox {}
+impl HasProperty<CornerRadius> for Checkbox {}
+impl HasProperty<Padding> for Checkbox {}
+impl HasProperty<CheckmarkStrokeWidth> for Checkbox {}
+impl HasProperty<DisabledCheckmarkColor> for Checkbox {}
+impl HasProperty<CheckmarkColor> for Checkbox {}
+
 /// The action type emitted by [`Checkbox`] when it is activated.
 ///
 /// The field is the target toggle state (i.e. true is "this checkbox would like to become checked").
@@ -333,18 +345,6 @@ impl Widget for Checkbox {
         }
     }
 }
-
-impl HasProperty<DisabledBackground> for Checkbox {}
-impl HasProperty<ActiveBackground> for Checkbox {}
-impl HasProperty<Background> for Checkbox {}
-impl HasProperty<HoveredBorderColor> for Checkbox {}
-impl HasProperty<BorderColor> for Checkbox {}
-impl HasProperty<BorderWidth> for Checkbox {}
-impl HasProperty<CornerRadius> for Checkbox {}
-impl HasProperty<Padding> for Checkbox {}
-impl HasProperty<CheckmarkStrokeWidth> for Checkbox {}
-impl HasProperty<DisabledCheckmarkColor> for Checkbox {}
-impl HasProperty<CheckmarkColor> for Checkbox {}
 
 // --- MARK: TESTS
 #[cfg(test)]

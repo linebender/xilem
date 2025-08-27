@@ -47,6 +47,8 @@ impl Default for Spinner {
     }
 }
 
+impl HasProperty<ContentColor> for Spinner {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Spinner {
     type Action = NoAction;
@@ -143,8 +145,6 @@ impl Widget for Spinner {
         trace_span!("Spinner", id = id.trace())
     }
 }
-
-impl HasProperty<ContentColor> for Spinner {}
 
 // --- MARK: TESTS
 #[cfg(test)]

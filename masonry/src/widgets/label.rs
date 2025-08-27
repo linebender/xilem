@@ -230,6 +230,10 @@ impl Label {
     }
 }
 
+impl HasProperty<ContentColor> for Label {}
+impl HasProperty<DisabledContentColor> for Label {}
+impl HasProperty<LineBreaking> for Label {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Label {
     type Action = NoAction;
@@ -399,10 +403,6 @@ impl Widget for Label {
         Some(self.text.to_string())
     }
 }
-
-impl HasProperty<ContentColor> for Label {}
-impl HasProperty<DisabledContentColor> for Label {}
-impl HasProperty<LineBreaking> for Label {}
 
 // --- MARK: TESTS
 #[cfg(test)]

@@ -55,6 +55,8 @@ impl Image {
     }
 }
 
+impl HasProperty<ObjectFit> for Image {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Image {
     type Action = NoAction;
@@ -144,8 +146,6 @@ impl Widget for Image {
         trace_span!("Image", id = id.trace())
     }
 }
-
-impl HasProperty<ObjectFit> for Image {}
 
 // FIXME - remove cfg?
 #[cfg(not(target_arch = "wasm32"))]

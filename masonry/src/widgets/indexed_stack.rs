@@ -171,6 +171,12 @@ impl IndexedStack {
     }
 }
 
+impl HasProperty<Background> for IndexedStack {}
+impl HasProperty<BorderColor> for IndexedStack {}
+impl HasProperty<BorderWidth> for IndexedStack {}
+impl HasProperty<CornerRadius> for IndexedStack {}
+impl HasProperty<Padding> for IndexedStack {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for IndexedStack {
     type Action = NoAction;
@@ -275,12 +281,6 @@ impl Widget for IndexedStack {
         trace_span!("IndexedStack", id = id.trace())
     }
 }
-
-impl HasProperty<Background> for IndexedStack {}
-impl HasProperty<BorderColor> for IndexedStack {}
-impl HasProperty<BorderWidth> for IndexedStack {}
-impl HasProperty<CornerRadius> for IndexedStack {}
-impl HasProperty<Padding> for IndexedStack {}
 
 // --- MARK: TESTS
 #[cfg(test)]
