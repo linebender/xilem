@@ -47,11 +47,11 @@ pub trait WidgetView<State, Action = ()>:
         transformed(self).transform(by)
     }
 
-    /// Set a [Property] on this view, when the underlying widget [supports](HasProperty) it.
+    /// Set a [`Property`] on this view, when the underlying widget [supports](HasProperty) it.
     ///
     /// This overrides previous set properties of the same type.
     ///
-    /// It can be used to create syntax-sugar extension traits with more documentation, as seen in [Style](crate::style::Style)
+    /// It can be used to create syntax-sugar extension traits with more documentation, as seen in [`Style`](crate::style::Style)
     ///
     /// # Examples
     /// ```
@@ -65,7 +65,7 @@ pub trait WidgetView<State, Action = ()>:
     /// # }
     ///
     /// ```
-    fn prop<P: Property>(self, property: P) -> Prop<P, Self, State, Action>
+    fn prop<P>(self, property: P) -> Prop<P, Self, State, Action>
     where
         State: 'static,
         Action: 'static,

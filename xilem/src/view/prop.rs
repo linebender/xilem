@@ -4,13 +4,17 @@
 use std::cmp::PartialEq;
 use std::marker::PhantomData;
 
-use masonry::core::Property;
+use masonry::core::{HasProperty, Property};
 use xilem_core::{MessageContext, Mut};
 
 use crate::core::{View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
-/// A view that adds a property `P` or overrides a previously defined property `P`.
+/// A view that adds a property `P` or overrides a previously defined property `P`
+/// to the element of the child (`V`) [`WidgetView`](crate::WidgetView) when it [supports it](HasProperty).
+///
+/// It can be constructed by using [`WidgetView::prop`](crate::WidgetView::prop)
+/// This view can also be used to create syntax-sugar extension traits with more documentation, as seen in [`Style`](crate::style::Style)
 pub struct Prop<P, V, State, Action> {
     pub(crate) property: P,
     pub(crate) child: V,
@@ -22,7 +26,7 @@ impl<P, Child, State, Action> View<State, Action, ViewCtx> for Prop<P, Child, St
 where
     P: Property + PartialEq + Clone,
     Child: WidgetView<State, Action>,
-    Child::Widget: masonry::core::HasProperty<P>,
+    Child::Widget: HasProperty<P>,
     State: 'static,
     Action: 'static,
 {
