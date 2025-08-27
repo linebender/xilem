@@ -64,7 +64,8 @@ impl<T> Default for AppendVec<T> {
     }
 }
 
-/// The number of elements a [`ViewSequence`] can have.
+/// Classes that a [`ViewSequence`] can be a member of, grouped based on the number
+/// of elements it is known to contain.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Count {
     /// This sequence is known to have no elements.
@@ -157,7 +158,8 @@ where
     /// [`ViewState`]: View::ViewState
     type SeqState;
 
-    /// The number of elements this sequence will manage.
+    /// The class of sequence this is, grouped based on how many elements it may contain.
+    /// This is useful for making bounds based on the expected number of child elements.
     const ELEMENTS_COUNT: Count;
 
     /// Build the associated widgets into `elements` and initialize all states.
