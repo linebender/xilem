@@ -68,14 +68,7 @@ pub fn button<State, Action>(
     impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
     Label,
 > {
-    Button {
-        child: label.into(),
-        callback: move |state: &mut State, button| match button {
-            None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
-            _ => MessageResult::Nop,
-        },
-        disabled: false,
-    }
+    any_button(label.into(), callback)
 }
 
 /// See [`button`], the only difference is, that it allows arbitrary widgets as content.
