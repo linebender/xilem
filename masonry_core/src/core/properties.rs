@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::default::Default;
 
 use crate::core::Widget;
-use crate::util::{AnyMap, TypeSet};
+use crate::util::AnyMap;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -55,7 +55,6 @@ pub struct PropertiesRef<'a> {
 pub struct PropertiesMut<'a> {
     pub(crate) map: &'a mut AnyMap,
     pub(crate) default_map: &'a AnyMap,
-    pub(crate) changed: &'a mut TypeSet,
 }
 
 // TODO - Better document local vs default properties.
@@ -200,7 +199,6 @@ impl PropertiesMut<'_> {
     ///
     /// [`WidgetMut::insert_prop`]: crate::core::WidgetMut::insert_prop
     pub fn insert<P: Property>(&mut self, value: P) -> Option<P> {
-        self.changed.insert(TypeId::of::<P>());
         self.map.insert(value)
     }
 
@@ -212,17 +210,7 @@ impl PropertiesMut<'_> {
     ///
     /// [`WidgetMut::remove_prop`]: crate::core::WidgetMut::remove_prop
     pub fn remove<P: Property>(&mut self) -> Option<P> {
-        self.changed.insert(TypeId::of::<P>());
         self.map.remove::<P>()
-    }
-
-    /// Whether the property `P` has been modified in this pass.
-    ///
-    /// If you're using a `WidgetMut`, call [`WidgetMut::prop_has_changed`] instead.
-    ///
-    /// [`WidgetMut::prop_has_changed`]: crate::core::WidgetMut::prop_has_changed
-    pub fn has_changed<P: Property>(&self) -> bool {
-        self.changed.contains(&TypeId::of::<P>())
     }
 
     /// Get a `PropertiesMut` for the same underlying properties with a shorter lifetime.
@@ -230,7 +218,6 @@ impl PropertiesMut<'_> {
         PropertiesMut {
             map: &mut *self.map,
             default_map: self.default_map,
-            changed: &mut *self.changed,
         }
     }
 }

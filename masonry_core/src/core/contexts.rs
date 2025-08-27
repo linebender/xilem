@@ -54,6 +54,7 @@ pub struct MutateCtx<'a> {
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) properties: PropertiesMut<'a>,
+    pub(crate) changed_properties: &'a mut TypeSet,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
@@ -244,8 +245,8 @@ impl MutateCtx<'_> {
             properties: PropertiesMut {
                 map: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
-                changed: &mut node_mut.item.changed_properties,
             },
+            changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
             default_properties: self.default_properties,
         };
@@ -264,6 +265,7 @@ impl MutateCtx<'_> {
             parent_widget_state: None,
             widget_state: self.widget_state,
             properties: self.properties.reborrow_mut(),
+            changed_properties: self.changed_properties,
             children: self.children.reborrow_mut(),
             default_properties: self.default_properties,
         }

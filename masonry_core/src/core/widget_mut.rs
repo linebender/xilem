@@ -64,7 +64,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// In these cases, the "strongest" of these will want to check if it has been
     /// changed by a different unit, to overwrite this change.
     pub fn prop_has_changed<P: Property>(&self) -> bool {
-        self.ctx.properties.has_changed::<P>()
+        self.ctx.changed_properties.contains(&TypeId::of::<P>())
     }
 
     /// Get value of property `T`.
@@ -81,10 +81,11 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// Does not affect default properties.
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
-    pub fn insert_prop<T: Property>(&mut self, value: T) -> Option<T> {
+    pub fn insert_prop<P: Property>(&mut self, value: P) -> Option<P> {
+        self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.insert(value);
         self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
         value
     }
 
@@ -93,10 +94,11 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// Does not affect default properties.
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
-    pub fn remove_prop<T: Property>(&mut self) -> Option<T> {
-        let value = self.ctx.properties.remove::<T>();
+    pub fn remove_prop<P: Property>(&mut self) -> Option<P> {
+        self.ctx.changed_properties.insert(TypeId::of::<P>());
+        let value = self.ctx.properties.remove::<P>();
         self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<T>());
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
         value
     }
 

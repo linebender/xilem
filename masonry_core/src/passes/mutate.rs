@@ -37,8 +37,8 @@ pub(crate) fn mutate_widget<R>(
             properties: PropertiesMut {
                 map: properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
-                changed: changed_properties,
             },
+            changed_properties,
             children,
             default_properties: &root.default_properties,
         },

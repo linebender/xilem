@@ -34,7 +34,6 @@ pub(crate) fn run_layout_on(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
-    let changed_properties = &mut node.item.changed_properties;
     let id = state.id;
     let trace = global_state.trace.layout;
     let _span = enter_span_if(trace, state);
@@ -115,7 +114,6 @@ pub(crate) fn run_layout_on(
         let mut props = PropertiesMut {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
-            changed: changed_properties,
         };
         widget.layout(&mut ctx, &mut props, bc)
     };
