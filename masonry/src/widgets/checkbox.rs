@@ -30,7 +30,13 @@ use crate::widgets::Label;
 ///
 #[doc = include_screenshot!("checkbox_hello_checked.png", "Checkbox with checked state.")]
 ///
-/// Emits [`CheckboxToggled`] when toggled.
+/// Emits [`CheckboxToggled`] when it should toggle.
+/// Note that the checked state does not automatically toggle, and so one of
+/// the responses to a `CheckboxToggled` is to call [`Checkbox::set_checked`]
+/// on the originating widget.
+///
+/// This allows higher-level components to choose how the checkbox responds,
+/// and ensure that its value is based on their correct source of truth.
 pub struct Checkbox {
     checked: bool,
     // FIXME - Remove label child, have this widget only be a box with a checkmark.
@@ -77,9 +83,9 @@ impl Checkbox {
     }
 }
 
-/// The action type emitted by [`Checkbox`] when it is toggled.
+/// The action type emitted by [`Checkbox`] when it is activated.
 ///
-/// The field is the toggle state (i.e. true is "checked").
+/// The field is the target toggle state (i.e. true is "this checkbox would like to become checked").
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct CheckboxToggled(pub bool);
 
@@ -96,18 +102,13 @@ impl Widget for Checkbox {
         match event {
             PointerEvent::Down { .. } => {
                 ctx.capture_pointer();
-                // Checked state impacts appearance and accessibility node
-                ctx.request_render();
                 trace!("Checkbox {:?} pressed", ctx.widget_id());
             }
             PointerEvent::Up { .. } => {
                 if ctx.is_active() && ctx.is_hovered() {
-                    self.checked = !self.checked;
-                    ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
+                    ctx.submit_action::<Self::Action>(CheckboxToggled(!self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
-                // Checked state impacts appearance and accessibility node
-                ctx.request_render();
             }
             _ => (),
         }
@@ -122,10 +123,7 @@ impl Widget for Checkbox {
         match event {
             TextEvent::Keyboard(event) if event.state.is_up() => {
                 if matches!(&event.key, Key::Character(c) if c == " ") {
-                    self.checked = !self.checked;
-                    ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
-                    // Checked state impacts appearance and accessibility node
-                    ctx.request_render();
+                    ctx.submit_action::<Self::Action>(CheckboxToggled(!self.checked));
                 }
             }
             _ => (),
@@ -145,10 +143,7 @@ impl Widget for Checkbox {
     ) {
         match event.action {
             accesskit::Action::Click => {
-                self.checked = !self.checked;
-                ctx.submit_action::<Self::Action>(CheckboxToggled(self.checked));
-                // Checked state impacts appearance and accessibility node
-                ctx.request_render();
+                ctx.submit_action::<Self::Action>(CheckboxToggled(!self.checked));
             }
             _ => {}
         }
@@ -379,6 +374,10 @@ mod tests {
             harness.pop_action::<CheckboxToggled>(),
             Some((CheckboxToggled(true), checkbox_id))
         );
+
+        assert_render_snapshot!(harness, "checkbox_hello_hovered");
+
+        harness.edit_root_widget(|mut checkbox| Checkbox::set_checked(&mut checkbox, true));
 
         assert_render_snapshot!(harness, "checkbox_hello_checked");
 

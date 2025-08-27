@@ -341,9 +341,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.inner.teardown(view_state, ctx, element, app_state);
+        self.inner.teardown(view_state, ctx, element);
     }
 
     fn message(

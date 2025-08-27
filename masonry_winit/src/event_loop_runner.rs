@@ -790,7 +790,11 @@ impl MasonryState<'_> {
             match signal {
                 RenderRootSignal::Action(action, widget_id) => {
                     let window_id = window.id;
-                    debug!("Action {:?} on widget {:?}", action, widget_id);
+                    debug!(
+                        "Action {:?} on widget {:?}",
+                        (*action).type_name(),
+                        widget_id
+                    );
                     app_driver.on_action(
                         window_id,
                         &mut DriverCtx::new(self, event_loop),

@@ -124,7 +124,6 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _>::teardown(
@@ -132,7 +131,6 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
                 &mut (),
                 ctx,
                 widgets::VariableLabel::label_mut(&mut element),
-                app_state,
             );
         });
     }

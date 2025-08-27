@@ -60,14 +60,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
     ) {
     }
 
-    fn teardown(
-        &self,
-        (): &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: Mut<'_, Self::Element>,
-        _: &mut State,
-    ) {
-    }
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,

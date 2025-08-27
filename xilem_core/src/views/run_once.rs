@@ -109,13 +109,7 @@ where
         // Nothing to do
     }
 
-    fn teardown(
-        &self,
-        (): &mut Self::ViewState,
-        _: &mut Context,
-        _: Mut<'_, Self::Element>,
-        _: &mut State,
-    ) {
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut Context, _: Mut<'_, Self::Element>) {
         // Nothing to do
     }
 

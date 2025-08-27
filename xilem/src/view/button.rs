@@ -163,7 +163,6 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         ctx.with_id(BUTTON_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::teardown(
@@ -171,7 +170,6 @@ where
                 view_state,
                 ctx,
                 widgets::Button::child_mut(&mut element).downcast(),
-                app_state,
             );
         });
         ctx.teardown_leaf(element);
