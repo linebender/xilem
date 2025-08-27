@@ -26,10 +26,10 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///
 /// // A component to make a bigger than usual button
 /// fn big_button(
-///     content: &'static str,
+///     label: impl Into<Label>,
 ///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 /// ) -> impl WidgetView<i32> {
-///     sized_box(button(content, callback)).width(40.px()).height(40.px())
+///     sized_box(button(label, callback)).width(40.px()).height(40.px())
 /// }
 ///
 /// fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {

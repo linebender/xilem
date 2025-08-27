@@ -314,7 +314,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// use masonry::widgets::GridParams;
-    /// use xilem::{view::{button, label, prose, grid, GridExt}};
+    /// use xilem::{view::{button, prose, grid, GridExt}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
@@ -341,7 +341,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// use masonry::widgets::GridParams;
-    /// use xilem::{view::{button, label, prose, grid, GridExt}};
+    /// use xilem::{view::{button, prose, grid, GridExt}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
