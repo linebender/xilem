@@ -11,9 +11,9 @@ use crate::core::{View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that adds a property `P` or overrides a previously defined property `P`
-/// to the element of the child (`V`) [`WidgetView`](crate::WidgetView) when it [supports it](HasProperty).
+/// to the element of the child (`V`) [`WidgetView`] when it [supports it](HasProperty).
 ///
-/// It can be constructed by using [`WidgetView::prop`](crate::WidgetView::prop)
+/// It can be constructed by using [`WidgetView::prop`]
 /// This view can also be used to create syntax-sugar extension traits with more documentation, as seen in [`Style`](crate::style::Style)
 pub struct Prop<P, V, State, Action> {
     pub(crate) property: P,
