@@ -8,7 +8,7 @@
 use std::cmp::Ordering;
 
 use accesskit::{Node, Role};
-use masonry_core::core::{HasProperty, NoAction, Property};
+use masonry_core::core::NoAction;
 use parley::style::FontWeight;
 use tracing::{Span, trace_span};
 use vello::Scene;
@@ -123,13 +123,6 @@ impl AnimationStatus {
 pub struct VariableLabel {
     label: WidgetPod<Label>,
     weight: AnimatedF32,
-}
-
-impl<P> HasProperty<P> for VariableLabel
-where
-    P: Property,
-    Label: HasProperty<P>,
-{
 }
 
 // --- MARK: BUILDERS
