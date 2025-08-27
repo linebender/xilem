@@ -19,11 +19,11 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
         FlexSpacer::Fixed(50.px()), // Padding because of the info bar on Android
         flex_row((
             // TODO: Expose that this is a "zoom out" button accessibly
-            button(label("🔍-"), |data: &mut EmojiPagination| {
+            button("🔍-", |data: &mut EmojiPagination| {
                 data.size = (data.size + 1).min(5);
             }),
             // TODO: Expose that this is a "zoom in" button accessibly
-            button(label("🔍+"), |data: &mut EmojiPagination| {
+            button("🔍+", |data: &mut EmojiPagination| {
                 data.size = (data.size - 1).max(2);
             }),
         )),

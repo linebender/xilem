@@ -23,7 +23,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use vello::kurbo::RoundedRectRadii;
 /// use masonry::properties::Padding;
 ///
-/// sized_box(button(label("Button"), |data: &mut i32| *data+=1))
+/// sized_box(button("Button", |data: &mut i32| *data+=1))
 ///     .expand()
 ///     .background(palette::css::RED)
 ///     .border(palette::css::YELLOW, 20.)

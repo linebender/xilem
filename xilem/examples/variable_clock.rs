@@ -99,16 +99,16 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
 /// Controls for the variable font weight.
 fn controls() -> impl WidgetView<Clocks> {
     flex_row((
-        button(label("Increase"), |data: &mut Clocks| {
+        button("Increase", |data: &mut Clocks| {
             data.weight = (data.weight + 100.).clamp(1., 1000.);
         }),
-        button(label("Decrease"), |data: &mut Clocks| {
+        button("Decrease", |data: &mut Clocks| {
             data.weight = (data.weight - 100.).clamp(1., 1000.);
         }),
-        button(label("Minimum"), |data: &mut Clocks| {
+        button("Minimum", |data: &mut Clocks| {
             data.weight = 1.;
         }),
-        button(label("Maximum"), |data: &mut Clocks| {
+        button("Maximum", |data: &mut Clocks| {
             data.weight = 1000.;
         }),
     ))

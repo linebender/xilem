@@ -29,7 +29,7 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 ///     content: &'static str,
 ///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 /// ) -> impl WidgetView<i32> {
-///     sized_box(button(label(content), callback)).width(40.px()).height(40.px())
+///     sized_box(button(content, callback)).width(40.px()).height(40.px())
 /// }
 ///
 /// fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
@@ -466,7 +466,7 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex((
-    ///     button(label("click me"), |_| ()).flex(2.0),
+    ///     button("click me", |_| ()).flex(2.0),
     ///     FlexSpacer::Fixed(2.px()),
     ///     label("a label").flex(CrossAxisAlignment::Fill),
     ///     FlexSpacer::Fixed(2.px()),
@@ -526,7 +526,7 @@ pub struct FlexItem<V, State, Action> {
 ///
 /// # fn view<State: 'static>() -> impl WidgetView<State> {
 /// flex((
-///     flex_item(button(label("click me"), |_| ()), 2.0),
+///     flex_item(button("click me", |_| ()), 2.0),
 ///     FlexSpacer::Fixed(2.px()),
 ///     flex_item(label("a label"), CrossAxisAlignment::Fill),
 ///     FlexSpacer::Fixed(2.px()),

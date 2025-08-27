@@ -53,8 +53,8 @@ where
 /// fn count_view<T>(count: i32) -> impl WidgetView<T, CountMessage> {
 ///     flex((
 ///         label(format!("count: {}", count)),
-///         button(label("+"), |_| CountMessage::Increment),
-///         button(label("-"), |_| CountMessage::Decrement),
+///         button("+", |_| CountMessage::Increment),
+///         button("-", |_| CountMessage::Decrement),
 ///     ))
 /// }
 ///

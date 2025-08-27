@@ -8,7 +8,7 @@
 
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{Axis, button, checkbox, flex, flex_row, label, text_input};
+use xilem::view::{Axis, button, checkbox, flex, flex_row, text_input};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
@@ -47,7 +47,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
     });
     let first_line = flex((
         input_box,
-        button(label("Add task"), |task_list: &mut TaskList| {
+        button("Add task".to_string(), |task_list: &mut TaskList| {
             task_list.add_task();
         }),
     ))
@@ -65,7 +65,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
                     data.tasks[i].done = checked;
                 },
             );
-            let delete_button = button(label("Delete"), move |data: &mut TaskList| {
+            let delete_button = button("Delete", move |data: &mut TaskList| {
                 data.tasks.remove(i);
             });
             flex_row((checkbox, delete_button))

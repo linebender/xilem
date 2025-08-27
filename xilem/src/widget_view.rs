@@ -58,7 +58,7 @@ pub trait WidgetView<State, Action = ()>:
     /// use xilem::{masonry::properties::CornerRadius, view::{button, label}, WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> + use<State> {
-    /// button(label("click me"), |_| {})
+    /// button("click me", |_| {})
     ///     .prop(CornerRadius { radius: 20.0 })
     ///     .prop(CornerRadius { radius: 5.0 })
     /// // The corner radius of this button will be 5.0

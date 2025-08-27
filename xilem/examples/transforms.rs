@@ -59,36 +59,36 @@ impl TransformsGame {
         .scale(self.scale);
 
         let controls = (
-            button(label("↶"), |this: &mut Self| {
+            button("↶", |this: &mut Self| {
                 this.rotation -= PI * 0.125;
             })
             .grid_pos(0, 0),
-            button(label("↑"), |this: &mut Self| {
+            button("↑", |this: &mut Self| {
                 this.translation.y -= 10.0;
             })
             .grid_pos(1, 0),
-            button(label("↷"), |this: &mut Self| {
+            button("↷", |this: &mut Self| {
                 this.rotation += PI * 0.125;
             })
             .grid_pos(2, 0),
-            button(label("←"), |this: &mut Self| {
+            button("←", |this: &mut Self| {
                 this.translation.x -= 10.0;
             })
             .grid_pos(0, 1),
-            button(label("→"), |this: &mut Self| {
+            button("→", |this: &mut Self| {
                 this.translation.x += 10.0;
             })
             .grid_pos(2, 1),
-            button(label("-"), |this: &mut Self| {
+            button("-", |this: &mut Self| {
                 // 2 ^ (1/3) for 3 clicks to reach the target.
                 this.scale /= 1.2599210498948732;
             })
             .grid_pos(0, 2),
-            button(label("↓"), |this: &mut Self| {
+            button("↓", |this: &mut Self| {
                 this.translation.y += 10.0;
             })
             .grid_pos(1, 2),
-            button(label("+"), |this: &mut Self| {
+            button("+", |this: &mut Self| {
                 this.scale *= 1.2599210498948732;
             })
             .grid_pos(2, 2),

@@ -7,6 +7,7 @@ pub use masonry::core::PointerButton;
 use masonry::widgets::{self, ButtonPress};
 
 use crate::core::{MessageContext, Mut, View, ViewMarker, ViewPathTracker};
+use crate::view::Label;
 use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
@@ -30,7 +31,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// }
 ///
 /// # fn view() -> impl WidgetView<State> {
-/// button(label("Button"), |state: &mut State| {
+/// button("Button", |state: &mut State| {
 ///      state.increase();
 /// })
 /// # }
@@ -60,7 +61,25 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// })
 /// # }
 /// ```
-pub fn button<State, Action, V: WidgetView<State, Action>>(
+pub fn button<State, Action>(
+    label: impl Into<Label>,
+    callback: impl Fn(&mut State) -> Action + Send + 'static,
+) -> Button<
+    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    Label,
+> {
+    Button {
+        child: label.into(),
+        callback: move |state: &mut State, button| match button {
+            None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
+            _ => MessageResult::Nop,
+        },
+        disabled: false,
+    }
+}
+
+/// See [`button`], the only difference is, that it allows arbitrary widgets as content.
+pub fn any_button<State, Action, V: WidgetView<State, Action>>(
     child: V,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<

@@ -37,11 +37,11 @@ use masonry::widgets;
 ///     (   
 ///         flex((
 ///             label("Tab A"),
-///             button(label("Move to tab B"), |state: &mut State| state.tab = 1)
+///             button("Move to tab B", |state: &mut State| state.tab = 1)
 ///         )),
 ///         flex((
 ///             label("Tab B"),
-///             button(label("Move to tab A"), |state: &mut State| state.tab = 0)
+///             button("Move to tab A", |state: &mut State| state.tab = 0)
 ///         )),
 ///     ),
 /// )

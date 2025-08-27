@@ -174,11 +174,11 @@ fn single_lap(
 
 fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     if data.active {
-        Either::A(button(label("Stop"), |data: &mut Stopwatch| {
+        Either::A(button("Stop", |data: &mut Stopwatch| {
             data.stop();
         }))
     } else {
-        Either::B(button(label("Start"), |data: &mut Stopwatch| {
+        Either::B(button("Start", |data: &mut Stopwatch| {
             data.start();
         }))
     }
@@ -186,11 +186,11 @@ fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<>
 
 fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     if data.active {
-        Either::A(button(label("  Lap  "), |data: &mut Stopwatch| {
+        Either::A(button("  Lap  ", |data: &mut Stopwatch| {
             data.lap();
         }))
     } else {
-        Either::B(button(label("Reset"), |data: &mut Stopwatch| {
+        Either::B(button("Reset", |data: &mut Stopwatch| {
             data.reset();
         }))
     }

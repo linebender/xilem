@@ -18,8 +18,8 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, ZStackExt, button, flex, flex_row, image, inline_prose, label, portal, prose,
-    sized_box, spinner, split, worker, zstack,
+    FlexSpacer, ZStackExt, button, flex, flex_row, image, inline_prose, portal, prose, sized_box,
+    spinner, split, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 
@@ -152,7 +152,7 @@ impl Status {
             FlexSpacer::Flex(1.),
             // TODO: Spinner if image pending?
             // TODO: Tick if image loaded?
-            button(label("Select"), move |state: &mut HttpCats| {
+            button("Select", move |state: &mut HttpCats| {
                 let status = state
                     .statuses
                     .iter_mut()

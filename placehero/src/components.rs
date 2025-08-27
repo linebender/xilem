@@ -51,7 +51,7 @@ fn base_status<State: 'static>(
             .main_axis_alignment(MainAxisAlignment::Start)
             .gap(1.px()),
             FlexSpacer::Flex(1.0),
-            button(label("Open Profile"), move |_| {
+            button("Open Profile", move |_| {
                 // TODO: We already actually just have the "account" here, so maybe
                 // short-circuit re-loading the account?
                 Navigation::LoadUser(acct_clone.clone())
@@ -65,7 +65,7 @@ fn base_status<State: 'static>(
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            button(label("View Replies"), move |_| {
+            button("View Replies", move |_| {
                 Navigation::LoadContext(status_clone.clone())
             }),
         ))

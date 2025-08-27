@@ -36,9 +36,9 @@ pub use masonry::widgets::GridParams;
 /// grid(
 ///     (
 ///         label(state.int.to_string()).grid_item(GridParams::new(0, 0, 3, 1)),
-///         button(label("Decrease by 1"), |state: &mut State| state.int -= 1).grid_pos(1, 1),
-///         button(label("To zero"), |state: &mut State| state.int = 0).grid_pos(2, 1),
-///         button(label("Increase by 1"), |state: &mut State| state.int += 1).grid_pos(3, 1),
+///         button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
+///         button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
+///         button("Increase by 1", |state: &mut State| state.int += 1).grid_pos(3, 1),
 ///     ),
 ///     3,
 ///     2,
@@ -319,7 +319,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
-    ///     button(label("click me"), |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
+    ///     button("click me", |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
     ///     prose("a prose").grid_item(GridParams::new(1, 1, 1, 1)),
     /// ), 2, 2)
     /// # }
@@ -346,7 +346,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
-    ///     button(label("click me"), |_| ()).grid_pos(0, 0),
+    ///     button("click me", |_| ()).grid_pos(0, 0),
     ///     prose("a prose").grid_pos(1, 1),
     /// ), 2, 2)
     /// # }
