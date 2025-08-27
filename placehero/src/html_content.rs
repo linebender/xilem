@@ -124,12 +124,11 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                     }
                 }
                 _ => {
-                    tracing::error!(
-                        tag = format_args!("<{:?}>", start_tag.name),
-                        "Unhandled tag."
-                    );
+                    let tag_value = String::from_utf8_lossy(&start_tag.name);
+                    tracing::error!(tag = format_args!("<{:?}>", tag_value), "Unhandled tag.");
                     tracing::trace!(
-                        status = format_args!("<{:?}>", start_tag.name),
+                        tag = format_args!("<{:?}>", tag_value),
+                        status = content,
                         "Context for unhandled tag."
                     );
                     if !start_tag.self_closing {
