@@ -209,10 +209,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e16d2d3311acee920a9eb8d33b8cbc1787ce4a264e85f964c2404b969bdcd487"
 
 [[package]]
-name = "anymap3"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "170433209e817da6aae2c51aa0dd443009a613425dd041ebfb2492d1c4c11a25"
+name = "anymap4"
+version = "0.1.0"
+dependencies = [
+ "anymore",
+ "hashbrown",
+]
 
 [[package]]
 name = "anymore"
@@ -2186,7 +2188,7 @@ name = "masonry_core"
 version = "0.3.0"
 dependencies = [
  "accesskit",
- "anymap3",
+ "anymap4",
  "anymore",
  "assert_matches",
  "cursor-icon",

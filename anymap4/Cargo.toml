@@ -1,0 +1,27 @@
+[package]
+name = "anymap4"
+version = "0.1.0"
+authors = [
+    "Olivier Faure (this thing) <couteaubleu@gmail.com>",
+    "Olivier 'reivilibre' (fork maintainer) <contact@librepush.net>",
+    "Chris Morgan (original author) <rust@chrismorgan.info>",
+]
+edition = "2018"
+rust-version = "1.36"
+description = "A safe and convenient store for one value of each type"
+repository.workspace = true
+keywords = ["container", "any", "map"]
+categories = ["rust-patterns", "data-structures", "no-std"]
+license = "BlueOak-1.0.0 OR MIT OR Apache-2.0"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+default = ["std"]
+std = []
+
+[dependencies]
+# The hashbrown feature, disabled by default, is exposed under different stability guarantees than the usual SemVer ones: by preference the version range will only be extended, but it may be shrunk in a MINOR release. See README.md.
+hashbrown = { version = ">=0.1.1, <0.16", optional = true }
+anymore.workspace = true

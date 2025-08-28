@@ -20,6 +20,7 @@ members = [
     "xilem_web/web_examples/svgtoy",
     "xilem_web/web_examples/svgdraw",
     "tree_arena",
+    "anymap4",
     "placehero",
 ]
 
@@ -45,6 +46,7 @@ masonry_testing = { version = "0.3.0", path = "masonry_testing" }
 masonry_winit = { version = "0.3.0", path = "masonry_winit" }
 xilem_core = { version = "0.3.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
+anymap4 = { version = "0.1.0", path = "anymap4" }
 
 anymore = "1.0.0"
 vello = { version = "0.5.0", git = "https://github.com/linebender/vello", rev = "2e74f202aed09f273fe7e84234e9b564f99ff9bc" }

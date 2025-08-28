@@ -3,8 +3,7 @@
 
 //! Miscellaneous utility functions.
 
-use std::any::Any;
-
+use anymore::AnyDebug;
 use vello::Scene;
 use vello::kurbo::{Affine, Join, Shape, Stroke};
 use vello::peniko::{BrushRef, Color, Fill};
@@ -37,7 +36,7 @@ pub use crate::debug_panic;
 
 // ---
 
-pub(crate) type AnyMap = anymap3::Map<dyn Any + Send + Sync>;
+pub(crate) type AnyMap = anymap4::Map<dyn AnyDebug + Send + Sync>;
 
 // --- MARK: PAINT HELPERS
 

@@ -10,7 +10,7 @@ use vello::kurbo::{Affine, Size};
 /// Strategies for inscribing a rectangle inside another rectangle.
 ///
 /// Default value is [`Self::Contain`].
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ObjectFit {
     /// As large as possible without changing aspect ratio of image and all of image shown
     Contain,
