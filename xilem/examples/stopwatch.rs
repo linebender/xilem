@@ -14,7 +14,7 @@ use tracing::warn;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{FlexSequence, FlexSpacer, button, flex, flex_row, label, task};
+use xilem::view::{FlexSequence, FlexSpacer, button, flex_col, flex_row, label, task};
 use xilem::{WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
@@ -107,7 +107,7 @@ fn get_formatted_duration(dur: Duration) -> String {
 
 fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     fork(
-        flex((
+        flex_col((
             FlexSpacer::Fixed(5.px()),
             label(get_formatted_duration(data.displayed_duration)).text_size(70.0),
             flex_row((lap_reset_button(data), start_stop_button(data))),

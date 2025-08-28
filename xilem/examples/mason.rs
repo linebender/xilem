@@ -15,7 +15,7 @@ use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
-    flex_row, label, prose, task, text_input,
+    flex_col, flex_row, label, prose, task, text_input,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView, WindowOptions,
@@ -85,7 +85,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     provides(
         |_: &mut AppData| SomeContext(120),
         fork(
-            flex((
+            flex_col((
                 env_using(),
                 flex_row((
                     label("Label").color(palette::css::REBECCA_PURPLE),
@@ -93,7 +93,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                     // TODO masonry doesn't allow setting disabled manually anymore?
                     // label("Disabled label").disabled(),
                 )),
-                flex(
+                flex_row(
                     text_input(
                         data.text_input_contents.clone(),
                         |data: &mut AppData, new_value| {
@@ -101,9 +101,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                         },
                     )
                     .insert_newline(InsertNewline::OnEnter),
-                )
-                // Manually adding a direction is equivalent to using flex_row
-                .direction(Axis::Horizontal),
+                ),
                 prose(LOREM)
                     .text_alignment(TextAlign::Center)
                     .text_size(18.),
@@ -123,7 +121,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 env_using(),
                 button("Decrement", |data: &mut AppData| data.count -= 1),
                 button("Reset", |data: &mut AppData| data.count = 0),
-                flex((fizz_buzz_flex_sequence, flex_sequence)).direction(axis),
+                flex(axis, (fizz_buzz_flex_sequence, flex_sequence)),
             ))
             .padding(8.0),
             // The following `task` view only exists whilst the example is in the "active" state, so

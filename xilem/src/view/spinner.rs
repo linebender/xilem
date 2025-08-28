@@ -18,11 +18,11 @@ use crate::{MessageResult, Pod, PropertyTuple as _, View, ViewCtx};
 /// # Examples
 ///
 /// ```rust,no_run
-/// # use xilem::{view::{spinner, flex}, WidgetView, core::one_of::Either};
+/// # use xilem::{view::{spinner, flex_col}, WidgetView, core::one_of::Either};
 /// # struct ApiClient;
 /// # struct RequestState { pending: bool }
 /// # impl RequestState {
-/// #     fn request_result(&mut self) -> impl WidgetView<ApiClient> { flex(()) }
+/// #     fn request_result(&mut self) -> impl WidgetView<ApiClient> { flex_col(()) }
 /// # }
 /// #
 /// fn show_request_outcome(data: &mut RequestState) -> impl WidgetView<ApiClient>  {
