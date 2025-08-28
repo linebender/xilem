@@ -3,12 +3,9 @@
 
 use std::marker::PhantomData;
 
-use crate::style::Style;
-
 use masonry::core::{Axis, FromDynWidget, Widget, WidgetMut};
 use masonry::properties::types::Length;
 pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
-use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 pub use masonry::widgets::FlexParams;
 use masonry::widgets::{self};
 
@@ -16,7 +13,7 @@ use crate::core::{
     AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
-use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
+use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 /// A layout which defines how items will be arranged in rows or columns.
 ///
@@ -71,7 +68,6 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
         gap: masonry::theme::DEFAULT_GAP,
-        properties: FlexProps::default(),
         phantom: PhantomData,
     }
 }
@@ -107,7 +103,6 @@ pub struct Flex<Seq, State, Action = ()> {
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     gap: Length,
-    properties: FlexProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -154,25 +149,6 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
         self
     }
 }
-
-impl<Seq, S, A> Style for Flex<Seq, S, A> {
-    type Props = FlexProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub FlexProps;
-    Flex<Seq, S, A>;
-
-    Background, 0;
-    BorderColor, 1;
-    BorderWidth, 2;
-    CornerRadius, 3;
-    Padding, 4;
-);
 
 mod hidden {
     use super::FlexItem;
@@ -245,15 +221,13 @@ where
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        let mut pod = ctx.create_pod(widget);
-        pod.new_widget.properties = self.properties.build_properties();
-        (
-            pod,
-            FlexState {
-                seq_state,
-                scratch: elements,
-            },
-        )
+        let pod = ctx.create_pod(widget);
+        let state = FlexState {
+            seq_state,
+            scratch: elements,
+        };
+
+        (pod, state)
     }
 
     fn rebuild(
@@ -264,8 +238,6 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         if prev.axis != self.axis {
             widgets::Flex::set_direction(&mut element, self.axis);
         }

@@ -6,6 +6,7 @@
 use std::f64::consts::{PI, TAU};
 
 use winit::error::EventLoopError;
+use xilem::core::one_of::Either;
 use xilem::style::Style as _;
 use xilem::view::{GridExt as _, button, grid, label, sized_box, transformed};
 use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, WindowOptions, Xilem};
@@ -24,16 +25,18 @@ impl TransformsGame {
         let everything_correct = rotation_correct && scale_correct && translation_correct;
 
         let status = if everything_correct {
-            label("Great success!")
-                .color(Color::new([0.0, 0.0, 1.0, 1.0]))
-                .text_size(30.0)
+            Either::A(
+                label("Great success!")
+                    .text_size(30.0)
+                    .color(Color::new([0.0, 0.0, 1.0, 1.0])),
+            )
         } else {
             let rotation_mark = if rotation_correct { "✓" } else { "⨯" };
             let scale_mark = if scale_correct { "✓" } else { "⨯" };
             let translation_mark = if translation_correct { "✓" } else { "⨯" };
-            label(format!(
+            Either::B(label(format!(
                 "rotation: {rotation_mark}\nscale: {scale_mark}\ntranslation: {translation_mark}"
-            ))
+            )))
         };
 
         let bg_color = if everything_correct {

@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
@@ -568,6 +569,12 @@ fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> 
     }
     (space_before, space_between)
 }
+
+impl HasProperty<Background> for Flex {}
+impl HasProperty<BorderColor> for Flex {}
+impl HasProperty<BorderWidth> for Flex {}
+impl HasProperty<CornerRadius> for Flex {}
+impl HasProperty<Padding> for Flex {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Flex {

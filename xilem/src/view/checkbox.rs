@@ -1,13 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::PropertyTuple as _;
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::style::Style;
 use crate::{MessageResult, Pod, View, ViewCtx};
 
 use masonry::core::ArcStr;
-use masonry::properties::*;
 use masonry::widgets::{self, CheckboxToggled};
 
 /// An element which can be in checked and unchecked state.
@@ -41,7 +38,6 @@ where
         callback,
         checked,
         disabled: false,
-        properties: CheckboxProps::default(),
     }
 }
 
@@ -54,7 +50,6 @@ pub struct Checkbox<F> {
     checked: bool,
     callback: F,
     disabled: bool,
-    properties: CheckboxProps,
 }
 
 impl<F> Checkbox<F> {
@@ -64,31 +59,6 @@ impl<F> Checkbox<F> {
         self
     }
 }
-
-impl<F> Style for Checkbox<F> {
-    type Props = CheckboxProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub CheckboxProps;
-    Checkbox<F>;
-
-    DisabledBackground, 0;
-    ActiveBackground, 1;
-    Background, 2;
-    HoveredBorderColor, 3;
-    BorderColor, 4;
-    BorderWidth, 5;
-    CornerRadius, 6;
-    Padding, 7;
-    CheckmarkStrokeWidth, 8;
-    DisabledCheckmarkColor, 9;
-    CheckmarkColor, 10;
-);
 
 impl<F> ViewMarker for Checkbox<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<F>
@@ -101,7 +71,6 @@ where
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
             let mut pod = ctx.create_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
-            pod.new_widget.properties = self.properties.build_properties();
             pod.new_widget.options.disabled = self.disabled;
             pod
         })
@@ -115,8 +84,6 @@ where
         mut element: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
         }

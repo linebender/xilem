@@ -68,9 +68,9 @@ fn border_box<State: 'static, Action: 'static>(
         flex_col((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
         FlexSpacer::Flex(1.),
     )))
-    .border(Color::WHITE, 2.)
     .width(450.px())
     .height(200.px())
+    .border(Color::WHITE, 2.)
 }
 
 /// Top-level view

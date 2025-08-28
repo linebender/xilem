@@ -23,7 +23,7 @@ use crate::core::{
 use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
-use crate::util::get_debug_color;
+use crate::util::{TypeSet, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -54,6 +54,7 @@ pub struct MutateCtx<'a> {
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) properties: PropertiesMut<'a>,
+    pub(crate) changed_properties: &'a mut TypeSet,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
@@ -245,6 +246,7 @@ impl MutateCtx<'_> {
                 map: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
             },
+            changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
             default_properties: self.default_properties,
         };
@@ -263,6 +265,7 @@ impl MutateCtx<'_> {
             parent_widget_state: None,
             widget_state: self.widget_state,
             properties: self.properties.reborrow_mut(),
+            changed_properties: self.changed_properties,
             children: self.children.reborrow_mut(),
             default_properties: self.default_properties,
         }
@@ -1478,6 +1481,7 @@ impl RegisterCtx<'_> {
             widget: widget.as_box_dyn(),
             state,
             properties: properties.map,
+            changed_properties: TypeSet::default(),
         };
         self.children.insert(id, node);
     }

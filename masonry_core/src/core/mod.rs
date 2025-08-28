@@ -29,7 +29,9 @@ pub use cursor_icon::CursorIcon;
 pub use events::{
     AccessEvent, Handled, Ime, ResizeDirection, TextEvent, Update, WindowEvent, WindowTheme,
 };
-pub use properties::{DefaultProperties, Properties, PropertiesMut, PropertiesRef, Property};
+pub use properties::{
+    DefaultProperties, HasProperty, Properties, PropertiesMut, PropertiesRef, Property,
+};
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;
 pub use widget::{AllowRawMut, AsDynWidget, ChildrenIds, FromDynWidget, Widget, WidgetId};

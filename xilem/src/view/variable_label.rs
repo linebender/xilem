@@ -4,11 +4,9 @@
 use masonry::core::ArcStr;
 use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
-use vello::peniko::Color;
 
 use super::{Label, label};
 use crate::core::{MessageContext, Mut, ViewMarker, ViewPathTracker};
-use crate::style::Style as _;
 use crate::{MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
@@ -60,14 +58,6 @@ impl VariableLabel {
     /// although non-variable fonts will work, just without the smooth animation support.
     pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
         self.label = self.label.font(font);
-        self
-    }
-
-    /// Set the color used to paint the text.
-    pub fn color(mut self, color: Color) -> Self {
-        // TODO - Replace this with properties on the VariableLabel view
-        // once we implement property inheritance or something like it.
-        self.label = self.label.color(color);
         self
     }
 

@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span, warn};
 use vello::Scene;
 use vello::kurbo::{Point, Size};
@@ -234,6 +235,12 @@ impl SizedBox {
         )
     }
 }
+
+impl HasProperty<Background> for SizedBox {}
+impl HasProperty<BorderColor> for SizedBox {}
+impl HasProperty<BorderWidth> for SizedBox {}
+impl HasProperty<CornerRadius> for SizedBox {}
+impl HasProperty<Padding> for SizedBox {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for SizedBox {
