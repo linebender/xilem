@@ -1,7 +1,10 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use std::sync::Arc;
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use megalodon::entities::{Attachment, attachment::AttachmentType};
 use xilem::{
@@ -38,6 +41,7 @@ pub(crate) fn attachment<State: 'static>(
 fn maybe_blurhash<State: 'static>(
     attachment: &Attachment,
 ) -> Option<impl WidgetView<State, Navigation> + use<State>> {
+    let start = Instant::now();
     let blurhash = attachment.blurhash.as_deref()?;
     // TODO: Maybe use `memoize` here? We don't at the moment because we
     // wouldn't have any way to pass the "attachment" in.
@@ -64,6 +68,10 @@ fn maybe_blurhash<State: 'static>(
     let image_data = Blob::new(Arc::new(result_bytes));
     // This image format doesn't seem to be documented by the blurhash crate, but this value seems to work.
     let image2 = Image::new(image_data, ImageFormat::Rgba8, blur_width, blur_height);
+    let took = start.elapsed();
+    if took > Duration::from_millis(5) {
+        tracing::info!("Calculating a blurhash (size {blur_width}x{blur_height}) took {took:?}.");
+    }
 
     // Retain the aspect ratio, and don't go bigger than the image's actual dimensions.
     // Prefer to fill up the width rather than the height.
