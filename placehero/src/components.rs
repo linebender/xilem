@@ -18,6 +18,8 @@ pub(crate) use timeline::Timeline;
 mod thread;
 pub(crate) use thread::thread;
 
+mod media;
+
 /// Renders the key parts of a Status, in a shared way.
 ///
 /// This is the shared functionality between a timeline and the list of views.
@@ -60,7 +62,14 @@ fn base_status<State: 'static>(
                 .text_alignment(TextAlign::End),
         ))
         .must_fill_major_axis(true),
-        prose(status_html_to_plaintext(status.content.as_str())),
+        prose(status_html_to_plaintext(status.content.as_str())).flex(CrossAxisAlignment::Start),
+        status
+            .media_attachments
+            .iter()
+            .map(|attachment| {
+                media::attachment::<State>(attachment).flex(CrossAxisAlignment::Start)
+            })
+            .collect::<Vec<_>>(),
         flex_row((
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
@@ -70,6 +79,7 @@ fn base_status<State: 'static>(
             }),
         ))
         // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .flex(CrossAxisAlignment::Start),
     )
 }

@@ -42,7 +42,7 @@ impl Avatars {
     /// This will fetch the image data from the URL, and cache it.
     /// If the image hasn't yet loaded, will show a placeholder,
     ///
-    ///  Requires that this View is within a [`Self::provide`] call.
+    /// Requires that this View is within a [`Self::provide`] call.
     // TODO: ArcStr for URL?
     pub(crate) fn avatar<State: 'static, Action: 'static>(
         url: String,
