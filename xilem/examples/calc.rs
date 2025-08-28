@@ -10,8 +10,8 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, any_button, button, flex_row,
-    grid, label, sized_box,
+    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, any_button, button, flex_row, grid,
+    label, sized_box,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
