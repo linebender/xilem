@@ -8,7 +8,7 @@ use xilem::{
     Blob, Image, ImageFormat, WidgetView,
     core::one_of::{OneOf, OneOf4},
     masonry::properties::types::AsUnit,
-    view::{flex, image, prose, sized_box},
+    view::{flex_col, image, prose, sized_box},
 };
 
 use crate::actions::Navigation;
@@ -23,9 +23,10 @@ pub(crate) fn attachment<State: 'static>(
         AttachmentType::Audio => OneOf4::A(audio_attachment(attachment)),
         AttachmentType::Video | AttachmentType::Gifv => OneOf::B(video_attachment(attachment)),
         AttachmentType::Image => OneOf::C(image_attachment(attachment)),
-        AttachmentType::Unknown => {
-            OneOf::D(flex((maybe_blurhash(attachment), prose("Unknown media"))))
-        }
+        AttachmentType::Unknown => OneOf::D(flex_col((
+            maybe_blurhash(attachment),
+            prose("Unknown media"),
+        ))),
     }
 }
 
@@ -73,7 +74,7 @@ fn maybe_blurhash<State: 'static>(
 fn audio_attachment<State: 'static>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
-    flex((
+    flex_col((
         maybe_blurhash(attachment),
         prose("Audio File - Unsupported"),
         attachment.meta.as_ref().map(|meta| {
@@ -89,7 +90,7 @@ fn audio_attachment<State: 'static>(
 fn video_attachment<State: 'static>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
-    flex((
+    flex_col((
         maybe_blurhash(attachment),
         prose("Video File - Unsupported"),
         attachment.meta.as_ref().map(|meta| {
@@ -105,7 +106,7 @@ fn video_attachment<State: 'static>(
 fn image_attachment<State: 'static>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
-    flex((
+    flex_col((
         maybe_blurhash(attachment),
         prose("Image File - Unsupported"),
         attachment.meta.as_ref().map(|meta| {
