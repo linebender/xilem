@@ -7,7 +7,7 @@
 
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use xilem::core::{MessageResult, map_action};
-use xilem::view::{button, flex_h, flex_v, label};
+use xilem::view::{button, flex_col, flex_row, label};
 use xilem::winit::dpi::LogicalSize;
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
@@ -27,7 +27,7 @@ enum CountMessage {
 // `map_action()` is basically how elm works, i.e. provide a message that the parent view has to handle to update the state.
 // In this case the parent adjusts the count that is given to this view according to the message
 fn elm_counter<T: 'static>(count: i32) -> impl WidgetView<T, CountMessage> {
-    flex_v((
+    flex_col((
         label(format!("elm count: {count}")),
         button("+", |_| CountMessage::Increment),
         button("-", |_| CountMessage::Decrement),
@@ -44,8 +44,8 @@ enum CounterChanged {
 // `map_message` is the most flexible but also most verbose way to modularize the views by action.
 // It's very similar to `map_action`, but it also allows to change the `MessageResult` for the parent view
 fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
-    flex_h((
-        flex_v((
+    flex_row((
+        flex_col((
             label(format!("map_message count: {count}")),
             button("+", |count| {
                 *count += 1;
@@ -56,7 +56,7 @@ fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
                 CounterChanged::Changed
             }),
         )),
-        flex_v((
+        flex_col((
             button("reset all", |_| CounterChanged::Reset),
             button("do nothing (and don't rebuild the view tree)", |_| {
                 CounterChanged::Nop
@@ -66,7 +66,7 @@ fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
-    flex_h((
+    flex_row((
         map_action(
             elm_counter(state.map_action_count),
             |state: &mut AppState, message| match message {

@@ -14,7 +14,7 @@ use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, button, flex_h, flex_v, inline_prose, label, portal, prose, sized_box,
+    FlexExt, FlexSpacer, button, flex_col, flex_row, inline_prose, label, portal, prose, sized_box,
     task, variable_label,
 };
 use xilem::{
@@ -40,12 +40,12 @@ struct TimeZone {
 }
 
 fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
-    let view = flex_v((
+    let view = flex_col((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.px()),
         local_time(data),
         controls(),
-        portal(flex_v(
+        portal(flex_col(
             // TODO: When we get responsive layouts, move this into a two-column view on desktop.
             TIMEZONES.iter().map(|it| it.view(data)).collect::<Vec<_>>(),
         ))
@@ -86,7 +86,7 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         )
     };
 
-    flex_v((
+    flex_col((
         TimeZone {
             region: "Here",
             offset,
@@ -98,7 +98,7 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
 
 /// Controls for the variable font weight.
 fn controls() -> impl WidgetView<Clocks> {
-    flex_h((
+    flex_row((
         button("Increase", |data: &mut Clocks| {
             data.weight = (data.weight + 100.).clamp(1., 1000.);
         }),
@@ -118,8 +118,8 @@ impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
     fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
-        sized_box(flex_v((
-            flex_h((
+        sized_box(flex_col((
+            flex_row((
                 inline_prose(self.region),
                 FlexSpacer::Flex(1.),
                 label(format!("UTC{}", self.offset)).color(
@@ -133,7 +133,7 @@ impl TimeZone {
             ))
             .must_fill_major_axis(true)
             .flex(1.),
-            flex_h((
+            flex_row((
                 variable_label(
                     date_time_in_self
                         .format(format_description!("[hour repr:24]:[minute]:[second]"))

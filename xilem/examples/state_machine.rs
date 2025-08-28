@@ -7,7 +7,7 @@ use masonry::properties::types::AsUnit;
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::style::Style as _;
-use xilem::view::{button, flex_v, label, prose, sized_box, spinner};
+use xilem::view::{button, flex_col, label, prose, sized_box, spinner};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
@@ -33,13 +33,13 @@ fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> +
         // The first time we use `OneOf` in a conditional statement, we need
         // to specify the number of `OneOf` variants used - 3 in this case.
         // This works around a rustc inference issue.
-        IsEven::Initial | IsEven::Even => OneOf3::A(flex_v((
+        IsEven::Initial | IsEven::Even => OneOf3::A(flex_col((
             sequence_button("1", IsEven::Odd),
             sequence_button("_", IsEven::Success),
         ))),
         // Subsequent branches can instead use the overarching `OneOf` type,
         // meaning that they don't need to change if additional branches are added.
-        IsEven::Odd => OneOf::B(flex_v((
+        IsEven::Odd => OneOf::B(flex_col((
             sequence_button("1", IsEven::Even),
             sequence_button("_", IsEven::Halt),
         ))),
@@ -60,7 +60,7 @@ fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView
 }
 
 fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
-    flex_v((
+    flex_col((
         button("Reset", |app_data: &mut StateMachine| {
             app_data.history.clear();
             app_data.state = IsEven::Initial;

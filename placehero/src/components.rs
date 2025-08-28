@@ -4,8 +4,8 @@
 use megalodon::entities::Status;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex_h,
-    flex_v, inline_prose, label, prose,
+    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex_col,
+    flex_row, inline_prose, label, prose,
 };
 use xilem::{FontWeight, TextAlign};
 
@@ -35,9 +35,9 @@ fn base_status<State: 'static>(
     // We return a child list.
     (
         // Account info/message time
-        flex_h((
+        flex_row((
             Avatars::avatar(status.account.avatar_static.clone()),
-            flex_v((
+            flex_col((
                 inline_prose(status.account.display_name.as_str())
                     .weight(FontWeight::SEMI_BOLD)
                     .text_alignment(TextAlign::Start)
@@ -61,7 +61,7 @@ fn base_status<State: 'static>(
         ))
         .must_fill_major_axis(true),
         prose(status_html_to_plaintext(status.content.as_str())),
-        flex_h((
+        flex_row((
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),

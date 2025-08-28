@@ -15,7 +15,7 @@ use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
-    flex_h, flex_v, label, prose, task, text_input,
+    flex_col, flex_row, label, prose, task, text_input,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView, WindowOptions,
@@ -85,15 +85,15 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     provides(
         |_: &mut AppData| SomeContext(120),
         fork(
-            flex_v((
+            flex_col((
                 env_using(),
-                flex_h((
+                flex_row((
                     label("Label").color(palette::css::REBECCA_PURPLE),
                     label("Bold Label").weight(FontWeight::BOLD),
                     // TODO masonry doesn't allow setting disabled manually anymore?
                     // label("Disabled label").disabled(),
                 )),
-                flex_h(
+                flex_row(
                     text_input(
                         data.text_input_contents.clone(),
                         |data: &mut AppData, new_value| {
@@ -150,7 +150,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     if data.active {
         provides(
             |_| SomeContext(777),
-            flex_h((
+            flex_row((
                 button("Deactivate", |data: &mut AppData| {
                     data.active = false;
                 }),

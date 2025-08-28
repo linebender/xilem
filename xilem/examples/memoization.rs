@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use xilem::core::{frozen, memoize};
-use xilem::view::{button, flex_v};
+use xilem::view::{button, flex_col};
 use xilem::{AnyWidgetView, EventLoop, WidgetView, WindowOptions, Xilem};
 
 // There are currently two ways to do memoization
@@ -58,7 +58,7 @@ fn reset_button() -> impl WidgetView<AppState> {
 }
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
-    flex_v((
+    flex_col((
         increase_button(state),
         decrease_button(state),
         reset_button(),

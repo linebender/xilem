@@ -20,7 +20,7 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 
 /// A layout which defines how items will be arranged in rows or columns.
 ///
-/// Its simplified forms are [`flex_h`] and [`flex_v`].
+/// Its simplified forms are [`flex_row`] and [`flex_col`].
 /// # Example
 /// ```rust,no_run
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
@@ -80,7 +80,7 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
 ///
 /// This is equivalent to [`flex`] with a pre-applied horizontal
 /// [`direction`](Flex::direction).
-pub fn flex_h<State, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_row<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Horizontal, sequence)
@@ -90,7 +90,7 @@ pub fn flex_h<State, Action, Seq: FlexSequence<State, Action>>(
 ///
 /// This is equivalent to [`flex`] with a pre-applied vertical
 /// [`direction`](Flex::direction).
-pub fn flex_v<State, Action, Seq: FlexSequence<State, Action>>(
+pub fn flex_col<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     flex(Axis::Vertical, sequence)
