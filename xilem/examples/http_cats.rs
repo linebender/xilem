@@ -18,8 +18,8 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, ZStackExt, button, flex, flex_row, image, inline_prose, portal, prose, sized_box,
-    spinner, split, worker, zstack,
+    FlexSpacer, ZStackExt, button, flex_col, flex_row, image, inline_prose, portal, prose,
+    sized_box, spinner, split, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 
@@ -51,7 +51,7 @@ enum ImageState {
 impl HttpCats {
     fn view(&mut self) -> impl WidgetView<Self> + use<> {
         let left_column = portal(
-            flex((
+            flex_col((
                 prose("Status"),
                 self.statuses
                     .iter_mut()
@@ -85,7 +85,7 @@ impl HttpCats {
         // TODO: Should `web_image` be a built-in component?
 
         fork(
-            flex((
+            flex_col((
                 // Add padding to the top for Android. Still a horrible hack
                 FlexSpacer::Fixed(40.px()),
                 split(left_column, portal(sized_box(info_area).expand_width())).split_point(0.4),
@@ -201,7 +201,7 @@ impl Status {
                 )))
             }
         };
-        flex((
+        flex_col((
             prose(format!("HTTP Status Code: {}", self.code)).text_alignment(TextAlign::Center),
             prose(self.message)
                 .text_size(20.)

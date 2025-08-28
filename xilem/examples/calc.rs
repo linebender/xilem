@@ -10,8 +10,8 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    Axis, Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, any_button, button, flex, grid,
-    label, sized_box,
+    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, Label, any_button, button, flex_row,
+    grid, label, sized_box,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
@@ -254,8 +254,7 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
 pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex<Seq, State> {
-    flex(sequence)
-        .direction(Axis::Horizontal)
+    flex_row(sequence)
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .main_axis_alignment(MainAxisAlignment::Start)
         .gap(5.px())

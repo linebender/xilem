@@ -7,7 +7,7 @@ use xilem::masonry::properties::types::AsUnit;
 use xilem::masonry::util::debug_panic;
 use xilem::palette::css;
 use xilem::style::{Padding, Style};
-use xilem::view::{CrossAxisAlignment, FlexExt, flex, flex_row, label, portal, sized_box};
+use xilem::view::{CrossAxisAlignment, FlexExt, flex_col, flex_row, label, portal, sized_box};
 
 use crate::Placehero;
 use crate::actions::Navigation;
@@ -53,7 +53,7 @@ pub(crate) fn thread(
     }
 
     portal(
-        flex((
+        flex_col((
             ancestor_views,
             base_status(root_status),
             label("Replies:").flex(CrossAxisAlignment::Start),
@@ -75,12 +75,12 @@ fn thread_ancestor(status: &Status) -> impl WidgetView<Placehero, Navigation> + 
     sized_box(
         flex_row((
             // An awful left-side border.
-            sized_box(flex(()))
+            sized_box(flex_col(()))
                 .width(3.px())
                 .height(50.px())
                 .background_color(css::WHITE)
                 .flex(CrossAxisAlignment::Start),
-            flex(base_status(status)).flex(1.0),
+            flex_col(base_status(status)).flex(1.0),
         ))
         .must_fill_major_axis(true),
     )

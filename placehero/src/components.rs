@@ -4,7 +4,7 @@
 use megalodon::entities::Status;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex,
+    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex_col,
     flex_row, inline_prose, label, prose,
 };
 use xilem::{FontWeight, TextAlign};
@@ -37,7 +37,7 @@ fn base_status<State: 'static>(
         // Account info/message time
         flex_row((
             Avatars::avatar(status.account.avatar_static.clone()),
-            flex((
+            flex_col((
                 inline_prose(status.account.display_name.as_str())
                     .weight(FontWeight::SEMI_BOLD)
                     .text_alignment(TextAlign::Start)
