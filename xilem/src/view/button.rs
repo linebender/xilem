@@ -15,7 +15,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// # Examples
 /// To use button provide it with a button text and a closure.
 /// ```
-/// use xilem::view::{button, label};
+/// use xilem::view::button;
 /// # use xilem::WidgetView;
 ///
 /// struct State {

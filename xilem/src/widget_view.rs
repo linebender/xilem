@@ -51,7 +51,7 @@ pub trait WidgetView<State, Action = ()>:
     ///
     /// This overrides previous set properties of the same type.
     ///
-    /// It can be used to create syntax-sugar extension traits with more documentation, as seen in [`Style`](crate::style::Style)
+    /// It can be used to create syntax-sugar extension traits with more documentation, as seen in [`Style`](crate::style::Style).
     ///
     /// # Examples
     /// ```

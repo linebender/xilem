@@ -19,7 +19,7 @@ use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::palette::css::{BLACK, WHITE};
-use xilem::style::Style;
+use xilem::style::Style as _;
 use xilem::view::{
     ObjectFit, ZStackExt, flex_col, image, label, prose, sized_box, spinner, virtual_scroll, zstack,
 };

@@ -300,7 +300,7 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
 
     sized_box(
-        button(label(digit), |data: &mut Calculator| {
+        button(digit, |data: &mut Calculator| {
             data.on_entered_digit(digit);
         })
         .background_color(GRAY)
