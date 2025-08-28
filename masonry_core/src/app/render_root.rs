@@ -194,6 +194,9 @@ pub struct RenderRootOptions {
     /// Defines how the window size should be determined.
     pub size_policy: WindowSizePolicy,
 
+    /// The size of the window.
+    pub size: PhysicalSize<u32>,
+
     /// The scale factor to use for rendering.
     ///
     /// Useful for high-DPI displays.
@@ -295,6 +298,7 @@ impl RenderRoot {
             default_properties,
             use_system_fonts,
             size_policy,
+            size,
             scale_factor,
             test_font,
         } = options;
@@ -304,7 +308,7 @@ impl RenderRoot {
             root: root_widget.erased().to_pod(),
             window_node_id: WidgetId::next().into(),
             size_policy,
-            size: PhysicalSize::new(0, 0),
+            size,
             last_mouse_pos: None,
             default_properties,
             global_state: RenderRootState {
@@ -613,6 +617,11 @@ impl RenderRoot {
         self.run_rewrite_passes();
 
         res
+    }
+
+    /// Get the current size of the window.
+    pub fn size(&self) -> PhysicalSize<u32> {
+        self.size
     }
 
     pub(crate) fn get_kurbo_size(&self) -> Size {
