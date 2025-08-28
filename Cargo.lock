@@ -561,6 +561,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "blurhash"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e79769241dcd44edf79a732545e8b5cec84c247ac060f5252cd51885d093a8fc"
+
+[[package]]
 name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2961,6 +2967,7 @@ name = "placehero"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "blurhash",
  "html5gum",
  "image",
  "megalodon",
