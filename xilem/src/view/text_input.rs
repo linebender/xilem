@@ -156,7 +156,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         ctx.record_action(id);
 
         let mut pod = ctx.create_pod(text_input);
-        pod.new_widget.options.disabled = self.disabled;
+        pod.new_widget.disabled = self.disabled;
         (pod, ())
     }
 

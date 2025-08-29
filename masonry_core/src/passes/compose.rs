@@ -6,7 +6,7 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Affine;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{ComposeCtx, DefaultProperties, WidgetArenaNode};
+use crate::core::{ComposeCtx, DefaultProperties, Transform, WidgetArenaNode};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: RECURSE
@@ -23,7 +23,8 @@ fn compose_widget(
     let id = state.id;
     let _span = enter_span_if(global_state.trace.compose, state);
 
-    let transformed = parent_transformed || state.transform_changed;
+    let transform_changed = node.item.changed_properties.has_changed::<Transform>();
+    let transformed = parent_transformed || transform_changed;
 
     if !transformed && !state.needs_compose {
         return;
@@ -32,8 +33,14 @@ fn compose_widget(
     // the translation needs to be applied *after* applying the transform, as translation by scrolling should be within the transformed coordinate space. Same is true for the (layout) origin, to behave similar as in CSS.
     let local_translation = state.scroll_translation + state.origin.to_vec2();
 
-    state.window_transform =
-        parent_window_transform * state.transform.then_translate(local_translation);
+    let transform = node
+        .item
+        .properties
+        .get::<Transform>()
+        .map(|t| t.transform)
+        .unwrap_or(Affine::IDENTITY);
+
+    state.window_transform = parent_window_transform * transform.then_translate(local_translation);
 
     let local_rect = state.size().to_rect() + state.paint_insets;
     state.bounding_rect = state.window_transform.transform_rect_bbox(local_rect);
@@ -55,7 +62,7 @@ fn compose_widget(
 
     state.needs_compose = false;
     state.request_compose = false;
-    state.transform_changed = false;
+    node.item.changed_properties.clear_property::<Transform>();
 
     let parent_transform = state.window_transform;
     let parent_state = state;
