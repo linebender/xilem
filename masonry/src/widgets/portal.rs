@@ -11,8 +11,9 @@ use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
-    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
+    PropertiesRef, RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::widgets::ScrollBar;
 
@@ -270,7 +271,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let content_size = self.content_size;
 
         match *event {
-            PointerEvent::Scroll { delta, .. } => {
+            PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
                 let delta = match delta {
