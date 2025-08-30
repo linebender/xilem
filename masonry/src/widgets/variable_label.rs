@@ -169,6 +169,10 @@ impl VariableLabel {
     }
 }
 
+impl HasProperty<ContentColor> for VariableLabel {}
+impl HasProperty<DisabledContentColor> for VariableLabel {}
+impl HasProperty<LineBreaking> for VariableLabel {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for VariableLabel {
     type Action = NoAction;
