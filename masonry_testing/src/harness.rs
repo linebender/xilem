@@ -327,6 +327,7 @@ impl<W: Widget> TestHarness<W> {
                     default_properties: Arc::new(default_props),
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
+                    size: window_size,
                     scale_factor: params.scale_factor,
                     test_font: Some(data),
                 },
@@ -349,7 +350,6 @@ impl<W: Widget> TestHarness<W> {
         };
 
         // Set up the initial state, and clear invalidation flags.
-        harness.process_window_event(WindowEvent::Resize(window_size));
         harness.process_window_event(WindowEvent::EnableAccessTree);
         harness.animate_ms(0);
 

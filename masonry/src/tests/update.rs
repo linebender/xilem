@@ -35,8 +35,6 @@ fn app_creation() {
             Record::Update(Update::WidgetAdded),
             Record::Layout(_),
             Record::Compose,
-            Record::Layout(_),
-            Record::Compose,
             Record::AnimFrame(0),
             Record::Paint,
             Record::PostPaint,

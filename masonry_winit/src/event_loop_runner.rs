@@ -24,6 +24,7 @@ use masonry_core::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererO
 use tracing::{debug, info, info_span};
 use ui_events_winit::{WindowEventReducer, WindowEventTranslation};
 use winit::application::ApplicationHandler;
+use winit::dpi::PhysicalSize;
 use winit::error::EventLoopError;
 use winit::event::{DeviceEvent as WinitDeviceEvent, DeviceId, WindowEvent as WinitWindowEvent};
 use winit::event_loop::ActiveEventLoop;
@@ -125,10 +126,9 @@ impl Window {
         signal_sender: Sender<(WindowId, RenderRootSignal)>,
         default_properties: Arc<DefaultProperties>,
         base_color: Color,
+        size: PhysicalSize<u32>,
+        scale_factor: f64,
     ) -> Self {
-        // TODO: We can't know this scale factor until later?
-        let scale_factor = 1.0;
-
         Self {
             id: window_id,
             handle,
@@ -143,6 +143,7 @@ impl Window {
                     default_properties,
                     use_system_fonts: true,
                     size_policy: WindowSizePolicy::User,
+                    size,
                     scale_factor,
                     test_font: None,
                 },
@@ -354,11 +355,7 @@ impl MasonryState<'_> {
 
         self.is_suspended = false;
 
-        //  Recreate surfaces for all existing windows.
-        for (handle_id, window) in self.windows.iter() {
-            let surface = create_surface(&mut self.render_cx, window.handle.clone());
-            self.surfaces.insert(*handle_id, surface);
-        }
+        // Surfaces for existing windows will be recreated on-demand in the redraw method
 
         // Create new windows.
         if !self.new_windows.is_empty() {
@@ -411,7 +408,7 @@ impl MasonryState<'_> {
             .unwrap();
         if visible {
             // We defer the rendering of the first frame to the handle_signals method because
-            // we want to handle any signals caused by the initial layout or rescale before we render.
+            // we want to handle any signals caused by the initial layout before we render.
             self.need_first_frame.push(handle.id());
         }
 
@@ -419,13 +416,16 @@ impl MasonryState<'_> {
             Adapter::with_event_loop_proxy(event_loop, &handle, self.event_loop_proxy.clone());
         let handle = Arc::new(handle);
 
-        let scale_factor = handle.scale_factor();
         let handle_id = handle.id();
+        let scale_factor = handle.scale_factor();
 
-        let surface = create_surface(&mut self.render_cx, handle.clone());
-        self.surfaces.insert(handle_id, surface);
+        // https://github.com/rust-windowing/winit/issues/2308
+        #[cfg(target_os = "ios")]
+        let size = handle.outer_size();
+        #[cfg(not(target_os = "ios"))]
+        let size = handle.inner_size();
 
-        let mut window = Window::new(
+        let window = Window::new(
             new_window.id,
             handle,
             adapter,
@@ -433,10 +433,9 @@ impl MasonryState<'_> {
             self.signal_sender.clone(),
             self.default_properties.clone(),
             new_window.base_color,
+            size,
+            scale_factor,
         );
-        window
-            .render_root
-            .handle_window_event(WindowEvent::Rescale(scale_factor));
 
         tracing::debug!(window_id = window.id.trace(), handle=?handle_id, "creating window");
         self.window_id_to_handle_id.insert(window.id, handle_id);
@@ -458,6 +457,58 @@ impl MasonryState<'_> {
         window.handle.set_ime_allowed(false);
     }
 
+    // --- MARK: REDRAW
+    fn redraw(&mut self, handle_id: HandleId) {
+        let _span = info_span!("redraw");
+
+        let window = self.windows.get_mut(&handle_id).unwrap();
+        let size = window.render_root.size();
+        if size.width == 0 || size.height == 0 {
+            // Surface can't have a dimension of zero, remove the stale surface to save memory.
+            self.surfaces.remove(&handle_id);
+            return;
+        }
+
+        // Get the existing surface or create a new one
+        let surface = if let Some(surface) = self.surfaces.get_mut(&handle_id) {
+            // The window might have been resized, make sure the surface dimensions match.
+            if surface.config.width != size.width || surface.config.height != size.height {
+                self.render_cx
+                    .resize_surface(surface, size.width, size.height);
+            }
+            surface
+        } else {
+            let surface = create_surface(&mut self.render_cx, window.handle.clone(), size);
+            self.surfaces.insert(handle_id, surface);
+            self.surfaces.get_mut(&handle_id).unwrap()
+        };
+
+        let now = Instant::now();
+        // TODO: this calculation uses wall-clock time of the paint call, which
+        // potentially has jitter.
+        //
+        // See https://github.com/linebender/druid/issues/85 for discussion.
+        let last = self.last_anim.take();
+        let elapsed = last.map(|t| now.duration_since(t)).unwrap_or_default();
+
+        window
+            .render_root
+            .handle_window_event(WindowEvent::AnimFrame(elapsed));
+
+        // If this animation will continue, store the time.
+        // If a new animation starts, then it will have zero reported elapsed time.
+        let animation_continues = window.render_root.needs_anim();
+        self.last_anim = animation_continues.then_some(now);
+
+        let (scene, tree_update) = window.render_root.redraw();
+        Self::render(surface, window, scene, &self.render_cx, &mut self.renderer);
+        #[cfg(feature = "tracy")]
+        drop(self.frame.take());
+        if let Some(tree_update) = tree_update {
+            window.accesskit_adapter.update_if_active(|| tree_update);
+        }
+    }
+
     // --- MARK: RENDER
     fn render(
         surface: &mut RenderSurface<'_>,
@@ -466,18 +517,8 @@ impl MasonryState<'_> {
         render_cx: &RenderContext,
         renderer: &mut Option<Renderer>,
     ) {
+        let size = window.render_root.size();
         let scale_factor = window.handle.scale_factor();
-        // https://github.com/rust-windowing/winit/issues/2308
-        #[cfg(target_os = "ios")]
-        let size = window.handle.outer_size();
-        #[cfg(not(target_os = "ios"))]
-        let size = window.handle.inner_size();
-        let width = size.width;
-        let height = size.height;
-
-        if surface.config.width != width || surface.config.height != height {
-            render_cx.resize_surface(surface, width, height);
-        }
 
         let transformed_scene = if scale_factor == 1.0 {
             None
@@ -497,8 +538,8 @@ impl MasonryState<'_> {
         };
         let render_params = RenderParams {
             base_color: window.base_color,
-            width,
-            height,
+            width: size.width,
+            height: size.height,
             antialiasing_method: AaConfig::Area,
         };
 
@@ -635,38 +676,7 @@ impl MasonryState<'_> {
                     .handle_window_event(WindowEvent::Rescale(scale_factor));
             }
             WinitWindowEvent::RedrawRequested => {
-                let _span = info_span!("redraw");
-
-                let now = Instant::now();
-                // TODO: this calculation uses wall-clock time of the paint call, which
-                // potentially has jitter.
-                //
-                // See https://github.com/linebender/druid/issues/85 for discussion.
-                let last = self.last_anim.take();
-                let elapsed = last.map(|t| now.duration_since(t)).unwrap_or_default();
-
-                window
-                    .render_root
-                    .handle_window_event(WindowEvent::AnimFrame(elapsed));
-
-                // If this animation will continue, store the time.
-                // If a new animation starts, then it will have zero reported elapsed time.
-                let animation_continues = window.render_root.needs_anim();
-                self.last_anim = animation_continues.then_some(now);
-
-                let (scene, tree_update) = window.render_root.redraw();
-                Self::render(
-                    self.surfaces.get_mut(&handle_id).unwrap(),
-                    window,
-                    scene,
-                    &self.render_cx,
-                    &mut self.renderer,
-                );
-                #[cfg(feature = "tracy")]
-                drop(self.frame.take());
-                if let Some(tree_update) = tree_update {
-                    window.accesskit_adapter.update_if_active(|| tree_update);
-                }
+                self.redraw(handle_id);
             }
             WinitWindowEvent::CloseRequested => {
                 app_driver.on_close_requested(window.id, &mut DriverCtx::new(self, event_loop));
@@ -872,23 +882,9 @@ impl MasonryState<'_> {
 
         // If an app creates a visible window, we firstly create it as invisible
         // and then render the first frame before making it visible to avoid flashing.
-        for handle_id in self.need_first_frame.drain(0..) {
+        for handle_id in std::mem::take(&mut self.need_first_frame) {
+            self.redraw(handle_id);
             let window = self.windows.get_mut(&handle_id).unwrap();
-            let (scene, tree_update) = window.render_root.redraw();
-            Self::render(
-                self.surfaces.get_mut(&handle_id).unwrap(),
-                window,
-                scene,
-                &self.render_cx,
-                &mut self.renderer,
-            );
-            #[cfg(feature = "tracy")]
-            drop(self.frame.take());
-
-            if let Some(tree_update) = tree_update {
-                window.accesskit_adapter.update_if_active(|| tree_update);
-            }
-
             window.handle.set_visible(true);
         }
 
@@ -939,13 +935,12 @@ impl MasonryState<'_> {
 fn create_surface<'s>(
     render_cx: &mut RenderContext,
     handle: Arc<WindowHandle>,
+    size: PhysicalSize<u32>,
 ) -> RenderSurface<'s> {
-    // https://github.com/rust-windowing/winit/issues/2308
-    #[cfg(target_os = "ios")]
-    let size = handle.outer_size();
-    #[cfg(not(target_os = "ios"))]
-    let size = handle.inner_size();
-
+    assert!(
+        size.width != 0 && size.height != 0,
+        "cannot create a surface with a width or height of zero"
+    );
     pollster::block_on(render_cx.create_surface(
         handle.clone(),
         size.width,
