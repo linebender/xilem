@@ -71,7 +71,7 @@ where
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
         ctx.with_leaf_action_widget(|ctx| {
             let mut pod = ctx.create_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
-            pod.new_widget.options.disabled = self.disabled;
+            pod.new_widget.disabled = self.disabled;
             pod
         })
     }
