@@ -48,7 +48,9 @@ pub fn slider<State, Action>(
 impl<F> Slider<F> {
     /// Sets the stepping interval of the slider.
     pub fn step(mut self, step: f64) -> Self {
-        if step > 0.0 { self.step = Some(step); }
+        if step > 0.0 {
+            self.step = Some(step);
+        }
         self
     }
     /// Sets the color of the inactive part of the track.
@@ -68,12 +70,16 @@ impl<F> Slider<F> {
     }
     /// Sets the thickness (height) of the track.
     pub fn track_thickness(mut self, thickness: f64) -> Self {
-        if thickness > 0.0 { self.track_thickness = Some(thickness); }
+        if thickness > 0.0 {
+            self.track_thickness = Some(thickness);
+        }
         self
     }
     /// Sets the base radius of the thumb.
     pub fn thumb_radius(mut self, radius: f64) -> Self {
-        if radius > 0.0 { self.thumb_radius = Some(radius); }
+        if radius > 0.0 {
+            self.thumb_radius = Some(radius);
+        }
         self
     }
     /// Sets whether the slider is disabled.
@@ -97,14 +103,26 @@ where
     fn build(&self, ctx: &mut ViewCtx, _app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let pod = ctx.with_action_widget(|ctx| {
             let mut widget = widgets::Slider::new(self.min, self.max, self.value);
-            if let Some(step) = self.step { widget = widget.with_step(step); }
-            if let Some(color) = self.track_color { widget = widget.with_track_color(color); }
-            if let Some(color) = self.active_track_color { widget = widget.with_active_track_color(color); }
-            if let Some(color) = self.thumb_color { widget = widget.with_thumb_color(color); }
-            if let Some(thickness) = self.track_thickness { widget = widget.with_track_thickness(thickness); }
-            if let Some(radius) = self.thumb_radius { widget = widget.with_thumb_radius(radius); }
+            if let Some(step) = self.step {
+                widget = widget.with_step(step);
+            }
+            if let Some(color) = self.track_color {
+                widget = widget.with_track_color(color);
+            }
+            if let Some(color) = self.active_track_color {
+                widget = widget.with_active_track_color(color);
+            }
+            if let Some(color) = self.thumb_color {
+                widget = widget.with_thumb_color(color);
+            }
+            if let Some(thickness) = self.track_thickness {
+                widget = widget.with_track_thickness(thickness);
+            }
+            if let Some(radius) = self.thumb_radius {
+                widget = widget.with_thumb_radius(radius);
+            }
             widget = widget.with_disabled(self.disabled);
-            
+
             ctx.create_pod(widget)
         });
         (pod, ())
@@ -127,9 +145,6 @@ where
         if prev.disabled != self.disabled {
             widgets::Slider::set_disabled(&mut element, self.disabled);
         }
-        // Nota: Los estilos visuales (colores, tamaños) se establecen en `build`.
-        // Para una reactividad completa, se necesitarían métodos `set_...` para cada
-        // propiedad de estilo, pero se omite para esta implementación inicial.
         if prev.value != self.value {
             widgets::Slider::set_value(&mut element, self.value);
         }

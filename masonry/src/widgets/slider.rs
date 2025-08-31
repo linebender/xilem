@@ -1,17 +1,17 @@
 // Copyright 2024 Retype15 (https://github.com/Retype15)
 // SPDX-License-Identifier: Apache-2.0
 
-use tracing::{trace_span, Span};
+use tracing::{Span, trace_span};
+use vello::Scene;
 use vello::kurbo::{Affine, Circle, Point, Rect, Size, Stroke};
 use vello::peniko::{Brush, Color, Fill};
-use vello::Scene;
 
+use crate::accesskit::{Node, Role};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, PaintCtx,
     PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
     WidgetId, WidgetMut,
 };
-use crate::accesskit::{Node, Role};
 use crate::theme;
 
 /// A widget that allows a user to select a value from a continuous range.
@@ -82,7 +82,7 @@ impl Slider {
         self.disabled = disabled;
         self
     }
-    
+
     /// Sets the current value of the slider.
     /// The value will be clamped to the slider's range and rounded to the nearest step.
     pub fn set_value(this: &mut WidgetMut<'_, Self>, value: f64) {
@@ -97,7 +97,7 @@ impl Slider {
             this.ctx.request_render();
         }
     }
-    
+
     fn set_step_internal(&mut self, step: Option<f64>) {
         self.step = step.filter(|s| *s > 0.0);
         let clamped_value = self.value.clamp(self.min, self.max);
@@ -123,7 +123,7 @@ impl Slider {
             Self::set_value(this, this.widget.value);
         }
     }
-    
+
     /// Sets the disabled state of the slider.
     pub fn set_disabled(this: &mut WidgetMut<'_, Self>, disabled: bool) {
         if this.widget.disabled != disabled {
@@ -135,7 +135,11 @@ impl Slider {
     // --- Lógica Interna ---
     fn update_value_from_position(&mut self, x: f64, width: f64) -> bool {
         let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
-        let thumb_radius = if self.is_dragging { base_thumb_radius + 2.0 } else { base_thumb_radius };
+        let thumb_radius = if self.is_dragging {
+            base_thumb_radius + 2.0
+        } else {
+            base_thumb_radius
+        };
         let track_start_x = thumb_radius;
         let track_width = width - (thumb_radius * 2.0);
         let relative_x = x - track_start_x;
@@ -143,7 +147,7 @@ impl Slider {
         let progress = (relative_x / track_width).clamp(0.0, 1.0);
         let new_value = self.min + progress * (self.max - self.min);
         let old_value = self.value;
-        
+
         let final_value = if let Some(step) = self.step {
             ((new_value / step).round() * step).clamp(self.min, self.max)
         } else {
@@ -165,8 +169,13 @@ impl Widget for Slider {
     fn accepts_pointer_interaction(&self) -> bool {
         !self.disabled
     }
-    
-    fn on_pointer_event(&mut self, ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, event: &PointerEvent) {
+
+    fn on_pointer_event(
+        &mut self,
+        ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        event: &PointerEvent,
+    ) {
         if self.disabled {
             return;
         }
@@ -200,13 +209,36 @@ impl Widget for Slider {
         }
     }
 
-    fn on_text_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &TextEvent) {}
-    fn on_access_event(&mut self, _ctx: &mut EventCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &AccessEvent) {}
+    fn on_text_event(
+        &mut self,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &TextEvent,
+    ) {
+    }
+    fn on_access_event(
+        &mut self,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &AccessEvent,
+    ) {
+    }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
-    fn update(&mut self, _ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, _event: &Update) {}
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+    }
 
-    fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
+    fn layout(
+        &mut self,
+        _ctx: &mut LayoutCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        bc: &BoxConstraints,
+    ) -> Size {
         let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
         let height = (base_thumb_radius * 2.0).max(self.track_thickness.unwrap_or(4.0)) + 16.0;
         let width = bc.max().width.clamp(100.0, 200.0);
@@ -222,39 +254,95 @@ impl Widget for Slider {
         let thumb_border_width = 2.0;
 
         let disabled_alpha = 0.4;
-        let final_track_color = if self.disabled { track_color.with_alpha(disabled_alpha) } else { track_color };
-        let final_active_track_color = if self.disabled { active_track_color.with_alpha(disabled_alpha) } else { active_track_color };
-        let final_thumb_color = if self.disabled { thumb_color.with_alpha(disabled_alpha) } else { thumb_color };
+        let final_track_color = if self.disabled {
+            track_color.with_alpha(disabled_alpha)
+        } else {
+            track_color
+        };
+        let final_active_track_color = if self.disabled {
+            active_track_color.with_alpha(disabled_alpha)
+        } else {
+            active_track_color
+        };
+        let final_thumb_color = if self.disabled {
+            thumb_color.with_alpha(disabled_alpha)
+        } else {
+            thumb_color
+        };
 
         let size = ctx.size();
-        let thumb_radius = if self.is_dragging { base_thumb_radius + 2.0 } else { base_thumb_radius };
+        let thumb_radius = if self.is_dragging {
+            base_thumb_radius + 2.0
+        } else {
+            base_thumb_radius
+        };
         let track_start_x = thumb_radius;
         let track_width = size.width - (thumb_radius * 2.0);
 
         let track_y = (size.height - track_thickness) / 2.0;
-        let track_rect = Rect::new(track_start_x, track_y, track_start_x + track_width, track_y + track_thickness);
-        scene.fill(Fill::NonZero, Affine::IDENTITY, &Brush::Solid(final_track_color), None, &track_rect.to_rounded_rect(track_thickness / 2.0));
+        let track_rect = Rect::new(
+            track_start_x,
+            track_y,
+            track_start_x + track_width,
+            track_y + track_thickness,
+        );
+        scene.fill(
+            Fill::NonZero,
+            Affine::IDENTITY,
+            &Brush::Solid(final_track_color),
+            None,
+            &track_rect.to_rounded_rect(track_thickness / 2.0),
+        );
 
         let progress = (self.value - self.min) / (self.max - self.min).max(f64::EPSILON);
         let active_track_width = progress * track_width;
         if active_track_width > 0.0 {
-            let active_track_rect = Rect::new(track_start_x, track_y, track_start_x + active_track_width, track_y + track_thickness);
-            scene.fill(Fill::NonZero, Affine::IDENTITY, &Brush::Solid(final_active_track_color), None, &active_track_rect.to_rounded_rect(track_thickness / 2.0));
+            let active_track_rect = Rect::new(
+                track_start_x,
+                track_y,
+                track_start_x + active_track_width,
+                track_y + track_thickness,
+            );
+            scene.fill(
+                Fill::NonZero,
+                Affine::IDENTITY,
+                &Brush::Solid(final_active_track_color),
+                None,
+                &active_track_rect.to_rounded_rect(track_thickness / 2.0),
+            );
         }
 
         let thumb_x = track_start_x + active_track_width;
         let thumb_y = size.height / 2.0;
         let thumb_circle = Circle::new(Point::new(thumb_x, thumb_y), thumb_radius);
-        
-        scene.fill(Fill::NonZero, Affine::IDENTITY, &Brush::Solid(final_thumb_color), None, &thumb_circle);
-        scene.stroke(&Stroke::new(thumb_border_width), Affine::IDENTITY, &Brush::Solid(final_active_track_color), None, &thumb_circle);
+
+        scene.fill(
+            Fill::NonZero,
+            Affine::IDENTITY,
+            &Brush::Solid(final_thumb_color),
+            None,
+            &thumb_circle,
+        );
+        scene.stroke(
+            &Stroke::new(thumb_border_width),
+            Affine::IDENTITY,
+            &Brush::Solid(final_active_track_color),
+            None,
+            &thumb_circle,
+        );
     }
-    
+
     fn accessibility_role(&self) -> Role {
         Role::Slider
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx<'_>, _props: &PropertiesRef<'_>, _node: &mut Node) {}
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        _node: &mut Node,
+    ) {
+    }
 
     fn children_ids(&self) -> ChildrenIds {
         ChildrenIds::new()
