@@ -184,3 +184,6 @@ pub use widget_view::{WidgetView, WidgetViewSequence};
 
 // FIXME - Remove these re-exports.
 pub(crate) use xilem_core::{MessageResult, View, ViewId};
+
+#[cfg(windows)]
+pub use window_options::WindowOptionsExtWindows;
