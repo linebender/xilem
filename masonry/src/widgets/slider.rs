@@ -107,6 +107,7 @@ impl Slider {
             clamped_value
         };
     }
+
     /// Sets or removes the stepping interval of the slider.
     pub fn set_step(this: &mut WidgetMut<'_, Self>, step: Option<f64>) {
         let filtered_step = step.filter(|s| *s > 0.0);
@@ -115,6 +116,7 @@ impl Slider {
             this.ctx.request_render();
         }
     }
+
     /// Sets the range (min and max) of the slider.
     pub fn set_range(this: &mut WidgetMut<'_, Self>, min: f64, max: f64) {
         if this.widget.min != min || this.widget.max != max {
@@ -132,7 +134,44 @@ impl Slider {
         }
     }
 
-    // --- Lógica Interna ---
+    /// Sets the track color of the slider.
+    pub fn set_track_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
+        if this.widget.track_color != color {
+            this.widget.track_color = color;
+            this.ctx.request_render();
+        }
+    }
+
+    /// Sets the active track color of the slider.
+    pub fn set_active_track_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
+        if this.widget.active_track_color != color {
+            this.widget.active_track_color = color;
+            this.ctx.request_render();
+        }
+    }
+    /// Sets the thumb color of the slider.
+    pub fn set_thumb_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
+        if this.widget.thumb_color != color {
+            this.widget.thumb_color = color;
+            this.ctx.request_render();
+        }
+    }
+    /// Sets the track thickness of the slider.
+    pub fn set_track_thickness(this: &mut WidgetMut<'_, Self>, thickness: Option<f64>) {
+        if this.widget.track_thickness != thickness {
+            this.widget.track_thickness = thickness;
+            this.ctx.request_layout(); // El tamaño cambia, pedimos layout
+        }
+    }
+    /// Sets the thumb radius of the slider.
+    pub fn set_thumb_radius(this: &mut WidgetMut<'_, Self>, radius: Option<f64>) {
+        if this.widget.thumb_radius != radius {
+            this.widget.thumb_radius = radius;
+            this.ctx.request_layout(); // El tamaño cambia, pedimos layout
+        }
+    }
+
+    // --- Logic ---
     fn update_value_from_position(&mut self, x: f64, width: f64) -> bool {
         let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
         let thumb_radius = if self.is_dragging {

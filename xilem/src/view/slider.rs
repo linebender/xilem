@@ -145,6 +145,21 @@ where
         if prev.disabled != self.disabled {
             widgets::Slider::set_disabled(&mut element, self.disabled);
         }
+        if prev.track_color != self.track_color {
+            widgets::Slider::set_track_color(&mut element, self.track_color);
+        }
+        if prev.active_track_color != self.active_track_color {
+            widgets::Slider::set_active_track_color(&mut element, self.active_track_color);
+        }
+        if prev.thumb_color != self.thumb_color {
+            widgets::Slider::set_thumb_color(&mut element, self.thumb_color);
+        }
+        if prev.track_thickness != self.track_thickness {
+            widgets::Slider::set_track_thickness(&mut element, self.track_thickness);
+        }
+        if prev.thumb_radius != self.thumb_radius {
+            widgets::Slider::set_thumb_radius(&mut element, self.thumb_radius);
+        }
         if prev.value != self.value {
             widgets::Slider::set_value(&mut element, self.value);
         }
