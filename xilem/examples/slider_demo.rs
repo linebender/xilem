@@ -1,4 +1,4 @@
-// Copyright 2024 Retype15 (https://github.com/Retype15)
+// Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
 //! An example showcasing the capabilities of the Slider widget.
