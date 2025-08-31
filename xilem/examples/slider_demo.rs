@@ -79,10 +79,14 @@ where
 /// The main logic for building the user interface.
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     // Convert the 0-100 state values to 0-255 color channel values.
+    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
     let color_red = (state.red * 2.55).clamp(0.0, 255.0) as u8;
-    let color_green = (state.green * 2.55).clamp(0.0, 255.0) as u8;
+    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
+    let color_green = (state.green * 2.55).clamp(0.0, 255.0) as u8; 
+    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
     let color_blue = (state.blue * 2.55).clamp(0.0, 255.0) as u8;
-    let color_alpha = (state.alpha * 2.55).clamp(0.0, 255.0) as u8;
+    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]   
+    let color_alpha = (state.alpha * 2.55).clamp(0.0, 255.0) as u8; 
 
     let final_color = Color::from_rgba8(color_red, color_green, color_blue, color_alpha);
 

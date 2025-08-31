@@ -47,37 +47,44 @@ impl Slider {
         }
     }
 
-    // --- Métodos Builder para la configuración inicial ---
+    /// Sets the stepping interval of the slider.
     pub fn with_step(mut self, step: f64) -> Self {
         self.set_step_internal(Some(step));
         self
     }
+    /// Sets the color of the inactive part of the track.
     pub fn with_track_color(mut self, color: Color) -> Self {
         self.track_color = Some(color);
         self
     }
+    /// Sets the color of the active part of the track and the thumb border.
     pub fn with_active_track_color(mut self, color: Color) -> Self {
         self.active_track_color = Some(color);
         self
     }
+    /// Sets the main fill color of the thumb.
     pub fn with_thumb_color(mut self, color: Color) -> Self {
         self.thumb_color = Some(color);
         self
     }
+    /// Sets the thickness (height) of the track.
     pub fn with_track_thickness(mut self, thickness: f64) -> Self {
         self.track_thickness = Some(thickness);
         self
     }
+    /// Sets the base radius of the thumb.
     pub fn with_thumb_radius(mut self, radius: f64) -> Self {
         self.thumb_radius = Some(radius);
         self
     }
+    /// Sets the initial disabled state of the slider.
     pub fn with_disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
     
-    // --- Métodos de actualización para `rebuild` ---
+    /// Sets the current value of the slider.
+    /// The value will be clamped to the slider's range and rounded to the nearest step.
     pub fn set_value(this: &mut WidgetMut<'_, Self>, value: f64) {
         let clamped_value = value.clamp(this.widget.min, this.widget.max);
         let new_value = if let Some(step) = this.widget.step {
@@ -100,7 +107,7 @@ impl Slider {
             clamped_value
         };
     }
-    
+    /// Sets or removes the stepping interval of the slider.
     pub fn set_step(this: &mut WidgetMut<'_, Self>, step: Option<f64>) {
         let filtered_step = step.filter(|s| *s > 0.0);
         if this.widget.step != filtered_step {
@@ -108,7 +115,7 @@ impl Slider {
             this.ctx.request_render();
         }
     }
-
+    /// Sets the range (min and max) of the slider.
     pub fn set_range(this: &mut WidgetMut<'_, Self>, min: f64, max: f64) {
         if this.widget.min != min || this.widget.max != max {
             this.widget.min = min;
@@ -117,6 +124,7 @@ impl Slider {
         }
     }
     
+    /// Sets the disabled state of the slider.
     pub fn set_disabled(this: &mut WidgetMut<'_, Self>, disabled: bool) {
         if this.widget.disabled != disabled {
             this.widget.disabled = disabled;
@@ -201,7 +209,7 @@ impl Widget for Slider {
     fn layout(&mut self, _ctx: &mut LayoutCtx<'_>, _props: &mut PropertiesMut<'_>, bc: &BoxConstraints) -> Size {
         let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
         let height = (base_thumb_radius * 2.0).max(self.track_thickness.unwrap_or(4.0)) + 16.0;
-        let width = bc.max().width.min(200.0).max(100.0);
+        let width = bc.max().width.clamp(100.0, 200.0);
         Size::new(width, height)
     }
 
