@@ -61,21 +61,6 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         }),
     ));
 
-    let filter_view = |label, filter| {
-        // TODO: replace with combo-buttons
-        checkbox(
-            label,
-            task_list.filter == filter,
-            move |state: &mut TaskList, _| state.filter = filter,
-        )
-    };
-
-    let footer_view = flex_row((
-        filter_view("All", Filter::All),
-        filter_view("Active", Filter::Active),
-        filter_view("Completed", Filter::Completed),
-    ));
-
     let tasks = task_list
         .tasks
         .iter()
@@ -101,7 +86,24 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         })
         .collect::<Vec<_>>();
 
-    flex_col((first_line, tasks, footer_view)).padding(50.)
+    let filter_tasks = |label, filter| {
+        // TODO: replace with combo-buttons
+        checkbox(
+            label,
+            task_list.filter == filter,
+            move |state: &mut TaskList, _| state.filter = filter,
+        )
+    };
+    let has_tasks = !task_list.tasks.is_empty();
+    let footer = has_tasks.then(|| {
+        flex_row((
+            filter_tasks("All", Filter::All),
+            filter_tasks("Active", Filter::Active),
+            filter_tasks("Completed", Filter::Completed),
+        ))
+    });
+
+    flex_col((first_line, tasks, footer)).padding(50.0)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
