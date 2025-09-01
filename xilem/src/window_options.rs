@@ -200,17 +200,13 @@ impl<State> WindowOptions<State> {
 
 #[cfg(windows)]
 mod windows {
-    #![expect(unsafe_code, reason = "FFI with Windows API")]
-
-    use winit::{
-        platform::windows::{
-            BackdropType, Color, CornerPreference, HMENU, HWND, WindowAttributesExtWindows,
-            WindowExtWindows,
-        },
-        window::{Icon, Window, WindowAttributes},
+    use winit::platform::windows::{
+        BackdropType, Color, CornerPreference, HMENU, HWND, WindowAttributesExtWindows,
+        WindowExtWindows,
     };
+    use winit::window::{Icon, Window, WindowAttributes};
 
-    #[derive(Clone, Debug)]
+    #[derive(Debug, Clone)]
     pub(crate) struct PlatformSpecificInitialWindowAttrs {
         owner: Option<HWND>,
         menu: Option<HMENU>,
@@ -221,7 +217,7 @@ mod windows {
         clip_children: bool,
     }
 
-    #[derive(Clone, Debug, Default)]
+    #[derive(Debug, Clone, Default)]
     pub(crate) struct PlatformSpecificReactiveWindowAttrs {
         skip_taskbar: bool,
         decoration_shadow: bool,
@@ -352,16 +348,13 @@ mod windows {
         }
     }
 
-    unsafe impl Send for PlatformSpecificReactiveWindowAttrs {}
-    unsafe impl Sync for PlatformSpecificReactiveWindowAttrs {}
-
     /// Extension setters for Windows-specific window options.
     pub trait WindowOptionsExtWindows {
         /// Set an owner to the window to be created. Can be used to create a dialog box, for example.
-        /// This only works when [`WindowAttributes::with_parent_window`] isn't called or set to `None`.
-        /// Can be used in combination with
-        /// [`WindowExtWindows::set_enable(false)`][WindowExtWindows::set_enable] on the owner
-        /// window to create a modal dialog box.
+        // / This only works when [`WindowAttributes::with_parent_window`] isn't called or set to `None`.
+        // / Can be used in combination with
+        // / [`WindowExtWindows::set_enable(false)`][WindowExtWindows::set_enable] on the owner
+        // / window to create a modal dialog box.
         ///
         /// From MSDN:
         /// - An owned window is always above its owner in the z-order.
@@ -378,8 +371,9 @@ mod windows {
         /// The menu must have been manually created beforehand with `CreateMenu` or similar.
         ///
         /// Note: Dark mode cannot be supported for win32 menus, it's simply not possible to change how
-        /// the menus look. If you use this, it is recommended that you combine it with
-        /// `with_theme(Some(Theme::Light))` to avoid a jarring effect.
+        /// the menus look.
+        // / If you use this, it is recommended that you combine it with
+        // / `with_theme(Some(Theme::Light))` to avoid a jarring effect.
         fn with_menu(self, menu: HMENU) -> Self;
 
         /// This sets `ICON_BIG`. A good ceiling here is 256x256.
@@ -500,14 +494,13 @@ mod windows {
 
         #[inline]
         fn with_border_color(mut self, color: Option<Color>) -> Self {
-            self.reactive.platform_specific.border_color = Some(color.unwrap_or(NONE_COLOR));
+            self.reactive.platform_specific.border_color = color;
             self
         }
 
         #[inline]
         fn with_title_background_color(mut self, color: Option<Color>) -> Self {
-            self.reactive.platform_specific.title_background_color =
-                Some(color.unwrap_or(NONE_COLOR));
+            self.reactive.platform_specific.title_background_color = color;
             self
         }
 
@@ -523,8 +516,6 @@ mod windows {
             self
         }
     }
-
-    const NONE_COLOR: Color = unsafe { std::mem::transmute(0xfffffffe_u32) };
 }
 
 #[cfg(windows)]
