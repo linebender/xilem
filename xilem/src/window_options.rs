@@ -532,6 +532,8 @@ pub use windows::*;
 
 #[cfg(not(windows))]
 mod dummy_platform {
+    use winit::window::{Window, WindowAttributes};
+
     #[derive(Debug, Clone, Default)]
     pub(crate) struct PlatformSpecificInitialWindowAttrs {}
 
@@ -556,4 +558,4 @@ mod dummy_platform {
 }
 
 #[cfg(not(windows))]
-pub use dummy_platform::*;
+pub(crate) use dummy_platform::*;
