@@ -529,3 +529,31 @@ mod windows {
 
 #[cfg(windows)]
 pub use windows::*;
+
+#[cfg(not(windows))]
+mod dummy_platform {
+    #[derive(Debug, Clone, Default)]
+    pub(crate) struct PlatformSpecificInitialWindowAttrs {}
+
+    #[derive(Debug, Clone, Default)]
+    pub(crate) struct PlatformSpecificReactiveWindowAttrs {}
+
+    impl PlatformSpecificInitialWindowAttrs {
+        pub(crate) fn build(&self, attrs: WindowAttributes) -> WindowAttributes {
+            attrs
+        }
+
+        pub(crate) fn warn(&self, _prev: &Self) {}
+    }
+
+    impl PlatformSpecificReactiveWindowAttrs {
+        pub(crate) fn build(&self, attrs: WindowAttributes) -> WindowAttributes {
+            attrs
+        }
+
+        pub(crate) fn rebuild(&self, _prev: &Self, _window: &Window) {}
+    }
+}
+
+#[cfg(not(windows))]
+pub use dummy_platform::*;
