@@ -140,7 +140,6 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                                     state.use_transparency = checked;
                                     if checked {
                                         state.alpha = state.saved_alpha;
-                                        
                                     } else {
                                         state.saved_alpha = state.alpha;
                                         state.alpha = 100.0;
