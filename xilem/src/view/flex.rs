@@ -17,7 +17,28 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 /// A layout which defines how items will be arranged in rows or columns.
 ///
-/// Its simplified forms are [`flex_row`] and [`flex_col`].
+/// Most use cases for flexible layouts should use one of [`flex_row`] and [`flex_col`].
+///
+/// The flex model used by Xilem has different behaviour than you might be familiar with from the web.
+/// Only items which have an explicit flex factor, set using the [`.flex`](FlexExt::flex) extension
+/// method, will share remaining space flexibly.
+/// Items which do not have an explicit flex factor set will be laid out as their natural size.
+/// For some widgets (such as [`text_input`](crate::view::text_input::text_input)), this will be
+/// all the space made available to the flex (in at least one axis).
+/// In the web model, this is equivalent to the default `flex` being `none` (on the web, this is instead `auto`).
+/// This can lead to surprising results, including later siblings of the expanded child being pushed off-screen.
+/// A general rule of thumb is to set a flex factor on all "large" children in the flex axis, especially
+/// portals, sized boxes, and text inputs (in horizontal flex areas).
+/// That is, any item which needs to shrink to fit within the viewport should have a
+/// flex factor set.
+/// The `sequence` can also contain [`FlexSpacer`]s, which leave the specified amount of empty space.
+///
+/// We would like to move to a more intuitive model. There is some discussion of possibilities for this in
+/// [#masonry > Layout refactor: surgical edition](https://xi.zulipchat.com/#narrow/channel/317477-masonry/topic/Layout.20refactor.3A.20surgical.20edition/with/534963761).
+/// There is also currently no support for flex grow or flex shrink; instead, each flexible child takes up
+/// the proportion of remaining space (after all "non-flex" children are laid out) specified
+/// by its flex factor.
+///
 /// # Example
 /// ```rust,no_run
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
@@ -76,6 +97,8 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
 ///
 /// This is equivalent to [`flex`] with a pre-applied horizontal
 /// [`direction`](Flex::direction).
+/// We recommend reading that type's documentation for a detailed
+/// explanation of this component's layout model.
 pub fn flex_row<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
@@ -86,6 +109,8 @@ pub fn flex_row<State, Action, Seq: FlexSequence<State, Action>>(
 ///
 /// This is equivalent to [`flex`] with a pre-applied vertical
 /// [`direction`](Flex::direction).
+/// We recommend reading that type's documentation for a detailed
+/// explanation of this component's layout model.
 pub fn flex_col<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
