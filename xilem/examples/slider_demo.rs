@@ -57,6 +57,7 @@ impl AppState {
 fn control_slider<F>(
     label_text: &'static str,
     value: f64,
+    u_value: u8,
     on_change: F,
 ) -> impl WidgetView<AppState>
 where
@@ -67,7 +68,7 @@ where
         (
             label(label_text),
             slider(0.0, 100.0, value, on_change),
-            label(format!("{:.0}%", value)),
+            label(format!("{:.0}% [{}]", value, u_value)),
         ),
     )
     .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -80,13 +81,13 @@ where
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     // Convert the 0-100 state values to 0-255 color channel values.
     #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_red = (state.red * 2.55).clamp(0.0, 255.0) as u8;
+    let color_red = (state.red * 2.56).clamp(0.0, 255.0) as u8;
     #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_green = (state.green * 2.55).clamp(0.0, 255.0) as u8;
+    let color_green = (state.green * 2.56).clamp(0.0, 255.0) as u8;
     #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_blue = (state.blue * 2.55).clamp(0.0, 255.0) as u8;
+    let color_blue = (state.blue * 2.56).clamp(0.0, 255.0) as u8;
     #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_alpha = (state.alpha * 2.55).clamp(0.0, 255.0) as u8;
+    let color_alpha = (state.alpha * 2.56).clamp(0.0, 255.0) as u8;
 
     let final_color = Color::from_rgba8(color_red, color_green, color_blue, color_alpha);
 
@@ -99,13 +100,13 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 Axis::Vertical,
                 (
                     label("Color Picker").text_size(24.0),
-                    control_slider("Red", state.red, |state, val| {
+                    control_slider("Red", state.red, color_red, |state, val| {
                         state.red = val;
                     }),
-                    control_slider("Green", state.green, |state, val| {
+                    control_slider("Green", state.green, color_green, |state, val| {
                         state.green = val;
                     }),
-                    control_slider("Blue", state.blue, |state, val| {
+                    control_slider("Blue", state.blue, color_blue, |state, val| {
                         state.blue = val;
                     }),
                     flex(
@@ -120,7 +121,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                             .active_track_color(Color::from_rgb8(0x78, 0x71, 0x6c))
                             .thumb_color(Color::WHITE)
                             .thumb_radius(10.0),
-                            label(format!("{:.0}%", state.alpha)),
+                            label(format!("{:.0}% [{}]", state.alpha, color_alpha)),
                         ),
                     )
                     .cross_axis_alignment(CrossAxisAlignment::Center)
