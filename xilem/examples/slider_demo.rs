@@ -9,7 +9,10 @@
 //! react to and manipulate a shared application state.
 
 use masonry::peniko::Color;
-use masonry::properties::types::{AsUnit, CrossAxisAlignment};
+use masonry::properties::{
+    Background,
+    types::{AsUnit, CrossAxisAlignment},
+};
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::{
@@ -27,7 +30,7 @@ struct AppState {
     /// Stores the alpha value before it's locked to opaque.
     saved_alpha: f64,
     /// A flag to lock the alpha channel to fully opaque.
-    is_opaque: bool,
+    use_transparency: bool,
 }
 
 impl Default for AppState {
@@ -38,7 +41,7 @@ impl Default for AppState {
             blue: 60.0,
             alpha: 100.0,
             saved_alpha: 100.0,
-            is_opaque: false,
+            use_transparency: true,
         }
     }
 }
@@ -75,19 +78,20 @@ where
     .gap(10.0.px())
 }
 
+/// Convert 0-100 to 0-255 u8 value.
+fn perc_to_u8(value: f64) -> u8 {
+    #[allow(clippy::cast_possible_truncation, reason = "This is Fine")]
+    return (value * 2.56).clamp(0.0, 255.0).round() as u8;
+}
+
 // --- Main UI Logic ---
 
 /// The main logic for building the user interface.
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
-    // Convert the 0-100 state values to 0-255 color channel values.
-    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_red = (state.red * 2.56).clamp(0.0, 255.0) as u8;
-    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_green = (state.green * 2.56).clamp(0.0, 255.0) as u8;
-    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_blue = (state.blue * 2.56).clamp(0.0, 255.0) as u8;
-    #[allow(clippy::cast_possible_truncation, reason = "It's OK")]
-    let color_alpha = (state.alpha * 2.56).clamp(0.0, 255.0) as u8;
+    let color_red = perc_to_u8(state.red);
+    let color_green = perc_to_u8(state.green);
+    let color_blue = perc_to_u8(state.blue);
+    let color_alpha = perc_to_u8(state.alpha);
 
     let final_color = Color::from_rgba8(color_red, color_green, color_blue, color_alpha);
 
@@ -117,7 +121,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                                 state.alpha = val;
                             })
                             .step(5.0)
-                            .disabled(state.is_opaque)
+                            .disabled(!state.use_transparency)
                             .active_track_color(Color::from_rgb8(0x78, 0x71, 0x6c))
                             .thumb_color(Color::WHITE)
                             .thumb_radius(10.0),
@@ -130,15 +134,16 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                         Axis::Horizontal,
                         (
                             checkbox(
-                                "Opaque",
-                                state.is_opaque,
+                                "Transparency",
+                                state.use_transparency,
                                 |state: &mut AppState, checked| {
-                                    state.is_opaque = checked;
+                                    state.use_transparency = checked;
                                     if checked {
+                                        state.alpha = state.saved_alpha;
+                                        
+                                    } else {
                                         state.saved_alpha = state.alpha;
                                         state.alpha = 100.0;
-                                    } else {
-                                        state.alpha = state.saved_alpha;
                                     }
                                 },
                             ),
@@ -155,7 +160,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 label(""),
             )
             .expand()
-            .background(masonry::properties::Background::Color(final_color))
+            .background(Background::Color(final_color))
             .corner_radius(8.0),
         ),
     )
@@ -166,8 +171,8 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
 // --- Application Entry Point ---
 
 fn main() -> Result<(), EventLoopError> {
-    let data = AppState::default();
+    let app_data = AppState::default();
     let window_options = WindowOptions::new("Slider Demo - Color Picker");
-    let app = Xilem::new_simple(data, app_logic, window_options);
+    let app = Xilem::new_simple(app_data, app_logic, window_options);
     app.run_in(EventLoop::with_user_event())
 }
