@@ -41,6 +41,11 @@ use crate::util::{debug_panic, fill, include_screenshot, stroke};
 /// There is also no support for flex grow or flex shrink; instead, each flexible child takes up
 /// the proportion of remaining space (after all "non-flex" children are laid out) specified
 /// by its flex factor.
+/// In the web flex algorithm, if a widget cannot expand to its target flex size, that remaining space is distributed
+/// to the other sibling flex widgets recursively.
+/// However, this widget does not implement this behaviour at the moment, as it uses a single-pass layout algorithm.
+/// Instead, if a flex child of this widget does not expand to the target size provided by this parent, the difference is distributed
+/// to the space between widgets according to this widget's [`MainAxisAlignment`](Flex::set_main_axis_alignment).
 ///
 #[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
