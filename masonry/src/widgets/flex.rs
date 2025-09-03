@@ -25,6 +25,28 @@ use crate::util::{debug_panic, fill, include_screenshot, stroke};
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
 ///
+/// The flex model used by Masonry has different behaviour than you might be familiar with from the web.
+/// Only children which have an explicit flex factor, set by the first parameter of
+/// [`FlexParams::new`](FlexParams::new) being `Some`, will share remaining space flexibly.
+/// Children which do not have an explicit flex factor set will be laid out as their natural size.
+/// For some widgets (such as [`TextInput`](crate::widgets::TextInput)), this will be
+/// all the space made available to the flex (in at least one axis).
+/// In the web model, this is equivalent to the default `flex` being `none` (on the web, this is instead `auto`).
+/// This can lead to surprising results, including later siblings of the expanded child being pushed off-screen.
+/// A general rule of thumb is to set a flex factor on all "large" children in the flex axis, especially
+/// portals, sized boxes, and text inputs (in horizontal flex areas).
+/// That is, any item which needs to shrink to fit within the viewport should have a
+/// flex factor set.
+///
+/// There is also no support for flex grow or flex shrink; instead, each flexible child takes up
+/// the proportion of remaining space (after all "non-flex" children are laid out) specified
+/// by its flex factor.
+/// In the web flex algorithm, if a widget cannot expand to its target flex size, that remaining space is distributed
+/// to the other sibling flex widgets recursively.
+/// However, this widget does not implement this behaviour at the moment, as it uses a single-pass layout algorithm.
+/// Instead, if a flex child of this widget does not expand to the target size provided by this parent, the difference is distributed
+/// to the space between widgets according to this widget's [`MainAxisAlignment`](Flex::set_main_axis_alignment).
+///
 #[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
     direction: Axis,
