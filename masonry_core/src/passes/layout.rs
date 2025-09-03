@@ -14,7 +14,10 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::app::RenderRootState;
 use crate::app::{RenderRoot, RenderRootSignal, WindowSizePolicy};
-use crate::core::{BoxConstraints, ChildrenIds, LayoutCtx, PropertiesMut, WidgetState};
+use crate::core::{
+    BoxConstraints, ChangedProperties, ChildrenIds, LayoutCtx, PropertiesMut, Transform,
+    WidgetState,
+};
 use crate::core::{DefaultProperties, WidgetArenaNode};
 use crate::debug_panic;
 use crate::passes::{enter_span_if, recurse_on_children};
@@ -201,7 +204,11 @@ fn clear_layout_flags(node: ArenaMut<'_, WidgetArenaNode>) {
 }
 
 // --- MARK: PLACE WIDGET
-pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
+pub(crate) fn place_widget(
+    child_state: &mut WidgetState,
+    changed_properties: &mut ChangedProperties,
+    origin: Point,
+) {
     let end_point = origin + child_state.layout_size.to_vec2();
     let baseline_y = origin.y + child_state.baseline_offset;
     // TODO - Account for display scale in pixel snapping
@@ -212,7 +219,7 @@ pub(crate) fn place_widget(child_state: &mut WidgetState, origin: Point) {
 
     // TODO - We may want to invalidate in other cases as well
     if origin != child_state.origin {
-        child_state.transform_changed = true;
+        changed_properties.mark_as_changed::<Transform>();
     }
     child_state.origin = origin;
     child_state.end_point = end_point;
@@ -245,7 +252,11 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         root_node.reborrow_mut(),
         &bc,
     );
-    place_widget(&mut root_node.item.state, Point::ORIGIN);
+    place_widget(
+        &mut root_node.item.state,
+        &mut root_node.item.changed_properties,
+        Point::ORIGIN,
+    );
 
     root.global_state.fonts_changed = false;
 

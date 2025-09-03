@@ -30,13 +30,14 @@ pub use events::{
     AccessEvent, Handled, Ime, ResizeDirection, TextEvent, Update, WindowEvent, WindowTheme,
 };
 pub use properties::{
-    DefaultProperties, HasProperty, Properties, PropertiesMut, PropertiesRef, Property,
+    ChangedProperties, DefaultProperties, GlobalProperty, HasProperty, Properties, PropertiesMut,
+    PropertiesRef, Property, Transform,
 };
 pub use text::{ArcStr, BrushIndex, StyleProperty, StyleSet, render_text};
 pub use widget::find_widget_under_pointer;
 pub use widget::{AllowRawMut, AsDynWidget, ChildrenIds, FromDynWidget, Widget, WidgetId};
 pub use widget_mut::WidgetMut;
-pub use widget_pod::{NewWidget, WidgetOptions, WidgetPod};
+pub use widget_pod::{NewWidget, WidgetPod};
 pub use widget_ref::WidgetRef;
 pub use widget_tag::WidgetTag;
 

@@ -16,14 +16,14 @@ use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
 use crate::core::{
-    AllowRawMut, BoxConstraints, BrushIndex, DefaultProperties, ErasedAction, FromDynWidget,
-    NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Widget, WidgetArenaNode, WidgetId,
-    WidgetMut, WidgetPod, WidgetRef, WidgetState,
+    AllowRawMut, BoxConstraints, BrushIndex, ChangedProperties, DefaultProperties, ErasedAction,
+    FromDynWidget, NewWidget, PropertiesMut, PropertiesRef, ResizeDirection, Transform, Widget,
+    WidgetArenaNode, WidgetId, WidgetMut, WidgetPod, WidgetRef, WidgetState,
 };
 use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
-use crate::util::{TypeSet, get_debug_color};
+use crate::util::get_debug_color;
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -54,7 +54,7 @@ pub struct MutateCtx<'a> {
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) properties: PropertiesMut<'a>,
-    pub(crate) changed_properties: &'a mut TypeSet,
+    pub(crate) changed_properties: &'a mut ChangedProperties,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
@@ -190,12 +190,6 @@ impl_context_method!(
                 .item
                 .state
         }
-
-        #[allow(dead_code, reason = "Copy-pasted for some types that don't need it")]
-        /// The current (local) transform of this widget.
-        pub fn transform(&self) -> Affine {
-            self.widget_state.transform
-        }
     }
 );
 
@@ -278,15 +272,6 @@ impl MutateCtx<'_> {
             children: self.children.reborrow_mut(),
             default_properties: self.default_properties,
         }
-    }
-
-    /// Whether the (local) transform of this widget has been modified since
-    /// the last time this widget's transformation was resolved.
-    ///
-    /// This is exposed for Xilem, and is more likely to change or be removed
-    /// in major releases of Masonry.
-    pub fn transform_has_changed(&self) -> bool {
-        self.widget_state.transform_changed
     }
 }
 
@@ -588,9 +573,17 @@ impl LayoutCtx<'_> {
             );
         }
 
-        let child_state = self.get_child_state_mut(child);
+        let child_node = self
+            .children
+            .item_mut(child.id())
+            .expect("place_child: child not found")
+            .item;
 
-        place_widget(child_state, origin);
+        place_widget(
+            &mut child_node.state,
+            &mut child_node.changed_properties,
+            origin,
+        );
 
         self.widget_state.local_paint_rect = self
             .widget_state
@@ -780,10 +773,14 @@ impl ComposeCtx<'_> {
 
         let translation = translation.round();
 
-        let child = self.get_child_state_mut(child);
-        if translation != child.scroll_translation {
-            child.scroll_translation = translation;
-            child.transform_changed = true;
+        let child_node = self
+            .children
+            .item_mut(child.id())
+            .expect("No child widget exists")
+            .item;
+        if translation != child_node.state.scroll_translation {
+            child_node.state.scroll_translation = translation;
+            child_node.changed_properties.mark_as_changed::<Transform>();
         }
     }
 
@@ -812,10 +809,14 @@ impl ComposeCtx<'_> {
             );
         }
 
-        let child = self.get_child_state_mut(child);
-        if translation != child.scroll_translation {
-            child.scroll_translation = translation;
-            child.transform_changed = true;
+        let child_node = self
+            .children
+            .item_mut(child.id())
+            .expect("No child widget exists")
+            .item;
+        if translation != child_node.state.scroll_translation {
+            child_node.state.scroll_translation = translation;
+            child_node.changed_properties.mark_as_changed::<Transform>();
         }
     }
 }
@@ -1186,15 +1187,6 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.needs_update_disabled = true;
         self.widget_state.is_explicitly_disabled = disabled;
     }
-
-    /// Set the transform for this widget.
-    ///
-    /// It behaves similarly as CSS transforms
-    pub fn set_transform(&mut self, transform: Affine) {
-        self.widget_state.transform = transform;
-        self.widget_state.transform_changed = true;
-        self.request_compose();
-    }
 });
 
 // --- MARK: OTHER METHODS
@@ -1441,7 +1433,7 @@ impl RegisterCtx<'_> {
         let Some(NewWidget {
             widget,
             id,
-            options,
+            disabled,
             properties,
             tag,
             action_type,
@@ -1460,7 +1452,7 @@ impl RegisterCtx<'_> {
         let state = WidgetState::new(
             id,
             widget.short_type_name(),
-            options,
+            disabled,
             action_type,
             #[cfg(debug_assertions)]
             action_type_name,
@@ -1481,7 +1473,7 @@ impl RegisterCtx<'_> {
             widget: widget.as_box_dyn(),
             state,
             properties: properties.map,
-            changed_properties: TypeSet::default(),
+            changed_properties: ChangedProperties::default(),
         };
         self.children.insert(id, node);
     }

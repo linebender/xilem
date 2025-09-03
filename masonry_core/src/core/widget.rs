@@ -16,7 +16,7 @@ use vello::kurbo::{Point, Size};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ComposeCtx, CursorIcon, EventCtx, LayoutCtx, NewWidget,
     PaintCtx, PointerEvent, Properties, PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx,
-    TextEvent, Update, UpdateCtx, WidgetOptions, WidgetRef,
+    TextEvent, Update, UpdateCtx, WidgetRef,
 };
 
 /// A unique identifier for a single [`Widget`].
@@ -430,7 +430,7 @@ pub trait Widget: AsDynWidget + Any {
     where
         Self: Sized,
     {
-        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
+        NewWidget::new_with(self, WidgetId::next(), false, props)
     }
 }
 
