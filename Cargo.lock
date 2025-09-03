@@ -4559,8 +4559,7 @@ dependencies = [
 [[package]]
 name = "ui-events"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c4c2cc34489c685d4e7a1a1f97b7b4416c5aa789892114ae77df6cd2a60f0ec4"
+source = "git+https://github.com/endoli/ui-events?branch=main#08c942cfbce0e010d844683726ad811936dc12e0"
 dependencies = [
  "dpi",
  "keyboard-types",
@@ -4569,10 +4568,10 @@ dependencies = [
 [[package]]
 name = "ui-events-winit"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61de84ebdb9c2e756d18fcd378802b5a0d359863fcee3ced54ac2d2fbb19cf74"
+source = "git+https://github.com/endoli/ui-events?branch=main#08c942cfbce0e010d844683726ad811936dc12e0"
 dependencies = [
  "ui-events",
+ "web-time",
  "winit",
 ]
 

@@ -639,7 +639,9 @@ impl MasonryState<'_> {
                 is_synthetic: true,
                 ..
             }
-        ) && let Some(wet) = window.event_reducer.reduce(&event)
+        ) && let Some(wet) = window
+            .event_reducer
+            .reduce(window.render_root.get_scale_factor(), &event)
         {
             match wet {
                 WindowEventTranslation::Keyboard(k) => {

@@ -8,6 +8,7 @@ use accesskit::{Node, NodeId, Role};
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use tracing::{Span, trace_span};
+use ui_events::pointer::PointerButtonEvent;
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
 use vello::peniko::Fill;
@@ -429,7 +430,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
 
         match event {
-            PointerEvent::Down { button, state, .. } => {
+            PointerEvent::Down(PointerButtonEvent { button, state, .. }) => {
                 if matches!(button, None | Some(PointerButton::Primary)) {
                     let cursor_pos = ctx.local_position(state.position);
                     let (fctx, lctx) = ctx.text_contexts();

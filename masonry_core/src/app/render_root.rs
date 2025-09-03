@@ -850,6 +850,11 @@ impl RenderRoot {
     pub fn emit_signal(&mut self, signal: RenderRootSignal) {
         self.global_state.emit_signal(signal);
     }
+
+    /// Returns the scale factor
+    pub fn get_scale_factor(&self) -> f64 {
+        self.global_state.scale_factor
+    }
 }
 
 impl RenderRootState {
