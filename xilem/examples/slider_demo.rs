@@ -17,7 +17,10 @@ use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::{
     EventLoop, WidgetView, WindowOptions, Xilem,
-    view::{Axis, button, checkbox, flex, flex_col, flex_row, label, sized_box, slider, FlexExt, FlexSpacer},
+    view::{
+        Axis, FlexExt, FlexSpacer, button, checkbox, flex, flex_col, flex_row, label, sized_box,
+        slider,
+    },
 };
 
 // --- Application State ---
@@ -66,13 +69,11 @@ fn control_slider<F>(
 where
     F: Fn(&mut AppState, f64) + Send + Sync + 'static,
 {
-    flex_row(
-        (
-            sized_box(label(label_text)).width(40.px()),
-            slider(0.0, 100.0, value, on_change),
-            sized_box(label(format!("{:.0}% [{}]", value, u_value))).width(60.px()),
-        ),
-    )
+    flex_row((
+        sized_box(label(label_text)).width(40.px()),
+        slider(0.0, 100.0, value, on_change),
+        sized_box(label(format!("{:.0}% [{}]", value, u_value))).width(60.px()),
+    ))
     .cross_axis_alignment(CrossAxisAlignment::Center)
     .gap(10.0.px())
 }
@@ -95,74 +96,67 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     let final_color = Color::from_rgba8(color_red, color_green, color_blue, color_alpha);
 
     // Main layout is a horizontal flexbox with controls on the left and preview on the right.
-    flex_row(
-        (
-            // Controls column
-            flex_col(
+    flex_row((
+        // Controls column
+        flex_col((
+            label("Color Picker").text_size(24.0),
+            control_slider("Red", state.red, color_red, |state, val| {
+                state.red = val;
+            }),
+            control_slider("Green", state.green, color_green, |state, val| {
+                state.green = val;
+            }),
+            control_slider("Blue", state.blue, color_blue, |state, val| {
+                state.blue = val;
+            }),
+            flex_row((
+                sized_box(label("Alpha")).width(40.px()),
+                slider(0.0, 100.0, state.alpha, |state: &mut AppState, val| {
+                    state.alpha = val;
+                })
+                .step(5.0)
+                .disabled(!state.use_transparency)
+                .active_track_color(Color::from_rgb8(0x78, 0x71, 0x6c))
+                .thumb_color(Color::WHITE)
+                .thumb_radius(10.0),
+                sized_box(label(format!("{:.0}% [{}]", state.alpha, color_alpha))).width(60.px()),
+            ))
+            .cross_axis_alignment(CrossAxisAlignment::Center)
+            .gap(10.0.px()),
+            flex(
+                Axis::Horizontal,
                 (
-                    label("Color Picker").text_size(24.0),
-                    control_slider("Red", state.red, color_red, |state, val| {
-                        state.red = val;
-                    }),
-                    control_slider("Green", state.green, color_green, |state, val| {
-                        state.green = val;
-                    }),
-                    control_slider("Blue", state.blue, color_blue, |state, val| {
-                        state.blue = val;
-                    }),
-                    flex_row(
-                        (
-                            sized_box(label("Alpha")).width(40.px()),
-                            slider(0.0, 100.0, state.alpha, |state: &mut AppState, val| {
-                                state.alpha = val;
-                            })
-                            .step(5.0)
-                            .disabled(!state.use_transparency)
-                            .active_track_color(Color::from_rgb8(0x78, 0x71, 0x6c))
-                            .thumb_color(Color::WHITE)
-                            .thumb_radius(10.0),
-                            sized_box(label(format!("{:.0}% [{}]", state.alpha, color_alpha))).width(60.px()),
-                        ),
-                    )
-                    .cross_axis_alignment(CrossAxisAlignment::Center)
-                    .gap(10.0.px()),
-                    flex(
-                        Axis::Horizontal,
-                        (   
-                            checkbox(
-                                "Transparency",
-                                state.use_transparency,
-                                |state: &mut AppState, checked| {
-                                    state.use_transparency = checked;
-                                    if checked {
-                                        state.alpha = state.saved_alpha;
-                                    } else {
-                                        state.saved_alpha = state.alpha;
-                                        state.alpha = 100.0;
-                                    }
-                                },
-                            ),
-                            button("Reset", |state: &mut AppState| state.reset()),
-                        ),
-                    )
-                    .gap(20.0.px()),
-                    FlexSpacer::Flex(1.0),
+                    checkbox(
+                        "Transparency",
+                        state.use_transparency,
+                        |state: &mut AppState, checked| {
+                            state.use_transparency = checked;
+                            if checked {
+                                state.alpha = state.saved_alpha;
+                            } else {
+                                state.saved_alpha = state.alpha;
+                                state.alpha = 100.0;
+                            }
+                        },
+                    ),
+                    button("Reset", |state: &mut AppState| state.reset()),
                 ),
-                
             )
-            .gap(15.0.px()),
-            FlexSpacer::Fixed(10.px()),
-            // Color preview box
-            sized_box(
-                // An empty label to create a view with a background.
-                label(""),
-            )
-            .expand()
-            .background(Background::Color(final_color))
-            .corner_radius(8.0)
-            .flex(1.0),
-        ),
-    )
+            .gap(20.0.px()),
+            FlexSpacer::Flex(1.0),
+        ))
+        .gap(15.0.px()),
+        FlexSpacer::Fixed(10.px()),
+        // Color preview box
+        sized_box(
+            // An empty label to create a view with a background.
+            label(""),
+        )
+        .expand()
+        .background(Background::Color(final_color))
+        .corner_radius(8.0)
+        .flex(1.0),
+    ))
     .gap(20.0.px())
     .padding(20.0)
 }

@@ -73,7 +73,7 @@ impl Slider {
         self.track_thickness = Some(thickness);
         self
     }
-    
+
     /// Sets the main fill color of the thumb.
     pub fn with_thumb_color(mut self, color: Color) -> Self {
         self.thumb_color = Some(color);
@@ -85,7 +85,7 @@ impl Slider {
         self.thumb_radius = Some(radius);
         self
     }
-    
+
     /// Sets the initial disabled state of the slider.
     pub fn with_disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
