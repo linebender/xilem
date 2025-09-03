@@ -16,16 +16,19 @@ use crate::theme;
 
 /// A widget that allows a user to select a value from a continuous range.
 pub struct Slider {
+    // --- Logic ---
     min: f64,
     max: f64,
     value: f64,
     step: Option<f64>,
+    // --- State ---
     is_dragging: bool,
     disabled: bool,
+    // --- Style ---
     track_color: Option<Color>,
     active_track_color: Option<Color>,
-    thumb_color: Option<Color>,
     track_thickness: Option<f64>,
+    thumb_color: Option<Color>,
     thumb_radius: Option<f64>,
 }
 
@@ -41,8 +44,8 @@ impl Slider {
             disabled: false,
             track_color: None,
             active_track_color: None,
-            thumb_color: None,
             track_thickness: None,
+            thumb_color: None,
             thumb_radius: None,
         }
     }
@@ -52,31 +55,37 @@ impl Slider {
         self.set_step_internal(Some(step));
         self
     }
+
     /// Sets the color of the inactive part of the track.
     pub fn with_track_color(mut self, color: Color) -> Self {
         self.track_color = Some(color);
         self
     }
+
     /// Sets the color of the active part of the track and the thumb border.
     pub fn with_active_track_color(mut self, color: Color) -> Self {
         self.active_track_color = Some(color);
         self
     }
-    /// Sets the main fill color of the thumb.
-    pub fn with_thumb_color(mut self, color: Color) -> Self {
-        self.thumb_color = Some(color);
-        self
-    }
+
     /// Sets the thickness (height) of the track.
     pub fn with_track_thickness(mut self, thickness: f64) -> Self {
         self.track_thickness = Some(thickness);
         self
     }
+    
+    /// Sets the main fill color of the thumb.
+    pub fn with_thumb_color(mut self, color: Color) -> Self {
+        self.thumb_color = Some(color);
+        self
+    }
+
     /// Sets the base radius of the thumb.
     pub fn with_thumb_radius(mut self, radius: f64) -> Self {
         self.thumb_radius = Some(radius);
         self
     }
+    
     /// Sets the initial disabled state of the slider.
     pub fn with_disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
@@ -149,13 +158,7 @@ impl Slider {
             this.ctx.request_render();
         }
     }
-    /// Sets the thumb color of the slider.
-    pub fn set_thumb_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
-        if this.widget.thumb_color != color {
-            this.widget.thumb_color = color;
-            this.ctx.request_render();
-        }
-    }
+
     /// Sets the track thickness of the slider.
     pub fn set_track_thickness(this: &mut WidgetMut<'_, Self>, thickness: Option<f64>) {
         if this.widget.track_thickness != thickness {
@@ -163,6 +166,15 @@ impl Slider {
             this.ctx.request_layout(); // El tamaño cambia, pedimos layout
         }
     }
+
+    /// Sets the thumb color of the slider.
+    pub fn set_thumb_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
+        if this.widget.thumb_color != color {
+            this.widget.thumb_color = color;
+            this.ctx.request_render();
+        }
+    }
+
     /// Sets the thumb radius of the slider.
     pub fn set_thumb_radius(this: &mut WidgetMut<'_, Self>, radius: Option<f64>) {
         if this.widget.thumb_radius != radius {
@@ -255,6 +267,7 @@ impl Widget for Slider {
         _event: &TextEvent,
     ) {
     }
+
     fn on_access_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
@@ -264,6 +277,7 @@ impl Widget for Slider {
     }
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
+
     fn update(
         &mut self,
         _ctx: &mut UpdateCtx<'_>,

@@ -18,8 +18,8 @@ pub struct Slider<F> {
     disabled: bool,
     track_color: Option<Color>,
     active_track_color: Option<Color>,
-    thumb_color: Option<Color>,
     track_thickness: Option<f64>,
+    thumb_color: Option<Color>,
     thumb_radius: Option<f64>,
 }
 
@@ -39,8 +39,8 @@ pub fn slider<State, Action>(
         disabled: false,
         track_color: None,
         active_track_color: None,
-        thumb_color: None,
         track_thickness: None,
+        thumb_color: None,
         thumb_radius: None,
     }
 }
@@ -53,6 +53,11 @@ impl<F> Slider<F> {
         }
         self
     }
+    /// Sets whether the slider is disabled.
+    pub fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
     /// Sets the color of the inactive part of the track.
     pub fn track_color(mut self, color: impl Into<Color>) -> Self {
         self.track_color = Some(color.into());
@@ -63,11 +68,6 @@ impl<F> Slider<F> {
         self.active_track_color = Some(color.into());
         self
     }
-    /// Sets the main fill color of the thumb.
-    pub fn thumb_color(mut self, color: impl Into<Color>) -> Self {
-        self.thumb_color = Some(color.into());
-        self
-    }
     /// Sets the thickness (height) of the track.
     pub fn track_thickness(mut self, thickness: f64) -> Self {
         if thickness > 0.0 {
@@ -75,16 +75,16 @@ impl<F> Slider<F> {
         }
         self
     }
+    /// Sets the main fill color of the thumb.
+    pub fn thumb_color(mut self, color: impl Into<Color>) -> Self {
+        self.thumb_color = Some(color.into());
+        self
+    }
     /// Sets the base radius of the thumb.
     pub fn thumb_radius(mut self, radius: f64) -> Self {
         if radius > 0.0 {
             self.thumb_radius = Some(radius);
         }
-        self
-    }
-    /// Sets whether the slider is disabled.
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
         self
     }
 }
@@ -112,11 +112,11 @@ where
             if let Some(color) = self.active_track_color {
                 widget = widget.with_active_track_color(color);
             }
-            if let Some(color) = self.thumb_color {
-                widget = widget.with_thumb_color(color);
-            }
             if let Some(thickness) = self.track_thickness {
                 widget = widget.with_track_thickness(thickness);
+            }
+            if let Some(color) = self.thumb_color {
+                widget = widget.with_thumb_color(color);
             }
             if let Some(radius) = self.thumb_radius {
                 widget = widget.with_thumb_radius(radius);
@@ -136,6 +136,9 @@ where
         mut element: Mut<'_, Self::Element>,
         _app_state: &mut State,
     ) {
+        if prev.value != self.value {
+            widgets::Slider::set_value(&mut element, self.value);
+        }
         if prev.min != self.min || prev.max != self.max {
             widgets::Slider::set_range(&mut element, self.min, self.max);
         }
@@ -151,17 +154,14 @@ where
         if prev.active_track_color != self.active_track_color {
             widgets::Slider::set_active_track_color(&mut element, self.active_track_color);
         }
-        if prev.thumb_color != self.thumb_color {
-            widgets::Slider::set_thumb_color(&mut element, self.thumb_color);
-        }
         if prev.track_thickness != self.track_thickness {
             widgets::Slider::set_track_thickness(&mut element, self.track_thickness);
         }
+        if prev.thumb_color != self.thumb_color {
+            widgets::Slider::set_thumb_color(&mut element, self.thumb_color);
+        }
         if prev.thumb_radius != self.thumb_radius {
             widgets::Slider::set_thumb_radius(&mut element, self.thumb_radius);
-        }
-        if prev.value != self.value {
-            widgets::Slider::set_value(&mut element, self.value);
         }
     }
 
