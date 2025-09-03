@@ -39,6 +39,10 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// the proportion of remaining space (after all "non-flex" children are laid out) specified
 /// by its flex factor.
 ///
+/// When flexible children cannot expand to their allotted space, this space is allocated into the space
+/// between the children; the exact semantics are determined by the [`MainAxisAlignment`](Flex::main_axis_alignment).
+/// This is also discussed in the docs for the underlying [`Flex`](widgets::Flex) widget.
+///
 /// # Example
 /// ```rust,no_run
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
