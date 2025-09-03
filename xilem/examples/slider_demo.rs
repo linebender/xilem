@@ -17,7 +17,7 @@ use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::{
     EventLoop, WidgetView, WindowOptions, Xilem,
-    view::{Axis, button, checkbox, flex, label, sized_box, slider},
+    view::{Axis, button, checkbox, flex, flex_col, flex_row, label, sized_box, slider, FlexExt, FlexSpacer},
 };
 
 // --- Application State ---
@@ -66,12 +66,11 @@ fn control_slider<F>(
 where
     F: Fn(&mut AppState, f64) + Send + Sync + 'static,
 {
-    flex(
-        Axis::Horizontal,
+    flex_row(
         (
-            label(label_text),
+            sized_box(label(label_text)).width(40.px()),
             slider(0.0, 100.0, value, on_change),
-            label(format!("{:.0}% [{}]", value, u_value)),
+            sized_box(label(format!("{:.0}% [{}]", value, u_value))).width(60.px()),
         ),
     )
     .cross_axis_alignment(CrossAxisAlignment::Center)
@@ -96,12 +95,10 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     let final_color = Color::from_rgba8(color_red, color_green, color_blue, color_alpha);
 
     // Main layout is a horizontal flexbox with controls on the left and preview on the right.
-    flex(
-        Axis::Horizontal,
+    flex_row(
         (
             // Controls column
-            flex(
-                Axis::Vertical,
+            flex_col(
                 (
                     label("Color Picker").text_size(24.0),
                     control_slider("Red", state.red, color_red, |state, val| {
@@ -113,10 +110,9 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                     control_slider("Blue", state.blue, color_blue, |state, val| {
                         state.blue = val;
                     }),
-                    flex(
-                        Axis::Horizontal,
+                    flex_row(
                         (
-                            label("Alpha"),
+                            sized_box(label("Alpha")).width(40.px()),
                             slider(0.0, 100.0, state.alpha, |state: &mut AppState, val| {
                                 state.alpha = val;
                             })
@@ -125,14 +121,14 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                             .active_track_color(Color::from_rgb8(0x78, 0x71, 0x6c))
                             .thumb_color(Color::WHITE)
                             .thumb_radius(10.0),
-                            label(format!("{:.0}% [{}]", state.alpha, color_alpha)),
+                            sized_box(label(format!("{:.0}% [{}]", state.alpha, color_alpha))).width(60.px()),
                         ),
                     )
                     .cross_axis_alignment(CrossAxisAlignment::Center)
                     .gap(10.0.px()),
                     flex(
                         Axis::Horizontal,
-                        (
+                        (   
                             checkbox(
                                 "Transparency",
                                 state.use_transparency,
@@ -150,9 +146,12 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                         ),
                     )
                     .gap(20.0.px()),
+                    FlexSpacer::Flex(1.0),
                 ),
+                
             )
             .gap(15.0.px()),
+            FlexSpacer::Fixed(10.px()),
             // Color preview box
             sized_box(
                 // An empty label to create a view with a background.
@@ -160,7 +159,8 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
             )
             .expand()
             .background(Background::Color(final_color))
-            .corner_radius(8.0),
+            .corner_radius(8.0)
+            .flex(1.0),
         ),
     )
     .gap(20.0.px())
