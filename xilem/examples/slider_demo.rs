@@ -13,6 +13,7 @@ use masonry::properties::{
     Background,
     types::{AsUnit, CrossAxisAlignment},
 };
+use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::{
@@ -165,7 +166,9 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
 
 fn main() -> Result<(), EventLoopError> {
     let app_data = AppState::default();
-    let window_options = WindowOptions::new("Slider Demo - Color Picker");
+    let min_window_size = LogicalSize::new(440., 300.);
+    let window_options =
+        WindowOptions::new("Slider Demo - Color Picker").with_min_inner_size(min_window_size);
     let app = Xilem::new_simple(app_data, app_logic, window_options);
     app.run_in(EventLoop::with_user_event())
 }
