@@ -137,6 +137,7 @@ impl Slider {
 
     // Setters for styling properties...
 
+    /// sets track color
     pub fn set_track_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
         if this.widget.track_color != color {
             this.widget.track_color = color;
@@ -144,6 +145,7 @@ impl Slider {
         }
     }
 
+    /// sets active track color
     pub fn set_active_track_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
         if this.widget.active_track_color != color {
             this.widget.active_track_color = color;
@@ -151,6 +153,7 @@ impl Slider {
         }
     }
 
+    /// sets track thiknes
     pub fn set_track_thickness(this: &mut WidgetMut<'_, Self>, thickness: Option<f64>) {
         if this.widget.track_thickness != thickness {
             this.widget.track_thickness = thickness;
@@ -158,13 +161,14 @@ impl Slider {
         }
     }
 
+    /// sets thumb color
     pub fn set_thumb_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
         if this.widget.thumb_color != color {
             this.widget.thumb_color = color;
             this.ctx.request_render();
         }
     }
-
+    /// sets thumb radius
     pub fn set_thumb_radius(this: &mut WidgetMut<'_, Self>, radius: Option<f64>) {
         if this.widget.thumb_radius != radius {
             this.widget.thumb_radius = radius;
