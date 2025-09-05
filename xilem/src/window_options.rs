@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use winit::dpi::{Position, Size};
-use winit::window::{Cursor, Icon, Window, WindowAttributes};
+use winit::window::{Cursor, Icon, Window, WindowAttributes, WindowButtons, WindowLevel};
 
 // TODO: make this a type-state builder to force Xilem::new apps to define on_close?
 /// Attributes and callbacks of a window.
@@ -23,9 +23,12 @@ pub struct WindowOptions<State> {
 pub(crate) struct ReactiveWindowAttrs {
     title: String,
     resizable: bool,
+    enabled_buttons: WindowButtons,
     cursor: Cursor,
     min_inner_size: Option<Size>,
     max_inner_size: Option<Size>,
+    window_level: WindowLevel,
+    decorations: bool,
     platform_specific: PlatformSpecificReactiveWindowAttrs,
 }
 
@@ -34,6 +37,7 @@ pub(crate) struct ReactiveWindowAttrs {
 pub(crate) struct InitialAttrs {
     inner_size: Option<Size>,
     position: Option<Position>,
+    transparent: bool,
     // TODO: move window_icon to ReactiveWindowAttrs once the winit type implements PartialEq
     window_icon: Option<Icon>,
     platform_specific: PlatformSpecificInitialWindowAttrs,
@@ -55,14 +59,18 @@ impl<State> WindowOptions<State> {
             reactive: ReactiveWindowAttrs {
                 title: title.into(),
                 resizable: true,
+                enabled_buttons: WindowButtons::all(),
                 cursor: Cursor::default(),
                 min_inner_size: None,
                 max_inner_size: None,
+                window_level: WindowLevel::default(),
+                decorations: true,
                 platform_specific: PlatformSpecificReactiveWindowAttrs::default(),
             },
             initial: InitialAttrs {
                 inner_size: None,
                 position: None,
+                transparent: false,
                 window_icon: None,
                 platform_specific: PlatformSpecificInitialWindowAttrs::default(),
             },
@@ -84,6 +92,14 @@ impl<State> WindowOptions<State> {
         self
     }
 
+    /// Sets the enabled window buttons.
+    ///
+    /// The default is [`WindowButtons::all`]
+    pub fn with_enabled_buttons(mut self, enabled_buttons: WindowButtons) -> Self {
+        self.reactive.enabled_buttons = enabled_buttons;
+        self
+    }
+
     /// Sets the cursor icon of the window.
     pub fn with_cursor(mut self, cursor: impl Into<Cursor>) -> Self {
         self.reactive.cursor = cursor.into();
@@ -99,6 +115,24 @@ impl<State> WindowOptions<State> {
     /// Sets the maximum dimensions the window can have.
     pub fn with_max_inner_size<S: Into<Size>>(mut self, max_size: S) -> Self {
         self.reactive.max_inner_size = Some(max_size.into());
+        self
+    }
+
+    /// Sets the window level.
+    ///
+    /// This is just a hint to the OS, and the system could ignore it.
+    ///
+    /// The default is [`WindowLevel::Normal`].
+    pub fn with_window_level(mut self, window_level: WindowLevel) -> Self {
+        self.reactive.window_level = window_level;
+        self
+    }
+
+    /// Sets whether the window should have a border, a title bar, etc.
+    ///
+    /// The default is `true`.
+    pub fn with_decorations(mut self, decorations: bool) -> Self {
+        self.reactive.decorations = decorations;
         self
     }
 
@@ -122,11 +156,28 @@ impl<State> WindowOptions<State> {
         self
     }
 
+    /// Sets whether the background of the window should be transparent.
+    ///
+    /// If this is `true`, writing colors with alpha values different than
+    /// `1.0` will produce a transparent window. On some platforms this
+    /// is more of a hint for the system and you'd still have the alpha
+    /// buffer.
+    ///
+    /// The default is `false`.
+    pub fn with_transparent(mut self, transparent: bool) -> Self {
+        self.initial.transparent = transparent;
+        self
+    }
+
     pub(crate) fn build_initial_attrs(&self) -> WindowAttributes {
         let mut attrs = WindowAttributes::default()
             .with_title(self.reactive.title.clone())
-            .with_cursor(self.reactive.cursor.clone())
             .with_resizable(self.reactive.resizable)
+            .with_enabled_buttons(self.reactive.enabled_buttons)
+            .with_cursor(self.reactive.cursor.clone())
+            .with_window_level(self.reactive.window_level)
+            .with_decorations(self.reactive.decorations)
+            .with_transparent(self.initial.transparent)
             .with_window_icon(self.initial.window_icon.clone());
 
         if let Some(min_inner_size) = self.reactive.min_inner_size {
@@ -137,6 +188,9 @@ impl<State> WindowOptions<State> {
         }
         if let Some(inner_size) = self.initial.inner_size {
             attrs = attrs.with_inner_size(inner_size);
+        }
+        if let Some(position) = self.initial.position {
+            attrs = attrs.with_position(position);
         }
         self.initial
             .platform_specific
@@ -158,6 +212,9 @@ impl<State> WindowOptions<State> {
         if current.resizable != prev.resizable {
             window.set_resizable(current.resizable);
         }
+        if current.enabled_buttons != prev.enabled_buttons {
+            window.set_enabled_buttons(current.enabled_buttons);
+        }
         if current.cursor != prev.cursor {
             window.set_cursor(current.cursor.clone());
         }
@@ -166,6 +223,12 @@ impl<State> WindowOptions<State> {
         }
         if current.max_inner_size != prev.max_inner_size {
             window.set_max_inner_size(current.max_inner_size);
+        }
+        if current.window_level != prev.window_level {
+            window.set_window_level(current.window_level);
+        }
+        if current.decorations != prev.decorations {
+            window.set_decorations(current.decorations);
         }
 
         current
@@ -185,6 +248,11 @@ impl<State> WindowOptions<State> {
         if current.position != prev.position {
             tracing::warn!(
                 "attempted to change position attribute after window creation, this is not supported"
+            );
+        }
+        if current.transparent != prev.transparent {
+            tracing::warn!(
+                "attempted to change transparent attribute after window creation, this is not supported"
             );
         }
         // winit::icon::Icon doesn't implement PartialEq, once it does it will be made reactive
