@@ -8,35 +8,36 @@ use tree_arena::*;
 #[test]
 fn arena_insertions() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.roots_mut();
+    let (mut roots, mut map) = tree.roots_mut();
 
     // <empty>
 
-    roots.insert(1_u64, 'a');
-    roots.insert(2_u64, 'b');
-    assert!(roots.item(1_u64).is_some());
+    roots.insert(map.reborrow_mut(), 1_u64, 'a');
+    roots.insert(map.reborrow_mut(), 2_u64, 'b');
+    assert!(roots.item(map.reborrow(), 1_u64).is_some());
 
     // >-- 1(a)
     //
     // >-- 2(b)
 
-    let mut child_1 = roots.item_mut(1_u64).unwrap();
-    child_1.children.insert(3_u64, 'c');
-    assert!(child_1.children.item(3_u64).is_some());
+    let mut child_1 = roots.item_mut(map.reborrow(), 1_u64).unwrap();
+    child_1.children.insert(map.reborrow_mut(), 3_u64, 'c');
+    assert!(child_1.children.item(map.reborrow(), 3_u64).is_some());
 
     // >-- 1(a) -- 3(c)
     //
     // >-- 2(b)
 
-    let mut child_3 = child_1.children.item_mut(3_u64).unwrap();
-    child_3.children.insert(4_u64, 'd');
+    let mut child_3 = child_1.children.item_mut(map.reborrow(), 3_u64).unwrap();
+    child_3.children.insert(map.reborrow_mut(), 4_u64, 'd');
 
     // >-- 1(a) -- 3(c) -- 4(d)
     //
     // >-- 2(b)
 
-    let child_2 = tree.find(2_u64).expect("No child 2 found");
-    let child_4 = child_2.children.find(4_u64);
+    let (child_2, map) = tree.find(2_u64);
+    let child_2 = child_2.expect("No child 2 found");
+    let child_4 = child_2.children.find(map, 4_u64);
     assert!(
         child_4.is_none(),
         "Child 4 should not be descended from Child 2"
@@ -46,32 +47,35 @@ fn arena_insertions() {
 #[test]
 fn arena_item_removal() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.roots_mut();
+    let (mut roots, mut map) = tree.roots_mut();
 
     // <empty>
 
-    roots.insert(1_u64, 'a');
-    roots.insert(2_u64, 'b');
+    roots.insert(map.reborrow_mut(), 1_u64, 'a');
+    roots.insert(map.reborrow_mut(), 2_u64, 'b');
 
     // >-- 1(a)
     //
     // >-- 2(b)
 
-    let mut child_1 = roots.item_mut(1_u64).unwrap();
+    let mut child_1 = roots.item_mut(map.reborrow(), 1_u64).unwrap();
     let child_1_item = child_1.item;
-    let mut child_3 = child_1.children.insert(3_u64, 'c');
+    let mut child_3 = child_1.children.insert(map.reborrow_mut(), 3_u64, 'c');
 
     // >-- 1(a) -- 3(c)
     //
     // >-- 2(b)
 
-    child_3.children.insert(4_u64, 'd');
+    child_3.children.insert(map.reborrow_mut(), 4_u64, 'd');
 
     // >-- 1(a) -- 3(c) -- 4(d)
     //
     // >-- 2(b)
 
-    let child_3_removed = child_1.children.remove(3_u64).expect("No child 3 found");
+    let child_3_removed = child_1
+        .children
+        .remove(map.reborrow_mut(), 3_u64)
+        .expect("No child 3 found");
     assert_eq!(child_3_removed, 'c', "Expect removal of node 3");
 
     // Force a realloc to surface potential UAFs.
@@ -84,28 +88,28 @@ fn arena_item_removal() {
     // Check that the borrow of child_1.item is still valid.
     *child_1_item = 'X';
 
-    assert!(child_1.children.find(3_u64).is_none());
-    assert!(child_1.children.remove(3_u64).is_none());
+    assert!(child_1.children.find(map.reborrow(), 3_u64).is_none());
+    assert!(child_1.children.remove(map.reborrow_mut(), 3_u64).is_none());
 
-    assert!(tree.find(4_u64).is_none());
+    assert!(tree.find(4_u64).0.is_none());
 }
 
 #[test]
 #[should_panic(expected = "Key already present")]
 fn arena_duplicate_insertion() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.roots_mut();
-    roots.insert(1_u64, 'a');
-    roots.insert(1_u64, 'b');
+    let (mut roots, mut map) = tree.roots_mut();
+    roots.insert(map.reborrow_mut(), 1_u64, 'a');
+    roots.insert(map.reborrow_mut(), 1_u64, 'b');
 }
 
 #[test]
 fn arena_mutate_parent_and_child_at_once() {
     let mut tree: TreeArena<char> = TreeArena::new();
-    let mut roots = tree.roots_mut();
+    let (mut roots, mut map) = tree.roots_mut();
 
-    let mut node_1 = roots.insert(1_u64, 'a');
-    let mut node_2 = node_1.children.insert(2_u64, 'b');
+    let mut node_1 = roots.insert(map.reborrow_mut(), 1_u64, 'a');
+    let mut node_2 = node_1.children.insert(map.reborrow_mut(), 2_u64, 'b');
 
     // >-- 1(a) -- 2(b)
 
@@ -125,24 +129,24 @@ fn arena_mutate_parent_and_child_at_once() {
 #[test]
 fn mem_swap() {
     let mut tree_p: TreeArena<char> = TreeArena::new();
-    let mut roots_p = tree_p.roots_mut();
+    let (mut roots_p, mut map_p) = tree_p.roots_mut();
 
-    let mut node_p1 = roots_p.insert(1_u64, 'a');
-    node_p1.children.insert(2_u64, 'b');
-    let mut node_p3 = node_p1.children.insert(3_u64, 'c');
-    node_p3.children.insert(4_u64, 'd');
+    let mut node_p1 = roots_p.insert(map_p.reborrow_mut(), 1_u64, 'a');
+    node_p1.children.insert(map_p.reborrow_mut(), 2_u64, 'b');
+    let mut node_p3 = node_p1.children.insert(map_p.reborrow_mut(), 3_u64, 'c');
+    node_p3.children.insert(map_p.reborrow_mut(), 4_u64, 'd');
 
     // P: >-- 1(a) -- 2(b)
     //             |
     //             |- 3(c) -- 4(d)
 
     let mut tree_q: TreeArena<char> = TreeArena::new();
-    let mut roots_q = tree_q.roots_mut();
+    let (mut roots_q, mut map_q) = tree_q.roots_mut();
 
-    let mut node_q4 = roots_q.insert(4_u64, 'e');
-    node_q4.children.insert(3_u64, 'f');
-    let mut node_q2 = node_q4.children.insert(2_u64, 'g');
-    node_q2.children.insert(1_u64, 'h');
+    let mut node_q4 = roots_q.insert(map_q.reborrow_mut(), 4_u64, 'e');
+    node_q4.children.insert(map_q.reborrow_mut(), 3_u64, 'f');
+    let mut node_q2 = node_q4.children.insert(map_q.reborrow_mut(), 2_u64, 'g');
+    node_q2.children.insert(map_q.reborrow_mut(), 1_u64, 'h');
 
     // Q: >-- 4(e) -- 3(f)
     //             |
@@ -158,15 +162,19 @@ fn mem_swap() {
     // but now has the id '4' and access to the children of node Q4.
     assert_eq!(node_p1.id(), 4_u64);
     assert_eq!(node_p1.item, &'a');
-    assert_eq!(node_p1.children.item(2_u64).unwrap().item, &'g',);
+    assert_eq!(
+        node_p1.children.item(map_p.reborrow(), 2_u64).unwrap().item,
+        &'g',
+    );
 }
 
 #[test]
 fn root_ids() {
     let mut arena = TreeArena::new();
-    arena.roots_mut().insert(3_u64, '0');
-    arena.roots_mut().insert(4_u64, '0');
-    arena.roots_mut().insert(5_u64, '0');
+    let (mut roots, mut map) = arena.roots_mut();
+    roots.insert(map.reborrow_mut(), 3_u64, '0');
+    roots.insert(map.reborrow_mut(), 4_u64, '0');
+    roots.insert(map.reborrow_mut(), 5_u64, '0');
     assert_eq!(sorted(arena.root_ids()), vec![3, 4, 5]);
 }
 
@@ -183,9 +191,9 @@ fn child_ids() {
             Node(2, '2', vec![]),
         ]),
     );
-    assert_eq!(sorted(arena.find(0_u64).unwrap().child_ids()), vec![1, 2]);
-    assert_eq!(sorted(arena.find(2_u64).unwrap().child_ids()), vec![]);
-    assert_eq!(sorted(arena.find(3_u64).unwrap().child_ids()), vec![]);
+    assert_eq!(sorted(arena.find(0_u64).0.unwrap().child_ids()), vec![1, 2]);
+    assert_eq!(sorted(arena.find(2_u64).0.unwrap().child_ids()), vec![]);
+    assert_eq!(sorted(arena.find(3_u64).0.unwrap().child_ids()), vec![]);
 }
 
 #[test]
@@ -379,32 +387,41 @@ fn reparent_root() {
 struct Node<T>(u64, T, Vec<Node<T>>);
 
 fn add_tree<T>(arena: &mut TreeArena<T>, root: Node<T>) {
-    let mut roots = arena.roots_mut();
-    let root_mut = roots.insert(root.0, root.1);
-    add_children(root.2, root_mut);
+    let (mut roots, mut map) = arena.roots_mut();
+    let root_mut = roots.insert(map.reborrow_mut(), root.0, root.1);
+    add_children(root.2, root_mut, map);
 }
 
-fn add_children<T>(children: Vec<Node<T>>, mut parent_mut: ArenaMut<'_, T>) {
+fn add_children<T>(
+    children: Vec<Node<T>>,
+    mut parent_mut: ArenaMut<'_, T>,
+    mut parents_map: ArenaMapMut<'_>,
+) {
     for child in children {
-        let child_mut = parent_mut.children.insert(child.0, child.1);
-        add_children(child.2, child_mut);
+        let child_mut = parent_mut
+            .children
+            .insert(parents_map.reborrow_mut(), child.0, child.1);
+        add_children(child.2, child_mut, parents_map.reborrow_mut());
     }
 }
 
 fn to_nodes<T: Copy>(arena: &TreeArena<T>) -> Vec<Node<T>> {
     sorted(arena.root_ids())
         .into_iter()
-        .map(|root_id| to_node(arena.find(root_id).unwrap()))
+        .map(|root_id| {
+            let (node, map) = arena.find(root_id);
+            to_node(node.unwrap(), map)
+        })
         .collect()
 }
 
-fn to_node<T: Copy>(a: ArenaRef<'_, T>) -> Node<T> {
+fn to_node<T: Copy>(a: ArenaRef<'_, T>, parents_map: ArenaMapRef<'_>) -> Node<T> {
     Node(
         a.id(),
         *a.item,
         sorted(a.child_ids())
             .iter()
-            .map(|id| to_node(a.children.find(*id).unwrap()))
+            .map(|id| to_node(a.children.find(parents_map, *id).unwrap(), parents_map))
             .collect(),
     )
 }
