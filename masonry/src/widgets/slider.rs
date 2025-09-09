@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use tracing::{Span, trace_span};
+use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::{Affine, Circle, Point, Rect, Size, Stroke};
 use vello::peniko::{Brush, Color, Fill};
@@ -135,8 +136,6 @@ impl Slider {
         }
     }
 
-    // Setters for styling properties...
-
     /// sets track color
     pub fn set_track_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
         if this.widget.track_color != color {
@@ -236,7 +235,11 @@ impl Widget for Slider {
             return;
         }
         match event {
-            PointerEvent::Down { state, .. } => {
+            PointerEvent::Down {
+                button: Some(PointerButton::Primary),
+                state,
+                ..
+            } => {
                 //ctx.request_focus(); // In the future, consider focusing the widget when the mouse hovers over it, as long as no other widget is already focused.
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
@@ -253,7 +256,10 @@ impl Widget for Slider {
                     ctx.request_render();
                 }
             }
-            PointerEvent::Up { .. } => {
+            PointerEvent::Up {
+                button: Some(PointerButton::Primary),
+                ..
+            } => {
                 if ctx.is_active() {
                     ctx.release_pointer();
                 }
