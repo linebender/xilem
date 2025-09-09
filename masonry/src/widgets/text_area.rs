@@ -672,8 +672,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 }
             }
 
-            // TODO: Set our highlighting colour to a lighter blue as window unfocused
-            TextEvent::WindowFocusChange(_) => {}
+            TextEvent::WindowFocusChange(_) => {
+                // To use a different selection color when unfocused.
+                ctx.request_paint_only();
+            }
 
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
@@ -848,13 +850,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.try_layout().unwrap()
         };
         if ctx.is_focus_target() {
+            // TODO: Make configurable
+            let selection_color = if ctx.is_window_focused() {
+                palette::css::STEEL_BLUE
+            } else {
+                palette::css::SLATE_GRAY
+            };
             for (rect, _) in self.editor.selection_geometry().iter() {
-                // TODO: If window not focused, use a different color
-                // TODO: Make configurable
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    palette::css::STEEL_BLUE,
+                    selection_color,
                     None,
                     &rect,
                 );
