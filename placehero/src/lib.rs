@@ -19,8 +19,8 @@ use xilem::core::{NoElement, View, fork, lens, map_action, map_state};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
-    button, flex_col, flex_row, label, prose, sized_box, spinner, split, task_raw, text_input,
-    worker_raw,
+    CrossAxisAlignment, FlexExt, button, flex_col, flex_row, label, prose, sized_box, spinner,
+    split, task_raw, text_input, worker_raw,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
@@ -52,6 +52,16 @@ use crate::login_flow::PlaceheroWithLogin;
 )]
 type Mastodon = Arc<mastodon::Mastodon>;
 
+/// Execute the app in the given winit event loop.
+pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
+    Xilem::new_simple(
+        MainState::Selecting,
+        select_app,
+        WindowOptions::new("Placehero: A placeholder named Mastodon client"),
+    )
+    .run_in(event_loop)
+}
+
 /// We are developing a version of Placehero which supports login.
 ///
 /// This requires some quite gnarly refactors, so for now we built it "alongside"
@@ -63,54 +73,26 @@ enum MainState {
     New(PlaceheroWithLogin),
 }
 
-struct Placehero {
-    mastodon: Mastodon,
-    instance: Option<Instance>,
-    timeline: Option<Timeline>,
-    show_context: Option<Status>,
-    context: Option<Context>,
-    context_sender: Option<UnboundedSender<String>>,
-    account_sender: Option<UnboundedSender<String>>,
-    timeline_box_contents: String,
-    loading_timeline: bool,
-    not_found_acct: Option<String>,
-}
-
 fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
     match state {
-        MainState::Selecting => OneOf3::A(flex_row((
-            button("Browse Anonymously", |state: &mut MainState| {
-                // TODO: Configurable server?
-                let base_url = "https://mastodon.online".to_string();
-                // TODO: Determine what user agent we want to send.
-                // Currently we send "megalodon", as that is the default in the library.
-                let user_agent = None;
-
-                #[expect(
-                    clippy::disallowed_types,
-                    reason = "We are constructing a value of the type, which we will never directly use elsewhere"
-                )]
-                let mastodon = mastodon::Mastodon::new(base_url, None, user_agent)
-                    .expect("Provided User Agent is valid");
-
-                let app_state = Placehero {
-                    mastodon: Arc::new(mastodon),
-                    instance: None,
-                    timeline: None,
-                    show_context: None,
-                    context: None,
-                    context_sender: None,
-                    account_sender: None,
-                    timeline_box_contents: "raph".to_string(),
-                    loading_timeline: false,
-                    not_found_acct: None,
-                };
-                *state = MainState::Old(app_state);
-            }),
-            button("Login", |state: &mut MainState| {
-                *state = MainState::New(PlaceheroWithLogin::default());
-            }),
-        ))),
+        MainState::Selecting => OneOf3::A(
+            flex_col((
+                prose("Welcome to Placehero. This is an example of the Xilem GUI framework, which is a Mastodon client.\n\
+                    We currently have decent support for browsing anonymously, and are currently developing our logged-in support in parallel to avoid regressions.")
+                    .text_alignment(xilem::TextAlign::Center)
+                    .flex(CrossAxisAlignment::Center),
+                flex_row((
+                    button("Browse Anonymously", |state: &mut MainState| {
+                        *state = MainState::Old(Placehero::default());
+                    }),
+                    button("Log In", |state: &mut MainState| {
+                        *state = MainState::New(PlaceheroWithLogin::default());
+                    }),
+                ))
+                .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
+            ))
+            .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
+        ),
         MainState::Old(_) => OneOf::B(lens(app_logic, |state| {
             let MainState::Old(placehero) = state else {
                 unreachable!()
@@ -126,14 +108,47 @@ fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
     }
 }
 
-/// Execute the app in the given winit event loop.
-pub fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
-    Xilem::new_simple(
-        MainState::Selecting,
-        select_app,
-        WindowOptions::new("Placehero: A placeholder named Mastodon client"),
-    )
-    .run_in(event_loop)
+struct Placehero {
+    mastodon: Mastodon,
+    instance: Option<Instance>,
+    timeline: Option<Timeline>,
+    show_context: Option<Status>,
+    context: Option<Context>,
+    context_sender: Option<UnboundedSender<String>>,
+    account_sender: Option<UnboundedSender<String>>,
+    timeline_box_contents: String,
+    loading_timeline: bool,
+    not_found_acct: Option<String>,
+}
+
+impl Default for Placehero {
+    fn default() -> Self {
+        // TODO: Configurable server?
+        let base_url = "https://mastodon.online".to_string();
+        // TODO: Determine what user agent we want to send.
+        // Currently we send "megalodon", as that is the default in the library.
+        let user_agent = None;
+
+        #[expect(
+            clippy::disallowed_types,
+            reason = "We are constructing a value of the type, which we will never directly use elsewhere"
+        )]
+        let mastodon = mastodon::Mastodon::new(base_url, None, user_agent)
+            .expect("Provided User Agent is valid");
+
+        Self {
+            mastodon: Arc::new(mastodon),
+            instance: None,
+            timeline: None,
+            show_context: None,
+            context: None,
+            context_sender: None,
+            account_sender: None,
+            timeline_box_contents: "raph".to_string(),
+            loading_timeline: false,
+            not_found_acct: None,
+        }
+    }
 }
 
 impl Placehero {
