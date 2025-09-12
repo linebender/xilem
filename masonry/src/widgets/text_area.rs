@@ -77,6 +77,9 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// What key combination should trigger a newline insertion.
     /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a [`TextAction::Entered`] event.
     insert_newline: InsertNewline,
+
+    /// Used to blink the insertion caret.
+    t: f64,
 }
 
 // --- MARK: BUILDERS
@@ -118,6 +121,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             last_available_width: None,
             hint: true,
             insert_newline: InsertNewline::default(),
+            t: 0.0,
         }
     }
 
@@ -420,6 +424,20 @@ pub enum TextAction {
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     type Action = TextAction;
 
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+        self.t += (interval as f64) * 1e-9;
+        if self.t >= 1.2 {
+            self.t = self.t.rem_euclid(1.2);
+        }
+        ctx.request_anim_frame();
+        ctx.request_paint_only();
+    }
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -476,6 +494,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
+        // Reset the blink animation.
+        self.t = 0.0;
         match event {
             TextEvent::Keyboard(key_event) => {
                 if key_event.state != KeyState::Down || self.editor.is_composing() {
@@ -852,10 +872,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.try_layout().unwrap()
         };
         if ctx.is_focus_target() {
-            let selection_color = if ctx.is_window_focused() {
-                props.get::<SelectionColor>().color
+            let (window_is_focused, selection_color) = if ctx.is_window_focused() {
+                (true, props.get::<SelectionColor>().color)
             } else {
-                props.get::<UnfocusedSelectionColor>().0
+                (false, props.get::<UnfocusedSelectionColor>().0)
             };
             for (rect, _) in self.editor.selection_geometry().iter() {
                 scene.fill(
@@ -866,7 +886,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     &rect,
                 );
             }
-            if let Some(cursor) = self.editor.cursor_geometry(1.5) {
+            if let Some(cursor) = self.editor.cursor_geometry(1.5)
+                && window_is_focused
+                && self.t <= 0.6
+            {
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
