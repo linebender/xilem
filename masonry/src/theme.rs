@@ -11,9 +11,10 @@ use crate::core::{DefaultProperties, StyleProperty, StyleSet};
 use crate::peniko::Color;
 use crate::properties::types::Length;
 use crate::properties::{
-    ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CheckmarkColor,
+    ActiveBackground, Background, BarColor, BorderColor, BorderWidth, CaretColor, CheckmarkColor,
     CheckmarkStrokeWidth, ContentColor, CornerRadius, DisabledBackground, DisabledCheckmarkColor,
-    DisabledContentColor, HoveredBorderColor, Padding, PlaceholderColor,
+    DisabledContentColor, HoveredBorderColor, Padding, PlaceholderColor, SelectionColor,
+    UnfocusedSelectionColor,
 };
 use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
@@ -95,9 +96,19 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextArea<false>, _>(ContentColor::new(TEXT_COLOR));
     properties
         .insert::<TextArea<false>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
+    properties.insert::<TextArea<false>, _>(CaretColor { color: TEXT_COLOR });
+    properties.insert::<TextArea<false>, _>(SelectionColor {
+        color: ACCENT_COLOR,
+    });
+    properties.insert::<TextArea<false>, _>(UnfocusedSelectionColor(DISABLED_TEXT_COLOR));
     properties.insert::<TextArea<true>, _>(ContentColor::new(TEXT_COLOR));
     properties
         .insert::<TextArea<true>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
+    properties.insert::<TextArea<true>, _>(CaretColor { color: TEXT_COLOR });
+    properties.insert::<TextArea<true>, _>(SelectionColor {
+        color: ACCENT_COLOR,
+    });
+    properties.insert::<TextArea<true>, _>(UnfocusedSelectionColor(DISABLED_TEXT_COLOR));
 
     // Label
     properties.insert::<Label, _>(Padding::from_vh(0., 2.));
