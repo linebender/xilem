@@ -8,7 +8,7 @@ use crate::peniko::color::{AlphaColor, Srgb};
 
 /// The color of a [`TextArea`]'s cursor.
 ///
-/// [`TextArea``]: crate::widgets::TextArea`
+/// [`TextArea`]: crate::widgets::TextArea`
 #[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CaretColor {
@@ -26,7 +26,7 @@ impl Property for CaretColor {
 
 /// The background color of a [`TextArea`]'s selection.
 ///
-/// [`TextArea``]: crate::widgets::TextArea`
+/// [`TextArea`]: crate::widgets::TextArea`
 #[expect(missing_docs, reason = "field names are self-descriptive")]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SelectionColor {
@@ -44,7 +44,7 @@ impl Property for SelectionColor {
 
 /// The background color of a [`TextArea`]'s selection when unfocused.
 ///
-/// [`TextArea``]: crate::widgets::TextArea`
+/// [`TextArea`]: crate::widgets::TextArea`
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UnfocusedSelectionColor(pub AlphaColor<Srgb>);
 
