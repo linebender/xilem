@@ -19,10 +19,12 @@ use crate::core::{
     RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     render_text,
 };
-use crate::properties::{ContentColor, DisabledContentColor};
+use crate::properties::{
+    CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
+};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
-use crate::{TextAlign, palette, theme};
+use crate::{TextAlign, theme};
 
 /// `TextArea` implements the core of interactive text.
 ///
@@ -850,11 +852,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.try_layout().unwrap()
         };
         if ctx.is_focus_target() {
-            // TODO: Make configurable
             let selection_color = if ctx.is_window_focused() {
-                palette::css::STEEL_BLUE
+                props.get::<SelectionColor>().color
             } else {
-                palette::css::SLATE_GRAY
+                props.get::<UnfocusedSelectionColor>().0
             };
             for (rect, _) in self.editor.selection_geometry().iter() {
                 scene.fill(
@@ -866,11 +867,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5) {
-                // TODO: Make configurable
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    palette::css::WHITE,
+                    props.get::<CaretColor>().color,
                     None,
                     &cursor,
                 );
@@ -970,6 +970,7 @@ mod tests {
 
     use super::*;
     use crate::core::{KeyboardEvent, Modifiers, Properties};
+    use crate::palette;
     use crate::testing::TestHarness;
     use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.
