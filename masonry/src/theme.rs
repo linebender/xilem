@@ -88,9 +88,15 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextInput, _>(BorderWidth {
         width: BORDER_WIDTH,
     });
-    properties.insert::<TextInput, _>(PlaceholderColor::new(PLACEHOLDER_COLOR));
-
     properties.insert::<TextInput, _>(BorderColor { color: ZYNC_600 });
+    properties.insert::<TextInput, _>(PlaceholderColor::new(PLACEHOLDER_COLOR));
+    properties.insert::<TextInput, _>(CaretColor { color: TEXT_COLOR });
+    properties.insert::<TextInput, _>(SelectionColor {
+        color: ACCENT_COLOR,
+    });
+    properties.insert::<TextInput, _>(UnfocusedSelectionColor(SelectionColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
 
     // TextArea
     properties.insert::<TextArea<false>, _>(ContentColor::new(TEXT_COLOR));
@@ -100,7 +106,9 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextArea<false>, _>(SelectionColor {
         color: ACCENT_COLOR,
     });
-    properties.insert::<TextArea<false>, _>(UnfocusedSelectionColor(DISABLED_TEXT_COLOR));
+    properties.insert::<TextArea<false>, _>(UnfocusedSelectionColor(SelectionColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
     properties.insert::<TextArea<true>, _>(ContentColor::new(TEXT_COLOR));
     properties
         .insert::<TextArea<true>, _>(DisabledContentColor(ContentColor::new(DISABLED_TEXT_COLOR)));
@@ -108,7 +116,9 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextArea<true>, _>(SelectionColor {
         color: ACCENT_COLOR,
     });
-    properties.insert::<TextArea<true>, _>(UnfocusedSelectionColor(DISABLED_TEXT_COLOR));
+    properties.insert::<TextArea<true>, _>(UnfocusedSelectionColor(SelectionColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
 
     // Label
     properties.insert::<Label, _>(Padding::from_vh(0., 2.));

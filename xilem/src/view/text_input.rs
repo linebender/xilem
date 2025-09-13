@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, NewWidget, Properties};
-use masonry::properties::{ContentColor, DisabledContentColor, PlaceholderColor};
+use masonry::properties::{
+    CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
+    UnfocusedSelectionColor,
+};
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
@@ -68,6 +71,30 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     pub fn disabled_text_color(mut self, color: Color) -> Self {
         self.disabled_text_color = Some(color);
         self
+    }
+
+    /// Set the insertion caret's color.
+    ///
+    /// This overwrites the default `CaretColor` property for the inner `TextArea` widget.
+    pub fn caret_color(self, color: Color) -> Prop<CaretColor, Self, State, Action> {
+        self.prop(CaretColor { color })
+    }
+
+    /// Set the selection's color.
+    ///
+    /// This overwrites the default `SelectionColor` property for the inner `TextArea` widget.
+    pub fn selection_color(self, color: Color) -> Prop<SelectionColor, Self, State, Action> {
+        self.prop(SelectionColor { color })
+    }
+
+    /// Set the selection's color when the window is unfocused.
+    ///
+    /// This overwrites the default `UnfocusedSelectionColor` property for the inner `TextArea` widget.
+    pub fn unfocused_selection_color(
+        self,
+        color: Color,
+    ) -> Prop<UnfocusedSelectionColor, Self, State, Action> {
+        self.prop(UnfocusedSelectionColor(SelectionColor { color }))
     }
 
     /// Set the string which is shown when the input is empty.

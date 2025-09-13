@@ -855,7 +855,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             let selection_color = if ctx.is_window_focused() {
                 props.get::<SelectionColor>().color
             } else {
-                props.get::<UnfocusedSelectionColor>().0
+                props.get::<UnfocusedSelectionColor>().0.color
             };
             for (rect, _) in self.editor.selection_geometry().iter() {
                 scene.fill(
