@@ -46,12 +46,13 @@ impl Property for SelectionColor {
 ///
 /// [`TextArea`]: crate::widgets::TextArea`
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct UnfocusedSelectionColor(pub AlphaColor<Srgb>);
+pub struct UnfocusedSelectionColor(pub SelectionColor);
 
 impl Property for UnfocusedSelectionColor {
     fn static_default() -> &'static Self {
-        static DEFAULT: UnfocusedSelectionColor =
-            UnfocusedSelectionColor(AlphaColor::from_rgb8(176, 176, 176));
+        static DEFAULT: UnfocusedSelectionColor = UnfocusedSelectionColor(SelectionColor {
+            color: AlphaColor::from_rgb8(176, 176, 176),
+        });
         &DEFAULT
     }
 }

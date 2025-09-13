@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, NewWidget, Properties};
-use masonry::properties::{ContentColor, DisabledContentColor, PlaceholderColor};
+use masonry::properties::{
+    CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
+    UnfocusedSelectionColor,
+};
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
@@ -27,6 +30,9 @@ where
         on_enter: None,
         text_color: None,
         disabled_text_color: None,
+        caret_color: None,
+        selection_color: None,
+        unfocused_selection_color: None,
         placeholder: ArcStr::default(),
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
@@ -45,6 +51,9 @@ pub struct TextInput<State, Action> {
     on_enter: Option<Callback<State, Action>>,
     text_color: Option<Color>,
     disabled_text_color: Option<Color>,
+    caret_color: Option<Color>,
+    selection_color: Option<Color>,
+    unfocused_selection_color: Option<Color>,
     placeholder: ArcStr,
     text_alignment: TextAlign,
     insert_newline: InsertNewline,
@@ -67,6 +76,30 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     /// This overwrites the default `DisabledContentColor` property for the inner `TextArea` widget.
     pub fn disabled_text_color(mut self, color: Color) -> Self {
         self.disabled_text_color = Some(color);
+        self
+    }
+
+    /// Set the insertion caret's color.
+    ///
+    /// This overwrites the default `CaretColor` property for the inner `TextArea` widget.
+    pub fn caret_color(mut self, color: Color) -> Self {
+        self.caret_color = Some(color);
+        self
+    }
+
+    /// Set the selection's color.
+    ///
+    /// This overwrites the default `SelectionColor` property for the inner `TextArea` widget.
+    pub fn selection_color(mut self, color: Color) -> Self {
+        self.selection_color = Some(color);
+        self
+    }
+
+    /// Set the selection's color when the window is unfocused.
+    ///
+    /// This overwrites the default `UnfocusedSelectionColor` property for the inner `TextArea` widget.
+    pub fn unfocused_selection_color(mut self, color: Color) -> Self {
+        self.unfocused_selection_color = Some(color);
         self
     }
 
@@ -145,6 +178,15 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         if let Some(color) = self.disabled_text_color {
             props.insert(DisabledContentColor(ContentColor { color }));
         }
+        if let Some(color) = self.caret_color {
+            props.insert(CaretColor { color });
+        }
+        if let Some(color) = self.selection_color {
+            props.insert(SelectionColor { color });
+        }
+        if let Some(color) = self.unfocused_selection_color {
+            props.insert(UnfocusedSelectionColor(SelectionColor { color }));
+        }
 
         let text_input =
             widgets::TextInput::from_text_area(NewWidget::new_with_props(text_area, props))
@@ -181,6 +223,27 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
                 element.insert_prop(DisabledContentColor(ContentColor { color }));
             } else {
                 element.remove_prop::<DisabledContentColor>();
+            }
+        }
+        if self.caret_color != prev.caret_color {
+            if let Some(color) = self.caret_color {
+                element.insert_prop(CaretColor { color });
+            } else {
+                element.remove_prop::<CaretColor>();
+            }
+        }
+        if self.selection_color != prev.selection_color {
+            if let Some(color) = self.selection_color {
+                element.insert_prop(SelectionColor { color });
+            } else {
+                element.remove_prop::<SelectionColor>();
+            }
+        }
+        if self.unfocused_selection_color != prev.unfocused_selection_color {
+            if let Some(color) = self.unfocused_selection_color {
+                element.insert_prop(UnfocusedSelectionColor(SelectionColor { color }));
+            } else {
+                element.remove_prop::<UnfocusedSelectionColor>();
             }
         }
         if self.placeholder != prev.placeholder {

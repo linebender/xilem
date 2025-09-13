@@ -16,8 +16,8 @@ use crate::core::{
     WidgetMut, WidgetPod,
 };
 use crate::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
-    DisabledBackground, Padding, PlaceholderColor,
+    Background, BorderColor, BorderWidth, BoxShadow, CaretColor, ContentColor, CornerRadius,
+    DisabledBackground, Padding, PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
 };
 use crate::util::{fill, stroke};
 use crate::widgets::{Label, TextArea};
@@ -126,6 +126,7 @@ impl TextInput {
 }
 
 impl HasProperty<Background> for TextInput {}
+impl HasProperty<CaretColor> for TextInput {}
 impl HasProperty<DisabledBackground> for TextInput {}
 impl HasProperty<BorderColor> for TextInput {}
 impl HasProperty<BorderWidth> for TextInput {}
@@ -133,6 +134,8 @@ impl HasProperty<BoxShadow> for TextInput {}
 impl HasProperty<CornerRadius> for TextInput {}
 impl HasProperty<Padding> for TextInput {}
 impl HasProperty<PlaceholderColor> for TextInput {}
+impl HasProperty<SelectionColor> for TextInput {}
+impl HasProperty<UnfocusedSelectionColor> for TextInput {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for TextInput {
@@ -148,10 +151,13 @@ impl Widget for TextInput {
         Background::prop_changed(ctx, property_type);
         BorderColor::prop_changed(ctx, property_type);
         BorderWidth::prop_changed(ctx, property_type);
+        CaretColor::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
         // TODO: Draw shadows in post_paint.
         BoxShadow::prop_changed(ctx, property_type);
+        SelectionColor::prop_changed(ctx, property_type);
+        UnfocusedSelectionColor::prop_changed(ctx, property_type);
 
         // FIXME - Find more elegant way to propagate property to child.
         if property_type == TypeId::of::<PlaceholderColor>() {
