@@ -240,7 +240,7 @@ impl Widget for Slider {
                 state,
                 ..
             } => {
-                //ctx.request_focus(); // In the future, consider focusing the widget when the mouse hovers over it, as long as no other widget is already focused.
+                ctx.request_focus(); // In the future, consider focusing the widget when the mouse hovers over it, as long as no other widget is already focused.
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
                 if self.update_value_from_position(local_pos.x, ctx.size().width) {
@@ -396,47 +396,45 @@ impl Widget for Slider {
     }
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        const THUMB_BORDER_WIDTH: f64 = 2.0;
-        const DISABLED_ALPHA: f32 = 0.4;
-
+        // --- 1. Get parameters and resolve colors ---
         let track_color = self.track_color.unwrap_or(theme::ZYNC_800);
         let active_track_color = self.active_track_color.unwrap_or(theme::ACCENT_COLOR);
         let thumb_color = self.thumb_color.unwrap_or(theme::TEXT_COLOR);
         let track_thickness = self.track_thickness.unwrap_or(4.0);
         let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
+        let thumb_border_width = 2.0;
 
+        let disabled_alpha = 0.4;
         let final_track_color = if self.disabled {
-            track_color.with_alpha(DISABLED_ALPHA)
+            track_color.with_alpha(disabled_alpha)
         } else {
             track_color
         };
         let final_active_track_color = if self.disabled {
-            active_track_color.with_alpha(DISABLED_ALPHA)
+            active_track_color.with_alpha(disabled_alpha)
         } else {
             active_track_color
         };
         let final_thumb_color = if self.disabled {
-            thumb_color.with_alpha(DISABLED_ALPHA)
+            thumb_color.with_alpha(disabled_alpha)
         } else {
             thumb_color
         };
 
+        // --- 2. Calculate geometry based on state ---
         let size = ctx.size();
-
-        let thumb_radius = if self.disabled {
-            base_thumb_radius
-        } else if ctx.is_active() {
+        let thumb_radius = if ctx.is_active() {
             base_thumb_radius + 2.0
         } else if ctx.is_hovered() || self.is_focused {
             base_thumb_radius + 1.0
         } else {
             base_thumb_radius
         };
-
         let track_start_x = thumb_radius;
         let track_width = (size.width - thumb_radius * 2.0).max(0.0);
         let track_y = (size.height - track_thickness) / 2.0;
 
+        // --- 3. Paint inactive track ---
         let track_rect = Rect::new(
             track_start_x,
             track_y,
@@ -451,6 +449,7 @@ impl Widget for Slider {
             &track_rect.to_rounded_rect(track_thickness / 2.0),
         );
 
+        // --- 4. Paint active track ---
         let progress = (self.value - self.min) / (self.max - self.min).max(f64::EPSILON);
         let active_track_width = progress * track_width;
         if active_track_width > 0.0 {
@@ -469,6 +468,7 @@ impl Widget for Slider {
             );
         }
 
+        // --- 5. Paint thumb ---
         let thumb_x = track_start_x + active_track_width;
         let thumb_y = size.height / 2.0;
         let thumb_circle = Circle::new(Point::new(thumb_x, thumb_y), thumb_radius);
@@ -481,19 +481,22 @@ impl Widget for Slider {
             &thumb_circle,
         );
         scene.stroke(
-            &Stroke::new(THUMB_BORDER_WIDTH),
+            &Stroke::new(thumb_border_width),
             Affine::IDENTITY,
             &Brush::Solid(final_active_track_color),
             None,
             &thumb_circle,
         );
 
+        // --- 6. Paint focus ring ---
         if self.is_focused && !self.disabled {
             let focus_rect = ctx.size().to_rect().inset(-2.0);
+            let focus_color =
+                theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 } as f32);
             scene.stroke(
                 &Stroke::new(2.0),
                 Affine::IDENTITY,
-                &Brush::Solid(theme::FOCUS_COLOR),
+                &Brush::Solid(focus_color),
                 None,
                 &focus_rect.to_rounded_rect(4.0),
             );
@@ -527,5 +530,82 @@ impl Widget for Slider {
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
         trace_span!("Slider", id = id.trace())
+    }
+}
+
+// --- MARK: TESTS ---
+#[cfg(test)]
+mod tests {
+    use masonry_core::core::NewWidget;
+    use vello::kurbo::{Point, Size};
+
+    use super::*;
+    use crate::core::{PointerButton, TextEvent};
+    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::theme::default_property_set;
+
+    #[test]
+    fn slider_initial_state() {
+        let widget = NewWidget::new(Slider::new(0.0, 100.0, 25.0));
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+
+        assert_render_snapshot!(harness, "slider_initial_state");
+    }
+
+    #[test]
+    fn slider_drag_interaction() {
+        let widget = NewWidget::new(Slider::new(0.0, 100.0, 25.0));
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+        let slider_id = harness.root_id();
+
+        assert_render_snapshot!(harness, "slider_drag_initial_at_25");
+
+        // 1. Move the mouse to the thumb position (25%) BEFORE clicking.
+        harness.mouse_move(Point::new(53.0, 16.0));
+
+        // 2. Press the mouse button.
+        // This should not emit an action because the value does not change.
+        harness.mouse_button_press(PointerButton::Primary);
+        assert!(harness.pop_action::<f64>().is_none());
+
+        // 3. Move to the new position (75%).
+        // PosX for 75.0 = 8.0 + (184.0 * 0.75) = 146.0
+        harness.mouse_move(Point::new(146.0, 16.0));
+
+        assert_eq!(harness.pop_action::<f64>(), Some((75.0, slider_id)));
+        assert_render_snapshot!(harness, "slider_drag_to_75");
+
+        // Release the mouse
+        harness.mouse_button_release(PointerButton::Primary);
+        assert_render_snapshot!(harness, "slider_drag_released_at_75");
+    }
+
+    #[test]
+    fn slider_keyboard_interaction() {
+        let widget = NewWidget::new(Slider::new(0.0, 100.0, 50.0).with_step(10.0));
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+        let slider_id = harness.root_id();
+
+        harness.focus_on(Some(slider_id));
+        assert_render_snapshot!(harness, "slider_keyboard_focused");
+
+        harness.process_text_event(TextEvent::key_down(Key::Named(NamedKey::ArrowRight)));
+        harness.process_text_event(TextEvent::key_up(Key::Named(NamedKey::ArrowRight)));
+
+        assert_eq!(harness.pop_action::<f64>(), Some((60.0, slider_id)));
+        assert_render_snapshot!(harness, "slider_keyboard_moved");
+    }
+
+    #[test]
+    fn slider_disabled_state() {
+        let widget = NewWidget::new(Slider::new(0.0, 100.0, 50.0).with_disabled(true));
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+
+        assert_render_snapshot!(harness, "slider_disabled");
+        assert!(harness.pop_action::<f64>().is_none());
     }
 }
