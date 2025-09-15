@@ -240,7 +240,7 @@ impl Widget for Slider {
                 state,
                 ..
             } => {
-                ctx.request_focus(); // In the future, consider focusing the widget when the mouse hovers over it, as long as no other widget is already focused.
+                ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
                 if self.update_value_from_position(local_pos.x, ctx.size().width) {
@@ -490,7 +490,7 @@ impl Widget for Slider {
 
         // --- 6. Paint focus ring ---
         if self.is_focused && !self.disabled {
-            let focus_rect = ctx.size().to_rect().inset(-2.0);
+            let focus_rect = ctx.size().to_rect().inset(2.0);
             let focus_color =
                 theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 } as f32);
             scene.stroke(
