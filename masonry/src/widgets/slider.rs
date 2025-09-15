@@ -494,7 +494,7 @@ impl Widget for Slider {
             let focus_color =
                 theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 } as f32);
             scene.stroke(
-                &Stroke::new(2.0),
+                &Stroke::new(1.0),
                 Affine::IDENTITY,
                 &Brush::Solid(focus_color),
                 None,
