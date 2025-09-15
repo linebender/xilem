@@ -2,19 +2,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::peniko::Blob;
-use masonry_winit::app::{EventLoopBuilder, NewWindow, WindowId};
+use masonry_winit::app::{EventLoopBuilder, MasonryUserEvent, NewWindow, WindowId};
 
 use std::iter::Once;
 use std::sync::Arc;
 
 use masonry::core::DefaultProperties;
 use masonry::theme::default_property_set;
-use masonry_winit::app::MasonryUserEvent;
 use winit::error::EventLoopError;
 use xilem_core::map_state;
 
 use crate::window_options::WindowCallbacks;
-use crate::{AnyWidgetView, MasonryDriver, WidgetView, WindowOptions};
+use crate::{MasonryDriver, WidgetView, WindowOptions, WindowView};
 
 /// Runtime builder.
 #[must_use = "A Xilem app does nothing unless ran."]
@@ -39,12 +38,10 @@ impl<S> AppState for ExitOnClose<S> {
     }
 }
 
-type WindowTuple<State> = (WindowId, WindowOptions<State>, Box<AnyWidgetView<State>>);
-
 impl<State>
     Xilem<
         ExitOnClose<State>,
-        Box<dyn FnMut(&mut ExitOnClose<State>) -> Once<WindowTuple<ExitOnClose<State>>>>,
+        Box<dyn FnMut(&mut ExitOnClose<State>) -> Once<WindowView<ExitOnClose<State>>>>,
     >
 {
     /// Create an app builder for a single window app with fixed window attributes
@@ -76,20 +73,22 @@ impl<State>
                         on_close(&mut wrapper.state);
                     }
                 };
-                std::iter::once((
-                    window_id,
-                    WindowOptions {
+                std::iter::once(
+                    crate::window(
+                        window_id,
+                        String::new(),
+                        map_state(logic(state), |wrapper: &mut ExitOnClose<_>| {
+                            &mut wrapper.state
+                        }),
+                    )
+                    .with_options(|_| WindowOptions {
                         reactive: window_options.reactive.clone(),
                         initial: window_options.initial.clone(),
                         callbacks: WindowCallbacks {
                             on_close: Some(Box::new(on_close)),
                         },
-                    },
-                    map_state(logic(state), |wrapper: &mut ExitOnClose<_>| {
-                        &mut wrapper.state
-                    })
-                    .boxed(),
-                ))
+                    }),
+                )
             }),
         )
     }
@@ -110,7 +109,7 @@ impl<State, Logic, WindowIter> Xilem<State, Logic>
 where
     State: AppState + 'static,
     Logic: FnMut(&mut State) -> WindowIter + 'static,
-    WindowIter: Iterator<Item = (WindowId, WindowOptions<State>, Box<AnyWidgetView<State>>)>,
+    WindowIter: Iterator<Item = WindowView<State>>,
 {
     /// Initialize the builder state for your app with an app logic function that returns a window iterator.
     pub fn new(state: State, logic: Logic) -> Self
