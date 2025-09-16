@@ -423,7 +423,9 @@ impl Widget for Slider {
 
         // --- 2. Calculate geometry based on state ---
         let size = ctx.size();
-        let thumb_radius = if ctx.is_active() {
+        let thumb_radius = if self.disabled {
+            base_thumb_radius
+        } else if ctx.is_active() {
             base_thumb_radius + 2.0
         } else if ctx.is_hovered() || self.is_focused {
             base_thumb_radius + 1.0
