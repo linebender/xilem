@@ -19,7 +19,10 @@ pub struct WindowView<State> {
 
 /// A view representing a window.
 ///
-/// `id` can be created using the [`WindowId::next()`] method.
+/// `id` can be created using the [`WindowId::next()`] method and _must_ be the
+/// same each frame for the same window. Usually it should be stored in app
+/// state somewhere.
+///
 /// `title` initializes [`WindowOptions`].
 pub fn window<V: WidgetView<State>, State: 'static>(
     id: WindowId,
@@ -41,6 +44,12 @@ impl<State> WindowView<State> {
         f: impl FnOnce(WindowOptions<State>) -> WindowOptions<State>,
     ) -> Self {
         self.options = f(self.options);
+        self
+    }
+
+    /// Set base color of the window.
+    pub fn with_base_color(mut self, color: Color) -> Self {
+        self.base_color = color;
         self
     }
 }

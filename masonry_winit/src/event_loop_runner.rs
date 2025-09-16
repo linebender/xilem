@@ -152,7 +152,7 @@ impl Window {
         }
     }
 
-    /// Access the [`WindowHandle`] of this window.
+    /// Access the the underlying [Winit window](WindowHandle) of this window.
     pub fn handle(&self) -> &WindowHandle {
         &self.handle
     }
