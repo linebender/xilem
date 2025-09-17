@@ -16,6 +16,6 @@ bench = false
 [dependencies]
 console_error_panic_hook = "0.1"
 console_log = "1.0.0"
-log = "0.4.27"
-web-sys = "0.3.77"
+log = "0.4.28"
+web-sys = "0.3.78"
 xilem_web = { path = "../.." }

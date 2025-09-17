@@ -52,17 +52,17 @@ kurbo = "0.11.3"
 parley = { git = "https://github.com/linebender/parley", rev = "587b7634ae8601c10de7f0361bfd56085a5b7b4e", features = [
     "accesskit",
 ] }
-peniko = "0.4.0"
-winit = "0.30.10"
+peniko = "0.4.1"
+winit = "0.30.12"
 tracing = { version = "0.1.41", default-features = false }
 ui-events = "0.1.0"
 ui-events-winit = "0.1.0"
-smallvec = "1.15.0"
-hashbrown = "0.15.3"
+smallvec = "1.15.1"
+hashbrown = "0.15.5"
 dpi = "0.1.2"
-image = { version = "0.25.6", default-features = false }
+image = { version = "0.25.8", default-features = false }
 web-time = "1.1.0"
-bitflags = "2.9.1"
+bitflags = "2.9.4"
 accesskit = "0.21.0"
 accesskit_winit = { version = "0.29.0", default-features = false, features = [
     "accesskit_unix",
@@ -70,8 +70,8 @@ accesskit_winit = { version = "0.29.0", default-features = false, features = [
     "rwh_06",
 ] }
 accesskit_consumer = "0.30.0"
-time = "0.3.41"
-reqwest = { version = "0.12.20", default-features = false, features = [
+time = "0.3.43"
+reqwest = { version = "0.12.23", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl
     # and this is likely to be easiest to get working.
     "rustls-tls",
