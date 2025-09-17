@@ -10,10 +10,9 @@ use masonry_core::app::RenderRoot;
 use masonry_core::core::{ErasedAction, WidgetId};
 use tracing::field::DisplayValue;
 use winit::event_loop::ActiveEventLoop;
-use winit::window::Window as WindowHandle;
 
 use crate::app::MasonryState;
-use crate::event_loop_runner::NewWindow;
+use crate::event_loop_runner::{NewWindow, Window};
 
 /// A unique and persistent identifier for a window.
 ///
@@ -97,30 +96,16 @@ impl DriverCtx<'_, '_> {
     ///
     /// Panics if the window cannot be found.
     pub fn render_root(&mut self, window_id: WindowId) -> &mut RenderRoot {
-        &mut self.state.window_mut(window_id).render_root
+        &mut self.window(window_id).render_root
     }
 
-    /// Access the [`WindowHandle`] of the given window.
+    /// Access the [`Window`] state of the given window.
     ///
     /// # Panics
     ///
     /// Panics if the window cannot be found.
-    pub fn window_handle(&self, window_id: WindowId) -> &WindowHandle {
-        let window = self.state.window(window_id);
-        &window.handle
-    }
-
-    /// Access the [`WindowHandle`] and [`RenderRoot`] of the given window.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the window cannot be found.
-    pub fn window_handle_and_render_root(
-        &mut self,
-        window_id: WindowId,
-    ) -> (&WindowHandle, &mut RenderRoot) {
-        let window = self.state.window_mut(window_id);
-        (&window.handle, &mut window.render_root)
+    pub fn window(&mut self, window_id: WindowId) -> &mut Window {
+        self.state.window_mut(window_id)
     }
 
     /// Creates a new window.

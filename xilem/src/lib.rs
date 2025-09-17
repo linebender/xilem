@@ -181,6 +181,7 @@ pub use app::{AppState, ExitOnClose, Xilem};
 pub use pod::Pod;
 pub use view_ctx::ViewCtx;
 pub use widget_view::{WidgetView, WidgetViewSequence};
+pub use window_view::{PodWindow, WindowView, window};
 
 // FIXME - Remove these re-exports.
 pub(crate) use xilem_core::{MessageResult, View, ViewId};

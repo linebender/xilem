@@ -53,7 +53,7 @@ pub struct NewWindow {
     /// The id is set by the App, and can be created using the [`WindowId::next()`] method.
     ///
     /// Once the window is created, it can be accessed using this `id` through the
-    /// [`DriverCtx::window_handle()`] method.
+    /// [`DriverCtx::window()`] method.
     pub id: WindowId,
     /// Window attributes for the winit's [`Window`].
     ///
@@ -108,7 +108,7 @@ impl NewWindow {
 }
 
 /// Per-Window state
-pub(crate) struct Window {
+pub struct Window {
     id: WindowId,
     pub(crate) handle: Arc<WindowHandle>,
     pub(crate) accesskit_adapter: Adapter,
@@ -150,6 +150,21 @@ impl Window {
             ),
             base_color,
         }
+    }
+
+    /// Access the the underlying [Winit window](WindowHandle) of this window.
+    pub fn handle(&self) -> &winit::window::Window {
+        &self.handle
+    }
+
+    /// Access the [`RenderRoot`] of this window.
+    pub fn render_root(&mut self) -> &mut RenderRoot {
+        &mut self.render_root
+    }
+
+    /// Access base color of this window.
+    pub fn base_color(&mut self) -> &mut Color {
+        &mut self.base_color
     }
 }
 
@@ -901,11 +916,6 @@ impl MasonryState<'_> {
             .window_id_to_handle_id
             .get(&window_id)
             .unwrap_or_else(|| panic!("could not find window for id {window_id:?}"))
-    }
-
-    pub(crate) fn window(&self, window_id: WindowId) -> &Window {
-        let handle_id = self.handle_id(window_id);
-        self.windows.get(&handle_id).unwrap()
     }
 
     pub(crate) fn window_mut(&mut self, window_id: WindowId) -> &mut Window {
