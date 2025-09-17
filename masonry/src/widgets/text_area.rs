@@ -19,10 +19,12 @@ use crate::core::{
     RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     render_text,
 };
-use crate::properties::{ContentColor, DisabledContentColor};
+use crate::properties::{
+    CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
+};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
-use crate::{TextAlign, palette, theme};
+use crate::{TextAlign, theme};
 
 /// `TextArea` implements the core of interactive text.
 ///
@@ -75,6 +77,9 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// What key combination should trigger a newline insertion.
     /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a [`TextAction::Entered`] event.
     insert_newline: InsertNewline,
+
+    /// Used to blink the insertion caret.
+    t: f64,
 }
 
 // --- MARK: BUILDERS
@@ -116,6 +121,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             last_available_width: None,
             hint: true,
             insert_newline: InsertNewline::default(),
+            t: 0.0,
         }
     }
 
@@ -418,6 +424,20 @@ pub enum TextAction {
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     type Action = TextAction;
 
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+        self.t += (interval as f64) * 1e-9;
+        if self.t >= 1.2 {
+            self.t = self.t.rem_euclid(1.2);
+        }
+        ctx.request_anim_frame();
+        ctx.request_paint_only();
+    }
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -474,6 +494,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
+        // Reset the blink animation.
+        self.t = 0.0;
         match event {
             TextEvent::Keyboard(key_event) => {
                 if key_event.state != KeyState::Down || self.editor.is_composing() {
@@ -672,8 +694,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 }
             }
 
-            // TODO: Set our highlighting colour to a lighter blue as window unfocused
-            TextEvent::WindowFocusChange(_) => {}
+            TextEvent::WindowFocusChange(_) => {
+                // To use a different selection color when unfocused.
+                ctx.request_paint_only();
+            }
 
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
@@ -848,23 +872,28 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.try_layout().unwrap()
         };
         if ctx.is_focus_target() {
+            let (window_is_focused, selection_color) = if ctx.is_window_focused() {
+                (true, props.get::<SelectionColor>().color)
+            } else {
+                (false, props.get::<UnfocusedSelectionColor>().0.color)
+            };
             for (rect, _) in self.editor.selection_geometry().iter() {
-                // TODO: If window not focused, use a different color
-                // TODO: Make configurable
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    palette::css::STEEL_BLUE,
+                    selection_color,
                     None,
                     &rect,
                 );
             }
-            if let Some(cursor) = self.editor.cursor_geometry(1.5) {
-                // TODO: Make configurable
+            if let Some(cursor) = self.editor.cursor_geometry(1.5)
+                && window_is_focused
+                && self.t <= 0.6
+            {
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    palette::css::WHITE,
+                    props.get::<CaretColor>().color,
                     None,
                     &cursor,
                 );
@@ -964,6 +993,7 @@ mod tests {
 
     use super::*;
     use crate::core::{KeyboardEvent, Modifiers, Properties};
+    use crate::palette;
     use crate::testing::TestHarness;
     use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.
