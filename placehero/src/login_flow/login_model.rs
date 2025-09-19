@@ -17,7 +17,7 @@
 // TODO: How can we test this? Would we want to make a local Mastodon server?
 
 use std::{
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::{BTreeMap, HashSet},
     io,
     path::PathBuf,
 };
@@ -35,7 +35,8 @@ pub(super) struct LoginData {
     /// Information about each server you've connected to.
     /// Key is the server's hostname, e.g. "mastodon.social".
     // TODO: Presumably we don't want to support non-https servers?
-    servers: HashMap<ArcStr, MastodonServer>,
+    // We want to display the servers in alphabetical order.
+    servers: BTreeMap<ArcStr, MastodonServer>,
     accounts: Vec<RemoteAccount>,
 }
 
@@ -53,7 +54,7 @@ impl LoginData {
             Err(e) if e.kind() == io::ErrorKind::NotFound => {
                 return Some(Self {
                     file_path,
-                    servers: HashMap::new(),
+                    servers: BTreeMap::new(),
                     accounts: Vec::new(),
                 });
             }
@@ -86,6 +87,10 @@ impl LoginData {
             account.oauth_token = account.persisted_token.clone();
         }
         Some(data)
+    }
+
+    pub(super) fn servers(&self) -> &BTreeMap<ArcStr, MastodonServer> {
+        &self.servers
     }
 }
 
@@ -153,9 +158,9 @@ struct RemoteApp {
 ///
 /// This will be stored in the `user_data` folder.
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct MastodonServer {
+pub(crate) struct MastodonServer {
     /// The name most recently associated with the server, to give immediate feedback on loading.
-    cached_name: ArcStr,
+    pub(crate) cached_name: ArcStr,
     // TODO: Store a picture?
     /// The currently associated apps with this server.
     /// For new logins, the most recent app should be preferred, if it has the right
