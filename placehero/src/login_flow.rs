@@ -44,5 +44,25 @@ pub(crate) fn app_logic(
                 .flex(CrossAxisAlignment::Start),
         )));
     };
+
+    // If auto-login, login to that account
+    // If no accounts, go-to "new account" flow
+    // If accounts, show accounts, and button for "new account" flow (at the top for consistency?)
+    //
+    // New account flow:
+    // - Textbox at top for server address
+    // - Also show list of previously used servers
+    //
+    // On server confirmation screen (show name, image?); allow selecting if
+    // you want to connect to the account in a read-only manner.
+    // Also select if you want to persist the login token (default true if read-only).
+    //
+    // If server has `multiple_accounts` set to true (either manually or due to logging
+    // in to multiple accounts, then use force_login).
+    // At this point, make sure we have a suitable app registered for this client, then authenticate the
+    // user and register the token (with the right scopes).
+    // Use an input box for the token, saving it with the account.
+    // Don't forget e.g. a cancel button here.
+
     Either::B(label("Todo"))
 }
