@@ -1053,9 +1053,6 @@ impl<W: Widget> TestHarness<W> {
         let reference_file =
             ImageReader::with_format(BufReader::new(reference_file), ImageFormat::Png);
 
-        // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
-        // Have a warning for that case (i.e. differentiation between not-found and invalid format)
-        // and a environment variable to ignore the test in that case.
         let ref_image = reference_file.decode().unwrap().to_rgb8();
 
         if expect_failure {

@@ -187,13 +187,8 @@ TODO - mention kompari
 
 TestHarness can render a widget tree, save the result to an image, and compare the image to a stored snapshot. This lets us check that (1) our widgets' paint methods don't panic and (2) changes don't introduce accidental regression in their visual appearance.
 
-The screenshots are stored using git LFS, which adds some minor complications but avoids the overhead of committing files directly to Git.
-
-We include some of the screenshots in the documentation; because `docs.rs` doesn't have access to LFS files, we use the `include_screenshot!` to instead link to `https://media.githubusercontent.com` when building doc for `docs.rs`.
-
-**Note:** The above may or may not be true at the time you read this document.
-We've had problems with the `docsrs` flag and Github's handling of LFS files.
-See also https://github.com/linebender/xilem/issues/851.
+To avoid accumulating large files in the repository, we optimize screenshots with the `oxipng` tool.
+Screenshots tests will fail by default if the saved screenshot is larger than 8KiB.
 
 #### Tests Are Important
 
