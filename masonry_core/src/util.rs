@@ -127,43 +127,10 @@ pub fn get_debug_color(id: u64) -> Color {
 
 // ---
 
-// FIXME - We're essentially completely disabling screenshots, period.
-// Hopefully we'll be able to re-enable them soon.
-// See https://github.com/linebender/xilem/issues/851
-
 pub use crate::include_screenshot;
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! include_screenshot {
-    ($path:literal $(, $caption:literal)? $(,)?) => {
-        // On docsrs we just remove the screenshot links for now.
-        " "
-    };
-}
-
-// TODO - Re-enable this once we find a way to load screenshots that doesn't go against our
-// storage quotas.
-#[cfg(false)]
-#[cfg(docsrs)]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! include_screenshot {
-    ($path:literal $(, $caption:literal)? $(,)?) => {
-        concat!(
-            "![", $($caption,)? "]",
-            "(", "https://media.githubusercontent.com/media/linebender/xilem/",
-            "masonry-v", env!("CARGO_PKG_VERSION"), "/masonry/screenshots/", $path,
-            ")",
-        )
-    };
-}
-
-#[cfg(false)]
-#[cfg(not(docsrs))]
-#[doc(hidden)]
-#[macro_export]
-/// Macro used to create markdown img tag, with a different URL when uploading to docs.rs.
 macro_rules! include_screenshot {
     ($path:literal $(, $caption:literal)? $(,)?) => {
         // This space at the start avoids triggering https://rust-lang.github.io/rust-clippy/master/index.html#suspicious_doc_comments
