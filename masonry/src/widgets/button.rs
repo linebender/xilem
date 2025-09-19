@@ -112,14 +112,15 @@ impl Widget for Button {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down {
-                button: Some(PointerButton::Primary),
-                ..
-            } => {
-                ctx.capture_pointer();
-                // Changes in pointer capture impact appearance, but not accessibility node
-                ctx.request_paint_only();
-                trace!("Button {:?} pressed", ctx.widget_id());
+            PointerEvent::Down { button, .. } => {
+                if *button == Some(PointerButton::Primary) {
+                    ctx.capture_pointer();
+                    // Changes in pointer capture impact appearance, but not accessibility node
+                    ctx.request_paint_only();
+                    trace!("Button {:?} pressed", ctx.widget_id());
+                }
+                // Any click event should lead to this widget getting focused.
+                ctx.request_focus();
             }
             PointerEvent::Up {
                 button: Some(PointerButton::Primary),
@@ -133,10 +134,6 @@ impl Widget for Button {
                 }
                 // Changes in pointer capture impact appearance, but not accessibility node
                 ctx.request_paint_only();
-            }
-            PointerEvent::Down { .. } => {
-                // Any non-primary click event should lead to this widget getting focused.
-                ctx.request_focus();
             }
             _ => (),
         }

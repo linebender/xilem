@@ -113,12 +113,15 @@ impl Widget for Checkbox {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down {
-                button: Some(PointerButton::Primary),
-                ..
-            } => {
-                ctx.capture_pointer();
-                trace!("Checkbox {:?} pressed", ctx.widget_id());
+            PointerEvent::Down { button, .. } => {
+                if *button == Some(PointerButton::Primary) {
+                    ctx.capture_pointer();
+                    // Checked state impacts appearance and accessibility node
+                    ctx.request_render();
+                    trace!("Checkbox {:?} pressed", ctx.widget_id());
+                }
+                // Any click event should lead to this widget getting focused.
+                ctx.request_focus();
             }
             PointerEvent::Up {
                 button: Some(PointerButton::Primary),
@@ -128,10 +131,6 @@ impl Widget for Checkbox {
                     ctx.submit_action::<Self::Action>(CheckboxToggled(!self.checked));
                     trace!("Checkbox {:?} released", ctx.widget_id());
                 }
-            }
-            PointerEvent::Down { .. } => {
-                // Any non-primary click event should lead to this widget getting focused.
-                ctx.request_focus();
             }
             _ => (),
         }
