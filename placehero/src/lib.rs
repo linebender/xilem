@@ -86,7 +86,7 @@ fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
                         *state = MainState::Old(Placehero::default());
                     }),
                     button("Log In", |state: &mut MainState| {
-                        *state = MainState::New(PlaceheroWithLogin::default());
+                        *state = MainState::New(PlaceheroWithLogin::new());
                     }),
                 ))
                 .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
