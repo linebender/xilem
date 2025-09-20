@@ -18,7 +18,6 @@ use masonry_core::core::{
 use masonry_core::kurbo::Affine;
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
-use masonry_core::vello::util::{RenderContext, RenderSurface};
 use masonry_core::vello::wgpu;
 use masonry_core::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use tracing::{debug, info, info_span};
@@ -32,6 +31,7 @@ use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as Handle
 
 use crate::app::{AppDriver, DriverCtx, masonry_resize_direction_to_winit, winit_ime_to_masonry};
 use crate::app_driver::WindowId;
+use crate::vello_util::{RenderContext, RenderSurface};
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
