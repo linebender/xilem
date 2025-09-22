@@ -5,8 +5,8 @@
 
 use masonry_core::vello::{Error, wgpu};
 use wgpu::{
-    Adapter, BlendComponent, BlendFactor, BlendOperation, BlendState, Device, Instance, Limits,
-    Queue, Surface, SurfaceConfiguration, SurfaceTarget, Texture, TextureFormat, TextureView,
+    BlendComponent, BlendFactor, BlendState, CompositeAlphaMode, Device, Instance, PresentMode,
+    Surface, SurfaceConfiguration, Texture, TextureFormat, TextureUsages, TextureView,
     util::{TextureBlitter, TextureBlitterBuilder},
 };
 
@@ -17,9 +17,9 @@ pub(crate) struct RenderContext {
 }
 
 pub(crate) struct DeviceHandle {
-    adapter: Adapter,
+    adapter: wgpu::Adapter,
     pub device: Device,
-    pub queue: Queue,
+    pub queue: wgpu::Queue,
 }
 
 impl RenderContext {
@@ -41,10 +41,10 @@ impl RenderContext {
     /// Creates a new surface for the specified window and dimensions.
     pub(crate) async fn create_surface<'w>(
         &mut self,
-        window: impl Into<SurfaceTarget<'w>>,
+        window: impl Into<wgpu::SurfaceTarget<'w>>,
         width: u32,
         height: u32,
-        present_mode: wgpu::PresentMode,
+        present_mode: PresentMode,
     ) -> Result<RenderSurface<'w>, Error> {
         self.create_render_surface(
             self.instance.create_surface(window.into())?,
@@ -61,7 +61,7 @@ impl RenderContext {
         surface: Surface<'w>,
         width: u32,
         height: u32,
-        present_mode: wgpu::PresentMode,
+        present_mode: PresentMode,
     ) -> Result<RenderSurface<'w>, Error> {
         let dev_id = self
             .device(Some(&surface))
@@ -76,27 +76,59 @@ impl RenderContext {
             .find(|it| matches!(it, TextureFormat::Rgba8Unorm | TextureFormat::Bgra8Unorm))
             .ok_or(Error::UnsupportedSurfaceFormat)?;
 
+        const PREMUL_BELND_STATE: BlendState = BlendState {
+            alpha: BlendComponent::REPLACE,
+            color: BlendComponent {
+                src_factor: BlendFactor::SrcAlpha,
+                dst_factor: BlendFactor::Zero,
+                operation: wgpu::BlendOperation::Add,
+            },
+        };
+        let (alpha_mode, blitter) = if capabilities
+            .alpha_modes
+            .contains(&CompositeAlphaMode::PostMultiplied)
+        {
+            (
+                CompositeAlphaMode::PostMultiplied,
+                TextureBlitter::new(&device_handle.device, format),
+            )
+        } else if capabilities
+            .alpha_modes
+            .contains(&CompositeAlphaMode::PreMultiplied)
+        {
+            (
+                CompositeAlphaMode::PreMultiplied,
+                TextureBlitterBuilder::new(&device_handle.device, format)
+                    .blend_state(PREMUL_BELND_STATE)
+                    .build(),
+            )
+        } else {
+            let texture_blitter =
+                if cfg!(windows) && device_handle.adapter.get_info().name.contains("AMD") {
+                    tracing::info!(
+                        "on Windows with AMD GPUs use premultiplied blitting even on opaque surface"
+                    );
+                    TextureBlitterBuilder::new(&device_handle.device, format)
+                        .blend_state(PREMUL_BELND_STATE)
+                        .build()
+                } else {
+                    TextureBlitter::new(&device_handle.device, format)
+                };
+            (CompositeAlphaMode::Auto, texture_blitter)
+        };
+
         let config = SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            usage: TextureUsages::RENDER_ATTACHMENT,
             format,
             width,
             height,
             present_mode,
             desired_maximum_frame_latency: 2,
-            alpha_mode: wgpu::CompositeAlphaMode::Auto,
+            alpha_mode,
             view_formats: vec![],
         };
         let (target_texture, target_view) = create_targets(width, height, &device_handle.device);
-        let premul_blitter = TextureBlitterBuilder::new(&device_handle.device, format)
-            .blend_state(BlendState {
-                alpha: BlendComponent::REPLACE,
-                color: BlendComponent {
-                    src_factor: BlendFactor::SrcAlpha,
-                    dst_factor: BlendFactor::Zero,
-                    operation: BlendOperation::Add,
-                },
-            })
-            .build();
+
         let surface = RenderSurface {
             surface,
             config,
@@ -104,7 +136,7 @@ impl RenderContext {
             format,
             target_texture,
             target_view,
-            blitter: premul_blitter,
+            blitter,
         };
         self.configure_surface(&surface);
         Ok(surface)
@@ -125,7 +157,7 @@ impl RenderContext {
     pub(crate) fn set_present_mode(
         &self,
         surface: &mut RenderSurface<'_>,
-        present_mode: wgpu::PresentMode,
+        present_mode: PresentMode,
     ) {
         surface.config.present_mode = present_mode;
         self.configure_surface(surface);
@@ -163,7 +195,7 @@ impl RenderContext {
                 .await
                 .ok()?;
         let features = adapter.features();
-        let limits = Limits::default();
+        let limits = wgpu::Limits::default();
         let maybe_features = wgpu::Features::CLEAR_TEXTURE;
         #[cfg(feature = "tracy")]
         let maybe_features = maybe_features | wgpu_profiler::GpuProfiler::ALL_WGPU_TIMER_FEATURES;
@@ -203,7 +235,7 @@ fn create_targets(width: u32, height: u32, device: &Device) -> (Texture, Texture
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
-        usage: wgpu::TextureUsages::STORAGE_BINDING | wgpu::TextureUsages::TEXTURE_BINDING,
+        usage: TextureUsages::STORAGE_BINDING | TextureUsages::TEXTURE_BINDING,
         format: TextureFormat::Rgba8Unorm,
         view_formats: &[],
     });
