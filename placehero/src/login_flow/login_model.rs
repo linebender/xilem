@@ -14,6 +14,8 @@
 //! If you're using this code to implement your own Mastodon (or similar) client implementation,
 //! you should choose a data location relevant to your install method.
 
+#![expect(dead_code, reason = "In progress")]
+
 // TODO: How can we test this? Would we want to make a local Mastodon server?
 
 use std::{

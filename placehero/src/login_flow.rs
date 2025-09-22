@@ -28,7 +28,7 @@ impl PlaceheroWithLogin {
 pub(crate) fn app_logic(
     state: &mut PlaceheroWithLogin,
 ) -> impl WidgetView<PlaceheroWithLogin> + use<> {
-    let Some(login) = &mut state.login else {
+    let Some(_login) = &mut state.login else {
         return Either::A(flex_col((
             prose("Error: Placehero not ran using cargo run.")
                 .text_size(25.)
