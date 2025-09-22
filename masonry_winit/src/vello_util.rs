@@ -2,6 +2,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 //! Simple helpers for managing wgpu state and surfaces.
+//!
+//! This module is based on [`vello::util`](masonry_core::vello::util) module
+//! with modifications for transparent surfaces.
 
 use masonry_core::vello::{Error, wgpu};
 use wgpu::{
@@ -76,7 +79,7 @@ impl RenderContext {
             .find(|it| matches!(it, TextureFormat::Rgba8Unorm | TextureFormat::Bgra8Unorm))
             .ok_or(Error::UnsupportedSurfaceFormat)?;
 
-        const PREMUL_BELND_STATE: BlendState = BlendState {
+        const PREMUL_BLEND_STATE: BlendState = BlendState {
             alpha: BlendComponent::REPLACE,
             color: BlendComponent {
                 src_factor: BlendFactor::SrcAlpha,
@@ -84,6 +87,9 @@ impl RenderContext {
                 operation: wgpu::BlendOperation::Add,
             },
         };
+        // TODO: check if the window is transparent then set alpha_mode accordingly
+        // also, Opaque mode may help in saving power.
+        // blocked on winit not exposing a way to check for transparency
         let (alpha_mode, blitter) = if capabilities
             .alpha_modes
             .contains(&CompositeAlphaMode::PostMultiplied)
@@ -99,17 +105,19 @@ impl RenderContext {
             (
                 CompositeAlphaMode::PreMultiplied,
                 TextureBlitterBuilder::new(&device_handle.device, format)
-                    .blend_state(PREMUL_BELND_STATE)
+                    .blend_state(PREMUL_BLEND_STATE)
                     .build(),
             )
         } else {
+            // TODO: check if the only available mode is Inherit then log info that postmultipled blit is being used
+            // TODO: check if non-opaque base color is used on unsupported device then warn
             let texture_blitter =
                 if cfg!(windows) && device_handle.adapter.get_info().name.contains("AMD") {
                     tracing::info!(
                         "on Windows with AMD GPUs use premultiplied blitting even on opaque surface"
                     );
                     TextureBlitterBuilder::new(&device_handle.device, format)
-                        .blend_state(PREMUL_BELND_STATE)
+                        .blend_state(PREMUL_BLEND_STATE)
                         .build()
                 } else {
                     TextureBlitter::new(&device_handle.device, format)

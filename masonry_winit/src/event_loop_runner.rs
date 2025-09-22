@@ -415,6 +415,14 @@ impl MasonryState<'_> {
             return;
         }
 
+        // TODO: move this check to modification of base_color once winit exposes window transparency state
+        if !new_window.attributes.transparent && new_window.base_color.components[3] != 0. {
+            tracing::warn!(
+                window_id = ?new_window.id,
+                "opaque window with non-opaque base color"
+            );
+        }
+
         let visible = new_window.attributes.visible;
         // We always create the window as invisible so that we can
         // render the first frame before showing it to avoid flashing.
@@ -952,7 +960,7 @@ fn create_surface<'s>(
         "cannot create a surface with a width or height of zero"
     );
     pollster::block_on(render_cx.create_surface(
-        handle.clone(),
+        handle,
         size.width,
         size.height,
         wgpu::PresentMode::AutoVsync,
