@@ -122,7 +122,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             last_available_width: None,
             hint: true,
             insert_newline: InsertNewline::default(),
-            anim_cursor_visible: true,
+            anim_cursor_visible: false,
             anim_prev_interval: 0,
         }
     }
@@ -443,17 +443,14 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             }
 
             // Request paint only if necessary.
-            if self.anim_prev_interval <= CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
+            if self.anim_prev_interval < CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
                 self.anim_cursor_visible = true;
                 ctx.request_paint_only();
-            } else if self.anim_prev_interval > CURSOR_BLINK_TIME / 2 && self.anim_cursor_visible {
+            } else if self.anim_prev_interval >= CURSOR_BLINK_TIME / 2 && self.anim_cursor_visible {
                 // TODO: need to have a timeout to stop the animation
                 self.anim_cursor_visible = false;
                 ctx.request_paint_only();
             }
-        } else if self.anim_cursor_visible {
-            self.anim_cursor_visible = false;
-            ctx.request_paint_only();
         }
     }
 
@@ -515,6 +512,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     ) {
         // Reset the blink animation.
         self.anim_prev_interval = 0;
+
         match event {
             TextEvent::Keyboard(key_event) => {
                 if key_event.state != KeyState::Down || self.editor.is_composing() {
@@ -714,7 +712,12 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             }
 
             // TODO: Set our highlighting colour to a lighter blue as window unfocused
-            TextEvent::WindowFocusChange(_) => {}
+            TextEvent::WindowFocusChange(focused) => {
+                if self.anim_cursor_visible != *focused {
+                    self.anim_cursor_visible = *focused;
+                    ctx.request_paint_only();
+                }
+            }
 
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
