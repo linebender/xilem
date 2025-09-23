@@ -181,9 +181,5 @@ macro_rules! include_screenshot {
                 ")",
                 "\n</object>"
         )
-        // concat!(
-        //     " ![", $($caption,)? "]",
-        //     "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
-        // )
     };
 }
