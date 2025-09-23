@@ -78,8 +78,11 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a [`TextAction::Entered`] event.
     insert_newline: InsertNewline,
 
-    /// Used to blink the insertion caret.
-    t: f64,
+    /// Whether to show the cursor, used for the blink animation.
+    anim_cursor_visible: bool,
+
+    /// Previous interval (ms), used for the cursor's blink animation.
+    anim_prev_interval: u64,
 }
 
 // --- MARK: BUILDERS
@@ -121,7 +124,8 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             last_available_width: None,
             hint: true,
             insert_newline: InsertNewline::default(),
-            t: 0.0,
+            anim_cursor_visible: true,
+            anim_prev_interval: 0,
         }
     }
 
@@ -430,12 +434,29 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
-        self.t += (interval as f64) * 1e-9;
-        if self.t >= 1.2 {
-            self.t = self.t.rem_euclid(1.2);
-        }
+        // TODO: for real world use, this should be reading from the system settings
+        const CURSOR_BLINK_TIME: u64 = 1000; // ms
         ctx.request_anim_frame();
-        ctx.request_paint_only();
+
+        if ctx.is_window_focused() && ctx.is_focus_target() {
+            self.anim_prev_interval += interval / 1_000_000; // ns to ms
+            if self.anim_prev_interval >= CURSOR_BLINK_TIME {
+                self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
+            }
+
+            // Request paint only if necessary.
+            if self.anim_prev_interval <= CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
+                self.anim_cursor_visible = true;
+                ctx.request_paint_only();
+            } else if self.anim_prev_interval > CURSOR_BLINK_TIME / 2 && self.anim_cursor_visible {
+                // TODO: need to have a timeout to stop the animation
+                self.anim_cursor_visible = false;
+                ctx.request_paint_only();
+            }
+        } else if self.anim_cursor_visible {
+            self.anim_cursor_visible = false;
+            ctx.request_paint_only();
+        }
     }
 
     fn on_pointer_event(
@@ -495,7 +516,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         event: &TextEvent,
     ) {
         // Reset the blink animation.
-        self.t = 0.0;
+        self.anim_prev_interval = 0;
         match event {
             TextEvent::Keyboard(key_event) => {
                 if key_event.state != KeyState::Down || self.editor.is_composing() {
@@ -892,8 +913,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5)
-                && window_is_focused
-                && self.t <= 0.6
+                && self.anim_cursor_visible
             {
                 scene.fill(Fill::NonZero, Affine::IDENTITY, caret_color, None, &cursor);
             };
