@@ -129,15 +129,57 @@ pub fn get_debug_color(id: u64) -> Color {
 
 pub use crate::include_screenshot;
 
+/// Markdown input to display a screenshot from the current crate's `screenshots` directory.
+///
+/// This can be added to docs as follows:
+///
+/// ```rust,ignore
+/// /// Some docs here.
+/// ///
+/// #[doc = include_screenshot!("button_hello.png", "Button with text label.")]
+/// ```
+///
+/// The caption should have a full-stop at the end, as it's being used as alt-text.
+/// This macro will only function correctly for packages in the Xilem repository,
+/// as it hardcodes the supported GitHub repository.
 #[doc(hidden)]
 #[macro_export]
+// If we made this into a proc macro, we would gain the following features:
+// 1) Automatic detection of the file existing - see https://github.com/linebender/xilem/issues/1080
+// 2) Using the image's dimensions to set the `width` and `height` attributes of the object and `img` tag
+// 3) Extract the "repository" from CARGO_PKG_REPOSITORY for docs
 macro_rules! include_screenshot {
     ($path:literal $(, $caption:literal)? $(,)?) => {
-        // This space at the start avoids triggering https://rust-lang.github.io/rust-clippy/master/index.html#suspicious_doc_comments
-        // when using this macro in a `doc` attribute
+        // We want to show the "local" image if it's present (e.g. from a git dependency or in the local repository).
+        // However, if we're on docs.rs (or building from the crates.io registry),
+        // the screenshots aren't available (as they shouldn't be in the published package for space reasons).
+        // For those environments, we want to instead show the image from `raw.githubusercontent.com`.
+        // To allow this, we use a fallback based on the `object` element. See:
+        // https://blog.sentry.io/fallbacks-for-http-404-images-in-html-and-javascript/#image-fallbacks-in-html
+
+        // Ideally, we'd also provide both a caption and an alt-text (and therefore put this in a `figure` element).
+        // That's deferred.
         concat!(
-            " ![", $($caption,)? "]",
-            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
+            "\n<object \
+                type='image/png' \
+                data='", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path,
+                // The above is the path to the screenshot on the local file system.
+                "'",
+                $(
+                    " aria-label=\"",
+                    // Obviously this is vulnerable to injection, but this is trusted content in a docstring.
+                    $caption,
+                    "\"",
+                )?
+                // Two newlines allows the inner content to be interpreted as markdown
+                ">\n\n",
+                "![", $($caption,)? "]",
+                // The online path to the screenshot, on this released version.
+                // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
+                // The `v` is because of our tag name convention.
+                "(https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path,
+                ")",
+                "\n</object>"
         )
     };
 }
