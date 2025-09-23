@@ -1,13 +1,15 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! A slider widget.
+
+use accesskit::{Node, Role};
 use tracing::{Span, trace_span};
 use ui_events::pointer::PointerButton;
 use vello::Scene;
-use vello::kurbo::{Affine, Circle, Point, Rect, Size, Stroke};
-use vello::peniko::{Brush, Color, Fill};
+use vello::kurbo::{Circle, Point, Rect, Size};
+use vello::peniko::Color;
 
-use crate::accesskit::{Node, Role};
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, PaintCtx,
@@ -15,8 +17,11 @@ use crate::core::{
     WidgetId, WidgetMut,
 };
 use crate::theme;
+use crate::util::{fill, include_screenshot, stroke};
 
 /// A widget that allows a user to select a value from a continuous range.
+///
+#[doc = include_screenshot!("slider_initial_state.png", "Slider.")]
 pub struct Slider {
     // --- Logic ---
     min: f64,
@@ -34,6 +39,7 @@ pub struct Slider {
     thumb_radius: Option<f64>,
 }
 
+// --- MARK: BUILDERS
 impl Slider {
     /// Creates a new `Slider`.
     pub fn new(min: f64, max: f64, value: f64) -> Self {
@@ -93,9 +99,10 @@ impl Slider {
         self.thumb_radius = Some(radius);
         self
     }
+}
 
-    // --- Upd methods from `rebuild` ---
-
+// --- MARK: WIDGETMUT
+impl Slider {
     /// Sets the current value of the slider.
     pub fn set_value(this: &mut WidgetMut<'_, Self>, value: f64) {
         let clamped_value = value.clamp(this.widget.min, this.widget.max);
@@ -174,9 +181,10 @@ impl Slider {
             this.ctx.request_layout();
         }
     }
+}
 
-    // --- Logic ---
-
+// --- MARK: INTERNALS
+impl Slider {
     fn set_step_internal(&mut self, step: Option<f64>) {
         self.step = step.filter(|s| *s > 0.0);
         let clamped_value = self.value.clamp(self.min, self.max);
@@ -214,6 +222,7 @@ impl Slider {
     }
 }
 
+// --- MARK: IMPL WIDGET
 impl Widget for Slider {
     type Action = f64;
 
@@ -441,12 +450,10 @@ impl Widget for Slider {
             track_start_x + track_width,
             track_y + track_thickness,
         );
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            &Brush::Solid(final_track_color),
-            None,
+        fill(
+            scene,
             &track_rect.to_rounded_rect(track_thickness / 2.0),
+            final_track_color,
         );
 
         // --- 4. Paint active track ---
@@ -459,12 +466,10 @@ impl Widget for Slider {
                 track_start_x + active_track_width,
                 track_y + track_thickness,
             );
-            scene.fill(
-                Fill::NonZero,
-                Affine::IDENTITY,
-                &Brush::Solid(final_active_track_color),
-                None,
+            fill(
+                scene,
                 &active_track_rect.to_rounded_rect(track_thickness / 2.0),
+                final_active_track_color,
             );
         }
 
@@ -473,19 +478,12 @@ impl Widget for Slider {
         let thumb_y = size.height / 2.0;
         let thumb_circle = Circle::new(Point::new(thumb_x, thumb_y), thumb_radius);
 
-        scene.fill(
-            Fill::NonZero,
-            Affine::IDENTITY,
-            &Brush::Solid(final_thumb_color),
-            None,
+        fill(scene, &thumb_circle, final_thumb_color);
+        stroke(
+            scene,
             &thumb_circle,
-        );
-        scene.stroke(
-            &Stroke::new(thumb_border_width),
-            Affine::IDENTITY,
-            &Brush::Solid(final_active_track_color),
-            None,
-            &thumb_circle,
+            final_active_track_color,
+            thumb_border_width,
         );
 
         // --- 6. Paint focus ring ---
@@ -493,13 +491,7 @@ impl Widget for Slider {
             let focus_rect = ctx.size().to_rect().inset(2.0);
             let focus_color =
                 theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 } as f32);
-            scene.stroke(
-                &Stroke::new(1.0),
-                Affine::IDENTITY,
-                &Brush::Solid(focus_color),
-                None,
-                &focus_rect.to_rounded_rect(4.0),
-            );
+            stroke(scene, &focus_rect.to_rounded_rect(4.0), focus_color, 1.0);
         }
     }
 
@@ -536,7 +528,6 @@ impl Widget for Slider {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use masonry_core::core::NewWidget;
     use vello::kurbo::{Point, Size};
 
     use super::*;
@@ -546,7 +537,7 @@ mod tests {
 
     #[test]
     fn slider_initial_state() {
-        let widget = NewWidget::new(Slider::new(0.0, 100.0, 25.0));
+        let widget = Slider::new(0.0, 100.0, 25.0).with_auto_id();
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
 
@@ -555,7 +546,7 @@ mod tests {
 
     #[test]
     fn slider_drag_interaction() {
-        let widget = NewWidget::new(Slider::new(0.0, 100.0, 25.0));
+        let widget = Slider::new(0.0, 100.0, 25.0).with_auto_id();
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
         let slider_id = harness.root_id();
@@ -584,7 +575,7 @@ mod tests {
 
     #[test]
     fn slider_keyboard_interaction() {
-        let widget = NewWidget::new(Slider::new(0.0, 100.0, 50.0).with_step(10.0));
+        let widget = Slider::new(0.0, 100.0, 50.0).with_step(10.0).with_auto_id();
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
         let slider_id = harness.root_id();
@@ -601,7 +592,9 @@ mod tests {
 
     #[test]
     fn slider_disabled_state() {
-        let widget = NewWidget::new(Slider::new(0.0, 100.0, 50.0).with_disabled(true));
+        let widget = Slider::new(0.0, 100.0, 50.0)
+            .with_disabled(true)
+            .with_auto_id();
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
 
