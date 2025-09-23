@@ -88,6 +88,7 @@
 mod app_driver;
 mod convert_winit_event;
 mod event_loop_runner;
+mod vello_util;
 
 pub use winit;
 

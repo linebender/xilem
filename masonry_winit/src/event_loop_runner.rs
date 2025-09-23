@@ -18,7 +18,6 @@ use masonry_core::core::{
 use masonry_core::kurbo::Affine;
 use masonry_core::peniko::Color;
 use masonry_core::util::Instant;
-use masonry_core::vello::util::{RenderContext, RenderSurface};
 use masonry_core::vello::wgpu;
 use masonry_core::vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use tracing::{debug, info, info_span};
@@ -32,6 +31,7 @@ use winit::window::{Window as WindowHandle, WindowAttributes, WindowId as Handle
 
 use crate::app::{AppDriver, DriverCtx, masonry_resize_direction_to_winit, winit_ime_to_masonry};
 use crate::app_driver::WindowId;
+use crate::vello_util::{RenderContext, RenderSurface};
 
 #[derive(Debug)]
 pub enum MasonryUserEvent {
@@ -413,6 +413,15 @@ impl MasonryState<'_> {
             self.new_windows.push(new_window);
 
             return;
+        }
+
+        // TODO: move this check to modification of base_color once winit exposes window transparency state
+        if !new_window.attributes.transparent && new_window.base_color.components[3] != 1. {
+            tracing::warn!(
+                window_id = ?new_window.id,
+                "New window with non-opaque base color doesn't support transparency - \
+                you should call `.with_transparent(true)` on the new window's `WindowAttributes`."
+            );
         }
 
         let visible = new_window.attributes.visible;
@@ -952,7 +961,7 @@ fn create_surface<'s>(
         "cannot create a surface with a width or height of zero"
     );
     pollster::block_on(render_cx.create_surface(
-        handle.clone(),
+        handle,
         size.width,
         size.height,
         wgpu::PresentMode::AutoVsync,
