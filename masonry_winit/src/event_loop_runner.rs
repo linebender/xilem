@@ -416,10 +416,11 @@ impl MasonryState<'_> {
         }
 
         // TODO: move this check to modification of base_color once winit exposes window transparency state
-        if !new_window.attributes.transparent && new_window.base_color.components[3] != 0. {
+        if !new_window.attributes.transparent && new_window.base_color.components[3] != 1. {
             tracing::warn!(
                 window_id = ?new_window.id,
-                "opaque window with non-opaque base color"
+                "New window with non-opaque base color doesn't support transparency - \
+                you should call `.with_transparent(true)` on the new window's `WindowAttributes`."
             );
         }
 
