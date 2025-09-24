@@ -19,10 +19,12 @@ use crate::core::{
     RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
     render_text,
 };
-use crate::properties::{ContentColor, DisabledContentColor};
+use crate::properties::{
+    CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
+};
 use crate::theme::default_text_styles;
 use crate::util::debug_panic;
-use crate::{TextAlign, palette, theme};
+use crate::{TextAlign, theme};
 
 /// `TextArea` implements the core of interactive text.
 ///
@@ -672,8 +674,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 }
             }
 
-            // TODO: Set our highlighting colour to a lighter blue as window unfocused
-            TextEvent::WindowFocusChange(_) => {}
+            TextEvent::WindowFocusChange(_) => {
+                // To use a different selection color when unfocused.
+                ctx.request_paint_only();
+            }
 
             TextEvent::Ime(e) => {
                 // TODO: Handle the cursor movement things from https://github.com/rust-windowing/winit/pull/3824
@@ -774,8 +778,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        CaretColor::prop_changed(ctx, property_type);
         ContentColor::prop_changed(ctx, property_type);
         DisabledContentColor::prop_changed(ctx, property_type);
+        SelectionColor::prop_changed(ctx, property_type);
+        UnfocusedSelectionColor::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -848,26 +855,23 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.try_layout().unwrap()
         };
         if ctx.is_focus_target() {
+            let caret_color = props.get::<CaretColor>().color;
+            let selection_color = if ctx.is_window_focused() {
+                props.get::<SelectionColor>().color
+            } else {
+                props.get::<UnfocusedSelectionColor>().0.color
+            };
             for (rect, _) in self.editor.selection_geometry().iter() {
-                // TODO: If window not focused, use a different color
-                // TODO: Make configurable
                 scene.fill(
                     Fill::NonZero,
                     Affine::IDENTITY,
-                    palette::css::STEEL_BLUE,
+                    selection_color,
                     None,
                     &rect,
                 );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5) {
-                // TODO: Make configurable
-                scene.fill(
-                    Fill::NonZero,
-                    Affine::IDENTITY,
-                    palette::css::WHITE,
-                    None,
-                    &cursor,
-                );
+                scene.fill(Fill::NonZero, Affine::IDENTITY, caret_color, None, &cursor);
             };
         }
 
@@ -964,6 +968,7 @@ mod tests {
 
     use super::*;
     use crate::core::{KeyboardEvent, Modifiers, Properties};
+    use crate::palette;
     use crate::testing::TestHarness;
     use crate::theme::default_property_set;
     // Tests of alignment happen in Prose.
