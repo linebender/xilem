@@ -778,8 +778,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
     fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        CaretColor::prop_changed(ctx, property_type);
         ContentColor::prop_changed(ctx, property_type);
         DisabledContentColor::prop_changed(ctx, property_type);
+        SelectionColor::prop_changed(ctx, property_type);
+        UnfocusedSelectionColor::prop_changed(ctx, property_type);
     }
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
@@ -852,6 +855,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             self.editor.try_layout().unwrap()
         };
         if ctx.is_focus_target() {
+            let caret_color = props.get::<CaretColor>().color;
             let selection_color = if ctx.is_window_focused() {
                 props.get::<SelectionColor>().color
             } else {
@@ -867,13 +871,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5) {
-                scene.fill(
-                    Fill::NonZero,
-                    Affine::IDENTITY,
-                    props.get::<CaretColor>().color,
-                    None,
-                    &cursor,
-                );
+                scene.fill(Fill::NonZero, Affine::IDENTITY, caret_color, None, &cursor);
             };
         }
 
