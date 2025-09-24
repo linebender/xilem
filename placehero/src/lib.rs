@@ -3,6 +3,11 @@
 
 //! A mastodon client written in Xilem.
 //!
+//! We're assuming that all Mastodon servers supported are trusted (and so it's not a
+//! privacy violation for them to know that two accounts you log in to are linked).
+//! This link survives even if you log out of one and into the other, even in different sessions.
+//! If this doesn't apply to you, we recommend not using Placehero.
+//!
 //! Features:
 //!
 //! - None
@@ -86,7 +91,7 @@ fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
                         *state = MainState::Old(Placehero::default());
                     }),
                     button("Log In", |state: &mut MainState| {
-                        *state = MainState::New(PlaceheroWithLogin::default());
+                        *state = MainState::New(PlaceheroWithLogin::new());
                     }),
                 ))
                 .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
