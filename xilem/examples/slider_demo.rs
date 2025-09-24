@@ -10,7 +10,7 @@
 
 use masonry::peniko::Color;
 use masonry::properties::{
-    Background,
+    Background, BarColor, ThumbColor, ThumbRadius,
     types::{AsUnit, CrossAxisAlignment},
 };
 use winit::dpi::LogicalSize;
@@ -117,9 +117,9 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                 })
                 .step(5.0)
                 .disabled(!state.use_transparency)
-                .active_track_color(Color::from_rgb8(0x78, 0x71, 0x6c))
-                .thumb_color(Color::WHITE)
-                .thumb_radius(10.0),
+                .prop(BarColor(Color::from_rgb8(0x78, 0x71, 0x6c)))
+                .prop(ThumbColor(Color::WHITE))
+                .prop(ThumbRadius(10.0)),
                 sized_box(label(format!("{:.0}% [{}]", state.alpha, color_alpha))).width(60.px()),
             ))
             .cross_axis_alignment(CrossAxisAlignment::Center)

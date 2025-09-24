@@ -1,7 +1,6 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::peniko::Color;
 use masonry::widgets;
 use xilem_core::{MessageResult, Mut, View, ViewMarker};
 
@@ -16,11 +15,6 @@ pub struct Slider<F> {
     on_change: F,
     step: Option<f64>,
     disabled: bool,
-    track_color: Option<Color>,
-    active_track_color: Option<Color>,
-    track_thickness: Option<f64>,
-    thumb_color: Option<Color>,
-    thumb_radius: Option<f64>,
 }
 
 /// Creates a slider widget for selecting a value from a range.
@@ -37,11 +31,6 @@ pub fn slider<State, Action>(
         on_change,
         step: None,
         disabled: false,
-        track_color: None,
-        active_track_color: None,
-        track_thickness: None,
-        thumb_color: None,
-        thumb_radius: None,
     }
 }
 
@@ -58,40 +47,10 @@ impl<F> Slider<F> {
         self.disabled = disabled;
         self
     }
-    /// Sets the color of the inactive part of the track.
-    pub fn track_color(mut self, color: impl Into<Color>) -> Self {
-        self.track_color = Some(color.into());
-        self
-    }
-    /// Sets the color of the active part of the track and the thumb border.
-    pub fn active_track_color(mut self, color: impl Into<Color>) -> Self {
-        self.active_track_color = Some(color.into());
-        self
-    }
-    /// Sets the thickness (height) of the track.
-    pub fn track_thickness(mut self, thickness: f64) -> Self {
-        if thickness > 0.0 {
-            self.track_thickness = Some(thickness);
-        }
-        self
-    }
-    /// Sets the main fill color of the thumb.
-    pub fn thumb_color(mut self, color: impl Into<Color>) -> Self {
-        self.thumb_color = Some(color.into());
-        self
-    }
-    /// Sets the base radius of the thumb.
-    pub fn thumb_radius(mut self, radius: f64) -> Self {
-        if radius > 0.0 {
-            self.thumb_radius = Some(radius);
-        }
-        self
-    }
 }
 
 impl<F> ViewMarker for Slider<F> {}
-
-impl<State, Action, F> View<State, Action, ViewCtx> for Slider<F>
+impl<F, State, Action> View<State, Action, ViewCtx> for Slider<F>
 where
     State: 'static,
     Action: 'static,
@@ -100,42 +59,32 @@ where
     type Element = Pod<widgets::Slider>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _app_state: &mut State) -> (Self::Element, Self::ViewState) {
-        let pod = ctx.with_action_widget(|ctx| {
-            let mut widget = widgets::Slider::new(self.min, self.max, self.value);
-            if let Some(step) = self.step {
-                widget = widget.with_step(step);
-            }
-            if let Some(color) = self.track_color {
-                widget = widget.with_track_color(color);
-            }
-            if let Some(color) = self.active_track_color {
-                widget = widget.with_active_track_color(color);
-            }
-            if let Some(thickness) = self.track_thickness {
-                widget = widget.with_track_thickness(thickness);
-            }
-            if let Some(color) = self.thumb_color {
-                widget = widget.with_thumb_color(color);
-            }
-            if let Some(radius) = self.thumb_radius {
-                widget = widget.with_thumb_radius(radius);
-            }
-            widget = widget.with_disabled(self.disabled);
-
-            ctx.create_pod(widget)
-        });
-        (pod, ())
+    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+        (
+            ctx.with_action_widget(|ctx| {
+                let mut widget = widgets::Slider::new(self.min, self.max, self.value);
+                if let Some(step) = self.step {
+                    widget = widget.with_step(step);
+                }
+                let mut pod = ctx.create_pod(widget);
+                pod.new_widget.options.disabled = self.disabled;
+                pod
+            }),
+            (),
+        )
     }
 
     fn rebuild(
         &self,
         prev: &Self,
-        _view_state: &mut Self::ViewState,
-        _ctx: &mut ViewCtx,
+        (): &mut Self::ViewState,
+        _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _app_state: &mut State,
+        _: &mut State,
     ) {
+        if prev.disabled != self.disabled {
+            element.ctx.set_disabled(self.disabled);
+        }
         if prev.value != self.value {
             widgets::Slider::set_value(&mut element, self.value);
         }
@@ -145,29 +94,11 @@ where
         if prev.step != self.step {
             widgets::Slider::set_step(&mut element, self.step);
         }
-        if prev.disabled != self.disabled {
-            widgets::Slider::set_disabled(&mut element, self.disabled);
-        }
-        if prev.track_color != self.track_color {
-            widgets::Slider::set_track_color(&mut element, self.track_color);
-        }
-        if prev.active_track_color != self.active_track_color {
-            widgets::Slider::set_active_track_color(&mut element, self.active_track_color);
-        }
-        if prev.track_thickness != self.track_thickness {
-            widgets::Slider::set_track_thickness(&mut element, self.track_thickness);
-        }
-        if prev.thumb_color != self.thumb_color {
-            widgets::Slider::set_thumb_color(&mut element, self.thumb_color);
-        }
-        if prev.thumb_radius != self.thumb_radius {
-            widgets::Slider::set_thumb_radius(&mut element, self.thumb_radius);
-        }
     }
 
     fn teardown(
         &self,
-        _view_state: &mut Self::ViewState,
+        (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
     ) {
@@ -176,9 +107,9 @@ where
 
     fn message(
         &self,
-        _view_state: &mut Self::ViewState,
+        (): &mut Self::ViewState,
         message: &mut MessageContext,
-        _element: Mut<'_, Self::Element>,
+        _: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> MessageResult<Action> {
         if message.take_first().is_some() {

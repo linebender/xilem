@@ -3,19 +3,21 @@
 
 //! A slider widget.
 
-use accesskit::{Node, Role};
+use std::any::TypeId;
+
+use accesskit::{ActionData, Node, Role};
 use tracing::{Span, trace_span};
 use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::{Circle, Point, Rect, Size};
-use vello::peniko::Color;
 
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut,
 };
+use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
 use crate::util::{fill, include_screenshot, stroke};
 
@@ -28,15 +30,6 @@ pub struct Slider {
     max: f64,
     value: f64,
     step: Option<f64>,
-    // --- State ---
-    is_focused: bool,
-    disabled: bool,
-    // --- Style ---
-    track_color: Option<Color>,
-    active_track_color: Option<Color>,
-    track_thickness: Option<f64>,
-    thumb_color: Option<Color>,
-    thumb_radius: Option<f64>,
 }
 
 // --- MARK: BUILDERS
@@ -48,55 +41,12 @@ impl Slider {
             max,
             value: value.clamp(min, max),
             step: None,
-            is_focused: false,
-            disabled: false,
-            track_color: None,
-            active_track_color: None,
-            track_thickness: None,
-            thumb_color: None,
-            thumb_radius: None,
         }
     }
 
     /// Configures the stepping interval of the slider.
     pub fn with_step(mut self, step: f64) -> Self {
         self.set_step_internal(Some(step));
-        self
-    }
-
-    /// Configures the disabled state of the slider.
-    pub fn with_disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
-        self
-    }
-
-    /// Configures the color of the inactive part of the track.
-    pub fn with_track_color(mut self, color: Color) -> Self {
-        self.track_color = Some(color);
-        self
-    }
-
-    /// Configures the color of the active part of the track and the thumb border.
-    pub fn with_active_track_color(mut self, color: Color) -> Self {
-        self.active_track_color = Some(color);
-        self
-    }
-
-    /// Configures the thickness (height) of the track.
-    pub fn with_track_thickness(mut self, thickness: f64) -> Self {
-        self.track_thickness = Some(thickness);
-        self
-    }
-
-    /// Configures the main fill color of the thumb.
-    pub fn with_thumb_color(mut self, color: Color) -> Self {
-        self.thumb_color = Some(color);
-        self
-    }
-
-    /// Configures the base radius of the thumb.
-    pub fn with_thumb_radius(mut self, radius: f64) -> Self {
-        self.thumb_radius = Some(radius);
         self
     }
 }
@@ -126,59 +76,12 @@ impl Slider {
         }
     }
 
-    /// Sets the disabled state of the slider.
-    pub fn set_disabled(this: &mut WidgetMut<'_, Self>, disabled: bool) {
-        if this.widget.disabled != disabled {
-            this.widget.disabled = disabled;
-            this.ctx.request_render();
-        }
-    }
-
     /// Sets the range (min and max) of the slider.
     pub fn set_range(this: &mut WidgetMut<'_, Self>, min: f64, max: f64) {
         if this.widget.min != min || this.widget.max != max {
             this.widget.min = min;
             this.widget.max = max;
             Self::set_value(this, this.widget.value);
-        }
-    }
-
-    /// sets track color
-    pub fn set_track_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
-        if this.widget.track_color != color {
-            this.widget.track_color = color;
-            this.ctx.request_render();
-        }
-    }
-
-    /// sets active track color
-    pub fn set_active_track_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
-        if this.widget.active_track_color != color {
-            this.widget.active_track_color = color;
-            this.ctx.request_render();
-        }
-    }
-
-    /// sets track thiknes
-    pub fn set_track_thickness(this: &mut WidgetMut<'_, Self>, thickness: Option<f64>) {
-        if this.widget.track_thickness != thickness {
-            this.widget.track_thickness = thickness;
-            this.ctx.request_layout();
-        }
-    }
-
-    /// sets thumb color
-    pub fn set_thumb_color(this: &mut WidgetMut<'_, Self>, color: Option<Color>) {
-        if this.widget.thumb_color != color {
-            this.widget.thumb_color = color;
-            this.ctx.request_render();
-        }
-    }
-    /// sets thumb radius
-    pub fn set_thumb_radius(this: &mut WidgetMut<'_, Self>, radius: Option<f64>) {
-        if this.widget.thumb_radius != radius {
-            this.widget.thumb_radius = radius;
-            this.ctx.request_layout();
         }
     }
 }
@@ -195,9 +98,14 @@ impl Slider {
         };
     }
 
-    fn update_value_from_position(&mut self, x: f64, width: f64) -> bool {
-        let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
-        let thumb_radius = if self.is_focused {
+    fn update_value_from_position(
+        &mut self,
+        x: f64,
+        width: f64,
+        ThumbRadius(base_thumb_radius): ThumbRadius,
+        is_focused: bool,
+    ) -> bool {
+        let thumb_radius = if is_focused {
             base_thumb_radius + 2.0
         } else {
             base_thumb_radius
@@ -222,25 +130,27 @@ impl Slider {
     }
 }
 
+impl HasProperty<Background> for Slider {}
+impl HasProperty<BarColor> for Slider {}
+impl HasProperty<TrackThickness> for Slider {}
+impl HasProperty<ThumbColor> for Slider {}
+impl HasProperty<ThumbRadius> for Slider {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Slider {
     type Action = f64;
 
-    fn accepts_pointer_interaction(&self) -> bool {
-        !self.disabled
-    }
-
     fn accepts_focus(&self) -> bool {
-        !self.disabled
+        true
     }
 
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        if self.disabled {
+        if ctx.is_disabled() {
             return;
         }
         match event {
@@ -252,14 +162,24 @@ impl Widget for Slider {
                 ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
-                if self.update_value_from_position(local_pos.x, ctx.size().width) {
+                if self.update_value_from_position(
+                    local_pos.x,
+                    ctx.size().width,
+                    *props.get(),
+                    ctx.is_focus_target(),
+                ) {
                     ctx.submit_action::<f64>(self.value);
                 }
             }
             PointerEvent::Move(e) => {
                 if ctx.is_active() {
                     let local_pos = ctx.local_position(e.current.position);
-                    if self.update_value_from_position(local_pos.x, ctx.size().width) {
+                    if self.update_value_from_position(
+                        local_pos.x,
+                        ctx.size().width,
+                        *props.get(),
+                        ctx.is_focus_target(),
+                    ) {
                         ctx.submit_action::<f64>(self.value);
                     }
                     ctx.request_render();
@@ -283,7 +203,7 @@ impl Widget for Slider {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        if self.disabled || !self.is_focused {
+        if ctx.is_disabled() || !ctx.is_focus_target() {
             return;
         }
 
@@ -338,11 +258,7 @@ impl Widget for Slider {
 
     fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
         match event {
-            Update::FocusChanged(focused) => {
-                self.is_focused = *focused;
-                ctx.request_render();
-            }
-            Update::HoveredChanged(_) | Update::ActiveChanged(_) => {
+            Update::FocusChanged(_) | Update::HoveredChanged(_) | Update::ActiveChanged(_) => {
                 ctx.request_render();
             }
             _ => {}
@@ -355,7 +271,7 @@ impl Widget for Slider {
         _props: &mut PropertiesMut<'_>,
         event: &AccessEvent,
     ) {
-        if self.disabled {
+        if ctx.is_disabled() {
             return;
         }
 
@@ -372,9 +288,15 @@ impl Widget for Slider {
             accesskit::Action::Decrement => {
                 new_value -= step;
             }
-            accesskit::Action::SetValue => {
-                // Dont know how use and change this value...
-            }
+            accesskit::Action::SetValue => match &event.data {
+                Some(ActionData::NumericValue(value)) => new_value = *value,
+                Some(ActionData::Value(value)) => {
+                    if let Ok(value) = value.parse() {
+                        new_value = value;
+                    }
+                }
+                _ => {}
+            },
             _ => return,
         }
 
@@ -392,49 +314,48 @@ impl Widget for Slider {
 
     fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
+    fn property_changed(&mut self, ctx: &mut UpdateCtx<'_>, property_type: TypeId) {
+        Background::prop_changed(ctx, property_type);
+        BarColor::prop_changed(ctx, property_type);
+        TrackThickness::prop_changed(ctx, property_type);
+        ThumbColor::prop_changed(ctx, property_type);
+        ThumbRadius::prop_changed(ctx, property_type);
+    }
+
     fn layout(
         &mut self,
         _ctx: &mut LayoutCtx<'_>,
-        _props: &mut PropertiesMut<'_>,
+        props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
-        let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
-        let height = (base_thumb_radius * 2.0).max(self.track_thickness.unwrap_or(4.0)) + 16.0;
+        let height =
+            (props.get::<ThumbRadius>().0 * 2.0).max(props.get::<TrackThickness>().0) + 16.0;
         let width = bc.max().width.clamp(100.0, 200.0);
         Size::new(width, height)
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
-        // --- 1. Get parameters and resolve colors ---
-        let track_color = self.track_color.unwrap_or(theme::ZYNC_800);
-        let active_track_color = self.active_track_color.unwrap_or(theme::ACCENT_COLOR);
-        let thumb_color = self.thumb_color.unwrap_or(theme::TEXT_COLOR);
-        let track_thickness = self.track_thickness.unwrap_or(4.0);
-        let base_thumb_radius = self.thumb_radius.unwrap_or(6.0);
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
+        // Get parameters and resolve colors
+        let track_color = if props.contains::<Background>() {
+            props.get::<Background>()
+        } else {
+            &Background::Color(theme::ZYNC_800)
+        };
+        let active_track_color = if props.contains::<BarColor>() {
+            props.get::<BarColor>().0
+        } else {
+            theme::ACCENT_COLOR
+        };
+        let thumb_color = props.get::<ThumbColor>().0;
+        let track_thickness = props.get::<TrackThickness>().0;
+        let base_thumb_radius = props.get::<ThumbRadius>().0;
         let thumb_border_width = 2.0;
 
-        let disabled_alpha = 0.4;
-        let final_track_color = if self.disabled {
-            track_color.with_alpha(disabled_alpha)
-        } else {
-            track_color
-        };
-        let final_active_track_color = if self.disabled {
-            active_track_color.with_alpha(disabled_alpha)
-        } else {
-            active_track_color
-        };
-        let final_thumb_color = if self.disabled {
-            thumb_color.with_alpha(disabled_alpha)
-        } else {
-            thumb_color
-        };
-
-        // --- 2. Calculate geometry based on state ---
+        // Calculate geometry based on state
         let size = ctx.size();
         let thumb_radius = if ctx.is_active() {
             base_thumb_radius + 2.0
-        } else if ctx.is_hovered() || self.is_focused {
+        } else if ctx.is_hovered() || ctx.is_focus_target() {
             base_thumb_radius + 1.0
         } else {
             base_thumb_radius
@@ -443,7 +364,18 @@ impl Widget for Slider {
         let track_width = (size.width - thumb_radius * 2.0).max(0.0);
         let track_y = (size.height - track_thickness) / 2.0;
 
-        // --- 3. Paint inactive track ---
+        // Push semitransparent layer if disabled
+        if ctx.is_disabled() {
+            const DISABLED_ALPHA: f32 = 0.4;
+            scene.push_layer(
+                vello::peniko::Mix::Normal,
+                DISABLED_ALPHA,
+                vello::kurbo::Affine::IDENTITY,
+                &ctx.size().to_rect(),
+            );
+        }
+
+        // Paint inactive track
         let track_rect = Rect::new(
             track_start_x,
             track_y,
@@ -453,10 +385,10 @@ impl Widget for Slider {
         fill(
             scene,
             &track_rect.to_rounded_rect(track_thickness / 2.0),
-            final_track_color,
+            &track_color.get_peniko_brush_for_rect(track_rect),
         );
 
-        // --- 4. Paint active track ---
+        // Paint active track
         let progress = (self.value - self.min) / (self.max - self.min).max(f64::EPSILON);
         let active_track_width = progress * track_width;
         if active_track_width > 0.0 {
@@ -469,29 +401,29 @@ impl Widget for Slider {
             fill(
                 scene,
                 &active_track_rect.to_rounded_rect(track_thickness / 2.0),
-                final_active_track_color,
+                active_track_color,
             );
         }
 
-        // --- 5. Paint thumb ---
+        // Paint thumb
         let thumb_x = track_start_x + active_track_width;
         let thumb_y = size.height / 2.0;
         let thumb_circle = Circle::new(Point::new(thumb_x, thumb_y), thumb_radius);
 
-        fill(scene, &thumb_circle, final_thumb_color);
-        stroke(
-            scene,
-            &thumb_circle,
-            final_active_track_color,
-            thumb_border_width,
-        );
+        fill(scene, &thumb_circle, thumb_color);
+        stroke(scene, &thumb_circle, active_track_color, thumb_border_width);
 
-        // --- 6. Paint focus ring ---
-        if self.is_focused && !self.disabled {
+        // Paint focus ring
+        if ctx.is_focus_target() && !ctx.is_disabled() {
             let focus_rect = ctx.size().to_rect().inset(2.0);
             let focus_color =
-                theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 } as f32);
+                theme::FOCUS_COLOR.with_alpha(if ctx.is_active() { 1.0 } else { 0.5 });
             stroke(scene, &focus_rect.to_rounded_rect(4.0), focus_color, 1.0);
+        }
+
+        // Pop the semitransparent layer
+        if ctx.is_disabled() {
+            scene.pop_layer();
         }
     }
 
@@ -592,9 +524,8 @@ mod tests {
 
     #[test]
     fn slider_disabled_state() {
-        let widget = Slider::new(0.0, 100.0, 50.0)
-            .with_disabled(true)
-            .with_auto_id();
+        let mut widget = Slider::new(0.0, 100.0, 50.0).with_auto_id();
+        widget.options.disabled = true;
         let mut harness =
             TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
 
