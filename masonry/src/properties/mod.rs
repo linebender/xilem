@@ -18,6 +18,7 @@ mod padding;
 mod placeholder_color;
 mod progress_bar;
 mod selection;
+mod slider;
 
 pub mod types;
 
@@ -34,3 +35,4 @@ pub use padding::Padding;
 pub use placeholder_color::PlaceholderColor;
 pub use progress_bar::BarColor;
 pub use selection::{CaretColor, SelectionColor, UnfocusedSelectionColor};
+pub use slider::{ThumbColor, ThumbRadius, TrackThickness};
