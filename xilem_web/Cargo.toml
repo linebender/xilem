@@ -114,7 +114,6 @@ features = [
     "Text",
     "Window",
     "FocusEvent",
-    "HtmlInputElement",
     "InputEvent",
     "KeyboardEvent",
     "MouseEvent",
