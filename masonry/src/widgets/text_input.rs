@@ -326,8 +326,13 @@ mod tests {
             TextArea::select_text(&mut text_input, "contents");
         });
         harness.focus_on(text_area_id);
+        harness.animate_ms(0);
 
         assert_render_snapshot!(harness, "text_input_selection");
+
+        harness.animate_ms(500 + 1);
+
+        assert_render_snapshot!(harness, "text_input_cursor_blink");
     }
 
     #[test]
