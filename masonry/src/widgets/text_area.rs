@@ -83,6 +83,9 @@ pub struct TextArea<const USER_EDITABLE: bool> {
 
     /// Previous interval (ms), used for the cursor's blink animation.
     anim_prev_interval: u64,
+
+    /// Time elapsed (ms) to calculate the timeout of the cursor's blink animation.
+    anim_elapsed: u64,
 }
 
 // --- MARK: BUILDERS
@@ -126,6 +129,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             insert_newline: InsertNewline::default(),
             anim_cursor_visible: false,
             anim_prev_interval: 0,
+            anim_elapsed: 0,
         }
     }
 
@@ -436,21 +440,32 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     ) {
         // TODO: for real world use, this should be reading from the system settings
         const CURSOR_BLINK_TIME: u64 = 1000; // ms
+        const CURSOR_BLINK_TIMEOUT: u64 = 10_000; // ms
         ctx.request_anim_frame();
 
         if ctx.is_window_focused() && ctx.is_focus_target() {
-            self.anim_prev_interval += interval / 1_000_000; // ns to ms
-            if self.anim_prev_interval >= CURSOR_BLINK_TIME {
-                self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
-            }
+            if self.anim_elapsed < CURSOR_BLINK_TIMEOUT {
+                let interval_ms = interval / 1_000_000; // ns to ms
+                self.anim_prev_interval += interval_ms;
+                self.anim_elapsed += interval_ms;
 
-            // Request paint only if necessary.
-            if self.anim_prev_interval < CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
+                if self.anim_prev_interval >= CURSOR_BLINK_TIME {
+                    self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
+                }
+
+                // Request paint only if changed.
+                if self.anim_prev_interval < CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
+                    self.anim_cursor_visible = true;
+                    ctx.request_paint_only();
+                } else if self.anim_prev_interval >= CURSOR_BLINK_TIME / 2
+                    && self.anim_cursor_visible
+                {
+                    self.anim_cursor_visible = false;
+                    ctx.request_paint_only();
+                }
+            } else if !self.anim_cursor_visible {
+                // Request paint only if changed.
                 self.anim_cursor_visible = true;
-                ctx.request_paint_only();
-            } else if self.anim_prev_interval >= CURSOR_BLINK_TIME / 2 && self.anim_cursor_visible {
-                // TODO: need to have a timeout to stop the animation
-                self.anim_cursor_visible = false;
                 ctx.request_paint_only();
             }
         }
@@ -514,6 +529,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     ) {
         // Reset the blink animation.
         self.anim_prev_interval = 0;
+        self.anim_elapsed = 0;
 
         match event {
             TextEvent::Keyboard(key_event) => {
