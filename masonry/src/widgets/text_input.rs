@@ -337,6 +337,7 @@ impl Widget for TextInput {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::TextEvent;
     use vello::kurbo::Size;
 
     use super::*;
@@ -370,6 +371,10 @@ mod tests {
         harness.focus_on(text_area_id);
 
         assert_render_snapshot!(harness, "text_input_selection");
+
+        harness.process_text_event(TextEvent::WindowFocusChange(false));
+
+        assert_render_snapshot!(harness, "text_input_selection_unfocused");
     }
 
     #[test]
