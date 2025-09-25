@@ -50,7 +50,7 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 ///
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
-    /// WidgetPod handle for the layer stack, which holds the root widget of each layer.
+    /// `WidgetPod` handle for the layer stack, which holds the root widget of each layer.
     pub(crate) layer_stack: WidgetPod<LayerStack>,
 
     /// The accessibility pass creates a wrapper node for the app with `Role::Window`.
@@ -648,7 +648,7 @@ impl RenderRoot {
 
     /// Add a new layer at the end of the stack, with the given widget as its root, at the given position.
     pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
-        let _ = mutate_widget(self, self.root_id(), |mut layer_stack| {
+        mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::add_layer(&mut layer_stack, root, pos);
         });
@@ -668,7 +668,7 @@ impl RenderRoot {
             debug_panic!("Cannot remove initial layer");
             return;
         }
-        let _ = mutate_widget(self, self.root_id(), |mut layer_stack| {
+        mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::remove_layer(&mut layer_stack, idx);
         });
@@ -799,7 +799,7 @@ impl RenderRoot {
             });
         }
 
-        let root_node = self.widget_arena.get_node_mut(self.root.id());
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
         request_layout_all_in(root_node);
         // We need to perform a relayout before the next pointer/keyboard input event.
         // So we do it now, rather than deferring it until a redraw.
