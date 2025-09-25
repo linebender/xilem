@@ -50,10 +50,10 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     let horizontal_controls = flex_row((
         label("Horizontal blocks"),
         button("+", |appstate: &mut AppState| {
-            appstate.horizontal_count += 1
+            appstate.horizontal_count += 1;
         }),
         button("-", |appstate: &mut AppState| {
-            appstate.horizontal_count -= 1
+            appstate.horizontal_count -= 1;
         }),
     ));
 
