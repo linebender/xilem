@@ -3,6 +3,8 @@
 
 use std::marker::PhantomData;
 
+use masonry::core::Transform;
+
 use crate::core::{MessageContext, Mut, View, ViewMarker};
 use crate::{Affine, Pod, ViewCtx, WidgetView};
 
@@ -98,11 +100,20 @@ where
 
     fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
         let (mut child_pod, child_state) = self.child.build(ctx, app_state);
+
         let state = private::TransformedState {
             child: child_state,
-            previous_transform: child_pod.new_widget.options.transform,
+            previous_transform: child_pod
+                .new_widget
+                .properties
+                .get::<Transform>()
+                .map(|t| t.transform)
+                .unwrap_or(Affine::IDENTITY),
         };
-        child_pod.new_widget.options.transform = self.transform * state.previous_transform;
+        child_pod
+            .new_widget
+            .properties
+            .insert(Transform::from(self.transform * state.previous_transform));
         (child_pod, state)
     }
 
@@ -121,21 +132,20 @@ where
             element.reborrow_mut(),
             app_state,
         );
-        let transform_changed = element.ctx.transform_has_changed();
+        let transform_changed = element.prop_has_changed::<Transform>();
         // If the child view changed the transform, we know we're out of date.
         if transform_changed {
             // If it has changed the transform, then we know that it will only be due to effects
             // "below us" (that is, it will have restarted from scratch).
             // We update our stored understanding of the transforms below us
-            view_state.previous_transform = element.ctx.transform();
+            view_state.previous_transform = element.get_prop::<Transform>().transform;
             // This is a convention used to communicate with ourselves, which could
             // break down if any other view handles transforms differently.
             // However, we document against this in `Pod::transform`.
         }
         if self.transform != prev.transform || transform_changed {
-            element
-                .ctx
-                .set_transform(self.transform * view_state.previous_transform);
+            let transform = Transform::from(self.transform * view_state.previous_transform);
+            element.insert_prop(transform);
         }
     }
 
