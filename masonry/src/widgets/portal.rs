@@ -6,6 +6,7 @@ use std::ops::Range;
 use accesskit::{Node, Role};
 use dpi::PhysicalPosition;
 use tracing::{Span, trace_span};
+use ui_events::pointer::PointerState;
 use vello::Scene;
 use vello::kurbo::{Point, Rect, Size, Vec2};
 
@@ -270,7 +271,11 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let content_size = self.content_size;
 
         match *event {
-            PointerEvent::Scroll { delta, .. } => {
+            PointerEvent::Scroll {
+                delta,
+                state: PointerState { modifiers, .. },
+                ..
+            } => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
                 let delta = match delta {
@@ -286,11 +291,19 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
                 ctx.request_compose();
 
-                // TODO - horizontal scrolling?
-                let (scrollbar, mut scrollbar_ctx) = ctx.get_raw_mut(&mut self.scrollbar_vertical);
-                scrollbar.cursor_progress =
-                    self.viewport_pos.y / (content_size - portal_size).height;
-                scrollbar_ctx.request_render();
+                if modifiers.shift() {
+                    let (scrollbar, mut scrollbar_ctx) =
+                        ctx.get_raw_mut(&mut self.scrollbar_horizontal);
+                    scrollbar.cursor_progress =
+                        self.viewport_pos.x / (content_size - portal_size).width;
+                    scrollbar_ctx.request_render();
+                } else {
+                    let (scrollbar, mut scrollbar_ctx) =
+                        ctx.get_raw_mut(&mut self.scrollbar_vertical);
+                    scrollbar.cursor_progress =
+                        self.viewport_pos.y / (content_size - portal_size).height;
+                    scrollbar_ctx.request_render();
+                }
             }
             _ => (),
         }
@@ -457,7 +470,10 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
     }
 
     fn compose(&mut self, ctx: &mut ComposeCtx<'_>) {
-        ctx.set_child_scroll_translation(&mut self.child, Vec2::new(0.0, -self.viewport_pos.y));
+        ctx.set_child_scroll_translation(
+            &mut self.child,
+            Vec2::new(-self.viewport_pos.x, -self.viewport_pos.y),
+        );
     }
 
     fn paint(&mut self, _ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, _scene: &mut Scene) {}
