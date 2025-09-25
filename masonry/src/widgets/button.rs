@@ -112,15 +112,24 @@ impl Widget for Button {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { .. } => {
-                ctx.capture_pointer();
-                // Changes in pointer capture impact appearance, but not accessibility node
-                ctx.request_paint_only();
-                trace!("Button {:?} pressed", ctx.widget_id());
+            PointerEvent::Down { button, .. } => {
+                if *button == Some(PointerButton::Primary) {
+                    ctx.capture_pointer();
+                    // Changes in pointer capture impact appearance, but not accessibility node
+                    ctx.request_paint_only();
+                    trace!("Button {:?} pressed", ctx.widget_id());
+                }
+                // Any click event should lead to this widget getting focused.
+                ctx.request_focus();
             }
-            PointerEvent::Up { button, .. } => {
+            PointerEvent::Up {
+                button: Some(PointerButton::Primary),
+                ..
+            } => {
                 if ctx.is_active() && ctx.is_hovered() {
-                    ctx.submit_action::<Self::Action>(ButtonPress { button: *button });
+                    ctx.submit_action::<Self::Action>(ButtonPress {
+                        button: Some(PointerButton::Primary),
+                    });
                     trace!("Button {:?} released", ctx.widget_id());
                 }
                 // Changes in pointer capture impact appearance, but not accessibility node
@@ -316,6 +325,7 @@ impl Widget for Button {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use assert_matches::assert_matches;
     use masonry_testing::{TestHarnessParams, assert_failing_render_snapshot};
 
     use super::*;
@@ -361,6 +371,19 @@ mod tests {
             harness.pop_action(),
             Some((ButtonPress { button: None }, button_id))
         );
+    }
+
+    #[test]
+    fn button_right_click() {
+        let button = NewWidget::new(Button::with_text("Hello"));
+
+        let mut harness = TestHarness::create(default_property_set(), button);
+        let button_id = harness.root_id();
+
+        harness.mouse_move_to(button_id);
+        harness.mouse_button_press(PointerButton::Secondary);
+        assert_eq!(harness.focused_widget_id(), Some(button_id));
+        assert_matches!(harness.pop_action_erased(), None);
     }
 
     #[test]
