@@ -1,19 +1,23 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::sync::mpsc;
+
 use assert_matches::assert_matches;
 use masonry_core::core::{
     CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
     WidgetTag,
 };
 use masonry_testing::{
-    DebugName, ModularWidget, Record, TestHarness, TestWidgetExt, assert_debug_panics,
+    DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
+    assert_debug_panics,
 };
 use ui_events::pointer::{PointerButton, PointerEvent};
-use vello::kurbo::Size;
+use vello::kurbo::{Point, Size};
 
+use crate::properties::types::Length;
 use crate::theme::default_property_set;
-use crate::widgets::{Button, Flex, SizedBox, TextArea};
+use crate::widgets::{Button, Flex, Label, SizedBox, TextArea};
 
 // TREE
 
@@ -25,12 +29,10 @@ fn app_creation() {
     let harness = TestHarness::create(default_property_set(), widget);
 
     assert_matches!(
-        harness.get_records_of(widget_tag)[..],
+        harness.take_records_of(widget_tag)[..],
         [
             Record::RegisterChildren,
             Record::Update(Update::WidgetAdded),
-            Record::Layout(_),
-            Record::Compose,
             Record::Layout(_),
             Record::Compose,
             Record::AnimFrame(0),
@@ -55,7 +57,7 @@ fn new_widget() {
     });
 
     assert_matches!(
-        harness.get_records_of(widget_tag)[0..2],
+        harness.take_records_of(widget_tag)[0..2],
         [
             Record::RegisterChildren,
             Record::Update(Update::WidgetAdded)
@@ -102,15 +104,13 @@ fn disabled_widget_gets_no_event() {
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let button_id = harness.get_widget_with_tag(button_tag).id();
+    let button_id = harness.get_widget(button_tag).id();
     harness.focus_on(Some(button_id));
     harness.flush_records_of(button_tag);
 
-    harness.edit_widget_with_tag(button_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
+    harness.set_disabled(button_tag, true);
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [
             Record::Update(Update::DisabledChanged(true)),
             Record::Update(Update::ChildFocusChanged(false)),
@@ -119,7 +119,7 @@ fn disabled_widget_gets_no_event() {
     );
 
     harness.mouse_click_on(button_id);
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     assert_matches!(harness.focused_widget_id(), None);
 
@@ -139,44 +139,34 @@ fn disable_parent() {
     harness.flush_records_of(button_tag);
 
     // First we disable the parent: the button should get a "DisabledChanged" event.
-    harness.edit_widget_with_tag(parent_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
+    harness.set_disabled(parent_tag, true);
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [Record::Update(Update::DisabledChanged(true))]
     );
 
-    assert!(harness.get_widget_with_tag(button_tag).ctx().is_disabled());
+    assert!(harness.get_widget(button_tag).ctx().is_disabled());
 
     // Then we disable the grandparent: nothing should happen,
     // the parent is already disabled.
-    harness.edit_widget_with_tag(grandparent_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    harness.set_disabled(grandparent_tag, true);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we re-enable the parent: nothing should happen,
     // the parent is still disabled through the grandparent.
-    harness.edit_widget_with_tag(parent_tag, |mut widget| {
-        widget.ctx.set_disabled(false);
-    });
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    harness.set_disabled(parent_tag, false);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we re-enable the grandparent: the button should get a "DisabledChanged" event.
-    harness.edit_widget_with_tag(grandparent_tag, |mut widget| {
-        widget.ctx.set_disabled(false);
-    });
+    harness.set_disabled(grandparent_tag, false);
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [Record::Update(Update::DisabledChanged(false))]
     );
 
     // Finally we re-enable the button: no effect, it's already enabled.
-    harness.edit_widget_with_tag(button_tag, |mut widget| {
-        widget.ctx.set_disabled(false);
-    });
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    harness.set_disabled(button_tag, false);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 }
 
 // STASHED
@@ -189,15 +179,15 @@ fn stashed_widget_loses_focus() {
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child), parent_tag);
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let button_id = harness.get_widget_with_tag(button_tag).id();
+    let button_id = harness.get_widget(button_tag).id();
     harness.focus_on(Some(button_id));
     harness.flush_records_of(button_tag);
 
-    harness.edit_widget_with_tag(parent_tag, |mut widget| {
+    harness.edit_widget(parent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, true);
     });
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [
             Record::Update(Update::StashedChanged(true)),
             Record::Update(Update::ChildFocusChanged(false)),
@@ -223,36 +213,36 @@ fn stash_parent() {
     harness.flush_records_of(button_tag);
 
     // First we stash the button: the button should get a "StashedChanged" event.
-    harness.edit_widget_with_tag(parent_tag, |mut widget| {
+    harness.edit_widget(parent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, true);
     });
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [Record::Update(Update::StashedChanged(true))]
     );
 
-    assert!(harness.get_widget_with_tag(button_tag).ctx().is_stashed());
+    assert!(harness.get_widget(button_tag).ctx().is_stashed());
 
     // Then we stash the parent: nothing should happen,
     // the button is already stashed.
-    harness.edit_widget_with_tag(grandparent_tag, |mut widget| {
+    harness.edit_widget(grandparent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, true);
     });
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we un-stash the button: nothing should happen,
     // the button is still stashed through the parent.
-    harness.edit_widget_with_tag(parent_tag, |mut widget| {
+    harness.edit_widget(parent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, false);
     });
-    assert_matches!(harness.get_records_of(button_tag)[..], []);
+    assert_matches!(harness.take_records_of(button_tag)[..], []);
 
     // Then we un-stash the parent: the button should get a "StashedChanged" event.
-    harness.edit_widget_with_tag(grandparent_tag, |mut widget| {
+    harness.edit_widget(grandparent_tag, |mut widget| {
         widget.ctx.set_stashed(&mut widget.widget.state, false);
     });
     assert_matches!(
-        harness.get_records_of(button_tag)[..],
+        harness.take_records_of(button_tag)[..],
         [
             Record::Update(Update::StashedChanged(false)),
             // Un-stashing also requests a layout pass.
@@ -323,7 +313,13 @@ fn focus_order() {
     let mut harness = TestHarness::create(default_property_set(), root);
 
     fn get_name(harness: &TestHarness<impl Widget>, id: Option<WidgetId>) -> Option<String> {
-        Some(harness.get_widget(id?).get_prop::<DebugName>().0.clone())
+        Some(
+            harness
+                .get_widget_with_id(id?)
+                .get_prop::<DebugName>()
+                .0
+                .clone(),
+        )
     }
 
     let mut focusable_widgets = Vec::new();
@@ -395,14 +391,12 @@ fn disable_focusable() {
 
     let mut harness = TestHarness::create(default_property_set(), parent);
 
-    let button1_id = harness.get_widget_with_tag(button1_tag).id();
-    let button2_id = harness.get_widget_with_tag(button2_tag).id();
-    let button3_id = harness.get_widget_with_tag(button3_tag).id();
+    let button1_id = harness.get_widget(button1_tag).id();
+    let button2_id = harness.get_widget(button2_tag).id();
+    let button3_id = harness.get_widget(button3_tag).id();
 
     harness.focus_on(Some(button2_id));
-    harness.edit_widget_with_tag(button2_tag, |mut button| {
-        button.ctx.set_disabled(true);
-    });
+    harness.set_disabled(button2_tag, true);
 
     // We skip button2 and jump from button1 to button3.
     harness.focus_on(Some(button1_id));
@@ -430,9 +424,9 @@ fn stash_focusable() {
 
     let mut harness = TestHarness::create(default_property_set(), parent);
 
-    let button1_id = harness.get_widget_with_tag(button1_tag).id();
-    let button2_id = harness.get_widget_with_tag(button2_tag).id();
-    let button3_id = harness.get_widget_with_tag(button3_tag).id();
+    let button1_id = harness.get_widget(button1_tag).id();
+    let button2_id = harness.get_widget(button2_tag).id();
+    let button3_id = harness.get_widget(button3_tag).id();
 
     harness.focus_on(Some(button2_id));
 
@@ -466,9 +460,9 @@ fn remove_focusable() {
 
     let mut harness = TestHarness::create(default_property_set(), parent);
 
-    let button1_id = harness.get_widget_with_tag(button1_tag).id();
-    let button2_id = harness.get_widget_with_tag(button2_tag).id();
-    let button3_id = harness.get_widget_with_tag(button3_tag).id();
+    let button1_id = harness.get_widget(button1_tag).id();
+    let button2_id = harness.get_widget(button2_tag).id();
+    let button3_id = harness.get_widget(button3_tag).id();
 
     harness.focus_on(Some(button2_id));
     harness.edit_root_widget(|mut parent| {
@@ -494,18 +488,15 @@ fn ime_commit() {
     let textbox = NewWidget::new_with_tag(TextArea::new_editable(""), textbox_tag);
 
     let mut harness = TestHarness::create(default_property_set(), textbox);
-    let textbox_id = harness.get_widget_with_tag(textbox_tag).id();
+    let textbox_id = harness.get_widget(textbox_tag).id();
 
     harness.focus_on(Some(textbox_id));
 
     harness.process_text_event(TextEvent::Ime(Ime::Commit("New Text".to_string())));
-    assert_eq!(harness.get_widget_with_tag(textbox_tag).text(), "New Text");
+    assert_eq!(harness.get_widget(textbox_tag).text(), "New Text");
 
     harness.process_text_event(TextEvent::Ime(Ime::Commit(" and more".to_string())));
-    assert_eq!(
-        harness.get_widget_with_tag(textbox_tag).text(),
-        "New Text and more"
-    );
+    assert_eq!(harness.get_widget(textbox_tag).text(), "New Text and more");
 
     let ime_area_size = harness.ime_rect().1;
     assert!(ime_area_size.width > 0. && ime_area_size.height > 0.);
@@ -518,7 +509,7 @@ fn ime_removed() {
     let parent = NewWidget::new(SizedBox::new(textbox));
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let textbox_id = harness.get_widget_with_tag(textbox_tag).id();
+    let textbox_id = harness.get_widget(textbox_tag).id();
 
     harness.focus_on(Some(textbox_id));
 
@@ -537,23 +528,19 @@ fn ime_start_stop() {
     let parent = NewWidget::new(ModularWidget::new_parent(textbox));
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let textbox_id = harness.get_widget_with_tag(textbox_tag).id();
+    let textbox_id = harness.get_widget(textbox_tag).id();
 
     harness.focus_on(Some(textbox_id));
 
     assert!(harness.has_ime_session());
 
     harness.flush_records_of(textbox_tag);
-    harness.edit_widget_with_tag(textbox_tag, |mut widget| {
-        widget.ctx.set_disabled(true);
-    });
+    harness.set_disabled(textbox_tag, true);
 
-    let records = harness.get_records_of(textbox_tag);
-    assert!(
-        records
-            .iter()
-            .any(|r| matches!(r, Record::TextEvent(TextEvent::Ime(Ime::Disabled))))
-    );
+    let records = harness.take_records_of(textbox_tag);
+    assert_any(records, |r| {
+        matches!(r, Record::TextEvent(TextEvent::Ime(Ime::Disabled)))
+    });
 
     assert!(!harness.has_ime_session());
 }
@@ -581,7 +568,7 @@ fn cursor_icon() {
     let parent = NewWidget::new(Flex::row().with_child(label).with_child(icon_widget));
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let icon_id = harness.get_widget_with_tag(icon_tag).id();
+    let icon_id = harness.get_widget(icon_tag).id();
 
     assert_eq!(harness.cursor_icon(), CursorIcon::Default);
 
@@ -598,8 +585,8 @@ fn pointer_capture_affects_pointer_icon() {
     let parent = NewWidget::new(Flex::row().with_child(label).with_child(icon_widget));
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let icon_id = harness.get_widget_with_tag(icon_tag).id();
-    let label_id = harness.get_widget_with_tag(label_tag).id();
+    let icon_id = harness.get_widget(icon_tag).id();
+    let label_id = harness.get_widget(label_tag).id();
 
     harness.mouse_move_to(icon_id);
     harness.mouse_button_press(PointerButton::Primary);
@@ -611,4 +598,220 @@ fn pointer_capture_affects_pointer_icon() {
 
     harness.mouse_button_release(PointerButton::Primary);
     assert_eq!(harness.cursor_icon(), CursorIcon::Default);
+}
+
+#[test]
+fn lose_hovered_on_pointer_leave_or_cancel() {
+    let button_tag = WidgetTag::new("button");
+
+    let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), button);
+    let button_id = harness.get_widget(button_tag).id();
+
+    // Hover button
+    harness.mouse_move_to(button_id);
+    assert!(harness.get_widget(button_tag).ctx().is_hovered());
+
+    // POINTER LEAVE
+    harness.flush_records_of(button_tag);
+    harness.process_pointer_event(PointerEvent::Leave(PRIMARY_MOUSE));
+
+    assert!(!harness.get_widget(button_tag).ctx().is_hovered());
+
+    let records = harness.take_records_of(button_tag);
+    assert_any(records, |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(false)))
+    });
+
+    // Hover button again
+    harness.mouse_move_to(button_id);
+    assert!(harness.get_widget(button_tag).ctx().is_hovered());
+
+    // POINTER CANCEL
+    harness.flush_records_of(button_tag);
+    harness.process_pointer_event(PointerEvent::Cancel(PRIMARY_MOUSE));
+
+    assert!(!harness.get_widget(button_tag).ctx().is_hovered());
+
+    let records = harness.take_records_of(button_tag);
+    assert_any(records, |r| {
+        matches!(r, Record::Update(Update::HoveredChanged(false)))
+    });
+}
+
+#[test]
+fn change_hovered_when_widget_changes() {
+    const BOX_SIZE: Length = Length::const_px(50.);
+
+    let child_tag = WidgetTag::new("child");
+    let parent_tag = WidgetTag::new("parent");
+
+    let child = NewWidget::new_with_tag(
+        ModularWidget::new(BOX_SIZE).layout_fn(|size, _, _, _| Size::new(size.get(), size.get())),
+        child_tag,
+    );
+    let parent = NewWidget::new_with_tag(
+        ModularWidget::new_parent(child).layout_fn(move |child, ctx, _props, bc| {
+            let _ = ctx.run_layout(child, bc);
+            ctx.place_child(child, Point::ZERO);
+            Size::new(BOX_SIZE.get(), BOX_SIZE.get())
+        }),
+        parent_tag,
+    );
+
+    let mut harness = TestHarness::create(default_property_set(), parent);
+    let child_id = harness.get_widget(child_tag).id();
+
+    harness.mouse_move_to(child_id);
+    assert!(harness.get_widget(child_tag).ctx().is_hovered());
+    assert!(!harness.get_widget(parent_tag).ctx().is_hovered());
+
+    harness.edit_widget(child_tag, |mut child| {
+        child.widget.state = Length::ZERO;
+        child.ctx.request_layout();
+    });
+
+    // The pointer hasn't moved, but no longer covers the child.
+    // The parent should now be the widget which is hovered.
+    assert!(!harness.get_widget(child_tag).ctx().is_hovered());
+    assert!(harness.get_widget(parent_tag).ctx().is_hovered());
+
+    harness.edit_widget(child_tag, |mut child| {
+        child.widget.state = BOX_SIZE;
+        child.ctx.request_layout();
+    });
+    // We reverted the child to the old size. It should be hovered again.
+    assert!(harness.get_widget(child_tag).ctx().is_hovered());
+    assert!(!harness.get_widget(parent_tag).ctx().is_hovered());
+}
+
+// STATUS FLAGS
+
+fn make_reporter_parent(
+    child: NewWidget<impl Widget>,
+    sender: mpsc::Sender<(String, u32)>,
+    n: u32,
+) -> impl Widget {
+    ModularWidget::new_parent(child)
+        .accepts_focus(true)
+        .pointer_event_fn(|_, ctx, _, event| {
+            if matches!(event, PointerEvent::Down { .. }) {
+                // Makes widget active
+                ctx.capture_pointer();
+                ctx.set_handled();
+            }
+        })
+        .layout_fn(move |child, ctx, _props, bc| {
+            let _ = ctx.run_layout(child, bc);
+            ctx.place_child(child, Point::ZERO);
+            Size::new(100., 100.)
+        })
+        .update_fn(move |_, _, _, event| {
+            sender.send((event.short_name().to_string(), n)).unwrap();
+        })
+}
+
+#[test]
+fn status_flag_update_order() {
+    let (sender, receiver) = mpsc::channel::<(String, u32)>();
+    let sender1 = sender.clone();
+    let sender2 = sender.clone();
+    let sender3 = sender;
+
+    let parent1_tag = WidgetTag::new("parent1");
+
+    let child = NewWidget::new(Label::new(""));
+    let parent1 = NewWidget::new_with_tag(make_reporter_parent(child, sender1, 1), parent1_tag);
+    let parent2 = NewWidget::new(make_reporter_parent(parent1, sender2, 2));
+    let parent3 = NewWidget::new(make_reporter_parent(parent2, sender3, 3));
+
+    let mut harness = TestHarness::create(default_property_set(), parent3);
+    let parent1_id = harness.get_widget(parent1_tag).id();
+    // Flush initial events
+    let _ = receiver.try_iter().count();
+
+    harness.mouse_move_to(parent1_id);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildHoveredChanged(true)".into(), 1),
+            ("ChildHoveredChanged(true)".into(), 2),
+            ("ChildHoveredChanged(true)".into(), 3),
+            ("HoveredChanged(true)".into(), 1)
+        ]
+    );
+    assert!(harness.get_widget(parent1_tag).ctx().is_hovered());
+    assert!(harness.get_widget(parent1_tag).ctx().has_hovered());
+
+    harness.mouse_button_press(PointerButton::Primary);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildActiveChanged(true)".into(), 1),
+            ("ChildActiveChanged(true)".into(), 2),
+            ("ChildActiveChanged(true)".into(), 3),
+            ("ActiveChanged(true)".into(), 1)
+        ]
+    );
+    assert!(harness.get_widget(parent1_tag).ctx().is_active());
+    assert!(harness.get_widget(parent1_tag).ctx().has_active());
+
+    harness.mouse_button_release(PointerButton::Primary);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildActiveChanged(false)".into(), 1),
+            ("ChildActiveChanged(false)".into(), 2),
+            ("ChildActiveChanged(false)".into(), 3),
+            ("ActiveChanged(false)".into(), 1)
+        ]
+    );
+    assert!(!harness.get_widget(parent1_tag).ctx().is_active());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_active());
+
+    harness.mouse_move((-10., -10.));
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildHoveredChanged(false)".into(), 1),
+            ("ChildHoveredChanged(false)".into(), 2),
+            ("ChildHoveredChanged(false)".into(), 3),
+            ("HoveredChanged(false)".into(), 1)
+        ]
+    );
+    assert!(!harness.get_widget(parent1_tag).ctx().is_hovered());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_hovered());
+
+    harness.focus_on(Some(parent1_id));
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildFocusChanged(true)".into(), 1),
+            ("ChildFocusChanged(true)".into(), 2),
+            ("ChildFocusChanged(true)".into(), 3),
+            ("FocusChanged(true)".into(), 1)
+        ]
+    );
+    assert!(harness.get_widget(parent1_tag).ctx().is_focus_target());
+    assert!(harness.get_widget(parent1_tag).ctx().has_focus_target());
+
+    harness.focus_on(None);
+    let events: Vec<_> = receiver.try_iter().collect();
+    assert_eq!(
+        events,
+        [
+            ("ChildFocusChanged(false)".into(), 1),
+            ("ChildFocusChanged(false)".into(), 2),
+            ("ChildFocusChanged(false)".into(), 3),
+            ("FocusChanged(false)".into(), 1)
+        ]
+    );
+    assert!(!harness.get_widget(parent1_tag).ctx().is_focus_target());
+    assert!(!harness.get_widget(parent1_tag).ctx().has_focus_target());
 }

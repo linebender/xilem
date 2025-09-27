@@ -8,14 +8,14 @@ use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
 use xilem::view::{
-    Axis, FlexExt, FlexSpacer, GridExt, button, flex, flex_row, grid, label, prose, sized_box,
+    FlexExt, FlexSpacer, GridExt, button, flex_col, flex_row, grid, label, prose, sized_box,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
 };
 
 fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
-    flex((
+    flex_col((
         FlexSpacer::Fixed(50.px()), // Padding because of the info bar on Android
         flex_row((
             // TODO: Expose that this is a "zoom out" button accessibly
@@ -40,7 +40,6 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
             .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
         FlexSpacer::Fixed(10.px()),
     ))
-    .direction(Axis::Vertical)
     .must_fill_major_axis(true)
 }
 
@@ -55,7 +54,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
                 // There are no more emoji, no point still looping
                 break 'outer;
             };
-            let view = flex((
+            let view = flex_col((
                 // TODO: Expose that this button corresponds to the label below for accessibility?
                 sized_box(button(
                     label(emoji.display).text_size(200.0 / data.size as f32),

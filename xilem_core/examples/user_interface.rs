@@ -84,7 +84,6 @@ impl<State, Action> View<State, Action, ViewCtx> for Button {
         _view_state: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         _element: Mut<'_, Self::Element>,
-        _app_state: &mut State,
     ) {
         // Nothing to do
     }

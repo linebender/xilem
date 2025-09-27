@@ -3,12 +3,9 @@
 
 use std::marker::PhantomData;
 
-use crate::style::Style;
-
 use masonry::core::{Axis, FromDynWidget, Widget, WidgetMut};
 use masonry::properties::types::Length;
 pub use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
-use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 pub use masonry::widgets::FlexParams;
 use masonry::widgets::{self};
 
@@ -16,15 +13,41 @@ use crate::core::{
     AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
-use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
+use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 
 /// A layout which defines how items will be arranged in rows or columns.
+///
+/// Most use cases for flexible layouts should use one of [`flex_row`] and [`flex_col`].
+///
+/// The flex model used by Xilem has different behaviour than you might be familiar with from the web.
+/// Only items which have an explicit flex factor, set using the [`.flex`](FlexExt::flex) extension
+/// method, will share remaining space flexibly.
+/// Items which do not have an explicit flex factor set will be laid out as their natural size.
+/// For some widgets (such as [`text_input`](crate::view::text_input::text_input)), this will be
+/// all the space made available to the flex (in at least one axis).
+/// In the web model, this is equivalent to the default `flex` being `none` (on the web, this is instead `auto`).
+/// This can lead to surprising results, including later siblings of the expanded child being pushed off-screen.
+/// A general rule of thumb is to set a flex factor on all "large" children in the flex axis, especially
+/// portals, sized boxes, and text inputs (in horizontal flex areas).
+/// That is, any item which needs to shrink to fit within the viewport should have a
+/// flex factor set.
+/// The `sequence` can also contain [`FlexSpacer`]s, which leave the specified amount of empty space.
+///
+/// We would like to move to a more intuitive model. There is some discussion of possibilities for this in
+/// [#masonry > Layout refactor: surgical edition](https://xi.zulipchat.com/#narrow/channel/317477-masonry/topic/Layout.20refactor.3A.20surgical.20edition/with/534963761).
+/// There is also currently no support for flex grow or flex shrink; instead, each flexible child takes up
+/// the proportion of remaining space (after all "non-flex" children are laid out) specified
+/// by its flex factor.
+///
+/// When flexible children cannot expand to their allotted space, this space is allocated into the space
+/// between the children; the exact semantics are determined by the [`MainAxisAlignment`](Flex::main_axis_alignment).
+/// This is also discussed in the docs for the underlying [`Flex`](widgets::Flex) widget.
 ///
 /// # Example
 /// ```rust,no_run
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
-/// use xilem::view::{button, flex, label, sized_box, Axis, FlexExt as _, FlexSpacer, Label};
+/// use xilem::view::{Axis, button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 ///
 /// // A component to make a bigger than usual button
@@ -36,7 +59,7 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 /// }
 ///
 /// fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
-///     flex((
+///     flex(Axis::Horizontal, (
 ///         FlexSpacer::Fixed(30.px()),
 ///         big_button("-", |data| {
 ///             *data -= 1;
@@ -49,9 +72,8 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 ///         }),
 ///         FlexSpacer::Fixed(30.px()),
 ///     ))
-///     .direction(Axis::Horizontal)
-///     .cross_axis_alignment(CrossAxisAlignment::Center)
 ///     .main_axis_alignment(MainAxisAlignment::Center)
+///     .cross_axis_alignment(CrossAxisAlignment::Center)
 /// }
 ///
 /// fn main() -> Result<(), EventLoopError> {
@@ -61,16 +83,16 @@ use crate::{AnyWidgetView, Pod, PropertyTuple as _, ViewCtx, WidgetView};
 /// }
 /// ```
 pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
+    axis: Axis,
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
     Flex {
+        axis,
         sequence,
-        axis: Axis::Vertical,
         cross_axis_alignment: CrossAxisAlignment::Center,
         main_axis_alignment: MainAxisAlignment::Start,
         fill_major_axis: false,
         gap: masonry::theme::DEFAULT_GAP,
-        properties: FlexProps::default(),
         phantom: PhantomData,
     }
 }
@@ -79,10 +101,24 @@ pub fn flex<State, Action, Seq: FlexSequence<State, Action>>(
 ///
 /// This is equivalent to [`flex`] with a pre-applied horizontal
 /// [`direction`](Flex::direction).
+/// We recommend reading that type's documentation for a detailed
+/// explanation of this component's layout model.
 pub fn flex_row<State, Action, Seq: FlexSequence<State, Action>>(
     sequence: Seq,
 ) -> Flex<Seq, State, Action> {
-    flex(sequence).direction(Axis::Horizontal)
+    flex(Axis::Horizontal, sequence)
+}
+
+/// A layout where the children are laid out in a column.
+///
+/// This is equivalent to [`flex`] with a pre-applied vertical
+/// [`direction`](Flex::direction).
+/// We recommend reading that type's documentation for a detailed
+/// explanation of this component's layout model.
+pub fn flex_col<State, Action, Seq: FlexSequence<State, Action>>(
+    sequence: Seq,
+) -> Flex<Seq, State, Action> {
+    flex(Axis::Vertical, sequence)
 }
 
 /// The [`View`] created by [`flex`] from a sequence.
@@ -96,7 +132,6 @@ pub struct Flex<Seq, State, Action = ()> {
     main_axis_alignment: MainAxisAlignment,
     fill_major_axis: bool,
     gap: Length,
-    properties: FlexProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -143,25 +178,6 @@ impl<Seq, State, Action> Flex<Seq, State, Action> {
         self
     }
 }
-
-impl<Seq, S, A> Style for Flex<Seq, S, A> {
-    type Props = FlexProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub FlexProps;
-    Flex<Seq, S, A>;
-
-    Background, 0;
-    BorderColor, 1;
-    BorderWidth, 2;
-    CornerRadius, 3;
-    Padding, 4;
-);
 
 mod hidden {
     use super::FlexItem;
@@ -234,15 +250,13 @@ where
                 FlexElement::FlexSpacer(flex) => widget.with_flex_spacer(flex),
             }
         }
-        let mut pod = ctx.create_pod(widget);
-        pod.new_widget.properties = self.properties.build_properties();
-        (
-            pod,
-            FlexState {
-                seq_state,
-                scratch: elements,
-            },
-        )
+        let pod = ctx.create_pod(widget);
+        let state = FlexState {
+            seq_state,
+            scratch: elements,
+        };
+
+        (pod, state)
     }
 
     fn rebuild(
@@ -253,8 +267,6 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         if prev.axis != self.axis {
             widgets::Flex::set_direction(&mut element, self.axis);
         }
@@ -281,11 +293,9 @@ where
         FlexState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut splice = FlexSplice::new(element, scratch);
-        self.sequence
-            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        self.sequence.seq_teardown(seq_state, ctx, &mut splice);
         debug_assert!(scratch.is_empty());
     }
 
@@ -491,11 +501,11 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// use xilem::masonry::properties::types::AsUnit;
-    /// use xilem::{view::{button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
+    /// use xilem::{view::{Axis, button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// flex((
+    /// flex(Axis::Vertical, (
     ///     button("click me", |_| ()).flex(2.0),
     ///     FlexSpacer::Fixed(2.px()),
     ///     label("a label").flex(CrossAxisAlignment::Fill),
@@ -519,11 +529,11 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// use xilem::masonry::properties::types::AsUnit;
-    /// use xilem::{view::{flex, label, FlexSpacer, FlexExt, AnyFlexChild}};
+    /// use xilem::{view::{Axis, flex, label, FlexSpacer, FlexExt, AnyFlexChild}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// flex([label("a label").into_any_flex(), AnyFlexChild::Spacer(FlexSpacer::Fixed(1.px()))])
+    /// flex(Axis::Vertical, [label("a label").into_any_flex(), AnyFlexChild::Spacer(FlexSpacer::Fixed(1.px()))])
     /// # }
     ///
     /// ```
@@ -551,11 +561,11 @@ pub struct FlexItem<V, State, Action> {
 /// # Examples
 /// ```
 /// use xilem::masonry::properties::types::AsUnit;
-/// use xilem::view::{button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
+/// use xilem::view::{Axis, button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
 /// # use xilem::{WidgetView};
 ///
 /// # fn view<State: 'static>() -> impl WidgetView<State> {
-/// flex((
+/// flex(Axis::Vertical, (
 ///     flex_item(button("click me", |_| ()), 2.0),
 ///     FlexSpacer::Fixed(2.px()),
 ///     flex_item(label("a label"), CrossAxisAlignment::Fill),
@@ -635,12 +645,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut child = widgets::Flex::child_mut(&mut element.parent, element.idx)
             .expect("FlexWrapper always has a widget child");
-        self.view
-            .teardown(view_state, ctx, child.downcast(), app_state);
+        self.view.teardown(view_state, ctx, child.downcast());
     }
 
     fn message(
@@ -707,14 +715,7 @@ impl<State, Action> View<State, Action, ViewCtx> for FlexSpacer {
         }
     }
 
-    fn teardown(
-        &self,
-        _: &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: Mut<'_, Self::Element>,
-        _: &mut State,
-    ) {
-    }
+    fn teardown(&self, _: &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,
@@ -742,11 +743,11 @@ impl FlexSpacer {
     /// # Examples
     /// ```
     /// use xilem::masonry::properties::types::AsUnit;
-    /// use xilem::{view::{flex, FlexSpacer}};
+    /// use xilem::{view::{Axis, flex, FlexSpacer}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// flex(FlexSpacer::Fixed(2.px()).into_any_flex())
+    /// flex(Axis::Vertical, FlexSpacer::Fixed(2.px()).into_any_flex())
     /// # }
     ///
     /// ```
@@ -765,11 +766,11 @@ where
     ///
     /// # Examples
     /// ```
-    /// use xilem::view::{flex, flex_item, label};
+    /// use xilem::view::{Axis, flex, flex_item, label};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
-    /// flex(flex_item(label("Industry"), 4.0).into_any_flex())
+    /// flex(Axis::Vertical, flex_item(label("Industry"), 4.0).into_any_flex())
     /// # }
     ///
     /// ```
@@ -846,7 +847,6 @@ where
                             parent: element.parent.reborrow_mut(),
                             idx: element.idx,
                         },
-                        app_state,
                     );
                 });
                 widgets::Flex::remove_child(&mut element.parent, element.idx);
@@ -880,7 +880,6 @@ where
                         parent: element.parent.reborrow_mut(),
                         idx: element.idx,
                     },
-                    &mut (),
                 );
                 widgets::Flex::remove_child(&mut element.parent, element.idx);
 
@@ -908,14 +907,13 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         match self {
             Self::Item(flex_item) => {
-                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element, app_state);
+                flex_item.teardown(view_state.inner.as_mut().unwrap(), ctx, element);
             }
             Self::Spacer(spacer) => {
-                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element, &mut ());
+                View::<(), (), ViewCtx>::teardown(spacer, &mut (), ctx, element);
             }
         }
     }

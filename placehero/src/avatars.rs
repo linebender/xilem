@@ -11,7 +11,7 @@ use xilem::core::{
 };
 use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
-use xilem::style::{Gradient, Style};
+use xilem::style::{Gradient, Style as _};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{env_worker, image, sized_box, spinner};
 use xilem::{Blob, Image, ImageFormat, ViewCtx, WidgetView, tokio};
@@ -42,9 +42,11 @@ impl Avatars {
     /// This will fetch the image data from the URL, and cache it.
     /// If the image hasn't yet loaded, will show a placeholder,
     ///
-    ///  Requires that this View is within a [`Self::provide`] call.
+    /// Requires that this View is within a [`Self::provide`] call.
     // TODO: ArcStr for URL?
-    pub(crate) fn avatar<State: 'static>(url: String) -> impl WidgetView<State> + use<State> {
+    pub(crate) fn avatar<State: 'static, Action: 'static>(
+        url: String,
+    ) -> impl WidgetView<State, Action> + use<State, Action> {
         with_context(move |this: &mut Self, _: &mut State| {
             let width = 50.px();
             let height = 50.px();
@@ -62,6 +64,8 @@ impl Avatars {
             }
             Either::B(
                 sized_box(spinner().color(css::BLACK))
+                    .width(width)
+                    .height(height)
                     .background_gradient(
                         Gradient::new_linear(
                             // down-right
@@ -69,8 +73,6 @@ impl Avatars {
                         )
                         .with_stops([css::YELLOW, css::LIME]),
                     )
-                    .width(width)
-                    .height(height)
                     .padding(4.0),
             )
         })

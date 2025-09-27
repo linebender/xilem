@@ -15,8 +15,6 @@ env:
   ANDROID_TARGETS: "-p xilem --example mason_android --example calc_android --example stopwatch_android --example variable_clock_android --example http_cats_android --example to_do_mvc_android"
   # Whether the workspace contains Rust code using the debug_assertions configuration option.
   USING_DEBUG_ASSERTIONS: "true"
-  # The files stored in LFS the tests need to access
-  LFS_FILES: "**/screenshots/*.png"
 
 
 # Rationale
@@ -106,13 +104,13 @@ jobs:
           tool: cargo-rdme@1.4.8
 
       - name: Run cargo rdme (masonry)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry
+        run: cargo rdme --check --workspace-project=masonry
 
       - name: Run cargo rdme (masonry_core)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_core
 
       - name: Run cargo rdme (masonry_winit)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_winit
+        run: cargo rdme --check --workspace-project=masonry_winit
     
       - name: Run cargo rdme (tree_arena)
         run: cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
@@ -216,37 +214,8 @@ jobs:
         env:
           CARGO_PROFILE_CI_DEBUG_ASSERTIONS: "false"
 
-  prime-lfs-cache:
-    name: Prime LFS Cache
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    outputs:
-      lfs-hash: ${{ steps.calc-hash.outputs.result }}
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - id: calc-hash
-      name: Calculate LFS hash
-      run: echo "result=${{ hashFiles(env.LFS_FILES) }}" | tee -a "$GITHUB_OUTPUT"
-
-    - name: Cache git LFS
-      id: lfs-cache
-      uses: actions/cache@v4
-      with:
-        path: .git/lfs
-        # The files stored in git lfs are all in this folder
-        key: masonry-lfs-${{ steps.calc-hash.outputs.result }}
-        restore-keys: masonry-lfs-
-        enableCrossOsArchive: true
-
-    - name: Fetch LFS data
-      if: ${{ steps.lfs-cache.outputs.cache-hit != 'true' }}
-      run: git lfs fetch --include '${{ env.LFS_FILES }}'
-
   test-stable:
     name: cargo test
-    needs: prime-lfs-cache
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -263,20 +232,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        # We intentionally do not use lfs: true here, instead using the caching method to save LFS bandwidth.
-
-      - name: Restore LFS cache
-        id: lfs-cache
-        uses: actions/cache/restore@v4
-        with:
-          path: .git/lfs
-          # The files stored in git lfs are all in this folder
-          key: masonry-lfs-${{ needs.prime-lfs-cache.outputs.lfs-hash }}
-          enableCrossOsArchive: true
-
-      - name: Checkout LFS files
-        run: git lfs checkout '${{ env.LFS_FILES }}'
-        continue-on-error: true
 
       - name: Install Rust ${{ env.RUST_STABLE_VER }}
         uses: dtolnay/rust-toolchain@master

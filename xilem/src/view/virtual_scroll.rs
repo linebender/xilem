@@ -178,7 +178,6 @@ where
                             &mut child_state.state,
                             ctx,
                             widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
-                            app_state,
                         );
                         widgets::VirtualScroll::remove_child(&mut element, idx);
                     });
@@ -252,7 +251,6 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         for (&idx, child) in &mut view_state.children {
             ctx.with_id(view_id_for_index(idx), |ctx| {
@@ -260,7 +258,6 @@ where
                     &mut child.state,
                     ctx,
                     widgets::VirtualScroll::child_mut(&mut element, idx).downcast(),
-                    app_state,
                 );
             });
         }

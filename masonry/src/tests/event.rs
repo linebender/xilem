@@ -4,7 +4,9 @@
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
 use masonry_core::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
-use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_debug_panics};
+use masonry_testing::{
+    ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics,
+};
 use ui_events::keyboard::{Key, NamedKey};
 use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
@@ -32,17 +34,15 @@ fn pointer_event() {
     let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
 
     let mut harness = TestHarness::create(default_property_set(), button);
-    let button_id = harness.get_widget_with_tag(button_tag).id();
+    let button_id = harness.get_widget(button_tag).id();
 
     harness.flush_records_of(button_tag);
     harness.mouse_move_to(button_id);
 
-    let records = harness.get_records_of(button_tag);
-    assert!(
-        records
-            .iter()
-            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Move(_))))
-    );
+    let records = harness.take_records_of(button_tag);
+    assert_any(records, |r| {
+        matches!(r, Record::PointerEvent(PointerEvent::Move(_)))
+    });
 }
 
 #[test]
@@ -57,20 +57,18 @@ fn pointer_event_bubbling() {
         NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
 
     let mut harness = TestHarness::create(default_property_set(), grandparent);
-    let button_id = harness.get_widget_with_tag(button_tag).id();
+    let button_id = harness.get_widget(button_tag).id();
 
     harness.flush_records_of(button_tag);
     harness.mouse_click_on(button_id);
 
-    let has_pointer_down = |records: Vec<_>| {
-        records
-            .iter()
-            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Down { .. })))
-    };
+    fn is_pointer_down(record: Record) -> bool {
+        matches!(record, Record::PointerEvent(PointerEvent::Down { .. }))
+    }
 
-    assert!(has_pointer_down(harness.get_records_of(button_tag)));
-    assert!(has_pointer_down(harness.get_records_of(parent_tag)));
-    assert!(has_pointer_down(harness.get_records_of(grandparent_tag)));
+    assert_any(harness.take_records_of(button_tag), is_pointer_down);
+    assert_any(harness.take_records_of(parent_tag), is_pointer_down);
+    assert_any(harness.take_records_of(grandparent_tag), is_pointer_down);
 }
 
 #[test]
@@ -82,7 +80,7 @@ fn pointer_capture_and_cancel() {
 
     let mut harness = TestHarness::create(default_property_set(), target);
 
-    let target_id = harness.get_widget_with_tag(target_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
 
     harness.mouse_move_to(target_id);
     harness.mouse_button_press(PointerButton::Primary);
@@ -105,7 +103,7 @@ fn synthetic_cancel() {
 
     let mut harness = TestHarness::create(default_property_set(), target);
 
-    let target_id = harness.get_widget_with_tag(target_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
 
     harness.mouse_move_to(target_id);
     harness.mouse_button_press(PointerButton::Primary);
@@ -113,16 +111,12 @@ fn synthetic_cancel() {
 
     // When we disable a widget with pointer capture, it gets a
     // synthetic PointerCancel event.
-    harness.edit_widget_with_tag(target_tag, |mut target| {
-        target.ctx.set_disabled(true);
-    });
+    harness.set_disabled(target_tag, true);
 
-    let records = harness.get_records_of(target_tag);
-    assert!(
-        records
-            .iter()
-            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Cancel(_))))
-    );
+    let records = harness.take_records_of(target_tag);
+    assert_any(records, |r| {
+        matches!(r, Record::PointerEvent(PointerEvent::Cancel(_)))
+    });
 }
 
 #[test]
@@ -144,8 +138,8 @@ fn pointer_capture_suppresses_neighbors() {
     let mut harness = TestHarness::create(default_property_set(), parent);
     harness.flush_records_of(other_tag);
 
-    let target_id = harness.get_widget_with_tag(target_tag).id();
-    let other_id = harness.get_widget_with_tag(other_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
+    let other_id = harness.get_widget(other_tag).id();
 
     harness.mouse_move_to(target_id);
     harness.mouse_button_press(PointerButton::Primary);
@@ -154,17 +148,17 @@ fn pointer_capture_suppresses_neighbors() {
 
     // As long as 'target' is captured, 'other' doesn't get pointer events, even when the cursor is on it.
     harness.mouse_move_to(other_id);
-    assert_matches!(harness.get_records_of(other_tag)[..], []);
+    assert_matches!(harness.take_records_of(other_tag)[..], []);
 
     // 'other' is not considered hovered either.
-    assert!(!harness.get_widget_with_tag(other_tag).ctx().is_hovered());
+    assert!(!harness.get_widget(other_tag).ctx().is_hovered());
 
     // We end pointer capture.
     harness.mouse_button_release(PointerButton::Primary);
     assert_eq!(harness.pointer_capture_target_id(), None);
 
     // Once the capture is released, 'other' should immediately register as hovered.
-    assert!(harness.get_widget_with_tag(other_tag).ctx().is_hovered());
+    assert!(harness.get_widget(other_tag).ctx().is_hovered());
 }
 
 #[test]
@@ -211,7 +205,7 @@ fn pointer_cancel_on_window_blur() {
 
     let mut harness = TestHarness::create(default_property_set(), target);
 
-    let target_id = harness.get_widget_with_tag(target_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
 
     harness.mouse_move_to(target_id);
     harness.mouse_button_press(PointerButton::Primary);
@@ -220,12 +214,10 @@ fn pointer_cancel_on_window_blur() {
 
     harness.process_text_event(TextEvent::WindowFocusChange(false));
 
-    let records = harness.get_records_of(target_tag);
-    assert!(
-        records
-            .iter()
-            .any(|r| matches!(r, Record::PointerEvent(PointerEvent::Cancel(..))))
-    );
+    let records = harness.take_records_of(target_tag);
+    assert_any(records, |r| {
+        matches!(r, Record::PointerEvent(PointerEvent::Cancel(..)))
+    });
 }
 
 #[test]
@@ -248,9 +240,9 @@ fn click_anchors_focus() {
 
     let mut harness = TestHarness::create(default_property_set(), parent);
 
-    let child_3_id = harness.get_widget_with_tag(child_3).id();
-    let child_4_id = harness.get_widget_with_tag(child_4).id();
-    let other_id = harness.get_widget_with_tag(other).id();
+    let child_3_id = harness.get_widget(child_3).id();
+    let child_4_id = harness.get_widget(child_4).id();
+    let other_id = harness.get_widget(other).id();
 
     // Clicking a button doesn't focus it.
     harness.mouse_click_on(child_3_id);
@@ -274,18 +266,18 @@ fn text_event() {
     let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
 
     let mut harness = TestHarness::create(default_property_set(), target);
-    let target_id = harness.get_widget_with_tag(target_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
     harness.flush_records_of(target_tag);
 
     // The widget isn't focused, it doesn't get text events.
     harness.keyboard_type_chars("A");
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
 
     // We focus on the widget, now it gets text events.
     harness.focus_on(Some(target_id));
     harness.keyboard_type_chars("A");
-    let records = harness.get_records_of(target_tag);
-    assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
+    let records = harness.take_records_of(target_tag);
+    assert_any(records, |r| matches!(r, Record::TextEvent(_)));
 }
 
 #[test]
@@ -303,20 +295,18 @@ fn text_event_bubbling() {
         NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
 
     let mut harness = TestHarness::create(default_property_set(), grandparent);
-    let target_id = harness.get_widget_with_tag(target_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
 
     harness.focus_on(Some(target_id));
     harness.process_text_event(TextEvent::key_down(Key::Character("A".into())));
 
-    let has_keyboard_event = |records: Vec<_>| {
-        records
-            .iter()
-            .any(|r| matches!(r, Record::TextEvent(TextEvent::Keyboard(_))))
-    };
+    fn is_keyboard_event(record: Record) -> bool {
+        matches!(record, Record::TextEvent(TextEvent::Keyboard(_)))
+    }
 
-    assert!(has_keyboard_event(harness.get_records_of(target_tag)));
-    assert!(has_keyboard_event(harness.get_records_of(parent_tag)));
-    assert!(has_keyboard_event(harness.get_records_of(grandparent_tag)));
+    assert_any(harness.take_records_of(target_tag), is_keyboard_event);
+    assert_any(harness.take_records_of(parent_tag), is_keyboard_event);
+    assert_any(harness.take_records_of(grandparent_tag), is_keyboard_event);
 }
 
 #[test]
@@ -332,27 +322,25 @@ fn text_event_fallback() {
         .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let target_id = harness.get_widget_with_tag(target_tag).id();
-    let other_id = harness.get_widget_with_tag(other_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
+    let other_id = harness.get_widget(other_tag).id();
     harness.flush_records_of(target_tag);
     harness.set_focus_fallback(Some(target_id));
 
     harness.focus_on(Some(other_id));
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
 
     // If a widget is set as focus fallback, that widget gets text events when no widget is focused.
     harness.focus_on(None);
     harness.keyboard_type_chars("A");
-    let records = harness.get_records_of(target_tag);
-    assert!(records.iter().any(|r| matches!(r, Record::TextEvent(_))));
+    let records = harness.take_records_of(target_tag);
+    assert_any(records, |r| matches!(r, Record::TextEvent(_)));
 
     // Unless it's disabled.
-    harness.edit_widget_with_tag(target_tag, |mut target| {
-        target.ctx.set_disabled(true);
-    });
+    harness.set_disabled(target_tag, true);
     harness.flush_records_of(target_tag);
     harness.keyboard_type_chars("A");
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
 }
 
 #[test]
@@ -373,11 +361,11 @@ fn tab_focus() {
 
     let mut harness = TestHarness::create(default_property_set(), parent);
 
-    let child_1_id = harness.get_widget_with_tag(child_1).id();
-    let child_2_id = harness.get_widget_with_tag(child_2).id();
-    let child_3_id = harness.get_widget_with_tag(child_3).id();
-    let child_4_id = harness.get_widget_with_tag(child_4).id();
-    let child_5_id = harness.get_widget_with_tag(child_5).id();
+    let child_1_id = harness.get_widget(child_1).id();
+    let child_2_id = harness.get_widget(child_2).id();
+    let child_3_id = harness.get_widget(child_3).id();
+    let child_4_id = harness.get_widget(child_4).id();
+    let child_5_id = harness.get_widget(child_5).id();
 
     assert_eq!(harness.focused_widget_id(), None);
 
@@ -416,7 +404,7 @@ fn access_event_bubbling() {
         NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
 
     let mut harness = TestHarness::create(default_property_set(), grandparent);
-    let target_id = harness.get_widget_with_tag(target_tag).id();
+    let target_id = harness.get_widget(target_tag).id();
 
     // Send random event
     harness.process_access_event(ActionRequest {
@@ -425,21 +413,19 @@ fn access_event_bubbling() {
         data: None,
     });
 
-    let has_access_event = |records: Vec<_>| {
-        records.iter().any(|r| {
-            matches!(
-                r,
-                Record::AccessEvent(AccessEvent {
-                    action: accesskit::Action::Click,
-                    data: None
-                })
-            )
-        })
-    };
+    fn is_access_click(record: Record) -> bool {
+        matches!(
+            record,
+            Record::AccessEvent(AccessEvent {
+                action: accesskit::Action::Click,
+                data: None
+            })
+        )
+    }
 
-    assert!(has_access_event(harness.get_records_of(target_tag)));
-    assert!(has_access_event(harness.get_records_of(parent_tag)));
-    assert!(has_access_event(harness.get_records_of(grandparent_tag)));
+    assert_any(harness.take_records_of(target_tag), is_access_click);
+    assert_any(harness.take_records_of(parent_tag), is_access_click);
+    assert_any(harness.take_records_of(grandparent_tag), is_access_click);
 }
 
 #[test]
@@ -455,8 +441,8 @@ fn accessibility_focus() {
         .with_auto_id();
 
     let mut harness = TestHarness::create(default_property_set(), parent);
-    let child_2_id = harness.get_widget_with_tag(child_2).id();
-    let child_3_id = harness.get_widget_with_tag(child_3).id();
+    let child_2_id = harness.get_widget(child_2).id();
+    let child_3_id = harness.get_widget(child_3).id();
 
     // Send focus event
     harness.process_access_event(ActionRequest {

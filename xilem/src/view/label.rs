@@ -3,28 +3,30 @@
 
 use masonry::core::{ArcStr, StyleProperty};
 use masonry::parley::style::{FontStack, FontWeight};
-use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::style::Style;
-use crate::{MessageResult, Pod, PropertyTuple as _, TextAlign, View, ViewCtx};
+use crate::{MessageResult, Pod, TextAlign, View, ViewCtx};
 
 /// A non-interactive text element.
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use xilem::palette;
 /// use xilem::view::label;
-/// use masonry::TextAlign;
-/// use masonry::parley::fontique;
+/// use xilem::style::Style as _;
+/// use xilem::{FontWeight, TextAlign};
+/// use xilem::masonry::parley::fontique;
+/// # use xilem::WidgetView;
 ///
+/// # fn view() -> impl WidgetView<()> {
 /// label("Text example.")
-///     .text_color(palette::css::RED)
-///     .text_alignment(TextAlign::Middle)
+///     .text_alignment(TextAlign::Center)
 ///     .text_size(24.0)
 ///     .weight(FontWeight::BOLD)
-///     .with_font(fontique::GenericFamily::Serif)
+///     .font(fontique::GenericFamily::Serif)
+///     .color(palette::css::RED)
+/// # }
 /// ```
 pub fn label(label: impl Into<ArcStr>) -> Label {
     Label {
@@ -33,7 +35,6 @@ pub fn label(label: impl Into<ArcStr>) -> Label {
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
-        properties: LabelProps::default(),
     }
 }
 
@@ -48,7 +49,6 @@ pub struct Label {
     weight: FontWeight,
     font: FontStack<'static>,
     // TODO: add more attributes of `masonry::widgets::Label`
-    properties: LabelProps,
 }
 
 impl Label {
@@ -90,37 +90,19 @@ where
     }
 }
 
-impl Style for Label {
-    type Props = LabelProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub LabelProps;
-    Label;
-
-    ContentColor, 0;
-    DisabledContentColor, 1;
-    LineBreaking, 2;
-);
-
 impl ViewMarker for Label {}
 impl<State, Action> View<State, Action, ViewCtx> for Label {
     type Element = Pod<widgets::Label>;
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
-        let mut pod = ctx.create_pod(
+        let pod = ctx.create_pod(
             widgets::Label::new(self.label.clone())
                 .with_text_alignment(self.text_alignment)
                 .with_style(StyleProperty::FontSize(self.text_size))
                 .with_style(StyleProperty::FontWeight(self.weight))
                 .with_style(StyleProperty::FontStack(self.font.clone())),
         );
-        pod.new_widget.properties = self.properties.build_properties();
         (pod, ())
     }
 
@@ -132,8 +114,6 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         mut element: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         if prev.label != self.label {
             widgets::Label::set_text(&mut element, self.label.clone());
         }
@@ -151,14 +131,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Label {
         }
     }
 
-    fn teardown(
-        &self,
-        (): &mut Self::ViewState,
-        _: &mut ViewCtx,
-        _: Mut<'_, Self::Element>,
-        _: &mut State,
-    ) {
-    }
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,

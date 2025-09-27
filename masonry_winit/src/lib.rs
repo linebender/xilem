@@ -1,33 +1,21 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-//! Masonry gives you a platform to create windows (using [winit] as a backend) each with a tree of widgets. It also gives you tools to inspect that widget tree at runtime, write unit tests on it, and generally have an easier time debugging and maintaining your app.
+//! This is the [Winit][winit] backend for the [Masonry] GUI framework.
 //!
-//! The framework is not opinionated about what your user-facing abstraction will be: you can implement immediate-mode GUI, the Elm architecture, functional reactive GUI, etc, on top of Masonry.
+//! See [Masonry's documentation] for more details, examples and resources.
 //!
-//! See [Xilem] as an example of reactive UI built on top of Masonry.
-//!
-//! Masonry was originally a fork of [Druid] that emerged from discussions within the Linebender community about what it would look like to turn Druid into a foundational library.
-//!
-//! Masonry can currently be considered to be in an alpha state.
-//! Lots of things need improvements, e.g. text input is janky and snapshot testing is not consistent across platforms.
-//!
-//! ## Example
-//!
-//! The to-do-list example looks like this:
+//! # Example
 //!
 //! ```rust
 //! use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetPod};
 //! use masonry::dpi::LogicalSize;
-//! use masonry::properties::types::{Length, AsUnit};
 //! use masonry::theme::default_property_set;
-//! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextInput};
 //! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 //! use masonry_winit::winit::window::Window;
 //!
 //! struct Driver {
-//!     next_task: String,
-//!     window_id: WindowId,
+//!     // ...
 //! }
 //!
 //! impl AppDriver for Driver {
@@ -35,56 +23,27 @@
 //!         &mut self,
 //!         window_id: WindowId,
 //!         ctx: &mut DriverCtx<'_, '_>,
-//!         _widget_id: WidgetId,
+//!         widget_id: WidgetId,
 //!         action: ErasedAction,
 //!     ) {
-//!         debug_assert_eq!(window_id, self.window_id, "unknown window");
-//!
-//!         if action.is::<ButtonPress>() {
-//!             ctx.render_root(window_id).edit_root_widget(|mut root| {
-//!                 let mut portal = root.downcast::<Portal<Flex>>();
-//!                 let mut flex = Portal::child_mut(&mut portal);
-//!                 Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_auto_id());
-//!             });
-//!         } else if action.is::<TextAction>() {
-//!             let action = *action.downcast::<TextAction>().unwrap();
-//!             match action {
-//!                 TextAction::Changed(new_text) => {
-//!                     self.next_task = new_text.clone();
-//!                 }
-//!                 _ => {}
-//!             }
-//!         }
+//!         // ...
 //!     }
 //! }
 //!
 //! fn main() {
-//!     const WIDGET_SPACING: Length = Length::const_px(5.0);
-//!
-//!     let main_widget = Portal::new(
-//!         Flex::column()
-//!             .with_child(NewWidget::new(
-//!                 Flex::row()
-//!                     .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
-//!                     .with_child(
-//!                         Button::new(
-//!                             Label::new("Add task").with_auto_id()
-//!                         ).with_auto_id()
-//!                     ),
-//!             ))
-//!             .with_spacer(WIDGET_SPACING)
-//!             .with_auto_id(),
-//!     );
+//!     let main_widget = {
+//!         // ...
+//!         # masonry::widgets::Label::new("hello")
+//!     };
 //!
 //!     let window_size = LogicalSize::new(400.0, 400.0);
 //!     let window_attributes = Window::default_attributes()
-//!         .with_title("To-do list")
+//!         .with_title("My Masonry App")
 //!         .with_resizable(true)
 //!         .with_min_inner_size(window_size);
 //!
 //!     let driver = Driver {
-//!         next_task: String::new(),
-//!         window_id: WindowId::next(),
+//!         // ...
 //!     };
 //!     # return;
 //!     let event_loop = masonry_winit::app::EventLoop::with_user_event()
@@ -92,11 +51,10 @@
 //!         .unwrap();
 //!     masonry_winit::app::run_with(
 //!         event_loop,
-//!         vec![NewWindow {
-//!             id: driver.window_id,
-//!             attributes: window_attributes,
-//!             root_widget: NewWidget::new(main_widget).erased(),
-//!         }],
+//!         vec![NewWindow::new(
+//!             window_attributes,
+//!             NewWidget::new(main_widget).erased(),
+//!         )],
 //!         driver,
 //!         default_property_set(),
 //!     )
@@ -104,28 +62,10 @@
 //! }
 //! ```
 //!
-//! For more information, see [the Masonry documentation][Masonry].
+//! (See the Masonry documentation for more detailed examples.)
 //!
-//! ### Crate feature flags
-//!
-//! The following feature flags are available:
-//!
-//! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
-//!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
-//!
-//! ### Debugging features
-//!
-//! Masonry apps currently ship with two debugging features built in:
-//! - A rudimentary widget inspector - toggled by F11 key.
-//! - A debug mode painting widget layout rectangles - toggled by F12 key.
-//!
-//! [winit]: https://crates.io/crates/winit
-//! [Druid]: https://crates.io/crates/druid
-//! [Masonry]: https://docs.rs/masonry
-//! [Xilem]: https://crates.io/crates/xilem
-//! [tracing_tracy]: https://crates.io/crates/tracing-tracy
-// TODO: Add screenshot. This can't use include_screenshot as that doesn't work with cargo-rdme
-// See https://github.com/linebender/xilem/issues/851
+//! [Masonry's documentation]: https://docs.rs/masonry
+//! [Masonry]: https://crates.io/crates/masonry
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
@@ -137,14 +77,10 @@
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
-#![cfg_attr(
-    test,
-    expect(
-        unused_crate_dependencies,
-        reason = "False-positive with dev-dependencies only used in examples"
-    )
+#![expect(
+    clippy::needless_doctest_main,
+    reason = "Having a main function is a deliberate part of the root doc."
 )]
-#![expect(clippy::needless_doctest_main, reason = "Deferred: Noisy")]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 
 // TODO - Add logo
@@ -152,6 +88,7 @@
 mod app_driver;
 mod convert_winit_event;
 mod event_loop_runner;
+mod vello_util;
 
 pub use winit;
 
@@ -160,7 +97,7 @@ pub mod app {
     pub use super::app_driver::{AppDriver, DriverCtx, WindowId};
     pub use super::event_loop_runner::{
         EventLoop, EventLoopBuilder, EventLoopProxy, MasonryState, MasonryUserEvent, NewWindow,
-        run, run_with,
+        Window, run, run_with,
     };
 
     pub(crate) use super::convert_winit_event::{

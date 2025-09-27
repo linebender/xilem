@@ -11,7 +11,7 @@ use anymore::AnyDebug;
 use dpi::{LogicalPosition, PhysicalPosition};
 use parley::{FontContext, LayoutContext};
 use tracing::{trace, warn};
-use tree_arena::{ArenaMutList, ArenaRefList};
+use tree_arena::{ArenaMut, ArenaMutList, ArenaRefList};
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
 use crate::app::{MutateCallback, RenderRootSignal, RenderRootState};
@@ -23,7 +23,7 @@ use crate::core::{
 use crate::debug_panic;
 use crate::passes::layout::{place_widget, run_layout_on};
 use crate::peniko::Color;
-use crate::util::get_debug_color;
+use crate::util::{TypeSet, get_debug_color};
 
 // Note - Most methods defined in this file revolve around `WidgetState` fields.
 // Consider reading `WidgetState` documentation (especially the documented naming scheme)
@@ -54,6 +54,7 @@ pub struct MutateCtx<'a> {
     pub(crate) parent_widget_state: Option<&'a mut WidgetState>,
     pub(crate) widget_state: &'a mut WidgetState,
     pub(crate) properties: PropertiesMut<'a>,
+    pub(crate) changed_properties: &'a mut TypeSet,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
     pub(crate) default_properties: &'a DefaultProperties,
 }
@@ -128,7 +129,6 @@ pub struct PaintCtx<'a> {
     pub(crate) global_state: &'a mut RenderRootState,
     pub(crate) widget_state: &'a WidgetState,
     pub(crate) children: ArenaMutList<'a, WidgetArenaNode>,
-    pub(crate) debug_paint: bool,
 }
 
 /// A context passed to [`Widget::accessibility`] method.
@@ -246,6 +246,7 @@ impl MutateCtx<'_> {
                 map: &mut node_mut.item.properties,
                 default_map: self.properties.default_map,
             },
+            changed_properties: &mut node_mut.item.changed_properties,
             children: node_mut.children,
             default_properties: self.default_properties,
         };
@@ -264,6 +265,7 @@ impl MutateCtx<'_> {
             parent_widget_state: None,
             widget_state: self.widget_state,
             properties: self.properties.reborrow_mut(),
+            changed_properties: self.changed_properties,
             children: self.children.reborrow_mut(),
             default_properties: self.default_properties,
         }
@@ -1126,24 +1128,50 @@ impl_context_method!(MutateCtx<'_>, EventCtx<'_>, UpdateCtx<'_>, RawCtx<'_>, {
         self.widget_state.needs_update_focusable = true;
         self.request_layout();
     }
-
     /// Indicate that a child is about to be removed from the tree.
     ///
     /// Container widgets should avoid dropping `WidgetPod`s. Instead, they should
     /// pass them to this method.
     pub fn remove_child(&mut self, child: WidgetPod<impl Widget + ?Sized>) {
-        // TODO - Send recursive event to child
-        let id = child.id();
-        let _ = self
-            .children
-            .remove(id)
-            .expect("remove_child: child not found");
-        self.global_state.scene_cache.remove(&child.id());
+        fn remove_node(
+            global_state: &mut RenderRootState,
+            parent_state: &mut WidgetState,
+            node: ArenaMut<'_, WidgetArenaNode>,
+        ) {
+            let mut children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
 
-        // If we remove the focus anchor, its parent becomes the anchor.
-        if self.global_state.focus_anchor == Some(id) {
-            self.global_state.focus_anchor = Some(self.widget_state.id);
+            // TODO - Send event to widget
+
+            let parent_name = widget.short_type_name();
+            let parent_id = state.id;
+            for child_id in widget.children_ids() {
+                let Some(node) = children.item_mut(child_id) else {
+                    panic!(
+                        "Error in '{parent_name}' {parent_id}: cannot find child {child_id} returned by children_ids()"
+                    );
+                };
+
+                remove_node(global_state, state, node);
+            }
+
+            // If we remove the focus anchor, its parent becomes the anchor.
+            if global_state.focus_anchor == Some(state.id) {
+                global_state.focus_anchor = Some(parent_state.id);
+            }
+
+            global_state.scene_cache.remove(&state.id);
         }
+
+        let id = child.id();
+        let node = self
+            .children
+            .item_mut(id)
+            .expect("remove_child: child not found");
+        remove_node(self.global_state, self.widget_state, node);
+
+        let _ = self.children.remove(id).unwrap();
 
         self.children_changed();
     }
@@ -1478,6 +1506,7 @@ impl RegisterCtx<'_> {
             widget: widget.as_box_dyn(),
             state,
             properties: properties.map,
+            changed_properties: TypeSet::default(),
         };
         self.children.insert(id, node);
     }
@@ -1501,7 +1530,7 @@ impl PaintCtx<'_> {
     ///
     /// Debug paint can be enabled by setting the environment variable `MASONRY_DEBUG_PAINT`.
     pub fn debug_paint_enabled(&self) -> bool {
-        self.debug_paint
+        self.global_state.debug_paint
     }
 
     /// A color used for debug painting in this widget.

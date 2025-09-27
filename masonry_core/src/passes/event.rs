@@ -313,7 +313,7 @@ pub(crate) fn run_on_text_event_pass(root: &mut RenderRoot, event: &TextEvent) -
             && key.state == KeyState::Down
             && handled == Handled::No
         {
-            root.debug_paint = !root.debug_paint;
+            root.global_state.debug_paint = !root.global_state.debug_paint;
             root.root_state_mut().needs_paint = true;
             handled = Handled::Yes;
         }

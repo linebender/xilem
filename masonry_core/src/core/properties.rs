@@ -70,6 +70,12 @@ pub struct DefaultProperties {
     pub(crate) dummy_map: AnyMap,
 }
 
+/// A marker trait indicating that the widget this is implemented for supports the property `P`.
+///
+/// You should implement this for your widget types, with each property the widget reads.
+/// This is not used directly by Masonry Core, but is instead provided for the convenience of external crates.
+pub trait HasProperty<P: Property> {}
+
 impl Properties {
     /// Create an empty collection of properties.
     pub fn new() -> Self {

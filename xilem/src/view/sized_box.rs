@@ -2,11 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::properties::types::Length;
-use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use std::marker::PhantomData;
 
-use crate::property_tuple::PropertyTuple;
-use crate::style::Style;
 use masonry::widgets;
 
 use crate::core::{MessageContext, Mut, View, ViewMarker};
@@ -41,7 +38,6 @@ where
         inner,
         height: None,
         width: None,
-        properties: SizedBoxProps::default(),
         phantom: PhantomData,
     }
 }
@@ -54,7 +50,6 @@ pub struct SizedBox<V, State, Action = ()> {
     inner: V,
     width: Option<f64>,
     height: Option<f64>,
-    properties: SizedBoxProps,
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
@@ -102,25 +97,6 @@ impl<V, State, Action> SizedBox<V, State, Action> {
     }
 }
 
-impl<V, S, A> Style for SizedBox<V, S, A> {
-    type Props = SizedBoxProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub SizedBoxProps;
-    SizedBox<V, S, A>;
-
-    Background, 0;
-    BorderColor, 1;
-    BorderWidth, 2;
-    CornerRadius, 3;
-    Padding, 4;
-);
-
 impl<V, State, Action> ViewMarker for SizedBox<V, State, Action> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for SizedBox<V, State, Action>
 where
@@ -136,9 +112,8 @@ where
         let widget = widgets::SizedBox::new(child.new_widget)
             .raw_width(self.width)
             .raw_height(self.height);
-        let mut pod = ctx.create_pod(widget);
-        pod.new_widget.properties = self.properties.build_properties();
-        (pod, child_state)
+
+        (ctx.create_pod(widget), child_state)
     }
 
     fn rebuild(
@@ -149,8 +124,6 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         if self.width != prev.width {
             widgets::SizedBox::set_raw_width(&mut element, self.width);
         }
@@ -170,12 +143,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut child = widgets::SizedBox::child_mut(&mut element)
             .expect("We only create SizedBox with a child");
-        self.inner
-            .teardown(view_state, ctx, child.downcast(), app_state);
+        self.inner.teardown(view_state, ctx, child.downcast());
     }
 
     fn message(

@@ -189,12 +189,11 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
             // TODO remove event listeners from child or is this not necessary?
             self.child
-                .teardown(&mut view_state.child_state, ctx, element, app_state);
+                .teardown(&mut view_state.child_state, ctx, element);
         });
     }
 

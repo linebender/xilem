@@ -29,6 +29,9 @@ pub use grid::*;
 mod sized_box;
 pub use sized_box::*;
 
+mod slider;
+pub use slider::*;
+
 mod spinner;
 pub use spinner::*;
 
@@ -46,6 +49,9 @@ pub use variable_label::*;
 
 mod progress_bar;
 pub use progress_bar::*;
+
+mod prop;
+pub use prop::*;
 
 mod prose;
 pub use prose::*;

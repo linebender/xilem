@@ -173,7 +173,6 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
-        _: &mut State,
     ) {
         let handle = view_state.abort_handle.take().unwrap_throw();
         handle.abort();

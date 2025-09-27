@@ -26,6 +26,7 @@ pub struct EnvironmentItem {
     pub value: Box<dyn AnyDebug>,
     // TODO: Can we/do we want to make these share an allocation?
     // TODO: How do we GC this?
+    // TODO: The change listeners currently aren't ever notified.
     change_listeners: Vec<Option<Arc<[ViewId]>>>,
 }
 
@@ -290,7 +291,6 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         // Make our value available in the child teardown.
         let env = ctx.environment();
@@ -298,7 +298,7 @@ where
         core::mem::swap(&mut slot.item, &mut view_state.this_state);
 
         self.child
-            .teardown(&mut view_state.child_state, ctx, element, app_state);
+            .teardown(&mut view_state.child_state, ctx, element);
 
         let env = ctx.environment();
         let slot = &mut env.slots[usize::try_from(view_state.environment_slot).unwrap()];
@@ -542,7 +542,6 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         if let Some(_listener_idx) = view_state.listener_index {
             // TODO: Potentially garbage collect the listener.
@@ -553,7 +552,7 @@ where
             // TODO: We will probably want some access to the context in teardown at some point.
             view_state
                 .prev
-                .teardown(&mut view_state.child_state, ctx, element, app_state);
+                .teardown(&mut view_state.child_state, ctx, element);
         });
     }
 
@@ -691,10 +690,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         self.child
-            .teardown(&mut view_state.child_state, ctx, element, app_state);
+            .teardown(&mut view_state.child_state, ctx, element);
     }
 
     fn message(

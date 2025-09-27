@@ -7,6 +7,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
@@ -53,6 +54,8 @@ impl Image {
         this.ctx.request_layout();
     }
 }
+
+impl HasProperty<ObjectFit> for Image {}
 
 // --- MARK: IMPL WIDGET
 impl Widget for Image {

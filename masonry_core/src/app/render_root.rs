@@ -73,21 +73,14 @@ pub struct RenderRoot {
     /// State passed to context types.
     pub(crate) global_state: RenderRootState,
 
-    /// Whether the next accessibility pass should rebuild the entire access tree.
-    ///
-    /// TODO - Add `access_tree_active` to detect when you don't need to update the
-    // access tree
-    pub(crate) rebuild_access_tree: bool,
-
     /// The widget tree; stores widgets and their states.
     pub(crate) widget_arena: WidgetArena,
-    pub(crate) debug_paint: bool,
 }
 
 /// State shared between passes.
 pub(crate) struct RenderRootState {
     /// Sink for signals to be processed by the event loop.
-    signal_sink: Box<dyn FnMut(RenderRootSignal)>,
+    pub(crate) signal_sink: Box<dyn FnMut(RenderRootSignal)>,
 
     /// Currently focused widget.
     pub(crate) focused_widget: Option<WidgetId>,
@@ -157,12 +150,20 @@ pub(crate) struct RenderRootState {
 
     /// Pass tracing configuration, used to skip tracing to limit overhead.
     pub(crate) trace: PassTracing,
+
+    /// Internal state of the widget inspector.
     pub(crate) inspector_state: InspectorState,
+
+    /// Whether the next accessibility pass tree should be updated during `render()`.
+    pub(crate) access_tree_active: bool,
 
     /// DPI scale factor.
     ///
     /// Kurbo coordinates are assumed to be in logical pixels
     pub(crate) scale_factor: f64,
+
+    /// Whether to paint widget's bounding boxes and other visual helpers.
+    pub(crate) debug_paint: bool,
 }
 
 pub(crate) struct MutateCallback {
@@ -194,6 +195,9 @@ pub struct RenderRootOptions {
 
     /// Defines how the window size should be determined.
     pub size_policy: WindowSizePolicy,
+
+    /// The size of the window.
+    pub size: PhysicalSize<u32>,
 
     /// The scale factor to use for rendering.
     ///
@@ -346,6 +350,7 @@ impl RenderRoot {
             default_properties,
             use_system_fonts,
             size_policy,
+            size,
             scale_factor,
             test_font,
         } = options;
@@ -357,7 +362,7 @@ impl RenderRoot {
             layer_stack,
             window_node_id: WidgetId::next().into(),
             size_policy,
-            size: PhysicalSize::new(0, 0),
+            size,
             last_mouse_pos: None,
             default_properties,
             global_state: RenderRootState {
@@ -393,13 +398,13 @@ impl RenderRoot {
                     is_picking_widget: false,
                     hovered_widget: None,
                 },
+                access_tree_active: false,
                 scale_factor,
+                debug_paint,
             },
             widget_arena: WidgetArena {
                 nodes: TreeArena::new(),
             },
-            rebuild_access_tree: true,
-            debug_paint,
         };
 
         if let Some(test_font_data) = test_font {
@@ -487,10 +492,17 @@ impl RenderRoot {
 
                 Handled::Yes
             }
-            WindowEvent::RebuildAccessTree => {
-                self.rebuild_access_tree = true;
+            WindowEvent::EnableAccessTree => {
+                self.global_state.access_tree_active = true;
+                // AccessKit expects the next update to have include
+                // a description of every single node.
+                self.request_access_all();
                 self.global_state
                     .emit_signal(RenderRootSignal::RequestRedraw);
+                Handled::Yes
+            }
+            WindowEvent::DisableAccessTree => {
+                self.global_state.access_tree_active = false;
                 Handled::Yes
             }
         }
@@ -558,12 +570,15 @@ impl RenderRoot {
     ///
     /// Returns an update to the accessibility tree and a Vello scene representing
     /// the widget tree's current state.
-    pub fn redraw(&mut self) -> (Scene, TreeUpdate) {
+    pub fn redraw(&mut self) -> (Scene, Option<TreeUpdate>) {
         self.run_rewrite_passes();
+
+        let access_tree_active = self.global_state.access_tree_active;
 
         // TODO - Handle invalidation regions
         let scene = run_paint_pass(self);
-        let tree_update = run_accessibility_pass(self, self.global_state.scale_factor);
+        let tree_update = access_tree_active
+            .then(|| run_accessibility_pass(self, self.global_state.scale_factor));
         (scene, tree_update)
     }
 
@@ -739,6 +754,11 @@ impl RenderRoot {
         self.run_rewrite_passes();
     }
 
+    /// Get the current size of the window.
+    pub fn size(&self) -> PhysicalSize<u32> {
+        self.size
+    }
+
     pub(crate) fn get_kurbo_size(&self) -> Size {
         let size = self.size.to_logical(self.global_state.scale_factor);
         Size::new(size.width, size.height)
@@ -790,9 +810,9 @@ impl RenderRoot {
         }
 
         // We request a redraw if either the render tree or the accessibility
-        // tree needs to be rebuilt. Usually both happen at the same time.
+        // tree needs to be rebuilt. Usually both are rebuilt at the same time.
         // A redraw will trigger a rebuild of the accessibility tree.
-        if self.root_state().needs_paint || self.root_state().needs_accessibility {
+        if self.root_state().needs_paint || self.needs_accessibility() {
             self.global_state
                 .emit_signal(RenderRootSignal::RequestRedraw);
         }
@@ -814,6 +834,29 @@ impl RenderRoot {
                     .emit_signal(RenderRootSignal::new_ime_moved_signal(ime_area));
             }
         }
+    }
+
+    // TODO - Factor out into "visit_all" method?
+
+    pub(crate) fn request_access_all(&mut self) {
+        fn request_access_all_in(node: ArenaMut<'_, WidgetArenaNode>) {
+            let children = node.children;
+            let widget = &mut *node.item.widget;
+            let state = &mut node.item.state;
+
+            state.needs_accessibility = true;
+            state.request_accessibility = true;
+
+            let id = state.id;
+            recurse_on_children(id, widget, children, |node| {
+                request_access_all_in(node);
+            });
+        }
+
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
+        request_access_all_in(root_node);
+        self.global_state
+            .emit_signal(RenderRootSignal::RequestRedraw);
     }
 
     pub(crate) fn request_render_all(&mut self) {
@@ -923,6 +966,13 @@ impl RenderRoot {
     /// Returns true if the widget tree is waiting for an animation frame.
     pub fn needs_anim(&self) -> bool {
         self.root_state().needs_anim
+    }
+
+    /// Returns true if the accessibility tree needs to be rebuilt.
+    ///
+    /// This will be inhibited if `access_tree_active` is false.
+    pub fn needs_accessibility(&self) -> bool {
+        self.global_state.access_tree_active && self.root_state().needs_accessibility
     }
 
     /// Returns `true` if something requires a rewrite pass or a re-render.

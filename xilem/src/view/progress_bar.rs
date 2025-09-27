@@ -46,7 +46,6 @@ impl<State, Action> View<State, Action, ViewCtx> for ProgressBar {
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        _: &mut State,
     ) {
         ctx.teardown_leaf(element);
     }

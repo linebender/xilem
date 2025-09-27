@@ -3,9 +3,6 @@
 
 //! Common widgets.
 
-#[cfg(test)]
-mod tests;
-
 mod align;
 mod button;
 mod checkbox;
@@ -19,6 +16,7 @@ mod progress_bar;
 mod prose;
 mod scroll_bar;
 mod sized_box;
+mod slider;
 mod spinner;
 mod split;
 mod text_area;
@@ -40,6 +38,7 @@ pub use self::progress_bar::ProgressBar;
 pub use self::prose::Prose;
 pub use self::scroll_bar::ScrollBar;
 pub use self::sized_box::SizedBox;
+pub use self::slider::Slider;
 pub use self::spinner::Spinner;
 pub use self::split::{Split, ceil_length};
 pub use self::text_area::{InsertNewline, TextAction, TextArea};

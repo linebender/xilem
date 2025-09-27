@@ -7,14 +7,9 @@ use crate::core::{
     AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewMarker, ViewSequence,
 };
-use crate::{Pod, PropertyTuple as _, ViewCtx};
+use crate::{Pod, ViewCtx};
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
-use masonry::{
-    properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding},
-    widgets,
-};
-
-use crate::style::Style;
+use masonry::widgets;
 
 /// An `IndexedStack` displays one of several children elements at a time.
 ///
@@ -28,7 +23,7 @@ use crate::style::Style;
 /// # Example
 /// ```
 /// use xilem::view::{
-///     button, indexed_stack, label, flex
+///     button, flex_col, indexed_stack, label
 /// };
 ///
 /// #[derive(Default)]
@@ -40,11 +35,11 @@ use crate::style::Style;
 ///
 /// indexed_stack(
 ///     (   
-///         flex((
+///         flex_col((
 ///             label("Tab A"),
 ///             button("Move to tab B", |state: &mut State| state.tab = 1)
 ///         )),
-///         flex((
+///         flex_col((
 ///             label("Tab B"),
 ///             button("Move to tab A", |state: &mut State| state.tab = 0)
 ///         )),
@@ -58,7 +53,6 @@ pub fn indexed_stack<State, Action, Seq: IndexedStackSequence<State, Action>>(
     IndexedStack {
         sequence,
         active_child: 0,
-        properties: IndexedStackProps::default(),
         phantom: PhantomData,
     }
 }
@@ -70,7 +64,6 @@ pub fn indexed_stack<State, Action, Seq: IndexedStackSequence<State, Action>>(
 pub struct IndexedStack<Seq, State, Action = ()> {
     sequence: Seq,
     active_child: usize,
-    properties: IndexedStackProps,
 
     /// Used to associate the State and Action in the call to `.indexed_stack()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
@@ -88,25 +81,6 @@ impl<Seq, State, Action> IndexedStack<Seq, State, Action> {
         self
     }
 }
-
-impl<Seq, S, A> Style for IndexedStack<Seq, S, A> {
-    type Props = IndexedStackProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub IndexedStackProps;
-    IndexedStack<Seq, S, A>;
-
-    Background, 0;
-    BorderColor, 1;
-    BorderWidth, 2;
-    CornerRadius, 3;
-    Padding, 4;
-);
 
 mod hidden {
     use super::IndexedStackElement;
@@ -145,8 +119,7 @@ where
             widget = widget.with_child(element.child.new_widget);
         }
         widget = widget.with_active_child(self.active_child);
-        let mut pod = ctx.create_pod(widget);
-        pod.new_widget.properties = self.properties.build_properties();
+        let pod = ctx.create_pod(widget);
         (
             pod,
             IndexedStackState {
@@ -164,8 +137,6 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         {
             let mut splice = IndexedStackSplice::new(element.reborrow_mut(), scratch);
             self.sequence
@@ -185,11 +156,9 @@ where
         IndexedStackState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut splice = IndexedStackSplice::new(element, scratch);
-        self.sequence
-            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        self.sequence.seq_teardown(seq_state, ctx, &mut splice);
         debug_assert!(scratch.is_empty());
     }
 

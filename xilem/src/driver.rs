@@ -7,20 +7,19 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
 
-use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId};
+use masonry::core::{ErasedAction, WidgetId};
 use masonry::peniko::Blob;
 use masonry_winit::app::{
     AppDriver, DriverCtx, MasonryState, MasonryUserEvent, NewWindow, WindowId,
 };
-use winit::window::WindowAttributes;
 
 use crate::any_view::DynWidget;
 use crate::core::{
     AnyViewState, DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage,
     View, ViewId, ViewPathTracker,
 };
-use crate::window_view::{CreateWindow, WindowView};
-use crate::{AnyWidgetView, AppState, ViewCtx, WindowOptions};
+use crate::window_view::WindowView;
+use crate::{AppState, ViewCtx};
 
 pub struct MasonryDriver<State, Logic> {
     state: State,
@@ -43,7 +42,7 @@ impl<State: 'static, Logic, WindowIter> MasonryDriver<State, Logic>
 where
     State: 'static,
     Logic: FnMut(&mut State) -> WindowIter,
-    WindowIter: Iterator<Item = (WindowId, WindowOptions<State>, Box<AnyWidgetView<State>>)>,
+    WindowIter: Iterator<Item = WindowView<State>>,
 {
     pub(crate) fn new(
         state: State,
@@ -64,16 +63,7 @@ where
             scratch_id_path: Vec::new(),
         };
         let windows: Vec<_> = (driver.logic)(&mut driver.state)
-            .map(|(id, attrs, root_widget_view)| {
-                let view = WindowView::new(attrs, root_widget_view);
-                let (attributes, root_widget) = driver.build_window(id, view);
-
-                NewWindow {
-                    id,
-                    attributes,
-                    root_widget,
-                }
-            })
+            .map(|view| driver.build_window(view))
             .collect();
         (driver, windows)
     }
@@ -148,42 +138,31 @@ impl<State, Logic, WindowIter> MasonryDriver<State, Logic>
 where
     State: 'static,
     Logic: FnMut(&mut State) -> WindowIter,
-    WindowIter: Iterator<Item = (WindowId, WindowOptions<State>, Box<AnyWidgetView<State>>)>,
+    WindowIter: Iterator<Item = WindowView<State>>,
 {
-    fn build_window(
-        &mut self,
-        window_id: WindowId,
-        view: WindowView<State>,
-    ) -> (WindowAttributes, NewWidget<dyn Widget>) {
+    fn build_window(&mut self, window_view: WindowView<State>) -> NewWindow {
         let mut view_ctx = ViewCtx::new(
-            Arc::new(WindowProxy(window_id, self.proxy.clone())),
+            Arc::new(WindowProxy(window_view.id, self.proxy.clone())),
             self.runtime.clone(),
         );
-        let (CreateWindow(attrs, root_widget), view_state) =
-            view.build(&mut view_ctx, &mut self.state);
+        let (new_window, view_state) = window_view.build(&mut view_ctx, &mut self.state);
         self.windows.insert(
-            window_id,
+            window_view.id,
             Window {
-                view,
+                view: window_view,
                 view_ctx,
                 view_state,
             },
         );
-        (attrs, root_widget)
+        new_window.0
     }
 
     pub(crate) fn create_window(
         &mut self,
         driver_ctx: &mut DriverCtx<'_, '_>,
-        window_id: WindowId,
         view: WindowView<State>,
     ) {
-        let (attributes, root_widget) = self.build_window(window_id, view);
-        driver_ctx.create_window(NewWindow {
-            id: window_id,
-            attributes,
-            root_widget,
-        });
+        driver_ctx.create_window(self.build_window(view));
     }
 
     fn close_window(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
@@ -191,8 +170,7 @@ where
         window.view.teardown(
             &mut window.view_state,
             &mut window.view_ctx,
-            ctx.window_handle_and_render_root(window_id),
-            &mut self.state,
+            ctx.window(window_id),
         );
         self.windows.remove(&window_id);
         ctx.close_window(window_id);
@@ -200,17 +178,16 @@ where
 
     fn run_logic(&mut self, driver_ctx: &mut DriverCtx<'_, '_>) {
         let mut returned_ids = HashSet::new();
-        for (window_id, next_attrs, next_view) in (self.logic)(&mut self.state) {
-            if !returned_ids.insert(window_id) {
+        for next_view in (self.logic)(&mut self.state) {
+            if !returned_ids.insert(next_view.id) {
                 tracing::error!(
-                    window_id = window_id.trace(),
+                    window_id = next_view.id.trace(),
                     "logic function returned two windows with the same id, ignoring the duplicate"
                 );
                 continue;
             }
-            let next_view = WindowView::new(next_attrs, next_view);
 
-            match self.windows.get_mut(&window_id) {
+            match self.windows.get_mut(&next_view.id) {
                 Some(Window {
                     view,
                     view_ctx,
@@ -220,12 +197,12 @@ where
                         view,
                         view_state,
                         view_ctx,
-                        driver_ctx.window_handle_and_render_root(window_id),
+                        driver_ctx.window(next_view.id),
                         &mut self.state,
                     );
                     *view = next_view;
                 }
-                None => self.create_window(driver_ctx, window_id, next_view),
+                None => self.create_window(driver_ctx, next_view),
             }
         }
 
@@ -245,7 +222,7 @@ impl<State, Logic, WindowIter> AppDriver for MasonryDriver<State, Logic>
 where
     State: AppState + 'static,
     Logic: FnMut(&mut State) -> WindowIter,
-    WindowIter: Iterator<Item = (WindowId, WindowOptions<State>, Box<AnyWidgetView<State>>)>,
+    WindowIter: Iterator<Item = WindowView<State>>,
 {
     fn on_action(
         &mut self,
@@ -276,7 +253,7 @@ where
             let res = window.view.message(
                 &mut window.view_state,
                 &mut message_context,
-                masonry_ctx.window_handle_and_render_root(window_id),
+                masonry_ctx.window(window_id),
                 &mut self.state,
             );
             let (env, id_path, _message) = message_context.finish();
@@ -294,7 +271,7 @@ where
             let res = window.view.message(
                 &mut window.view_state,
                 &mut message_context,
-                masonry_ctx.window_handle_and_render_root(window_id),
+                masonry_ctx.window(window_id),
                 &mut self.state,
             );
             let (env, id_path, _message) = message_context.finish();

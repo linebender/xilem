@@ -3,18 +3,15 @@
 
 use std::marker::PhantomData;
 
-use crate::style::Style;
-
 use masonry::core::{FromDynWidget, Widget, WidgetMut};
 use masonry::properties::types::Length;
-use masonry::properties::{Background, BorderColor, BorderWidth, CornerRadius, Padding};
 use masonry::widgets;
 
 use crate::core::{
     AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
     ViewMarker, ViewSequence,
 };
-use crate::{Pod, PropertyTuple as _, ViewCtx, WidgetView};
+use crate::{Pod, ViewCtx, WidgetView};
 
 pub use masonry::widgets::GridParams;
 /// A Grid layout divides a window into regions and defines the relationship
@@ -37,14 +34,14 @@ pub use masonry::widgets::GridParams;
 /// let mut state = State::default();
 ///
 /// grid(
-///     (   
+///     (
 ///         label(state.int.to_string()).grid_item(GridParams::new(0, 0, 3, 1)),
 ///         button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
 ///         button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
 ///         button("Increase by 1", |state: &mut State| state.int += 1).grid_pos(3, 1),
-///         ),
-/// 3,
-/// 2,
+///     ),
+///     3,
+///     2,
 /// )
 /// .spacing(GRID_GAP)
 /// ```
@@ -59,7 +56,6 @@ pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
         spacing: Length::ZERO,
         height,
         width,
-        properties: GridProps::default(),
         phantom: PhantomData,
     }
 }
@@ -73,7 +69,6 @@ pub struct Grid<Seq, State, Action = ()> {
     spacing: Length,
     width: i32,
     height: i32,
-    properties: GridProps,
 
     /// Used to associate the State and Action in the call to `.grid()` with the State and Action
     /// used in the View implementation, to allow inference to flow backwards, allowing State and
@@ -89,25 +84,6 @@ impl<Seq, State, Action> Grid<Seq, State, Action> {
         self
     }
 }
-
-impl<Seq, S, A> Style for Grid<Seq, S, A> {
-    type Props = GridProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
-    }
-}
-
-crate::declare_property_tuple!(
-    pub GridProps;
-    Grid<Seq, S, A>;
-
-    Background, 0;
-    BorderColor, 1;
-    BorderWidth, 2;
-    CornerRadius, 3;
-    Padding, 4;
-);
 
 mod hidden {
     use super::GridElement;
@@ -146,8 +122,7 @@ where
         for element in elements.drain() {
             widget = widget.with_child(element.child.new_widget, element.params);
         }
-        let mut pod = ctx.create_pod(widget);
-        pod.new_widget.properties = self.properties.build_properties();
+        let pod = ctx.create_pod(widget);
         (
             pod,
             GridState {
@@ -165,8 +140,6 @@ where
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
         if prev.height != self.height {
             widgets::Grid::set_height(&mut element, self.height);
         }
@@ -188,11 +161,9 @@ where
         GridState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut splice = GridSplice::new(element, scratch);
-        self.sequence
-            .seq_teardown(seq_state, ctx, &mut splice, app_state);
+        self.sequence.seq_teardown(seq_state, ctx, &mut splice);
         debug_assert!(scratch.is_empty());
     }
 
@@ -497,11 +468,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
-        self.view
-            .teardown(view_state, ctx, child.downcast(), app_state);
+        self.view.teardown(view_state, ctx, child.downcast());
     }
 
     fn message(

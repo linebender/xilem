@@ -4,6 +4,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Point, Rect, Size};
@@ -15,8 +16,8 @@ use crate::core::{
     WidgetMut, WidgetPod,
 };
 use crate::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
-    DisabledBackground, Padding, PlaceholderColor,
+    Background, BorderColor, BorderWidth, BoxShadow, CaretColor, ContentColor, CornerRadius,
+    DisabledBackground, Padding, PlaceholderColor, SelectionColor, UnfocusedSelectionColor,
 };
 use crate::util::{fill, stroke};
 use crate::widgets::{Label, TextArea};
@@ -124,6 +125,18 @@ impl TextInput {
     }
 }
 
+impl HasProperty<Background> for TextInput {}
+impl HasProperty<CaretColor> for TextInput {}
+impl HasProperty<DisabledBackground> for TextInput {}
+impl HasProperty<BorderColor> for TextInput {}
+impl HasProperty<BorderWidth> for TextInput {}
+impl HasProperty<BoxShadow> for TextInput {}
+impl HasProperty<CornerRadius> for TextInput {}
+impl HasProperty<Padding> for TextInput {}
+impl HasProperty<PlaceholderColor> for TextInput {}
+impl HasProperty<SelectionColor> for TextInput {}
+impl HasProperty<UnfocusedSelectionColor> for TextInput {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for TextInput {
     type Action = NoAction;
@@ -140,15 +153,37 @@ impl Widget for TextInput {
         BorderWidth::prop_changed(ctx, property_type);
         CornerRadius::prop_changed(ctx, property_type);
         Padding::prop_changed(ctx, property_type);
+        // TODO: Draw shadows in post_paint.
         BoxShadow::prop_changed(ctx, property_type);
 
         // FIXME - Find more elegant way to propagate property to child.
-        if property_type == TypeId::of::<PlaceholderColor>() {
+        if property_type == TypeId::of::<CaretColor>() {
+            ctx.mutate_self_later(|mut input| {
+                let mut input = input.downcast::<Self>();
+                let color = *input.get_prop::<CaretColor>();
+                let mut text_area = Self::text_mut(&mut input);
+                text_area.insert_prop(color);
+            });
+        } else if property_type == TypeId::of::<SelectionColor>() {
+            ctx.mutate_self_later(|mut input| {
+                let mut input = input.downcast::<Self>();
+                let color = *input.get_prop::<SelectionColor>();
+                let mut text_area = Self::text_mut(&mut input);
+                text_area.insert_prop(color);
+            });
+        } else if property_type == TypeId::of::<UnfocusedSelectionColor>() {
+            ctx.mutate_self_later(|mut input| {
+                let mut input = input.downcast::<Self>();
+                let color = *input.get_prop::<UnfocusedSelectionColor>();
+                let mut text_area = Self::text_mut(&mut input);
+                text_area.insert_prop(color);
+            });
+        } else if property_type == TypeId::of::<PlaceholderColor>() {
             ctx.mutate_self_later(|mut input| {
                 let mut input = input.downcast::<Self>();
                 let color = input.get_prop::<PlaceholderColor>().color;
-                let mut text_area = Self::placeholder_mut(&mut input);
-                text_area.insert_prop(ContentColor::new(color));
+                let mut label = Self::placeholder_mut(&mut input);
+                label.insert_prop(ContentColor::new(color));
             });
         }
     }
@@ -159,9 +194,27 @@ impl Widget for TextInput {
                 // FIXME - Find more elegant way to propagate property to child.
                 ctx.mutate_self_later(|mut input| {
                     let mut input = input.downcast::<Self>();
+                    let color = *input.get_prop::<CaretColor>();
+                    let mut text_area = Self::text_mut(&mut input);
+                    text_area.insert_prop(color);
+                });
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
+                    let color = *input.get_prop::<SelectionColor>();
+                    let mut text_area = Self::text_mut(&mut input);
+                    text_area.insert_prop(color);
+                });
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
+                    let color = *input.get_prop::<UnfocusedSelectionColor>();
+                    let mut text_area = Self::text_mut(&mut input);
+                    text_area.insert_prop(color);
+                });
+                ctx.mutate_self_later(|mut input| {
+                    let mut input = input.downcast::<Self>();
                     let color = input.get_prop::<PlaceholderColor>().color;
-                    let mut text_area = Self::placeholder_mut(&mut input);
-                    text_area.insert_prop(ContentColor::new(color));
+                    let mut label = Self::placeholder_mut(&mut input);
+                    label.insert_prop(ContentColor::new(color));
                 });
             }
             // We check for `ChildFocusChanged` instead of `FocusChanged`
@@ -212,6 +265,11 @@ impl Widget for TextInput {
         }
 
         if self.clip {
+            // TODO: Ideally, this clip would be the "inside edge" of our border path
+            // In the current implementation, that would currently clip our own border
+            // and so isn't viable.
+            // The BorderColor (etc.) properties don't currently support the border
+            // being drawn in post_post, which I think would be ideal for this use case.
             ctx.set_clip_path(Rect::from_origin_size(Point::ORIGIN, size));
         }
 
@@ -279,6 +337,7 @@ impl Widget for TextInput {
 // TODO - Add more tests
 #[cfg(test)]
 mod tests {
+    use masonry_core::core::TextEvent;
     use vello::kurbo::Size;
 
     use super::*;
@@ -312,5 +371,49 @@ mod tests {
         harness.focus_on(text_area_id);
 
         assert_render_snapshot!(harness, "text_input_selection");
+
+        harness.process_text_event(TextEvent::WindowFocusChange(false));
+
+        assert_render_snapshot!(harness, "text_input_selection_unfocused");
+    }
+
+    #[test]
+    fn placeholder() {
+        let text_input = NewWidget::new(
+            TextInput::from_text_area(
+                TextArea::new_editable("")
+                    .with_style(StyleProperty::FontSize(14.0))
+                    .with_auto_id(),
+            )
+            .with_placeholder("HELLO WORLD"),
+        );
+
+        let mut harness = TestHarness::create_with_size(
+            default_property_set(),
+            text_input,
+            Size::new(150.0, 40.0),
+        );
+
+        assert_render_snapshot!(harness, "text_input_placeholder");
+    }
+
+    #[test]
+    fn text_input_clips() {
+        let text_input = NewWidget::new(
+            TextInput::from_text_area(
+                TextArea::new_editable("TextInput contents")
+                    .with_style(StyleProperty::FontSize(14.0))
+                    .with_word_wrap(false)
+                    .with_auto_id(),
+            )
+            .with_clip(true),
+        );
+        let mut harness = TestHarness::create_with_size(
+            default_property_set(),
+            text_input,
+            Size::new(80.0, 30.0),
+        );
+
+        assert_render_snapshot!(harness, "text_input_clip");
     }
 }

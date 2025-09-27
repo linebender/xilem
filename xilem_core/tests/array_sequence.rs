@@ -53,7 +53,7 @@ fn two_element_passthrough() {
         &[Operation::Build(1), Operation::Rebuild { from: 1, to: 4 }]
     );
 
-    view2.teardown(&mut state, &mut ctx, &mut element, &mut ());
+    view2.teardown(&mut state, &mut ctx, &mut element);
     assert_eq!(
         element.operations,
         &[

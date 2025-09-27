@@ -20,8 +20,10 @@ pub enum WindowEvent {
     Resize(PhysicalSize<u32>),
     /// The animation frame requested by this window must run.
     AnimFrame(Duration),
-    /// The accessibility tree must be rebuilt.
-    RebuildAccessTree,
+    /// The accessibility tree must be updated when rendering the app.
+    EnableAccessTree,
+    /// The accessibility tree is no longer updated when rendering the app.
+    DisableAccessTree,
 }
 
 /// A text-related event.
@@ -254,15 +256,23 @@ impl Update {
     pub fn short_name(&self) -> &str {
         match self {
             Self::WidgetAdded => "WidgetAdded",
-            Self::DisabledChanged(_) => "DisabledChanged",
-            Self::StashedChanged(_) => "StashedChanged",
-            Self::RequestPanToChild(_) => "RequestPanToChild",
-            Self::HoveredChanged(_) => "HoveredChanged",
-            Self::ChildHoveredChanged(_) => "ChildHoveredChanged",
-            Self::ActiveChanged(_) => "ActiveChanged",
-            Self::ChildActiveChanged(_) => "ChildActiveChanged",
-            Self::FocusChanged(_) => "FocusChanged",
-            Self::ChildFocusChanged(_) => "ChildFocusChanged",
+            Self::DisabledChanged(false) => "DisabledChanged(false)",
+            Self::StashedChanged(false) => "StashedChanged(false)",
+            Self::HoveredChanged(false) => "HoveredChanged(false)",
+            Self::ChildHoveredChanged(false) => "ChildHoveredChanged(false)",
+            Self::ActiveChanged(false) => "ActiveChanged(false)",
+            Self::ChildActiveChanged(false) => "ChildActiveChanged(false)",
+            Self::FocusChanged(false) => "FocusChanged(false)",
+            Self::ChildFocusChanged(false) => "ChildFocusChanged(false)",
+            Self::DisabledChanged(true) => "DisabledChanged(true)",
+            Self::StashedChanged(true) => "StashedChanged(true)",
+            Self::HoveredChanged(true) => "HoveredChanged(true)",
+            Self::ChildHoveredChanged(true) => "ChildHoveredChanged(true)",
+            Self::ActiveChanged(true) => "ActiveChanged(true)",
+            Self::ChildActiveChanged(true) => "ChildActiveChanged(true)",
+            Self::FocusChanged(true) => "FocusChanged(true)",
+            Self::ChildFocusChanged(true) => "ChildFocusChanged(true)",
+            Self::RequestPanToChild(_) => "RequestPanToChild(_)",
         }
     }
 }

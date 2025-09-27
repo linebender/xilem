@@ -2,33 +2,63 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::app::RenderRoot;
-use masonry::core::{NewWidget, Widget};
-use winit::window::{Window, WindowAttributes};
+use masonry::peniko::Color;
+use masonry_winit::app::{NewWindow, Window, WindowId};
 
 use crate::core::{AnyViewState, MessageContext, Mut, View, ViewElement, ViewMarker};
-use crate::{AnyWidgetView, ViewCtx, WindowOptions};
+use crate::{AnyWidgetView, ViewCtx, WidgetView, WindowOptions};
 
-pub(crate) struct WindowView<State> {
+/// A view representing a window.
+pub struct WindowView<State> {
+    pub(crate) id: WindowId,
     options: WindowOptions<State>,
     root_widget_view: Box<AnyWidgetView<State, ()>>,
+    /// The base color of the window.
+    base_color: Color,
 }
 
-impl<State> WindowView<State> {
-    pub(crate) fn new(
-        options: WindowOptions<State>,
-        root_widget_view: Box<AnyWidgetView<State, ()>>,
-    ) -> Self {
-        Self {
-            options,
-            root_widget_view,
-        }
+/// A view representing a window.
+///
+/// `id` can be created using the [`WindowId::next()`] method and _must_ be the
+/// same each frame for the same window. Usually it should be stored in app
+/// state somewhere.
+///
+/// `title` initializes [`WindowOptions`].
+pub fn window<V: WidgetView<State>, State: 'static>(
+    id: WindowId,
+    title: impl Into<String>,
+    root_view: V,
+) -> WindowView<State> {
+    WindowView {
+        id,
+        options: WindowOptions::new(title),
+        root_widget_view: root_view.boxed(),
+        base_color: Color::BLACK,
     }
 }
 
-pub(crate) struct CreateWindow(pub WindowAttributes, pub NewWidget<dyn Widget>);
+impl<State> WindowView<State> {
+    /// Modify window options in-place.
+    pub fn with_options(
+        mut self,
+        f: impl FnOnce(WindowOptions<State>) -> WindowOptions<State>,
+    ) -> Self {
+        self.options = f(self.options);
+        self
+    }
 
-impl ViewElement for CreateWindow {
-    type Mut<'a> = (&'a Window, &'a mut RenderRoot);
+    /// Set base color of the window.
+    pub fn with_base_color(mut self, color: Color) -> Self {
+        self.base_color = color;
+        self
+    }
+}
+
+/// A newtype wrapper around [`NewWindow`] for implementing [`ViewElement`].
+pub struct PodWindow(pub NewWindow);
+
+impl ViewElement for PodWindow {
+    type Mut<'a> = &'a mut Window;
 }
 
 impl<State> ViewMarker for WindowView<State> where State: 'static {}
@@ -37,7 +67,7 @@ impl<State> View<State, (), ViewCtx> for WindowView<State>
 where
     State: 'static,
 {
-    type Element = CreateWindow;
+    type Element = PodWindow;
 
     type ViewState = AnyViewState;
 
@@ -45,7 +75,14 @@ where
         let (root_widget, view_state) = self.root_widget_view.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
         (
-            CreateWindow(initial_attributes, root_widget.new_widget.erased()),
+            PodWindow(
+                NewWindow::new_with_id(
+                    self.id,
+                    initial_attributes,
+                    root_widget.new_widget.erased(),
+                )
+                .with_base_color(self.base_color),
+            ),
             view_state,
         )
     }
@@ -55,25 +92,33 @@ where
         prev: &Self,
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        (window, render_root): Mut<'_, Self::Element>,
+        window: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) {
-        self.options.rebuild(&prev.options, window);
+        self.options.rebuild(&prev.options, window.handle());
+        if self.base_color != prev.base_color {
+            *window.base_color() = self.base_color;
+        }
 
         ctx.set_state_changed(true);
-        self.rebuild_root_widget(prev, root_widget_view_state, ctx, render_root, app_state);
+        self.rebuild_root_widget(
+            prev,
+            root_widget_view_state,
+            ctx,
+            window.render_root(),
+            app_state,
+        );
     }
 
     fn teardown(
         &self,
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
-        (_, render_root): Mut<'_, Self::Element>,
-        app_state: &mut State,
+        window: Mut<'_, Self::Element>,
     ) {
-        render_root.edit_base_layer(|mut root| {
+        window.render_root().edit_base_layer(|mut root| {
             self.root_widget_view
-                .teardown(view_state, ctx, root.downcast(), app_state);
+                .teardown(view_state, ctx, root.downcast());
         });
     }
 
@@ -81,10 +126,10 @@ where
         &self,
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
-        (_, render_root): Mut<'_, Self::Element>,
+        window: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
-        render_root.edit_base_layer(|mut root| {
+        window.render_root().edit_base_layer(|mut root| {
             self.root_widget_view
                 .message(view_state, message, root.downcast(), app_state)
         })

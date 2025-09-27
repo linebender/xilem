@@ -28,32 +28,32 @@ fn request_paint() {
     harness.flush_records_of(parent_tag);
 
     // Paint
-    harness.edit_widget_with_tag(target_tag, |mut widget| {
+    harness.edit_widget(target_tag, |mut widget| {
         widget.ctx.request_paint_only();
     });
     let _ = harness.render();
 
     // Check that `Widget::paint()` is called for the child (which did request it)
     // but not the parent (which did not).
-    assert_matches!(harness.get_records_of(target_tag)[..], [Record::Paint]);
-    assert_matches!(harness.get_records_of(parent_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], [Record::Paint]);
+    assert_matches!(harness.take_records_of(parent_tag)[..], []);
 
     // Post-paint
-    harness.edit_widget_with_tag(target_tag, |mut widget| {
+    harness.edit_widget(target_tag, |mut widget| {
         widget.ctx.request_post_paint();
     });
     let _ = harness.render();
 
     // Check that `Widget::post_paint()` is called for the child (which did request it)
     // but not the parent (which did not).
-    assert_matches!(harness.get_records_of(target_tag)[..], [Record::PostPaint]);
-    assert_matches!(harness.get_records_of(parent_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], [Record::PostPaint]);
+    assert_matches!(harness.take_records_of(parent_tag)[..], []);
 
     // Check that `Widget::paint()` and `Widget::post_paint()` are not called:
     // neither widget has requested an update.
     let _ = harness.render();
-    assert_matches!(harness.get_records_of(parent_tag)[..], []);
-    assert_matches!(harness.get_records_of(target_tag)[..], []);
+    assert_matches!(harness.take_records_of(parent_tag)[..], []);
+    assert_matches!(harness.take_records_of(target_tag)[..], []);
 }
 
 #[test]

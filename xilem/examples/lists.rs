@@ -4,7 +4,7 @@
 //! Displaying a variable length list is achieved using a [Vec] `FlexSequence`.
 
 use winit::error::EventLoopError;
-use xilem::view::{Axis, MainAxisAlignment, button, flex, prose};
+use xilem::view::{MainAxisAlignment, button, flex_col, prose};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 #[derive(Default)]
@@ -18,13 +18,12 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         .map(|n| prose(format!("item #{n}")))
         .collect::<Vec<_>>();
 
-    flex((
+    flex_col((
         // Even when a `Vec` is used for the children, other widgets can be included by putting them in a
         // tuple of children alongside the vector.
         button("more", |appstate: &mut AppState| appstate.count += 1),
         list,
     ))
-    .direction(Axis::Vertical) // Top to Bottom
     // We can control alignment of the elements in the flexbox
     .main_axis_alignment(MainAxisAlignment::Start) // Aligned to the left
 }

@@ -19,12 +19,16 @@ pub(crate) fn mutate_widget<R>(
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
     let properties = &mut node.item.properties;
+    let changed_properties = &mut node.item.changed_properties;
     let id = state.id;
 
     let _span = info_span!("mutate_widget", name = widget.short_type_name()).entered();
 
+    changed_properties.clear();
+
     // NOTE - we can set parent_widget_state to None here, because the loop below will merge the
     // states up to the root.
+
     let root_widget = WidgetMut {
         ctx: MutateCtx {
             global_state: &mut root.global_state,
@@ -34,6 +38,7 @@ pub(crate) fn mutate_widget<R>(
                 map: properties,
                 default_map: root.default_properties.for_widget(widget.type_id()),
             },
+            changed_properties,
             children,
             default_properties: &root.default_properties,
         },

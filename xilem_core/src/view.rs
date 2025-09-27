@@ -96,7 +96,6 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     );
 
     /// Route `message` to `id_path`, if that is still a valid path.
@@ -197,9 +196,8 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
-        self.deref().teardown(view_state, ctx, element, app_state);
+        self.deref().teardown(view_state, ctx, element);
     }
 
     fn message(
@@ -266,10 +264,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         self.deref()
-            .teardown(&mut view_state.view_state, ctx, element, app_state);
+            .teardown(&mut view_state.view_state, ctx, element);
     }
 
     fn message(
@@ -330,10 +327,9 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
     ) {
         self.deref()
-            .teardown(&mut view_state.view_state, ctx, element, app_state);
+            .teardown(&mut view_state.view_state, ctx, element);
     }
 
     fn message(

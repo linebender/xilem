@@ -8,7 +8,7 @@
 
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{Axis, button, checkbox, flex, flex_row, text_input};
+use xilem::view::{button, checkbox, flex_col, flex_row, text_input};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
@@ -16,8 +16,16 @@ struct Task {
     done: bool,
 }
 
+#[derive(PartialEq, Eq, Copy, Clone)]
+enum Filter {
+    All,
+    Active,
+    Completed,
+}
+
 struct TaskList {
     next_task: String,
+    filter: Filter,
     tasks: Vec<Task>,
 }
 
@@ -40,45 +48,69 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
             task_list.next_task = new_value;
         },
     )
-    .placeholder("ex: 'Do the dishes', 'File my taxes', ...")
+    .placeholder("What needs to be done?")
     .insert_newline(InsertNewline::OnShiftEnter)
     .on_enter(|task_list: &mut TaskList, _| {
         task_list.add_task();
     });
-    let first_line = flex((
+
+    let first_line = flex_col((
         input_box,
         button("Add task".to_string(), |task_list: &mut TaskList| {
             task_list.add_task();
         }),
-    ))
-    .direction(Axis::Vertical);
+    ));
 
     let tasks = task_list
         .tasks
         .iter()
         .enumerate()
-        .map(|(i, task)| {
-            let checkbox = checkbox(
-                task.description.clone(),
-                task.done,
-                move |data: &mut TaskList, checked| {
-                    data.tasks[i].done = checked;
-                },
-            );
-            let delete_button = button("Delete", move |data: &mut TaskList| {
-                data.tasks.remove(i);
-            });
-            flex_row((checkbox, delete_button))
+        .filter_map(|(i, task)| {
+            if (task_list.filter == Filter::Active && task.done)
+                || (task_list.filter == Filter::Completed && !task.done)
+            {
+                None
+            } else {
+                let checkbox = checkbox(
+                    task.description.clone(),
+                    task.done,
+                    move |data: &mut TaskList, checked| {
+                        data.tasks[i].done = checked;
+                    },
+                );
+                let delete_button = button("Delete", move |data: &mut TaskList| {
+                    data.tasks.remove(i);
+                });
+                Some(flex_row((checkbox, delete_button)))
+            }
         })
         .collect::<Vec<_>>();
 
-    flex((first_line, tasks)).padding(50.)
+    let filter_tasks = |label, filter| {
+        // TODO: replace with combo-buttons
+        checkbox(
+            label,
+            task_list.filter == filter,
+            move |state: &mut TaskList, _| state.filter = filter,
+        )
+    };
+    let has_tasks = !task_list.tasks.is_empty();
+    let footer = has_tasks.then(|| {
+        flex_row((
+            filter_tasks("All", Filter::All),
+            filter_tasks("Active", Filter::Active),
+            filter_tasks("Completed", Filter::Completed),
+        ))
+    });
+
+    flex_col((first_line, tasks, footer)).padding(50.0)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
     let data = TaskList {
         // Add a placeholder task for Android, whilst the
         next_task: "My Next Task".into(),
+        filter: Filter::All,
         tasks: vec![
             Task {
                 description: "Buy milk".into(),

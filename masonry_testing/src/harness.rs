@@ -4,7 +4,8 @@
 //! Tools and infrastructure for testing widgets.
 
 use std::collections::VecDeque;
-use std::io::Cursor;
+use std::fs::File;
+use std::io::{BufReader, Cursor};
 use std::marker::PhantomData;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
@@ -139,8 +140,9 @@ pub struct TestHarness<W: Widget> {
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
     background_color: Color,
-    screenshot_tolerance: u32,
     panic_on_rewrite_saturation: bool,
+    screenshot_tolerance: u32,
+    max_screenshot_size: u32,
     action_queue: VecDeque<(ErasedAction, WidgetId)>,
     has_ime_session: bool,
     ime_rect: (LogicalPosition<f64>, LogicalSize<f64>),
@@ -170,6 +172,13 @@ pub struct TestHarnessParams {
     /// A loop means a case where the passes keep running because some passes keep
     /// invalidating flags for previous passes.
     pub panic_on_rewrite_saturation: bool,
+    /// The largest size a screenshot file is allowed to be in this test.
+    /// Defaults to `8KiB`.
+    ///
+    /// You can use [`TestHarnessParams::KIBIBYTE`] to help set this.
+    /// Keeping screenshot files small avoids clones of this repository taking too long.
+    /// Masonry testing uses [oxipng] to optimise the size of screenshots.
+    pub max_screenshot_size: u32,
 }
 
 /// Assert a snapshot of a rendered frame of your app.
@@ -220,6 +229,7 @@ impl TestHarnessParams {
         screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
         panic_on_rewrite_saturation: true,
+        max_screenshot_size: 8 * Self::KIBIBYTE,
     };
 
     /// Default canvas size for tests.
@@ -230,6 +240,9 @@ impl TestHarnessParams {
 
     /// Default background color for tests.
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
+
+    /// One kibibyte. Used in [`TestHarnessParams::max_screenshot_size`].
+    pub const KIBIBYTE: u32 = 1024;
 }
 
 impl Default for TestHarnessParams {
@@ -314,6 +327,7 @@ impl<W: Widget> TestHarness<W> {
                     default_properties: Arc::new(default_props),
                     use_system_fonts: false,
                     size_policy: WindowSizePolicy::User,
+                    size: window_size,
                     scale_factor: params.scale_factor,
                     test_font: Some(data),
                 },
@@ -326,6 +340,7 @@ impl<W: Widget> TestHarness<W> {
             background_color: params.background_color,
             screenshot_tolerance: params.screenshot_tolerance,
             panic_on_rewrite_saturation: params.panic_on_rewrite_saturation,
+            max_screenshot_size: params.max_screenshot_size,
             action_queue: VecDeque::new(),
             has_ime_session: false,
             ime_rect: Default::default(),
@@ -335,10 +350,11 @@ impl<W: Widget> TestHarness<W> {
         };
 
         // Set up the initial state, and clear invalidation flags.
-        harness.process_window_event(WindowEvent::Resize(window_size));
+        harness.process_window_event(WindowEvent::EnableAccessTree);
         harness.animate_ms(0);
 
         let (_, tree_update) = harness.render_root.redraw();
+        let tree_update = tree_update.unwrap();
         harness
             .access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
@@ -441,6 +457,7 @@ impl<W: Widget> TestHarness<W> {
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
     pub fn render(&mut self) -> RgbaImage {
         let (scene, tree_update) = self.render_root.redraw();
+        let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
         if std::env::var("SKIP_RENDER_TESTS").is_ok_and(|it| !it.is_empty()) {
@@ -637,7 +654,7 @@ impl<W: Widget> TestHarness<W> {
     /// - If the widget is scrolled out of view.
     #[track_caller]
     pub fn mouse_move_to(&mut self, id: WidgetId) {
-        let widget = self.get_widget(id);
+        let widget = self.get_widget_with_id(id);
         let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
         let widget_center = widget.ctx().window_transform() * local_widget_center;
 
@@ -751,6 +768,13 @@ impl<W: Widget> TestHarness<W> {
         self.process_signals();
     }
 
+    /// Helper method to directly enable/disable a widget.
+    pub fn set_disabled(&mut self, widget: WidgetTag<impl Widget>, disabled: bool) {
+        self.edit_widget(widget, |mut target| {
+            target.ctx.set_disabled(disabled);
+        });
+    }
+
     // --- MARK: GETTERS
 
     /// Return a [`WidgetRef`] to the root widget.
@@ -769,7 +793,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Panics if no widget with this id can be found.
     #[track_caller]
-    pub fn get_widget(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
+    pub fn get_widget_with_id(&self, id: WidgetId) -> WidgetRef<'_, dyn Widget> {
         self.render_root
             .get_widget(id)
             .unwrap_or_else(|| panic!("could not find widget {id}"))
@@ -781,7 +805,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Panics if no widget with this tag can be found.
     #[track_caller]
-    pub fn get_widget_with_tag<W2: Widget + FromDynWidget + ?Sized>(
+    pub fn get_widget<W2: Widget + FromDynWidget + ?Sized>(
         &self,
         tag: WidgetTag<W2>,
     ) -> WidgetRef<'_, W2> {
@@ -790,14 +814,14 @@ impl<W: Widget> TestHarness<W> {
             .unwrap_or_else(|| panic!("could not find widget '{tag}'"))
     }
 
-    /// Return the events recorded by the [`Recorder`] widget with the given tag.
+    /// Drain the events recorded by the [`Recorder`] widget with the given tag.
     ///
     /// # Panics
     ///
     /// Panics if no widget with this tag can be found.
     #[track_caller]
-    pub fn get_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) -> Vec<Record> {
-        self.get_widget_with_tag(tag).inner().recording().drain()
+    pub fn take_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) -> Vec<Record> {
+        self.get_widget(tag).inner().recording().drain()
     }
 
     /// Flush the events recorded by the [`Recorder`] widget with the given tag.
@@ -807,7 +831,7 @@ impl<W: Widget> TestHarness<W> {
     /// Panics if no widget with this tag can be found.
     #[track_caller]
     pub fn flush_records_of<W2: Widget>(&self, tag: WidgetTag<Recorder<W2>>) {
-        self.get_widget_with_tag(tag).inner().recording().clear();
+        self.get_widget(tag).inner().recording().clear();
     }
 
     /// Try to return a [`WidgetRef`] to the widget with the given id.
@@ -869,7 +893,7 @@ impl<W: Widget> TestHarness<W> {
     /// Get a [`WidgetMut`] to a specific widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_widget<R>(
+    pub fn edit_widget_with_id<R>(
         &mut self,
         id: WidgetId,
         f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
@@ -883,7 +907,7 @@ impl<W: Widget> TestHarness<W> {
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     #[track_caller]
-    pub fn edit_widget_with_tag<R, W2: Widget + FromDynWidget + ?Sized>(
+    pub fn edit_widget<R, W2: Widget + FromDynWidget + ?Sized>(
         &mut self,
         tag: WidgetTag<W2>,
         f: impl FnOnce(WidgetMut<'_, W2>) -> R,
@@ -979,15 +1003,30 @@ impl<W: Widget> TestHarness<W> {
 
             return;
         }
+        let max_size = Some(usize::try_from(self.max_screenshot_size).unwrap());
 
-        fn save_image(image: &DynamicImage, path: &PathBuf) {
+        #[track_caller]
+        fn save_image(image: &DynamicImage, path: &PathBuf, max_size: Option<usize>) {
             let mut buffer = Cursor::new(Vec::new());
             image.write_to(&mut buffer, ImageFormat::Png).unwrap();
 
             let image_data = buffer.into_inner();
+            // Whenever we save a file, we optimise it.
+            // This avoids cases where people copy the `new` file to the reference path, thus avoiding optimisation
+            // (We could skip this for diff images, but that is so far off the hot path that it's not
+            // worth a different code path for it.)
             let data =
                 optimize_from_memory(image_data.as_slice(), &Options::from_preset(5)).unwrap();
+            let saved_len = data.len();
             std::fs::write(path, data).unwrap();
+            if let Some(max_size) = max_size
+                && saved_len > max_size
+            {
+                panic!(
+                    "New screenshot file ({saved_len} bytes) was larger than the supported file size ({max_size} bytes).\
+                        Consider increasing `TestHarnessParams::max_screenshot_size` when creating the test harness.",
+                );
+            }
         }
 
         let new_image: DynamicImage = self.render().into();
@@ -1001,22 +1040,23 @@ impl<W: Widget> TestHarness<W> {
 
         let bless_test = std::env::var_os("MASONRY_TEST_BLESS").is_some_and(|it| !it.is_empty());
 
-        // TODO: If this file is corrupted, it could be an lfs bandwidth/installation issue.
-        // Have a warning for that case (i.e. differentiation between not-found and invalid format)
-        // and a environment variable to ignore the test in that case.
-        let Ok(reference_file) = ImageReader::open(&reference_path) else {
+        let Ok(reference_file) = File::open(&reference_path) else {
             if bless_test && !expect_failure {
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
-                save_image(&new_image, &reference_path);
+                save_image(&new_image, &reference_path, max_size);
                 return;
             }
 
             // Remove '<test_name>.new.png' file if it exists
             let _ = std::fs::remove_file(&new_path);
-            save_image(&new_image, &new_path);
+            save_image(&new_image, &new_path, max_size);
             panic!("Snapshot test '{test_name}' failed: No reference file");
         };
+        let reference_size = reference_file.metadata().unwrap().len();
+
+        let reference_file =
+            ImageReader::with_format(BufReader::new(reference_file), ImageFormat::Png);
 
         let ref_image = reference_file.decode().unwrap().to_rgb8();
 
@@ -1037,16 +1077,24 @@ impl<W: Widget> TestHarness<W> {
             if bless_test {
                 let _ = std::fs::remove_file(&new_path);
                 let _ = std::fs::remove_file(&diff_path);
-                save_image(&new_image, &reference_path);
+                save_image(&new_image, &reference_path, max_size);
             } else {
-                save_image(&new_image, &new_path);
-                save_image(&diff_image.into(), &diff_path);
+                save_image(&new_image, &new_path, max_size);
+                // Don't fail if the diff file is too big!
+                save_image(&diff_image.into(), &diff_path, None);
                 panic!("Snapshot test '{test_name}' failed: Images are different");
             }
         } else {
             // Remove the vestigial new and diff images
             let _ = std::fs::remove_file(&new_path);
             let _ = std::fs::remove_file(&diff_path);
+            if reference_size > u64::from(self.max_screenshot_size) {
+                panic!(
+                    "Existing file ({reference_size}) was larger than the supported file size ({}).\
+                    Consider increasing `TestHarnessParams::max_screenshot_size` when creating the test harness.",
+                    self.max_screenshot_size
+                );
+            }
         }
     }
 }

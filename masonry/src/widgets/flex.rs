@@ -6,6 +6,7 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role};
+use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Line, Point, Size, Stroke};
@@ -23,6 +24,28 @@ use crate::util::{debug_panic, fill, include_screenshot, stroke};
 /// A container with either horizontal or vertical layout.
 ///
 /// This widget is the foundation of most layouts, and is highly configurable.
+///
+/// The flex model used by Masonry has different behaviour than you might be familiar with from the web.
+/// Only children which have an explicit flex factor, set by the first parameter of
+/// [`FlexParams::new`](FlexParams::new) being `Some`, will share remaining space flexibly.
+/// Children which do not have an explicit flex factor set will be laid out as their natural size.
+/// For some widgets (such as [`TextInput`](crate::widgets::TextInput)), this will be
+/// all the space made available to the flex (in at least one axis).
+/// In the web model, this is equivalent to the default `flex` being `none` (on the web, this is instead `auto`).
+/// This can lead to surprising results, including later siblings of the expanded child being pushed off-screen.
+/// A general rule of thumb is to set a flex factor on all "large" children in the flex axis, especially
+/// portals, sized boxes, and text inputs (in horizontal flex areas).
+/// That is, any item which needs to shrink to fit within the viewport should have a
+/// flex factor set.
+///
+/// There is also no support for flex grow or flex shrink; instead, each flexible child takes up
+/// the proportion of remaining space (after all "non-flex" children are laid out) specified
+/// by its flex factor.
+/// In the web flex algorithm, if a widget cannot expand to its target flex size, that remaining space is distributed
+/// to the other sibling flex widgets recursively.
+/// However, this widget does not implement this behaviour at the moment, as it uses a single-pass layout algorithm.
+/// Instead, if a flex child of this widget does not expand to the target size provided by this parent, the difference is distributed
+/// to the space between widgets according to this widget's [`MainAxisAlignment`](Flex::set_main_axis_alignment).
 ///
 #[doc = include_screenshot!("flex_col_main_axis_spaceAround.png", "Flex column with multiple labels.")]
 pub struct Flex {
@@ -569,6 +592,12 @@ fn get_spacing(alignment: MainAxisAlignment, extra: f64, child_count: usize) -> 
     (space_before, space_between)
 }
 
+impl HasProperty<Background> for Flex {}
+impl HasProperty<BorderColor> for Flex {}
+impl HasProperty<BorderWidth> for Flex {}
+impl HasProperty<CornerRadius> for Flex {}
+impl HasProperty<Padding> for Flex {}
+
 // --- MARK: IMPL WIDGET
 impl Widget for Flex {
     type Action = NoAction;
@@ -606,7 +635,8 @@ impl Widget for Flex {
 
         const MIN_FLEX_SUM: f64 = 0.0001;
         let gap_count = self.children.len().saturating_sub(1);
-        let bc_major = self.direction.major(bc.max());
+        let bc_major_min = self.direction.major(bc.min());
+        let bc_major_max = self.direction.major(bc.max());
 
         // ACCUMULATORS
         let mut minor = self.direction.minor(bc.min());
@@ -658,7 +688,7 @@ impl Widget for Flex {
             }
         }
 
-        let remaining_major = (bc_major - major_non_flex).max(0.0);
+        let remaining_major = (bc_major_max - major_non_flex).max(0.0);
         let px_per_flex = remaining_major / flex_sum;
 
         // MEASURE FLEX CHILDREN
@@ -766,14 +796,14 @@ impl Widget for Flex {
             }
         }
 
-        if flex_sum > MIN_FLEX_SUM && bc_major.is_infinite() {
+        if flex_sum > MIN_FLEX_SUM && bc_major_max.is_infinite() {
             tracing::warn!("A child of Flex is flex, but Flex is unbounded.");
         }
 
         let final_major = if flex_sum > MIN_FLEX_SUM || self.fill_major_axis {
-            bc_major.max(major_non_flex)
+            bc_major_max.max(major_non_flex)
         } else {
-            major_non_flex
+            bc_major_min.max(major_non_flex)
         };
 
         let my_size: Size = self.direction.pack(final_major, minor).into();
@@ -855,10 +885,12 @@ impl Widget for Flex {
 // --- MARK: TESTS
 #[cfg(test)]
 mod tests {
+    use masonry_testing::assert_debug_panics;
+
     use super::*;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::{ACCENT_COLOR, default_property_set};
     use crate::widgets::Label;
 
     #[test]
@@ -965,33 +997,73 @@ mod tests {
         assert_eq!(after, 3.5);
     }
 
-    // TODO - fix this test
     #[test]
-    #[ignore = "Unclear what test is trying to validate"]
-    fn test_invalid_flex_params() {
-        use float_cmp::approx_eq;
-        let params = FlexParams::new(0.0, None);
-        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
+    fn invalid_flex_params() {
+        assert_debug_panics!(FlexParams::new(0.0, None), "Flex value should be > 0.0");
+        assert_debug_panics!(FlexParams::new(-0.0, None), "Flex value should be > 0.0");
+        assert_debug_panics!(FlexParams::new(-1.0, None), "Flex value should be > 0.0");
+    }
 
-        let params = FlexParams::new(-0.0, None);
-        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
+    #[test]
+    fn flex_row_fixed_size_only() {
+        let widget = NewWidget::new_with_props(
+            Flex::row()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_child(Label::new("world").with_auto_id())
+                .with_child(Label::new("foo").with_auto_id())
+                .with_child(Label::new("bar").with_auto_id()),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
-        let params = FlexParams::new(-1.0, None);
-        approx_eq!(f64, params.flex.unwrap(), 1.0, ulps = 2);
+        let window_size = Size::new(200.0, 150.0);
+        let mut harness =
+            TestHarness::create_with_size(default_property_set(), widget, window_size);
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Start);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_start");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Center);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_center");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::End);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_end");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceBetween);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_spaceBetween");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceEvenly);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_spaceEvenly");
+
+        harness.edit_root_widget(|mut flex| {
+            Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::SpaceAround);
+        });
+        assert_render_snapshot!(harness, "flex_row_fixed_children_spaceAround");
     }
 
     // TODO - Reduce copy-pasting?
     #[test]
     fn flex_row_cross_axis_snapshots() {
-        let widget = Flex::row()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::row()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1025,15 +1097,17 @@ mod tests {
 
     #[test]
     fn flex_row_main_axis_snapshots() {
-        let widget = Flex::row()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::row()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1082,15 +1156,17 @@ mod tests {
 
     #[test]
     fn flex_col_cross_axis_snapshots() {
-        let widget = Flex::column()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::column()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
@@ -1124,15 +1200,17 @@ mod tests {
 
     #[test]
     fn flex_col_main_axis_snapshots() {
-        let widget = Flex::column()
-            .with_child(Label::new("hello").with_auto_id())
-            .with_flex_child(Label::new("world").with_auto_id(), 1.0)
-            .with_child(Label::new("foo").with_auto_id())
-            .with_flex_child(
-                Label::new("bar").with_auto_id(),
-                FlexParams::new(2.0, CrossAxisAlignment::Start),
-            )
-            .with_auto_id();
+        let widget = NewWidget::new_with_props(
+            Flex::column()
+                .with_child(Label::new("hello").with_auto_id())
+                .with_flex_child(Label::new("world").with_auto_id(), 1.0)
+                .with_child(Label::new("foo").with_auto_id())
+                .with_flex_child(
+                    Label::new("bar").with_auto_id(),
+                    FlexParams::new(2.0, CrossAxisAlignment::Start),
+                ),
+            (BorderWidth::all(2.0), BorderColor::new(ACCENT_COLOR)).into(),
+        );
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =

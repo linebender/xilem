@@ -4,18 +4,21 @@
 use megalodon::entities::Status;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex,
+    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex_col,
     flex_row, inline_prose, label, prose,
 };
 use xilem::{FontWeight, TextAlign};
 
-use crate::{Avatars, Placehero, status_html_to_plaintext};
+use crate::actions::Navigation;
+use crate::{Avatars, status_html_to_plaintext};
 
 mod timeline;
-pub(crate) use timeline::timeline;
+pub(crate) use timeline::Timeline;
 
 mod thread;
 pub(crate) use thread::thread;
+
+mod media;
 
 /// Renders the key parts of a Status, in a shared way.
 ///
@@ -23,9 +26,12 @@ pub(crate) use thread::thread;
 // TODO: Determine our UX for boosting/reblogging.
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
-fn base_status(status: &Status) -> impl FlexSequence<Placehero> + use<> {
+fn base_status<State: 'static>(
+    status: &Status,
+) -> impl FlexSequence<State, Navigation> + use<State> {
     // TODO: This really should be Arced or something.
     let status_clone: Status = status.clone();
+    let acct_clone = status.account.acct.clone();
     // TODO: In theory, it's possible to reblog a reblog; it's not clear what happens in this case.
     debug_assert!(status.reblog.is_none(), "`base_status` can't show reblogs.");
     // We return a child list.
@@ -33,13 +39,13 @@ fn base_status(status: &Status) -> impl FlexSequence<Placehero> + use<> {
         // Account info/message time
         flex_row((
             Avatars::avatar(status.account.avatar_static.clone()),
-            flex((
+            flex_col((
                 inline_prose(status.account.display_name.as_str())
                     .weight(FontWeight::SEMI_BOLD)
                     .text_alignment(TextAlign::Start)
                     .text_size(20.)
                     .flex(CrossAxisAlignment::Start),
-                inline_prose(status.account.username.as_str())
+                inline_prose(status.account.acct.as_str())
                     .weight(FontWeight::SEMI_LIGHT)
                     .text_alignment(TextAlign::Start)
                     .flex(CrossAxisAlignment::Start),
@@ -47,27 +53,33 @@ fn base_status(status: &Status) -> impl FlexSequence<Placehero> + use<> {
             .main_axis_alignment(MainAxisAlignment::Start)
             .gap(1.px()),
             FlexSpacer::Flex(1.0),
+            button("Open Profile", move |_| {
+                // TODO: We already actually just have the "account" here, so maybe
+                // short-circuit re-loading the account?
+                Navigation::LoadUser(acct_clone.clone())
+            }),
             inline_prose(status.created_at.format("%Y-%m-%d %H:%M:%S").to_string())
                 .text_alignment(TextAlign::End),
         ))
         .must_fill_major_axis(true),
-        prose(status_html_to_plaintext(status.content.as_str())),
+        prose(status_html_to_plaintext(status.content.as_str())).flex(CrossAxisAlignment::Start),
+        status
+            .media_attachments
+            .iter()
+            .map(|attachment| {
+                media::attachment::<State>(attachment).flex(CrossAxisAlignment::Start)
+            })
+            .collect::<Vec<_>>(),
         flex_row((
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            button("View Replies", move |state: &mut Placehero| {
-                state
-                    .context_sender
-                    .as_ref()
-                    .unwrap()
-                    .send(status_clone.id.clone())
-                    .unwrap();
-                state.show_context = Some(status_clone.clone());
-                state.context = None;
+            button("View Replies", move |_| {
+                Navigation::LoadContext(status_clone.clone())
             }),
         ))
         // TODO: The "extra space" amount actually ends up being zero, so this doesn't do anything.
-        .main_axis_alignment(MainAxisAlignment::SpaceEvenly),
+        .main_axis_alignment(MainAxisAlignment::SpaceEvenly)
+        .flex(CrossAxisAlignment::Start),
     )
 }

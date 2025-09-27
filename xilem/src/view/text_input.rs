@@ -1,19 +1,17 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::core::{ArcStr, NewWidget, Properties, WidgetId, WidgetOptions};
+use masonry::core::{ArcStr, NewWidget, Properties};
 use masonry::properties::{
-    Background, BorderColor, BorderWidth, BoxShadow, ContentColor, CornerRadius,
-    DisabledBackground, DisabledContentColor, Padding, PlaceholderColor,
+    CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
+    UnfocusedSelectionColor,
 };
 use masonry::widgets::{self, TextAction};
-use vello::kurbo::Affine;
 use vello::peniko::Color;
 
 use crate::core::{MessageContext, Mut, View, ViewMarker};
-use crate::property_tuple::PropertyTuple;
-use crate::style::{HasProperty, Style};
-use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx};
+use crate::view::Prop;
+use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as _};
 
 // FIXME - A major problem of the current approach (always setting the text_input contents)
 // is that if the user forgets to hook up the modify the state's contents in the callback,
@@ -36,7 +34,9 @@ where
         text_alignment: TextAlign::default(),
         insert_newline: InsertNewline::default(),
         disabled: false,
-        properties: TextInputProps::default(),
+        // Since we don't support setting the word wrapping, we can default to
+        // not clipping
+        clip: true,
     }
 }
 
@@ -52,11 +52,11 @@ pub struct TextInput<State, Action> {
     text_alignment: TextAlign,
     insert_newline: InsertNewline,
     disabled: bool,
-    properties: TextInputProps,
+    clip: bool,
     // TODO: add more attributes of `masonry::widgets::TextInput`
 }
 
-impl<State, Action> TextInput<State, Action> {
+impl<State: 'static, Action: 'static> TextInput<State, Action> {
     /// Set the text's color.
     ///
     /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
@@ -73,6 +73,30 @@ impl<State, Action> TextInput<State, Action> {
         self
     }
 
+    /// Set the insertion caret's color.
+    ///
+    /// This overwrites the default `CaretColor` property for the inner `TextArea` widget.
+    pub fn caret_color(self, color: Color) -> Prop<CaretColor, Self, State, Action> {
+        self.prop(CaretColor { color })
+    }
+
+    /// Set the selection's color.
+    ///
+    /// This overwrites the default `SelectionColor` property for the inner `TextArea` widget.
+    pub fn selection_color(self, color: Color) -> Prop<SelectionColor, Self, State, Action> {
+        self.prop(SelectionColor { color })
+    }
+
+    /// Set the selection's color when the window is unfocused.
+    ///
+    /// This overwrites the default `UnfocusedSelectionColor` property for the inner `TextArea` widget.
+    pub fn unfocused_selection_color(
+        self,
+        color: Color,
+    ) -> Prop<UnfocusedSelectionColor, Self, State, Action> {
+        self.prop(UnfocusedSelectionColor(SelectionColor { color }))
+    }
+
     /// Set the string which is shown when the input is empty.
     pub fn placeholder(mut self, placeholder_text: impl Into<ArcStr>) -> Self {
         self.placeholder = placeholder_text.into();
@@ -80,9 +104,8 @@ impl<State, Action> TextInput<State, Action> {
     }
 
     /// Set the [`PlaceholderColor`] property, which sets the color of the text shown when the input is empty.
-    pub fn placeholder_color(mut self, color: Color) -> Self {
-        *self.property() = Some(PlaceholderColor::new(color));
-        self
+    pub fn placeholder_color(self, color: Color) -> Prop<PlaceholderColor, Self, State, Action> {
+        self.prop(PlaceholderColor::new(color))
     }
 
     /// Set the [text alignment](https://en.wikipedia.org/wiki/Typographic_alignment) of the text.
@@ -111,29 +134,23 @@ impl<State, Action> TextInput<State, Action> {
         self.disabled = disabled;
         self
     }
-}
 
-impl<S, A> Style for TextInput<S, A> {
-    type Props = TextInputProps;
-
-    fn properties(&mut self) -> &mut Self::Props {
-        &mut self.properties
+    /// Set whether the contained text will be clipped to the box if it overflows.
+    ///
+    /// Please note:
+    /// 1) We don't currently support scrolling within a text area, so this can make some content
+    ///    unviewable (without the user adding spaces and/or copy/pasting to extract content).
+    ///    You should probably set this to false for small text inputs (and probably also lower
+    ///    the default padding).
+    /// 2) This view currently always uses word wrapping, so if there are any linebreaking
+    ///    opportunities in the text, they will be taken.
+    ///
+    /// The default value is true (i.e. clipping is enabled).
+    pub fn clip(mut self, clip: bool) -> Self {
+        self.clip = clip;
+        self
     }
 }
-
-crate::declare_property_tuple!(
-    pub TextInputProps;
-    TextInput<S, A>;
-
-    Background, 0;
-    DisabledBackground, 1;
-    BorderColor, 2;
-    BorderWidth, 3;
-    BoxShadow, 4;
-    CornerRadius, 5;
-    Padding, 6;
-    PlaceholderColor, 7;
-);
 
 impl<State, Action> ViewMarker for TextInput<State, Action> {}
 impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput<State, Action> {
@@ -156,22 +173,17 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             props.insert(DisabledContentColor(ContentColor { color }));
         }
 
-        let text_input = widgets::TextInput::from_text_area(NewWidget::new_with(
-            text_area,
-            WidgetId::next(),
-            WidgetOptions {
-                disabled: self.disabled,
-                transform: Affine::default(),
-            },
-            props,
-        ));
-        let text_input = text_input.with_placeholder(self.placeholder.clone());
+        let text_input =
+            widgets::TextInput::from_text_area(NewWidget::new_with_props(text_area, props))
+                .with_clip(self.clip)
+                .with_placeholder(self.placeholder.clone());
 
         // Ensure that the actions from the *inner* TextArea get routed correctly.
         let id = text_input.area_pod().id();
         ctx.record_action(id);
+
         let mut pod = ctx.create_pod(text_input);
-        pod.new_widget.properties = self.properties.build_properties();
+        pod.new_widget.options.disabled = self.disabled;
         (pod, ())
     }
 
@@ -183,9 +195,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         mut element: Mut<'_, Self::Element>,
         _: &mut State,
     ) {
-        self.properties
-            .rebuild_properties(&prev.properties, &mut element);
-
         // TODO - Replace this with properties on the TextInput view
         if self.text_color != prev.text_color {
             if let Some(color) = self.text_color {
@@ -207,6 +216,10 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
 
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
+        }
+
+        if self.clip != prev.clip {
+            widgets::TextInput::set_clip(&mut element, self.clip);
         }
 
         let mut text_area = widgets::TextInput::text_mut(&mut element);
@@ -235,7 +248,6 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         _: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        _: &mut State,
     ) {
         ctx.teardown_leaf(element);
     }
