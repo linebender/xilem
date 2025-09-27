@@ -90,20 +90,54 @@ impl LayerStack {
         this.ctx.get_mut(layer)
     }
 
-    /// Removes the layer at the given index.
+    /// Removes the layer with the given widget as root.
     ///
     /// The base layer cannot be removed.
     ///
     /// # Panics
     ///
-    /// Panics if the index is zero or out of bounds.
-    pub(crate) fn remove_layer(this: &mut WidgetMut<'_, Self>, idx: usize) {
-        if idx == 0 {
-            debug_panic!("Cannot remove initial layer");
-            return;
+    /// Panics if the the intended layer the base layer in debug mode.
+    pub(crate) fn remove_layer(this: &mut WidgetMut<'_, Self>, root_id: WidgetId) {
+        match this
+            .widget
+            .layers
+            .iter()
+            .position(|layer| layer.widget.id() == root_id)
+        {
+            Some(0) => debug_panic!("Cannot remove initial layer"),
+            None => tracing::warn!("layer with root widget {root_id:?} not found"),
+            Some(idx) => {
+                let child = this.widget.layers.remove(idx).widget;
+                this.ctx.remove_child(child);
+            }
         }
-        let child = this.widget.layers.remove(idx).widget;
-        this.ctx.remove_child(child);
+    }
+
+    /// Repositions the layer with the given widget as root.
+    ///
+    /// The base layer cannot be repositioned.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the the intended layer the base layer in debug mode.
+    pub(crate) fn reposition_layer(
+        this: &mut WidgetMut<'_, Self>,
+        root_id: WidgetId,
+        new_origin: Point,
+    ) {
+        match this
+            .widget
+            .layers
+            .iter()
+            .position(|layer| layer.widget.id() == root_id)
+        {
+            Some(0) => debug_panic!("Cannot reposition initial layer"),
+            None => tracing::warn!("layer with root widget {root_id:?} not found"),
+            Some(idx) => {
+                this.widget.layers[idx].pos = new_origin;
+                this.ctx.request_layout();
+            }
+        }
     }
 }
 

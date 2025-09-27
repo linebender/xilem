@@ -213,7 +213,6 @@ pub struct RenderRootOptions {
 }
 
 /// Objects emitted by the [`RenderRoot`] to signal that something has changed or require external actions.
-#[derive(Debug)]
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
     Action(ErasedAction, WidgetId),
@@ -266,6 +265,57 @@ pub enum RenderRootSignal {
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
+    /// A new layer should be created with the widget as root.
+    NewLayer(NewWidget<dyn Widget>, Point),
+    /// The layer with the given widget as root should be removed.
+    RemoveLayer(WidgetId),
+    /// The layer with the given widget as root should be repositioned to the specified point.
+    RepositionLayer(WidgetId, Point),
+}
+
+impl std::fmt::Debug for RenderRootSignal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Action(action, widget_id) => f
+                .debug_tuple("Action")
+                .field(action)
+                .field(widget_id)
+                .finish(),
+            Self::StartIme => write!(f, "StartIme"),
+            Self::EndIme => write!(f, "EndIme"),
+            Self::ImeMoved(origin, size) => {
+                f.debug_tuple("ImeMoved").field(origin).field(size).finish()
+            }
+            Self::ClipboardStore(item) => f.debug_tuple("ClipboardStore").field(item).finish(),
+            Self::RequestRedraw => write!(f, "RequestRedraw"),
+            Self::RequestAnimFrame => write!(f, "RequestAnimFrame"),
+            Self::TakeFocus => write!(f, "TakeFocus"),
+            Self::SetCursor(icon) => f.debug_tuple("SetCursor").field(icon).finish(),
+            Self::SetSize(size) => f.debug_tuple("SetSize").field(size).finish(),
+            Self::SetTitle(title) => f.debug_tuple("SetTitle").field(title).finish(),
+            Self::DragWindow => write!(f, "DragWindow"),
+            Self::DragResizeWindow(d) => f.debug_tuple("DragResizeWindow").field(d).finish(),
+            Self::ToggleMaximized => write!(f, "ToggleMaximized"),
+            Self::Minimize => write!(f, "Minimize"),
+            Self::Exit => write!(f, "Exit"),
+            Self::ShowWindowMenu(pos) => f.debug_tuple("ShowWindowMenu").field(pos).finish(),
+            Self::WidgetSelectedInInspector(widget_id) => f
+                .debug_tuple("WidgetSelectedInInspector")
+                .field(widget_id)
+                .finish(),
+            Self::NewLayer(root_widget, pos) => f
+                .debug_tuple("NewLayer")
+                .field(&root_widget.widget.short_type_name())
+                .field(&pos)
+                .finish(),
+            Self::RemoveLayer(root_id) => f.debug_tuple("RemoveLayer").field(root_id).finish(),
+            Self::RepositionLayer(root_id, new_origin) => f
+                .debug_tuple("RepositionLayer")
+                .field(root_id)
+                .field(new_origin)
+                .finish(),
+        }
+    }
 }
 
 /// State of the widget inspector. Useful for debugging.
@@ -648,6 +698,7 @@ impl RenderRoot {
 
     /// Add a new layer at the end of the stack, with the given widget as its root, at the given position.
     pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
+        tracing::debug!("added layer to stack");
         mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
             LayerStack::add_layer(&mut layer_stack, root, pos);
@@ -656,21 +707,33 @@ impl RenderRoot {
         self.run_rewrite_passes();
     }
 
-    /// Removes the layer at the given index.
+    /// Removes the layer with the given widget as root.
     ///
     /// The base layer cannot be removed.
     ///
     /// # Panics
     ///
-    /// Panics if the index is zero or out of bounds.
-    pub fn remove_layer(&mut self, idx: usize) {
-        if idx == 0 {
-            debug_panic!("Cannot remove initial layer");
-            return;
-        }
+    /// Panics if the intended layer is the base layer in debug mode.
+    pub fn remove_layer(&mut self, root_id: WidgetId) {
         mutate_widget(self, self.root_id(), |mut layer_stack| {
             let mut layer_stack = layer_stack.downcast::<LayerStack>();
-            LayerStack::remove_layer(&mut layer_stack, idx);
+            LayerStack::remove_layer(&mut layer_stack, root_id);
+        });
+
+        self.run_rewrite_passes();
+    }
+
+    /// Repositions the layer with the given widget as root.
+    ///
+    /// The base layer cannot be repositioned.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the intended layer is the base layer in debug mode.
+    pub fn reposition_layer(&mut self, root_id: WidgetId, new_origin: Point) {
+        mutate_widget(self, self.root_id(), |mut layer_stack| {
+            let mut layer_stack = layer_stack.downcast::<LayerStack>();
+            LayerStack::reposition_layer(&mut layer_stack, root_id, new_origin);
         });
 
         self.run_rewrite_passes();
