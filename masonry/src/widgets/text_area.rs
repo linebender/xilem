@@ -127,7 +127,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             last_available_width: None,
             hint: true,
             insert_newline: InsertNewline::default(),
-            anim_cursor_visible: false,
+            anim_cursor_visible: true,
             anim_prev_interval: 0,
             anim_elapsed: 0,
         }
@@ -440,8 +440,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     ) {
         // TODO: for real world use, this should be reading from the system settings
         const CURSOR_BLINK_TIME: u64 = 1000; // ms
-        const CURSOR_BLINK_TIMEOUT: u64 = 10_000; // ms
-        ctx.request_anim_frame();
+        const CURSOR_BLINK_TIMEOUT: u64 = 10_000; // 10 seconds
 
         if ctx.is_window_focused() && ctx.is_focus_target() {
             if self.anim_elapsed < CURSOR_BLINK_TIMEOUT {
@@ -452,6 +451,9 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 if self.anim_prev_interval >= CURSOR_BLINK_TIME {
                     self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
                 }
+
+                // TODO: request timer here
+                ctx.request_anim_frame();
 
                 // Request paint only if changed.
                 if self.anim_prev_interval < CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
@@ -530,6 +532,8 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         // Reset the blink animation.
         self.anim_prev_interval = 0;
         self.anim_elapsed = 0;
+        ctx.request_anim_frame();
+        ctx.request_paint_only();
 
         match event {
             TextEvent::Keyboard(key_event) => {
@@ -730,7 +734,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             }
 
             TextEvent::WindowFocusChange(focused) => {
-                self.anim_cursor_visible = *focused;
+                if self.anim_cursor_visible != *focused {
+                    self.anim_cursor_visible = *focused;
+                    ctx.request_anim_frame();
+                }
+                // To use a different selection color when unfocused.
                 ctx.request_paint_only();
             }
 
@@ -916,7 +924,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             } else {
                 props.get::<UnfocusedSelectionColor>().0.color
             };
-            let window_is_focused = ctx.is_window_focused();
             for (rect, _) in self.editor.selection_geometry().iter() {
                 scene.fill(
                     Fill::NonZero,
