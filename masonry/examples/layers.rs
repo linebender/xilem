@@ -34,16 +34,7 @@ impl AppDriver for Driver {
     }
 }
 
-/// A widget with predefined size.
-///
-/// If given a child, this widget forces its child to have a specific width and/or height
-/// (assuming values are permitted by this widget's parent). If either the width or height is not
-/// set, this widget will size itself to match the child's size in that dimension.
-///
-/// If not given a child, `SizedBox` will try to size itself as close to the specified height
-/// and width as possible given the parent's constraints. If height or width is not set,
-/// it will be treated as zero.
-///
+#[allow(missing_docs, missing_debug_implementations, reason = "example code")]
 pub struct OverlayBox {
     child: WidgetPod<dyn Widget>,
     overlayer: Box<dyn Fn() -> NewWidget<dyn Widget>>,

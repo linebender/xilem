@@ -57,7 +57,7 @@
 //!         debug_assert_eq!(window_id, self.window_id, "unknown window");
 //!
 //!         if action.is::<ButtonPress>() {
-//!             ctx.render_root(window_id).edit_root_widget(|mut root| {
+//!             ctx.render_root(window_id).edit_base_layer(|mut root| {
 //!                 let mut portal = root.downcast::<Portal<Flex>>();
 //!                 let mut flex = Portal::child_mut(&mut portal);
 //!                 Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_auto_id());
