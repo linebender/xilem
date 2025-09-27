@@ -9,8 +9,8 @@
 use masonry::accesskit::{Node, Role};
 use masonry::core::{
     AccessCtx, BoxConstraints, ChildrenIds, ErasedAction, EventCtx, LayoutCtx, NewWidget, NoAction,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, StyleProperty, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use masonry::kurbo::{Point, Size};
 use masonry::parley::FontWeight;
@@ -83,25 +83,30 @@ impl Widget for OverlayBox {
         _props: &mut PropertiesMut<'_>,
         event: &PointerEvent,
     ) {
-        if let PointerEvent::Move(e) = event {
-            if ctx.is_hovered() {
-                let position =
-                    ctx.window_origin() + ctx.local_position(e.current.position).to_vec2();
-                if let Some(overlay_id) = self.layer_root_id {
-                    ctx.reposition_layer(overlay_id, position);
-                } else {
-                    let overlay = (self.overlayer)();
-                    self.layer_root_id = Some(overlay.id());
-                    ctx.create_layer(overlay, position);
-                }
-            } else if let Some(overlay_id) = self.layer_root_id.take() {
-                ctx.remove_layer(overlay_id);
+        if let PointerEvent::Move(e) = event
+            && ctx.is_hovered()
+        {
+            let position = ctx.window_origin() + ctx.local_position(e.current.position).to_vec2();
+            if let Some(overlay_id) = self.layer_root_id {
+                ctx.reposition_layer(overlay_id, position);
+            } else {
+                let overlay = (self.overlayer)();
+                self.layer_root_id = Some(overlay.id());
+                ctx.create_layer(overlay, position);
             }
         }
     }
 
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         ctx.register_child(&mut self.child);
+    }
+
+    fn update(&mut self, ctx: &mut UpdateCtx<'_>, _props: &mut PropertiesMut<'_>, event: &Update) {
+        if let Update::HoveredChanged(false) = event
+            && let Some(overlay_id) = self.layer_root_id.take()
+        {
+            ctx.remove_layer(overlay_id);
+        }
     }
 
     fn layout(
