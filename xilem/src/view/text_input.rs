@@ -28,7 +28,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 /// # Examples
 /// Create a basic text input with it's content stored in the app state.
 /// ```
-/// use xilem::view::text_input;
+/// use xilem::{view::text_input, InsertNewline};
 /// # use xilem::WidgetView;
 ///
 /// #[derive(Default)]
@@ -36,7 +36,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 ///     content: String,
 /// }
 ///
-/// # fn view() -> impl WidgetView<State> {
+/// # fn view(state: &mut State) -> impl WidgetView<State> {
 /// text_input(state.content.clone(), |local_state: &mut State, input: String| {
 ///     local_state.buffer = input
 /// })
@@ -45,7 +45,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 ///
 /// Create a `text_input` that can handle inputting a newline when enter is pressed.
 /// ```
-/// use xilem::view::text_input;
+/// use xilem::{view::text_input, InsertNewline};
 /// # use xilem::WidgetView;
 ///
 /// #[derive(Default)]
@@ -53,7 +53,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 ///     content: String,
 /// }
 ///
-/// # fn view() -> impl WidgetView<State> {
+/// # fn view(state: &mut State) -> impl WidgetView<State> {
 /// text_input(state.content.clone(), |local_state: &mut State, input: String| {
 ///     local_state.content = input
 /// })
