@@ -38,7 +38,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 ///
 /// # fn view(state: &mut State) -> impl WidgetView<State> {
 /// text_input(state.content.clone(), |local_state: &mut State, input: String| {
-///     local_state.buffer = input
+///     local_state.content = input
 /// })
 /// # }
 /// ```
