@@ -21,8 +21,8 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 
 /// A view which displays editable text.
 ///
-/// The text_input stores the content as a string, that can be set to a variable for
-/// getting/setting the text_input's content from outside it's own logic. It also
+/// The `text_input` stores the content as a string, that can be set to a variable for
+/// getting/setting the `text_input`'s content from outside it's own logic. It also
 /// needs to be expilicty told how to handle newlines, via the [`insert_newline`] function.
 ///
 /// # Examples
@@ -43,7 +43,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 /// # }
 /// ```
 ///
-/// Create a `text_input` that can hanle inputting a newline when enter is pressed.
+/// Create a `text_input` that can handle inputting a newline when enter is pressed.
 /// ```
 /// use xilem::view::text_input;
 /// # use xilem::WidgetView;
