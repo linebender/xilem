@@ -20,6 +20,46 @@ use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as
 type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
 
 /// A view which displays editable text.
+///
+/// The text_input stores the content as a string, that can be set to a variable for
+/// getting/setting the text_input's content from outside it's own logic. It also
+/// needs to be expilicty told how to handle newlines, via the [`insert_newline`] function.
+///
+/// # Examples
+/// Create a basic text input with it's content stored in the app state.
+/// ```
+/// use xilem::view::text_input;
+/// # use xilem::WidgetView;
+///
+/// #[derive(Default)]
+/// struct State {
+///     content: String,
+/// }
+///
+/// # fn view() -> impl WidgetView<State> {
+/// text_input(state.content.clone(), |local_state: &mut State, input: String| {
+///     local_state.buffer = input
+/// })
+/// # }
+/// ```
+///
+/// Create a `text_input` that can hanle inputting a newline when enter is pressed.
+/// ```
+/// use xilem::view::text_input;
+/// # use xilem::WidgetView;
+///
+/// #[derive(Default)]
+/// struct State {
+///     content: String,
+/// }
+///
+/// # fn view() -> impl WidgetView<State> {
+/// text_input(state.content.clone(), |local_state: &mut State, input: String| {
+///     local_state.content = input
+/// })
+/// .insert_newline(InsertNewline::OnEnter)
+/// # }
+/// ```
 pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInput<State, Action>
 where
     F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
