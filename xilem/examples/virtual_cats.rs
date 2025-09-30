@@ -13,7 +13,7 @@ use std::time::Duration;
 use masonry::core::ArcStr;
 use masonry::properties::types::{AsUnit, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
-use vello::peniko::{Blob, Image};
+use vello::peniko::{Blob, ImageAlphaType, ImageBrush, ImageData, ImageFormat};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
@@ -43,7 +43,7 @@ struct Status {
 /// The state of the download of an image from a URL
 enum ImageState {
     Pending,
-    Available(Image),
+    Available(ImageBrush),
     Error(anyhow::Error),
 }
 
@@ -143,19 +143,20 @@ impl VirtualCats {
 }
 
 /// Load a [`vello::peniko::Image`] from the given url.
-async fn image_from_url(url: &str) -> anyhow::Result<Image> {
+async fn image_from_url(url: &str) -> anyhow::Result<ImageBrush> {
     let response = reqwest::get(url).await?;
     let bytes = response.bytes().await?;
     let image = image::load_from_memory(&bytes)?.into_rgba8();
     let width = image.width();
     let height = image.height();
     let data = image.into_vec();
-    Ok(Image::new(
-        Blob::new(Arc::new(data)),
-        vello::peniko::ImageFormat::Rgba8,
+    Ok(ImageBrush::new(ImageData {
+        data: Blob::new(Arc::new(data)),
+        format: ImageFormat::Rgba8,
+        alpha_type: ImageAlphaType::Alpha,
         width,
         height,
-    ))
+    }))
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

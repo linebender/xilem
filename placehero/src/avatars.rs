@@ -9,12 +9,13 @@ use xilem::core::{
     MessageProxy, MessageResult, NoElement, Resource, View, fork, map_message,
     on_action_with_context, provides, with_context,
 };
+use xilem::masonry::peniko::{ImageAlphaType, ImageData};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
 use xilem::style::{Gradient, Style as _};
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{env_worker, image, sized_box, spinner};
-use xilem::{Blob, Image, ImageFormat, ViewCtx, WidgetView, tokio};
+use xilem::{Blob, ImageBrush, ImageFormat, ViewCtx, WidgetView, tokio};
 
 #[derive(Debug)]
 struct AvatarRequest {
@@ -24,12 +25,12 @@ struct AvatarRequest {
 #[derive(Debug)]
 struct AvatarResponse {
     url: String,
-    image: Image,
+    image: ImageBrush,
 }
 
 #[derive(Debug)]
 pub(crate) struct Avatars {
-    icons: HashMap<String, Option<Image>>,
+    icons: HashMap<String, Option<ImageBrush>>,
     requester: Option<UnboundedSender<AvatarRequest>>,
     // TODO: lru: ...
 }
@@ -156,17 +157,18 @@ impl Avatars {
 /// Load an [`Image`] from the given url.
 ///
 /// N.B. This is functionality shared with `http_cats`
-pub(crate) async fn image_from_url(url: &str) -> anyhow::Result<Image> {
+pub(crate) async fn image_from_url(url: &str) -> anyhow::Result<ImageBrush> {
     let response = reqwest::get(url).await?;
     let bytes = response.bytes().await?;
     let image = image::load_from_memory(&bytes)?.into_rgba8();
     let width = image.width();
     let height = image.height();
     let data = image.into_vec();
-    Ok(Image::new(
-        Blob::new(Arc::new(data)),
-        ImageFormat::Rgba8,
+    Ok(ImageBrush::new(ImageData {
+        data: Blob::new(Arc::new(data)),
+        format: ImageFormat::Rgba8,
+        alpha_type: ImageAlphaType::Alpha,
         width,
         height,
-    ))
+    }))
 }

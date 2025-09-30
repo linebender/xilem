@@ -47,12 +47,12 @@ xilem_core = { version = "0.3.0", path = "xilem_core" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
 
 anymore = "1.0.0"
-vello = { version = "0.5.0", git = "https://github.com/linebender/vello", rev = "2e74f202aed09f273fe7e84234e9b564f99ff9bc" }
-kurbo = "0.11.3"
+vello = { version = "0.5.0", git = "https://github.com/linebender/vello", rev = "bb51b7fbab18cfff6ac49f4c3b9d1d0b22abac1b" }
+kurbo = "0.12.0"
 parley = { git = "https://github.com/linebender/parley", rev = "587b7634ae8601c10de7f0361bfd56085a5b7b4e", features = [
     "accesskit",
 ] }
-peniko = "0.4.1"
+peniko = { git = "https://github.com/linebender/peniko", rev = "dde968cf406be54d3211fe422bdd066f891ab632", default-features = false }
 winit = "0.30.12"
 tracing = { version = "0.1.41", default-features = false }
 ui-events = "0.1.0"

@@ -17,7 +17,7 @@ use masonry::core::{
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
-use masonry::peniko::{Color, Fill, Image, ImageFormat};
+use masonry::peniko::{Color, Fill, ImageBrush as Image, ImageFormat};
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
@@ -25,6 +25,7 @@ use masonry::{TextAlign, TextAlignOptions};
 use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 use masonry_winit::winit::window::Window;
 use tracing::{Span, trace_span};
+use vello::peniko::{ImageAlphaType, ImageData};
 
 struct Driver;
 
@@ -160,7 +161,13 @@ impl Widget for CustomWidget {
 
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
-        let image_data = Image::new(image_data.into(), ImageFormat::Rgba8, 256, 256);
+        let image_data = Image::new(ImageData {
+            data: image_data.into(),
+            format: ImageFormat::Rgba8,
+            alpha_type: ImageAlphaType::Alpha,
+            width: 256,
+            height: 256,
+        });
         let transform = ObjectFit::Fill.affine_to_fill(ctx.size(), Size::new(256., 256.));
         scene.draw_image(&image_data, transform);
     }
