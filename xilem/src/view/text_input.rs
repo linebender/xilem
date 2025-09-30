@@ -23,7 +23,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 ///
 /// The `text_input` stores the content as a string, that can be set to a variable for
 /// getting/setting the `text_input`'s content from outside it's own logic. It also
-/// needs to be expilicty told how to handle newlines, via the [`insert_newline`] function.
+/// needs to be expilicty told how to handle newlines, as seen in an example below.
 ///
 /// # Examples
 /// Create a basic text input with it's content stored in the app state.
