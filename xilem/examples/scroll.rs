@@ -36,6 +36,12 @@ impl Default for AppState {
     }
 }
 
+/// Convert 0-1 to 0-255 u8 value.
+fn to_u8(value: f32) -> u8 {
+    #[allow(clippy::cast_possible_truncation, reason = "This is Fine")]
+    return (value * 255.).clamp(0.0, 255.0).round() as u8;
+}
+
 fn color_block(
     row_idx: i32,
     col_idx: i32,
@@ -51,8 +57,8 @@ fn color_block(
         .width(50.px())
         .height(50.px())
         .background_color(AlphaColor::from_rgb8(
-            (row_idx / vertical_count * 255.).round().clamp(0., 255.) as u8,
-            (col_idx / horizontal_count * 255.).round().clamp(0., 255.) as u8,
+            to_u8(row_idx / vertical_count),
+            to_u8(col_idx / horizontal_count),
             80,
         ))
 }
