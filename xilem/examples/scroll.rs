@@ -14,9 +14,18 @@ use xilem::view::{
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::one_of::Either;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
+/// The layout mode we use.
 enum BlocksLayout {
+    /// A grid layout.
+    ///
+    /// We would like this to be the only supported option, but Grid currently
+    /// completely ignores the size of its items, so it doesn't accurately show
+    /// what we want it to show.
     Grid,
+    /// A flex layout, using a flex for each row each
+    /// inside a single flex column containing all the rows.
+    #[default]
     Flex,
 }
 
@@ -31,15 +40,9 @@ impl Default for AppState {
         Self {
             vertical_count: 30,
             horizontal_count: 30,
-            blocks_layout: BlocksLayout::Flex,
+            blocks_layout: BlocksLayout::default(),
         }
     }
-}
-
-/// Convert 0-1 to 0-255 u8 value.
-fn to_u8(value: f32) -> u8 {
-    #[allow(clippy::cast_possible_truncation, reason = "This is Fine")]
-    return (value * 255.).clamp(0.0, 255.0).round() as u8;
 }
 
 fn color_block(
@@ -56,11 +59,12 @@ fn color_block(
     sized_box(label(format!("r{}c{}", row_idx, col_idx)))
         .width(50.px())
         .height(50.px())
-        .background_color(AlphaColor::from_rgb8(
-            to_u8(row_idx / vertical_count),
-            to_u8(col_idx / horizontal_count),
-            80,
-        ))
+        .background_color(AlphaColor::new([
+            row_idx / vertical_count,
+            col_idx / horizontal_count,
+            80. / 255.,
+            1.0,
+        ]))
 }
 
 fn grid_blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
@@ -108,7 +112,7 @@ fn blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
 
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     let blocks_layout_switch = flex_row((
-        label("Switch layout"),
+        label("Switch layout:"),
         button(
             format!("{:?}", state.blocks_layout),
             |state: &mut AppState| {
@@ -121,17 +125,17 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         ),
     ));
     let vertical_controls = flex_row((
-        label("Vertical(Row) blocks"),
-        button("+", |appstate: &mut AppState| appstate.vertical_count += 1),
+        label("Vertical blocks (rows):"),
         button("-", |appstate: &mut AppState| appstate.vertical_count -= 1),
+        button("+", |appstate: &mut AppState| appstate.vertical_count += 1),
     ));
     let horizontal_controls = flex_row((
-        label("Horizontal(Column) blocks"),
-        button("+", |appstate: &mut AppState| {
-            appstate.horizontal_count += 1;
-        }),
+        label("Horizontal blocks (columns):"),
         button("-", |appstate: &mut AppState| {
             appstate.horizontal_count -= 1;
+        }),
+        button("+", |appstate: &mut AppState| {
+            appstate.horizontal_count += 1;
         }),
     ));
 
