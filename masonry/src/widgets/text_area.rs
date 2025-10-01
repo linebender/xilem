@@ -438,9 +438,17 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         interval: u64,
     ) {
-        // TODO: for real world use, this should be reading from the system settings
-        const CURSOR_BLINK_TIME: u64 = 1000; // ms
+        /// The time for a complete blink cycle, in milliseconds.
+        /// For the first half (i.e. currently 0.5s) the cursor is shown, and for the second half,
+        /// it is hidden.
+        const CURSOR_BLINK_TIME: u64 = 1000;
+
+        /// The timeout, in milliseconds, after which the cursor will stop blinking (i.e. stay
+        /// solid).
         const CURSOR_BLINK_TIMEOUT: u64 = 10_000; // 10 seconds
+
+        // TODO: These should be reading from the system settings, but we currently
+        // aren't aware of a robust way to read that cross-platform.
 
         if ctx.is_window_focused() && ctx.is_focus_target() {
             if self.anim_elapsed < CURSOR_BLINK_TIMEOUT {
@@ -533,7 +541,6 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         self.anim_prev_interval = 0;
         self.anim_elapsed = 0;
         ctx.request_anim_frame();
-        ctx.request_paint_only();
 
         match event {
             TextEvent::Keyboard(key_event) => {
@@ -733,11 +740,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                 }
             }
 
-            TextEvent::WindowFocusChange(focused) => {
-                if self.anim_cursor_visible != *focused {
-                    self.anim_cursor_visible = *focused;
-                    ctx.request_anim_frame();
-                }
+            TextEvent::WindowFocusChange(_) => {
                 // To use a different selection color when unfocused.
                 ctx.request_paint_only();
             }
@@ -935,6 +938,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5)
                 && self.anim_cursor_visible
+                && ctx.is_window_focused()
             {
                 scene.fill(Fill::NonZero, Affine::IDENTITY, caret_color, None, &cursor);
             };
