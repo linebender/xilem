@@ -291,13 +291,14 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                 self.set_viewport_pos_raw(portal_size, content_size, self.viewport_pos + delta);
                 ctx.request_compose();
 
-                if modifiers.shift() {
+                {
                     let (scrollbar, mut scrollbar_ctx) =
                         ctx.get_raw_mut(&mut self.scrollbar_horizontal);
                     scrollbar.cursor_progress =
                         self.viewport_pos.x / (content_size - portal_size).width;
                     scrollbar_ctx.request_render();
-                } else {
+                }
+                {
                     let (scrollbar, mut scrollbar_ctx) =
                         ctx.get_raw_mut(&mut self.scrollbar_vertical);
                     scrollbar.cursor_progress =
