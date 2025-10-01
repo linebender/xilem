@@ -20,7 +20,7 @@
 // Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 // TODO: Remove any items listed as "Deferred"
 #![cfg_attr(test, expect(clippy::print_stdout, reason = "Deferred: Noisy"))]
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
