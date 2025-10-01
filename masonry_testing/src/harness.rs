@@ -984,6 +984,8 @@ impl<W: Widget> TestHarness<W> {
     /// * `manifest_dir`: directory where `Cargo.toml` can be found.
     /// * `test_name`: arbitrary name; second argument of [`assert_render_snapshot`].
     /// * `expect_failure`: whether the snapshot is expected to fail to match.
+    ///
+    /// [`assert_render_snapshot`]: crate::assert_render_snapshot
     #[doc(hidden)]
     #[track_caller]
     pub fn check_render_snapshot(
