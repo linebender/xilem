@@ -51,8 +51,8 @@ fn color_block(
         .width(50.px())
         .height(50.px())
         .background_color(AlphaColor::from_rgb8(
-            (row_idx / vertical_count * 255.) as u8,
-            (col_idx / horizontal_count * 255.) as u8,
+            (row_idx / vertical_count * 255.).round().clamp(0., 255.) as u8,
+            (col_idx / horizontal_count * 255.).round().clamp(0., 255.) as u8,
             80,
         ))
 }
