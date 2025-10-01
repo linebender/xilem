@@ -21,41 +21,53 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 
 /// A view which displays editable text.
 ///
-/// The `text_input` stores the content as a string, that can be set to a variable for
-/// getting/setting the `text_input`'s content from outside it's own logic. It also
-/// needs to be expilicty told how to handle newlines, as seen in an example below.
+/// The text input's current text currently *must* be stored in your app's state, and so
+/// will not work if it isn't managed correctly.
+/// If the user has made an input, the updated value is provided by the `on_changed`
+/// callback, which is the second parameter to this function (where the first is a
+/// clone of the current contents).
+/// See the examples for how to use this.
+///
+/// By default, the text input is single-line - that is, pressing Enter <kbd>↵</kbd> does
+/// not insert a newline.
+/// This can be configured using [`insert_newline`](TextInput::insert_newline) on the
+/// returned view.
+/// In the default state, Enter <kbd>↵</kbd> being pressed can therefore be used as a
+/// "submit" operation.
+/// This can be detected by setting the [`on_enter`](TextInput::on_enter) callback.
 ///
 /// # Examples
-/// Create a basic text input with it's content stored in the app state.
+///
+/// Create a basic text input with its content stored in the app state:
+///
 /// ```
-/// use xilem::{view::text_input, InsertNewline};
+/// # use xilem::view::text_input;
 /// # use xilem::WidgetView;
 ///
-/// #[derive(Default)]
 /// struct State {
 ///     content: String,
 /// }
 ///
-/// # fn view(state: &mut State) -> impl WidgetView<State> {
-/// text_input(state.content.clone(), |local_state: &mut State, input: String| {
-///     local_state.content = input
-/// })
+/// fn view(state: &mut State) -> impl WidgetView<State> {
+///     text_input(state.content.clone(), |state: &mut State, input: String| {
+///         state.content = input;
+///     })
+/// }
+/// ```
+///
+/// Create a multiline `text_input`:
+///
+/// ```
+/// use xilem::{view::text_input, InsertNewline};
+/// # use xilem::WidgetView;
+///
+/// # struct State {
+/// #    content: String,
 /// # }
-/// ```
-///
-/// Create a `text_input` that can handle inputting a newline when enter is pressed.
-/// ```
-/// use xilem::{view::text_input, InsertNewline};
-/// # use xilem::WidgetView;
-///
-/// #[derive(Default)]
-/// struct State {
-///     content: String,
-/// }
 ///
 /// # fn view(state: &mut State) -> impl WidgetView<State> {
-/// text_input(state.content.clone(), |local_state: &mut State, input: String| {
-///     local_state.content = input
+/// text_input(state.content.clone(), |state: &mut State, input: String| {
+///     state.content = input;
 /// })
 /// .insert_newline(InsertNewline::OnEnter)
 /// # }
@@ -155,12 +167,18 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     }
 
     /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
+    ///
+    /// See also [`on_enter`](Self::on_enter), which provides a callback for enter
+    /// being used for submitting.
     pub fn insert_newline(mut self, insert_newline: InsertNewline) -> Self {
         self.insert_newline = insert_newline;
         self
     }
 
-    /// Set a callback that will be run when the user presses the `Enter` key to submit their input.
+    /// Set a callback that will be run when the user presses Enter <kbd>↵</kbd> to submit their input.
+    ///
+    /// Note that if [`insert_newline`](Self::insert_newline) is `InsertNewline::OnEnter`, this
+    /// will never be called.
     pub fn on_enter<F>(mut self, on_enter: F) -> Self
     where
         F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
