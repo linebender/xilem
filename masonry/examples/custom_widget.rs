@@ -17,7 +17,7 @@ use masonry::core::{
 use masonry::kurbo::{Affine, BezPath, Point, Rect, Size, Stroke};
 use masonry::palette;
 use masonry::parley::style::{FontFamily, FontStack, GenericFamily, StyleProperty};
-use masonry::peniko::{Color, Fill, ImageBrush as Image, ImageFormat};
+use masonry::peniko::{Color, Fill, ImageBrush, ImageFormat};
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::vello::Scene;
@@ -161,7 +161,7 @@ impl Widget for CustomWidget {
 
         // Let's burn some CPU to make a (partially transparent) image buffer
         let image_data = make_image_data(256, 256);
-        let image_data = Image::new(ImageData {
+        let image_data = ImageBrush::new(ImageData {
             data: image_data.into(),
             format: ImageFormat::Rgba8,
             alpha_type: ImageAlphaType::Alpha,
