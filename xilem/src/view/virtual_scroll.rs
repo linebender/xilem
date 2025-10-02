@@ -286,7 +286,9 @@ where
                 );
                 return result;
             } else {
-                tracing::error!("Message sent type in VirtualScroll::message: {message:?}");
+                tracing::error!(
+                    "Message sent to unloaded view in `VirtualScroll::message`: {message:?}"
+                );
                 return MessageResult::Stale;
             }
         }
