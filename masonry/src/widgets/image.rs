@@ -40,8 +40,10 @@ impl Image {
     ///
     /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
     #[inline]
-    pub fn new(image_data: ImageBrush) -> Self {
-        Self { image_data }
+    pub fn new(image_data: impl Into<ImageBrush>) -> Self {
+        Self {
+            image_data: image_data.into(),
+        }
     }
 }
 
@@ -49,8 +51,8 @@ impl Image {
 impl Image {
     /// Set new `ImageBrush`.
     #[inline]
-    pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: ImageBrush) {
-        this.widget.image_data = image_data;
+    pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: impl Into<ImageBrush>) {
+        this.widget.image_data = image_data.into();
         this.ctx.request_layout();
     }
 }
@@ -169,14 +171,14 @@ mod tests {
     #[test]
     fn empty_paint() {
         // TODO - Blob::empty() function?
-        // TODO: Does Vello promise this?
-        let image_data = ImageBrush::new(ImageData {
+        // TODO: Does Vello promise this is supported?
+        let image_data = ImageData {
             data: Vec::new().into(),
             format: ImageFormat::Rgba8,
             alpha_type: ImageAlphaType::Alpha,
             width: 0,
             height: 0,
-        });
+        };
 
         let image_widget = NewWidget::new(Image::new(image_data));
         let mut harness = TestHarness::create(default_property_set(), image_widget);
@@ -185,7 +187,7 @@ mod tests {
 
     #[test]
     fn tall_paint() {
-        let image_data = ImageBrush::new(ImageData {
+        let image_data = ImageData {
             // This could have a more concise chain, but previously used versions either
             // had unreadable formatting or used `rustfmt::skip`, which broke formatting
             // across large parts of the file.
@@ -203,7 +205,7 @@ mod tests {
             alpha_type: ImageAlphaType::Alpha,
             width: 2,
             height: 2,
-        });
+        };
         let image_widget = NewWidget::new(Image::new(image_data));
 
         let mut harness = TestHarness::create_with_size(
@@ -216,13 +218,13 @@ mod tests {
 
     #[test]
     fn edit_image() {
-        let image_data = ImageBrush::new(ImageData {
+        let image_data = ImageData {
             data: vec![255; 4 * 8 * 8].into(),
             format: ImageFormat::Rgba8,
             alpha_type: ImageAlphaType::Alpha,
             width: 8,
             height: 8,
-        });
+        };
 
         let render_1 = {
             let image_widget = NewWidget::new(Image::new(image_data.clone()));
@@ -237,13 +239,13 @@ mod tests {
         };
 
         let render_2 = {
-            let other_image_data = ImageBrush::new(ImageData {
+            let other_image_data = ImageData {
                 data: vec![10; 4 * 8 * 8].into(),
                 format: ImageFormat::Rgba8,
                 alpha_type: ImageAlphaType::Alpha,
                 width: 8,
                 height: 8,
-            });
+            };
             let image_widget = NewWidget::new(Image::new(other_image_data));
 
             let mut harness = TestHarness::create_with_size(
@@ -266,13 +268,13 @@ mod tests {
 
     #[test]
     fn layout() {
-        let image_data = ImageBrush::new(ImageData {
+        let image_data = ImageData {
             data: vec![255; 4 * 8 * 8].into(),
             format: ImageFormat::Rgba8,
             alpha_type: ImageAlphaType::Alpha,
             width: 8,
             height: 8,
-        });
+        };
         let harness_size = Size::new(100.0, 50.0);
 
         let image_widget = NewWidget::new(Image::new(image_data.clone()));

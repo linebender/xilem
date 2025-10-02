@@ -10,7 +10,7 @@
 
 use masonry::core::{ErasedAction, NewWidget, Properties, WidgetId};
 use masonry::dpi::LogicalSize;
-use masonry::peniko::{ImageBrush, ImageFormat};
+use masonry::peniko::ImageFormat;
 use masonry::properties::ObjectFit;
 use masonry::theme::default_property_set;
 use masonry::widgets::Image;
@@ -36,13 +36,13 @@ pub fn make_image() -> NewWidget<Image> {
     let image_bytes = include_bytes!("./assets/PicWithAlpha.png");
     let image_data = image::load_from_memory(image_bytes).unwrap().to_rgba8();
     let (width, height) = image_data.dimensions();
-    let png_data = ImageBrush::new(ImageData {
+    let png_data = ImageData {
         data: image_data.to_vec().into(),
         format: ImageFormat::Rgba8,
         alpha_type: ImageAlphaType::Alpha,
         width,
         height,
-    });
+    };
 
     NewWidget::new_with_props(Image::new(png_data), Properties::one(ObjectFit::Contain))
 }

@@ -8,7 +8,7 @@ use std::{
 
 use megalodon::entities::{Attachment, attachment::AttachmentType};
 use xilem::{
-    Blob, ImageBrush, ImageFormat, WidgetView,
+    Blob, ImageFormat, WidgetView,
     core::one_of::{OneOf, OneOf4},
     masonry::{
         peniko::{ImageAlphaType, ImageData},
@@ -70,13 +70,13 @@ fn maybe_blurhash<State: 'static>(
     let result_bytes = blurhash::decode(blurhash, blur_width, blur_height, 1.0).ok()?;
     let image_data = Blob::new(Arc::new(result_bytes));
     // This image format doesn't seem to be documented by the blurhash crate, but this value seems to work.
-    let image2 = ImageBrush::new(ImageData {
+    let image2 = ImageData {
         data: image_data,
         format: ImageFormat::Rgba8,
         alpha_type: ImageAlphaType::Alpha,
         width: blur_width,
         height: blur_height,
-    });
+    };
     let took = start.elapsed();
     if took > Duration::from_millis(5) {
         tracing::info!("Calculating a blurhash (size {blur_width}x{blur_height}) took {took:?}.");
@@ -84,7 +84,7 @@ fn maybe_blurhash<State: 'static>(
 
     // Retain the aspect ratio, and don't go bigger than the image's actual dimensions.
     // Prefer to fill up the width rather than the height.
-    Some(sized_box(sized_box(image(&image2)).expand_width()).width(width.px()))
+    Some(sized_box(sized_box(image(image2)).expand_width()).width(width.px()))
 }
 
 /// Show some useful info for audio attachments.

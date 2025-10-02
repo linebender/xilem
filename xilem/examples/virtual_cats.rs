@@ -13,7 +13,7 @@ use std::time::Duration;
 use masonry::core::ArcStr;
 use masonry::properties::types::{AsUnit, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
-use vello::peniko::{Blob, ImageAlphaType, ImageBrush, ImageData, ImageFormat};
+use vello::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
@@ -43,7 +43,7 @@ struct Status {
 /// The state of the download of an image from a URL
 enum ImageState {
     Pending,
-    Available(ImageBrush),
+    Available(ImageData),
     Error(anyhow::Error),
 }
 
@@ -107,7 +107,7 @@ impl VirtualCats {
                     bottom: 0.,
                 });
                 let imgview = zstack((
-                    image(img).fit(ObjectFit::FitWidth),
+                    image(img.clone()).fit(ObjectFit::FitWidth),
                     attribution.alignment(UnitPoint::TOP_RIGHT),
                 ));
                 OneOf3::A(imgview)
@@ -142,21 +142,23 @@ impl VirtualCats {
     }
 }
 
-/// Load a [`vello::peniko::Image`] from the given url.
-async fn image_from_url(url: &str) -> anyhow::Result<ImageBrush> {
+/// Load the [`ImageData`] from the given url.
+///
+/// N.B. This is functionality shared with `http_cats`.
+async fn image_from_url(url: &str) -> anyhow::Result<ImageData> {
     let response = reqwest::get(url).await?;
     let bytes = response.bytes().await?;
     let image = image::load_from_memory(&bytes)?.into_rgba8();
     let width = image.width();
     let height = image.height();
     let data = image.into_vec();
-    Ok(ImageBrush::new(ImageData {
+    Ok(ImageData {
         data: Blob::new(Arc::new(data)),
         format: ImageFormat::Rgba8,
         alpha_type: ImageAlphaType::Alpha,
         width,
         height,
-    }))
+    })
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
