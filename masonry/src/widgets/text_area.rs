@@ -77,6 +77,15 @@ pub struct TextArea<const USER_EDITABLE: bool> {
     /// What key combination should trigger a newline insertion.
     /// If this is set to `InsertNewline::OnEnter` then `Enter` will insert a newline and _not_ trigger a [`TextAction::Entered`] event.
     insert_newline: InsertNewline,
+
+    /// Whether to show the cursor, used for the blink animation.
+    anim_cursor_visible: bool,
+
+    /// Previous interval (ms), used for the cursor's blink animation.
+    anim_prev_interval: u64,
+
+    /// Time elapsed (ms) to calculate the timeout of the cursor's blink animation.
+    anim_elapsed: u64,
 }
 
 // --- MARK: BUILDERS
@@ -118,6 +127,9 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             last_available_width: None,
             hint: true,
             insert_newline: InsertNewline::default(),
+            anim_cursor_visible: true,
+            anim_prev_interval: 0,
+            anim_elapsed: 0,
         }
     }
 
@@ -420,6 +432,55 @@ pub enum TextAction {
 impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
     type Action = TextAction;
 
+    fn on_anim_frame(
+        &mut self,
+        ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        interval: u64,
+    ) {
+        /// The time for a complete blink cycle, in milliseconds.
+        /// For the first half (i.e. currently 0.5s) the cursor is shown, and for the second half,
+        /// it is hidden.
+        const CURSOR_BLINK_TIME: u64 = 1000;
+
+        /// The timeout, in milliseconds, after which the cursor will stop blinking (i.e. stay
+        /// solid).
+        const CURSOR_BLINK_TIMEOUT: u64 = 10_000; // 10 seconds
+
+        // TODO: These should be reading from the system settings, but we currently
+        // aren't aware of a robust way to read that cross-platform.
+
+        if ctx.is_window_focused() && ctx.is_focus_target() {
+            if self.anim_elapsed < CURSOR_BLINK_TIMEOUT {
+                let interval_ms = interval / 1_000_000; // ns to ms
+                self.anim_prev_interval += interval_ms;
+                self.anim_elapsed += interval_ms;
+
+                if self.anim_prev_interval >= CURSOR_BLINK_TIME {
+                    self.anim_prev_interval = self.anim_prev_interval.rem_euclid(CURSOR_BLINK_TIME);
+                }
+
+                // TODO: request timer here
+                ctx.request_anim_frame();
+
+                // Request paint only if changed.
+                if self.anim_prev_interval < CURSOR_BLINK_TIME / 2 && !self.anim_cursor_visible {
+                    self.anim_cursor_visible = true;
+                    ctx.request_paint_only();
+                } else if self.anim_prev_interval >= CURSOR_BLINK_TIME / 2
+                    && self.anim_cursor_visible
+                {
+                    self.anim_cursor_visible = false;
+                    ctx.request_paint_only();
+                }
+            } else if !self.anim_cursor_visible {
+                // Request paint only if changed.
+                self.anim_cursor_visible = true;
+                ctx.request_paint_only();
+            }
+        }
+    }
+
     fn on_pointer_event(
         &mut self,
         ctx: &mut EventCtx<'_>,
@@ -476,6 +537,11 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
+        // Reset the blink animation.
+        self.anim_prev_interval = 0;
+        self.anim_elapsed = 0;
+        ctx.request_anim_frame();
+
         match event {
             TextEvent::Keyboard(key_event) => {
                 if key_event.state != KeyState::Down || self.editor.is_composing() {
@@ -870,7 +936,10 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     &rect,
                 );
             }
-            if let Some(cursor) = self.editor.cursor_geometry(1.5) {
+            if let Some(cursor) = self.editor.cursor_geometry(1.5)
+                && self.anim_cursor_visible
+                && ctx.is_window_focused()
+            {
                 scene.fill(Fill::NonZero, Affine::IDENTITY, caret_color, None, &cursor);
             };
         }
