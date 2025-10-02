@@ -56,12 +56,6 @@ pub fn stroke<'b>(
     brush: impl Into<BrushRef<'b>>,
     stroke_width: f64,
 ) {
-    // TODO - Remove that check once we depend on a Vello release that fixes
-    // https://github.com/linebender/vello/issues/662
-    if stroke_width == 0.0 {
-        return;
-    }
-
     // Using Join::Miter avoids rounding corners when a widget has a wide border.
     let style = Stroke {
         width: stroke_width,
