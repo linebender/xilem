@@ -53,7 +53,7 @@ parley = { git = "https://github.com/linebender/parley", rev = "587b7634ae8601c1
     "accesskit",
 ] }
 # TODO: Use no_std correctly in Xilem Web.
-peniko = { git = "https://github.com/linebender/peniko", rev = "dde968cf406be54d3211fe422bdd066f891ab632" }
+peniko = "0.5.0"
 winit = "0.30.12"
 tracing = { version = "0.1.41", default-features = false }
 ui-events = "0.1.0"
