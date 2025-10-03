@@ -5,6 +5,7 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
+use masonry_core::util::parley_rect_to_kurbo;
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use tracing::{Span, trace_span};
@@ -258,7 +259,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             self.editor.try_layout().is_some(),
             "TextArea::ime_area should only be called when the editor layout is available"
         );
-        self.editor.ime_cursor_area()
+        parley_rect_to_kurbo(self.editor.ime_cursor_area())
     }
 }
 
@@ -933,14 +934,20 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     Affine::IDENTITY,
                     selection_color,
                     None,
-                    &rect,
+                    &parley_rect_to_kurbo(*rect),
                 );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5)
                 && self.anim_cursor_visible
                 && ctx.is_window_focused()
             {
-                scene.fill(Fill::NonZero, Affine::IDENTITY, caret_color, None, &cursor);
+                scene.fill(
+                    Fill::NonZero,
+                    Affine::IDENTITY,
+                    caret_color,
+                    None,
+                    &parley_rect_to_kurbo(cursor),
+                );
             };
         }
 

@@ -31,7 +31,7 @@ tracing-tracy = { version = "0.11.4", optional = true }
 ui-events-winit.workspace = true
 pollster = "0.4.0"
 accesskit_winit.workspace = true
-wgpu-profiler = { optional = true, version = "0.23.0", default-features = false }
+wgpu-profiler = { optional = true, version = "0.24.0", default-features = false }
 copypasta = "0.10.2"
 
 [dev-dependencies]

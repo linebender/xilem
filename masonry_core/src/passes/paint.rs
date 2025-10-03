@@ -7,7 +7,7 @@ use tracing::{info_span, trace};
 use tree_arena::ArenaMut;
 use vello::Scene;
 use vello::kurbo::{Affine, Rect};
-use vello::peniko::{Color, Fill, Mix};
+use vello::peniko::{Color, Fill};
 
 use crate::app::{RenderRoot, RenderRootState};
 use crate::core::{DefaultProperties, PaintCtx, PropertiesRef, WidgetArenaNode, WidgetId};
@@ -82,7 +82,7 @@ fn paint_widget(
         };
 
         if let Some(clip) = state.clip_path {
-            complete_scene.push_layer(Mix::Clip, 1., transform, &clip);
+            complete_scene.push_clip_layer(transform, &clip);
         }
 
         complete_scene.append(scene, Some(transform));

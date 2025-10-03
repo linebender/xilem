@@ -56,12 +56,6 @@ pub fn stroke<'b>(
     brush: impl Into<BrushRef<'b>>,
     stroke_width: f64,
 ) {
-    // TODO - Remove that check once we depend on a Vello release that fixes
-    // https://github.com/linebender/vello/issues/662
-    if stroke_width == 0.0 {
-        return;
-    }
-
     // Using Join::Miter avoids rounding corners when a widget has a wide border.
     let style = Stroke {
         width: stroke_width,
@@ -83,6 +77,18 @@ pub fn fill<'b>(scene: &mut Scene, path: &impl Shape, brush: impl Into<BrushRef<
 /// Helper function for [`Scene::fill`] with a uniform color as the brush.
 pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
     scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
+}
+
+// ---
+
+/// Convert a 2d rectangle from Parley to one used for drawing in Vello and other maths.
+pub fn parley_rect_to_kurbo(input: parley::Rect) -> vello::kurbo::Rect {
+    vello::kurbo::Rect {
+        x0: input.x0,
+        y0: input.y0,
+        x1: input.x1,
+        y1: input.y1,
+    }
 }
 
 // ---
