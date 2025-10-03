@@ -10,7 +10,7 @@ use masonry_core::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, CursorIcon, EventCtx,
     LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, Properties, PropertiesMut,
     PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId,
-    WidgetOptions, WidgetPod, WidgetRef, find_widget_under_pointer,
+    WidgetPod, WidgetRef, find_widget_under_pointer,
 };
 use masonry_core::kurbo::{Point, Size};
 use masonry_core::vello::Scene;
@@ -466,6 +466,6 @@ impl<S: 'static> Widget for ModularWidget<S> {
     where
         Self: Sized,
     {
-        NewWidget::new_with(self, WidgetId::next(), WidgetOptions::default(), props)
+        NewWidget::new_with(self, WidgetId::next(), false, props)
     }
 }

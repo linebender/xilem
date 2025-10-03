@@ -6,7 +6,7 @@ use std::any::TypeId;
 use tracing::Span;
 use vello::kurbo::{Affine, Insets, Point, Rect, Size, Vec2};
 
-use crate::core::{LayoutCache, WidgetId, WidgetOptions};
+use crate::core::{LayoutCache, WidgetId};
 
 // TODO - Reduce WidgetState size.
 // See https://github.com/linebender/xilem/issues/706
@@ -118,16 +118,12 @@ pub(crate) struct WidgetState {
     // efficiently hold an arbitrary shape.
     pub(crate) clip_path: Option<Rect>,
 
-    /// Local transform of this widget in the parent coordinate space.
-    pub(crate) transform: Affine,
     /// Global transform of this widget in the window coordinate space.
     ///
     /// Computed from all `transform` and `scroll_translation` values from this to the root widget.
     pub(crate) window_transform: Affine,
     /// Translation applied by scrolling, applied after applying `transform` to this widget.
     pub(crate) scroll_translation: Vec2,
-    /// The `transform` or `scroll_translation` has changed.
-    pub(crate) transform_changed: bool,
 
     /// The `TypeId` of the widget's `Widget::Action` type.
     pub(crate) action_type: TypeId,
@@ -222,7 +218,7 @@ impl WidgetState {
     pub(crate) fn new(
         id: WidgetId,
         widget_name: &'static str,
-        options: WidgetOptions,
+        disabled: bool,
         action_type: TypeId,
         #[cfg(debug_assertions)] action_type_name: &'static str,
     ) -> Self {
@@ -241,9 +237,8 @@ impl WidgetState {
             ime_area: None,
             clip_path: Option::default(),
             scroll_translation: Vec2::ZERO,
-            transform_changed: false,
             action_type,
-            is_explicitly_disabled: options.disabled,
+            is_explicitly_disabled: disabled,
             is_explicitly_stashed: false,
             is_disabled: false,
             is_stashed: false,
@@ -278,7 +273,6 @@ impl WidgetState {
             window_transform: Affine::IDENTITY,
             bounding_rect: Rect::ZERO,
             trace_span: Span::none(),
-            transform: options.transform,
         }
     }
 
