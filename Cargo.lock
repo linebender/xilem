@@ -818,6 +818,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "core_maths"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77745e017f5edba1a9c1d854f6f3a52dac8a12dd5af5d2f54aecf61e43d80d30"
+dependencies = [
+ "libm",
+]
+
+[[package]]
 name = "counter"
 version = "0.1.0"
 dependencies = [
@@ -1142,19 +1151,19 @@ dependencies = [
 
 [[package]]
 name = "fontique"
-version = "0.5.0"
-source = "git+https://github.com/linebender/parley?rev=587b7634ae8601c10de7f0361bfd56085a5b7b4e#587b7634ae8601c10de7f0361bfd56085a5b7b4e"
+version = "0.6.0"
+source = "git+https://github.com/linebender/parley?rev=38a31c0eab7dc34045b0602e906cc05e9b670692#38a31c0eab7dc34045b0602e906cc05e9b670692"
 dependencies = [
  "bytemuck",
  "hashbrown 0.15.5",
- "icu_locid",
+ "icu_locale_core",
+ "linebender_resource_handle",
  "memmap2",
  "objc2 0.6.2",
  "objc2-core-foundation",
  "objc2-core-text",
  "objc2-foundation 0.3.1",
- "peniko 0.4.1",
- "read-fonts 0.29.3",
+ "read-fonts 0.35.0",
  "roxmltree",
  "smallvec",
  "windows 0.58.0",
@@ -1550,6 +1559,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "harfrust"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f3fd23d35c2d8bcf34a1f0e9ea8c0ad263f0c8a9a47108eee23aac76e71645a"
+dependencies = [
+ "bitflags 2.9.4",
+ "bytemuck",
+ "core_maths",
+ "read-fonts 0.35.0",
+ "smallvec",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1805,22 +1827,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0cde2700ccaed3872079a65fb1a78f6c0a36c91570f28755dda67bc8f7d9f00a"
 dependencies = [
  "displaydoc",
- "litemap 0.8.0",
- "tinystr 0.8.1",
- "writeable 0.6.1",
+ "litemap",
+ "tinystr",
+ "writeable",
  "zerovec",
-]
-
-[[package]]
-name = "icu_locid"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13acbb8371917fc971be86fc8057c41a64b521c184808a698c02acc242dbf637"
-dependencies = [
- "displaydoc",
- "litemap 0.7.5",
- "tinystr 0.7.6",
- "writeable 0.5.5",
 ]
 
 [[package]]
@@ -1875,8 +1885,8 @@ dependencies = [
  "displaydoc",
  "icu_locale_core",
  "stable_deref_trait",
- "tinystr 0.8.1",
- "writeable 0.6.1",
+ "tinystr",
+ "writeable",
  "yoke",
  "zerofrom",
  "zerotrie",
@@ -2050,17 +2060,6 @@ checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
 name = "kurbo"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c62026ae44756f8a599ba21140f350303d4f08dcdcc71b5ad9c9bb8128c13c62"
-dependencies = [
- "arrayvec",
- "euclid",
- "smallvec",
-]
-
-[[package]]
-name = "kurbo"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce9729cc38c18d86123ab736fd2e7151763ba226ac2490ec092d1dd148825e32"
@@ -2144,12 +2143,6 @@ name = "linux-raw-sys"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df1d3c3b53da64cf5760482273a98e575c651a67eec7f77df96b5b642de8f039"
-
-[[package]]
-name = "litemap"
-version = "0.7.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23fb14cb19457329c82206317a5663005a4d404783dc74f4252769b0d5f42856"
 
 [[package]]
 name = "litemap"
@@ -2916,14 +2909,15 @@ dependencies = [
 
 [[package]]
 name = "parley"
-version = "0.5.0"
-source = "git+https://github.com/linebender/parley?rev=587b7634ae8601c10de7f0361bfd56085a5b7b4e#587b7634ae8601c10de7f0361bfd56085a5b7b4e"
+version = "0.6.0"
+source = "git+https://github.com/linebender/parley?rev=38a31c0eab7dc34045b0602e906cc05e9b670692#38a31c0eab7dc34045b0602e906cc05e9b670692"
 dependencies = [
  "accesskit",
  "fontique",
+ "harfrust",
  "hashbrown 0.15.5",
- "peniko 0.4.1",
- "skrifa 0.31.3",
+ "linebender_resource_handle",
+ "skrifa 0.37.0",
  "swash",
 ]
 
@@ -2935,24 +2929,12 @@ checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "peniko"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b44f9ddd2f480176b34278eb653ec1c8062f3b143a4e16eeff5ffac3334e288"
-dependencies = [
- "color",
- "kurbo 0.11.3",
- "linebender_resource_handle",
- "smallvec",
-]
-
-[[package]]
-name = "peniko"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b3c76095c9a636173600478e0373218c7b955335048c2bcd12dc6a79657649d8"
 dependencies = [
  "color",
- "kurbo 0.12.0",
+ "kurbo",
  "linebender_resource_handle",
  "smallvec",
 ]
@@ -3360,6 +3342,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6717cf23b488adf64b9d711329542ba34de147df262370221940dfabc2c91358"
 dependencies = [
  "bytemuck",
+ "core_maths",
  "font-types 0.10.0",
 ]
 
@@ -4052,9 +4035,9 @@ dependencies = [
 
 [[package]]
 name = "swash"
-version = "0.2.5"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f745de914febc7c9ab4388dfaf94bbc87e69f57bb41133a9b0c84d4be49856f3"
+checksum = "47846491253e976bdd07d0f9cc24b7daf24720d11309302ccbbc6e6b6e53550a"
 dependencies = [
  "skrifa 0.31.3",
  "yazi",
@@ -4252,15 +4235,6 @@ dependencies = [
  "arrayref",
  "bytemuck",
  "strict-num",
-]
-
-[[package]]
-name = "tinystr"
-version = "0.7.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9117f5d4db391c1cf6927e7bea3db74b9a1c1add8f7eda9ffd5364f40f57b82f"
-dependencies = [
- "displaydoc",
 ]
 
 [[package]]
@@ -4748,7 +4722,7 @@ dependencies = [
  "bytemuck",
  "futures-intrusive",
  "log",
- "peniko 0.5.0",
+ "peniko",
  "png 0.17.16",
  "skrifa 0.37.0",
  "static_assertions",
@@ -4766,7 +4740,7 @@ source = "git+https://github.com/linebender/vello?rev=b7aac65ffc3c4c3bd03ea2ecc3
 dependencies = [
  "bytemuck",
  "guillotiere",
- "peniko 0.5.0",
+ "peniko",
  "skrifa 0.37.0",
  "smallvec",
 ]
@@ -5841,12 +5815,6 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 
 [[package]]
 name = "writeable"
-version = "0.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e9df38ee2d2c3c5948ea468a8406ff0db0b29ae1ffde1bcf20ef305bcc95c51"
-
-[[package]]
-name = "writeable"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea2f10b9bb0928dfb1b42b65e1f9e36f7f54dbdf08457afefb38afcdec4fa2bb"
@@ -5932,7 +5900,7 @@ version = "0.3.0"
 dependencies = [
  "anymore",
  "hashbrown 0.15.5",
- "kurbo 0.12.0",
+ "kurbo",
  "tracing",
 ]
 
@@ -5941,7 +5909,7 @@ name = "xilem_web"
 version = "0.3.0"
 dependencies = [
  "futures",
- "peniko 0.5.0",
+ "peniko",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
