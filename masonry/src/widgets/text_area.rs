@@ -5,7 +5,7 @@ use std::any::TypeId;
 use std::mem::Discriminant;
 
 use accesskit::{Node, NodeId, Role};
-use masonry_core::util::parley_rect_to_kurbo;
+use masonry_core::util::bounding_box_to_rect;
 use parley::PlainEditor;
 use parley::editor::{Generation, SplitString};
 use tracing::{Span, trace_span};
@@ -259,7 +259,7 @@ impl<const EDITABLE: bool> TextArea<EDITABLE> {
             self.editor.try_layout().is_some(),
             "TextArea::ime_area should only be called when the editor layout is available"
         );
-        parley_rect_to_kurbo(self.editor.ime_cursor_area())
+        bounding_box_to_rect(self.editor.ime_cursor_area())
     }
 }
 
@@ -500,8 +500,16 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     let mut drv = self.editor.driver(fctx, lctx);
                     match state.count {
                         2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
-                        3 => drv.select_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
-                        _ => drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32),
+                        3 => {
+                            drv.select_hard_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32);
+                        }
+                        _ => {
+                            if state.modifiers.shift() {
+                                drv.shift_click_extension(cursor_pos.x as f32, cursor_pos.y as f32);
+                            } else {
+                                drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
+                            }
+                        }
                     }
                     let new_generation = self.editor.generation();
                     if new_generation != self.rendered_generation {
@@ -934,7 +942,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     Affine::IDENTITY,
                     selection_color,
                     None,
-                    &parley_rect_to_kurbo(*rect),
+                    &bounding_box_to_rect(*rect),
                 );
             }
             if let Some(cursor) = self.editor.cursor_geometry(1.5)
@@ -946,7 +954,7 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
                     Affine::IDENTITY,
                     caret_color,
                     None,
-                    &parley_rect_to_kurbo(cursor),
+                    &bounding_box_to_rect(cursor),
                 );
             };
         }
