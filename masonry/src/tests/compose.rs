@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use assert_matches::assert_matches;
-use masonry_core::core::{ChildrenIds, NewWidget, Widget, WidgetPod, WidgetTag};
+use masonry_core::core::{ChildrenIds, NewWidget, Transform, Widget, WidgetPod, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 use vello::kurbo::{Affine, Point, Size, Vec2};
 
@@ -63,9 +63,7 @@ fn request_compose() {
     assert_matches!(harness.take_records_of(parent_tag)[..], [Record::Compose]);
 
     harness.edit_widget(parent_tag, |mut parent| {
-        parent
-            .ctx
-            .set_transform(Affine::translate(Vec2::new(7., 7.)));
+        parent.insert_prop(Transform::from(Affine::translate(Vec2::new(7., 7.))));
     });
 
     // Origin should be "parent_origin + pos + scroll_offset"
