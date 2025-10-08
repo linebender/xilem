@@ -116,7 +116,7 @@ where
         ctx: &mut ViewCtx,
         window: Mut<'_, Self::Element>,
     ) {
-        window.render_root().edit_root_widget(|mut root| {
+        window.render_root().edit_base_layer(|mut root| {
             self.root_widget_view
                 .teardown(view_state, ctx, root.downcast());
         });
@@ -129,7 +129,7 @@ where
         window: Mut<'_, Self::Element>,
         app_state: &mut State,
     ) -> xilem_core::MessageResult<()> {
-        window.render_root().edit_root_widget(|mut root| {
+        window.render_root().edit_base_layer(|mut root| {
             self.root_widget_view
                 .message(view_state, message, root.downcast(), app_state)
         })
@@ -149,7 +149,7 @@ where
         app_state: &mut State,
     ) {
         let mut root_id = None;
-        render_root.edit_root_widget(|mut root| {
+        render_root.edit_base_layer(|mut root| {
             let mut root = root.downcast();
             self.root_widget_view.rebuild(
                 &prev.root_widget_view,

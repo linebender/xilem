@@ -1,6 +1,7 @@
 // Copyright 2019 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -11,8 +12,9 @@ use parley::{FontContext, LayoutContext};
 use tracing::{info_span, warn};
 use tree_arena::{ArenaMut, TreeArena};
 use vello::Scene;
-use vello::kurbo::{Rect, Size};
+use vello::kurbo::{Point, Rect, Size};
 
+use crate::app::layer_stack::LayerStack;
 use crate::core::{
     AccessEvent, BrushIndex, CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled,
     Ime, NewWidget, PointerEvent, PropertiesRef, QueryCtx, ResizeDirection, TextEvent, Widget,
@@ -48,8 +50,8 @@ const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN)
 ///
 /// This is also the type that owns the widget tree.
 pub struct RenderRoot {
-    /// Root of the widget tree.
-    pub(crate) root: WidgetPod<dyn Widget>,
+    /// `WidgetPod` handle for the layer stack, which holds the root widget of each layer.
+    pub(crate) layer_stack: WidgetPod<LayerStack>,
 
     /// The accessibility pass creates a wrapper node for the app with `Role::Window`.
     ///
@@ -215,7 +217,6 @@ pub struct RenderRootOptions {
 }
 
 /// Objects emitted by the [`RenderRoot`] to signal that something has changed or require external actions.
-#[derive(Debug)]
 pub enum RenderRootSignal {
     /// A widget has emitted an action.
     Action(ErasedAction, WidgetId),
@@ -268,6 +269,57 @@ pub enum RenderRootSignal {
     ShowWindowMenu(LogicalPosition<f64>),
     /// The widget picker has selected this widget.
     WidgetSelectedInInspector(WidgetId),
+    /// A new layer should be created with the widget as root.
+    NewLayer(NewWidget<dyn Widget>, Point),
+    /// The layer with the given widget as root should be removed.
+    RemoveLayer(WidgetId),
+    /// The layer with the given widget as root should be repositioned to the specified point.
+    RepositionLayer(WidgetId, Point),
+}
+
+impl std::fmt::Debug for RenderRootSignal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Action(action, widget_id) => f
+                .debug_tuple("Action")
+                .field(action)
+                .field(widget_id)
+                .finish(),
+            Self::StartIme => write!(f, "StartIme"),
+            Self::EndIme => write!(f, "EndIme"),
+            Self::ImeMoved(origin, size) => {
+                f.debug_tuple("ImeMoved").field(origin).field(size).finish()
+            }
+            Self::ClipboardStore(item) => f.debug_tuple("ClipboardStore").field(item).finish(),
+            Self::RequestRedraw => write!(f, "RequestRedraw"),
+            Self::RequestAnimFrame => write!(f, "RequestAnimFrame"),
+            Self::TakeFocus => write!(f, "TakeFocus"),
+            Self::SetCursor(icon) => f.debug_tuple("SetCursor").field(icon).finish(),
+            Self::SetSize(size) => f.debug_tuple("SetSize").field(size).finish(),
+            Self::SetTitle(title) => f.debug_tuple("SetTitle").field(title).finish(),
+            Self::DragWindow => write!(f, "DragWindow"),
+            Self::DragResizeWindow(d) => f.debug_tuple("DragResizeWindow").field(d).finish(),
+            Self::ToggleMaximized => write!(f, "ToggleMaximized"),
+            Self::Minimize => write!(f, "Minimize"),
+            Self::Exit => write!(f, "Exit"),
+            Self::ShowWindowMenu(pos) => f.debug_tuple("ShowWindowMenu").field(pos).finish(),
+            Self::WidgetSelectedInInspector(widget_id) => f
+                .debug_tuple("WidgetSelectedInInspector")
+                .field(widget_id)
+                .finish(),
+            Self::NewLayer(root_widget, pos) => f
+                .debug_tuple("NewLayer")
+                .field(&root_widget.widget.short_type_name())
+                .field(&pos)
+                .finish(),
+            Self::RemoveLayer(root_id) => f.debug_tuple("RemoveLayer").field(root_id).finish(),
+            Self::RepositionLayer(root_id, new_origin) => f
+                .debug_tuple("RepositionLayer")
+                .field(root_id)
+                .field(new_origin)
+                .finish(),
+        }
+    }
 }
 
 /// State of the widget inspector. Useful for debugging.
@@ -304,8 +356,10 @@ impl RenderRoot {
         } = options;
         let debug_paint = std::env::var("MASONRY_DEBUG_PAINT").is_ok_and(|it| !it.is_empty());
 
+        let layer_stack = WidgetPod::new(LayerStack::new(root_widget));
+
         let mut root = Self {
-            root: root_widget.erased().to_pod(),
+            layer_stack,
             window_node_id: WidgetId::next().into(),
             size_policy,
             size,
@@ -377,12 +431,29 @@ impl RenderRoot {
         root
     }
 
+    pub(crate) fn root_id(&self) -> WidgetId {
+        self.layer_stack.id()
+    }
+
+    /// `WidgetId` of the given layer's root widget.
+    pub(crate) fn layer_root_id(&self, layer_idx: usize) -> WidgetId {
+        let node_ref = self
+            .widget_arena
+            .nodes
+            .find(self.root_id())
+            .expect("root widget not in widget tree");
+        let widget = &*node_ref.item.widget;
+
+        let stack = (widget as &dyn Any).downcast_ref::<LayerStack>().unwrap();
+        stack.layer_id(layer_idx)
+    }
+
     pub(crate) fn root_state(&self) -> &WidgetState {
         &self
             .widget_arena
             .nodes
             .roots()
-            .into_item(self.root.id())
+            .into_item(self.root_id())
             .expect("root widget not in widget tree")
             .item
             .state
@@ -393,7 +464,7 @@ impl RenderRoot {
             .widget_arena
             .nodes
             .roots_mut()
-            .into_item_mut(self.root.id())
+            .into_item_mut(self.layer_stack.id())
             .expect("root widget not in widget tree")
             .item
             .state
@@ -517,10 +588,10 @@ impl RenderRoot {
     }
 
     // --- MARK: ACCESS WIDGETS
-    /// Get a [`WidgetRef`] to the root widget.
-    pub fn get_root_widget(&self) -> WidgetRef<'_, dyn Widget> {
-        self.get_widget(self.root.id())
-            .expect("root widget not in widget tree")
+    /// Get a [`WidgetRef`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    pub fn get_layer_root(&self, layer_idx: usize) -> WidgetRef<'_, dyn Widget> {
+        self.get_widget(self.layer_root_id(layer_idx))
+            .expect("layer root not in widget tree")
     }
 
     /// Get a [`WidgetRef`] to a specific widget.
@@ -561,11 +632,32 @@ impl RenderRoot {
         self.widget_arena.has(id)
     }
 
-    /// Get a [`WidgetMut`] to the root widget.
+    /// Get a [`WidgetMut`] to the root widget of the [base layer](crate::doc::masonry_concepts#layers).
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
-    pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
-        let res = mutate_widget(self, self.root.id(), f);
+    pub fn edit_base_layer<R>(&mut self, f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R) -> R {
+        let layer_id = self.layer_root_id(0);
+        let res = mutate_widget(self, layer_id, f);
+
+        self.run_rewrite_passes();
+
+        res
+    }
+
+    /// Get a [`WidgetMut`] to the root widget of the given [layer](crate::doc::masonry_concepts#layer).
+    ///
+    /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `idx` is out of bounds.
+    pub fn edit_layer<R>(
+        &mut self,
+        layer_idx: usize,
+        f: impl FnOnce(WidgetMut<'_, dyn Widget>) -> R,
+    ) -> R {
+        let layer_id = self.layer_root_id(layer_idx);
+        let res = mutate_widget(self, layer_id, f);
 
         self.run_rewrite_passes();
 
@@ -617,6 +709,49 @@ impl RenderRoot {
         self.run_rewrite_passes();
 
         res
+    }
+
+    /// Add a new layer at the end of the stack, with the given widget as its root, at the given position.
+    pub fn add_layer(&mut self, root: NewWidget<impl Widget + ?Sized>, pos: Point) {
+        tracing::debug!("added layer to stack");
+        mutate_widget(self, self.root_id(), |mut layer_stack| {
+            let mut layer_stack = layer_stack.downcast::<LayerStack>();
+            LayerStack::add_layer(&mut layer_stack, root, pos);
+        });
+
+        self.run_rewrite_passes();
+    }
+
+    /// Removes the layer with the given widget as root.
+    ///
+    /// The base layer cannot be removed.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the intended layer is the base layer in debug mode.
+    pub fn remove_layer(&mut self, root_id: WidgetId) {
+        mutate_widget(self, self.root_id(), |mut layer_stack| {
+            let mut layer_stack = layer_stack.downcast::<LayerStack>();
+            LayerStack::remove_layer(&mut layer_stack, root_id);
+        });
+
+        self.run_rewrite_passes();
+    }
+
+    /// Repositions the layer with the given widget as root.
+    ///
+    /// The base layer cannot be repositioned.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the intended layer is the base layer in debug mode.
+    pub fn reposition_layer(&mut self, root_id: WidgetId, new_origin: Point) {
+        mutate_widget(self, self.root_id(), |mut layer_stack| {
+            let mut layer_stack = layer_stack.downcast::<LayerStack>();
+            LayerStack::reposition_layer(&mut layer_stack, root_id, new_origin);
+        });
+
+        self.run_rewrite_passes();
     }
 
     /// Get the current size of the window.
@@ -718,7 +853,7 @@ impl RenderRoot {
             });
         }
 
-        let root_node = self.widget_arena.get_node_mut(self.root.id());
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
         request_access_all_in(root_node);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
@@ -742,7 +877,7 @@ impl RenderRoot {
             });
         }
 
-        let root_node = self.widget_arena.get_node_mut(self.root.id());
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
         request_render_all_in(root_node);
         self.global_state
             .emit_signal(RenderRootSignal::RequestRedraw);
@@ -770,7 +905,7 @@ impl RenderRoot {
             });
         }
 
-        let root_node = self.widget_arena.get_node_mut(self.root.id());
+        let root_node = self.widget_arena.get_node_mut(self.root_id());
         request_layout_all_in(root_node);
         // We need to perform a relayout before the next pointer/keyboard input event.
         // So we do it now, rather than deferring it until a redraw.
