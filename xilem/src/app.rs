@@ -3,6 +3,7 @@
 
 use masonry::peniko::Blob;
 use masonry_winit::app::{EventLoopBuilder, MasonryUserEvent, NewWindow, WindowId};
+use tokio::runtime::Runtime as TokioRuntime;
 
 use std::iter::Once;
 use std::sync::Arc;
@@ -20,7 +21,7 @@ use crate::{MasonryDriver, WidgetView, WindowOptions, WindowView};
 pub struct Xilem<State, Logic> {
     state: State,
     logic: Logic,
-    runtime: tokio::runtime::Runtime,
+    runtime: Arc<TokioRuntime>,
     default_properties: Option<DefaultProperties>,
     // Font data to include in loading.
     fonts: Vec<Blob<u8>>,
@@ -51,8 +52,27 @@ impl<State>
     /// on the state you should instead use [`Xilem::new`] (which this function wraps).
     pub fn new_simple<View>(
         state: State,
+        logic: impl FnMut(&mut State) -> View + 'static,
+        window_options: WindowOptions<State>,
+    ) -> Self
+    where
+        View: WidgetView<State>,
+        State: 'static,
+    {
+        Self::new_simple_with_tokio(
+            state,
+            logic,
+            window_options,
+            Arc::new(TokioRuntime::new().unwrap()),
+        )
+    }
+
+    /// Same as [Self::new_simple] but allows passing an existing tokio runtime.
+    pub fn new_simple_with_tokio<View>(
+        state: State,
         mut logic: impl FnMut(&mut State) -> View + 'static,
         window_options: WindowOptions<State>,
+        tokio_rt: Arc<TokioRuntime>,
     ) -> Self
     where
         View: WidgetView<State>,
@@ -90,6 +110,7 @@ impl<State>
                     }),
                 )
             }),
+            tokio_rt,
         )
     }
 }
@@ -116,14 +137,14 @@ where
     where
         State: AppState,
     {
-        Self::new_inner(state, logic)
+        Self::new_inner(state, logic, Arc::new(TokioRuntime::new().unwrap()))
     }
 
-    fn new_inner(state: State, logic: Logic) -> Self {
+    fn new_inner(state: State, logic: Logic, runtime: Arc<TokioRuntime>) -> Self {
         Self {
             state,
             logic,
-            runtime: tokio::runtime::Runtime::new().unwrap(),
+            runtime,
             default_properties: None,
             fonts: Vec::new(),
         }
