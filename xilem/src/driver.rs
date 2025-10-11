@@ -50,7 +50,7 @@ where
         // TODO: narrow down MasonryUserEvent in event_sink once masonry_winit supports custom event types
         // (we only ever use it to send MasonryUserEvent::Action with ASYNC_MARKER_WIDGET)
         event_sink: impl Fn(MasonryUserEvent) -> Result<(), MasonryUserEvent> + Send + Sync + 'static,
-        runtime: tokio::runtime::Runtime,
+        runtime: Arc<tokio::runtime::Runtime>,
         fonts: Vec<Blob<u8>>,
     ) -> (Self, Vec<NewWindow>) {
         let mut driver = Self {
@@ -58,7 +58,7 @@ where
             logic,
             windows: HashMap::new(),
             proxy: Arc::new(MasonryProxy(Box::new(event_sink))),
-            runtime: Arc::new(runtime),
+            runtime,
             fonts,
             scratch_id_path: Vec::new(),
         };
