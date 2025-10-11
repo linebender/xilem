@@ -67,7 +67,7 @@ impl<State>
         )
     }
 
-    /// Same as [Self::new_simple] but allows passing an existing tokio runtime.
+    /// Same as [`Self::new_simple`] but allows passing an existing tokio runtime.
     pub fn new_simple_with_tokio<View>(
         state: State,
         mut logic: impl FnMut(&mut State) -> View + 'static,
