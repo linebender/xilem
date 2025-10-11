@@ -162,7 +162,9 @@ Masonry apps currently ship with several debugging features built in:
 
 - A rudimentary widget inspector - toggled by the F11 key.
 - A debug mode painting widget layout rectangles - toggled by the F12 key.
-- Automatic registration of a [tracing] subscriber, which outputs to the console and to a file in the dev profile.
+- Optional automatic registration of a [tracing] subscriber, which outputs to the console and to a file in the dev profile.
+
+If you want to use your own subscriber, simply set it before starting masonry - in this case masonry will not set a subscriber.
 
 [masonry_winit]: https://crates.io/crates/masonry_winit
 [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
