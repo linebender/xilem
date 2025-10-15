@@ -7,7 +7,9 @@ use tree_arena::ArenaMut;
 use vello::kurbo::Rect;
 
 use crate::app::{RenderRoot, RenderRootState};
-use crate::core::{AccessCtx, DefaultProperties, PropertiesRef, Widget, WidgetArenaNode, WidgetId};
+use crate::core::{
+    AccessCtx, DefaultProperties, PropertiesRef, Transform, Widget, WidgetArenaNode, WidgetId,
+};
 use crate::passes::{enter_span_if, recurse_on_children};
 
 // --- MARK: BUILD TREE
@@ -21,7 +23,7 @@ fn build_accessibility_tree(
     let mut children = node.children;
     let widget = &mut *node.item.widget;
     let state = &mut node.item.state;
-    let properties = &mut node.item.properties;
+    let properties = &node.item.properties;
     let id = state.id;
     let _span = enter_span_if(global_state.trace.access, state);
 
@@ -44,11 +46,11 @@ fn build_accessibility_tree(
             children: children.reborrow_mut(),
             tree_update,
         };
-        let mut node = build_access_node(widget, &mut ctx, scale_factor);
         let props = PropertiesRef {
             map: properties,
             default_map: default_properties.for_widget(widget.type_id()),
         };
+        let mut node = build_access_node(widget, &mut ctx, props, scale_factor);
         widget.accessibility(&mut ctx, &props, &mut node);
 
         let id: NodeId = ctx.widget_state.id.into();
@@ -78,13 +80,17 @@ fn build_accessibility_tree(
 fn build_access_node(
     widget: &mut dyn Widget,
     ctx: &mut AccessCtx<'_>,
+    props: PropertiesRef<'_>,
     scale_factor: Option<f64>,
 ) -> Node {
     let mut node = Node::new(widget.accessibility_role());
     node.set_bounds(to_accesskit_rect(ctx.widget_state.size().to_rect()));
 
     let local_translation = ctx.widget_state.scroll_translation + ctx.widget_state.origin.to_vec2();
-    let mut local_transform = ctx.widget_state.transform.then_translate(local_translation);
+    let mut local_transform = props
+        .get::<Transform>()
+        .transform
+        .then_translate(local_translation);
 
     // TODO - Remove once Masonry uses physical coordinates.
     // See https://github.com/linebender/xilem/issues/1264

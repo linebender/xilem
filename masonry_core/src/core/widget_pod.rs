@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::TypeId;
-use vello::kurbo::Affine;
 
 use crate::core::{Properties, Widget, WidgetId, WidgetTag};
 
@@ -33,22 +32,12 @@ pub struct NewWidget<W: ?Sized> {
     #[cfg(debug_assertions)]
     pub(crate) action_type_name: &'static str,
 
-    /// The options the widget will be created with.
-    pub options: WidgetOptions,
+    /// The disabled state the widget will be created with.
+    pub disabled: bool,
     /// The properties the widget will be created with.
     pub properties: Properties,
 
     pub(crate) tag: &'static str,
-}
-
-// TODO - Remove this and merge it into NewWidget?
-/// The options a new widget will be created with.
-#[derive(Default, Debug)]
-pub struct WidgetOptions {
-    /// The transform the widget will be created with.
-    pub transform: Affine,
-    /// The disabled state the widget will be created with.
-    pub disabled: bool,
 }
 
 // TODO - This is a simple state machine that lets users create WidgetPods
@@ -78,7 +67,7 @@ impl<W: Widget> NewWidget<W> {
             action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
             action_type_name: std::any::type_name::<W::Action>(),
-            options: WidgetOptions::default(),
+            disabled: false,
             properties: Properties::default(),
             tag: "",
         }
@@ -101,23 +90,15 @@ impl<W: Widget> NewWidget<W> {
         }
     }
 
-    /// Create a new widget with custom [`WidgetOptions`].
-    pub fn new_with_options(inner: W, options: WidgetOptions) -> Self {
-        Self {
-            options,
-            ..Self::new(inner)
-        }
-    }
-
-    /// Create a new widget with custom [`WidgetOptions`] and custom [`Properties`].
-    pub fn new_with(inner: W, id: WidgetId, options: WidgetOptions, props: Properties) -> Self {
+    /// Create a new widget with custom disabled state and custom [`Properties`].
+    pub fn new_with(inner: W, id: WidgetId, disabled: bool, props: Properties) -> Self {
         Self {
             widget: Box::new(inner),
             id,
             action_type: TypeId::of::<W::Action>(),
             #[cfg(debug_assertions)]
             action_type_name: std::any::type_name::<W::Action>(),
-            options,
+            disabled,
             properties: props,
             tag: "",
         }
@@ -136,7 +117,7 @@ impl<W: Widget + ?Sized> NewWidget<W> {
             action_type: self.action_type,
             #[cfg(debug_assertions)]
             action_type_name: self.action_type_name,
-            options: self.options,
+            disabled: self.disabled,
             properties: self.properties,
             tag: self.tag,
         }
