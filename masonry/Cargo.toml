@@ -8,7 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-exclude = ["screenshots", "examples/assetss"]
+exclude = ["screenshots", "examples/assets"]
 
 [package.metadata.docs.rs]
 all-features = true
