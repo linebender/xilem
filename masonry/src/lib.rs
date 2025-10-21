@@ -33,13 +33,19 @@
 //! The to-do-list example looks like this, using `masonry_winit` as the backend:
 //!
 //! ```rust
-//! use masonry::core::{ErasedAction, NewWidget, Widget, WidgetId, WidgetPod};
+//! use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
 //! use masonry::dpi::LogicalSize;
-//! use masonry::properties::types::{Length, AsUnit};
+//! use masonry::peniko::color::AlphaColor;
+//! use masonry::properties::Padding;
+//! use masonry::properties::types::Length;
 //! use masonry::theme::default_property_set;
-//! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextInput};
+//! use masonry::widgets::{Button, ButtonPress, Flex, Label, Portal, TextAction, TextArea, TextInput};
 //! use masonry_winit::app::{AppDriver, DriverCtx, NewWindow, WindowId};
 //! use masonry_winit::winit::window::Window;
+//!
+//! const TEXT_INPUT_TAG: WidgetTag<TextInput> = WidgetTag::new("text-input");
+//! const LIST_TAG: WidgetTag<Flex> = WidgetTag::new("list");
+//! const WIDGET_SPACING: Length = Length::const_px(5.0);
 //!
 //! struct Driver {
 //!     next_task: String,
@@ -57,68 +63,84 @@
 //!         debug_assert_eq!(window_id, self.window_id, "unknown window");
 //!
 //!         if action.is::<ButtonPress>() {
-//!             ctx.render_root(window_id).edit_root_widget(|mut root| {
-//!                 let mut portal = root.downcast::<Portal<Flex>>();
-//!                 let mut flex = Portal::child_mut(&mut portal);
-//!                 Flex::add_child(&mut flex, Label::new(self.next_task.clone()).with_auto_id());
+//!             let render_root = ctx.render_root(window_id);
+//!
+//!             render_root.edit_widget_with_tag(TEXT_INPUT_TAG, |mut text_input| {
+//!                 let mut text_area = TextInput::text_mut(&mut text_input);
+//!                 TextArea::reset_text(&mut text_area, "");
+//!             });
+//!             render_root.edit_widget_with_tag(LIST_TAG, |mut list| {
+//!                 let child = Label::new(self.next_task.clone()).with_auto_id();
+//!                 Flex::add_child(&mut list, child);
 //!             });
 //!         } else if action.is::<TextAction>() {
-//!             let action = *action.downcast::<TextAction>().unwrap();
-//!             match action {
+//!             let action = action.downcast::<TextAction>().unwrap();
+//!             match *action {
 //!                 TextAction::Changed(new_text) => {
 //!                     self.next_task = new_text.clone();
 //!                 }
-//!                 _ => {}
+//!                 TextAction::Entered(_) => {}
 //!             }
 //!         }
 //!     }
 //! }
 //!
-//! fn main() {
-//!     const WIDGET_SPACING: Length = Length::const_px(5.0);
-//!
-//!     let main_widget = Portal::new(
-//!         Flex::column()
-//!             .with_child(NewWidget::new(
-//!                 Flex::row()
-//!                     .with_flex_child(TextInput::new("").with_auto_id(), 1.0)
-//!                     .with_child(
-//!                         Button::new(
-//!                             Label::new("Add task").with_auto_id()
-//!                         ).with_auto_id()
-//!                     ),
-//!             ))
-//!             .with_spacer(WIDGET_SPACING)
-//!             .with_auto_id(),
+//! /// Return initial to-do-list without items.
+//! pub fn make_widget_tree() -> NewWidget<impl Widget> {
+//!     let text_input = NewWidget::new_with_tag(
+//!         TextInput::new("").with_placeholder("ex: 'Do the dishes', 'File my taxes', ..."),
+//!         TEXT_INPUT_TAG,
 //!     );
+//!     let button = NewWidget::new(Button::with_text("Add task"));
 //!
+//!     let list = Flex::column()
+//!         .with_child(NewWidget::new_with_props(
+//!             Flex::row()
+//!                 .with_flex_child(text_input, 1.0)
+//!                 .with_child(button),
+//!             Properties::new().with(Padding::all(WIDGET_SPACING.get())),
+//!         ))
+//!         .with_spacer(WIDGET_SPACING);
+//!
+//!     NewWidget::new(Portal::new(NewWidget::new_with_tag(list, LIST_TAG)))
+//! }
+//!
+//! fn main() {
 //!     let window_size = LogicalSize::new(400.0, 400.0);
 //!     let window_attributes = Window::default_attributes()
 //!         .with_title("To-do list")
 //!         .with_resizable(true)
 //!         .with_min_inner_size(window_size);
-//!
 //!     let driver = Driver {
 //!         next_task: String::new(),
 //!         window_id: WindowId::next(),
 //!     };
+//!     # make_widget_tree();
 //!     # return;
+//!
 //!     let event_loop = masonry_winit::app::EventLoop::with_user_event()
 //!         .build()
 //!         .unwrap();
 //!     masonry_winit::app::run_with(
 //!         event_loop,
-//!         vec![NewWindow::new_with_id(
-//!             driver.window_id,
-//!             window_attributes,
-//!             NewWidget::new(main_widget).erased(),
-//!         )],
+//!         vec![
+//!             NewWindow::new_with_id(
+//!                 driver.window_id,
+//!                 window_attributes,
+//!                 make_widget_tree().erased(),
+//!             )
+//!             .with_base_color(AlphaColor::from_rgb8(2, 6, 23)),
+//!         ],
 //!         driver,
 //!         default_property_set(),
 //!     )
 //!     .unwrap();
 //! }
 //! ```
+//!
+//! Running this will open a window that looks like this:
+//!
+//! ![Screenshot of the to-do-list example][to-do-screenshot]
 //!
 //! # Feature flags
 //!
@@ -141,9 +163,14 @@
 //! [masonry_winit]: https://crates.io/crates/masonry_winit
 //! [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
-
-// TODO: Add screenshot. This can't use include_screenshot as that doesn't work with cargo-rdme
-// See https://github.com/linebender/xilem/issues/851
+//!
+#![cfg_attr(
+    not(docsrs),
+    doc = "**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
+)]
+// Screenshot generated in the unit test for the `to_do_list` example.
+#![doc = util::include_screenshot_reference!("to-do-screenshot", "example_to_do_list_initial.png")]
+//!
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
@@ -166,10 +193,6 @@
 #![expect(missing_debug_implementations, reason = "Deferred: Noisy")]
 #![expect(clippy::cast_possible_truncation, reason = "Deferred: Noisy")]
 #![expect(clippy::single_match, reason = "General policy not decided")]
-#![expect(
-    clippy::needless_doctest_main,
-    reason = "Having a main function is a deliberate part of the root doc."
-)]
 
 // TODO - Add logo
 
