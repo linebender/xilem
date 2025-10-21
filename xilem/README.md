@@ -71,7 +71,7 @@ A simple incrementing counter application looks like:
 
 ```rust
 use winit::error::EventLoopError;
-use xilem::view::{Axis, button, flex, label};
+use xilem::view::{Axis, text_button, flex, label};
 use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 
 #[derive(Default)]
@@ -82,7 +82,7 @@ struct Counter {
 fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
     flex(Axis::Vertical, (
         label(format!("{}", data.num)),
-        button("increment", |data: &mut Counter| data.num += 1),
+        text_button("increment", |data: &mut Counter| data.num += 1),
     ))
 }
 
