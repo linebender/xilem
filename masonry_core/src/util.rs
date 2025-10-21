@@ -143,10 +143,12 @@ pub use crate::include_screenshot_reference;
 // 3) Extract the "repository" from CARGO_PKG_REPOSITORY and auto-generate the online URL version.
 
 // We want to show the "local" image if it's present (e.g. from a git dependency or in the local repository).
-// However, if we're on docs.rs (or building from the crates.io registry),
-// the screenshots aren't available (as they shouldn't be in the published package for space reasons).
-// For those environments, we want to instead show the image from `raw.githubusercontent.com`.
-// This means that screenshots may fail to display in some cases, e.g. the user is pulling a crate as a
+// The image won't be available locally if our docs are being built on docs.rs or from a crates.io dependency, 
+// as we don't include the screenshots in the published package (for space/bandwidth reasons).
+// This fall back uses `raw.githubusercontent.com`, which allows it to access the correct version of the screenshot for the crate's version.
+// Unfortunately, it isn't currently possible to detect that this fallback is needed (without a procedural macro or build script);
+// as such, we currently use `cfg(docsrs)` as a proxy for whether to use a fallback.
+// This does mean that screenshots may fail to display in some cases, e.g. the user is pulling a crate as a
 // crates.io dependency and then generating its doc locally.
 // Masonry's documentation has a few warnings for these cases.
 
