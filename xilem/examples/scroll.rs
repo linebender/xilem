@@ -8,8 +8,8 @@ use vello::peniko::color::AlphaColor;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    CrossAxisAlignment, GridExt, MainAxisAlignment, text_button, flex_col, flex_row, grid, label,
-    portal, sized_box,
+    CrossAxisAlignment, GridExt, MainAxisAlignment, flex_col, flex_row, grid, label, portal,
+    sized_box, text_button,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 use xilem_core::one_of::Either;

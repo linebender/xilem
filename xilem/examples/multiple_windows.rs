@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use winit::error::EventLoopError;
-use xilem::view::{text_button, flex_col, label, text_input};
+use xilem::view::{flex_col, label, text_button, text_input};
 use xilem::{AppState, EventLoop, EventLoopBuilder, WindowId, WindowView, Xilem, window};
 
 struct State {

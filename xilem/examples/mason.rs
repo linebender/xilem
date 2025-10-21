@@ -14,8 +14,8 @@ use xilem::core::{Resource, fork, provides, run_once, with_context, without_elem
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
-    Axis, FlexExt as _, FlexSpacer, PointerButton, text_button, button_any_pointer, checkbox, flex,
-    flex_col, flex_row, label, prose, task, text_input,
+    Axis, FlexExt as _, FlexSpacer, PointerButton, button_any_pointer, checkbox, flex, flex_col,
+    flex_row, label, prose, task, text_button, text_input,
 };
 use xilem::{
     EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView, WindowOptions,

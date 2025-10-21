@@ -19,8 +19,8 @@ use xilem::style::Style;
 use xilem::{
     EventLoop, WidgetView, WindowOptions, Xilem,
     view::{
-        Axis, FlexExt, FlexSpacer, text_button, checkbox, flex, flex_col, flex_row, label, sized_box,
-        slider,
+        Axis, FlexExt, FlexSpacer, checkbox, flex, flex_col, flex_row, label, sized_box, slider,
+        text_button,
     },
 };
 

@@ -14,7 +14,7 @@ use tracing::warn;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{FlexSequence, FlexSpacer, text_button, flex_col, flex_row, label, task};
+use xilem::view::{FlexSequence, FlexSpacer, flex_col, flex_row, label, task, text_button};
 use xilem::{WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.

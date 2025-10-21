@@ -7,7 +7,7 @@ use masonry::properties::types::AsUnit;
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::style::Style as _;
-use xilem::view::{text_button, flex_col, label, prose, sized_box, spinner};
+use xilem::view::{flex_col, label, prose, sized_box, spinner, text_button};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.

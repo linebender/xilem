@@ -5,7 +5,7 @@
 
 use winit::error::EventLoopError;
 use xilem::core::lens;
-use xilem::view::{MainAxisAlignment, text_button, flex_col, flex_row, label};
+use xilem::view::{MainAxisAlignment, flex_col, flex_row, label, text_button};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 #[derive(Default)]

@@ -18,8 +18,8 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, ZStackExt, text_button, flex_col, flex_row, image, inline_prose, portal, prose,
-    sized_box, spinner, split, worker, zstack,
+    FlexSpacer, ZStackExt, flex_col, flex_row, image, inline_prose, portal, prose, sized_box,
+    spinner, split, text_button, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 

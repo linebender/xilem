@@ -9,7 +9,7 @@ use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, text_button, checkbox, flex_col, flex_row, indexed_stack, progress_bar, sized_box,
+    FlexSpacer, checkbox, flex_col, flex_row, indexed_stack, progress_bar, sized_box, text_button,
 };
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::lens;

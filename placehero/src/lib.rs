@@ -24,8 +24,8 @@ use xilem::core::{NoElement, View, fork, lens, map_action, map_state};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, text_button, flex_col, flex_row, label, prose, sized_box, spinner,
-    split, task_raw, text_input, worker_raw,
+    CrossAxisAlignment, FlexExt, flex_col, flex_row, label, prose, sized_box, spinner, split,
+    task_raw, text_button, text_input, worker_raw,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};

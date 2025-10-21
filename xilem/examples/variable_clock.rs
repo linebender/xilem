@@ -14,8 +14,8 @@ use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, text_button, flex_col, flex_row, inline_prose, label, portal, prose, sized_box,
-    task, variable_label,
+    FlexExt, FlexSpacer, flex_col, flex_row, inline_prose, label, portal, prose, sized_box, task,
+    text_button, variable_label,
 };
 use xilem::{
     Blob, EventLoop, EventLoopBuilder, FontWeight, WidgetView, WindowOptions, Xilem, palette,

@@ -4,8 +4,8 @@
 use megalodon::entities::Status;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, text_button, flex_col,
-    flex_row, inline_prose, label, prose,
+    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, flex_col, flex_row,
+    inline_prose, label, prose, text_button,
 };
 use xilem::{FontWeight, TextAlign};
 
