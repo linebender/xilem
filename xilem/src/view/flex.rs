@@ -47,15 +47,17 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// ```rust,no_run
 /// use xilem::masonry::properties::types::{AsUnit, CrossAxisAlignment, MainAxisAlignment};
 /// use winit::error::EventLoopError;
-/// use xilem::view::{Axis, button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
+/// use xilem::view::{Axis, button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 ///
-/// // A component to make a bigger than usual button
+/// /// A component to make a bigger than usual button
 /// fn big_button(
 ///     label: impl Into<Label>,
 ///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 /// ) -> impl WidgetView<i32> {
-///     sized_box(button(label, callback)).width(40.px()).height(40.px())
+///     sized_box(button(label.into(), callback))
+///         .width(40.px())
+///         .height(40.px())
 /// }
 ///
 /// fn app_logic(data: &mut i32) -> impl WidgetView<i32> + use<> {
@@ -501,12 +503,12 @@ pub trait FlexExt<State, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// use xilem::masonry::properties::types::AsUnit;
-    /// use xilem::{view::{Axis, button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
+    /// use xilem::{view::{Axis, text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, (
-    ///     button("click me", |_| ()).flex(2.0),
+    ///     text_button("click me", |_| ()).flex(2.0),
     ///     FlexSpacer::Fixed(2.px()),
     ///     label("a label").flex(CrossAxisAlignment::Fill),
     ///     FlexSpacer::Fixed(2.px()),
@@ -561,12 +563,12 @@ pub struct FlexItem<V, State, Action> {
 /// # Examples
 /// ```
 /// use xilem::masonry::properties::types::AsUnit;
-/// use xilem::view::{Axis, button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
+/// use xilem::view::{Axis, text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
 /// # use xilem::{WidgetView};
 ///
 /// # fn view<State: 'static>() -> impl WidgetView<State> {
 /// flex(Axis::Vertical, (
-///     flex_item(button("click me", |_| ()), 2.0),
+///     flex_item(text_button("click me", |_| ()), 2.0),
 ///     FlexSpacer::Fixed(2.px()),
 ///     flex_item(label("a label"), CrossAxisAlignment::Fill),
 ///     FlexSpacer::Fixed(2.px()),

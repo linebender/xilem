@@ -18,7 +18,6 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// This avoids cases where an inner interactive widget "steals" mouse focus from the outer
 /// widget, or is inadvertently impossible to interactive with.
 ///
-///
 /// For making a button with default text styling directly from a string, you can
 /// use [`text_button`] as a shorthand for `button(label(text), callback)`.
 ///

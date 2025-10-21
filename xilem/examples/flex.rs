@@ -9,7 +9,7 @@ use winit::error::EventLoopError;
 use xilem::view::{FlexExt as _, FlexSpacer, Label, button, flex_row, label, sized_box};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
-/// A component to make a bigger than usual button
+/// A component to make a bigger than usual button.
 fn big_button(
     label: impl Into<Label>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
