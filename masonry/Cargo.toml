@@ -8,12 +8,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-<<<<<<< HEAD
 exclude = ["screenshots", "examples/assets"]
-||||||| parent of aaf12ec6 (Refactor how screenshots are included in doc)
-=======
-exclude = ["screenshots/"]
->>>>>>> aaf12ec6 (Refactor how screenshots are included in doc)
 
 [package.metadata.docs.rs]
 all-features = true
