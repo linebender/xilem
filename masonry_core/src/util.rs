@@ -165,6 +165,18 @@ pub use crate::include_screenshot_reference;
 ///
 /// **Warning: This macro will only function correctly for packages in the Xilem repository,
 /// as it hardcodes the supported GitHub repository.**
+#[cfg(not(docsrs))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        concat!(
+            "![", $($caption,)? "]",
+            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
+        )
+    };
+}
+
 #[cfg(docsrs)]
 #[doc(hidden)]
 #[macro_export]
@@ -176,18 +188,6 @@ macro_rules! include_screenshot {
             // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
             // The `v` is because of our tag name convention.
             "(https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path, ")",
-        )
-    };
-}
-
-#[cfg(not(docsrs))]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! include_screenshot {
-    ($path:literal $(, $caption:literal)? $(,)?) => {
-        concat!(
-            "![", $($caption,)? "]",
-            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
         )
     };
 }
@@ -206,21 +206,6 @@ macro_rules! include_screenshot {
 ///
 /// **Warning: This macro will only function correctly for packages in the Xilem repository,
 /// as it hardcodes the supported GitHub repository.**
-#[cfg(docsrs)]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! include_screenshot_reference {
-    ($label:literal, $path:literal $(,)?) => {
-        concat!(
-            "[", $label, "]: ",
-            // The online path to the screenshot, on this released version.
-            // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
-            // The `v` is because of our tag name convention.
-            "https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path,
-        )
-    };
-}
-
 #[cfg(not(docsrs))]
 #[doc(hidden)]
 #[macro_export]
@@ -233,6 +218,21 @@ macro_rules! include_screenshot_reference {
             env!("CARGO_MANIFEST_DIR"),
             "/screenshots/",
             $path,
+        )
+    };
+}
+
+#[cfg(docsrs)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot_reference {
+    ($label:literal, $path:literal $(,)?) => {
+        concat!(
+            "[", $label, "]: ",
+            // The online path to the screenshot, on this released version.
+            // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
+            // The `v` is because of our tag name convention.
+            "https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path,
         )
     };
 }
