@@ -105,7 +105,7 @@ pub fn text_button<State, Action>(
 /// (so as to treat that as a right click, for example).
 /// Similarly, there is not currently long-press support.
 ///
-/// For more documentation and examples, see [`button`]
+/// For more documentation and examples, see [`button`].
 pub fn button_any_pointer<State, Action, V: WidgetView<State, Action>>(
     child: V,
     callback: impl Fn(&mut State, Option<PointerButton>) -> Action + Send + 'static,
