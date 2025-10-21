@@ -14,7 +14,7 @@ use winit::application::ApplicationHandler;
 use winit::error::EventLoopError;
 use winit::event::ElementState;
 use winit::keyboard::{KeyCode, PhysicalKey};
-use xilem::view::{Label, button, flex_row, label, sized_box};
+use xilem::view::{Label, any_button, flex_row, label, sized_box};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// A component to make a bigger than usual button
@@ -22,7 +22,7 @@ fn big_button(
     label: impl Into<Label>,
     callback: impl Fn(&mut i32) + Send + Sync + 'static,
 ) -> impl WidgetView<i32> {
-    sized_box(button(label, callback))
+    sized_box(any_button(label.into(), callback))
         .width(40.px())
         .height(40.px())
 }

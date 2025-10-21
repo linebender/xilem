@@ -3,11 +3,12 @@
 
 use std::any::type_name;
 
+use masonry::core::ArcStr;
 pub use masonry::core::PointerButton;
 use masonry::widgets::{self, ButtonPress};
 
 use crate::core::{MessageContext, Mut, View, ViewMarker, ViewPathTracker};
-use crate::view::Label;
+use crate::view::{Label, label};
 use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
@@ -60,13 +61,13 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// # }
 /// ```
 pub fn button<State, Action>(
-    label: impl Into<Label>,
+    text: impl Into<ArcStr>,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<
     impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
     Label,
 > {
-    any_button(label.into(), callback)
+    any_button(label(text), callback)
 }
 
 /// See [`button`], the only difference is, that it allows arbitrary widgets as content.
