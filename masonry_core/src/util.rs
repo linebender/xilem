@@ -139,11 +139,10 @@ pub use crate::include_screenshot_reference;
 
 // If we made this into proc macros, we would gain the following features:
 // 1) Automatic detection of the file existing - see https://github.com/linebender/xilem/issues/1080
-// 2) Using the image's dimensions to set the `width` and `height` attributes of the object and `img` tag
-// 3) Extract the "repository" from CARGO_PKG_REPOSITORY and auto-generate the online URL version.
+// 2) Extract the "repository" from CARGO_PKG_REPOSITORY and auto-generate the online URL version.
 
 // We want to show the "local" image if it's present (e.g. from a git dependency or in the local repository).
-// The image won't be available locally if our docs are being built on docs.rs or from a crates.io dependency, 
+// The image won't be available locally if our docs are being built on docs.rs or from a crates.io dependency,
 // as we don't include the screenshots in the published package (for space/bandwidth reasons).
 // This fall back uses `raw.githubusercontent.com`, which allows it to access the correct version of the screenshot for the crate's version.
 // Unfortunately, it isn't currently possible to detect that this fallback is needed (without a procedural macro or build script);
@@ -172,9 +171,7 @@ pub use crate::include_screenshot_reference;
 macro_rules! include_screenshot {
     ($path:literal $(, $caption:literal)? $(,)?) => {
         concat!(
-            // This space at the start avoids triggering https://rust-lang.github.io/rust-clippy/master/index.html#suspicious_doc_comments
-            // when using this macro in a `doc` attribute
-            " ![", $($caption,)? "]",
+            "![", $($caption,)? "]",
             // The online path to the screenshot, on this released version.
             // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
             // The `v` is because of our tag name convention.
@@ -188,10 +185,8 @@ macro_rules! include_screenshot {
 #[macro_export]
 macro_rules! include_screenshot {
     ($path:literal $(, $caption:literal)? $(,)?) => {
-        // This space at the start avoids triggering https://rust-lang.github.io/rust-clippy/master/index.html#suspicious_doc_comments
-        // when using this macro in a `doc` attribute
         concat!(
-            " ![", $($caption,)? "]",
+            "![", $($caption,)? "]",
             "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
         )
     };

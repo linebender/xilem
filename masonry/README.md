@@ -28,6 +28,9 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 [accesskit]: https://crates.io/crates/accesskit
 [tracing]: https://crates.io/crates/tracing
 
+<!-- Image link used in lib.rs. -->
+[to-do-screenshot]: ./screenshots/example_to_do_list_initial.png
+
 <!-- cargo-rdme start -->
 
 Masonry is a foundational framework for building GUI libraries in Rust.
@@ -193,8 +196,6 @@ If you want to use your own subscriber, simply set it before starting masonry - 
 
 
 <!-- cargo-rdme end -->
-
-[to-do-screenshot]: ./screenshots/example_to_do_list_initial.png
 
 ## Minimum supported Rust Version (MSRV)
 
