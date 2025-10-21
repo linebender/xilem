@@ -168,6 +168,7 @@
     not(docsrs),
     doc = "**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
 )]
+// Screenshot generated in the unit test for the `to_do_list` example.
 #![doc = util::include_screenshot_reference!("to-do-screenshot", "example_to_do_list_initial.png")]
 //!
 
