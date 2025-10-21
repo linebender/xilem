@@ -14,7 +14,7 @@ use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, button, flex_col, flex_row, inline_prose, label, portal, prose, sized_box,
+    FlexExt, FlexSpacer, text_button, flex_col, flex_row, inline_prose, label, portal, prose, sized_box,
     task, variable_label,
 };
 use xilem::{
@@ -99,16 +99,16 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
 /// Controls for the variable font weight.
 fn controls() -> impl WidgetView<Clocks> {
     flex_row((
-        button("Increase", |data: &mut Clocks| {
+        text_button("Increase", |data: &mut Clocks| {
             data.weight = (data.weight + 100.).clamp(1., 1000.);
         }),
-        button("Decrease", |data: &mut Clocks| {
+        text_button("Decrease", |data: &mut Clocks| {
             data.weight = (data.weight - 100.).clamp(1., 1000.);
         }),
-        button("Minimum", |data: &mut Clocks| {
+        text_button("Minimum", |data: &mut Clocks| {
             data.weight = 1.;
         }),
-        button("Maximum", |data: &mut Clocks| {
+        text_button("Maximum", |data: &mut Clocks| {
             data.weight = 1000.;
         }),
     ))

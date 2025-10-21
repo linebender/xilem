@@ -14,7 +14,7 @@ use xilem::core::{Resource, fork, provides, run_once, with_context, without_elem
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
-    Axis, FlexExt as _, FlexSpacer, PointerButton, button, button_any_pointer, checkbox, flex,
+    Axis, FlexExt as _, FlexSpacer, PointerButton, text_button, button_any_pointer, checkbox, flex,
     flex_col, flex_row, label, prose, task, text_input,
 };
 use xilem::{
@@ -35,7 +35,7 @@ impl Resource for SomeContext {}
 /// Requires the `SomeContext` resource to be [provided](provides).
 fn env_using() -> impl WidgetView<AppData> + use<> {
     with_context(|context: &mut SomeContext, _: &mut AppData| {
-        button(format!("Context: {}", context.0), |_: &mut AppData| {
+        text_button(format!("Context: {}", context.0), |_: &mut AppData| {
             tracing::warn!("Does nothing");
         })
     })
@@ -61,7 +61,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     let flex_sequence = (0..count)
         .map(|x| {
             (
-                button(format!("+{x}"), move |data: &mut AppData| data.count += x),
+                text_button(format!("+{x}"), move |data: &mut AppData| data.count += x),
                 if data.active {
                     FlexSpacer::Flex(x as f64)
                 } else {
@@ -73,7 +73,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
 
     let fizz_buzz_flex_sequence = [(3, "Fizz"), (5, "Buzz")].map(|c| {
         if data.count.abs() % c.0 == 0 {
-            button(c.1, move |data: &mut AppData| {
+            text_button(c.1, move |data: &mut AppData| {
                 data.count += 1;
             })
             .into_any_flex()
@@ -122,8 +122,8 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                 }),
                 toggleable(data),
                 env_using(),
-                button("Decrement", |data: &mut AppData| data.count -= 1),
-                button("Reset", |data: &mut AppData| data.count = 0),
+                text_button("Decrement", |data: &mut AppData| data.count -= 1),
+                text_button("Reset", |data: &mut AppData| data.count = 0),
                 flex(axis, (fizz_buzz_flex_sequence, flex_sequence)),
             ))
             .padding(8.0),
@@ -154,10 +154,10 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
         provides(
             |_| SomeContext(777),
             flex_row((
-                button("Deactivate", |data: &mut AppData| {
+                text_button("Deactivate", |data: &mut AppData| {
                     data.active = false;
                 }),
-                button("Unlimited Power", |data: &mut AppData| {
+                text_button("Unlimited Power", |data: &mut AppData| {
                     data.count = -1_000_000;
                 }),
                 without_elements(run_once(|| {
@@ -168,7 +168,7 @@ fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
         )
         .boxed()
     } else {
-        button("Activate", |data: &mut AppData| data.active = true).boxed()
+        text_button("Activate", |data: &mut AppData| data.active = true).boxed()
     }
 }
 

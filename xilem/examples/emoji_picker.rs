@@ -8,8 +8,8 @@ use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, GridExt, any_button, button, flex_col, flex_row, grid, label, prose,
-    sized_box,
+    FlexExt, FlexSpacer, GridExt, any_button, flex_col, flex_row, grid, label, prose, sized_box,
+    text_button,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
@@ -20,11 +20,11 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
         FlexSpacer::Fixed(50.px()), // Padding because of the info bar on Android
         flex_row((
             // TODO: Expose that this is a "zoom out" button accessibly
-            button("🔍-", |data: &mut EmojiPagination| {
+            text_button("🔍-", |data: &mut EmojiPagination| {
                 data.size = (data.size + 1).min(5);
             }),
             // TODO: Expose that this is a "zoom in" button accessibly
-            button("🔍+", |data: &mut EmojiPagination| {
+            text_button("🔍+", |data: &mut EmojiPagination| {
                 data.size = (data.size - 1).max(2);
             }),
         )),

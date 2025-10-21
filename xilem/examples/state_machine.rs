@@ -7,7 +7,7 @@ use masonry::properties::types::AsUnit;
 use winit::error::EventLoopError;
 use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::style::Style as _;
-use xilem::view::{button, flex_col, label, prose, sized_box, spinner};
+use xilem::view::{text_button, flex_col, label, prose, sized_box, spinner};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
@@ -53,7 +53,7 @@ fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> +
 /// A button component which transitions to a specified `target_state`
 /// and appends its value to the history when pressed.
 fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView<StateMachine> {
-    button(value, move |app_data: &mut StateMachine| {
+    text_button(value, move |app_data: &mut StateMachine| {
         app_data.state = target_state;
         app_data.history.push_str(value);
     })
@@ -61,7 +61,7 @@ fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView
 
 fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
     flex_col((
-        button("Reset", |app_data: &mut StateMachine| {
+        text_button("Reset", |app_data: &mut StateMachine| {
             app_data.history.clear();
             app_data.state = IsEven::Initial;
         }),

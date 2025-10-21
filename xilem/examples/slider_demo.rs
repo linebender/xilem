@@ -19,7 +19,7 @@ use xilem::style::Style;
 use xilem::{
     EventLoop, WidgetView, WindowOptions, Xilem,
     view::{
-        Axis, FlexExt, FlexSpacer, button, checkbox, flex, flex_col, flex_row, label, sized_box,
+        Axis, FlexExt, FlexSpacer, text_button, checkbox, flex, flex_col, flex_row, label, sized_box,
         slider,
     },
 };
@@ -140,7 +140,7 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
                             }
                         },
                     ),
-                    button("Reset", |state: &mut AppState| state.reset()),
+                    text_button("Reset", |state: &mut AppState| state.reset()),
                 ),
             )
             .gap(20.0.px()),

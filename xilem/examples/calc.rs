@@ -10,7 +10,7 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, any_button, button, flex_row, grid,
+    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, any_button, text_button, flex_row, grid,
     label, sized_box,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
@@ -300,7 +300,7 @@ fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
 
     sized_box(
-        button(digit, |data: &mut Calculator| {
+        text_button(digit, |data: &mut Calculator| {
             data.on_entered_digit(digit);
         })
         .background_color(GRAY)

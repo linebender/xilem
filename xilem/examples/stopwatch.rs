@@ -14,7 +14,7 @@ use tracing::warn;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::Either;
-use xilem::view::{FlexSequence, FlexSpacer, button, flex_col, flex_row, label, task};
+use xilem::view::{FlexSequence, FlexSpacer, text_button, flex_col, flex_row, label, task};
 use xilem::{WidgetView, WindowOptions, Xilem};
 
 /// The state of the entire application.
@@ -174,11 +174,11 @@ fn single_lap(
 
 fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     if data.active {
-        Either::A(button("Stop", |data: &mut Stopwatch| {
+        Either::A(text_button("Stop", |data: &mut Stopwatch| {
             data.stop();
         }))
     } else {
-        Either::B(button("Start", |data: &mut Stopwatch| {
+        Either::B(text_button("Start", |data: &mut Stopwatch| {
             data.start();
         }))
     }
@@ -186,11 +186,11 @@ fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<>
 
 fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
     if data.active {
-        Either::A(button("  Lap  ", |data: &mut Stopwatch| {
+        Either::A(text_button("  Lap  ", |data: &mut Stopwatch| {
             data.lap();
         }))
     } else {
-        Either::B(button("Reset", |data: &mut Stopwatch| {
+        Either::B(text_button("Reset", |data: &mut Stopwatch| {
             data.reset();
         }))
     }

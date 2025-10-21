@@ -8,7 +8,7 @@ use vello::peniko::color::AlphaColor;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    CrossAxisAlignment, GridExt, MainAxisAlignment, button, flex_col, flex_row, grid, label,
+    CrossAxisAlignment, GridExt, MainAxisAlignment, text_button, flex_col, flex_row, grid, label,
     portal, sized_box,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
@@ -113,7 +113,7 @@ fn blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
 fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     let blocks_layout_switch = flex_row((
         label("Switch layout:"),
-        button(
+        text_button(
             format!("{:?}", state.blocks_layout),
             |state: &mut AppState| {
                 let next = match state.blocks_layout {
@@ -126,15 +126,15 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     ));
     let vertical_controls = flex_row((
         label("Vertical blocks (rows):"),
-        button("-", |appstate: &mut AppState| appstate.vertical_count -= 1),
-        button("+", |appstate: &mut AppState| appstate.vertical_count += 1),
+        text_button("-", |appstate: &mut AppState| appstate.vertical_count -= 1),
+        text_button("+", |appstate: &mut AppState| appstate.vertical_count += 1),
     ));
     let horizontal_controls = flex_row((
         label("Horizontal blocks (columns):"),
-        button("-", |appstate: &mut AppState| {
+        text_button("-", |appstate: &mut AppState| {
             appstate.horizontal_count -= 1;
         }),
-        button("+", |appstate: &mut AppState| {
+        text_button("+", |appstate: &mut AppState| {
             appstate.horizontal_count += 1;
         }),
     ));

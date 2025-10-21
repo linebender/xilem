@@ -9,7 +9,7 @@
 use std::collections::{BTreeMap, HashMap};
 
 use winit::error::EventLoopError;
-use xilem::view::{button, flex_col, label, text_input};
+use xilem::view::{text_button, flex_col, label, text_input};
 use xilem::{AppState, EventLoop, EventLoopBuilder, WindowId, WindowView, Xilem, window};
 
 struct State {
@@ -50,7 +50,7 @@ fn app_logic(state: &mut State) -> impl Iterator<Item = WindowView<State>> + use
                         state.new_counter_name = new_name;
                     },
                 ),
-                button("Add".to_string(), |state: &mut State| {
+                text_button("Add".to_string(), |state: &mut State| {
                     if state
                         .counters
                         .values()
@@ -79,10 +79,10 @@ fn app_logic(state: &mut State) -> impl Iterator<Item = WindowView<State>> + use
                     name,
                     flex_col((
                         label(format!("count: {value}")),
-                        button("+".to_string(), move |state: &mut State| {
+                        text_button("+".to_string(), move |state: &mut State| {
                             state.counters.get_mut(&window_id).unwrap().value += 1;
                         }),
-                        button("-".to_string(), move |state: &mut State| {
+                        text_button("-".to_string(), move |state: &mut State| {
                             state.counters.get_mut(&window_id).unwrap().value -= 1;
                         }),
                     )),

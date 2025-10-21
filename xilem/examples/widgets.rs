@@ -9,7 +9,7 @@ use masonry_winit::app::{EventLoop, EventLoopBuilder};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, button, checkbox, flex_col, flex_row, indexed_stack, progress_bar, sized_box,
+    FlexSpacer, text_button, checkbox, flex_col, flex_row, indexed_stack, progress_bar, sized_box,
 };
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
 use xilem_core::lens;
@@ -46,7 +46,7 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
                 }
             },
         ),
-        button("change progress", |state: &mut Option<f64>| match state {
+        text_button("change progress", |state: &mut Option<f64>| match state {
             Some(v) => *v = (*v + 0.1).rem_euclid(1.),
             None => *state = Some(0.5),
         }),
@@ -79,11 +79,11 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
     sized_box(
         flex_col((
             flex_row((
-                button("Progress", |data: &mut WidgetGallery| {
+                text_button("Progress", |data: &mut WidgetGallery| {
                     data.tab = GalleryTab::Progress;
                 })
                 .disabled(data.tab == GalleryTab::Progress),
-                button("Checkbox", |data: &mut WidgetGallery| {
+                text_button("Checkbox", |data: &mut WidgetGallery| {
                     data.tab = GalleryTab::Checkbox;
                 })
                 .disabled(data.tab == GalleryTab::Checkbox),

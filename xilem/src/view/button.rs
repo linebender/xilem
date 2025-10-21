@@ -60,7 +60,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// })
 /// # }
 /// ```
-pub fn button<State, Action>(
+pub fn text_button<State, Action>(
     text: impl Into<ArcStr>,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<
