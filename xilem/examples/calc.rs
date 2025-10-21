@@ -10,8 +10,8 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, any_button, text_button, flex_row, grid,
-    label, sized_box,
+    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label,
+    sized_box, text_button,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
 
@@ -275,7 +275,7 @@ fn expanded_button(
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
 
     sized_box(
-        any_button(content, callback)
+        button(content, callback)
             .background_color(BLUE)
             .corner_radius(10.)
             .border_color(Color::TRANSPARENT)

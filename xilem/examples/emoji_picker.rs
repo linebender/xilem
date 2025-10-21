@@ -8,7 +8,7 @@ use winit::error::EventLoopError;
 use xilem::core::map_state;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexExt, FlexSpacer, GridExt, any_button, flex_col, flex_row, grid, label, prose, sized_box,
+    FlexExt, FlexSpacer, GridExt, button, flex_col, flex_row, grid, label, prose, sized_box,
     text_button,
 };
 use xilem::{
@@ -57,7 +57,7 @@ fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<
             };
             let view = flex_col((
                 // TODO: Expose that this button corresponds to the label below for accessibility?
-                sized_box(any_button(
+                sized_box(button(
                     label(emoji.display).text_size(200.0 / data.size as f32),
                     move |data: &mut EmojiPagination| {
                         data.last_selected = Some(idx);
@@ -102,12 +102,12 @@ fn paginate(
 
     flex_row((
         // TODO: Expose that this is a previous page button to accessibility
-        any_button(label("⬅️").text_size(24.0), move |data| {
+        button(label("⬅️").text_size(24.0), move |data| {
             *data = current_start.saturating_sub(count_per_page);
         })
         .disabled(current_start == 0),
         label(format!("{percentage_start}% - {percentage_end}%")),
-        any_button(label("➡️").text_size(24.0), move |data| {
+        button(label("➡️").text_size(24.0), move |data| {
             let new_idx = current_start + count_per_page;
             if new_idx < max_count {
                 *data = new_idx;

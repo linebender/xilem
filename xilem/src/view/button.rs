@@ -67,13 +67,13 @@ pub fn text_button<State, Action>(
     impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
     Label,
 > {
-    any_button(label(text), callback)
+    button(label(text), callback)
 }
 
 /// See [`button`], the only difference is, that it allows arbitrary widgets as content.
 ///
 /// `child` should be a non-interactive widget, like a [`label`](crate::view::label::label)
-pub fn any_button<State, Action, V: WidgetView<State, Action>>(
+pub fn button<State, Action, V: WidgetView<State, Action>>(
     child: V,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<
