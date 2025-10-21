@@ -115,6 +115,8 @@
 //!         next_task: String::new(),
 //!         window_id: WindowId::next(),
 //!     };
+//!     # make_widget_tree();
+//!     # return;
 //!
 //!     let event_loop = masonry_winit::app::EventLoop::with_user_event()
 //!         .build()
