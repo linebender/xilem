@@ -24,8 +24,8 @@ use xilem::core::{NoElement, View, fork, lens, map_action, map_state};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, button, flex_col, flex_row, label, prose, sized_box, spinner,
-    split, task_raw, text_input, worker_raw,
+    CrossAxisAlignment, FlexExt, flex_col, flex_row, label, prose, sized_box, spinner, split,
+    task_raw, text_button, text_input, worker_raw,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
@@ -87,10 +87,10 @@ fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
                     .text_alignment(xilem::TextAlign::Center)
                     .flex(CrossAxisAlignment::Center),
                 flex_row((
-                    button("Browse Anonymously", |state: &mut MainState| {
+                    text_button("Browse Anonymously", |state: &mut MainState| {
                         *state = MainState::Old(Placehero::default());
                     }),
-                    button("Log In", |state: &mut MainState| {
+                    text_button("Log In", |state: &mut MainState| {
                         *state = MainState::New(PlaceheroWithLogin::new());
                     }),
                 ))
@@ -161,7 +161,7 @@ impl Placehero {
         if let Some(instance) = &self.instance {
             let back = if self.show_context.is_some() {
                 // TODO: Make the ⬅️ arrow not be available to screen readers.
-                Either::A(button("⬅️ Back to Timeline", |_: &mut Self| {
+                Either::A(text_button("⬅️ Back to Timeline", |_: &mut Self| {
                     Navigation::Home
                 }))
             } else {
@@ -179,7 +179,7 @@ impl Placehero {
                     .disabled(self.loading_timeline),
                     self.loading_timeline
                         .then(|| sized_box(spinner()).width(50.px()).height(50.px())),
-                    button("Go", |state: &mut Self| {
+                    text_button("Go", |state: &mut Self| {
                         Navigation::LoadUser(state.timeline_box_contents.clone())
                     }),
                 ))))

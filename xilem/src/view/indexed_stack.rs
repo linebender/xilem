@@ -23,7 +23,7 @@ use masonry::widgets;
 /// # Example
 /// ```
 /// use xilem::view::{
-///     button, flex_col, indexed_stack, label
+///     text_button, flex_col, indexed_stack, label
 /// };
 ///
 /// #[derive(Default)]
@@ -37,11 +37,11 @@ use masonry::widgets;
 ///     (   
 ///         flex_col((
 ///             label("Tab A"),
-///             button("Move to tab B", |state: &mut State| state.tab = 1)
+///             text_button("Move to tab B", |state: &mut State| state.tab = 1)
 ///         )),
 ///         flex_col((
 ///             label("Tab B"),
-///             button("Move to tab A", |state: &mut State| state.tab = 0)
+///             text_button("Move to tab A", |state: &mut State| state.tab = 0)
 ///         )),
 ///     ),
 /// )

@@ -27,10 +27,10 @@ fn app_logic(state: &mut AppState) -> impl Iterator<Item = WindowView<AppState>>
     let root_view = flex_col((
         FlexSpacer::Flex(1.),
         flex_row((
-            button("-", |state: &mut AppState| {
+            text_button("-", |state: &mut AppState| {
                 state.alpha = (state.alpha - 0.25).max(0.);
             }),
-            button("+", |state: &mut AppState| {
+            text_button("+", |state: &mut AppState| {
                 state.alpha = (state.alpha + 0.25).min(1.);
             }),
         ))

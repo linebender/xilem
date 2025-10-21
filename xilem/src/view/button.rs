@@ -3,76 +3,67 @@
 
 use std::any::type_name;
 
+use masonry::core::ArcStr;
 pub use masonry::core::PointerButton;
 use masonry::widgets::{self, ButtonPress};
 
 use crate::core::{MessageContext, Mut, View, ViewMarker, ViewPathTracker};
-use crate::view::Label;
+use crate::view::{Label, label};
 use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
 /// A button which calls `callback` when the primary mouse button (normally left) is pressed.
 ///
+/// `child` will be the button's contents. and should be a non-interactive widget, such as a
+/// [`label`](label::label), or a layout widget containing several non-interactive widgets.
+/// This avoids cases where an inner interactive widget "steals" mouse focus from the outer
+/// widget, or is inadvertently impossible to interactive with.
+///
+/// For making a button with default text styling directly from a string, you can
+/// use [`text_button`] as a shorthand for `button(label(text), callback)`.
+///
+/// The button can also be activated using the keyboard when it has the keyboard focus.
+/// Currently this happens when <kbd>Space</kbd> or <kbd>↵ Enter</kbd> are pressed, and is not configurable.
+/// If you need to handle middle and right clicks on the button, as well as separate handling for
+/// touch, you can use [`button_any_pointer`].
+///
 /// # Examples
-/// To use button provide it with a button text and a closure.
-/// ```
-/// use xilem::view::button;
-/// # use xilem::WidgetView;
 ///
-/// struct State {
-///     int: i32,
-/// }
-///
-/// impl State {
-///     fn increase(&mut self) {
-///         self.int += 1;
-///     }
-/// }
-///
-/// # fn view() -> impl WidgetView<State> {
-/// button("Button", |state: &mut State| {
-///      state.increase();
-/// })
-/// # }
-/// ```
-///
-/// Create a `button` with a custom `label`.
+/// To create a simple button with styled text:
 ///
 /// ```
 /// use xilem::{view::{button, label}, FontWeight};
 /// # use xilem::WidgetView;
 ///
 /// struct State {
-///     int: i32,
-/// }
-///
-/// impl State {
-///     fn increase(&mut self) {
-///         self.int += 1;
-///     }
+///     count: i32,
 /// }
 ///
 /// # fn view() -> impl WidgetView<State> {
-/// let label = label("Button").weight(FontWeight::BOLD);
+/// let label = label("Increase").weight(FontWeight::BOLD);
 ///
 /// button(label, |state: &mut State| {
-///     state.increase();
+///     state.count += 1;
 /// })
 /// # }
 /// ```
-pub fn button<State, Action>(
-    label: impl Into<Label>,
-    callback: impl Fn(&mut State) -> Action + Send + 'static,
-) -> Button<
-    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
-    Label,
-> {
-    any_button(label.into(), callback)
-}
-
-/// See [`button`], the only difference is, that it allows arbitrary widgets as content.
 ///
-/// `child` should be a non-interactive widget, like a [`label`](crate::view::label::label)
-pub fn any_button<State, Action, V: WidgetView<State, Action>>(
+/// To create a button with more complex (non-interactive) contents children:
+///
+/// ```
+/// use xilem::{view::{button, label, flex_row, FlexExt}, FontWeight};
+/// # use xilem::WidgetView;
+/// # type State = u32;
+///
+/// # fn view() -> impl WidgetView<State> {
+/// let children = flex_row((
+///     label("👍").flex(1.0),
+///     label("Like").weight(FontWeight::BOLD),
+/// ));
+///
+/// button(children, |_: &mut State| {})
+/// # }
+/// ```
+pub fn button<State, Action, V: WidgetView<State, Action>>(
     child: V,
     callback: impl Fn(&mut State) -> Action + Send + 'static,
 ) -> Button<
@@ -89,7 +80,31 @@ pub fn any_button<State, Action, V: WidgetView<State, Action>>(
     }
 }
 
-/// A button which calls `callback` when pressed.
+/// A button with default styled text.
+///
+/// This is equivalent to `button(label(text), callback)`, and is useful for
+/// making buttons quickly from string literals.
+/// For more advanced text styling, prefer [`button`].
+pub fn text_button<State, Action>(
+    text: impl Into<ArcStr>,
+    callback: impl Fn(&mut State) -> Action + Send + 'static,
+) -> Button<
+    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    Label,
+> {
+    button(label(text), callback)
+}
+
+/// A button which calls `callback` when pressed with any mouse button, providing
+/// the specific mouse button.
+///
+/// Note that the callback may be called with `None` as the pointer, which indicates
+/// that the button was activated with the keyboard or a touch screen (see also [`ButtonPress`]).
+/// There is not currently any support for detecting when <kbd>≣ Menu</kbd> was pressed
+/// (so as to treat that as a right click, for example).
+/// Similarly, there is not currently long-press support.
+///
+/// For more documentation and examples, see [`button`].
 pub fn button_any_pointer<State, Action, V: WidgetView<State, Action>>(
     child: V,
     callback: impl Fn(&mut State, Option<PointerButton>) -> Action + Send + 'static,
@@ -104,9 +119,9 @@ pub fn button_any_pointer<State, Action, V: WidgetView<State, Action>>(
     }
 }
 
-/// The [`View`] created by [`button`] from a `label` and a callback.
+/// The [`View`] created by [`button`].
 ///
-/// See `button` documentation for more context.
+/// See `button`'s documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Button<F, V> {
     child: V,

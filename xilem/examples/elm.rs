@@ -7,7 +7,7 @@
 
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use xilem::core::{MessageResult, map_action};
-use xilem::view::{button, flex_col, flex_row, label};
+use xilem::view::{flex_col, flex_row, label, text_button};
 use xilem::winit::dpi::LogicalSize;
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
@@ -29,8 +29,8 @@ enum CountMessage {
 fn elm_counter<T: 'static>(count: i32) -> impl WidgetView<T, CountMessage> {
     flex_col((
         label(format!("elm count: {count}")),
-        button("+", |_| CountMessage::Increment),
-        button("-", |_| CountMessage::Decrement),
+        text_button("+", |_| CountMessage::Increment),
+        text_button("-", |_| CountMessage::Decrement),
     ))
 }
 
@@ -47,18 +47,18 @@ fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
     flex_row((
         flex_col((
             label(format!("map_message count: {count}")),
-            button("+", |count| {
+            text_button("+", |count| {
                 *count += 1;
                 CounterChanged::Changed
             }),
-            button("-", |count| {
+            text_button("-", |count| {
                 *count -= 1;
                 CounterChanged::Changed
             }),
         )),
         flex_col((
-            button("reset all", |_| CounterChanged::Reset),
-            button("do nothing (and don't rebuild the view tree)", |_| {
+            text_button("reset all", |_| CounterChanged::Reset),
+            text_button("do nothing (and don't rebuild the view tree)", |_| {
                 CounterChanged::Nop
             }),
         )),
