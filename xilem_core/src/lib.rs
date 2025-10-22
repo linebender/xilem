@@ -1,6 +1,9 @@
 // Copyright 2022 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// cargo rdme --workspace-project=xilem_core
+// After editing the below, then check links in README.md
+
 //! Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit) and [Xilem Web][] (a web frontend framework).
 //! If you are using Xilem, [its documentation][xilem docs] will probably be more helpful for you. <!-- TODO: In the long-term, we probably also need a book? -->
 //!
@@ -10,7 +13,7 @@
 //! If you wish to implement the Xilem pattern in a different domain (such as for a terminal user interface), this crate can be used to do so.
 //! Though, while Xilem Core should be able to support all kinds of domains, the crate prioritizes the ergonomics for users of Xilem.
 //!
-//! ## Hot reloading
+//! # Hot reloading
 //!
 //! Xilem Core does not currently include infrastructure to enable hot reloading, but this is planned.
 //! The current proposal would split the application into two processes:
@@ -18,11 +21,11 @@
 //!  - The app process, which contains the app state and create the views, which would be extremely lightweight and can be recompiled and restarted quickly.
 //!  - The display process, which contains the widgets and would be long-lived, updating to match the new state of the view tree provided by the app process.
 //!
-//! ## Quickstart
+//! # Quickstart
 //!
 //! <!-- TODO? -->
 //!
-//! ## `no_std` support
+//! # `no_std` support
 //!
 //! Xilem Core supports running with `#![no_std]`, but does require [`alloc`][] to be available.
 //!

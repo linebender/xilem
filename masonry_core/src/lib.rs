@@ -1,6 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// cargo rdme --workspace-project=masonry_core
+// After editing the below, then check links in README.md
+
 //! Traits and types of the Masonry toolkit.
 //! See [Masonry's documentation] for more details, examples and resources.
 //!

@@ -1,6 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// cargo rdme --workspace-project=placehero
+// After editing the below, then check links in README.md
+
 //! A mastodon client written in Xilem.
 //!
 //! We're assuming that all Mastodon servers supported are trusted (and so it's not a

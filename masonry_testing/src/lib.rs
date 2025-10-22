@@ -1,6 +1,9 @@
 // Copyright 2020 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// cargo rdme --workspace-project=masonry_testing
+// After editing the below, then check links in README.md
+
 //! Helper tools for writing unit tests for Masonry.
 
 // TODO: Remove any items listed as "Deferred"

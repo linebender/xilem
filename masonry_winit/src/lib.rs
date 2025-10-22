@@ -1,6 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// cargo rdme --workspace-project=masonry_winit
+// After editing the below, then check links in README.md
+
 //! This is the [Winit][winit] backend for the [Masonry] GUI framework.
 //!
 //! See [Masonry's documentation] for more details, examples and resources.
