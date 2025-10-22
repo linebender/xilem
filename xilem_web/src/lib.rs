@@ -1,16 +1,44 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// https://linebender.org/blog/doc-include
-//! <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
-//! [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_web/LICENSE
+// cargo rdme --workspace-project=xilem_web
+// After editing the below, then check links in README.md
+
+//! This is a prototype implementation of the Xilem architecture (through [Xilem Core][]) using DOM elements as Xilem elements (unfortunately the two concepts have the same name).
 //!
-//! <!-- intra-doc-links go here -->
+//! # Quickstart
 //!
-//! <style>
-//! .rustdoc-hidden { display: none; }
-//! </style>
-#![doc = include_str!("../README.md")]
+//! The easiest way to start, is to use [Trunk][] within some of the examples (see the `web_examples/` directory).
+//! Run `trunk serve`, then navigate the browser to the link provided (usually <http://localhost:8080>).
+//!
+//! ## Example
+//!
+//! A minimal example to run an application with `xilem_web`:
+//!
+//! ```rust,no_run
+//! use xilem_web::{
+//!     document_body,
+//!     elements::html::{button, div, p},
+//!     interfaces::{Element as _, HtmlDivElement},
+//!     App,
+//! };
+//!
+//! fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> + use<> {
+//!     div((
+//!         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
+//!         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
+//!     ))
+//! }
+//!
+//! pub fn main() {
+//!     let clicks = 0;
+//!     App::new(document_body(), clicks, app_logic).run();
+//! }
+//! ```
+//!
+//! [Trunk]: https://trunkrs.dev/
+//! [Xilem Core]: xilem_core
+
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
 // These lints shouldn't apply to examples or tests.

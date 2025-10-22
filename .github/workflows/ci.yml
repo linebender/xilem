@@ -120,6 +120,9 @@ jobs:
 
       - name: Run cargo rdme (xilem_core)
         run: cargo rdme --check --workspace-project=xilem_core
+
+      - name: Run cargo rdme (xilem_web)
+        run: cargo rdme --check --workspace-project=xilem_web
       
       - name: Run cargo rdme (placehero)
         run: cargo rdme --check --workspace-project=placehero
