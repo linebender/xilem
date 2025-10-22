@@ -8,7 +8,7 @@
 
 use masonry_core::vello::{
     Error,
-    wgpu::{self, MemoryBudgetThresholds},
+    wgpu::{self, MemoryBudgetThresholds, MemoryHints},
 };
 use wgpu::{
     BlendComponent, BlendFactor, BlendState, CompositeAlphaMode, Device, Instance, PresentMode,
@@ -217,7 +217,7 @@ impl RenderContext {
                 label: None,
                 required_features: features & maybe_features,
                 required_limits: limits,
-                memory_hints: Default::default(),
+                memory_hints: MemoryHints::default(),
                 trace: wgpu::Trace::Off,
             })
             .await
