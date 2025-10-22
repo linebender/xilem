@@ -970,7 +970,7 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Return the title of the simulated window.
-    pub fn title(&self) -> std::string::String {
+    pub fn title(&self) -> String {
         self.title.clone()
     }
 

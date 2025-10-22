@@ -1343,7 +1343,7 @@ mod tests {
                     .to_string(),
                 "world"
             );
-            std::mem::drop(child);
+            drop(child);
 
             assert!(Flex::child_mut(&mut flex, 2).is_none());
         });

@@ -124,8 +124,8 @@ impl RawProxy for WindowProxy {
     fn send_message(
         &self,
         path: Arc<[ViewId]>,
-        message: xilem_core::SendMessage,
-    ) -> Result<(), xilem_core::ProxyError> {
+        message: SendMessage,
+    ) -> Result<(), ProxyError> {
         self.1.send_message(self.0, path, message)
     }
 
@@ -227,7 +227,7 @@ where
     fn on_action(
         &mut self,
         window_id: WindowId,
-        masonry_ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
+        masonry_ctx: &mut DriverCtx<'_, '_>,
         widget_id: WidgetId,
         action: ErasedAction,
     ) {
@@ -333,7 +333,7 @@ where
     fn on_close_requested(
         &mut self,
         window_id: WindowId,
-        ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
+        ctx: &mut DriverCtx<'_, '_>,
     ) {
         let view = &self.windows.get(&window_id).unwrap().view;
         view.on_close(&mut self.state);

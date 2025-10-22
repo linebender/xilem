@@ -385,7 +385,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     self.viewport_pos.y / (content_size - portal_size).height;
                 scrollbar_ctx.request_render();
 
-                std::mem::drop(scrollbar_ctx);
+                drop(scrollbar_ctx);
 
                 let (scrollbar, mut scrollbar_ctx) =
                     ctx.get_raw_mut(&mut self.scrollbar_horizontal);
