@@ -83,7 +83,7 @@ reqwest = { version = "0.12.23", default-features = false, features = [
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
 
-# LINEBENDER LINT SET - Cargo.toml - v6
+# LINEBENDER LINT SET - Cargo.toml - v7
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -99,12 +99,14 @@ rust.unreachable_pub = "warn"
 rust.unused_import_braces = "warn"
 rust.unused_lifetimes = "warn"
 rust.unused_macro_rules = "warn"
+rust.unused_qualifications = "warn"
 
 clippy.too_many_arguments = "allow"
 
 clippy.allow_attributes_without_reason = "warn"
 clippy.cast_possible_truncation = "warn"
 clippy.collection_is_never_read = "warn"
+clippy.default_trait_access = "warn"
 clippy.dbg_macro = "warn"
 clippy.debug_assert_with_mut_call = "warn"
 clippy.doc_markdown = "warn"
