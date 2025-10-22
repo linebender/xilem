@@ -308,11 +308,7 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
         self.masonry_state.handle_about_to_wait(event_loop);
     }
 
-    fn new_events(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        cause: winit::event::StartCause,
-    ) {
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
         self.masonry_state.handle_new_events(event_loop, cause);
     }
 
@@ -333,8 +329,7 @@ impl MasonryState<'_> {
     ) -> Self {
         let render_cx = RenderContext::new();
 
-        let (signal_sender, signal_receiver) =
-            mpsc::channel::<(WindowId, RenderRootSignal)>();
+        let (signal_sender, signal_receiver) = mpsc::channel::<(WindowId, RenderRootSignal)>();
 
         MasonryState {
             is_suspended: true,
