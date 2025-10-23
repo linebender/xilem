@@ -239,7 +239,7 @@ pub fn run_with(
     app_driver: impl AppDriver + 'static,
     default_properties: DefaultProperties,
 ) -> Result<(), EventLoopError> {
-    // If there is no default tracing subscriber, we set our own. If one has
+    // If no tracing subscriber has been set before, we set our own. If one has
     // already been set, we get an error which we swallow.
     // By now, we're about to take control of the event loop. The user is unlikely
     // to try to set their own subscriber once the event loop has started.
