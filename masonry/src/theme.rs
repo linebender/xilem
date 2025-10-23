@@ -16,7 +16,9 @@ use crate::properties::{
     DisabledContentColor, HoveredBorderColor, Padding, PlaceholderColor, SelectionColor,
     UnfocusedSelectionColor,
 };
-use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
+use crate::widgets::{
+    Button, Checkbox, Label, ProgressBar, RadioButton, Spinner, TextArea, TextInput,
+};
 
 pub const BORDER_WIDTH: f64 = 1.;
 
@@ -134,6 +136,24 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<ProgressBar, _>(Background::Color(ZYNC_900));
     properties.insert::<ProgressBar, _>(BorderColor { color: ZYNC_800 });
     properties.insert::<ProgressBar, _>(BarColor(ACCENT_COLOR));
+
+    // Radio
+    // TODO: The radius should be 50% instead of pixels.
+    properties.insert::<RadioButton, _>(CornerRadius { radius: 50. });
+    properties.insert::<RadioButton, _>(BorderWidth {
+        width: BORDER_WIDTH,
+    });
+
+    properties.insert::<RadioButton, _>(Background::Color(ZYNC_800));
+    properties.insert::<RadioButton, _>(ActiveBackground(Background::Color(ZYNC_700)));
+    properties.insert::<RadioButton, _>(DisabledBackground(Background::Color(Color::BLACK)));
+    properties.insert::<RadioButton, _>(BorderColor { color: ZYNC_700 });
+    properties.insert::<RadioButton, _>(HoveredBorderColor(BorderColor { color: ZYNC_500 }));
+
+    properties.insert::<RadioButton, _>(CheckmarkColor { color: TEXT_COLOR });
+    properties.insert::<RadioButton, _>(DisabledCheckmarkColor(CheckmarkColor {
+        color: DISABLED_TEXT_COLOR,
+    }));
 
     // Spinner
     properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));

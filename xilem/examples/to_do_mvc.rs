@@ -8,7 +8,7 @@
 
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{checkbox, flex_col, flex_row, text_button, text_input};
+use xilem::view::{checkbox, flex_col, flex_row, radio_button, text_button, text_input};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
@@ -87,8 +87,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         .collect::<Vec<_>>();
 
     let filter_tasks = |label, filter| {
-        // TODO: replace with combo-buttons
-        checkbox(
+        radio_button(
             label,
             task_list.filter == filter,
             move |state: &mut TaskList, _| state.filter = filter,
