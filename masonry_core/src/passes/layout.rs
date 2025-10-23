@@ -237,7 +237,7 @@ pub(crate) fn run_layout_pass(root: &mut RenderRoot) {
         WindowSizePolicy::Content => BoxConstraints::UNBOUNDED,
     };
 
-    let mut root_node = root.widget_arena.get_node_mut(root.root.id());
+    let mut root_node = root.widget_arena.get_node_mut(root.root_id());
 
     let size = run_layout_on(
         &mut root.global_state,

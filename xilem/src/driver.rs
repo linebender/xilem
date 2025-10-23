@@ -312,7 +312,7 @@ where
         let fonts = std::mem::take(&mut self.fonts);
 
         for root in state.roots() {
-            if let Some(root_widget) = root.get_root_widget().downcast::<DynWidget>() {
+            if let Some(root_widget) = root.get_layer_root(0).downcast::<DynWidget>() {
                 let fallback = root_widget.inner().inner_id();
                 root.set_focus_fallback(Some(fallback));
             }

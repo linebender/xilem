@@ -31,7 +31,8 @@ fn get_pointer_target(
         // TODO - Apply scale
         let pointer_pos = (pointer_pos.x, pointer_pos.y).into();
         return root
-            .get_root_widget()
+            .get_widget(root.root_id())
+            .expect("root widget not in widget tree")
             .find_widget_under_pointer(pointer_pos)
             .map(|widget| widget.id());
     }

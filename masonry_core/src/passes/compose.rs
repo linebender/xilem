@@ -88,7 +88,7 @@ pub(crate) fn run_compose_pass(root: &mut RenderRoot) {
         root.global_state.needs_pointer_pass = true;
     }
 
-    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
     compose_widget(
         &mut root.global_state,
         &root.default_properties,

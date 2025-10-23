@@ -141,7 +141,7 @@ pub(crate) fn run_paint_pass(root: &mut RenderRoot) -> Scene {
     // https://github.com/linebender/xilem/issues/524
     let mut complete_scene = Scene::new();
 
-    let root_node = root.widget_arena.get_node_mut(root.root.id());
+    let root_node = root.widget_arena.get_node_mut(root.root_id());
 
     // TODO - This is a bit of a hack until we refactor widget tree mutation.
     // This should be removed once remove_child is exclusive to MutateCtx.
