@@ -6,7 +6,10 @@
 //! This module is based on [`vello::util`](masonry_core::vello::util) module
 //! with modifications for transparent surfaces.
 
-use masonry_core::vello::{Error, wgpu};
+use masonry_core::vello::{
+    Error,
+    wgpu::{self, MemoryBudgetThresholds, MemoryHints},
+};
 use wgpu::{
     BlendComponent, BlendFactor, BlendState, CompositeAlphaMode, Device, Instance, PresentMode,
     Surface, SurfaceConfiguration, Texture, TextureFormat, TextureUsages, TextureView,
@@ -34,6 +37,7 @@ impl RenderContext {
             backends,
             flags,
             backend_options,
+            memory_budget_thresholds: MemoryBudgetThresholds::default(),
         });
         Self {
             instance,
@@ -213,7 +217,7 @@ impl RenderContext {
                 label: None,
                 required_features: features & maybe_features,
                 required_limits: limits,
-                memory_hints: Default::default(),
+                memory_hints: MemoryHints::default(),
                 trace: wgpu::Trace::Off,
             })
             .await

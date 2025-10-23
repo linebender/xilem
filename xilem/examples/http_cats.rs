@@ -11,15 +11,15 @@ use std::sync::Arc;
 use masonry::properties::types::{AsUnit, Length, UnitPoint};
 use masonry::properties::{LineBreaking, Padding};
 use tokio::sync::mpsc::UnboundedSender;
-use vello::peniko::{Blob, Image};
+use vello::peniko::{Blob, ImageAlphaType, ImageData, ImageFormat};
 use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, ZStackExt, button, flex_col, flex_row, image, inline_prose, portal, prose,
-    sized_box, spinner, split, worker, zstack,
+    FlexSpacer, ZStackExt, flex_col, flex_row, image, inline_prose, portal, prose, sized_box,
+    spinner, split, text_button, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
 
@@ -45,7 +45,7 @@ enum ImageState {
     NotRequested,
     Pending,
     // Error,
-    Available(Image),
+    Available(ImageData),
 }
 
 impl HttpCats {
@@ -114,7 +114,7 @@ impl HttpCats {
                 |state: &mut Self, sender| {
                     state.download_sender = Some(sender);
                 },
-                |state: &mut Self, (code, image): (u32, Image)| {
+                |state: &mut Self, (code, image): (u32, ImageData)| {
                     if let Some(status) = state.statuses.iter_mut().find(|it| it.code == code) {
                         status.image = ImageState::Available(image);
                     } else {
@@ -126,20 +126,23 @@ impl HttpCats {
     }
 }
 
-/// Load a [`vello::peniko::Image`] from the given url.
-async fn image_from_url(url: &str) -> anyhow::Result<Image> {
+/// Load the [`ImageData`] from the given url.
+///
+/// N.B. This is functionality shared with Placehero and `virtual_cats`.
+async fn image_from_url(url: &str) -> anyhow::Result<ImageData> {
     let response = reqwest::get(url).await?;
     let bytes = response.bytes().await?;
     let image = image::load_from_memory(&bytes)?.into_rgba8();
     let width = image.width();
     let height = image.height();
     let data = image.into_vec();
-    Ok(Image::new(
-        Blob::new(Arc::new(data)),
-        vello::peniko::ImageFormat::Rgba8,
+    Ok(ImageData {
+        data: Blob::new(Arc::new(data)),
+        format: ImageFormat::Rgba8,
+        alpha_type: ImageAlphaType::Alpha,
         width,
         height,
-    ))
+    })
 }
 
 impl Status {
@@ -152,7 +155,7 @@ impl Status {
             FlexSpacer::Flex(1.),
             // TODO: Spinner if image pending?
             // TODO: Tick if image loaded?
-            button("Select", move |state: &mut HttpCats| {
+            text_button("Select", move |state: &mut HttpCats| {
                 let status = state
                     .statuses
                     .iter_mut()
@@ -196,7 +199,7 @@ impl Status {
                     bottom: 0.,
                 });
                 OneOf3::C(zstack((
-                    image(image_data),
+                    image(image_data.clone()),
                     attribution.alignment(UnitPoint::TOP_RIGHT),
                 )))
             }

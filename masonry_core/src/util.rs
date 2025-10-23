@@ -56,12 +56,6 @@ pub fn stroke<'b>(
     brush: impl Into<BrushRef<'b>>,
     stroke_width: f64,
 ) {
-    // TODO - Remove that check once we depend on a Vello release that fixes
-    // https://github.com/linebender/vello/issues/662
-    if stroke_width == 0.0 {
-        return;
-    }
-
     // Using Join::Miter avoids rounding corners when a widget has a wide border.
     let style = Stroke {
         width: stroke_width,
@@ -83,6 +77,18 @@ pub fn fill<'b>(scene: &mut Scene, path: &impl Shape, brush: impl Into<BrushRef<
 /// Helper function for [`Scene::fill`] with a uniform color as the brush.
 pub fn fill_color(scene: &mut Scene, path: &impl Shape, color: Color) {
     scene.fill(Fill::NonZero, Affine::IDENTITY, color, None, path);
+}
+
+// ---
+
+/// Convert a 2d rectangle from Parley to one used for drawing in Vello and other maths.
+pub fn bounding_box_to_rect(bb: parley::BoundingBox) -> vello::kurbo::Rect {
+    vello::kurbo::Rect {
+        x0: bb.x0,
+        y0: bb.y0,
+        x1: bb.x1,
+        y1: bb.y1,
+    }
 }
 
 // ---
@@ -127,9 +133,25 @@ pub fn get_debug_color(id: u64) -> Color {
 
 // ---
 
+// Macros are exported from crate root by default. Re-export them from here.
 pub use crate::include_screenshot;
+pub use crate::include_screenshot_reference;
 
-/// Markdown input to display a screenshot from the current crate's `screenshots` directory.
+// If we made this into proc macros, we would gain the following features:
+// 1) Automatic detection of the file existing - see https://github.com/linebender/xilem/issues/1080
+// 2) Extract the "repository" from CARGO_PKG_REPOSITORY and auto-generate the online URL version.
+
+// We want to show the "local" image if it's present (e.g. from a git dependency or in the local repository).
+// The image won't be available locally if our docs are being built on docs.rs or from a crates.io dependency,
+// as we don't include the screenshots in the published package (for space/bandwidth reasons).
+// This fall back uses `raw.githubusercontent.com`, which allows it to access the correct version of the screenshot for the crate's version.
+// Unfortunately, it isn't currently possible to detect that this fallback is needed (without a procedural macro or build script);
+// as such, we currently use `cfg(docsrs)` as a proxy for whether to use a fallback.
+// This does mean that screenshots may fail to display in some cases, e.g. the user is pulling a crate as a
+// crates.io dependency and then generating its doc locally.
+// Masonry's documentation has a few warnings for these cases.
+
+/// Markdown content to display a screenshot from the current crate's `screenshots` directory.
 ///
 /// This can be added to docs as follows:
 ///
@@ -140,46 +162,77 @@ pub use crate::include_screenshot;
 /// ```
 ///
 /// The caption should have a full-stop at the end, as it's being used as alt-text.
-/// This macro will only function correctly for packages in the Xilem repository,
-/// as it hardcodes the supported GitHub repository.
+///
+/// **Warning: This macro will only function correctly for packages in the Xilem repository,
+/// as it hardcodes the supported GitHub repository.**
+#[cfg(not(docsrs))]
 #[doc(hidden)]
 #[macro_export]
-// If we made this into a proc macro, we would gain the following features:
-// 1) Automatic detection of the file existing - see https://github.com/linebender/xilem/issues/1080
-// 2) Using the image's dimensions to set the `width` and `height` attributes of the object and `img` tag
-// 3) Extract the "repository" from CARGO_PKG_REPOSITORY for docs
 macro_rules! include_screenshot {
     ($path:literal $(, $caption:literal)? $(,)?) => {
-        // We want to show the "local" image if it's present (e.g. from a git dependency or in the local repository).
-        // However, if we're on docs.rs (or building from the crates.io registry),
-        // the screenshots aren't available (as they shouldn't be in the published package for space reasons).
-        // For those environments, we want to instead show the image from `raw.githubusercontent.com`.
-        // To allow this, we use a fallback based on the `object` element. See:
-        // https://blog.sentry.io/fallbacks-for-http-404-images-in-html-and-javascript/#image-fallbacks-in-html
-
-        // Ideally, we'd also provide both a caption and an alt-text (and therefore put this in a `figure` element).
-        // That's deferred.
         concat!(
-            "\n<object \
-                type='image/png' \
-                data='", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path,
-                // The above is the path to the screenshot on the local file system.
-                "'",
-                $(
-                    " aria-label=\"",
-                    // Obviously this is vulnerable to injection, but this is trusted content in a docstring.
-                    $caption,
-                    "\"",
-                )?
-                // Two newlines allows the inner content to be interpreted as markdown
-                ">\n\n",
-                "![", $($caption,)? "]",
-                // The online path to the screenshot, on this released version.
-                // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
-                // The `v` is because of our tag name convention.
-                "(https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path,
-                ")",
-                "\n</object>"
+            "![", $($caption,)? "]",
+            "(", env!("CARGO_MANIFEST_DIR"), "/screenshots/", $path, ")",
+        )
+    };
+}
+
+#[cfg(docsrs)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot {
+    ($path:literal $(, $caption:literal)? $(,)?) => {
+        concat!(
+            "![", $($caption,)? "]",
+            // The online path to the screenshot, on this released version.
+            // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
+            // The `v` is because of our tag name convention.
+            "(https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path, ")",
+        )
+    };
+}
+
+/// Markdown content to provide a screenshot from the current crate's `screenshots` directory as a [Markdown link reference definition](https://spec.commonmark.org/0.31.2/#link-reference-definition).
+///
+/// This can be added to docs as follows:
+///
+/// ```rust,ignore
+/// /// Some docs here.
+/// ///
+/// /// ![Alt text][my-screenshot]
+/// ///
+/// #[doc = include_screenshot_reference!("my-screenshot", "button_hello.png"]
+/// ```
+///
+/// **Warning: This macro will only function correctly for packages in the Xilem repository,
+/// as it hardcodes the supported GitHub repository.**
+#[cfg(not(docsrs))]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot_reference {
+    ($label:literal, $path:literal $(,)?) => {
+        concat!(
+            "[",
+            $label,
+            "]: ",
+            env!("CARGO_MANIFEST_DIR"),
+            "/screenshots/",
+            $path,
+        )
+    };
+}
+
+#[cfg(docsrs)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! include_screenshot_reference {
+    ($label:literal, $path:literal $(,)?) => {
+        concat!(
+            "[", $label, "]: ",
+            // The online path to the screenshot, on this released version.
+            // Ideally, the "base URL" would be customisable, so end-users could use this macro too.x
+            // The `v` is because of our tag name convention.
+            "https://raw.githubusercontent.com/linebender/xilem/v", env!("CARGO_PKG_VERSION"), "/", env!("CARGO_PKG_NAME"), "/screenshots/", $path,
         )
     };
 }

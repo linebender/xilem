@@ -11,6 +11,13 @@
 //! - **Testing widgets in Masonry:** Describes how to test your Masonry widgets in CI.
 //! - **Masonry pass system:** Deep dive into Masonry internals.
 //! - **Concepts and definitions:** Glossary of concepts used in Masonry APIs and internals.
+//!
+#![cfg_attr(
+    not(docsrs),
+    doc = "**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
+)]
+
+use masonry_core::util::include_screenshot_reference;
 
 // These docs all use the .rustdoc-hidden trick described in
 // https://linebender.org/blog/doc-include/
@@ -22,6 +29,7 @@ pub mod color_rectangle;
 // TODO - Add vertical_stack module.
 
 #[doc = include_str!("./creating_app.md")]
+#[doc = super::include_screenshot_reference!("to-do-screenshot", "example_to_do_list_initial.png")]
 /// <style> .rustdoc-hidden { display: none; } </style>
 pub mod doc_01_creating_app {}
 

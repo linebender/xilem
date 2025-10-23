@@ -1030,7 +1030,7 @@ impl ElementSplice<NoElement> for NoElements {
 
     fn insert(&mut self, _: NoElement) {}
 
-    fn mutate<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
+    fn mutate<R>(&mut self, f: impl FnOnce(<NoElement as ViewElement>::Mut<'_>) -> R) -> R {
         f(())
     }
 
@@ -1040,7 +1040,7 @@ impl ElementSplice<NoElement> for NoElements {
         0
     }
 
-    fn delete<R>(&mut self, f: impl FnOnce(<NoElement as crate::ViewElement>::Mut<'_>) -> R) -> R {
+    fn delete<R>(&mut self, f: impl FnOnce(<NoElement as ViewElement>::Mut<'_>) -> R) -> R {
         f(())
     }
 }
@@ -1137,7 +1137,7 @@ where
         message: &mut MessageContext,
         _elements: &mut impl ElementSplice<Element>,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         self.seq
             .seq_message(seq_state, message, &mut NoElements, app_state)
     }

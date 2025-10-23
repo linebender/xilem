@@ -320,7 +320,7 @@ where
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         // Use our value in the child message.
         let slot =
             &mut message.environment.slots[usize::try_from(view_state.environment_slot).unwrap()];
@@ -562,7 +562,7 @@ where
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
         app_state: &mut State,
-    ) -> crate::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         let Some(first) = message.take_first() else {
             match message.take_message::<Rebuild>() {
                 Some(_) => return MessageResult::RequestRebuild,

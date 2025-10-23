@@ -23,12 +23,12 @@ use crate::{Pod, ViewCtx, WidgetView};
 ///
 /// ```
 /// use xilem::WidgetView;
-/// use xilem::view::{zstack, label, button};
+/// use xilem::view::{zstack, label, text_button};
 ///
 /// fn view<State: 'static>() -> impl WidgetView<State> {
 ///     zstack((
 ///         label("Background"),
-///         button("Click me", |_| {})
+///         text_button("Click me", |_| {})
 ///     ))
 /// }
 /// ```

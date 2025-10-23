@@ -11,7 +11,7 @@ use masonry_core::core::HasProperty;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
-use vello::peniko::{BlendMode, Image as ImageBuf};
+use vello::peniko::{BlendMode, ImageBrush};
 
 use crate::core::{
     AccessCtx, BoxConstraints, ChildrenIds, LayoutCtx, NoAction, PaintCtx, PropertiesMut,
@@ -31,7 +31,7 @@ use crate::properties::ObjectFit;
 ///
 /// You can change the sizing of the image with the [`ObjectFit`] property.
 pub struct Image {
-    image_data: ImageBuf,
+    image_data: ImageBrush,
 }
 
 // --- MARK: BUILDERS
@@ -40,17 +40,19 @@ impl Image {
     ///
     /// By default, the Image will scale to fit its box constraints ([`ObjectFit::Fill`]).
     #[inline]
-    pub fn new(image_data: ImageBuf) -> Self {
-        Self { image_data }
+    pub fn new(image_data: impl Into<ImageBrush>) -> Self {
+        Self {
+            image_data: image_data.into(),
+        }
     }
 }
 
 // --- MARK: WIDGETMUT
 impl Image {
-    /// Set new `ImageBuf`.
+    /// Set new `ImageBrush`.
     #[inline]
-    pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: ImageBuf) {
-        this.widget.image_data = image_data;
+    pub fn set_image_data(this: &mut WidgetMut<'_, Self>, image_data: impl Into<ImageBrush>) {
+        this.widget.image_data = image_data.into();
         this.ctx.request_layout();
     }
 }
@@ -84,7 +86,10 @@ impl Widget for Image {
         // If either the width or height is constrained calculate a value so that the image fits
         // in the size exactly. If it is unconstrained by both width and height take the size of
         // the image.
-        let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
+        let image_size = Size::new(
+            self.image_data.image.width as f64,
+            self.image_data.image.height as f64,
+        );
         if image_size.is_zero_area() {
             let size = bc.min();
             return size;
@@ -116,7 +121,10 @@ impl Widget for Image {
 
     fn paint(&mut self, ctx: &mut PaintCtx<'_>, props: &PropertiesRef<'_>, scene: &mut Scene) {
         let object_fit = props.get::<ObjectFit>();
-        let image_size = Size::new(self.image_data.width as f64, self.image_data.height as f64);
+        let image_size = Size::new(
+            self.image_data.image.width as f64,
+            self.image_data.image.height as f64,
+        );
         let transform = object_fit.affine_to_fill(ctx.size(), image_size);
 
         let clip_rect = ctx.size().to_rect();
@@ -153,7 +161,7 @@ impl Widget for Image {
 #[cfg(test)]
 mod tests {
     use masonry_core::core::NewWidget;
-    use vello::peniko::ImageFormat;
+    use vello::peniko::{ImageAlphaType, ImageData, ImageFormat};
 
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
@@ -163,7 +171,14 @@ mod tests {
     #[test]
     fn empty_paint() {
         // TODO - Blob::empty() function?
-        let image_data = ImageBuf::new(Vec::new().into(), ImageFormat::Rgba8, 0, 0);
+        // TODO: Does Vello promise this is supported?
+        let image_data = ImageData {
+            data: Vec::new().into(),
+            format: ImageFormat::Rgba8,
+            alpha_type: ImageAlphaType::Alpha,
+            width: 0,
+            height: 0,
+        };
 
         let image_widget = NewWidget::new(Image::new(image_data));
         let mut harness = TestHarness::create(default_property_set(), image_widget);
@@ -172,11 +187,11 @@ mod tests {
 
     #[test]
     fn tall_paint() {
-        let image_data = ImageBuf::new(
+        let image_data = ImageData {
             // This could have a more concise chain, but previously used versions either
             // had unreadable formatting or used `rustfmt::skip`, which broke formatting
             // across large parts of the file.
-            [
+            data: [
                 [255, 255, 255, 255],
                 [000, 000, 000, 255],
                 [000, 000, 000, 255],
@@ -186,10 +201,11 @@ mod tests {
             .flatten()
             .collect::<Vec<_>>()
             .into(),
-            ImageFormat::Rgba8,
-            2,
-            2,
-        );
+            format: ImageFormat::Rgba8,
+            alpha_type: ImageAlphaType::Alpha,
+            width: 2,
+            height: 2,
+        };
         let image_widget = NewWidget::new(Image::new(image_data));
 
         let mut harness = TestHarness::create_with_size(
@@ -202,7 +218,13 @@ mod tests {
 
     #[test]
     fn edit_image() {
-        let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
+        let image_data = ImageData {
+            data: vec![255; 4 * 8 * 8].into(),
+            format: ImageFormat::Rgba8,
+            alpha_type: ImageAlphaType::Alpha,
+            width: 8,
+            height: 8,
+        };
 
         let render_1 = {
             let image_widget = NewWidget::new(Image::new(image_data.clone()));
@@ -217,8 +239,13 @@ mod tests {
         };
 
         let render_2 = {
-            let other_image_data =
-                ImageBuf::new(vec![10; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
+            let other_image_data = ImageData {
+                data: vec![10; 4 * 8 * 8].into(),
+                format: ImageFormat::Rgba8,
+                alpha_type: ImageAlphaType::Alpha,
+                width: 8,
+                height: 8,
+            };
             let image_widget = NewWidget::new(Image::new(other_image_data));
 
             let mut harness = TestHarness::create_with_size(
@@ -241,7 +268,13 @@ mod tests {
 
     #[test]
     fn layout() {
-        let image_data = ImageBuf::new(vec![255; 4 * 8 * 8].into(), ImageFormat::Rgba8, 8, 8);
+        let image_data = ImageData {
+            data: vec![255; 4 * 8 * 8].into(),
+            format: ImageFormat::Rgba8,
+            alpha_type: ImageAlphaType::Alpha,
+            width: 8,
+            height: 8,
+        };
         let harness_size = Size::new(100.0, 50.0);
 
         let image_widget = NewWidget::new(Image::new(image_data.clone()));

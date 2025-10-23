@@ -21,7 +21,7 @@ pub use masonry::widgets::GridParams;
 /// ```ignore
 /// use masonry::widgets::GridParams;
 /// use xilem::view::{
-///     button, grid, label, GridExt,
+///     text_button, grid, label, GridExt,
 /// };
 ///
 /// const GRID_GAP: f64 = 2.;
@@ -36,9 +36,9 @@ pub use masonry::widgets::GridParams;
 /// grid(
 ///     (
 ///         label(state.int.to_string()).grid_item(GridParams::new(0, 0, 3, 1)),
-///         button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
-///         button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
-///         button("Increase by 1", |state: &mut State| state.int += 1).grid_pos(3, 1),
+///         text_button("Decrease by 1", |state: &mut State| state.int -= 1).grid_pos(1, 1),
+///         text_button("To zero", |state: &mut State| state.int = 0).grid_pos(2, 1),
+///         text_button("Increase by 1", |state: &mut State| state.int += 1).grid_pos(3, 1),
 ///     ),
 ///     3,
 ///     2,
@@ -314,12 +314,12 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// use masonry::widgets::GridParams;
-    /// use xilem::{view::{button, prose, grid, GridExt}};
+    /// use xilem::view::{text_button, prose, grid, GridExt};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
-    ///     button("click me", |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
+    ///     text_button("click me", |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
     ///     prose("a prose").grid_item(GridParams::new(1, 1, 1, 1)),
     /// ), 2, 2)
     /// # }
@@ -341,12 +341,12 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// # Examples
     /// ```
     /// use masonry::widgets::GridParams;
-    /// use xilem::{view::{button, prose, grid, GridExt}};
+    /// use xilem::{view::{text_button, prose, grid, GridExt}};
     /// # use xilem::{WidgetView};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<State> {
     /// grid((
-    ///     button("click me", |_| ()).grid_pos(0, 0),
+    ///     text_button("click me", |_| ()).grid_pos(0, 0),
     ///     prose("a prose").grid_pos(1, 1),
     /// ), 2, 2)
     /// # }

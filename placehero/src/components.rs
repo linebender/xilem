@@ -4,8 +4,8 @@
 use megalodon::entities::Status;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex_col,
-    flex_row, inline_prose, label, prose,
+    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, flex_col, flex_row,
+    inline_prose, label, prose, text_button,
 };
 use xilem::{FontWeight, TextAlign};
 
@@ -53,7 +53,7 @@ fn base_status<State: 'static>(
             .main_axis_alignment(MainAxisAlignment::Start)
             .gap(1.px()),
             FlexSpacer::Flex(1.0),
-            button("Open Profile", move |_| {
+            text_button("Open Profile", move |_| {
                 // TODO: We already actually just have the "account" here, so maybe
                 // short-circuit re-loading the account?
                 Navigation::LoadUser(acct_clone.clone())
@@ -74,7 +74,7 @@ fn base_status<State: 'static>(
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            button("View Replies", move |_| {
+            text_button("View Replies", move |_| {
                 Navigation::LoadContext(status_clone.clone())
             }),
         ))

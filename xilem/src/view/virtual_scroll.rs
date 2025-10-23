@@ -136,7 +136,7 @@ where
         ctx.record_action(pod.new_widget.id());
         (
             pod,
-            private::VirtualScrollState {
+            VirtualScrollState {
                 pending_action: None,
                 children: HashMap::default(),
             },
@@ -270,7 +270,7 @@ where
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         if let Some(first) = message.take_first() {
             let child_idx = index_for_view_id(first);
             let target = view_state.children.get_mut(&child_idx);
@@ -286,7 +286,9 @@ where
                 );
                 return result;
             } else {
-                tracing::error!("Message sent type in VirtualScroll::message: {message:?}");
+                tracing::error!(
+                    "Message sent to unloaded view in `VirtualScroll::message`: {message:?}"
+                );
                 return MessageResult::Stale;
             }
         }

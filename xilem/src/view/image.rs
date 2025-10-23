@@ -4,6 +4,7 @@
 //! The bitmap image widget.
 
 use masonry::widgets;
+use vello::peniko::ImageBrush;
 
 use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::view::Prop;
@@ -21,12 +22,9 @@ pub use masonry::properties::ObjectFit;
 /// It is not currently supported to use a GPU-resident [texture](vello::wgpu::Texture) in this widget.
 /// See [#vello > vello adding wgpu texture buffers to scene](https://xi.zulipchat.com/#narrow/channel/197075-vello/topic/vello.20adding.20wgpu.20texture.20buffers.20to.20scene/with/456486490)
 /// for discussion.
-pub fn image(image: &vello::peniko::Image) -> Image {
+pub fn image(image: impl Into<ImageBrush>) -> Image {
     Image {
-        // Image only contains a `Blob` and Copy fields, and so is cheap to clone.
-        // We take by reference as we expect all users of this API will need to clone, and it's
-        // easier than documenting that cloning is cheap.
-        image: image.clone(),
+        image: image.into(),
     }
 }
 
@@ -35,7 +33,7 @@ pub fn image(image: &vello::peniko::Image) -> Image {
 /// See `image`'s docs for more details.
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Image {
-    image: vello::peniko::Image,
+    image: ImageBrush,
 }
 
 impl Image {

@@ -4,6 +4,9 @@
 use std::f64::consts::TAU;
 
 use vello::kurbo::{Point, Rect};
+use vello::peniko::{
+    InterpolationAlphaSpace, LinearGradientPosition, RadialGradientPosition, SweepGradientPosition,
+};
 
 use crate::peniko::color::{ColorSpaceTag, HueDirection};
 use crate::peniko::{ColorStops, ColorStopsSource, Extend};
@@ -223,6 +226,7 @@ impl Gradient {
             interpolation_cs: self.interpolation_cs,
             hue_direction: self.hue_direction,
             stops: self.stops.clone(),
+            interpolation_alpha_space: InterpolationAlphaSpace::default(),
         }
     }
 }
@@ -266,7 +270,7 @@ impl GradientShape {
         let start = Point::new(center.x - x, center.y - y);
         let end = Point::new(center.x + x, center.y + y);
 
-        crate::peniko::GradientKind::Linear { start, end }
+        LinearGradientPosition { start, end }.into()
     }
 
     fn get_peniko_radial_for_rect(
@@ -277,12 +281,13 @@ impl GradientShape {
         let center = center.resolve(rect);
         let radius = Self::get_gradient_radius(rect, center, shape);
 
-        crate::peniko::GradientKind::Radial {
+        RadialGradientPosition {
             start_center: center,
             start_radius: 0.,
             end_center: center,
             end_radius: radius as f32,
         }
+        .into()
     }
 
     fn get_gradient_radius(rect: Rect, center: Point, shape: RadialGradientShape) -> f64 {
@@ -337,11 +342,12 @@ impl GradientShape {
         // offsetting.
         // Giving Vello angles outside the 0..2*PI range just culls the displayed gradient.
 
-        crate::peniko::GradientKind::Sweep {
+        SweepGradientPosition {
             center,
             start_angle: start_angle as f32,
             end_angle: end_angle as f32,
         }
+        .into()
     }
 }
 

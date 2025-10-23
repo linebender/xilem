@@ -269,7 +269,7 @@ where
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
         app_state: &mut State,
-    ) -> xilem_core::MessageResult<Action> {
+    ) -> MessageResult<Action> {
         match message.take_first() {
             Some(CHILD1_VIEW_ID) => {
                 let child1_element = widgets::Split::child1_mut(&mut element);

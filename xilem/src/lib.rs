@@ -26,7 +26,7 @@
 //!
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
-//! use xilem::view::{Axis, button, flex, label};
+//! use xilem::view::{Axis, text_button, flex, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
 //!
 //! #[derive(Default)]
@@ -37,7 +37,7 @@
 //! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
 //!     flex(Axis::Vertical, (
 //!         label(format!("{}", data.num)),
-//!         button("increment", |data: &mut Counter| data.num += 1),
+//!         text_button("increment", |data: &mut Counter| data.num += 1),
 //!     ))
 //! }
 //!
@@ -131,7 +131,7 @@
 // Targeting e.g. 32-bit means structs containing usize can give false positives for 64-bit.
 #![cfg_attr(target_pointer_width = "64", warn(clippy::trivially_copy_pass_by_ref))]
 // END LINEBENDER LINT SET
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(
     test,
     expect(
@@ -150,7 +150,7 @@ pub use masonry;
 pub use masonry::kurbo::{Affine, Vec2};
 pub use masonry::parley::Alignment as TextAlign;
 pub use masonry::parley::style::FontWeight;
-pub use masonry::peniko::{Blob, Color, Image, ImageFormat};
+pub use masonry::peniko::{Blob, Color, ImageBrush, ImageFormat};
 pub use masonry::widgets::InsertNewline;
 pub use masonry::{dpi, palette};
 pub use masonry_winit::app::{EventLoop, EventLoopBuilder, WindowId};
