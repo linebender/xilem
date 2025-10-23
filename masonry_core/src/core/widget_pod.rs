@@ -46,7 +46,6 @@ impl<W: ?Sized + Widget> std::fmt::Debug for NewWidget<W> {
         f.debug_struct("NewWidget")
             .field("widget_type", &self.widget.short_type_name())
             .field("id", &self.id)
-            .field("action_type", &self.action_type_name)
             .field("options", &self.options)
             .field("tag", &self.tag)
             .finish_non_exhaustive()
