@@ -415,8 +415,8 @@ As mentioned in the previous chapter, a `WidgetMut` is a smart reference type to
 Most widgets will implement methods that let their users "project" a `WidgetMut` from a parent to its child.
 For example, `WidgetMut<Portal<MyWidget>>` has a `get_child_mut()` method that returns a `WidgetMut<MyWidget>`.
 
-So far, we've seen one way to get a `WidgetMut`: the [`RenderRoot::edit_root_widget()`] method.
-This methods returns a `WidgetMut` to the root widget, which you can then project into a `WidgetMut` reference to its descendants.
+So far, we've seen two ways to get a `WidgetMut`: the [`RenderRoot::edit_base_layer()`] and [`RenderRoot::edit_layer()`] methods.
+These methods gives access to a `WidgetMut` to the root widget of a layer, which you can then project into a `WidgetMut` reference to its descendants.
 
 ### Using `WidgetMut` in your custom widget code
 
@@ -474,5 +474,6 @@ The next one is about creating a container widgets, and the complications it add
 [`PaintCtx::size()`]: crate::core::PaintCtx::size
 [`vello::Scene`]: vello::Scene
 [`Role::Button`]: accesskit::Role::Button
-[`RenderRoot::edit_root_widget()`]: crate::app::RenderRoot::edit_root_widget
+[`RenderRoot::edit_base_layer()`]: crate::app::RenderRoot::edit_base_layer
+[`RenderRoot::edit_layer()`]: crate::app::RenderRoot::edit_layer
 [`Label::set_text()`]: crate::widgets::Label::set_text

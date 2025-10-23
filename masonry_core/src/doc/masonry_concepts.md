@@ -230,3 +230,4 @@ DPI-aware pixel snapping is a future feature.
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
 [`EventCtx::request_focus`]: crate::core::EventCtx::request_focus
 [`Widget::on_pointer_event`]: crate::core::Widget::on_pointer_event
+[`RenderRoot`]: crate::app::RenderRoot

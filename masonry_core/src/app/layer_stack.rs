@@ -96,7 +96,8 @@ impl LayerStack {
     ///
     /// # Panics
     ///
-    /// Panics if the the intended layer the base layer in debug mode.
+    /// Panics in debug mode if the the intended layer the base layer or the
+    /// intended layer is not found.
     pub(crate) fn remove_layer(this: &mut WidgetMut<'_, Self>, root_id: WidgetId) {
         match this
             .widget
@@ -105,7 +106,7 @@ impl LayerStack {
             .position(|layer| layer.widget.id() == root_id)
         {
             Some(0) => debug_panic!("Cannot remove initial layer"),
-            None => tracing::warn!("layer with root widget {root_id:?} not found"),
+            None => debug_panic!("layer with root widget {root_id:?} not found"),
             Some(idx) => {
                 let child = this.widget.layers.remove(idx).widget;
                 this.ctx.remove_child(child);
@@ -119,7 +120,8 @@ impl LayerStack {
     ///
     /// # Panics
     ///
-    /// Panics if the the intended layer the base layer in debug mode.
+    /// Panics in debug mode if the the intended layer the base layer or the
+    /// intended layer is not found.
     pub(crate) fn reposition_layer(
         this: &mut WidgetMut<'_, Self>,
         root_id: WidgetId,
@@ -132,7 +134,7 @@ impl LayerStack {
             .position(|layer| layer.widget.id() == root_id)
         {
             Some(0) => debug_panic!("Cannot reposition initial layer"),
-            None => tracing::warn!("layer with root widget {root_id:?} not found"),
+            None => debug_panic!("layer with root widget {root_id:?} not found"),
             Some(idx) => {
                 this.widget.layers[idx].pos = new_origin;
                 this.ctx.request_layout();

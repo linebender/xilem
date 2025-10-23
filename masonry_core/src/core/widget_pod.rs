@@ -41,6 +41,18 @@ pub struct NewWidget<W: ?Sized> {
     pub(crate) tag: &'static str,
 }
 
+impl<W: ?Sized + Widget> std::fmt::Debug for NewWidget<W> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NewWidget")
+            .field("widget_type", &self.widget.short_type_name())
+            .field("id", &self.id)
+            .field("action_type", &self.action_type_name)
+            .field("options", &self.options)
+            .field("tag", &self.tag)
+            .finish_non_exhaustive()
+    }
+}
+
 // TODO - Remove this and merge it into NewWidget?
 /// The options a new widget will be created with.
 #[derive(Default, Debug)]

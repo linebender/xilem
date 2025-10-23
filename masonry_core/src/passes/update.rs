@@ -219,7 +219,7 @@ fn update_widget_tree(
 pub(crate) fn run_update_widget_tree_pass(root: &mut RenderRoot) {
     let _span = info_span!("update_new_widgets").entered();
 
-    // REROOT
+    // INIT TREE
     if root.layer_stack.incomplete() {
         let mut ctx = RegisterCtx {
             global_state: &mut root.global_state,
