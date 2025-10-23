@@ -4,10 +4,42 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_core
 
-//! Traits and types of the Masonry toolkit.
-//! See [Masonry's documentation] for more details, examples and resources.
+//! Masonry Core provides the base GUI engine for Masonry.
+//!
+//! Masonry's widgets are implemented in the Masonry crate, which re-exports this crate as `masonry::core`.
+//! Most users who wish to use Masonry for creating applications (and UI libraries) should prefer that crate.
+//! [Masonry's documentation] can be found on docs.rs.
+//!
+//! Masonry Core provides:
+//!
+//! - [`Widget`][core::Widget], the trait for GUI widgets in Masonry.
+//! - Event handling and bubbling, using types from [`ui-events`][ui_events] for interoperability.
+//! - Communication between parent and child widgets for layout.
+//! - Compositing of widget's content (to be rendered using [Vello][vello]).
+//! - Creation of accessibility trees using [Accesskit][accesskit].
+//! - APIs for widget manipulation (such as [`WidgetMut`][core::WidgetMut]).
+//! - The [`Action`][core::Widget::Action] mechanism by which widgets send events to the application.
+//!
+//! Details of many of these can be found in the [Pass System][doc::pass_system] article.
+//!
+//! If you're writing a library in the Masonry ecosystem, you should depend on `masonry_core`
+//! directly where possible (instead of depending on `masonry`).
+//! This will allow applications using your library to have greater compilation parallelism.
+//! Cases where this apply include:
+//!
+//! - Writing an alternative driver for Masonry (alike to [Masonry Winit]).
+//! - Witing a library containing one or more custom widget (such as a 2d mapping widget).
+//!
+//! Masonry Core can also be used by by applications wishing to not use Masonry's provided
+//! set of widgets, so as to have more control.
+//! This can be especially useful if you wish to exactly match the appearance of an existing library,
+//! or enforce following a specific design guide, which Masonry's widgets may not always allow.
+//! Masonry Core provides a useful shared set of functionality to implement alternative widget libraries.
+//! Note that Masonry Core is currently focused primarily on the main Masonry crate itself, as we're
+//! not aware of any projects using Masonry Core as described in this paragraph.
 //!
 //! [Masonry's documentation]: https://docs.rs/masonry/latest/
+//! [Masonry Winit]: https://docs.rs/masonry_winit/latest/
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
