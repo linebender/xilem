@@ -3,9 +3,7 @@
 
 use std::any::TypeId;
 
-use vello::kurbo::Affine;
-
-use crate::core::{FromDynWidget, MutateCtx, Property, Widget};
+use crate::core::{FromDynWidget, MutateCtx, Property, Transform, Widget};
 
 /// A rich mutable reference to a [`Widget`].
 ///
@@ -64,7 +62,7 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     /// In these cases, the "strongest" of these will want to check if it has been
     /// changed by a different unit, to overwrite this change.
     pub fn prop_has_changed<P: Property>(&self) -> bool {
-        self.ctx.changed_properties.contains(&TypeId::of::<P>())
+        self.ctx.changed_properties.has_changed::<P>()
     }
 
     /// Get value of property `T`.
@@ -82,10 +80,8 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn insert_prop<P: Property>(&mut self, value: P) -> Option<P> {
-        self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.insert(value);
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
+        self.property_changed::<P>();
         value
     }
 
@@ -95,18 +91,20 @@ impl<W: Widget + ?Sized> WidgetMut<'_, W> {
     ///
     /// This also calls [`Widget::property_changed`] with the matching type id.
     pub fn remove_prop<P: Property>(&mut self) -> Option<P> {
-        self.ctx.changed_properties.insert(TypeId::of::<P>());
         let value = self.ctx.properties.remove::<P>();
-        self.widget
-            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
+        self.property_changed::<P>();
         value
     }
 
-    /// Set the local transform of this widget.
-    ///
-    /// It behaves similarly as CSS transforms.
-    pub fn set_transform(&mut self, transform: Affine) {
-        self.ctx.set_transform(transform);
+    /// Mark that the property `P` has changed.
+    fn property_changed<P: Property>(&mut self) {
+        self.ctx.changed_properties.mark_as_changed::<P>();
+        self.widget
+            .property_changed(&mut self.ctx.update_mut(), TypeId::of::<P>());
+
+        if TypeId::of::<P>() == TypeId::of::<Transform>() {
+            self.ctx.request_compose();
+        }
     }
 
     /// Attempt to downcast to `WidgetMut` of concrete widget type.

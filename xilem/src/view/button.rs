@@ -155,7 +155,7 @@ where
         (
             ctx.with_action_widget(|ctx| {
                 let mut pod = ctx.create_pod(widgets::Button::new(child.new_widget));
-                pod.new_widget.options.disabled = self.disabled;
+                pod.new_widget.disabled = self.disabled;
                 pod
             }),
             child_state,

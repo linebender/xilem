@@ -6,7 +6,10 @@ use std::collections::HashMap;
 use std::default::Default;
 
 use crate::core::Widget;
-use crate::util::AnyMap;
+use crate::util::{AnyMap, TypeSet};
+
+mod transform;
+pub use transform::Transform;
 
 /// A marker trait that indicates that a type is intended to be used as a widget's property.
 ///
@@ -32,6 +35,9 @@ pub trait Property: Default + Send + Sync + 'static {
     /// Ideally, when const generics are stable, we'll want to use `const Default` directly in the default impl.
     fn static_default() -> &'static Self;
 }
+
+/// A marker trait for properties that can be used on *any* [`Widget`]
+pub trait GlobalProperty: Property {}
 
 // TODO - Implement Debug.
 /// A collection of [properties](Property) that a widget can be created with.
@@ -76,6 +82,8 @@ pub struct DefaultProperties {
 /// This is not used directly by Masonry Core, but is instead provided for the convenience of external crates.
 pub trait HasProperty<P: Property> {}
 
+impl<P: GlobalProperty, W: Widget> HasProperty<P> for W {}
+
 impl Properties {
     /// Create an empty collection of properties.
     pub fn new() -> Self {
@@ -108,6 +116,34 @@ impl Properties {
     /// Remove property `P`. Returns the previous value if `P` was set.
     pub fn remove<P: Property>(&mut self) -> Option<P> {
         self.map.remove::<P>()
+    }
+}
+
+/// When properties of a widget were modified this should also be reflected by [`ChangedProperties::mark_as_changed`]
+#[derive(Default, Debug)]
+pub struct ChangedProperties {
+    set: TypeSet,
+}
+
+impl ChangedProperties {
+    /// Mark that the property `P` has changed
+    pub fn mark_as_changed<P: Property>(&mut self) {
+        self.set.insert(TypeId::of::<P>());
+    }
+
+    /// Whether the property `P` has changed
+    pub fn has_changed<P: Property>(&self) -> bool {
+        self.set.contains(&TypeId::of::<P>())
+    }
+
+    /// Clears all marked as changed properties
+    pub fn clear(&mut self) {
+        self.set.clear();
+    }
+
+    /// Clears all marked as changed properties
+    pub fn clear_property<P: Property>(&mut self) {
+        self.set.remove(&TypeId::of::<P>());
     }
 }
 
