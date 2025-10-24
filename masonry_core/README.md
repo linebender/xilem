@@ -34,7 +34,8 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 Masonry Core provides the base GUI engine for Masonry.
 
 Masonry's widgets are implemented in the Masonry crate, which re-exports this crate as `masonry::core`.
-Most users who wish to use Masonry for creating applications (and UI libraries) should prefer that crate.
+Most users who wish to use Masonry for creating applications (and UI libraries) should
+prefer to depend on Masonry directly (i.e. the `masonry` crate).
 [Masonry's documentation] can be found on docs.rs.
 
 Masonry Core provides:
