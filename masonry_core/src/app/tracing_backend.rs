@@ -13,11 +13,12 @@
 
 // TODO - Move this code out of masonry.
 
+use std::fmt;
 use std::fs::File;
 use std::time::UNIX_EPOCH;
 
 use time::macros::format_description;
-use tracing::subscriber::SetGlobalDefaultError;
+use tracing::Subscriber;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::time::UtcTime;
@@ -25,7 +26,7 @@ use tracing_subscriber::prelude::*;
 
 #[cfg(not(target_arch = "wasm32"))]
 /// Initialise tracing for a non-web platform with the given `default_level`.
-fn try_init_layered_tracing(default_level: LevelFilter) -> Result<(), SetGlobalDefaultError> {
+fn default_subscriber_native(default_level: LevelFilter) -> impl Subscriber {
     // Use EnvFilter to allow the user to override the log level without recompiling.
     let env_filter_builder = EnvFilter::builder()
         .with_default_directive(default_level.into())
@@ -95,20 +96,19 @@ fn try_init_layered_tracing(default_level: LevelFilter) -> Result<(), SetGlobalD
     #[cfg(feature = "tracy")]
     let registry = registry.with(tracing_tracy::TracyLayer::default());
 
-    tracing::dispatcher::set_global_default(registry.into())?;
-
     if let Some(err) = env_var_error {
         tracing::error!(
             err = &err as &dyn std::error::Error,
             "Failed to parse RUST_LOG environment variable"
         );
     }
-    Ok(())
+
+    registry
 }
 
 #[cfg(target_arch = "wasm32")]
 /// Initialise tracing for the web with the given `max_level`.
-fn try_init_wasm_tracing(max_level: LevelFilter) -> Result<(), SetGlobalDefaultError> {
+fn default_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
     // Note - tracing-wasm might not work in headless Node.js. Probably doesn't matter anyway,
     // because this is a GUI framework, so wasm targets will virtually always be browsers.
 
@@ -119,29 +119,63 @@ fn try_init_wasm_tracing(max_level: LevelFilter) -> Result<(), SetGlobalDefaultE
         .set_max_level(max_level)
         .build();
 
-    tracing::subscriber::set_global_default(
-        Registry::default().with(tracing_wasm::WASMLayer::new(config)),
-    )
+    Registry::default().with(tracing_wasm::WASMLayer::new(config))
 }
 
-/// Initialise tracing for a unit test.
-/// This ignores most messages to limit noise (but will still log all messages to a file).
-pub fn try_init_test_tracing() -> Result<(), SetGlobalDefaultError> {
-    // For unit tests we want to suppress most messages.
-    let default_level = LevelFilter::WARN;
+/// Setup the default tracing subscriber with a given `max_level` filter.
+pub fn default_subscriber(max_level: LevelFilter) -> impl Subscriber {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        try_init_layered_tracing(default_level)
+        default_subscriber_native(max_level)
     }
 
     #[cfg(target_arch = "wasm32")]
     {
-        try_init_wasm_tracing(default_level)
+        default_subscriber_wasm(max_level)
     }
 }
 
+/// An Error indicating that a tracing subscriber has been set before.
+#[derive(Debug)]
+pub struct SubscriberHasBeenSetError;
+
+impl fmt::Display for SubscriberHasBeenSetError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.pad("A tracing subscriber has been set before.")
+    }
+}
+
+impl std::error::Error for SubscriberHasBeenSetError {}
+
+// Verify that a tracing subscriber has not been set already.
+fn verify_subscriber_has_not_been_set() -> Result<(), SubscriberHasBeenSetError> {
+    // Return a SubscriberHasBeenSetError if a tracing subscriber/dispatcher was already set:
+    // - We use the undocumented tracing::dispatcher::has_been_set() function
+    //   to test if a tracing dispatcher has already been set.
+    if tracing::dispatcher::has_been_set() {
+        return Err(SubscriberHasBeenSetError);
+    }
+    Ok(())
+}
+
+/// Initialise tracing for a unit test.
+/// This ignores most messages to limit noise (but will still log all messages to a file).
+pub fn try_init_test_tracing() -> Result<(), SubscriberHasBeenSetError> {
+    // For unit tests we want to suppress most messages.
+    let default_level = LevelFilter::WARN;
+
+    verify_subscriber_has_not_been_set()?;
+
+    let subscriber = default_subscriber(default_level);
+
+    // We may ignore potential errors here because we already checked that no subscriber has been set.
+    let _ = tracing::subscriber::set_global_default(subscriber);
+
+    Ok(())
+}
+
 /// Initialise tracing for an end-user application.
-pub fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
+pub fn try_init_tracing() -> Result<(), SubscriberHasBeenSetError> {
     // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
     // DEBUG should print a few logs per low-density event.
     // INFO should only print logs for noteworthy things.
@@ -151,13 +185,12 @@ pub fn try_init_tracing() -> Result<(), SetGlobalDefaultError> {
         LevelFilter::INFO
     };
 
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        try_init_layered_tracing(default_level)
-    }
+    verify_subscriber_has_not_been_set()?;
 
-    #[cfg(target_arch = "wasm32")]
-    {
-        try_init_wasm_tracing(default_level)
-    }
+    let subscriber = default_subscriber(default_level);
+
+    // We may ignore potential errors here because we already checked that no subscriber has been set.
+    let _ = tracing::subscriber::set_global_default(subscriber);
+
+    Ok(())
 }

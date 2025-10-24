@@ -294,7 +294,7 @@ impl<W: Widget> TestHarness<W> {
             params.window_size.height as _,
         );
 
-        // If there is no default tracing subscriber, we set our own. If one has
+        // If no tracing subscriber has been set before, we set our own. If one has
         // already been set, we get an error which we swallow.
         // Having a default subscriber is helpful for tests; swallowing errors means
         // we don't panic if the user has already set one, or a test creates multiple
