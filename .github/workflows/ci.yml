@@ -107,22 +107,28 @@ jobs:
         run: cargo rdme --check --workspace-project=masonry
 
       - name: Run cargo rdme (masonry_core)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=masonry_core
+        run: cargo rdme --check --workspace-project=masonry_core
 
       - name: Run cargo rdme (masonry_winit)
         run: cargo rdme --check --workspace-project=masonry_winit
     
       - name: Run cargo rdme (tree_arena)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=tree_arena
+        run: cargo rdme --check --workspace-project=tree_arena
       
       - name: Run cargo rdme (xilem)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=xilem
+        run: cargo rdme --check --workspace-project=xilem
 
       - name: Run cargo rdme (xilem_core)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=xilem_core
+        run: cargo rdme --check --workspace-project=xilem_core
+
+      - name: Run cargo rdme (xilem_web)
+        run: cargo rdme --check --workspace-project=xilem_web
       
       - name: Run cargo rdme (placehero)
-        run: cargo rdme --check --heading-base-level=0 --workspace-project=placehero
+        run: cargo rdme --check --workspace-project=placehero
+      
+      - name: Run cargo rdme (masonry_testing)
+        run: cargo rdme --check --workspace-project=masonry_testing
 
   clippy-stable:
     name: cargo clippy

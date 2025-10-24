@@ -1,10 +1,6 @@
-<div align="center" class="rustdoc-hidden">
+<div align="center">
 
 # Xilem Web
-
-</div>
-
-<div align="center">
 
 **Experimental implementation of the Xilem architecture for the Web**
 
@@ -18,18 +14,31 @@
 
 </div>
 
+<!-- We use cargo-rdme to update the README with the contents of lib.rs.
+To edit the following section, update it in lib.rs, then run:
+cargo rdme --workspace-project=xilem
+Full documentation at https://github.com/orium/cargo-rdme -->
+
+<!-- Intra-doc links used in lib.rs should be evaluated here.
+See https://linebender.org/blog/doc-include/ for related discussion. -->
+
+[Xilem Core]: https://crates.io/crates/xilem_core
+
+<!-- markdownlint-disable MD053 -->
+<!-- cargo-rdme start -->
+
 This is a prototype implementation of the Xilem architecture (through [Xilem Core][]) using DOM elements as Xilem elements (unfortunately the two concepts have the same name).
 
 ## Quickstart
 
-The easiest way to start, is to use [Trunk] within some of the examples (see the `web_examples/` directory).
+The easiest way to start, is to use [Trunk][] within some of the examples (see the `web_examples/` directory).
 Run `trunk serve`, then navigate the browser to the link provided (usually <http://localhost:8080>).
 
 ### Example
 
 A minimal example to run an application with `xilem_web`:
 
-```rust,no_run
+```rust
 use xilem_web::{
     document_body,
     elements::html::{button, div, p},
@@ -50,15 +59,18 @@ pub fn main() {
 }
 ```
 
+[Trunk]: https://trunkrs.dev/
+[Xilem Core]: xilem_core
+
+<!-- cargo-rdme end -->
+<!-- markdownlint-enable MD053 -->
+
 ## Minimum supported Rust Version (MSRV)
 
 This version of Xilem Web has been verified to compile with **Rust 1.88** and later.
 
 Future versions of Xilem Web might increase the Rust version requirement.
 It will not be treated as a breaking change and as such can even happen with small patch releases.
-
-<!-- We hide these elements when viewing in Rustdoc, because they're not expected to be present in crate level docs -->
-<div class="rustdoc-hidden">
 
 ## Community
 
@@ -70,13 +82,6 @@ The [Rust code of conduct] applies.
 
 ## License
 
-Licensed under the Apache License, Version 2.0 ([LICENSE] or <http://www.apache.org/licenses/LICENSE-2.0>)
-
-</div>
+Licensed under the Apache License, Version 2.0 ([LICENSE](LICENSE) or <http://www.apache.org/licenses/LICENSE-2.0>)
 
 [Rust code of conduct]: https://www.rust-lang.org/policies/code-of-conduct
-[Trunk]: https://trunkrs.dev/
-[Xilem Core]: https://crates.io/crates/xilem_core
-
-<!-- Needs to be defined here for rustdoc's benefit -->
-[LICENSE]: LICENSE

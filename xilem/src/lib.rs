@@ -1,6 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
+// cargo rdme --workspace-project=xilem
+
 //! Xilem is a UI toolkit. It combines ideas from `Flutter`, `SwiftUI`, and `Elm`.
 //! Like all of these, it uses lightweight view objects, diffing them to provide
 //! minimal updates to a retained UI. Like `SwiftUI`, it is strongly typed.
@@ -20,7 +23,7 @@
 //!
 //! There is also a [blog post][xilem_blog] from when Xilem was first introduced.
 //!
-//! ## Example
+//! # Example
 //!
 //! A simple incrementing counter application looks like:
 //!
@@ -61,11 +64,11 @@
 //!
 //! **Note: The linked examples are for the `main` branch of Xilem. If you are using a released version, please view the examples in the tag for that release.**
 //!
-//! ## Reactive layer
+//! # Reactive layer
 //!
 //! The core concepts of the reactive layer are explained in [Xilem Core][xilem_core].
 //!
-//! ## View elements
+//! # View elements
 //!
 //! The primitives your `Xilem` app’s view tree will generally be constructed from:
 //!
@@ -88,7 +91,7 @@
 //! * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 //! * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 //!
-//! ## Precise Capturing
+//! # Precise Capturing
 //!
 //! Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
 //! This is new syntax in the 2024 edition, and so it might be unfamiliar.

@@ -16,12 +16,11 @@
 
 <!-- We use cargo-rdme to update the README with the contents of lib.rs.
 To edit the following section, update it in lib.rs, then run:
-cargo rdme --workspace-project=masonry_core --heading-base-level=0
+cargo rdme --workspace-project=masonry_core
 Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
-
 
 <!-- cargo-rdme start -->
 
