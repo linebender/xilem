@@ -6,8 +6,8 @@
 //! This module includes a series of articles documenting internals and fundamental
 //! concepts of the crate:
 //!
-//! - **Masonry pass system:** Deep dive into Masonry internals.
-//! - **Concepts and definitions:** Glossary of concepts used in Masonry APIs and internals.
+//! - **[Masonry pass system](pass_system):** Deep dive into Masonry internals.
+//! - **[Concepts and definitions](masonry_concepts):** Glossary of concepts used in Masonry APIs and internals.
 
 #[doc = include_str!("./pass_system.md")]
 /// <style> .rustdoc-hidden { display: none; } </style>
