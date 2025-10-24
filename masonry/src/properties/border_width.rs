@@ -3,7 +3,7 @@
 
 use std::any::TypeId;
 
-use vello::kurbo::{Point, RoundedRect, Size, Vec2};
+use vello::kurbo::{Ellipse, Point, RoundedRect, Size, Vec2};
 
 use crate::core::{BoxConstraints, Property, UpdateCtx};
 use crate::properties::CornerRadius;
@@ -62,6 +62,15 @@ impl BorderWidth {
         pos + Vec2::new(self.width, self.width)
     }
 
+    /// Creates an ellipse that is inset by the border width.
+    ///
+    /// Use to display a circle's background.
+    ///
+    /// Helper function to be called in [`Widget::paint`](crate::core::Widget::paint).
+    pub fn bg_ellipse(&self, size: Size) -> Ellipse {
+        size.to_rect().inset(-self.width).to_ellipse()
+    }
+
     /// Creates a rounded rectangle that is inset by the border width.
     ///
     /// Use to display a box's background.
@@ -71,6 +80,15 @@ impl BorderWidth {
         size.to_rect()
             .inset(-self.width)
             .to_rounded_rect((border_radius.radius - self.width).max(0.))
+    }
+
+    /// Creates an ellipse that is inset by half the border width.
+    ///
+    /// Use to display a circle's border.
+    ///
+    /// Helper function to be called in [`Widget::paint`](crate::core::Widget::paint).
+    pub fn border_ellipse(&self, size: Size) -> Ellipse {
+        size.to_rect().inset(-self.width / 2.0).to_ellipse()
     }
 
     /// Creates a rounded rectangle that is inset by half the border width.
