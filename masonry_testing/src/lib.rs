@@ -1,8 +1,8 @@
 // Copyright 2020 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_testing
-// After editing the below, then check links in README.md
 
 //! Helper tools for writing unit tests for Masonry.
 

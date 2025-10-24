@@ -1,8 +1,8 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=xilem_web
-// After editing the below, then check links in README.md
 
 //! This is a prototype implementation of the Xilem architecture (through [Xilem Core][]) using DOM elements as Xilem elements (unfortunately the two concepts have the same name).
 //!

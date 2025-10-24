@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=tree_arena
-// After editing the below, then check links in README.md
 
 //! This crate contains two implementations of a tree for use in [Masonry], one safe and the other unsafe. The safe tree is known to work, and serves as the baseline implementation and is used by default.
 //! The unsafe tree leverages a hashmap as an arena and is designed for higher performance: it leverages unsafe code to achieve this. The unsafe tree is not yet fully tested, and is not used by default.

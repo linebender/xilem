@@ -1,8 +1,8 @@
 // Copyright 2018 the Xilem Authors and the Druid Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry
-// After editing the below, then check links in README.md
 
 //! Masonry is a foundational framework for building GUI libraries in Rust.
 //!
