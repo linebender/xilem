@@ -26,7 +26,7 @@ use tracing_subscriber::prelude::*;
 
 #[cfg(not(target_arch = "wasm32"))]
 /// Initialise tracing for a non-web platform with the given `default_level`.
-fn default_subscriber_native(default_level: LevelFilter) -> impl Subscriber {
+fn default_tracing_subscriber_native(default_level: LevelFilter) -> impl Subscriber {
     // Use EnvFilter to allow the user to override the log level without recompiling.
     let env_filter_builder = EnvFilter::builder()
         .with_default_directive(default_level.into())
@@ -108,7 +108,7 @@ fn default_subscriber_native(default_level: LevelFilter) -> impl Subscriber {
 
 #[cfg(target_arch = "wasm32")]
 /// Initialise tracing for the web with the given `max_level`.
-fn default_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
+fn default_tracing_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
     // Note - tracing-wasm might not work in headless Node.js. Probably doesn't matter anyway,
     // because this is a GUI framework, so wasm targets will virtually always be browsers.
 
@@ -122,51 +122,51 @@ fn default_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
     Registry::default().with(tracing_wasm::WASMLayer::new(config))
 }
 
-/// Setup the default tracing subscriber with a given `max_level` filter.
-pub fn default_subscriber(max_level: LevelFilter) -> impl Subscriber {
+/// Constructs a default tracing subscriber with a given `max_level` filter.
+pub fn default_tracing_subscriber(max_level: LevelFilter) -> impl Subscriber {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        default_subscriber_native(max_level)
+        default_tracing_subscriber_native(max_level)
     }
 
     #[cfg(target_arch = "wasm32")]
     {
-        default_subscriber_wasm(max_level)
+        default_tracing_subscriber_wasm(max_level)
     }
 }
 
 /// An Error indicating that a tracing subscriber has been set before.
 #[derive(Debug)]
-pub struct SubscriberHasBeenSetError;
+pub struct TracingSubscriberHasBeenSetError;
 
-impl fmt::Display for SubscriberHasBeenSetError {
+impl fmt::Display for TracingSubscriberHasBeenSetError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter.pad("A tracing subscriber has been set before.")
     }
 }
 
-impl std::error::Error for SubscriberHasBeenSetError {}
+impl std::error::Error for TracingSubscriberHasBeenSetError {}
 
 // Verify that a tracing subscriber has not been set already.
-fn verify_subscriber_has_not_been_set() -> Result<(), SubscriberHasBeenSetError> {
-    // Return a SubscriberHasBeenSetError if a tracing subscriber/dispatcher was already set:
+fn verify_subscriber_has_not_been_set() -> Result<(), TracingSubscriberHasBeenSetError> {
+    // Return a TracingSubscriberHasBeenSetError if a tracing subscriber/dispatcher was already set:
     // - We use the undocumented tracing::dispatcher::has_been_set() function
     //   to test if a tracing dispatcher has already been set.
     if tracing::dispatcher::has_been_set() {
-        return Err(SubscriberHasBeenSetError);
+        return Err(TracingSubscriberHasBeenSetError);
     }
     Ok(())
 }
 
-/// Initialise tracing for a unit test.
+/// Initialise tracing with a default subscriber for a unit test.
 /// This ignores most messages to limit noise (but will still log all messages to a file).
-pub fn try_init_test_tracing() -> Result<(), SubscriberHasBeenSetError> {
+pub fn try_init_test_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
     // For unit tests we want to suppress most messages.
     let default_level = LevelFilter::WARN;
 
     verify_subscriber_has_not_been_set()?;
 
-    let subscriber = default_subscriber(default_level);
+    let subscriber = default_tracing_subscriber(default_level);
 
     // We may ignore potential errors here because we already checked that no subscriber has been set.
     let _ = tracing::subscriber::set_global_default(subscriber);
@@ -174,8 +174,8 @@ pub fn try_init_test_tracing() -> Result<(), SubscriberHasBeenSetError> {
     Ok(())
 }
 
-/// Initialise tracing for an end-user application.
-pub fn try_init_tracing() -> Result<(), SubscriberHasBeenSetError> {
+/// Initialise tracing with a default subscriber for an end-user application.
+pub fn try_init_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
     // Default level is DEBUG in --dev, INFO in --release, unless a level is passed.
     // DEBUG should print a few logs per low-density event.
     // INFO should only print logs for noteworthy things.
@@ -187,7 +187,7 @@ pub fn try_init_tracing() -> Result<(), SubscriberHasBeenSetError> {
 
     verify_subscriber_has_not_been_set()?;
 
-    let subscriber = default_subscriber(default_level);
+    let subscriber = default_tracing_subscriber(default_level);
 
     // We may ignore potential errors here because we already checked that no subscriber has been set.
     let _ = tracing::subscriber::set_global_default(subscriber);
