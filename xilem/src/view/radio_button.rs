@@ -5,25 +5,38 @@ use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx};
 
 use masonry::core::ArcStr;
-use masonry::widgets::{self, RadioToggled};
+use masonry::widgets::{self, RadioButtonToggled};
 
 /// An element which can be in checked and unchecked state.
 ///
 /// # Example
 /// ```ignore
-/// use xilem::view::radio_button;
+/// use xilem::view::{flex_row, radio_button};
+///
+/// #[derive(Debug, PartialEq, Eq)]
+/// enum Fruit {
+///     Banana,
+///     Apple,
+///     Lime,
+/// }
 ///
 /// struct State {
-///     value: bool,
+///     fruit: Fruit,
 /// }
 ///
 /// // ...
 ///
-/// let new_state = false;
-///
-/// radio_button("A simple radio button", app_state.value, |app_state: &mut State, new_state: bool| {
-/// *app_state.value = new_state;
-/// })
+/// flex_row((
+///     radio_button("Banana", app_state.fruit == Fruit::Banana, |app_state: &mut State| {
+///         app_state.fruit = Fruit::Banana;
+///     }),
+///     radio_button("Apple", app_state.fruit == Fruit::Apple, |app_state: &mut State| {
+///         app_state.fruit = Fruit::Apple;
+///     }),
+///     radio_button("Lime", app_state.fruit == Fruit::Lime, |app_state: &mut State| {
+///         app_state.fruit = Fruit::Lime;
+///     }),
+/// ))
 /// ```
 pub fn radio_button<F, State, Action>(
     label: impl Into<ArcStr>,
@@ -31,7 +44,7 @@ pub fn radio_button<F, State, Action>(
     callback: F,
 ) -> RadioButton<F>
 where
-    F: Fn(&mut State, bool) -> Action + Send + 'static,
+    F: Fn(&mut State) -> Action + Send + 'static,
 {
     RadioButton {
         label: label.into(),
@@ -63,7 +76,7 @@ impl<F> RadioButton<F> {
 impl<F> ViewMarker for RadioButton<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for RadioButton<F>
 where
-    F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
+    F: Fn(&mut State) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::RadioButton>;
     type ViewState = ();
@@ -114,12 +127,12 @@ where
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),
-            "id path should be empty in Radio::message"
+            "id path should be empty in RadioButton::message"
         );
-        match message.take_message::<RadioToggled>() {
-            Some(checked) => MessageResult::Action((self.callback)(app_state, checked.0)),
+        match message.take_message::<RadioButtonToggled>() {
+            Some(_) => MessageResult::Action((self.callback)(app_state)),
             None => {
-                tracing::error!("Wrong message type in Radio::message, got {message:?}.");
+                tracing::error!("Wrong message type in RadioButton::message, got {message:?}.");
                 MessageResult::Stale
             }
         }

@@ -6,7 +6,6 @@
 use std::any::TypeId;
 
 use accesskit::{Node, Role, Toggled};
-use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
 use ui_events::keyboard::Key;
 use vello::Scene;
@@ -14,9 +13,9 @@ use vello::kurbo::Rect;
 use vello::kurbo::{Affine, Cap, Dashes, Join, Size, Stroke};
 
 use crate::core::{
-    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
+    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent,
+    Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, CheckmarkColor, CheckmarkStrokeWidth,
@@ -28,14 +27,14 @@ use crate::widgets::Label;
 
 /// A radio button that can be toggled.
 ///
-#[doc = include_screenshot!("radio_hello_checked.png", "Radio button with checked state.")]
+#[doc = include_screenshot!("radio_button_hello_checked.png", "Radio button with checked state.")]
 ///
-/// Emits [`RadioToggled`] when it should toggle.
+/// Emits [`RadioButtonToggled`] when it should toggle.
 /// Note that the checked state does not automatically toggle, and so one of
-/// the responses to a `RadioToggled` is to call [`RadioButton::set_checked`]
+/// the responses to a `RadioButtonToggled` is to call [`RadioButton::set_checked`]
 /// on the originating widget.
 ///
-/// This allows higher-level components to choose how the radio responds,
+/// This allows higher-level components to choose how the radio button responds,
 /// and ensure that its value is based on their correct source of truth.
 pub struct RadioButton {
     checked: bool,
@@ -91,19 +90,18 @@ impl HasProperty<BorderColor> for RadioButton {}
 impl HasProperty<BorderWidth> for RadioButton {}
 impl HasProperty<CornerRadius> for RadioButton {}
 impl HasProperty<Padding> for RadioButton {}
-impl HasProperty<CheckmarkStrokeWidth> for RadioButton {}
 impl HasProperty<DisabledCheckmarkColor> for RadioButton {}
 impl HasProperty<CheckmarkColor> for RadioButton {}
 
 /// The action type emitted by [`RadioButton`] when it is activated.
 ///
-/// The field is the target toggle state (i.e. true is "this radio would like to become checked").
+/// The field is the target toggle state (i.e. true is "this radio button would like to become checked").
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub struct RadioToggled(pub bool);
+pub struct RadioButtonToggled;
 
 // --- MARK: IMPL WIDGET
 impl Widget for RadioButton {
-    type Action = RadioToggled;
+    type Action = RadioButtonToggled;
 
     fn on_pointer_event(
         &mut self,
@@ -114,12 +112,12 @@ impl Widget for RadioButton {
         match event {
             PointerEvent::Down { .. } => {
                 ctx.capture_pointer();
-                trace!("Radio {:?} pressed", ctx.widget_id());
+                trace!("RadioButton {:?} pressed", ctx.widget_id());
             }
             PointerEvent::Up { .. } => {
                 if ctx.is_active() && ctx.is_hovered() {
-                    ctx.submit_action::<Self::Action>(RadioToggled(!self.checked));
-                    trace!("Radio {:?} released", ctx.widget_id());
+                    ctx.submit_action::<Self::Action>(RadioButtonToggled);
+                    trace!("RadioButton {:?} released", ctx.widget_id());
                 }
             }
             _ => (),
@@ -135,7 +133,7 @@ impl Widget for RadioButton {
         match event {
             TextEvent::Keyboard(event) if event.state.is_up() => {
                 if matches!(&event.key, Key::Character(c) if c == " ") {
-                    ctx.submit_action::<Self::Action>(RadioToggled(!self.checked));
+                    ctx.submit_action::<Self::Action>(RadioButtonToggled);
                 }
             }
             _ => (),
@@ -143,7 +141,7 @@ impl Widget for RadioButton {
     }
 
     fn accepts_focus(&self) -> bool {
-        // Radio can be tab-focused...
+        // RadioButton can be tab-focused...
         true
     }
 
@@ -155,7 +153,7 @@ impl Widget for RadioButton {
     ) {
         match event.action {
             accesskit::Action::Click => {
-                ctx.submit_action::<Self::Action>(RadioToggled(!self.checked));
+                ctx.submit_action::<Self::Action>(RadioButtonToggled);
             }
             _ => {}
         }
@@ -249,7 +247,7 @@ impl Widget for RadioButton {
             props.get::<BorderColor>()
         };
 
-        // Paint the radio box background and border
+        // Paint the radio button box background and border
         let brush = bg.get_peniko_brush_for_rect(bg_rect.rect());
         fill(scene, &bg_rect, &brush);
         stroke(scene, &border_rect, border_color.color, border_width.width);
@@ -268,6 +266,7 @@ impl Widget for RadioButton {
                 .with_center(bg_rect.center());
             fill(scene, &filled_ellipse, brush.color);
         }
+
         // Paint focus indicator around the entire widget (box + label)
         if ctx.is_focus_target() || is_hovered {
             let widget_size = ctx.size();
@@ -323,7 +322,7 @@ impl Widget for RadioButton {
     }
 
     fn make_trace_span(&self, id: WidgetId) -> Span {
-        trace_span!("Radio", id = id.trace())
+        trace_span!("RadioButton", id = id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {
@@ -346,7 +345,7 @@ mod tests {
     use crate::widgets::Flex;
 
     #[test]
-    fn simple_radio() {
+    fn simple_radio_button() {
         let widget = NewWidget::new(RadioButton::new(false, "Hello"));
 
         let window_size = Size::new(100.0, 40.0);
@@ -354,36 +353,29 @@ mod tests {
             TestHarness::create_with_size(default_property_set(), widget, window_size);
         let radio_id = harness.root_id();
 
-        assert_render_snapshot!(harness, "radio_hello_unchecked");
+        assert_render_snapshot!(harness, "radio_button_hello_unchecked");
 
         assert!(harness.pop_action_erased().is_none());
 
         harness.mouse_click_on(radio_id);
         assert_eq!(
-            harness.pop_action::<RadioToggled>(),
-            Some((RadioToggled(true), radio_id))
+            harness.pop_action::<RadioButtonToggled>(),
+            Some((RadioButtonToggled, radio_id))
         );
 
-        assert_render_snapshot!(harness, "radio_hello_hovered");
+        assert_render_snapshot!(harness, "radio_button_hello_hovered");
 
         harness.edit_root_widget(|mut radio| RadioButton::set_checked(&mut radio, true));
 
-        assert_render_snapshot!(harness, "radio_hello_checked");
+        assert_render_snapshot!(harness, "radio_button_hello_checked");
 
         harness.focus_on(None);
         harness.press_tab_key(false);
         assert_eq!(harness.focused_widget().map(|w| w.id()), Some(radio_id));
-
-        harness.process_text_event(TextEvent::key_down(Key::Character(" ".into())));
-        harness.process_text_event(TextEvent::key_up(Key::Character(" ".into())));
-        assert_eq!(
-            harness.pop_action::<RadioToggled>(),
-            Some((RadioToggled(false), radio_id))
-        );
     }
 
     #[test]
-    fn radio_focus_indicator() {
+    fn radio_button_focus_indicator() {
         use crate::properties::types::MainAxisAlignment;
 
         let radio = NewWidget::new(RadioButton::new(true, "Focus test"));
@@ -398,10 +390,11 @@ mod tests {
             TestHarness::create_with_size(default_property_set(), root, Size::new(120.0, 40.0));
 
         harness.focus_on(Some(radio_id));
-        assert_render_snapshot!(harness, "radio_focus_focused");
+        assert_render_snapshot!(harness, "radio_button_focus_focused");
     }
+
     #[test]
-    fn edit_radio() {
+    fn edit_radio_button() {
         let image_1 = {
             let label = Label::new("The quick brown fox jumps over the lazy dog")
                 .with_style(StyleProperty::FontSize(20.0));

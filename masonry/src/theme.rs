@@ -137,7 +137,7 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<ProgressBar, _>(BorderColor { color: ZYNC_800 });
     properties.insert::<ProgressBar, _>(BarColor(ACCENT_COLOR));
 
-    // Radio
+    // RadioButton
     // TODO: The radius should be 50% instead of pixels.
     properties.insert::<RadioButton, _>(CornerRadius { radius: 50. });
     properties.insert::<RadioButton, _>(BorderWidth {
