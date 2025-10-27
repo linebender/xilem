@@ -11,7 +11,7 @@
 //!
 //! The testing harness can:
 //!
-//! - Simulate any external event, including mouse movement, key presses, text input, accessibility events.
+//! - Simulate any external event which Masonry handles, including mouse movement, key presses, text input, accessibility events.
 //! - Control the flow of time to the application (i.e. for testing animations).
 //! - Take screenshots of the application, save these to a file, and ensure that these are up-to-date.
 //!   See [Screenshots](#screenshots) for more details.
