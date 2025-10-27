@@ -194,3 +194,15 @@ pub fn try_init_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn multiple_init_test_tracing_errors() {
+        let _first_result = try_init_test_tracing();
+        let second_result = try_init_test_tracing();
+        assert!(second_result.is_err());
+    }
+}
