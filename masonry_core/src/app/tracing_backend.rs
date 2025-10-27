@@ -147,12 +147,12 @@ impl fmt::Display for TracingSubscriberHasBeenSetError {
 
 impl std::error::Error for TracingSubscriberHasBeenSetError {}
 
-// Verify that a tracing subscriber has not been set already.
+/// Verify that a tracing subscriber has not been set before or return with an error.
 fn verify_subscriber_has_not_been_set() -> Result<(), TracingSubscriberHasBeenSetError> {
-    // Return a TracingSubscriberHasBeenSetError if a tracing subscriber/dispatcher was already set:
-    // - We use the undocumented tracing::dispatcher::has_been_set() function
-    //   to test if a tracing dispatcher has already been set.
-    if tracing::dispatcher::has_been_set() {
+    // The tracing_core::dispatcher::has_been_set function is doc(hidden).
+    // However, it is guaranteed to remain for the entire tracing_core 1.0 series,
+    // as tracing depends on it, and it isn't documented as unsupported.
+    if tracing_core::dispatcher::has_been_set() {
         return Err(TracingSubscriberHasBeenSetError);
     }
     Ok(())

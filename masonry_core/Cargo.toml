@@ -31,6 +31,7 @@ parley.workspace = true
 smallvec.workspace = true
 time = { workspace = true, features = ["macros", "formatting"] }
 tracing = { workspace = true, features = ["default"] }
+tracing-core = { version = "0.1.33", default-features = false }
 tracing-subscriber = { version = "0.3.20", features = ["env-filter", "time"] }
 tracing-tracy = { version = "0.11.4", optional = true }
 tree_arena.workspace = true
