@@ -127,7 +127,7 @@ fn pointer_capture_suppresses_neighbors() {
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target, target_tag);
 
-    let other = SizedBox::empty().size(10.px(), 10.px());
+    let other = Button::with_text("");
     let other = NewWidget::new_with_tag(other.record(), other_tag);
 
     let parent = Flex::column()
@@ -253,7 +253,9 @@ fn click_anchors_focus() {
     assert_eq!(harness.focused_widget_id(), Some(child_4_id));
 
     // Clicking another non-focusable widget clears focus.
-    harness.mouse_click_on(other_id);
+    harness.mouse_move_to_unchecked(other_id);
+    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_release(PointerButton::Primary);
     assert_eq!(harness.focused_widget_id(), None);
 }
 
