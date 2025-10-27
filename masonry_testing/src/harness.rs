@@ -677,6 +677,31 @@ impl<W: Widget> TestHarness<W> {
         self.mouse_move(widget_center);
     }
 
+    /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
+    ///
+    /// This does fewer checks than [`mouse_move_to`](Self::mouse_move_to), which in most cases should be preferred.
+    /// However, `mouse_move_to` does not allow moving to non-interactive widgets, which can sometimes be desirable.
+    ///
+    /// TODO: In the long term, this method should still check if the widget is visible, without requiring it to be interactive.
+    /// At that point, it might make sense to rename this to `mouse_move_to`, deleting the distinction.
+    ///
+    /// # Panics
+    ///
+    /// - If the widget is not found in the tree.
+    /// - If the widget is stashed.
+    #[track_caller]
+    pub fn mouse_move_to_unchecked(&mut self, id: WidgetId) {
+        let widget = self.get_widget_with_id(id);
+        let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
+        let widget_center = widget.ctx().window_transform() * local_widget_center;
+
+        if widget.ctx().is_stashed() {
+            panic!("Widget {id} is stashed");
+        }
+
+        self.mouse_move(widget_center);
+    }
+
     /// Try to get the target widget into the viewport.
     ///
     /// This will send an accesskit [`ScrollIntoView`] action to the widget,
