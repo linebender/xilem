@@ -31,8 +31,13 @@ fn default_tracing_subscriber_native(default_level: LevelFilter) -> impl Subscri
     let env_filter_builder = EnvFilter::builder()
         .with_default_directive(default_level.into())
         .with_env_var("RUST_LOG");
-    // We store the error until our env is set, *then* we display it
-    let env_var_error = env_filter_builder.from_env().err();
+    if let Some(err) = env_filter_builder.from_env().err() {
+        #[allow(clippy::print_stderr, reason = "Can only use stderr")]
+        {
+            // We print this message to stderr because tracing hasn't been set up yet
+            eprintln!("Failed to parse RUST_LOG environment variable: {:#}", err);
+        }
+    }
     let env_filter = env_filter_builder.from_env_lossy();
 
     // This format is more concise than even the 'Compact' default:
@@ -95,13 +100,6 @@ fn default_tracing_subscriber_native(default_level: LevelFilter) -> impl Subscri
     // After the above line because of https://github.com/linebender/android_trace/pull/17
     #[cfg(feature = "tracy")]
     let registry = registry.with(tracing_tracy::TracyLayer::default());
-
-    if let Some(err) = env_var_error {
-        tracing::error!(
-            err = &err as &dyn std::error::Error,
-            "Failed to parse RUST_LOG environment variable"
-        );
-    }
 
     registry
 }
