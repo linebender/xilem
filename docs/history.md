@@ -1,10 +1,12 @@
 # History of Masonry and Xilem
 
-This crates evolved from various experiments in the Linebender community (Druid, masonry, idiopath, lasagna, crochet, etc)
+These crates evolved from various experiments in the Linebender community (Druid, masonry, idiopath, lasagna, crochet, etc)
 
-This document describes the high-level architecture of xilem. If you want to familirize yourself with the code base, you are just in the right place!
+This document describes the high-level architecture of Xilem.
+If you want to familiarize yourself with the code base, you are just in the right place!
 
-An evolution of the ideas implemented in xilem can be found in the following resources:
+An evolution of the ideas implemented in Xilem can be found in the following resources:
+
 - [Data Oriented GUI (2018)](https://www.youtube.com/watch?v=4YTfxresvS8)
 - [A Journey through incremental computation (2020)](https://www.youtube.com/watch?v=DSuX-LIAU-I)
 - [Raph Levien on UI Frameworks (2021)](https://www.youtube.com/watch?v=PwuwG2-0n3I)
