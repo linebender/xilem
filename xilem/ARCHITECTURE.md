@@ -1,7 +1,7 @@
 # ARCHITECTURE
 Xilem is a framework that aims to provide a performant and productive option for Rust GUI.
 
-This document describes the high-level architecture of xilem. If you want to familirize yourself with the code base, you are just in the right place!
+This document describes the high-level architecture of xilem. If you want to familiarize yourself with the code base, you are just in the right place!
 
 ## High-level Goals
 - **High Performance.** Lightweight state management, retained widget layer, massively parallel rendering backend (Vello), fast startup time, small binary size
