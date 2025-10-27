@@ -65,7 +65,7 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
                 }
                 b"span" => {
                     if let Some(class) = start_tag.attributes.remove(b"class".as_slice()) {
-                        let class_string = String::from_utf8(class.0).unwrap();
+                        let class_string = String::from_utf8(class.value.0).unwrap();
                         let mut has_ellipsis = false;
                         let mut has_invisible = false;
                         for class in class_string.split_whitespace() {
@@ -173,7 +173,7 @@ pub(crate) fn status_html_to_plaintext(content: &str) -> String {
             html5gum::Token::String(html_string) => {
                 if emit {
                     result.push_str(
-                        String::from_utf8(html_string.0)
+                        String::from_utf8(html_string.value.0)
                             .expect("utf-8 input implies utf-8 output.")
                             .as_str(),
                     );

@@ -31,21 +31,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "890d241cf51fc784f0ac5ac34dfc847421f8d39da6c7c91a0fcc987db62a8267"
 dependencies = [
  "accesskit",
- "accesskit_consumer 0.31.0",
+ "accesskit_consumer",
  "atspi-common",
  "serde",
  "thiserror 1.0.69",
  "zvariant",
-]
-
-[[package]]
-name = "accesskit_consumer"
-version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdd06f5fea9819250fffd4debf926709f3593ac22f8c1541a2573e5ee0ca01cd"
-dependencies = [
- "accesskit",
- "hashbrown 0.15.5",
 ]
 
 [[package]]
@@ -65,7 +55,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a0089e5c0ac0ca281e13ea374773898d9354cc28d15af9f0f7394d44a495b575"
 dependencies = [
  "accesskit",
- "accesskit_consumer 0.31.0",
+ "accesskit_consumer",
  "hashbrown 0.15.5",
  "objc2 0.5.2",
  "objc2-app-kit",
@@ -95,7 +85,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2d63dd5041e49c363d83f5419a896ecb074d309c414036f616dc0b04faca971"
 dependencies = [
  "accesskit",
- "accesskit_consumer 0.31.0",
+ "accesskit_consumer",
  "hashbrown 0.15.5",
  "static_assertions",
  "windows 0.61.3",
@@ -1118,6 +1108,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9c4f5dac5e15c24eb999c26181a6ca40b39fe946cbe4c263c7209467bc83af2"
 
 [[package]]
+name = "foldhash"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
+
+[[package]]
 name = "font-types"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1552,7 +1548,7 @@ checksum = "9229cfe53dfd69f0609a49f65461bd93001ea1ef889cd5529dd176593f5338a1"
 dependencies = [
  "allocator-api2",
  "equivalent",
- "foldhash",
+ "foldhash 0.1.5",
 ]
 
 [[package]]
@@ -1560,6 +1556,11 @@ name = "hashbrown"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
+dependencies = [
+ "allocator-api2",
+ "equivalent",
+ "foldhash 0.2.0",
+]
 
 [[package]]
 name = "hermit-abi"
@@ -1581,9 +1582,9 @@ checksum = "dfa686283ad6dd069f105e5ab091b04c62850d3e4cf5d67debad1933f55023df"
 
 [[package]]
 name = "html5gum"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3918b5f36d61861b757261da986b51be562c7a87ac4e531d4158e67e08bff72"
+checksum = "ba6fbe46e93059ce8ee19fbefdb0c7699cc7197fcaac048f2c3593f3e5da845f"
 dependencies = [
  "jetscii",
 ]
@@ -2212,7 +2213,7 @@ dependencies = [
 name = "masonry_testing"
 version = "0.3.0"
 dependencies = [
- "accesskit_consumer 0.30.1",
+ "accesskit_consumer",
  "assert_matches",
  "futures-intrusive",
  "image",
@@ -4489,7 +4490,7 @@ dependencies = [
 name = "tree_arena"
 version = "0.1.0"
 dependencies = [
- "hashbrown 0.15.5",
+ "hashbrown 0.16.0",
 ]
 
 [[package]]
@@ -5818,7 +5819,7 @@ name = "xilem_core"
 version = "0.3.0"
 dependencies = [
  "anymore",
- "hashbrown 0.15.5",
+ "hashbrown 0.16.0",
  "kurbo",
  "tracing",
 ]

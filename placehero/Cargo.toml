@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 reqwest = { workspace = true }
-html5gum = "0.7.0"
+html5gum = "0.8.0"
 megalodon = "1.0.3"
 tracing.workspace = true
 xilem = { version = "0.3.0", path = "../xilem" }
