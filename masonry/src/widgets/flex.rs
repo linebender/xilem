@@ -602,6 +602,10 @@ impl HasProperty<Padding> for Flex {}
 impl Widget for Flex {
     type Action = NoAction;
 
+    fn accepts_pointer_interaction(&self) -> bool {
+        false
+    }
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut().filter_map(|x| x.widget_mut()) {
             ctx.register_child(child);
