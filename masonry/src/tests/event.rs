@@ -233,7 +233,10 @@ fn click_anchors_focus() {
         ))
         .with_child(NewWidget::new(Button::with_text("")))
         .with_child(NewWidget::new(Button::with_text("")))
-        .with_child(NewWidget::new_with_tag(Button::with_text(""), child_3))
+        .with_child(NewWidget::new_with_tag(
+            SizedBox::empty().size(10.px(), 10.px()),
+            child_3,
+        ))
         .with_child(NewWidget::new_with_tag(Button::with_text(""), child_4))
         .with_child(NewWidget::new(Button::with_text("")))
         .with_auto_id();
@@ -244,7 +247,7 @@ fn click_anchors_focus() {
     let child_4_id = harness.get_widget(child_4).id();
     let other_id = harness.get_widget(other).id();
 
-    // Clicking a button doesn't focus it.
+    // Clicking a sized box doesn't focus it.
     harness.mouse_click_on(child_3_id);
     assert_eq!(harness.focused_widget_id(), None);
 
