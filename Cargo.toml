@@ -25,11 +25,11 @@ members = [
 
 [workspace.package]
 # Xilem version, also used by other packages which want to mimic Xilem's version.
-# Right now those packages include: xilem_core, xilem_web, masonry, masonry_winit.
+# Right now those packages include: xilem_core, xilem_web, masonry, masonry_core, masonry_testing, masonry_winit.
 #
 # NOTE: When bumping this, remember to also bump the aforementioned other packages'
 #       version in the dependencies section of this file.
-version = "0.3.0"
+version = "0.4.0"
 
 edition = "2024"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
@@ -39,12 +39,12 @@ repository = "https://github.com/linebender/xilem"
 
 [workspace.dependencies]
 
-masonry = { version = "0.3.0", path = "masonry" }
-masonry_core = { version = "0.3.0", path = "masonry_core" }
-masonry_testing = { version = "0.3.0", path = "masonry_testing" }
-masonry_winit = { version = "0.3.0", path = "masonry_winit" }
-xilem_core = { version = "0.3.0", path = "xilem_core" }
-xilem = { version = "0.3.0", path = "xilem" }
+masonry = { version = "0.4.0", path = "masonry" }
+masonry_core = { version = "0.4.0", path = "masonry_core" }
+masonry_testing = { version = "0.4.0", path = "masonry_testing" }
+masonry_winit = { version = "0.4.0", path = "masonry_winit" }
+xilem_core = { version = "0.4.0", path = "xilem_core" }
+xilem = { version = "0.4.0", path = "xilem" }
 tree_arena = { version = "0.1.0", path = "tree_arena" }
 
 anymore = "1.0.0"

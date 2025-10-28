@@ -2194,7 +2194,7 @@ dependencies = [
 
 [[package]]
 name = "masonry"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "accesskit",
  "assert_matches",
@@ -2214,7 +2214,7 @@ dependencies = [
 
 [[package]]
 name = "masonry_core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "accesskit",
  "anymap3",
@@ -2242,7 +2242,7 @@ dependencies = [
 
 [[package]]
 name = "masonry_testing"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "accesskit_consumer",
  "assert_matches",
@@ -2257,7 +2257,7 @@ dependencies = [
 
 [[package]]
 name = "masonry_winit"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "accesskit_winit",
  "copypasta",
@@ -2990,7 +2990,7 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
 name = "placehero"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "blurhash",
@@ -5855,7 +5855,7 @@ checksum = "bec9e4a500ca8864c5b47b8b482a73d62e4237670e5b5f1d6b9e3cae50f28f2b"
 
 [[package]]
 name = "xilem"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "image",
@@ -5873,7 +5873,7 @@ dependencies = [
 
 [[package]]
 name = "xilem_core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anymore",
  "hashbrown 0.15.5",
@@ -5883,7 +5883,7 @@ dependencies = [
 
 [[package]]
 name = "xilem_web"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "futures",
  "peniko",
