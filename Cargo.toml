@@ -45,7 +45,7 @@ masonry_testing = { version = "0.4.0", path = "masonry_testing" }
 masonry_winit = { version = "0.4.0", path = "masonry_winit" }
 xilem_core = { version = "0.4.0", path = "xilem_core" }
 xilem = { version = "0.4.0", path = "xilem" }
-tree_arena = { version = "0.1.0", path = "tree_arena" }
+tree_arena = { version = "0.2.0", path = "tree_arena" }
 
 anymore = "1.0.0"
 vello = "0.6.0"
