@@ -237,7 +237,7 @@ struct RemoteAccount {
 ///    - We by default check "auto-login" for read-only scopes
 ///    - We support auto-login for read-write scopes
 ///
-/// The name "app" is a pretty poor one from Mastodon, because it insteaad more closely refers to
+/// The name "app" is a pretty poor one from Mastodon, because it instead more closely refers to
 /// a "login session".
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(tag = "version")]

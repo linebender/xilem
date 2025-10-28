@@ -166,7 +166,7 @@ pub trait ZStackExt<State, Action>: WidgetView<State, Action> {
 impl<State, Action, V: WidgetView<State, Action>> ZStackExt<State, Action> for V {}
 
 /// A wrapper around a [`WidgetView`], with a specified [`ChildAlignment`].
-/// This struct is most often constructed indrectly using [`ZStackExt::alignment`].
+/// This struct is most often constructed indirectly using [`ZStackExt::alignment`].
 pub struct ZStackItem<V, State, Action> {
     view: V,
     alignment: ChildAlignment,
