@@ -1,27 +1,56 @@
 # ARCHITECTURE
-Xilem is a framework that aims to provide a performant and productive option for Rust GUI.
 
-This document describes the high-level architecture of xilem. If you want to familiarize yourself with the code base, you are just in the right place!
+Xilem is a family of high-level GUI frameworks.
+Xilem apps are written with idiomatic Rust code, with little to no reliance on macros and DSLs.
+
+
+## General architecture
+
+The most important thing about Xilem is that it is a *reactive* architecture:
+
+- After every change, user-provided functions are called to generate a **view tree**, a lightweight representation of the app's UI.
+- The new view tree is compared against the previous view tree.
+- Based on the differences, the back-end creates an updates a retained **element tree**. elements are added, removed or mutated to match the current view tree.
+    - In `xilem`, the element tree is the Masonry widget tree.
+    - in `xilem_web`, the element tree is the DOM.
+
+This architecture is strongly inspired by React, Elm and SwiftUI, which work on similar principles.
+
+A Xilem app's code will usually be made of functions called **components** that create and return subsets of the view tree.
+A component function might look like this pseudo-code:
+
+```rust
+fn list_item(item: &ItemData) -> impl View<...> {
+    row(
+        image(item.image_url),
+        text(item.text),
+        button("Do thing").on_click(|...| do_thing(item.id)),
+    )
+}
+```
+
 
 ## High-level Goals
-- **High Performance.** Lightweight state management, retained widget layer, massively parallel rendering backend (Vello), fast startup time, small binary size
-- **Productive.** Offer an ergonomic API, code is concise (low Rust tax), idiomatic and UI components compose well
-- **Rich 2D graphics model.**
-- **Wide platform support.** Windows, macOS, Linux (Wayland/X11), Android (Google funded), iOS
-- **Batteries-included.** Advanced text layout, IME, Accessibility, Animation, Styling
 
-## Roadmap
-<!-- TODO -->
+- **Good Performance:** Xilem aims for the "performant by default" class of Rust software. Everything isn't always optimized, but it uses sober data structures and high-performance dependencies (Vello, Parley, wgpu). Static typing lets us get very efficient diffing of view trees by default.
+- **Productive:** Xilem offers a high-level API, designed to bypass the borrowing and state management issues that retained GUIs suffer from in Rust.
+- **Idiomatic:** Xilem apps are low on macros or DSLs. Writing a component is about creating and composing view objects, no special syntax needed.
+- **Batteries-included:** Through Masonry, Xilme includes advanced text layout, IME, accessibility trees and styling.
+- **Wide platform support:** Xilem supports the web through `xilem_web` and native platforms such as Windows, macOS, Linux (Wayland/X11), Android and iOS through `masonry` and `winit`. (Though iOS support is low-priority.)
 
-## Bird's Eye View
-The code can be roughly divided into 3 levels:
-- Reactive Data Layer
-- UI Layer
-- Framework Layer
 
-![The Xilem architectural overview](./docs/assets/xilem-architecture.svg)
+## Code layout
 
-### Reactive layer (`xilem_masonry`,  `xilem_web` and `xilem_core`)
+The Xilem project includes these crates:
+
+- **`xilem_core`:** Includes the core traits such as `View`, `ViewElement`, `ViewSequence`, `ElementSlice`, and many others. Also include some generic implementations for these traits (e.g. for Box, Arc, tuples, etc).
+- **`xilem_web`:** Web backend for Xilem. Depends on `xilem_core` and `wasm-bindgen`.
+- **`xilem`:** Native backend for Xilem. Depends on `xilem_core`, `masonry` and `masonry_winit`.
+
+
+## Writing Xilem code
+
+**TODO - This section needs a rewrite.**
 
 Your main interaction with the framework is through the `app_logic()`. Like Elm, the `app_logic()` contains centralized state. On each cycle (meaning, roughly, on each high-level UI interaction such as a button click), the framework calls a closure, giving it mutable access to the `AppData`, and the return value is a `View` tree. This `View` tree is fairly short-lived; it is used to render the UI, possibly dispatch some events, and be used as a reference for diffing by the next cycle, at which point it is dropped. You pass the `app_logic()` to the framework (represented by `Xilem`) and then use it to create the window and run the UI.
 
@@ -55,25 +84,3 @@ The `lens` view is used to adapt/convert from the parent data (often the `AppDat
 The `View` trees are always eagerly evaluated when the `app_logic()` is called. Even though the `View`'s are very lightweight when the tree becomes large it can create performance issues; the `Memoize` node prunes the `View` tree to improve performance. The generation of the subtree is postponed until the `build()`/`rebuild()` are executed. If none of the `AppData` dependencies change during a UI cycle neither the `View` subtree will be constructed nor the `rebuild()` will be called. The `View` subtree will only be constructed if any of the `AppData` dependencies change. The `Memoize` node should be used when the subtree is a pure function of the `AppData`.
 
 Generally the Xilem `View` tree is statically typed. `AnyView` allows for the tree to be type erased to enable easy dynamic reconfiguration of the UI. 
-
-### UI Layer (`masonry`)
-The associated Elements of the `View` trait are either DOM nodes for `xilem_web`or implementations of the `Widget` trait.
-
-### Framework Layer (`masonry`)
-
-## Code Organisation
-### `xilem_core`
-Contains the `View` trait, and other general implementations. Is also contains the `DynMessage`, `MessageResult`, `Id` types and the tree-structrure tracking.
-
-### `xilem_web/`
-An implementation of Xilem running on the DOM.
-
-### `masonry/`, `masonry_winit/`
-See `ARCHITECTURE.md` file located under `masonry/doc`
-
-## Screenshot tests
-
-Multiple crates in this repository use screenshot tests to ensure the UI renders as expected.
-
-Screenshots are all saved as PNG files in `screenshots/` folders at different places in the repo.
-Because of this, we assume that any file matching `**/screenshots/*.png` is a saved screenshot.
