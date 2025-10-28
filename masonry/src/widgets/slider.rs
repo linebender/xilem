@@ -14,8 +14,8 @@ use vello::kurbo::{Circle, Point, Rect, Size};
 use crate::core::keyboard::{Key, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut,
+    PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
@@ -154,11 +154,11 @@ impl Widget for Slider {
             return;
         }
         match event {
-            PointerEvent::Down {
+            PointerEvent::Down(PointerButtonEvent {
                 button: Some(PointerButton::Primary),
                 state,
                 ..
-            } => {
+            }) => {
                 ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
@@ -171,9 +171,9 @@ impl Widget for Slider {
                     ctx.submit_action::<f64>(self.value);
                 }
             }
-            PointerEvent::Move(e) => {
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if ctx.is_active() {
-                    let local_pos = ctx.local_position(e.current.position);
+                    let local_pos = ctx.local_position(current.position);
                     if self.update_value_from_position(
                         local_pos.x,
                         ctx.size().width,
@@ -185,10 +185,10 @@ impl Widget for Slider {
                     ctx.request_render();
                 }
             }
-            PointerEvent::Up {
+            PointerEvent::Up(PointerButtonEvent {
                 button: Some(PointerButton::Primary),
                 ..
-            } => {
+            }) => {
                 if ctx.is_active() {
                     ctx.release_pointer();
                 }
