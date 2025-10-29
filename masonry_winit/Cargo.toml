@@ -35,7 +35,11 @@ wgpu-profiler = { optional = true, version = "0.24.0", default-features = false 
 copypasta = "0.10.2"
 
 [dev-dependencies]
-masonry.workspace = true
+# We don't use the "workspace" dependency here, because this makes a loop in publishing.
+# This does mean that this dev-dependency edge won't be recorded in the uploaded Cargo.toml,
+# but that's only an issue for crater?
+# See https://github.com/rust-lang/cargo/issues/4242
+masonry = { path = "../masonry" }
 
 [lints]
 workspace = true
