@@ -14,11 +14,12 @@
 
 Xilem and Masonry provide an experimental high-level architecture for writing GUI apps in Rust.
 
+**Masonry** is a foundational crate for building natively compiled GUIs in Rust.
+It provides a retained widget tree and runs event handling and update passes on it.
+
 **Xilem** a high-level reactive framework inspired by React, SwiftUI and Elm.
 It lets users create a lightweight view tree, and changes the rendered app based on changes to the tree.
-
-**Masonry** is a foundational crate for building native GUIs in Rust.
-It provides a retained widget tree and runs event handling and update passes on it.
+It has a web backend and a Masonry backend.
 
 ## Project structure
 
