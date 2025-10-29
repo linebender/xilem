@@ -10,7 +10,8 @@ The most important thing about Xilem is that it is a *reactive* architecture:
 
 - After every change, user-provided functions are called to generate a **view tree**, a lightweight representation of the app's UI.
 - The new view tree is compared against the previous view tree.
-- Based on the differences, the back-end creates an updates a retained **element tree**. elements are added, removed or mutated to match the current view tree.
+- Based on the differences, the back-end creates an updates a retained **element tree**.
+  Elements are added, removed or mutated to match the current view tree.
     - In `xilem`, the element tree is the Masonry widget tree.
     - in `xilem_web`, the element tree is the DOM.
 
@@ -21,22 +22,25 @@ A component function might look like this pseudo-code:
 
 ```rust
 fn list_item(item: &ItemData) -> impl View<...> {
-    row(
+    row((
         image(item.image_url),
         text(item.text),
         button("Do thing").on_click(|...| do_thing(item.id)),
-    )
+    ))
 }
 ```
 
 
 ## High-level Goals
 
-- **Good Performance:** Xilem aims for the "performant by default" class of Rust software. Everything isn't always optimized, but it uses sober data structures and high-performance dependencies (Vello, Parley, wgpu). Static typing lets us get very efficient diffing of view trees by default.
+- **Good Performance:** Xilem aims for the "performant by default" class of Rust software. 
+  Everything isn't always optimized, but it uses sober data structures and high-performance dependencies (Vello, Parley, wgpu).
+  Static typing gives us very efficient diffing of view trees by default.
 - **Productive:** Xilem offers a high-level API, designed to bypass the borrowing and state management issues that retained GUIs suffer from in Rust.
-- **Idiomatic:** Xilem apps are low on macros or DSLs. Writing a component is about creating and composing view objects, no special syntax needed.
+- **Idiomatic:** Xilem apps are low on macros or DSLs.
+  Writing a component is about creating and composing view objects, no special syntax needed.
 - **Batteries-included:** Through Masonry, Xilme includes advanced text layout, IME, accessibility trees and styling.
-- **Wide platform support:** Xilem supports the web through `xilem_web` and native platforms such as Windows, macOS, Linux (Wayland/X11), Android and iOS through `masonry` and `winit`. (Though iOS support is low-priority.)
+- **Wide platform support:** Xilem supports the web through `xilem_web` and desktop/mobile platforms through `masonry` and `winit`.
 
 
 ## Code layout
@@ -45,7 +49,7 @@ The Xilem project includes these crates:
 
 - **`xilem_core`:** Includes the core traits such as `View`, `ViewElement`, `ViewSequence`, `ElementSlice`, and many others. Also include some generic implementations for these traits (e.g. for Box, Arc, tuples, etc).
 - **`xilem_web`:** Web backend for Xilem. Depends on `xilem_core` and `wasm-bindgen`.
-- **`xilem`:** Native backend for Xilem. Depends on `xilem_core`, `masonry` and `masonry_winit`.
+- **`xilem`:** Natively compiled backend for Xilem. Depends on `xilem_core`, `masonry` and `masonry_winit`.
 
 
 ## Writing Xilem code
