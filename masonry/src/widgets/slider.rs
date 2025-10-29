@@ -7,11 +7,11 @@ use std::any::TypeId;
 
 use accesskit::{ActionData, Node, Role};
 use tracing::{Span, trace_span};
-use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::{Circle, Point, Rect, Size};
 
 use crate::core::keyboard::{Key, NamedKey};
+use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
     PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,

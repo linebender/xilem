@@ -2178,7 +2178,6 @@ dependencies = [
  "parley",
  "profiling",
  "tracing",
- "ui-events",
  "vello",
 ]
 

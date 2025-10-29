@@ -9,12 +9,12 @@ use std::sync::Arc;
 use accesskit::{Node, Role};
 use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
-use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Color;
 
 use crate::core::keyboard::{Key, NamedKey};
+use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
     PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,

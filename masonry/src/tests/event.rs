@@ -3,12 +3,12 @@
 
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
+use masonry_core::core::keyboard::{Key, NamedKey};
+use masonry_core::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use masonry_core::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{
     ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics,
 };
-use ui_events::keyboard::{Key, NamedKey};
-use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
 
 use crate::properties::types::AsUnit;
