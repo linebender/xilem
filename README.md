@@ -12,24 +12,24 @@
 
 </div>
 
-This repo contains an experimental architecture, implemented with Masonry.
-At a very high level, it combines ideas from Flutter, SwiftUI, and Elm.
-Like all of these, it uses lightweight view objects, diffing them to provide minimal updates to a retained UI.
-Like SwiftUI, it is strongly typed.
+Xilem and Masonry provide an experimental high-level architecture for writing GUI apps in Rust.
+
+**Masonry** is a foundational crate for building natively compiled GUIs in Rust.
+It provides a retained widget tree and runs event handling and update passes on it.
+
+**Xilem** a high-level reactive framework inspired by React, SwiftUI and Elm.
+It lets users create a lightweight view tree, and changes the rendered app based on changes to the tree.
+It has a web backend and a Masonry backend.
 
 ## Project structure
 
-This diagram gives an idea what the Xilem project is built on:
-
 ![Xilem project layers](docs/assets/xilem-layers.svg)
 
-On a very coarse level, Xilem is built directly on top of xilem_core and Masonry, both of which are crates in this repository.
-
-Then Masonry is built on top of:
+Xilem and Masonry are built on top of:
 
 - **winit** for window creation.
 - **Vello and wgpu** for 2D graphics.
-- **Parley** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
+- **Parley and Fontique** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
 - **AccessKit** for plugging into accessibility APIs.
 
 ## Precise Capturing
