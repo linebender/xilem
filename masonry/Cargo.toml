@@ -28,7 +28,6 @@ masonry_core.workspace = true
 masonry_testing = { workspace = true, optional = true }
 parley.workspace = true
 tracing = { workspace = true, features = ["default"] }
-ui-events.workspace = true
 vello.workspace = true
 
 [dev-dependencies]

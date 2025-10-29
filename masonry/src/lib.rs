@@ -215,7 +215,6 @@ pub use vello::peniko::color::palette;
 pub use vello::{kurbo, peniko};
 pub use {dpi, parley, vello};
 
-pub use masonry_core::{app, core, util};
+pub use masonry_core::{app, core, ui_events, util};
 #[cfg(any(feature = "testing", test))]
 pub use masonry_testing as testing;
-pub use ui_events;
