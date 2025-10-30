@@ -204,7 +204,7 @@ mod tests {
         // Resize to the same size.
         harness.edit_widget(tag, |mut it| SizedBox::set_height(&mut it, 200.px()));
 
-        // There shouldn't be a new event.
+        // The size hasn't changed, so no event.
         assert!(harness.pop_action::<LayoutChanged>().is_none());
     }
 
@@ -246,6 +246,12 @@ mod tests {
             }
         );
         // There shouldn't be a second layout.
+        assert!(harness.pop_action::<LayoutChanged>().is_none());
+
+        // Same size again.
+        harness.process_window_event(WindowEvent::Resize(PhysicalSize::new(100, 150)));
+
+        // The size hasn't changed, so no event.
         assert!(harness.pop_action::<LayoutChanged>().is_none());
     }
 }
