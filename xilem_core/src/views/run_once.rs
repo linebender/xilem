@@ -19,9 +19,9 @@ use crate::{
 /// This can be useful for logging a value:
 ///
 /// ```
-/// # use xilem_core::{run_once, View, docs::{Fake as ViewCtx, DocsView as WidgetView}};
+/// # use xilem_core::{run_once, View, Edit, docs::{Fake as ViewCtx, DocsView as WidgetView}};
 /// # struct AppData;
-/// fn log_lifecycle(data: &mut AppData) -> impl WidgetView<AppData, ()> {
+/// fn log_lifecycle(data: &mut AppData) -> impl WidgetView<Edit<AppData>, ()> {
 ///     run_once(|| eprintln!("View constructed"))
 /// }
 /// ```
@@ -35,11 +35,11 @@ use crate::{
 /// // <https://doc.rust-lang.org/error_codes/E0080.html>
 /// // Note that this error code is only checked on nightly
 /// ```compile_fail,E0080
-/// # use xilem_core::{run_once, View, docs::{DocsView as WidgetView}};
+/// # use xilem_core::{run_once, View, docs::{DocsView as WidgetView}, Edit};
 /// # struct AppData {
 /// #    data: u32
 /// # }
-/// fn log_data(app: &mut AppData) -> impl WidgetView<AppData, ()> {
+/// fn log_data(app: &mut AppData) -> impl WidgetView<Edit<AppData>, ()> {
 ///     let val = app.data;
 ///     run_once(move || println!("{}", val))
 /// }
