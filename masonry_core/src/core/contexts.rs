@@ -1454,6 +1454,13 @@ impl_context_method!(
             self.global_state
                 .emit_signal(RenderRootSignal::RepositionLayer(root_widget_id, position));
         }
+
+        /// Submit an app-wide signal, which indicates that this widget requires something be done
+        /// by the application, such as creating or closing a window.
+        pub fn submit_app_signal<S: 'static>(&mut self, signal: S) {
+            trace!("submit_app_signal");
+            self.global_state.emit_app_signal(Box::new(signal));
+        }
     }
 );
 
