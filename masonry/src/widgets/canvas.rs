@@ -143,8 +143,8 @@ impl Widget for Canvas {
         ChildrenIds::new()
     }
 
-    fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
-        trace_span!("Canvas", id = ctx.widget_id().trace())
+    fn make_trace_span(&self, widget_id: WidgetId) -> Span {
+        trace_span!("Canvas", id = widget_id.trace())
     }
 
     fn get_debug_text(&self) -> Option<String> {
