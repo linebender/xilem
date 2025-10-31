@@ -3,9 +3,12 @@
 
 use std::sync::Arc;
 
+use masonry::core::WidgetMut;
 use masonry::widgets;
 use vello::Scene;
 use vello::kurbo::Size;
+use vello::wgpu::hal::noop::Context;
+use xilem_core::MessageContext;
 
 use crate::core::{DynMessage, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
@@ -56,37 +59,37 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
     type Element = Pod<widgets::Canvas>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, state: &mut State) -> (Self::Element, Self::ViewState) {
         let widget = widgets::Canvas::from_arc(self.draw.clone());
 
         let widget_pod = ctx.new_pod(widget);
         (widget_pod, ())
     }
-
     fn rebuild(
         &self,
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: Mut<Self::Element>,
+        element: Mut<'_, Self::Element>,
+        _state: &mut State,
     ) {
         if !Arc::ptr_eq(&self.draw, &prev.draw) {
             widgets::Canvas::set_painter_arc(element, self.draw.clone());
         }
     }
 
-    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<Self::Element>) {}
+    fn teardown(&self, (): &mut Self::ViewState, _: &mut ViewCtx, _: Mut<'_, Self::Element>) {}
 
     fn message(
         &self,
         (): &mut Self::ViewState,
-        _id_path: &[ViewId],
-        message: DynMessage,
+        _ctx: &mut MessageContext,
+        _widget: WidgetMut<'_, masonry::widgets::Canvas>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
             "Message arrived in Canvas::message, but Canvas doesn't consume any messages, this is a bug"
         );
-        MessageResult::Stale(message)
+        MessageResult::Stale
     }
 }
