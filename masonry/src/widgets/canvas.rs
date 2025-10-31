@@ -85,8 +85,8 @@ impl Canvas {
 impl Widget for Canvas {
     fn on_pointer_event(
         &mut self,
-        _ctx: &mut EventCtx,
-        _props: &mut PropertiesMut,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
         _event: &PointerEvent,
     ) {
     }
@@ -97,35 +97,41 @@ impl Widget for Canvas {
 
     fn on_text_event(
         &mut self,
-        _ctx: &mut EventCtx,
-        _props: &mut PropertiesMut,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
         _event: &TextEvent,
     ) {
     }
 
     fn on_access_event(
         &mut self,
-        _ctx: &mut EventCtx,
-        _props: &mut PropertiesMut,
+        _ctx: &mut EventCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
         _event: &AccessEvent,
     ) {
     }
 
-    fn register_children(&mut self, _ctx: &mut RegisterCtx) {}
+    fn register_children(&mut self, _ctx: &mut RegisterCtx<'_>) {}
 
-    fn update(&mut self, _ctx: &mut UpdateCtx, _props: &mut PropertiesMut, _event: &Update) {}
+    fn update(
+        &mut self,
+        _ctx: &mut UpdateCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
+        _event: &Update,
+    ) {
+    }
 
     fn layout(
         &mut self,
-        _ctx: &mut LayoutCtx,
-        _props: &mut PropertiesMut,
+        _ctx: &mut LayoutCtx<'_>,
+        _props: &mut PropertiesMut<'_>,
         bc: &BoxConstraints,
     ) -> Size {
         // use as much space as possible - caller can size it as necessary
         bc.max()
     }
 
-    fn paint(&mut self, ctx: &mut PaintCtx, _props: &PropertiesRef, scene: &mut Scene) {
+    fn paint(&mut self, ctx: &mut PaintCtx<'_>, _props: &PropertiesRef<'_>, scene: &mut Scene) {
         (self.draw)(scene, ctx.size());
     }
 
@@ -133,7 +139,12 @@ impl Widget for Canvas {
         Role::Canvas
     }
 
-    fn accessibility(&mut self, _ctx: &mut AccessCtx, _props: &PropertiesRef, node: &mut Node) {
+    fn accessibility(
+        &mut self,
+        _ctx: &mut AccessCtx<'_>,
+        _props: &PropertiesRef<'_>,
+        node: &mut Node,
+    ) {
         if let Some(text) = &self.alt_text {
             node.set_description(text.clone());
         }
