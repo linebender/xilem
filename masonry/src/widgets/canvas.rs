@@ -214,6 +214,6 @@ mod tests {
         );
 
         assert_debug_snapshot!(harness.root_widget());
-        assert_render_snapshot!(harness, "hello.new");
+        assert_render_snapshot!(harness, "hello_new");
     }
 }
