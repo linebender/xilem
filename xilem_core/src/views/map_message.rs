@@ -4,7 +4,9 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
+use crate::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker,
+};
 
 /// View type for [`map_message`] and [`map_action`]. Most users will want to use `map_action` (the latter).
 ///
@@ -17,7 +19,7 @@ pub struct MapMessage<
     ChildAction,
     Context,
     // This default only exists for documentation purposes.
-    F = fn(&mut State, ChildAction) -> ParentAction,
+    F = fn(Arg<'_, State>, ChildAction) -> ParentAction,
 > {
     map_fn: F,
     child: V,
@@ -74,17 +76,17 @@ pub fn map_action<State, ParentAction, ChildAction, Context: ViewPathTracker, V,
     ParentAction,
     ChildAction,
     Context,
-    impl Fn(&mut State, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,
+    impl Fn(Arg<'_, State>, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,
 >
 where
-    State: 'static,
+    State: ViewArgument + 'static,
     ParentAction: 'static,
     ChildAction: 'static,
     V: View<State, ChildAction, Context>,
-    F: Fn(&mut State, ChildAction) -> ParentAction + 'static,
+    F: Fn(Arg<'_, State>, ChildAction) -> ParentAction + 'static,
 {
     MapMessage {
-        map_fn: move |app_state: &mut State, result: MessageResult<ChildAction>| {
+        map_fn: move |app_state: Arg<'_, State>, result: MessageResult<ChildAction>| {
             result.map(|action| map_fn(app_state, action))
         },
         child: view,
@@ -101,11 +103,11 @@ pub fn map_message<State, ParentAction, ChildAction, Context: ViewPathTracker, V
     map_fn: F,
 ) -> MapMessage<V, State, ParentAction, ChildAction, Context, F>
 where
-    State: 'static,
+    State: ViewArgument + 'static,
     ParentAction: 'static,
     ChildAction: 'static,
     V: View<State, ChildAction, Context>,
-    F: Fn(&mut State, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,
+    F: Fn(Arg<'_, State>, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,
 {
     MapMessage {
         map_fn,
@@ -122,16 +124,20 @@ impl<V, State, ParentAction, ChildAction, Context, F> View<State, ParentAction, 
     for MapMessage<V, State, ParentAction, ChildAction, Context, F>
 where
     V: View<State, ChildAction, Context>,
-    State: 'static,
+    State: ViewArgument + 'static,
     ParentAction: 'static,
     ChildAction: 'static,
-    F: Fn(&mut State, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,
+    F: Fn(Arg<'_, State>, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,
     Context: ViewPathTracker + 'static,
 {
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.child.build(ctx, app_state)
     }
 
@@ -141,7 +147,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.child
             .rebuild(&prev.child, view_state, ctx, element, app_state);
@@ -161,9 +167,14 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        mut app_state: Arg<'_, State>,
     ) -> MessageResult<ParentAction> {
-        let child_result = self.child.message(view_state, message, element, app_state);
+        let child_result = self.child.message(
+            view_state,
+            message,
+            element,
+            State::reborrow_mut(&mut app_state),
+        );
         (self.map_fn)(app_state, child_result)
     }
 }

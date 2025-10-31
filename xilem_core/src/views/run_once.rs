@@ -3,7 +3,10 @@
 
 use core::fmt::Debug;
 
-use crate::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker, ViewPathTracker};
+use crate::{
+    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker,
+    ViewPathTracker,
+};
 
 /// A view which executes `once` exactly once.
 ///
@@ -86,6 +89,7 @@ impl<F> Debug for RunOnce<F> {
 impl<F> ViewMarker for RunOnce<F> {}
 impl<F, State, Action, Context> View<State, Action, Context> for RunOnce<F>
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     F: Fn() + 'static,
 {
@@ -93,7 +97,7 @@ where
 
     type ViewState = ();
 
-    fn build(&self, _: &mut Context, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, _: &mut Context, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         (self.once)();
         (NoElement, ())
     }
@@ -104,7 +108,7 @@ where
         (): &mut Self::ViewState,
         _: &mut Context,
         (): Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         // Nothing to do
     }
@@ -118,7 +122,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageContext,
         _: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) -> MessageResult<Action> {
         panic!("Message should not have been sent to a `RunOnce` View: {message:?}");
     }
