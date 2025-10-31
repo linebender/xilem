@@ -167,6 +167,7 @@ impl Widget for Canvas {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
+    use masonry_core::core::{DefaultProperties, Properties};
     use masonry_testing::assert_render_snapshot;
     use vello::kurbo::{Affine, BezPath, Stroke};
     use vello::peniko::{Color, Fill};
@@ -200,7 +201,10 @@ mod tests {
             );
         });
 
-        let mut harness = TestHarness::create(canvas);
+        let mut harness = TestHarness::create(
+            DefaultProperties::default(),
+            canvas.with_props(Properties::default()),
+        );
 
         assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello");
