@@ -19,7 +19,8 @@ use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
 use masonry_core::app::{
-    RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
+    AppProxy, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+    try_init_test_tracing,
 };
 use masonry_core::core::{
     CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, KeyboardEvent,
@@ -181,6 +182,19 @@ pub struct TestHarnessParams {
     pub max_screenshot_size: u32,
 }
 
+#[derive(Clone)]
+struct TestHarnessProxy {
+    signal_sender: mpsc::Sender<RenderRootSignal>,
+}
+
+impl AppProxy for TestHarnessProxy {
+    fn emit_render_root_signal(&self, signal: RenderRootSignal) {
+        self.signal_sender.send(signal).unwrap();
+    }
+
+    fn emit_app_signal(&self, _: Box<dyn std::any::Any>) {}
+}
+
 /// Assert a snapshot of a rendered frame of your app.
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
@@ -322,7 +336,7 @@ impl<W: Widget> TestHarness<W> {
             signal_receiver,
             render_root: RenderRoot::new(
                 root_widget,
-                move |signal| signal_sender.send(signal).unwrap(),
+                TestHarnessProxy { signal_sender },
                 RenderRootOptions {
                     default_properties: Arc::new(default_props),
                     use_system_fonts: false,
