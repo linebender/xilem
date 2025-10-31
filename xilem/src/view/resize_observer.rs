@@ -19,7 +19,7 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// scaling up a game board in response more space being available, or switching
 /// to use fewer columns when there is not space to fit multiple columns.
 /// This can be safely used to dynamically access the size of a window
-/// or tab in a [`Split`](crate::widgets::Split).
+/// or tab in a [`split`](crate::view::split::split).
 /// You must make sure that the child takes up all the available space.
 /// This can be most easily achieved by making the child be
 /// an [expanded](crate::view::SizedBox::expand) `sized_box`.
