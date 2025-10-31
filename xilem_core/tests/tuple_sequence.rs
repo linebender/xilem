@@ -15,7 +15,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn unit_no_elements() {
     let view = sequence(0, ());
     let mut ctx = TestCtx::default();
-    let (element, _state) = view.build(&mut ctx, &mut ());
+    let (element, _state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert!(element.children.unwrap().active.is_empty());
 }
@@ -25,7 +25,7 @@ fn unit_no_elements() {
 fn one_element_passthrough() {
     let view = sequence(1, (record_ops(0),));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(1)]);
     assert_eq!(element.view_path, &[]);
@@ -42,7 +42,7 @@ fn one_element_passthrough() {
     );
 
     let view2 = sequence(3, (record_ops(2),));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element, &mut ());
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     let seq_children = element.children.as_ref().unwrap();
     assert_eq!(
@@ -59,7 +59,7 @@ fn one_element_passthrough() {
     );
 
     ctx.with_message_context(Vec::new(), DynMessage::new(()), |ctx| {
-        let result = view2.message(&mut state, ctx, &mut element, &mut ());
+        let result = view2.message(&mut state, ctx, &mut element, ());
         // The message should have been routed to the only child
         assert_action(result, 2);
     });
@@ -95,7 +95,7 @@ fn one_element_passthrough() {
 fn two_element_passthrough() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -111,7 +111,7 @@ fn two_element_passthrough() {
     assert_eq!(second_child.view_path.len(), 1);
 
     let view2 = sequence(5, (record_ops(3), record_ops(4)));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element, &mut ());
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
     assert_eq!(
         element.operations,
@@ -174,7 +174,7 @@ fn two_element_passthrough() {
 fn two_element_message() {
     let view = sequence(2, (record_ops(0), record_ops(1)));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(2)]);
     assert_eq!(element.view_path, &[]);
@@ -190,11 +190,11 @@ fn two_element_message() {
     let second_path = second_child.view_path.to_vec();
 
     ctx.with_message_context(first_path, DynMessage::new(()), |ctx| {
-        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        let result = view.message(&mut state, ctx, &mut element, ());
         assert_action(result, 0);
     });
     ctx.with_message_context(second_path, DynMessage::new(()), |ctx| {
-        let result = view.message(&mut state, ctx, &mut element, &mut ());
+        let result = view.message(&mut state, ctx, &mut element, ());
         assert_action(result, 1);
     });
 }

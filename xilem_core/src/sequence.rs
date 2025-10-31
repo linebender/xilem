@@ -9,8 +9,8 @@ use core::sync::atomic::{AtomicBool, Ordering};
 
 use crate::element::NoElement;
 use crate::{
-    MessageContext, MessageResult, SuperElement, View, ViewElement, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageContext, MessageResult, SuperElement, View, ViewArgument, ViewElement, ViewId,
+    ViewMarker, ViewPathTracker,
 };
 
 /// An append only `Vec`.
@@ -142,6 +142,7 @@ impl Count {
 ///    These can be nested if an ad-hoc sequence of more than 15 sequences is needed.
 pub trait ViewSequence<State, Action, Context, Element>: 'static
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     Element: ViewElement,
 {
@@ -168,7 +169,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> Self::SeqState;
 
     /// Update the associated widgets.
@@ -178,7 +179,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     );
 
     /// Update the associated widgets.
@@ -215,7 +216,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageContext,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
 }
 
@@ -248,6 +249,7 @@ pub trait ElementSplice<Element: ViewElement> {
 
 impl<State, Action, Context, V, Element> ViewSequence<State, Action, Context, Element> for V
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ViewMarker,
     Element: SuperElement<V::Element, Context>,
@@ -261,7 +263,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> Self::SeqState {
         let (element, view_state) = self.build(ctx, app_state);
         elements.push(Element::upcast(ctx, element));
@@ -273,7 +275,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         // Mutate the item we added in `seq_build`
         elements.mutate(|this_element| {
@@ -300,7 +302,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageContext,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         elements.mutate(|this_element| {
             Element::with_downcast_val(this_element, |element| {
@@ -335,6 +337,7 @@ pub struct OptionSeqState<InnerState> {
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
     for Option<Seq>
 where
+    State: ViewArgument,
     Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -361,7 +364,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> Self::SeqState {
         let generation = 0;
         match self {
@@ -388,7 +391,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         // If `prev` was `Some`, we set `seq_state` in reacting to it (and building the inner view)
         // This could only fail if some malicious parent view was messing with our internal state
@@ -460,7 +463,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageContext,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()
@@ -534,6 +537,7 @@ fn view_id_to_index_generation(view_id: ViewId) -> (usize, u32) {
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
     for Vec<Seq>
 where
+    State: ViewArgument,
     Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -551,7 +555,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: &mut State,
+        mut app_state: Arg<'_, State>,
     ) -> Self::SeqState {
         let start_idx = elements.index();
         let generations = alloc::vec![0; self.len()];
@@ -562,7 +566,9 @@ where
             .map(|((index, seq), generation)| {
                 let id = create_generational_view_id(index, *generation);
                 let this_skip = elements.index() - start_idx;
-                let inner_state = ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
+                let inner_state = ctx.with_id(id, |ctx| {
+                    seq.seq_build(ctx, elements, State::reborrow_mut(&mut app_state))
+                });
                 (this_skip, inner_state)
             })
             .collect();
@@ -579,7 +585,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        mut app_state: Arg<'_, State>,
     ) {
         let start_idx = elements.index();
         for (i, (((child, child_prev), (child_skip, child_state)), child_generation)) in self
@@ -593,7 +599,13 @@ where
             // Rebuild the items which are common to both vectors
             let id = create_generational_view_id(i, *child_generation);
             ctx.with_id(id, |ctx| {
-                child.seq_rebuild(child_prev, child_state, ctx, elements, app_state);
+                child.seq_rebuild(
+                    child_prev,
+                    child_state,
+                    ctx,
+                    elements,
+                    State::reborrow_mut(&mut app_state),
+                );
             });
         }
         let n = self.len();
@@ -650,8 +662,9 @@ where
                         .map(|(index, (seq, generation))| {
                             let id = create_generational_view_id(index + prev_n, *generation);
                             let this_skip = elements.index() + outer_idx - start_idx;
-                            let inner_state =
-                                ctx.with_id(id, |ctx| seq.seq_build(ctx, elements, app_state));
+                            let inner_state = ctx.with_id(id, |ctx| {
+                                seq.seq_build(ctx, elements, State::reborrow_mut(&mut app_state))
+                            });
                             (this_skip, inner_state)
                         }),
                 );
@@ -683,7 +696,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageContext,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()
@@ -707,6 +720,7 @@ where
 impl<State, Action, Context, Element, Seq, const N: usize>
     ViewSequence<State, Action, Context, Element> for [Seq; N]
 where
+    State: ViewArgument,
     Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -723,7 +737,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: &mut State,
+        mut app_state: Arg<'_, State>,
     ) -> Self::SeqState {
         let start_idx = elements.index();
         // there's no enumerate directly on an array
@@ -731,7 +745,7 @@ where
         self.each_ref().map(|vs| {
             let this_skip = elements.index() - start_idx;
             let state = ctx.with_id(ViewId::new(idx), |ctx| {
-                vs.seq_build(ctx, elements, app_state)
+                vs.seq_build(ctx, elements, State::reborrow_mut(&mut app_state))
             });
             idx += 1;
             (this_skip, state)
@@ -745,7 +759,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        mut app_state: Arg<'_, State>,
     ) {
         let start_idx = elements.index();
         for (idx, ((seq, prev_seq), (this_skip, state))) in
@@ -757,7 +771,13 @@ where
                     "ViewSequence arrays with more than u64::MAX + 1 elements not supported",
                 )),
                 |ctx| {
-                    seq.seq_rebuild(prev_seq, state, ctx, elements, app_state);
+                    seq.seq_rebuild(
+                        prev_seq,
+                        state,
+                        ctx,
+                        elements,
+                        State::reborrow_mut(&mut app_state),
+                    );
                 },
             );
         }
@@ -769,7 +789,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageContext,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()
@@ -806,6 +826,7 @@ where
 
 impl<State, Action, Context, Element> ViewSequence<State, Action, Context, Element> for ()
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     Element: ViewElement,
 {
@@ -817,7 +838,7 @@ where
         &self,
         _: &mut Context,
         _: &mut AppendVec<Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) -> Self::SeqState {
     }
 
@@ -827,7 +848,7 @@ where
         _: &mut Self::SeqState,
         _: &mut Context,
         _: &mut impl ElementSplice<Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
     }
 
@@ -844,7 +865,7 @@ where
         _: &mut Self::SeqState,
         message: &mut MessageContext,
         _: &mut impl ElementSplice<Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) -> MessageResult<Action> {
         unreachable!("Messages should never be dispatched to an empty tuple {message:?}.");
     }
@@ -854,6 +875,7 @@ where
 
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element> for (Seq,)
 where
+    State: ViewArgument,
     Seq: ViewSequence<State, Action, Context, Element>,
     Context: ViewPathTracker,
     Element: ViewElement,
@@ -866,7 +888,7 @@ where
         &self,
         ctx: &mut Context,
         elements: &mut AppendVec<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> Self::SeqState {
         self.0.seq_build(ctx, elements, app_state)
     }
@@ -877,7 +899,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.0
             .seq_rebuild(&prev.0, seq_state, ctx, elements, app_state);
@@ -897,7 +919,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageContext,
         elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.0.seq_message(seq_state, message, elements, app_state)
     }
@@ -912,7 +934,7 @@ macro_rules! impl_view_tuple {
         $($marker: ident, $seq: ident, $idx: tt);+
     ) => {
         impl<
-                State,
+                State: ViewArgument,
                 Action,
                 Context: ViewPathTracker,
                 Element: ViewElement,
@@ -929,13 +951,13 @@ macro_rules! impl_view_tuple {
                 &self,
                 ctx: &mut Context,
                 elements: &mut AppendVec<Element>,
-                app_state: &mut State,
+                mut app_state: Arg<'_, State>,
             ) -> Self::SeqState {
                 let start_idx = elements.index();
                 ($(
                     ctx.with_id(ViewId::new($idx), |ctx| {
                         let this_skip = elements.index() - start_idx;
-                        let state = self.$idx.seq_build(ctx, elements, app_state);
+                        let state = self.$idx.seq_build(ctx, elements, State::reborrow_mut(&mut app_state));
                         (this_skip, state)
                     }),
                 )+)
@@ -947,13 +969,13 @@ macro_rules! impl_view_tuple {
                 seq_state: &mut Self::SeqState,
                 ctx: &mut Context,
                 elements: &mut impl ElementSplice<Element>,
-                app_state: &mut State,
+                mut app_state: Arg<'_, State>,
             ) {
                 let start_idx = elements.index();
                 $(
                     ctx.with_id(ViewId::new($idx), |ctx| {
                         seq_state.$idx.0 = elements.index() - start_idx;
-                        self.$idx.seq_rebuild(&prev.$idx, &mut seq_state.$idx.1, ctx, elements, app_state);
+                        self.$idx.seq_rebuild(&prev.$idx, &mut seq_state.$idx.1, ctx, elements, State::reborrow_mut(&mut app_state));
                     });
                 )+
             }
@@ -976,7 +998,7 @@ macro_rules! impl_view_tuple {
                 seq_state: &mut Self::SeqState,
                 message: &mut MessageContext,
                 elements: &mut impl ElementSplice<Element>,
-                app_state: &mut State,
+                mut app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {
                 let start = message
                     .take_first()
@@ -985,7 +1007,7 @@ macro_rules! impl_view_tuple {
                     $(
                         $idx => {
                             elements.skip(seq_state.$idx.0);
-                            self.$idx.seq_message(&mut seq_state.$idx.1, message, elements, app_state)
+                            self.$idx.seq_message(&mut seq_state.$idx.1, message, elements, State::reborrow_mut(&mut app_state))
                         },
                     )+
                     // If we have received a message, our parent is (mostly) certain that we requested it
@@ -1064,9 +1086,9 @@ pub struct WithoutElements<Seq, State, Action, Context> {
 ///
 /// ```
 /// # use xilem_core::docs::{DocsViewSequence as WidgetViewSequence, some_component_generic as component};
-/// use xilem_core::{without_elements, run_once};
+/// use xilem_core::{without_elements, run_once, Edit};
 ///
-/// fn isolated_child(state: &mut AppState) -> impl WidgetViewSequence<AppState> {
+/// fn isolated_child(state: &mut AppState) -> impl WidgetViewSequence<Edit<AppState>> {
 ///     (component(state), without_elements(run_once(|| {})))
 /// }
 ///
@@ -1076,6 +1098,7 @@ pub fn without_elements<State, Action, Context, Seq>(
     seq: Seq,
 ) -> WithoutElements<Seq, State, Action, Context>
 where
+    State: ViewArgument,
     State: 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
@@ -1090,6 +1113,7 @@ where
 impl<State, Action, Context, Element, Seq> ViewSequence<State, Action, Context, Element>
     for WithoutElements<Seq, State, Action, Context>
 where
+    State: ViewArgument,
     State: 'static,
     Action: 'static,
     Element: ViewElement,
@@ -1104,7 +1128,7 @@ where
         &self,
         ctx: &mut Context,
         _elements: &mut AppendVec<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> Self::SeqState {
         self.seq
             .seq_build(ctx, &mut AppendVec::default(), app_state)
@@ -1116,7 +1140,7 @@ where
         seq_state: &mut Self::SeqState,
         ctx: &mut Context,
         _elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.seq
             .seq_rebuild(&prev.seq, seq_state, ctx, &mut NoElements, app_state);
@@ -1136,7 +1160,7 @@ where
         seq_state: &mut Self::SeqState,
         message: &mut MessageContext,
         _elements: &mut impl ElementSplice<Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.seq
             .seq_message(seq_state, message, &mut NoElements, app_state)

@@ -4,7 +4,9 @@
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
+use crate::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker,
+};
 
 /// The View for [`map_state`].
 ///
@@ -53,7 +55,7 @@ where
 /// }
 ///
 /// fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
-///     map_state(count_view(state.count), |state: &mut AppState|  &mut state.count)
+///     map_state(count_view(state.count), |state: &mut AppState, ()|  &mut state.count)
 /// }
 /// ```
 pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F>(
@@ -61,10 +63,12 @@ pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F
     f: F,
 ) -> MapState<V, F, ParentState, ChildState, Action, Context>
 where
-    ParentState: 'static,
-    ChildState: 'static,
+    ParentState: ViewArgument + 'static,
+    ChildState: ViewArgument + 'static,
     V: View<ChildState, Action, Context>,
-    F: Fn(&mut ParentState) -> &mut ChildState + 'static,
+    // :(, see https://doc.rust-lang.org/error_codes/E0582.html
+    F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, ChildState> + 'static,
+    MapState<V, F, ParentState, ChildState, Action, Context>: View<ParentState, Action, Context>,
 {
     MapState {
         map_state: f,
@@ -80,10 +84,11 @@ impl<V, F, ParentState, ChildState, Action, Context> ViewMarker
 impl<ParentState, ChildState, Action, Context, V, F> View<ParentState, Action, Context>
     for MapState<V, F, ParentState, ChildState, Action, Context>
 where
-    ParentState: 'static,
-    ChildState: 'static,
+    ParentState: ViewArgument + 'static,
+    ChildState: ViewArgument + 'static,
     V: View<ChildState, Action, Context>,
-    F: Fn(&mut ParentState) -> &mut ChildState + 'static,
+    // :(, see https://doc.rust-lang.org/error_codes/E0582.html
+    F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, ChildState> + 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
 {
@@ -93,9 +98,9 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: &mut ParentState,
+        app_state: Arg<'_, ParentState>,
     ) -> (Self::Element, Self::ViewState) {
-        self.child.build(ctx, (self.map_state)(app_state))
+        self.child.build(ctx, (self.map_state)(app_state, &()))
     }
 
     fn rebuild(
@@ -104,14 +109,14 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut ParentState,
+        app_state: Arg<'_, ParentState>,
     ) {
         self.child.rebuild(
             &prev.child,
             view_state,
             ctx,
             element,
-            (self.map_state)(app_state),
+            (self.map_state)(app_state, &()),
         );
     }
 
@@ -129,9 +134,13 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut ParentState,
+        app_state: Arg<'_, ParentState>,
     ) -> MessageResult<Action> {
-        self.child
-            .message(view_state, message, element, (self.map_state)(app_state))
+        self.child.message(
+            view_state,
+            message,
+            element,
+            (self.map_state)(app_state, &()),
+        )
     }
 }
