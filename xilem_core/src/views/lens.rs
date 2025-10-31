@@ -5,7 +5,9 @@ use core::any::type_name;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
+use crate::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker,
+};
 
 /// The View for [`lens`].
 ///
@@ -74,10 +76,14 @@ pub fn lens<OuterState, Action, Context, InnerState, StateF, InnerView, Componen
     access_state: StateF,
 ) -> Lens<Component, InnerView, StateF, OuterState, InnerState, Action, Context>
 where
+    InnerState: ViewArgument,
+    OuterState: ViewArgument,
     StateF: Fn(&mut OuterState) -> &mut InnerState + Send + Sync + 'static,
     Component: Fn(&mut InnerState) -> InnerView,
     InnerView: View<InnerState, Action, Context>,
     Context: ViewPathTracker,
+    Lens<Component, InnerView, StateF, OuterState, InnerState, Action, Context>:
+        View<OuterState, Action, Context>,
 {
     Lens {
         child_component: component,
@@ -94,11 +100,16 @@ impl<Component, ParentState, ChildState, Action, Context, V, StateF>
     View<ParentState, Action, Context>
     for Lens<Component, V, StateF, ParentState, ChildState, Action, Context>
 where
-    ParentState: 'static,
-    ChildState: 'static,
+    ParentState: ViewArgument + 'static,
+    ChildState: ViewArgument + 'static,
     V: View<ChildState, Action, Context>,
-    Component: Fn(&mut ChildState) -> V + 'static,
-    StateF: Fn(&mut ParentState) -> &mut ChildState + 'static,
+    Component: Fn(Arg<'_, ChildState>) -> V + 'static,
+    StateF: (for<'a> Fn(
+            Arg<'a, ParentState>,
+            // :(, see https://doc.rust-lang.org/error_codes/E0582.html
+            &'a (),
+        ) -> Arg<'a, ChildState>)
+        + 'static,
     Action: 'static,
     Context: ViewPathTracker + 'static,
 {
@@ -108,11 +119,14 @@ where
     fn build(
         &self,
         ctx: &mut Context,
-        app_state: &mut ParentState,
+        mut app_state: Arg<'_, ParentState>,
     ) -> (Self::Element, Self::ViewState) {
-        let child_state = (self.access_state)(app_state);
+        let child_state = (self.access_state)(ParentState::reborrow_mut(&mut app_state), &());
         let child = (self.child_component)(child_state);
-        let (element, child_state) = child.build(ctx, (self.access_state)(app_state));
+        let (element, child_state) = child.build(
+            ctx,
+            (self.access_state)(ParentState::reborrow_mut(&mut app_state), &()),
+        );
         (element, (child, child_state))
     }
 
@@ -122,10 +136,10 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut ParentState,
+        app_state: Arg<'_, ParentState>,
     ) {
-        let child_state = (self.access_state)(app_state);
-        let child = (self.child_component)(child_state);
+        let mut child_state = (self.access_state)(app_state, &());
+        let child = (self.child_component)(ChildState::reborrow_mut(&mut child_state));
         child.rebuild(&view_state.0, &mut view_state.1, ctx, element, child_state);
         view_state.0 = child;
     }
@@ -144,13 +158,13 @@ where
         (child, child_view_state): &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut ParentState,
+        app_state: Arg<'_, ParentState>,
     ) -> MessageResult<Action> {
         child.message(
             child_view_state,
             message,
             element,
-            (self.access_state)(app_state),
+            (self.access_state)(app_state, &()),
         )
     }
 }
