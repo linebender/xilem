@@ -73,3 +73,6 @@ pub use transform::*;
 
 mod split;
 pub use split::*;
+
+mod resize_observer;
+pub use resize_observer::*;
