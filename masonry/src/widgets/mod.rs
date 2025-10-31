@@ -27,9 +27,9 @@ mod virtual_scroll;
 mod zstack;
 
 pub use self::align::Align;
-pub use self::button::Button;
+pub use self::button::{Button, ButtonPress};
 pub use self::canvas::Canvas;
-pub use self::checkbox::Checkbox;
+pub use self::checkbox::{Checkbox, CheckboxToggled};
 pub use self::flex::{Flex, FlexParams};
 pub use self::grid::{Grid, GridParams};
 pub use self::image::Image;
