@@ -9,13 +9,14 @@
 use std::time::Duration;
 
 use masonry::properties::types::Length;
+use vello::kurbo::Size;
 use winit::error::EventLoopError;
 use xilem::core::{Resource, fork, provides, run_once, with_context, without_elements};
 use xilem::style::Style as _;
 use xilem::tokio::time;
 use xilem::view::{
     Axis, FlexExt as _, FlexSpacer, PointerButton, button_any_pointer, checkbox, flex, flex_col,
-    flex_row, label, prose, task, text_button, text_input,
+    flex_row, label, prose, resize_observer, task, text_button, text_input,
 };
 use xilem::{
     AnyWidgetView, EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView,
@@ -123,6 +124,14 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
                         _ => (),
                     },
                 ),
+                resize_observer(
+                    |data: &mut AppData, new_size| data.observed_size = new_size,
+                    // Correct to use this `label` as a child of resize_observer, because it is center aligned,
+                    // and therefore the widget (currently) takes up the full width of the window.
+                    label(format!("The window is {}px wide", data.observed_size.width))
+                        .text_alignment(TextAlign::Center)
+                        .line_break_mode(masonry::properties::LineBreaking::WordWrap),
+                ),
                 checkbox(
                     "Check me",
                     data.active,
@@ -186,6 +195,7 @@ struct AppData {
     text_input_contents: String,
     count: i32,
     active: bool,
+    observed_size: Size,
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
@@ -193,6 +203,10 @@ fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
         count: 0,
         text_input_contents: "Not quite a placeholder".into(),
         active: false,
+        observed_size: Size {
+            width: 0.,
+            height: 0.,
+        },
     };
 
     Xilem::new_simple(data, app_logic, WindowOptions::new("mason")).run_in(event_loop)
