@@ -167,11 +167,11 @@ impl Widget for Canvas {
 #[cfg(test)]
 mod tests {
     use insta::assert_debug_snapshot;
+    use masonry_testing::assert_render_snapshot;
     use vello::kurbo::{Affine, BezPath, Stroke};
     use vello::peniko::{Color, Fill};
 
     use super::*;
-    use crate::assert_render_snapshot;
     use crate::testing::TestHarness;
 
     #[test]
