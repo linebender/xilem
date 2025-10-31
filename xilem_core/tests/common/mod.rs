@@ -105,7 +105,7 @@ where
 
     type ViewState = (Seq::SeqState, AppendVec<TestElement>);
 
-    fn build(&self, ctx: &mut TestCtx, app_state: &mut ()) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx, app_state: ()) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let state = self.seq.seq_build(ctx, &mut elements, app_state);
         (
@@ -127,7 +127,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut (),
+        app_state: (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
@@ -164,7 +164,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut (),
+        app_state: (),
     ) -> MessageResult<Action> {
         let mut elements = SeqTracker {
             inner: element.children.as_mut().unwrap(),
@@ -182,7 +182,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
 
     type ViewState = ();
 
-    fn build(&self, ctx: &mut TestCtx, (): &mut ()) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut TestCtx, (): ()) -> (Self::Element, Self::ViewState) {
         (
             TestElement {
                 operations: vec![Operation::Build(self.0)],
@@ -199,7 +199,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         _: &mut Self::ViewState,
         ctx: &mut TestCtx,
         element: Mut<'_, Self::Element>,
-        (): &mut (),
+        (): (),
     ) {
         assert_eq!(&*element.view_path, ctx.view_path());
         element.operations.push(Operation::Rebuild {
@@ -223,7 +223,7 @@ impl<const N: u32> View<(), Action, TestCtx> for OperationView<N> {
         _: &mut Self::ViewState,
         _: &mut MessageContext,
         _: Mut<'_, Self::Element>,
-        _: &mut (),
+        _: (),
     ) -> MessageResult<Action> {
         // If we get an `Action` value, we know it came from here
         MessageResult::Action(Action {
