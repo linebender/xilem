@@ -70,11 +70,13 @@ impl Canvas {
         this.ctx.request_render();
     }
 
+    /// Set the alternative text for this widget
     pub fn set_alt_text(mut this: WidgetMut<'_, Self>, alt_text: String) {
         this.widget.alt_text = Some(alt_text);
         this.ctx.request_accessibility_update();
     }
 
+    /// Remove the existing alternative text on this widget (If there is any)
     pub fn remove_alt_text(mut this: WidgetMut<'_, Self>) {
         this.widget.alt_text = None;
         this.ctx.request_accessibility_update();
