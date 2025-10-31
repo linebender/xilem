@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, NewWidget, Properties};
+use masonry::parley::StyleProperty;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::properties::{
     CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
     UnfocusedSelectionColor,
@@ -84,6 +86,9 @@ where
         disabled_text_color: None,
         placeholder: ArcStr::default(),
         text_alignment: TextAlign::default(),
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
+        weight: FontWeight::NORMAL,
+        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         insert_newline: InsertNewline::default(),
         disabled: false,
         // Since we don't support setting the word wrapping, we can default to
@@ -102,6 +107,9 @@ pub struct TextInput<State, Action> {
     disabled_text_color: Option<Color>,
     placeholder: ArcStr,
     text_alignment: TextAlign,
+    text_size: f32,
+    weight: FontWeight,
+    font: FontStack<'static>,
     insert_newline: InsertNewline,
     disabled: bool,
     clip: bool,
@@ -166,6 +174,28 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
         self
     }
 
+    /// Sets text size.
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
+        self
+    }
+
+    /// Sets font weight.
+    pub fn weight(mut self, weight: FontWeight) -> Self {
+        self.weight = weight;
+        self
+    }
+
+    /// Set the [font stack](FontStack) this label will use.
+    ///
+    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// for a character, a system font will be used (if the system fonts are enabled).
+    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.font = font.into();
+        self
+    }
+
     /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
     ///
     /// See also [`on_enter`](Self::on_enter), which provides a callback for enter
@@ -219,7 +249,10 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
             .with_text_alignment(self.text_alignment)
-            .with_insert_newline(self.insert_newline);
+            .with_insert_newline(self.insert_newline)
+            .with_style(StyleProperty::FontSize(self.text_size))
+            .with_style(StyleProperty::FontWeight(self.weight))
+            .with_style(StyleProperty::FontStack(self.font.clone()));
 
         // TODO - Replace this with properties on the TextInput view
         // once we implement property inheritance or something like it.
@@ -293,6 +326,21 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             widgets::TextArea::reset_text(&mut text_area, &self.contents);
         }
 
+        if prev.text_size != self.text_size {
+            widgets::TextArea::insert_style(
+                &mut text_area,
+                StyleProperty::FontSize(self.text_size),
+            );
+        }
+        if prev.weight != self.weight {
+            widgets::TextArea::insert_style(&mut text_area, StyleProperty::FontWeight(self.weight));
+        }
+        if prev.font != self.font {
+            widgets::TextArea::insert_style(
+                &mut text_area,
+                StyleProperty::FontStack(self.font.clone()),
+            );
+        }
         if prev.text_alignment != self.text_alignment {
             widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);
         }

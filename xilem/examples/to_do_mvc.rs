@@ -8,7 +8,7 @@
 
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{checkbox, flex_col, flex_row, text_button, text_input};
+use xilem::view::{button, checkbox, flex_col, flex_row, label, text_input};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
@@ -48,6 +48,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
             task_list.next_task = new_value;
         },
     )
+    .text_size(16.)
     .placeholder("What needs to be done?")
     .insert_newline(InsertNewline::OnShiftEnter)
     .on_enter(|task_list: &mut TaskList, _| {
@@ -56,9 +57,12 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
 
     let first_line = flex_col((
         input_box,
-        text_button("Add task".to_string(), |task_list: &mut TaskList| {
-            task_list.add_task();
-        }),
+        button(
+            label("Add task".to_string()).text_size(16.),
+            |task_list: &mut TaskList| {
+                task_list.add_task();
+            },
+        ),
     ));
 
     let tasks = task_list
@@ -77,8 +81,10 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
                     move |data: &mut TaskList, checked| {
                         data.tasks[i].done = checked;
                     },
-                );
-                let delete_button = text_button("Delete", move |data: &mut TaskList| {
+                )
+                .text_size(16.);
+                let delete_button_label = label("Delete").text_size(16.);
+                let delete_button = button(delete_button_label, move |data: &mut TaskList| {
                     data.tasks.remove(i);
                 });
                 Some(flex_row((checkbox, delete_button)))

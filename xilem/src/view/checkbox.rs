@@ -4,7 +4,9 @@
 use crate::core::{MessageContext, Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx};
 
-use masonry::core::ArcStr;
+use masonry::core::{ArcStr, NewWidget};
+use masonry::parley::StyleProperty;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets::{self, CheckboxToggled};
 
 /// An element which can be in checked and unchecked state.
@@ -37,6 +39,9 @@ where
         label: label.into(),
         callback,
         checked,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
+        weight: FontWeight::NORMAL,
+        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         disabled: false,
     }
 }
@@ -49,10 +54,35 @@ pub struct Checkbox<F> {
     label: ArcStr,
     checked: bool,
     callback: F,
+    text_size: f32,
+    weight: FontWeight,
+    font: FontStack<'static>,
     disabled: bool,
 }
 
 impl<F> Checkbox<F> {
+    /// Sets text size of the checkbox label.
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
+        self
+    }
+
+    /// Sets font weight of the checkbox label.
+    pub fn weight(mut self, weight: FontWeight) -> Self {
+        self.weight = weight;
+        self
+    }
+
+    /// Set the [font stack](FontStack) the checkbox label will use.
+    ///
+    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// for a character, a system font will be used (if the system fonts are enabled).
+    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.font = font.into();
+        self
+    }
+
     /// Set the disabled state of the widget.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
@@ -69,8 +99,16 @@ where
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+        let label = widgets::Label::new(self.label.clone())
+            .with_style(StyleProperty::FontSize(self.text_size))
+            .with_style(StyleProperty::FontWeight(self.weight))
+            .with_style(StyleProperty::FontStack(self.font.clone()));
+
         ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx.create_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
+            let mut pod = ctx.create_pod(widgets::Checkbox::from_label(
+                self.checked,
+                NewWidget::new(label),
+            ));
             pod.new_widget.options.disabled = self.disabled;
             pod
         })
@@ -92,6 +130,17 @@ where
         }
         if prev.checked != self.checked {
             widgets::Checkbox::set_checked(&mut element, self.checked);
+        }
+
+        let mut label = widgets::Checkbox::label_mut(&mut element);
+        if prev.text_size != self.text_size {
+            widgets::Label::insert_style(&mut label, StyleProperty::FontSize(self.text_size));
+        }
+        if prev.weight != self.weight {
+            widgets::Label::insert_style(&mut label, StyleProperty::FontWeight(self.weight));
+        }
+        if prev.font != self.font {
+            widgets::Label::insert_style(&mut label, StyleProperty::FontStack(self.font.clone()));
         }
     }
 
