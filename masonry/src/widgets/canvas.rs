@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use accesskit::{Node, Role};
-use smallvec::SmallVec;
+use masonry_core::core::ChildrenIds;
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Size;
@@ -139,8 +139,8 @@ impl Widget for Canvas {
         }
     }
 
-    fn children_ids(&self) -> SmallVec<[WidgetId; 16]> {
-        SmallVec::new()
+    fn children_ids(&self) -> ChildrenIds {
+        ChildrenIds::new()
     }
 
     fn make_trace_span(&self, ctx: &QueryCtx<'_>) -> Span {
