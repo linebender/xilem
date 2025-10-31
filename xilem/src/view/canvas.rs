@@ -83,7 +83,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
         &self,
         (): &mut Self::ViewState,
         _ctx: &mut MessageContext,
-        _widget: WidgetMut<'_, masonry::widgets::Canvas>,
+        _widget: WidgetMut<'_, widgets::Canvas>,
         _app_state: &mut State,
     ) -> MessageResult<Action> {
         tracing::error!(
