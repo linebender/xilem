@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use accesskit::{Node, Role};
-use masonry_core::core::ChildrenIds;
+use masonry_core::core::{ChildrenIds, NoAction};
 use tracing::{Span, trace_span};
 use vello::Scene;
 use vello::kurbo::Size;
@@ -161,6 +161,11 @@ impl Widget for Canvas {
     fn get_debug_text(&self) -> Option<String> {
         self.alt_text.clone()
     }
+
+    type Action
+        = NoAction
+    where
+        Self: Sized;
 }
 
 // --- MARK: TESTS ---
