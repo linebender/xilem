@@ -17,6 +17,9 @@ pub use worker::*;
 mod button;
 pub use button::*;
 
+mod canvas;
+pub use canvas::*;
+
 mod checkbox;
 pub use checkbox::*;
 
