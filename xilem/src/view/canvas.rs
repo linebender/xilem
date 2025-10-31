@@ -62,7 +62,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
     fn build(&self, ctx: &mut ViewCtx, state: &mut State) -> (Self::Element, Self::ViewState) {
         let widget = widgets::Canvas::from_arc(self.draw.clone());
 
-        let widget_pod = ctx.new_pod(widget);
+        let widget_pod = ctx.create_pod(widget);
         (widget_pod, ())
     }
     fn rebuild(
