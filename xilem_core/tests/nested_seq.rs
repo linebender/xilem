@@ -15,7 +15,7 @@ fn record_ops(id: u32) -> OperationView<0> {
 fn vec_in_tuple() {
     let view = sequence(3, (record_ops(0), vec![record_ops(1), record_ops(2)]));
     let mut ctx = TestCtx::default();
-    let (mut element, mut state) = view.build(&mut ctx, &mut ());
+    let (mut element, mut state) = view.build(&mut ctx, ());
     ctx.assert_empty();
     assert_eq!(element.operations, &[Operation::Build(3)]);
     assert_eq!(element.view_path, &[]);
@@ -41,7 +41,7 @@ fn vec_in_tuple() {
 
     // Rebuild
     let view2 = sequence(5, (record_ops(4), vec![]));
-    view2.rebuild(&view, &mut state, &mut ctx, &mut element, &mut ());
+    view2.rebuild(&view, &mut state, &mut ctx, &mut element, ());
     ctx.assert_empty();
 
     assert_eq!(
