@@ -82,6 +82,9 @@ pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
 mod any_view;
 pub use any_view::{AnyView, AnyViewState};
 
+mod state;
+pub use state::{Arg, Edit, Read, ViewArgument};
+
 mod sequence;
 pub use sequence::{
     AppendVec, Count, ElementSplice, ViewSequence, WithoutElements, without_elements,
