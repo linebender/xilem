@@ -7,11 +7,10 @@ use masonry::core::WidgetMut;
 use masonry::widgets;
 use vello::Scene;
 use vello::kurbo::Size;
-use vello::wgpu::hal::noop::Context;
 use xilem_core::MessageContext;
 
-use crate::core::{DynMessage, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx, ViewId};
+use crate::core::{Mut, ViewMarker};
+use crate::{MessageResult, Pod, View, ViewCtx};
 
 /// A non-interactive text element.
 /// # Example
@@ -59,7 +58,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
     type Element = Pod<widgets::Canvas>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _state: &mut State) -> (Self::Element, Self::ViewState) {
         let widget = widgets::Canvas::from_arc(self.draw.clone());
 
         let widget_pod = ctx.create_pod(widget);
