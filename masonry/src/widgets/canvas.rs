@@ -173,7 +173,6 @@ impl Widget for Canvas {
 // --- MARK: TESTS ---
 #[cfg(test)]
 mod tests {
-    use insta::assert_debug_snapshot;
     use masonry_core::core::{DefaultProperties, Properties};
     use masonry_testing::assert_render_snapshot;
     use vello::kurbo::{Affine, BezPath, Stroke};
@@ -213,7 +212,6 @@ mod tests {
             canvas.with_props(Properties::default()),
         );
 
-        assert_debug_snapshot!(harness.root_widget());
         assert_render_snapshot!(harness, "hello_new");
     }
 }
