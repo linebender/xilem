@@ -1,5 +1,0 @@
----
-source: masonry/src/widgets/canvas.rs
-expression: harness.root_widget()
----
-Canvas
