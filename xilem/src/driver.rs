@@ -13,7 +13,6 @@ use masonry_winit::app::{
     AppDriver, DriverCtx, MasonryState, MasonryUserEvent, NewWindow, WindowId,
 };
 
-use crate::any_view::DynWidget;
 use crate::core::{
     AnyViewState, DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage,
     View, ViewId, ViewPathTracker,
@@ -312,7 +311,10 @@ where
         let fonts = std::mem::take(&mut self.fonts);
 
         for root in state.roots() {
-            if let Some(root_widget) = root.get_layer_root(0).downcast::<DynWidget>() {
+            if let Some(root_widget) = root
+                .get_layer_root(0)
+                .downcast::<masonry::widgets::ContentHost>()
+            {
                 let fallback = root_widget.inner().inner_id();
                 root.set_focus_fallback(Some(fallback));
             }

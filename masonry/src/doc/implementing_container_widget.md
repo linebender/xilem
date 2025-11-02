@@ -20,6 +20,10 @@ Our widget was overall pretty simple, the tutorial skipped over a few methods wi
 However, in some cases you want to write a widget which "contains" other widgets.
 You want these child widgets to receive events and be painted as well, as part of the widget hierarchy.
 
+Note: If you only need a simple pass-through container that hosts exactly one child and you want to be able to dynamically swap that child at runtime, consider using [`ContentHost`](crate::widgets::ContentHost).
+It forwards layout/paint/accessibility to its content and exposes helpers to replace or edit the hosted child.
+For richer behavior (custom layout, chrome, etc.), continue with a dedicated container as described below.
+
 To do so, you need to implement a container widget.
 A container widget is still a type which implements the [`Widget`] trait.
 It stores handles for its children using a type called [`WidgetPod`], and its `Widget` trait implementation is more complex.
