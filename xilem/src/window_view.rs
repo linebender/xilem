@@ -1,7 +1,7 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use masonry::app::RenderRoot;
+use masonry::app::{FocusFallbackPolicy, RenderRoot};
 use masonry::peniko::Color;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 
@@ -148,7 +148,6 @@ where
         render_root: &mut RenderRoot,
         app_state: &mut State,
     ) {
-        let mut root_id = None;
         render_root.edit_base_layer(|mut root| {
             let mut root = root.downcast();
             self.root_widget_view.rebuild(
@@ -158,9 +157,9 @@ where
                 root.reborrow_mut(),
                 app_state,
             );
-            root_id = Some(root.widget.inner_id());
         });
-        render_root.set_focus_fallback(root_id);
+        // Provide a sensible default fallback for Xilem apps: first text input in the tree.
+        let _ = render_root.set_focus_fallback_policy(FocusFallbackPolicy::FirstTextInput);
         if cfg!(debug_assertions) && !render_root.needs_rewrite_passes() {
             tracing::debug!("Widget tree didn't change as result of rebuild");
         }

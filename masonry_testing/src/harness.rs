@@ -19,7 +19,8 @@ use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
 use masonry_core::app::{
-    RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy, try_init_test_tracing,
+    FocusFallbackPolicy, RenderRoot, RenderRootOptions, RenderRootSignal, WindowSizePolicy,
+    try_init_test_tracing,
 };
 use masonry_core::core::{
     CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, KeyboardEvent,
@@ -784,6 +785,16 @@ impl<W: Widget> TestHarness<W> {
             };
         }
         let _ = self.render_root.set_focus_fallback(id);
+    }
+
+    /// Compute and set a focus fallback according to a policy.
+    pub fn set_focus_fallback_policy(&mut self, policy: FocusFallbackPolicy) -> bool {
+        self.render_root.set_focus_fallback_policy(policy)
+    }
+
+    /// Compute a focus fallback according to a policy.
+    pub fn compute_focus_fallback(&self, policy: FocusFallbackPolicy) -> Option<WidgetId> {
+        self.render_root.compute_focus_fallback(policy)
     }
 
     /// Run an animation pass on the widget tree.

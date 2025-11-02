@@ -37,6 +37,25 @@ use crate::passes::update::{
 };
 use crate::passes::{PassTracing, recurse_on_children};
 
+/// A policy used to compute a reasonable focus fallback.
+///
+/// Use [`RenderRoot::set_focus_fallback_policy`] to compute and apply a fallback according to this policy.
+///
+/// This enum does not change Masonry's default behavior.
+/// Frameworks compute and set a fallback explicitly when desired.
+#[non_exhaustive]
+#[derive(Clone, Debug)]
+pub enum FocusFallbackPolicy {
+    /// Pick the first interactive widget that accepts text input.
+    FirstTextInput,
+    /// Pick the first interactive widget that accepts focus.
+    FirstFocusable,
+    /// Prefer the subtree under the current focus anchor, then apply the inner policy globally.
+    AnchorSubtreeFirst(Box<FocusFallbackPolicy>),
+    /// Pick the widget with the given tag if it is interactive.
+    Tagged(&'static str),
+}
+
 /// We ensure that any valid initial IME area is sent to the platform by storing an invalid initial
 /// IME area as the `last_sent_ime_area`.
 const INVALID_IME_AREA: Rect = Rect::new(f64::NAN, f64::NAN, f64::NAN, f64::NAN);
@@ -287,6 +306,80 @@ pub(crate) struct InspectorState {
 }
 
 impl RenderRoot {
+    /// Compute a focus fallback according to the provided `policy`.
+    ///
+    /// Returns `Some(id)` if a suitable widget is found, otherwise `None`.
+    pub fn compute_focus_fallback(&self, policy: FocusFallbackPolicy) -> Option<WidgetId> {
+        let base = self.layer_root_id(0);
+        match &policy {
+            FocusFallbackPolicy::AnchorSubtreeFirst(inner) => {
+                if let Some(anchor) = self.global_state.focus_anchor
+                    && self.is_still_interactive(anchor)
+                    && let Some(id) = self.match_policy_at(inner, anchor)
+                {
+                    return Some(id);
+                }
+                self.match_policy_at(inner, base)
+            }
+            FocusFallbackPolicy::FirstTextInput
+            | FocusFallbackPolicy::FirstFocusable
+            | FocusFallbackPolicy::Tagged(_) => self.match_policy_at(&policy, base),
+        }
+    }
+
+    /// Depth-first pre-order search from `start` for first widget whose `predicate` returns true.
+    fn find_first_matching(
+        &self,
+        start: WidgetId,
+        predicate: impl Fn(&WidgetRef<'_, dyn Widget>) -> bool,
+    ) -> Option<WidgetId> {
+        let mut stack = vec![self.get_widget(start)?];
+        while let Some(node) = stack.pop() {
+            if predicate(&node) {
+                return Some(node.id());
+            }
+            let mut children = node.children();
+            for child in children.drain(..).rev() {
+                stack.push(child);
+            }
+        }
+        None
+    }
+
+    /// Match a policy starting at `start`.
+    fn match_policy_at(&self, policy: &FocusFallbackPolicy, start: WidgetId) -> Option<WidgetId> {
+        match policy {
+            FocusFallbackPolicy::FirstTextInput => self.find_first_matching(start, |node| {
+                let ctx = node.ctx();
+                ctx.accepts_text_input() && !ctx.is_disabled() && !ctx.is_stashed()
+            }),
+            FocusFallbackPolicy::FirstFocusable => self.find_first_matching(start, |node| {
+                let ctx = node.ctx();
+                ctx.accepts_focus() && !ctx.is_disabled() && !ctx.is_stashed()
+            }),
+            FocusFallbackPolicy::Tagged(name) => {
+                let id = self.global_state.widget_tags.get(name).copied()?;
+                if self.is_still_interactive(id) {
+                    Some(id)
+                } else {
+                    None
+                }
+            }
+            FocusFallbackPolicy::AnchorSubtreeFirst(_) => None,
+        }
+    }
+
+    /// Compute and set a focus fallback according to the provided `policy`.
+    ///
+    /// Returns `true` if a fallback was found and set.
+    pub fn set_focus_fallback_policy(&mut self, policy: FocusFallbackPolicy) -> bool {
+        if let Some(id) = self.compute_focus_fallback(policy) {
+            let _ = self.set_focus_fallback(Some(id));
+            true
+        } else {
+            false
+        }
+    }
     /// Create a new `RenderRoot` with the given options.
     ///
     /// The provided root widget will always stay the root widget.
@@ -425,6 +518,8 @@ impl RenderRoot {
             .item
             .state
     }
+
+    // (helper removed)
 
     // --- MARK: WINDOW_EVENT
     /// Handle a window event.
