@@ -4,6 +4,7 @@
 use std::sync::mpsc;
 
 use assert_matches::assert_matches;
+use masonry_core::core::pointer::{PointerButton, PointerEvent};
 use masonry_core::core::{
     CursorIcon, Ime, NewWidget, Properties, TextEvent, Update, Widget, WidgetId, WidgetPod,
     WidgetTag,
@@ -12,7 +13,6 @@ use masonry_testing::{
     DebugName, ModularWidget, PRIMARY_MOUSE, Record, TestHarness, TestWidgetExt, assert_any,
     assert_debug_panics,
 };
-use ui_events::pointer::{PointerButton, PointerEvent};
 use vello::kurbo::{Point, Size};
 
 use crate::properties::types::Length;

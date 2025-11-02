@@ -8,11 +8,11 @@ use std::any::TypeId;
 use accesskit::{Node, Role, Toggled};
 use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
-use ui_events::keyboard::Key;
 use vello::Scene;
 use vello::kurbo::Rect;
 use vello::kurbo::{Affine, BezPath, Cap, Dashes, Join, Size, Stroke};
 
+use crate::core::keyboard::Key;
 use crate::core::{
     AccessCtx, AccessEvent, ArcStr, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget,
     PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
