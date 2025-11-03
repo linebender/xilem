@@ -12,21 +12,23 @@ use xilem_core::MessageContext;
 use crate::core::{Mut, ViewMarker};
 use crate::{MessageResult, Pod, View, ViewCtx};
 
-/// A non-interactive text element.
+/// Creates a non-interactive drawing surface.
+///
+/// The `canvas` function provides a way to render custom graphics using a user-
+/// supplied drawing callback. The callback receives a mutable reference to a
+/// `Scene` and the current allocated `Size` of the canvas, allowing you to draw
+/// shapes, images, or any other custom content.
+///
 /// # Example
 ///
 /// ```ignore
-/// use xilem::palette;
-/// use xilem::view::label;
-/// use masonry::TextAlignment;
-/// use masonry::parley::fontique;
+/// use xilem::view::canvas;
+/// use masonry::{Scene, Size};
 ///
-/// label("Text example.")
-///     .brush(palette::css::RED)
-///     .alignment(TextAlignment::Middle)
-///     .text_size(24.0)
-///     .weight(FontWeight::BOLD)
-///     .with_font(fontique::GenericFamily::Serif)
+/// let my_canvas = canvas(|scene: &mut Scene, size: Size| {
+///     // Drawing a simple rectangle that fills the canvas.
+///     scene.fill_rect((0.0, 0.0, size.width, size.height), [0.2, 0.4, 0.8, 1.0]);
+/// });
 /// ```
 pub fn canvas(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Canvas {
     Canvas {
@@ -35,7 +37,7 @@ pub fn canvas(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Canvas
     }
 }
 
-/// Create a canvas view.
+/// The [`View`] created by [`canvas`].
 #[must_use = "View values do nothing unless provided to Xilem."]
 pub struct Canvas {
     draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
