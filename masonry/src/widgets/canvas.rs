@@ -212,6 +212,6 @@ mod tests {
             canvas.with_props(Properties::default()),
         );
 
-        assert_render_snapshot!(harness, "hello_new");
+        assert_render_snapshot!(harness, "simple_canvas");
     }
 }
