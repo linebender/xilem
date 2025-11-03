@@ -14,20 +14,31 @@ use crate::{MessageResult, Pod, View, ViewCtx};
 
 /// Creates a non-interactive drawing surface.
 ///
-/// The `canvas` function provides a way to render custom graphics using a user-
-/// supplied drawing callback. The callback receives a mutable reference to a
-/// `Scene` and the current allocated `Size` of the canvas, allowing you to draw
-/// shapes, images, or any other custom content.
+/// The `canvas` function provides a way to render custom graphics using a
+/// user-supplied drawing callback.
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
 /// use xilem::view::canvas;
-/// use masonry::{Scene, Size};
+/// use vello::{
+///     kurbo::{Affine, Rect},
+///     peniko::{Color, Fill},
+///     Scene,
+/// };
 ///
-/// let my_canvas = canvas(|scene: &mut Scene, size: Size| {
-///     // Drawing a simple rectangle that fills the canvas.
-///     scene.fill_rect((0.0, 0.0, size.width, size.height), [0.2, 0.4, 0.8, 1.0]);
+/// let my_canvas = canvas(|scene: &mut Scene, size| {
+///     // Define a rectangle that fills the entire canvas.
+///     let rect = Rect::new(0.0, 0.0, size.width, size.height);
+///
+///     // Fill the rectangle with a solid color.
+///     scene.fill(
+///         Fill::NonZero,
+///         Affine::IDENTITY,
+///         &Color::from_rgb8(51, 102, 204),
+///         None,
+///         &rect,
+///     );
 /// });
 /// ```
 pub fn canvas(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Canvas {
