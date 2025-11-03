@@ -72,11 +72,16 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
     type ViewState = ();
 
     fn build(&self, ctx: &mut ViewCtx, _state: &mut State) -> (Self::Element, Self::ViewState) {
-        let widget = widgets::Canvas::from_arc(self.draw.clone());
+        let mut widget = widgets::Canvas::from_arc(self.draw.clone());
+
+        if let Some(alt_text) = &self.alt_text {
+            widget = widget.with_alt_text(alt_text.to_owned());
+        }
 
         let widget_pod = ctx.create_pod(widget);
         (widget_pod, ())
     }
+
     fn rebuild(
         &self,
         prev: &Self,
