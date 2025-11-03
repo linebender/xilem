@@ -23,7 +23,7 @@
 //! /// ```
 //! /// # use xilem_core::docs::{DocsView as WidgetView, State};
 //! /// use xilem_core::interesting_primitive;
-//! /// fn user_component() -> WidgetView<State> {
+//! /// fn user_component() -> WidgetView<Edit<State>> {
 //! ///     interesting_primitive()
 //! /// }
 //! ///
@@ -92,6 +92,7 @@ impl<Seq, State: ViewArgument, Action> DocsViewSequence<State, Action> for Seq w
 pub struct State;
 
 /// A minimal component.
+// TODO: Does this need to have the state argument?
 pub fn some_component<Action>(
     _: &mut State,
 ) -> impl DocsView<Edit<State>, Action, Element = NoElement> + use<Action> {
@@ -103,6 +104,13 @@ pub fn some_component<Action>(
 pub fn some_component_generic<State: 'static, Action>(
     _: &mut State,
 ) -> impl DocsView<Edit<State>, Action, Element = NoElement> + use<State, Action> {
+    // The view which does nothing already exists in `run_once`.
+    run_once(|| {})
+}
+
+/// A minimal component without any state.
+pub fn stateless_component<Action>() -> impl DocsView<(), Action, Element = NoElement> + use<Action>
+{
     // The view which does nothing already exists in `run_once`.
     run_once(|| {})
 }
