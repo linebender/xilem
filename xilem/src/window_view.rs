@@ -3,6 +3,7 @@
 
 use masonry::app::RenderRoot;
 use masonry::peniko::Color;
+use masonry::theme::BACKGROUND_COLOR;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 use xilem_core::Edit;
 
@@ -34,7 +35,7 @@ pub fn window<V: WidgetView<Edit<State>>, State: 'static>(
         id,
         options: WindowOptions::new(title),
         root_widget_view: root_view.boxed(),
-        base_color: Color::BLACK,
+        base_color: BACKGROUND_COLOR,
     }
 }
 
@@ -49,6 +50,8 @@ impl<State> WindowView<State> {
     }
 
     /// Set base color of the window.
+    ///
+    /// This is [`masonry::theme::BACKGROUND_COLOR`] by default.
     pub fn with_base_color(mut self, color: Color) -> Self {
         self.base_color = color;
         self

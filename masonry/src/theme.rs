@@ -18,6 +18,12 @@ use crate::properties::{
 };
 use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, TextInput};
 
+/// Default color for the app background.
+///
+/// If the app driver does some kind beginning-of-frame clearing,
+/// it should clear with this color by default.
+pub const BACKGROUND_COLOR: Color = Color::from_rgb8(0x22, 0x22, 0x22);
+
 pub const BORDER_WIDTH: f64 = 1.;
 
 // Zync color variations from https://tailwindcss.com/docs/colors
@@ -28,9 +34,10 @@ pub const ZYNC_600: Color = Color::from_rgb8(0x52, 0x52, 0x5b);
 pub const ZYNC_500: Color = Color::from_rgb8(0x71, 0x71, 0x7a);
 
 pub const ACCENT_COLOR: Color = Color::from_rgb8(0x3b, 0x7e, 0xe4);
-pub const TEXT_COLOR: Color = Color::from_rgb8(0xf0, 0xf0, 0xea);
+pub const TEXT_COLOR: Color = Color::from_rgb8(0xf2, 0xf2, 0xf2);
 pub const DISABLED_TEXT_COLOR: Color = Color::from_rgb8(0xa0, 0xa0, 0x9a);
-const PLACEHOLDER_COLOR: Color = Color::from_rgba8(0xFF, 0xFF, 0xFF, 0x8F);
+pub const PLACEHOLDER_COLOR: Color = Color::from_rgba8(0xFF, 0xFF, 0xFF, 0x8F);
+pub const TEXT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x16, 0x16, 0x16);
 
 // TODO: The following constants are not being used in properties
 pub const TEXT_SIZE_NORMAL: f32 = 15.0;
@@ -97,6 +104,8 @@ pub fn default_property_set() -> DefaultProperties {
     properties.insert::<TextInput, _>(UnfocusedSelectionColor(SelectionColor {
         color: DISABLED_TEXT_COLOR,
     }));
+    properties.insert::<TextInput, _>(Background::Color(TEXT_BACKGROUND_COLOR));
+    properties.insert::<TextInput, _>(DisabledBackground(Background::Color(TEXT_BACKGROUND_COLOR)));
 
     // TextArea
     properties.insert::<TextArea<false>, _>(ContentColor::new(TEXT_COLOR));
