@@ -40,6 +40,8 @@ vello.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-time.workspace = true
+console_error_panic_hook.workspace = true
+tracing-wasm.workspace = true
 
 [dev-dependencies]
 assert_matches = "1.5.0"

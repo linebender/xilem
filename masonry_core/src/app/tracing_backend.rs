@@ -111,13 +111,14 @@ fn default_tracing_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
     // because this is a GUI framework, so wasm targets will virtually always be browsers.
 
     // Ignored if the panic hook is already set
+
     console_error_panic_hook::set_once();
 
     let config = tracing_wasm::WASMLayerConfigBuilder::new()
-        .set_max_level(max_level)
+        .set_max_level(max_level.into_level().expect("for max_level to be > tracing::LevelFilter::OFF"))
         .build();
 
-    Registry::default().with(tracing_wasm::WASMLayer::new(config))
+    tracing_subscriber::Registry::default().with(tracing_wasm::WASMLayer::new(config))
 }
 
 /// Constructs a default tracing subscriber with a given `max_level` filter.
