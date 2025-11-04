@@ -31,6 +31,7 @@
 //! use winit::error::EventLoopError;
 //! use xilem::view::{Axis, text_button, flex, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+//! use xilem::core::Edit;
 //!
 //! #[derive(Default)]
 //! struct Counter {
@@ -99,7 +100,7 @@
 //!
 //! ```rust,no_run
 //! # struct EmojiPagination;
-//! # use xilem::WidgetView;
+//! # use xilem::{WidgetView, core::Edit};
 //! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
 //!    // ...
 //!    # xilem::view::label("Not meaningful!")

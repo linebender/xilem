@@ -24,8 +24,9 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// ```
 /// use xilem::WidgetView;
 /// use xilem::view::{zstack, label, text_button};
+/// use xilem::core::ViewArgument;
 ///
-/// fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> {
+/// fn view<State: ViewArgument>() -> impl WidgetView<State> {
 ///     zstack((
 ///         label("Background"),
 ///         text_button("Click me", |_| {})

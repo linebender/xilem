@@ -34,6 +34,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// ```
 /// use xilem::{view::{button, label}, FontWeight};
 /// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     count: i32,
@@ -54,6 +55,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// use xilem::{view::{button, label, flex_row, FlexExt}, FontWeight};
 /// # use xilem::WidgetView;
 /// # type State = u32;
+/// # use xilem::core::Edit;
 ///
 /// # fn view() -> impl WidgetView<Edit<State>> {
 /// let children = flex_row((
@@ -61,7 +63,7 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 ///     label("Like").weight(FontWeight::BOLD),
 /// ));
 ///
-/// button(children, |_: Arg<'_, State>| {})
+/// button(children, |_: &mut State| {})
 /// # }
 /// ```
 pub fn button<

@@ -49,13 +49,15 @@ use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
 /// use winit::error::EventLoopError;
 /// use xilem::view::{Axis, button, text_button, flex, label, sized_box, FlexExt as _, FlexSpacer, Label};
 /// use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+/// use xilem::core::Edit;
 ///
-/// /// A component to make a bigger than usual button
-/// fn big_button(
+/// /// A component to make a bigger than usual button.
+/// fn big_button<F: Fn(&mut i32) + Send + Sync + 'static>(
 ///     label: impl Into<Label>,
-///     callback: impl Fn(&mut i32) + Send + Sync + 'static,
+///     callback: F,
 /// ) -> impl WidgetView<Edit<i32>> {
-///     sized_box(button(label.into(), callback))
+///     // This being fully specified is "a known limitation of the trait solver"
+///     sized_box(button::<Edit<i32>, _, _, F>(label.into(), callback))
 ///         .width(40.px())
 ///         .height(40.px())
 /// }
@@ -482,6 +484,7 @@ impl ElementSplice<FlexElement> for FlexSplice<'_, '_> {
 ///
 /// ```
 /// use xilem::view::{label, FlexSequence, FlexExt as _};
+/// use xilem::core::ViewArgument;
 ///
 /// fn label_sequence<State: ViewArgument>(
 ///     labels: impl Iterator<Item = &'static str>,
@@ -508,9 +511,9 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// ```
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::{view::{Axis, text_button, label, flex, CrossAxisAlignment, FlexSpacer, FlexExt}};
-    /// # use xilem::{WidgetView};
+    /// # use xilem::{WidgetView, core::ViewArgument};
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> {
+    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, (
     ///     text_button("click me", |_| ()).flex(2.0),
     ///     FlexSpacer::Fixed(2.px()),
@@ -535,9 +538,9 @@ pub trait FlexExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// ```
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::{view::{Axis, flex, label, FlexSpacer, FlexExt, AnyFlexChild}};
-    /// # use xilem::{WidgetView};
+    /// # use xilem::{WidgetView, core::ViewArgument};
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> {
+    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, [label("a label").into_any_flex(), AnyFlexChild::Spacer(FlexSpacer::Fixed(1.px()))])
     /// # }
     ///
@@ -566,9 +569,9 @@ pub struct FlexItem<V, State, Action> {
 /// ```
 /// use xilem::masonry::properties::types::AsUnit;
 /// use xilem::view::{Axis, text_button, label, flex_item, flex, CrossAxisAlignment, FlexSpacer};
-/// # use xilem::{WidgetView};
+/// # use xilem::{WidgetView, core::ViewArgument};
 ///
-/// # fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> {
+/// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
 /// flex(Axis::Vertical, (
 ///     flex_item(text_button("click me", |_| ()), 2.0),
 ///     FlexSpacer::Fixed(2.px()),
@@ -752,9 +755,9 @@ impl FlexSpacer {
     /// ```
     /// use xilem::masonry::properties::types::AsUnit;
     /// use xilem::{view::{Axis, flex, FlexSpacer}};
-    /// # use xilem::{WidgetView};
+    /// # use xilem::{WidgetView, core::ViewArgument};
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> {
+    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, FlexSpacer::Fixed(2.px()).into_any_flex())
     /// # }
     ///
@@ -775,9 +778,9 @@ where
     /// # Examples
     /// ```
     /// use xilem::view::{Axis, flex, flex_item, label};
-    /// # use xilem::{WidgetView, core::Edit};
+    /// # use xilem::{WidgetView, core::ViewArgument};
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> {
+    /// # fn view<State: ViewArgument>() -> impl WidgetView<State> {
     /// flex(Axis::Vertical, flex_item(label("Industry"), 4.0).into_any_flex())
     /// # }
     ///

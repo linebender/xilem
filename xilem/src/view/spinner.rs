@@ -18,6 +18,7 @@ use crate::{MessageResult, Pod, ViewCtx};
 /// ```rust,no_run
 /// # use xilem::{view::{spinner, flex_col}, WidgetView, core::one_of::Either};
 /// # struct ApiClient;
+/// # use xilem::core::Edit;
 /// # struct RequestState { pending: bool }
 /// # impl RequestState {
 /// #     fn request_result(&mut self) -> impl WidgetView<Edit<ApiClient>> { flex_col(()) }

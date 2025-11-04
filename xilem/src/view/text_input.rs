@@ -46,6 +46,7 @@ type Callback<State, Action> =
 /// ```
 /// # use xilem::view::text_input;
 /// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     content: String,
@@ -63,6 +64,7 @@ type Callback<State, Action> =
 /// ```
 /// use xilem::{view::text_input, InsertNewline};
 /// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// # struct State {
 /// #    content: String,

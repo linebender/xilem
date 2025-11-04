@@ -69,6 +69,13 @@ pub trait ViewArgument: 'static {
     ) -> Self::Params<'input>;
 }
 
+// A possible experiment for two-way type inference improvements would be adding:
+// pub trait BackArgument {
+//     type ViewArgument: ViewArgument;
+// }
+// plus:
+// `Params<'a>: BackArgument<ViewArgument = Self>` to ViewArgument
+
 /// When used in the first "state" parameter to `View`, this type indicates that
 /// the view value writes to a value of type `T` when performing reconciliation and/or event handling.
 ///

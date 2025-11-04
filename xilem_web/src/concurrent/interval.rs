@@ -26,9 +26,9 @@ pub struct Interval<Callback, State, Action> {
 /// # Examples
 ///
 /// ```
-/// use xilem_web::{core::fork, concurrent::interval, elements::html::div, interfaces::Element};
+/// use xilem_web::{core::{fork, Edit}, concurrent::interval, elements::html::div, interfaces::Element};
 ///
-/// fn timer(seconds: &mut u32) -> impl Element<u32> {
+/// fn timer(seconds: &mut u32) -> impl Element<Edit<u32>> {
 ///     fork(
 ///         div(format!("{seconds} seconds have passed, since creating this view")),
 ///         interval(

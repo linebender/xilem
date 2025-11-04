@@ -22,7 +22,7 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
     /// ```
     /// use xilem::{view::label, WidgetView};
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> + use<State> {
+    /// # fn view<State: xilem::core::ViewArgument>() -> impl WidgetView<State> + use<State> {
     /// label("a label").boxed()
     /// # }
     ///
@@ -57,7 +57,7 @@ pub trait WidgetView<State: ViewArgument, Action = ()>:
     /// ```
     /// use xilem::{masonry::properties::CornerRadius, view::{text_button, label}, WidgetView};
     ///
-    /// # fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> + use<State> {
+    /// # fn view<State: xilem::core::ViewArgument>() -> impl WidgetView<State> + use<State> {
     /// text_button("click me", |_| {})
     ///     .prop(CornerRadius { radius: 20.0 })
     ///     .prop(CornerRadius { radius: 5.0 })
@@ -96,7 +96,7 @@ where
 /// # Examples
 ///
 /// ```
-/// use xilem::{view::prose, WidgetViewSequence};
+/// use xilem::{view::prose, WidgetViewSequence, core::ViewArgument};
 ///
 /// fn prose_sequence<State: ViewArgument>(
 ///     texts: impl Iterator<Item = &'static str>,

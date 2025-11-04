@@ -347,9 +347,9 @@ pub trait Element<State: ViewArgument, Action = ()>:
     /// # Examples
     ///
     /// ```
-    /// use xilem_web::{interfaces::Element, elements::html::{a, canvas, div, input}};
+    /// use xilem_web::{interfaces::Element, elements::html::{a, canvas, div, input}, core::Edit};
     ///
-    /// fn observe_size() -> impl Element<(f64, f64)> {
+    /// fn observe_size() -> impl Element<Edit<(f64, f64)>> {
     ///     div(()).on_resize(|(width, height), resize_observer_entry| {
     ///         *width = resize_observer_entry.content_rect().width();
     ///         *height = resize_observer_entry.content_rect().height();

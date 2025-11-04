@@ -25,6 +25,7 @@ use masonry::widgets;
 /// use xilem::view::{
 ///     text_button, flex_col, indexed_stack, label
 /// };
+/// use xilem::core::Edit;
 ///
 /// #[derive(Default)]
 /// struct State {
@@ -33,7 +34,7 @@ use masonry::widgets;
 ///
 /// let mut state = State::default();
 ///
-/// indexed_stack(
+/// indexed_stack::<Edit<State>, _, _>(
 ///     (   
 ///         flex_col((
 ///             label("Tab A"),

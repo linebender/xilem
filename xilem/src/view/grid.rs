@@ -321,7 +321,7 @@ pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// ```
     /// use masonry::widgets::GridParams;
     /// use xilem::view::{text_button, prose, grid, GridExt};
-    /// # use xilem::{WidgetView};
+    /// # use xilem::{WidgetView, core::Edit};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<Edit<State>> {
     /// grid((
@@ -347,7 +347,7 @@ pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// ```
     /// use masonry::widgets::GridParams;
     /// use xilem::{view::{text_button, prose, grid, GridExt}};
-    /// # use xilem::{WidgetView};
+    /// # use xilem::{WidgetView, core::Edit};
     ///
     /// # fn view<State: 'static>() -> impl WidgetView<Edit<State>> {
     /// grid((

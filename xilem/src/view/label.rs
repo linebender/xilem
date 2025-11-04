@@ -18,6 +18,7 @@ use crate::{MessageResult, Pod, TextAlign, ViewCtx};
 /// use xilem::{FontWeight, TextAlign};
 /// use xilem::masonry::parley::fontique;
 /// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// # fn view() -> impl WidgetView<Edit<()>> {
 /// label("Text example.")
