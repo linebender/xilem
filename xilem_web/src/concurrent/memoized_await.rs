@@ -75,7 +75,7 @@ where
 ///         memoized_await(
 ///             10,
 ///             |count| std::future::ready(*count),
-///             |state, output| *state = output,
+///             |state: &mut i32, output| *state = output,
 ///         )
 ///     )
 /// }

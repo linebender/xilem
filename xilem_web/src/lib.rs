@@ -21,9 +21,10 @@
 //!     elements::html::{button, div, p},
 //!     interfaces::{Element as _, HtmlDivElement},
 //!     App,
+//!     core::Edit,
 //! };
 //!
-//! fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<u32> + use<> {
+//! fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<Edit<u32>> + use<> {
 //!     div((
 //!         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
 //!         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
@@ -148,7 +149,7 @@ pub trait DomView<State: ViewArgument, Action = ()>:
     ///
     /// # Examples
     /// ```
-    /// use xilem_web::{elements::html::div, DomView};
+    /// use xilem_web::{elements::html::div, DomView, core::ViewArgument};
     ///
     /// # fn view<State: ViewArgument>() -> impl DomView<State> {
     /// div("a label").boxed()
@@ -242,7 +243,8 @@ where
 /// # Examples
 ///
 /// ```
-/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<i32> {
+/// # use xilem_web::core::Edit;
+/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<Edit<i32>> {
 ///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 /// }
 /// ```
