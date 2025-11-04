@@ -39,6 +39,7 @@ use masonry_core::vello::wgpu::{
     TextureUsages, TextureViewDescriptor,
 };
 
+use crate::harness_root::HarnessRoot;
 use crate::screenshots::get_image_diff;
 use crate::{Record, Recorder};
 
@@ -134,6 +135,7 @@ pub const PRIMARY_MOUSE: PointerInfo = PointerInfo {
 pub struct TestHarness<W: Widget> {
     signal_receiver: mpsc::Receiver<RenderRootSignal>,
     render_root: RenderRoot,
+    root_id: WidgetId,
     access_tree: accesskit_consumer::Tree,
     render_context: Option<RenderContext>,
     vello_renderer: Option<vello::Renderer>,
@@ -161,6 +163,10 @@ pub struct TestHarnessParams {
     /// The background color of the virtual window.
     /// Defaults to [`Self::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
+    /// The padding between the virtual window and the root widget.
+    ///
+    /// Defaults to zero, but [`Self::ROOT_PADDING`] is recommended.
+    pub root_padding: f64,
     /// The maximum difference between two pixel channels before the harness will fail a screenshot test.
     /// Defaults to [`Self::DEFAULT_SCREENSHOT_TOLERANCE`].
     pub screenshot_tolerance: u32,
@@ -226,6 +232,7 @@ impl TestHarnessParams {
     pub const DEFAULT: Self = Self {
         window_size: Self::DEFAULT_SIZE,
         background_color: Self::DEFAULT_BACKGROUND_COLOR,
+        root_padding: 0.,
         screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
         panic_on_rewrite_saturation: true,
@@ -240,6 +247,9 @@ impl TestHarnessParams {
 
     /// Default background color for tests.
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
+
+    /// Recommended root padding for tests.
+    pub const ROOT_PADDING: f64 = 5.0;
 
     /// One kibibyte. Used in [`TestHarnessParams::max_screenshot_size`].
     pub const KIBIBYTE: u32 = 1024;
@@ -309,6 +319,10 @@ impl<W: Widget> TestHarness<W> {
 
         let (signal_sender, signal_receiver) = mpsc::channel::<RenderRootSignal>();
 
+        // Wrap provided root widget in "HarnessRoot" wrapper widget which adds provided padding.
+        let root_id = root_widget.id();
+        let root_widget = NewWidget::new(HarnessRoot::new(root_widget, params.root_padding));
+
         let dummy_tree_update = TreeUpdate {
             nodes: vec![(0.into(), Node::new(Role::Window))],
             tree: Some(Tree {
@@ -332,6 +346,7 @@ impl<W: Widget> TestHarness<W> {
                     test_font: Some(data),
                 },
             ),
+            root_id,
             access_tree: accesskit_consumer::Tree::new(dummy_tree_update, false),
             render_context: None,
             vello_renderer: None,
@@ -804,12 +819,16 @@ impl<W: Widget> TestHarness<W> {
 
     /// Return a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, W> {
-        self.render_root.get_layer_root(0).downcast().unwrap()
+        self.render_root
+            .get_widget(self.root_id)
+            .unwrap()
+            .downcast()
+            .unwrap()
     }
 
     /// Return the [`WidgetId`] of the root widget.
     pub fn root_id(&self) -> WidgetId {
-        self.render_root.get_layer_root(0).id()
+        self.root_id
     }
 
     /// Return a [`WidgetRef`] to the widget with the given id.
@@ -908,6 +927,8 @@ impl<W: Widget> TestHarness<W> {
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
         let ret = self.render_root.edit_base_layer(|mut root| {
+            let mut root = root.downcast::<HarnessRoot>();
+            let mut root = HarnessRoot::child_mut(&mut root);
             let root = root.downcast::<W>();
             f(root)
         });

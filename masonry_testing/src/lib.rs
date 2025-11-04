@@ -54,6 +54,7 @@ mod assert_any;
 mod assert_debug_panics;
 mod debug_name;
 mod harness;
+mod harness_root;
 mod modular_widget;
 mod recorder_widget;
 mod screenshots;
