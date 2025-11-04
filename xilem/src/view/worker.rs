@@ -13,8 +13,8 @@ use xilem_core::Resource;
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
-    MessageContext, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageContext, MessageProxy, MessageResult, Mut, NoElement, View, ViewArgument, ViewId,
+    ViewMarker, ViewPathTracker,
 };
 
 // TODO: Update generic variable names to be more .
@@ -35,13 +35,14 @@ pub fn worker<F, H, M, S, V, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, impl Fn(&mut State, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
+) -> Worker<F, H, M, impl Fn(Arg<'_, State>, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, UnboundedSender<V>) + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    S: Fn(Arg<'_, State>, UnboundedSender<V>) + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
+    State: ViewArgument,
 {
     const {
         assert!(
@@ -52,7 +53,9 @@ where
     };
     Worker {
         init_future,
-        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
+        store_sender: move |state: Arg<'_, State>,
+                            _dummy: &mut Dummy,
+                            sender: UnboundedSender<V>| {
             store_sender(state, sender);
         },
         on_response,
@@ -72,10 +75,11 @@ pub fn env_worker<F, H, M, S, V, Res, State, Action, Fut>(
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, &mut Res, UnboundedSender<V>),
-    H: Fn(&mut State, M) -> Action + 'static,
+    S: Fn(Arg<'_, State>, &mut Res, UnboundedSender<V>),
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
     Res: Resource,
+    State: ViewArgument,
 {
     const {
         assert!(
@@ -109,19 +113,22 @@ pub fn worker_raw<M, V, S, F, H, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, impl Fn(&mut State, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
+) -> Worker<F, H, M, impl Fn(Arg<'_, State>, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
 where
     // TODO(DJMcNab): Accept app_state here
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, UnboundedSender<V>) + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    S: Fn(Arg<'_, State>, UnboundedSender<V>) + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
+    State: ViewArgument,
 {
     Worker {
         init_future,
         on_response,
-        store_sender: move |state: &mut State, _dummy: &mut Dummy, sender: UnboundedSender<V>| {
+        store_sender: move |state: Arg<'_, State>,
+                            _dummy: &mut Dummy,
+                            sender: UnboundedSender<V>| {
             store_sender(state, sender);
         },
         message: PhantomData,
@@ -145,15 +152,20 @@ where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
     V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
-    S: Fn(&mut State, &mut Res, UnboundedSender<V>) + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    S: Fn(Arg<'_, State>, &mut Res, UnboundedSender<V>) + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
+    State: ViewArgument,
 {
     type Element = NoElement;
 
     type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
@@ -203,7 +215,7 @@ where
         _view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
     }
 
@@ -216,7 +228,7 @@ where
         _: &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

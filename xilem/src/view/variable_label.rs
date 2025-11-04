@@ -6,8 +6,8 @@ use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets;
 
 use super::{Label, label};
-use crate::core::{MessageContext, Mut, ViewMarker, ViewPathTracker};
-use crate::{MessageResult, Pod, TextAlign, View, ViewCtx, ViewId};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::{MessageResult, Pod, TextAlign, ViewCtx, ViewId};
 
 /// A view for displaying non-editable text, with a variable [weight](masonry::parley::style::FontWeight).
 pub fn variable_label(text: impl Into<ArcStr>) -> VariableLabel {
@@ -76,11 +76,15 @@ impl VariableLabel {
 }
 
 impl ViewMarker for VariableLabel {}
-impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
+impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for VariableLabel {
     type Element = Pod<widgets::VariableLabel>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (label, ()) = ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _>::build(&self.label, ctx, app_state)
         });
@@ -97,7 +101,7 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         (): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         ctx.with_id(ViewId::new(0), |ctx| {
             View::<State, Action, _>::rebuild(
@@ -140,16 +144,17 @@ impl<State, Action> View<State, Action, ViewCtx> for VariableLabel {
         (): &mut Self::ViewState,
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         if let Some(first) = message.take_first() {
             assert_eq!(first.routing_id(), 0);
 
-            self.label.message(
+            View::<(), _, _>::message(
+                &self.label,
                 &mut (),
                 message,
                 widgets::VariableLabel::label_mut(&mut element),
-                app_state,
+                (),
             )
         } else {
             tracing::error!(

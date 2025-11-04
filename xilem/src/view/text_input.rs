@@ -11,7 +11,7 @@ use masonry::properties::{
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
-use crate::core::{MessageContext, Mut, View, ViewMarker};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
 use crate::view::Prop;
 use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as _};
 
@@ -19,7 +19,8 @@ use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as
 // is that if the user forgets to hook up the modify the state's contents in the callback,
 // the text_input will always be reset to the initial state. This will be very annoying for the user.
 
-type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
+type Callback<State, Action> =
+    Box<dyn Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static>;
 
 /// A view which displays editable text.
 ///
@@ -50,7 +51,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 ///     content: String,
 /// }
 ///
-/// fn view(state: &mut State) -> impl WidgetView<State> {
+/// fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
 ///     text_input(state.content.clone(), |state: &mut State, input: String| {
 ///         state.content = input;
 ///     })
@@ -67,7 +68,7 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 /// #    content: String,
 /// # }
 ///
-/// # fn view(state: &mut State) -> impl WidgetView<State> {
+/// # fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
 /// text_input(state.content.clone(), |state: &mut State, input: String| {
 ///     state.content = input;
 /// })
@@ -76,7 +77,8 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 /// ```
 pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInput<State, Action>
 where
-    F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
+    F: Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static,
+    State: ViewArgument,
 {
     TextInput {
         contents,
@@ -99,7 +101,7 @@ where
 
 /// The [`View`] created by [`text_input`].
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct TextInput<State, Action> {
+pub struct TextInput<State: ViewArgument, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
@@ -116,7 +118,7 @@ pub struct TextInput<State, Action> {
     // TODO: add more attributes of `masonry::widgets::TextInput`
 }
 
-impl<State: 'static, Action: 'static> TextInput<State, Action> {
+impl<State: ViewArgument, Action: 'static> TextInput<State, Action> {
     /// Set the text's color.
     ///
     /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
@@ -211,7 +213,7 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     /// will never be called.
     pub fn on_enter<F>(mut self, on_enter: F) -> Self
     where
-        F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
+        F: Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static,
     {
         self.on_enter = Some(Box::new(on_enter));
         self
@@ -240,12 +242,14 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     }
 }
 
-impl<State, Action> ViewMarker for TextInput<State, Action> {}
-impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput<State, Action> {
+impl<State: ViewArgument, Action> ViewMarker for TextInput<State, Action> {}
+impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
+    for TextInput<State, Action>
+{
     type Element = Pod<widgets::TextInput>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
             .with_text_alignment(self.text_alignment)
@@ -284,7 +288,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         _: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         // TODO - Replace this with properties on the TextInput view
         if self.text_color != prev.text_color {
@@ -363,7 +367,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         _: &mut Self::ViewState,
         message: &mut MessageContext,
         _: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

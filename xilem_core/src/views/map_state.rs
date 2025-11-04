@@ -46,7 +46,7 @@ where
 ///     other: i32,
 /// }
 ///
-/// fn count_view(count: i32) -> impl WidgetView<i32> {
+/// fn count_view(count: i32) -> impl WidgetView<Edit<i32>> {
 ///     flex((
 ///         label(format!("count: {}", count)),
 ///         button("+", |count| *count += 1),
@@ -54,7 +54,7 @@ where
 ///     ))
 /// }
 ///
-/// fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> {
+/// fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> {
 ///     map_state(count_view(state.count), |state: &mut AppState, ()|  &mut state.count)
 /// }
 /// ```
@@ -63,8 +63,8 @@ pub fn map_state<ParentState, ChildState, Action, Context: ViewPathTracker, V, F
     f: F,
 ) -> MapState<V, F, ParentState, ChildState, Action, Context>
 where
-    ParentState: ViewArgument + 'static,
-    ChildState: ViewArgument + 'static,
+    ParentState: ViewArgument,
+    ChildState: ViewArgument,
     V: View<ChildState, Action, Context>,
     // :(, see https://doc.rust-lang.org/error_codes/E0582.html
     F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, ChildState> + 'static,
@@ -84,8 +84,8 @@ impl<V, F, ParentState, ChildState, Action, Context> ViewMarker
 impl<ParentState, ChildState, Action, Context, V, F> View<ParentState, Action, Context>
     for MapState<V, F, ParentState, ChildState, Action, Context>
 where
-    ParentState: ViewArgument + 'static,
-    ChildState: ViewArgument + 'static,
+    ParentState: ViewArgument,
+    ChildState: ViewArgument,
     V: View<ChildState, Action, Context>,
     // :(, see https://doc.rust-lang.org/error_codes/E0582.html
     F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, ChildState> + 'static,

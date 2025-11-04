@@ -3,8 +3,8 @@
 
 use masonry::widgets;
 
-use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::{MessageResult, Pod, ViewCtx};
 
 /// An indefinite spinner.
 ///
@@ -20,10 +20,10 @@ use crate::{MessageResult, Pod, View, ViewCtx};
 /// # struct ApiClient;
 /// # struct RequestState { pending: bool }
 /// # impl RequestState {
-/// #     fn request_result(&mut self) -> impl WidgetView<ApiClient> { flex_col(()) }
+/// #     fn request_result(&mut self) -> impl WidgetView<Edit<ApiClient>> { flex_col(()) }
 /// # }
 /// #
-/// fn show_request_outcome(data: &mut RequestState) -> impl WidgetView<ApiClient>  {
+/// fn show_request_outcome(data: &mut RequestState) -> impl WidgetView<Edit<ApiClient>>  {
 ///     if data.pending {
 ///         Either::A(spinner())
 ///     } else {
@@ -42,11 +42,11 @@ pub fn spinner() -> Spinner {
 pub struct Spinner;
 
 impl ViewMarker for Spinner {}
-impl<State, Action> View<State, Action, ViewCtx> for Spinner {
+impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for Spinner {
     type Element = Pod<widgets::Spinner>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         (ctx.create_pod(widgets::Spinner::new()), ())
     }
 
@@ -56,7 +56,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
         _: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
     }
 
@@ -67,7 +67,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Spinner {
         (): &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

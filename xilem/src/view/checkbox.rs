@@ -1,8 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::{MessageResult, Pod, ViewCtx};
 
 use masonry::core::{ArcStr, NewWidget};
 use masonry::parley::StyleProperty;
@@ -23,7 +23,7 @@ use masonry::widgets::{self, CheckboxToggled};
 ///
 /// let new_state = false;
 ///
-/// checkbox("A simple checkbox", app_state.value, |app_state: &mut State, new_state: bool| {
+/// checkbox("A simple checkbox", app_state.value, |app_state: Arg<'_, State>, new_state: bool| {
 /// *app_state.value = new_state;
 /// })
 /// ```
@@ -33,7 +33,8 @@ pub fn checkbox<F, State, Action>(
     callback: F,
 ) -> Checkbox<F>
 where
-    F: Fn(&mut State, bool) -> Action + Send + 'static,
+    F: Fn(Arg<'_, State>, bool) -> Action + Send + 'static,
+    State: ViewArgument,
 {
     Checkbox {
         label: label.into(),
@@ -93,12 +94,13 @@ impl<F> Checkbox<F> {
 impl<F> ViewMarker for Checkbox<F> {}
 impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<F>
 where
-    F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
+    State: ViewArgument,
+    F: Fn(Arg<'_, State>, bool) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let label = widgets::Label::new(self.label.clone())
             .with_style(StyleProperty::FontSize(self.text_size))
             .with_style(StyleProperty::FontWeight(self.weight))
@@ -120,7 +122,7 @@ where
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -158,7 +160,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

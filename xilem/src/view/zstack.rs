@@ -9,8 +9,8 @@ use masonry::widgets;
 pub use masonry::widgets::ChildAlignment;
 
 use crate::core::{
-    AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewMarker, ViewSequence,
+    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View,
+    ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -25,14 +25,16 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// use xilem::WidgetView;
 /// use xilem::view::{zstack, label, text_button};
 ///
-/// fn view<State: 'static>() -> impl WidgetView<State> {
+/// fn view<State: ViewArgument>() -> impl WidgetView<Edit<State>> {
 ///     zstack((
 ///         label("Background"),
 ///         text_button("Click me", |_| {})
 ///     ))
 /// }
 /// ```
-pub fn zstack<State, Action, Seq: ZStackSequence<State, Action>>(sequence: Seq) -> ZStack<Seq> {
+pub fn zstack<State: ViewArgument, Action, Seq: ZStackSequence<State, Action>>(
+    sequence: Seq,
+) -> ZStack<Seq> {
     ZStack {
         sequence,
         alignment: UnitPoint::CENTER,
@@ -76,7 +78,7 @@ use hidden::ZStackState;
 impl<Seq> ViewMarker for ZStack<Seq> {}
 impl<State, Action, Seq> View<State, Action, ViewCtx> for ZStack<Seq>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Seq: ZStackSequence<State, Action>,
 {
@@ -84,7 +86,11 @@ where
 
     type ViewState = ZStackState<Seq::SeqState>;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::ZStack::new().with_alignment(self.alignment);
         let seq_state = self.sequence.seq_build(ctx, &mut elements, app_state);
@@ -107,7 +113,7 @@ where
         ZStackState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         if self.alignment != prev.alignment {
             widgets::ZStack::set_alignment(&mut element, self.alignment);
@@ -135,7 +141,7 @@ where
         ZStackState { seq_state, scratch }: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let mut splice = ZStackSplice::new(element, scratch);
         let result = self
@@ -149,13 +155,13 @@ where
 // --- MARK: ZStackExt
 
 /// A trait that extends a [`WidgetView`] with methods to provide parameters for a parent [`ZStack`].
-pub trait ZStackExt<State, Action>: WidgetView<State, Action> {
+pub trait ZStackExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// Applies [`ChildAlignment`] to this view.
     /// This allows the view to override the default alignment of the parent [`ZStack`].
     /// This can only be used on views that are direct children of a [`ZStack`].
     fn alignment(self, alignment: impl Into<ChildAlignment>) -> ZStackItem<Self, State, Action>
     where
-        State: 'static,
+        State: ViewArgument,
         Action: 'static,
         Self: Sized,
     {
@@ -163,7 +169,7 @@ pub trait ZStackExt<State, Action>: WidgetView<State, Action> {
     }
 }
 
-impl<State, Action, V: WidgetView<State, Action>> ZStackExt<State, Action> for V {}
+impl<State: ViewArgument, Action, V: WidgetView<State, Action>> ZStackExt<State, Action> for V {}
 
 /// A wrapper around a [`WidgetView`], with a specified [`ChildAlignment`].
 /// This struct is most often constructed indirectly using [`ZStackExt::alignment`].
@@ -180,7 +186,7 @@ pub fn zstack_item<V, State, Action>(
     alignment: impl Into<ChildAlignment>,
 ) -> ZStackItem<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -195,7 +201,7 @@ impl<V, State, Action> ViewMarker for ZStackItem<V, State, Action> {}
 
 impl<State, Action, V> View<State, Action, ViewCtx> for ZStackItem<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -203,7 +209,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx, app_state);
         (ZStackElement::new(pod.erased(), self.alignment), state)
     }
@@ -214,7 +224,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         {
             if self.alignment != prev.alignment {
@@ -247,7 +257,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let mut child = widgets::ZStack::child_mut(&mut element.parent, element.idx)
             .expect("ZStackWrapper always has a corresponding child");
@@ -324,13 +334,15 @@ impl<W: Widget + FromDynWidget + ?Sized> SuperElement<Pod<W>, ViewCtx> for ZStac
 // MARK: Sequence
 
 /// A trait implementing `ViewSequence` for `ZStackElement`.
-pub trait ZStackSequence<State, Action = ()>:
+pub trait ZStackSequence<State: ViewArgument, Action = ()>:
     ViewSequence<State, Action, ViewCtx, ZStackElement>
 {
 }
 
-impl<Seq, State, Action> ZStackSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, ZStackElement>
+impl<Seq, State, Action> ZStackSequence<State, Action> for Seq
+where
+    Seq: ViewSequence<State, Action, ViewCtx, ZStackElement>,
+    State: ViewArgument,
 {
 }
 

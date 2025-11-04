@@ -12,6 +12,7 @@ pub use masonry::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
     DisabledBackground, HoveredBorderColor, Padding,
 };
+use xilem_core::ViewArgument;
 
 use crate::WidgetView;
 use crate::view::Prop;
@@ -19,7 +20,7 @@ use crate::view::Prop;
 /// Trait implemented by most widget views that lets you style their properties.
 ///
 /// Which methods you can use will depend whether the underlying widget implements [`HasProperty`].
-pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Sized {
+pub trait Style<State: ViewArgument, Action: 'static>: WidgetView<State, Action> + Sized {
     /// Set the element's content color.
     ///
     /// "Content color" usually means text or text decorations.
@@ -201,7 +202,7 @@ pub trait Style<State: 'static, Action: 'static>: WidgetView<State, Action> + Si
 
 impl<State, Action, V> Style<State, Action> for V
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: WidgetView<State, Action> + Sized,
 {

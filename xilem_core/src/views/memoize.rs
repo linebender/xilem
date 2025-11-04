@@ -48,7 +48,7 @@ It's not possible in Rust currently to check whether the (content of the) callba
 /// (From the Xilem implementation)
 ///
 /// ```ignore
-/// fn memoized_button(count: u32) -> impl WidgetView<i32> {
+/// fn memoized_button(count: u32) -> impl WidgetView<Edit<i32>> {
 ///     memoize(
 ///         count, // if this changes, the closure below is reevaluated
 ///         |count| button(format!("clicked {count} times"), |count| { count += 1; }),
@@ -92,7 +92,7 @@ impl<Data, ViewFn, State, Action, Context> ViewMarker
 impl<State, Action, Context, Data, V, ViewFn> View<State, Action, Context>
     for Memoize<Data, ViewFn, State, Action, Context>
 where
-    State: ViewArgument + 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker + 'static,
     Data: PartialEq + 'static,
@@ -188,7 +188,7 @@ impl<InitView, State, Action> Debug for Frozen<InitView, State, Action> {
 /// (From the Xilem implementation)
 ///
 /// ```ignore
-/// fn frozen_button() -> impl WidgetView<i32> {
+/// fn frozen_button() -> impl WidgetView<Edit<i32>> {
 ///     frozen(|| button("doesn't access any external state", |count| { count += 1; })),
 /// }
 /// ```
@@ -196,7 +196,7 @@ pub fn frozen<State, Action, Context, V, InitView>(
     init_view: InitView,
 ) -> Frozen<InitView, State, Action>
 where
-    State: ViewArgument + 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context>,
@@ -215,7 +215,7 @@ impl<InitView, State, Action> ViewMarker for Frozen<InitView, State, Action> {}
 impl<State, Action, Context, V, InitView> View<State, Action, Context>
     for Frozen<InitView, State, Action>
 where
-    State: ViewArgument + 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context>,

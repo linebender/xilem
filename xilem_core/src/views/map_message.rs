@@ -52,7 +52,7 @@ where
 ///     Decrement,
 /// }
 ///
-/// fn count_view<T>(count: i32) -> impl WidgetView<T, CountMessage> {
+/// fn count_view<T>(count: i32) -> impl WidgetView<Edit<T>, CountMessage> {
 ///     flex((
 ///         label(format!("count: {}", count)),
 ///         button("+", |_| CountMessage::Increment),
@@ -60,7 +60,7 @@ where
 ///     ))
 /// }
 ///
-/// fn app_logic(count: &mut i32) -> impl WidgetView<i32> {
+/// fn app_logic(count: &mut i32) -> impl WidgetView<Edit<i32>> {
 ///     map_action(count_view(*count), |count, message| match message {
 ///         CountMessage::Increment => *count += 1,
 ///         CountMessage::Decrement => *count -= 1,
@@ -79,7 +79,7 @@ pub fn map_action<State, ParentAction, ChildAction, Context: ViewPathTracker, V,
     impl Fn(Arg<'_, State>, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,
 >
 where
-    State: ViewArgument + 'static,
+    State: ViewArgument,
     ParentAction: 'static,
     ChildAction: 'static,
     V: View<State, ChildAction, Context>,
@@ -103,7 +103,7 @@ pub fn map_message<State, ParentAction, ChildAction, Context: ViewPathTracker, V
     map_fn: F,
 ) -> MapMessage<V, State, ParentAction, ChildAction, Context, F>
 where
-    State: ViewArgument + 'static,
+    State: ViewArgument,
     ParentAction: 'static,
     ChildAction: 'static,
     V: View<State, ChildAction, Context>,
@@ -124,7 +124,7 @@ impl<V, State, ParentAction, ChildAction, Context, F> View<State, ParentAction, 
     for MapMessage<V, State, ParentAction, ChildAction, Context, F>
 where
     V: View<State, ChildAction, Context>,
-    State: ViewArgument + 'static,
+    State: ViewArgument,
     ParentAction: 'static,
     ChildAction: 'static,
     F: Fn(Arg<'_, State>, MessageResult<ChildAction>) -> MessageResult<ParentAction> + 'static,

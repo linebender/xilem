@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{MessageContext, Mut, View, ViewMarker};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
 use crate::{Affine, Pod, ViewCtx, WidgetView};
 
 /// A view which transforms the widget created by child.
@@ -20,6 +20,7 @@ use crate::{Affine, Pod, ViewCtx, WidgetView};
 pub fn transformed<Child, State, Action>(child: Child) -> Transformed<Child, State, Action>
 where
     Child: WidgetView<State, Action>,
+    State: ViewArgument,
 {
     Transformed {
         child,
@@ -90,13 +91,17 @@ impl<V, State, Action> ViewMarker for Transformed<V, State, Action> {}
 impl<Child, State, Action> View<State, Action, ViewCtx> for Transformed<Child, State, Action>
 where
     Child: WidgetView<State, Action>,
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
 {
     type Element = Pod<Child::Widget>;
     type ViewState = private::TransformedState<Child::ViewState>;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut child_pod, child_state) = self.child.build(ctx, app_state);
         let state = private::TransformedState {
             child: child_state,
@@ -112,7 +117,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.child.rebuild(
             &prev.child,
@@ -153,7 +158,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> xilem_core::MessageResult<Action> {
         self.child
             .message(&mut view_state.child, message, element, app_state)

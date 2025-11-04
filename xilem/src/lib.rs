@@ -37,7 +37,7 @@
 //!     num: i32,
 //! }
 //!
-//! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
+//! fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
 //!     flex(Axis::Vertical, (
 //!         label(format!("{}", data.num)),
 //!         text_button("increment", |data: &mut Counter| data.num += 1),
@@ -100,7 +100,7 @@
 //! ```rust,no_run
 //! # struct EmojiPagination;
 //! # use xilem::WidgetView;
-//! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+//! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
 //!    // ...
 //!    # xilem::view::label("Not meaningful!")
 //! }
@@ -187,7 +187,7 @@ pub use widget_view::{WidgetView, WidgetViewSequence};
 pub use window_view::{PodWindow, WindowView, window};
 
 // FIXME - Remove these re-exports.
-pub(crate) use xilem_core::{MessageResult, View, ViewId};
+pub(crate) use xilem_core::{MessageResult, ViewId};
 
 #[cfg(windows)]
 pub use window_options::WindowOptionsExtWindows;

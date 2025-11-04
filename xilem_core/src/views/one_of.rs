@@ -215,7 +215,7 @@ impl<A, B, C, D, E, F, G, H, I> ViewMarker for OneOf<A, B, C, D, E, F, G, H, I> 
 impl<State, Action, Context, A, B, C, D, E, F, G, H, I> View<State, Action, Context>
     for OneOf<A, B, C, D, E, F, G, H, I>
 where
-    State: ViewArgument + 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker
         + OneOfCtx<
