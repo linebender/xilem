@@ -125,7 +125,7 @@ pub type Edit<T> = &'static mut T;
 /// # use xilem_core::docs::{DocsView as WidgetView, stateless_component};
 /// # use xilem_core::map_state;
 /// use xilem_core::Read;
-/// fn display_result() -> impl WidgetView<Edit<Read<f64>>> {
+/// fn display_result() -> impl WidgetView<Read<f64>> {
 ///     // ...
 /// #   map_state(stateless_component(), |_, ()| ())
 /// }
@@ -140,7 +140,7 @@ pub type Edit<T> = &'static mut T;
 /// # use xilem_core::map_state;
 /// use core::ops::Range;
 /// use xilem_core::{Read, Edit};
-/// fn slider() -> impl WidgetView<Edit<(Edit<f64>>, Read<Range<f64>>)> {
+/// fn slider() -> impl WidgetView<(Edit<f64>, Read<Range<f64>>)> {
 ///     // ...
 /// #   map_state(stateless_component(), |(_result, _range), ()| ())
 /// }
