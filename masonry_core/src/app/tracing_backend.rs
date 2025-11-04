@@ -114,7 +114,11 @@ fn default_tracing_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
     console_error_panic_hook::set_once();
 
     let config = tracing_wasm::WASMLayerConfigBuilder::new()
-        .set_max_level(max_level.into_level().expect("for max_level to be > tracing::LevelFilter::OFF"))
+        .set_max_level(
+            max_level
+                .into_level()
+                .expect("for max_level to be > tracing::LevelFilter::OFF"),
+        )
         .build();
 
     tracing_subscriber::Registry::default().with(tracing_wasm::WASMLayer::new(config))
