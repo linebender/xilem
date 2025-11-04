@@ -3,7 +3,7 @@
 
 use std::marker::PhantomData;
 
-use crate::core::{MessageContext, MessageResult, Mut, View, ViewMarker};
+use crate::core::{Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{DomNode, DomView, ViewCtx};
 
 /// Invokes the `callback` after the inner `element` [`DomView`] was created.
@@ -41,7 +41,7 @@ pub struct BeforeTeardown<State, Action, E, F> {
 /// E.g. to be interoperable with external javascript libraries.
 pub fn after_build<State, Action, E, F>(element: E, callback: F) -> AfterBuild<State, Action, E, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
     F: Fn(&E::DomNode) + 'static,
@@ -67,7 +67,7 @@ pub fn after_rebuild<State, Action, E, F>(
     callback: F,
 ) -> AfterRebuild<State, Action, E, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
     F: Fn(&E::DomNode) + 'static,
@@ -89,7 +89,7 @@ pub fn before_teardown<State, Action, E, F>(
     callback: F,
 ) -> BeforeTeardown<State, Action, E, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     E: DomView<State, Action> + 'static,
     F: Fn(&E::DomNode) + 'static,
@@ -107,7 +107,7 @@ impl<State, Action, E, F> ViewMarker for BeforeTeardown<State, Action, E, F> {}
 
 impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterBuild<State, Action, V, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(&V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
@@ -116,7 +116,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut el, view_state) = self.element.build(ctx, app_state);
         el.node.apply_props(&mut el.props, &mut el.flags);
         (self.callback)(&el.node);
@@ -129,7 +133,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.element
             .rebuild(&prev.element, view_state, ctx, element, app_state);
@@ -149,7 +153,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.element
             .message(view_state, message, element, app_state)
@@ -158,7 +162,7 @@ where
 
 impl<State, Action, V, F> View<State, Action, ViewCtx> for AfterRebuild<State, Action, V, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(&V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
@@ -167,7 +171,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.element.build(ctx, app_state)
     }
 
@@ -177,7 +185,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.element.rebuild(
             &prev.element,
@@ -204,7 +212,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.element
             .message(view_state, message, element, app_state)
@@ -213,7 +221,7 @@ where
 
 impl<State, Action, V, F> View<State, Action, ViewCtx> for BeforeTeardown<State, Action, V, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(&V::DomNode) + 'static,
     V: DomView<State, Action> + 'static,
@@ -222,7 +230,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.element.build(ctx, app_state)
     }
 
@@ -232,7 +244,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.element
             .rebuild(&prev.element, view_state, ctx, element, app_state);
@@ -253,7 +265,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.element
             .message(view_state, message, element, app_state)

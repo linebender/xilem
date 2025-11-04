@@ -113,7 +113,7 @@ pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{AnyView, MapMessage, MapState, MessageResult, View, ViewSequence};
+use core::{AnyView, Arg, MapMessage, MapState, MessageResult, View, ViewArgument, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -139,7 +139,7 @@ pub trait DomNode: AnyNode {
 pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
 
 /// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
-pub trait DomView<State, Action = ()>:
+pub trait DomView<State: ViewArgument, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::DomNode>>
 {
     type DomNode: DomNode;
@@ -150,13 +150,12 @@ pub trait DomView<State, Action = ()>:
     /// ```
     /// use xilem_web::{elements::html::div, DomView};
     ///
-    /// # fn view<State: 'static>() -> impl DomView<State> {
+    /// # fn view<State: ViewArgument>() -> impl DomView<State> {
     /// div("a label").boxed()
     /// # }
     /// ```
     fn boxed(self) -> Box<AnyDomView<State, Action>>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
     {
@@ -166,7 +165,6 @@ pub trait DomView<State, Action = ()>:
     /// See [`after_build`](`after_update::after_build`)
     fn after_build<F>(self, callback: F) -> AfterBuild<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
@@ -177,7 +175,6 @@ pub trait DomView<State, Action = ()>:
     /// See [`after_rebuild`](`after_update::after_rebuild`)
     fn after_rebuild<F>(self, callback: F) -> AfterRebuild<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
@@ -188,7 +185,6 @@ pub trait DomView<State, Action = ()>:
     /// See [`before_teardown`](`after_update::before_teardown`)
     fn before_teardown<F>(self, callback: F) -> BeforeTeardown<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
@@ -202,10 +198,10 @@ pub trait DomView<State, Action = ()>:
         f: F,
     ) -> MapState<Self, F, ParentState, State, Action, ViewCtx>
     where
-        State: 'static,
-        ParentState: 'static,
+        ParentState: ViewArgument,
+        Action: 'static,
         Self: Sized,
-        F: Fn(&mut ParentState) -> &mut State + 'static,
+        F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, State> + 'static,
     {
         core::map_state(self, f)
     }
@@ -220,20 +216,19 @@ pub trait DomView<State, Action = ()>:
         ParentAction,
         Action,
         ViewCtx,
-        impl Fn(&mut State, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
+        impl Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
     >
     where
-        State: 'static,
         ParentAction: 'static,
         Action: 'static,
         Self: Sized,
-        F: Fn(&mut State, Action) -> ParentAction + 'static,
+        F: Fn(Arg<'_, State>, Action) -> ParentAction + 'static,
     {
         core::map_action(self, f)
     }
 }
 
-impl<V, State, Action, N> DomView<State, Action> for V
+impl<V, State: ViewArgument, Action, N> DomView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<N>>,
     N: DomNode,
@@ -251,9 +246,12 @@ where
 ///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 /// }
 /// ```
-pub trait DomFragment<State, Action = ()>: ViewSequence<State, Action, ViewCtx, AnyPod> {}
+pub trait DomFragment<State: ViewArgument, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, AnyPod>
+{
+}
 
-impl<V, State, Action> DomFragment<State, Action> for V where
+impl<V, State: ViewArgument, Action> DomFragment<State, Action> for V where
     V: ViewSequence<State, Action, ViewCtx, AnyPod>
 {
 }

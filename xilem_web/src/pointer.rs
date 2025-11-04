@@ -10,7 +10,10 @@ use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::PointerEvent;
 
-use crate::core::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
+    ViewPathTracker,
+};
 use crate::interfaces::Element;
 use crate::{DomView, ViewCtx};
 
@@ -84,7 +87,7 @@ impl PointerDetails {
     }
 }
 
-pub fn pointer<T, A, F: Fn(&mut T, PointerMsg), V: Element<T, A>>(
+pub fn pointer<T: ViewArgument, A, F: Fn(Arg<'_, T>, PointerMsg), V: Element<T, A>>(
     child: V,
     callback: F,
 ) -> Pointer<V, T, A, F> {
@@ -136,15 +139,19 @@ impl<V, State, Action, Callback> ViewMarker for Pointer<V, State, Action, Callba
 impl<State, Action, Callback, V> View<State, Action, ViewCtx>
     for Pointer<V, State, Action, Callback>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
-    Callback: Fn(&mut State, PointerMsg) -> Action + 'static,
+    Callback: Fn(Arg<'_, State>, PointerMsg) -> Action + 'static,
     V: DomView<State, Action, DomNode: AsRef<web_sys::Element>>,
 {
     type ViewState = PointerState<V::ViewState>;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
             let (element, child_state) = self.child.build(ctx, app_state);
             let el = element.node.as_ref();
@@ -166,7 +173,7 @@ where
         state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut el: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         ctx.with_id(POINTER_VIEW_ID, |ctx| {
             self.child.rebuild(
@@ -202,7 +209,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let Some(first) = message.take_first() else {
             throw_str("Parent view of `Pointer` sent outdated and/or incorrect empty view path");
