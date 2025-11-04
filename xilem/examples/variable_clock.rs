@@ -20,6 +20,7 @@ use xilem::view::{
 use xilem::{
     Blob, EventLoop, EventLoopBuilder, FontWeight, WidgetView, WindowOptions, Xilem, palette,
 };
+use xilem_core::Edit;
 
 /// The state of the application, owned by Xilem and updated by the callbacks below.
 struct Clocks {
@@ -39,7 +40,7 @@ struct TimeZone {
     offset: UtcOffset,
 }
 
-fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
+fn app_logic(data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
     let view = flex_col((
         // HACK: We add a spacer at the top for Android. See https://github.com/rust-windowing/winit/issues/2308
         FlexSpacer::Fixed(40.px()),
@@ -73,7 +74,7 @@ fn app_logic(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
 
 /// Shows the current system time on a best-effort basis.
 // TODO: Maybe make this have a larger font size?
-fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
+fn local_time(data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
     let (error_view, offset) = if let Ok(offset) = data.local_offset {
         (None, offset)
     } else {
@@ -97,7 +98,7 @@ fn local_time(data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
 }
 
 /// Controls for the variable font weight.
-fn controls() -> impl WidgetView<Clocks> {
+fn controls() -> impl WidgetView<Edit<Clocks>> {
     flex_row((
         text_button("Increase", |data: &mut Clocks| {
             data.weight = (data.weight + 100.).clamp(1., 1000.);
@@ -116,7 +117,7 @@ fn controls() -> impl WidgetView<Clocks> {
 
 impl TimeZone {
     /// Display this timezone as a row, designed to be shown in a list of time zones.
-    fn view(&self, data: &mut Clocks) -> impl WidgetView<Clocks> + use<> {
+    fn view(&self, data: &mut Clocks) -> impl WidgetView<Edit<Clocks>> + use<> {
         let date_time_in_self = data.now_utc.to_offset(self.offset);
         sized_box(flex_col((
             flex_row((

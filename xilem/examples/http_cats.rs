@@ -22,6 +22,7 @@ use xilem::view::{
     spinner, split, text_button, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
+use xilem_core::Edit;
 
 /// The main state of the application.
 struct HttpCats {
@@ -49,7 +50,7 @@ enum ImageState {
 }
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<Self> + use<> {
+    fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
         let left_column = portal(
             flex_col((
                 prose("Status"),
@@ -146,7 +147,7 @@ async fn image_from_url(url: &str) -> anyhow::Result<ImageData> {
 }
 
 impl Status {
-    fn list_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
+    fn list_view(&mut self) -> impl WidgetView<Edit<HttpCats>> + use<> {
         let code = self.code;
         flex_row((
             // TODO: Reduce allocations here?
@@ -173,7 +174,7 @@ impl Status {
         ))
     }
 
-    fn details_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
+    fn details_view(&mut self) -> impl WidgetView<Edit<HttpCats>> + use<> {
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")

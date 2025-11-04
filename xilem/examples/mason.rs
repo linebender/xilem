@@ -18,9 +18,10 @@ use xilem::view::{
     flex_row, label, prose, task, text_button, text_input,
 };
 use xilem::{
-    EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView, WindowOptions,
-    Xilem, palette,
+    AnyWidgetView, EventLoop, EventLoopBuilder, FontWeight, InsertNewline, TextAlign, WidgetView,
+    WindowOptions, Xilem, palette,
 };
+use xilem_core::Edit;
 
 const LOREM: &str = r"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi cursus mi sed euismod euismod. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Nullam placerat efficitur tellus at semper. Morbi ac risus magna. Donec ut cursus ex. Etiam quis posuere tellus. Mauris posuere dui et turpis mollis, vitae luctus tellus consectetur. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur eu facilisis nisl.
 
@@ -33,15 +34,18 @@ impl Resource for SomeContext {}
 /// A test for using resources.
 ///
 /// Requires the `SomeContext` resource to be [provided](provides).
-fn env_using() -> impl WidgetView<AppData> + use<> {
+fn env_using() -> impl WidgetView<Edit<AppData>> + use<> {
     with_context(|context: &mut SomeContext, _: &mut AppData| {
-        text_button(format!("Context: {}", context.0), |_: &mut AppData| {
-            tracing::warn!("Does nothing");
-        })
+        Box::new(text_button(
+            format!("Context: {}", context.0),
+            |_: &mut AppData| {
+                tracing::warn!("Does nothing");
+            },
+        )) as Box<AnyWidgetView<Edit<AppData>>>
     })
 }
 
-fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
+fn app_logic(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
     // here's some logic, deriving state for the view from our state
     let count = data.count;
     let button_label = if count == 1 {
@@ -59,9 +63,11 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     };
 
     let flex_sequence = (0..count)
-        .map(|x| {
+        .map(|x: i32| {
             (
-                text_button(format!("+{x}"), move |data: &mut AppData| data.count += x),
+                Box::new(text_button(format!("+{x}"), move |data: &mut AppData| {
+                    data.count += x;
+                })) as Box<AnyWidgetView<Edit<AppData>>>,
                 if data.active {
                     FlexSpacer::Flex(x as f64)
                 } else {
@@ -117,9 +123,13 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
                         _ => (),
                     },
                 ),
-                checkbox("Check me", data.active, |data: &mut AppData, checked| {
-                    data.active = checked;
-                }),
+                checkbox(
+                    "Check me",
+                    data.active,
+                    |data: &mut AppData, checked: bool| {
+                        data.active = checked;
+                    },
+                ),
                 toggleable(data),
                 env_using(),
                 text_button("Decrement", |data: &mut AppData| data.count -= 1),
@@ -149,7 +159,7 @@ fn app_logic(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
     )
 }
 
-fn toggleable(data: &mut AppData) -> impl WidgetView<AppData> + use<> {
+fn toggleable(data: &mut AppData) -> impl WidgetView<Edit<AppData>> + use<> {
     if data.active {
         provides(
             |_| SomeContext(777),

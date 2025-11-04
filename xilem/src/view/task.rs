@@ -27,7 +27,10 @@ use crate::core::{
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
+pub fn task<M, F, H, State, Action, Fut>(
+    init_future: F,
+    on_event: H,
+) -> Task<State, Action, F, H, M>
 where
     // TODO: Accept the state in this function
     F: Fn(MessageProxy<M>) -> Fut,
@@ -54,7 +57,10 @@ where
 ///
 /// This is [`task`] without the capturing rules.
 /// See `task` for full documentation.
-pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
+pub fn task_raw<M, F, H, State, Action, Fut>(
+    init_future: F,
+    on_event: H,
+) -> Task<State, Action, F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
@@ -69,16 +75,17 @@ where
     }
 }
 
-pub struct Task<F, H, M> {
+pub struct Task<State, Action, F, H, M> {
     init_future: F,
     on_event: H,
-    message: PhantomData<fn() -> M>,
+    message: PhantomData<fn(State) -> (Action, M)>,
 }
 
-impl<F, H, M> ViewMarker for Task<F, H, M> {}
-impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<F, H, M>
+impl<State, Action, F, H, M> ViewMarker for Task<State, Action, F, H, M> {}
+impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<State, Action, F, H, M>
 where
     State: ViewArgument,
+    Action: 'static,
     F: Fn(MessageProxy<M>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
     H: Fn(Arg<'_, State>, M) -> Action + 'static,

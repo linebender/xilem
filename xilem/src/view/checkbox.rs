@@ -1,6 +1,8 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::marker::PhantomData;
+
 use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx};
 
@@ -31,7 +33,7 @@ pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
     checked: bool,
     callback: F,
-) -> Checkbox<F>
+) -> Checkbox<State, Action, F>
 where
     F: Fn(Arg<'_, State>, bool) -> Action + Send + 'static,
     State: ViewArgument,
@@ -44,6 +46,7 @@ where
         weight: FontWeight::NORMAL,
         font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         disabled: false,
+        phantom: PhantomData,
     }
 }
 
@@ -51,7 +54,7 @@ where
 ///
 /// See `checkbox` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Checkbox<F> {
+pub struct Checkbox<State, Action, F> {
     label: ArcStr,
     checked: bool,
     callback: F,
@@ -59,9 +62,10 @@ pub struct Checkbox<F> {
     weight: FontWeight,
     font: FontStack<'static>,
     disabled: bool,
+    phantom: PhantomData<fn(State) -> Action>,
 }
 
-impl<F> Checkbox<F> {
+impl<State, Action, F> Checkbox<State, Action, F> {
     /// Sets text size of the checkbox label.
     #[doc(alias = "font_size")]
     pub fn text_size(mut self, text_size: f32) -> Self {
@@ -91,10 +95,11 @@ impl<F> Checkbox<F> {
     }
 }
 
-impl<F> ViewMarker for Checkbox<F> {}
-impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<F>
+impl<State, Action, F> ViewMarker for Checkbox<State, Action, F> {}
+impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<State, Action, F>
 where
     State: ViewArgument,
+    Action: 'static,
     F: Fn(Arg<'_, State>, bool) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Checkbox>;

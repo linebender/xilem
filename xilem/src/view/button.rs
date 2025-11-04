@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::type_name;
+use std::marker::PhantomData;
 
 use masonry::core::ArcStr;
 pub use masonry::core::PointerButton;
@@ -63,20 +64,28 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// button(children, |_: Arg<'_, State>| {})
 /// # }
 /// ```
-pub fn button<State: ViewArgument, Action, V: WidgetView<State, Action>>(
+pub fn button<
+    State: ViewArgument,
+    Action,
+    V: WidgetView<State, Action>,
+    F: Fn(Arg<'_, State>) -> Action + Send + 'static,
+>(
     child: V,
-    callback: impl Fn(&mut State) -> Action + Send + 'static,
+    callback: F,
 ) -> Button<
-    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    State,
+    Action,
+    impl for<'a> Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
     V,
 > {
     Button {
         child,
-        callback: move |state: &mut State, button| match button {
+        callback: move |state: Arg<'_, State>, button| match button {
             None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
         disabled: false,
+        phantom: PhantomData,
     }
 }
 
@@ -87,9 +96,14 @@ pub fn button<State: ViewArgument, Action, V: WidgetView<State, Action>>(
 /// For more advanced text styling, prefer [`button`].
 pub fn text_button<State: ViewArgument, Action>(
     text: impl Into<ArcStr>,
-    callback: impl Fn(&mut State) -> Action + Send + 'static,
+    callback: impl Fn(Arg<'_, State>) -> Action + Send + Sync + 'static,
 ) -> Button<
-    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    State,
+    Action,
+    impl for<'a> Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action>
+    + Send
+    + Sync
+    + 'static,
     Label,
 > {
     button(label(text), callback)
@@ -107,9 +121,14 @@ pub fn text_button<State: ViewArgument, Action>(
 /// For more documentation and examples, see [`button`].
 pub fn button_any_pointer<State: ViewArgument, Action, V: WidgetView<State, Action>>(
     child: V,
-    callback: impl Fn(Arg<'_, State>, Option<PointerButton>) -> Action + Send + 'static,
+    callback: impl Fn(Arg<'_, State>, Option<PointerButton>) -> Action + Send + Sync + 'static,
 ) -> Button<
-    impl for<'a> Fn(Arg<'a, State>, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    State,
+    Action,
+    impl for<'a> Fn(Arg<'a, State>, Option<PointerButton>) -> MessageResult<Action>
+    + Send
+    + Sync
+    + 'static,
     V,
 > {
     Button {
@@ -118,6 +137,7 @@ pub fn button_any_pointer<State: ViewArgument, Action, V: WidgetView<State, Acti
             MessageResult::Action(callback(state, button))
         },
         disabled: false,
+        phantom: PhantomData,
     }
 }
 
@@ -125,13 +145,14 @@ pub fn button_any_pointer<State: ViewArgument, Action, V: WidgetView<State, Acti
 ///
 /// See `button`'s documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Button<F, V> {
+pub struct Button<State, Action, F, V> {
     child: V,
     callback: F,
     disabled: bool,
+    phantom: PhantomData<fn(State) -> Action>,
 }
 
-impl<F, V> Button<F, V> {
+impl<State, Action, F, V> Button<State, Action, F, V> {
     /// Set the disabled state of the widget.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
@@ -141,10 +162,11 @@ impl<F, V> Button<F, V> {
 
 const BUTTON_CONTENT_VIEW_ID: ViewId = ViewId::new(0);
 
-impl<F, V> ViewMarker for Button<F, V> {}
-impl<F, V, State, Action> View<State, Action, ViewCtx> for Button<F, V>
+impl<State, Action, F, V> ViewMarker for Button<State, Action, F, V> {}
+impl<F, V, State, Action> View<State, Action, ViewCtx> for Button<State, Action, F, V>
 where
     State: ViewArgument,
+    Action: 'static,
     V: WidgetView<State, Action>,
     F: Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
 {

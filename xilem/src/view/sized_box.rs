@@ -34,6 +34,7 @@ pub fn sized_box<State, Action, V>(inner: V) -> SizedBox<V, State, Action>
 where
     State: ViewArgument,
     V: WidgetView<State, Action>,
+    SizedBox<V, State, Action>: WidgetView<State, Action>,
 {
     SizedBox {
         inner,

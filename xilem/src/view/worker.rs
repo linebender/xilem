@@ -35,7 +35,16 @@ pub fn worker<F, H, M, S, V, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, impl Fn(Arg<'_, State>, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
+) -> Worker<
+    State,
+    Action,
+    F,
+    H,
+    M,
+    impl Fn(Arg<'_, State>, &mut Dummy, UnboundedSender<V>) + 'static,
+    V,
+    Dummy,
+>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
@@ -71,7 +80,7 @@ pub fn env_worker<F, H, M, S, V, Res, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, S, V, Res>
+) -> Worker<State, Action, F, H, M, S, V, Res>
 where
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
@@ -113,7 +122,16 @@ pub fn worker_raw<M, V, S, F, H, State, Action, Fut>(
     init_future: F,
     store_sender: S,
     on_response: H,
-) -> Worker<F, H, M, impl Fn(Arg<'_, State>, &mut Dummy, UnboundedSender<V>) + 'static, V, Dummy>
+) -> Worker<
+    State,
+    Action,
+    F,
+    H,
+    M,
+    impl Fn(Arg<'_, State>, &mut Dummy, UnboundedSender<V>) + 'static,
+    V,
+    Dummy,
+>
 where
     // TODO(DJMcNab): Accept app_state here
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut,
@@ -136,19 +154,20 @@ where
 }
 
 /// The View type for [`worker`], [`env_worker`] and [`worker_raw`]. See its documentation for details.
-pub struct Worker<F, H, M, S, V, Res> {
+pub struct Worker<State, Action, F, H, M, S, V, Res> {
     init_future: F,
     store_sender: S,
     on_response: H,
-    message: PhantomData<fn(M, V, Res)>,
+    message: PhantomData<fn(M, V, Res, State) -> Action>,
 }
 
-impl<F, H, M, S, V, Res> ViewMarker for Worker<F, H, M, S, V, Res> {}
+impl<State, Action, F, H, M, S, V, Res> ViewMarker for Worker<State, Action, F, H, M, S, V, Res> {}
 
 impl<State, Action, F, H, M, Fut, S, V, Res> View<State, Action, ViewCtx>
-    for Worker<F, H, M, S, V, Res>
+    for Worker<State, Action, F, H, M, S, V, Res>
 where
     Res: Resource,
+    Action: 'static,
     F: Fn(MessageProxy<M>, UnboundedReceiver<V>) -> Fut + 'static,
     V: Send + 'static,
     Fut: Future<Output = ()> + Send + 'static,
