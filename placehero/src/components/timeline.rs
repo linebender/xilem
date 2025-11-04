@@ -4,8 +4,8 @@
 use megalodon::Megalodon;
 use megalodon::entities::{Account, Status};
 use megalodon::megalodon::GetAccountStatusesInputOptions;
-use xilem::core::fork;
 use xilem::core::one_of::{OneOf, OneOf3};
+use xilem::core::{Edit, fork};
 use xilem::masonry::core::ArcStr;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::palette::css;
@@ -57,7 +57,10 @@ impl Timeline {
         }
     }
 
-    pub(crate) fn view(&mut self, mastodon: Mastodon) -> impl WidgetView<Self, Navigation> + use<> {
+    pub(crate) fn view(
+        &mut self,
+        mastodon: Mastodon,
+    ) -> impl WidgetView<Edit<Self>, Navigation> + use<> {
         // We clone the relevant user id for use in `worker_raw`
         // (We plan for the function which makes the future to have access to the app state, but that hasn't happened yet)
         let user = self.user_id.clone();
@@ -175,7 +178,9 @@ impl Timeline {
 // I think you want the same thing, but without the box, and without any "this is a reply" indicator.
 // It also wouldn't need to handle reblogs (the API doesn't provide any way to make a reply status which is a reblog).
 // N.b. API wise, there's no reason that you can't reply to a "reblog" status. TODO: Confirm this
-pub(crate) fn timeline_status(status: &Status) -> impl WidgetView<Timeline, Navigation> + use<> {
+pub(crate) fn timeline_status(
+    status: &Status,
+) -> impl WidgetView<Edit<Timeline>, Navigation> + use<> {
     let (info_line, primary_status) = if let Some(reblog) = status.reblog.as_ref() {
         (
             Some(prose(format!("🔄 {} boosted", status.account.display_name))),
