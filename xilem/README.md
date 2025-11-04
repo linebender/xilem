@@ -73,6 +73,7 @@ A simple incrementing counter application looks like:
 use winit::error::EventLoopError;
 use xilem::view::{Axis, text_button, flex, label};
 use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+use xilem::core::Edit;
 
 #[derive(Default)]
 struct Counter {
