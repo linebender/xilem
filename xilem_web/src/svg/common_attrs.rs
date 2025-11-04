@@ -6,7 +6,9 @@ use std::marker::PhantomData;
 
 use peniko::{Brush, kurbo};
 
-use crate::core::{MessageContext, MessageResult, Mut, View, Arg, ViewArgument, ViewElement, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
 use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
 use crate::{DomView, ViewCtx};
 
@@ -105,7 +107,11 @@ where
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Attributes, _>(2, |ctx| self.child.build(ctx, app_state));
         let mut attrs = element.modifier();
@@ -248,7 +254,11 @@ where
     type ViewState = V::ViewState;
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Attributes, _>(5, |ctx| self.child.build(ctx, app_state));
         push_stroke_modifiers(element.modifier(), &self.style, &self.brush);

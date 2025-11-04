@@ -10,7 +10,9 @@ use peniko::kurbo::Vec2;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use super::{Modifier, WithModifier};
-use crate::core::{MessageContext, MessageResult, Mut, View, Arg, ViewArgument, ViewElement, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
 use crate::diff::{Diff, diff_iters};
 use crate::vecmap::VecMap;
 use crate::{DomView, ViewCtx};
@@ -470,7 +472,11 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let style_iter = self.styles.style_modifiers_iter();
         let (mut e, s) = ctx.with_size_hint::<Styles, _>(style_iter.size_hint().0, |ctx| {
             self.el.build(ctx, app_state)
@@ -557,7 +563,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();
@@ -682,7 +692,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Styles, _>(1, |ctx| self.el.build(ctx, app_state));
         let styles = &mut element.modifier();

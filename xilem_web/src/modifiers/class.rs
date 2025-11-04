@@ -6,7 +6,9 @@ use std::marker::PhantomData;
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{MessageContext, MessageResult, Mut, View, Arg, ViewArgument, ViewElement, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
 use crate::diff::{Diff, diff_iters};
 use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
@@ -345,7 +347,11 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let add_class_iter = self.classes.add_class_iter();
         let (mut e, s) = ctx.with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| {
             self.el.build(ctx, app_state)

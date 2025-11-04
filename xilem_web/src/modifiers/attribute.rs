@@ -5,7 +5,9 @@ use std::marker::PhantomData;
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{MessageContext, MessageResult, Mut, View, Arg, ViewArgument, ViewElement, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
 use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
 use crate::{AttributeValue, DomView, IntoAttributeValue, ViewCtx};
@@ -309,7 +311,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Attributes, _>(1, |ctx| self.inner.build(ctx, app_state));
         Attributes::push(&mut element.modifier(), self.modifier.clone());
