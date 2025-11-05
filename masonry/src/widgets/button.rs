@@ -330,9 +330,11 @@ mod tests {
     fn simple_button() {
         let widget = NewWidget::new(Button::with_text("Hello"));
 
-        let window_size = Size::new(100.0, 40.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let window_size = Size::new(120.0, 60.0);
+        let mut params = TestHarnessParams::DEFAULT;
+        params.window_size = window_size;
+        params.root_padding = 10.;
+        let mut harness = TestHarness::create_with(default_property_set(), widget, params);
         let button_id = harness.root_id();
 
         assert_render_snapshot!(harness, "button_hello");
