@@ -353,7 +353,7 @@ mod tests {
     use crate::core::{Properties, StyleProperty};
     use crate::properties::ContentColor;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::{ACCENT_COLOR, default_property_set};
+    use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::Flex;
 
     #[test]
@@ -362,7 +362,7 @@ mod tests {
 
         let window_size = Size::new(100.0, 40.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
         let checkbox_id = harness.root_id();
 
         assert_render_snapshot!(harness, "checkbox_hello_unchecked");
@@ -406,7 +406,7 @@ mod tests {
                 .main_axis_alignment(MainAxisAlignment::Center),
         );
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), root, Size::new(120.0, 40.0));
+            TestHarness::create_with_size(test_property_set(), root, Size::new(120.0, 40.0));
 
         harness.focus_on(Some(checkbox_id));
         assert_render_snapshot!(harness, "checkbox_focus_focused");
@@ -423,7 +423,7 @@ mod tests {
             let checkbox = NewWidget::new(Checkbox::from_label(true, label));
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 checkbox,
                 Size::new(50.0, 50.0),
             );
@@ -435,7 +435,7 @@ mod tests {
             let checkbox = NewWidget::new(Checkbox::new(false, "Hello world"));
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 checkbox,
                 Size::new(50.0, 50.0),
             );

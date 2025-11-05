@@ -894,7 +894,7 @@ mod tests {
     use super::*;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::{ACCENT_COLOR, default_property_set};
+    use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::Label;
 
     #[test]
@@ -1021,7 +1021,7 @@ mod tests {
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         harness.edit_root_widget(|mut flex| {
             Flex::set_main_axis_alignment(&mut flex, MainAxisAlignment::Start);
@@ -1071,7 +1071,7 @@ mod tests {
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         harness.edit_root_widget(|mut flex| {
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Start);
@@ -1115,7 +1115,7 @@ mod tests {
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         // MAIN AXIS ALIGNMENT
 
@@ -1174,7 +1174,7 @@ mod tests {
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         harness.edit_root_widget(|mut flex| {
             Flex::set_cross_axis_alignment(&mut flex, CrossAxisAlignment::Start);
@@ -1218,7 +1218,7 @@ mod tests {
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         // MAIN AXIS ALIGNMENT
 
@@ -1274,7 +1274,7 @@ mod tests {
 
             let window_size = Size::new(200.0, 150.0);
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), widget, window_size);
+                TestHarness::create_with_size(test_property_set(), widget, window_size);
 
             harness.edit_root_widget(|mut flex| {
                 Flex::remove_child(&mut flex, 1);
@@ -1317,7 +1317,7 @@ mod tests {
 
             let window_size = Size::new(200.0, 150.0);
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), widget, window_size);
+                TestHarness::create_with_size(test_property_set(), widget, window_size);
             harness.render()
         };
 
@@ -1335,7 +1335,7 @@ mod tests {
 
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
         harness.edit_root_widget(|mut flex| {
             let mut child = Flex::child_mut(&mut flex, 1).unwrap();
             assert_eq!(
@@ -1362,7 +1362,7 @@ mod tests {
         // Running layout should not panic when the flex sum is zero.
         let window_size = Size::new(200.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
         harness.render();
     }
 }

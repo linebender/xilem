@@ -9,7 +9,7 @@ use vello::kurbo::{Insets, Point, Size};
 use crate::core::Widget;
 use crate::properties::types::{AsUnit, Length};
 use crate::testing::{ModularWidget, TestHarness};
-use crate::theme::default_property_set;
+use crate::theme::test_property_set;
 use crate::widgets::{Button, ChildAlignment, Flex, SizedBox, ZStack};
 
 #[test]
@@ -37,7 +37,7 @@ fn layout_simple() {
         .with_flex_spacer(1.0)
         .with_auto_id();
 
-    let harness = TestHarness::create(default_property_set(), widget);
+    let harness = TestHarness::create(test_property_set(), widget);
 
     let first_box_rect = harness.get_widget(tag_1).ctx().local_layout_rect();
     let first_box_paint_rect = harness.get_widget(tag_1).ctx().paint_rect();
@@ -63,7 +63,7 @@ fn forget_to_recurse_layout() {
         .with_auto_id();
 
     assert_debug_panics!(
-        TestHarness::create(default_property_set(), widget),
+        TestHarness::create(test_property_set(), widget),
         "LayoutCtx::run_layout() was not called"
     );
 }
@@ -78,7 +78,7 @@ fn forget_to_call_place_child() {
         .with_auto_id();
 
     assert_debug_panics!(
-        TestHarness::create(default_property_set(), widget),
+        TestHarness::create(test_property_set(), widget),
         "LayoutCtx::place_child() was not called"
     );
 }
@@ -94,7 +94,7 @@ fn call_place_child_before_layout() {
         .with_auto_id();
 
     assert_debug_panics!(
-        TestHarness::create(default_property_set(), widget),
+        TestHarness::create(test_property_set(), widget),
         "trying to call 'place_child'"
     );
 }
@@ -110,7 +110,7 @@ fn run_layout_on_stashed() {
         });
     let widget = NewWidget::new_with_tag(widget, parent_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), widget);
+    let mut harness = TestHarness::create(test_property_set(), widget);
 
     assert_debug_panics!(
         harness.edit_widget(parent_tag, |mut parent| {
@@ -136,7 +136,7 @@ fn stash_then_run_layout() {
     let widget = NewWidget::new_with_tag(widget, parent_tag);
 
     assert_debug_panics!(
-        TestHarness::create(default_property_set(), widget),
+        TestHarness::create(test_property_set(), widget),
         "trying to compute layout of stashed widget"
     );
 }
@@ -155,7 +155,7 @@ fn unstash_then_run_layout() {
         });
     let widget = NewWidget::new_with_tag(widget, parent_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), widget);
+    let mut harness = TestHarness::create(test_property_set(), widget);
 
     harness.edit_widget(parent_tag, |mut parent| {
         parent.ctx.set_stashed(&mut parent.widget.state, true);
@@ -181,7 +181,7 @@ fn skip_layout_when_cached() {
             .with_child(sibling, ChildAlignment::ParentAligned),
     );
 
-    let mut harness = TestHarness::create(default_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
 
     harness.flush_records_of(button_tag);
     harness.edit_widget(sibling_tag, |mut sized_box| {
@@ -206,7 +206,7 @@ fn pixel_snapping() {
     });
     let parent = NewWidget::new(parent);
 
-    let harness = TestHarness::create(default_property_set(), parent);
+    let harness = TestHarness::create(test_property_set(), parent);
 
     let child_pos = harness.get_widget(child_tag).ctx().window_origin();
     let child_size = harness.get_widget(child_tag).ctx().size();
@@ -233,7 +233,7 @@ fn layout_insets() {
         parent_tag,
     );
 
-    let harness = TestHarness::create(default_property_set(), parent_widget);
+    let harness = TestHarness::create(test_property_set(), parent_widget);
 
     let child_paint_rect = harness.get_widget(child_tag).ctx().paint_rect();
     let parent_paint_rect = harness.get_widget(parent_tag).ctx().paint_rect();

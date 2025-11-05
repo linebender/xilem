@@ -604,7 +604,7 @@ where
 mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Label;
 
     #[test]
@@ -617,7 +617,7 @@ mod tests {
 
         let window_size = Size::new(150.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "split_columns");
     }
@@ -632,7 +632,7 @@ mod tests {
 
         let window_size = Size::new(150.0, 150.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "split_rows");
     }
@@ -655,7 +655,7 @@ mod tests {
             .with_auto_id();
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 widget,
                 Size::new(100.0, 100.0),
             );
@@ -671,7 +671,7 @@ mod tests {
             .with_auto_id();
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 widget,
                 Size::new(100.0, 100.0),
             );

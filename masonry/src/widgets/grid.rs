@@ -361,7 +361,7 @@ mod tests {
     use super::*;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Button;
 
     #[test]
@@ -373,7 +373,7 @@ mod tests {
         ));
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_1x1");
 
@@ -433,7 +433,7 @@ mod tests {
         ));
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 
@@ -474,7 +474,7 @@ mod tests {
         ));
         let window_size = Size::new(200.0, 200.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+            TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 

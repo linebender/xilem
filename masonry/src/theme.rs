@@ -146,3 +146,12 @@ pub fn default_text_styles(styles: &mut StyleSet) {
     styles.insert(StyleProperty::LineHeight(LineHeight::FontSizeRelative(1.2)));
     styles.insert(GenericFamily::SystemUi.into());
 }
+
+/// Set of default properties used in unit tests.
+///
+/// This lets us change default properties without having to reset all screenshots every time.
+/// This should still be kept relatively close to `default_property_set()` so that screenshots look like end user apps.
+#[cfg(test)]
+pub(crate) fn test_property_set() -> DefaultProperties {
+    default_property_set()
+}

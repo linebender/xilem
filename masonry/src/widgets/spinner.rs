@@ -154,7 +154,7 @@ mod tests {
     use super::*;
     use crate::palette;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
 
     #[test]
     fn simple_spinner() {
@@ -162,7 +162,7 @@ mod tests {
 
         let window_size = Size::new(100.0, 100.0);
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), spinner, window_size);
+            TestHarness::create_with_size(test_property_set(), spinner, window_size);
         assert_render_snapshot!(harness, "spinner_init");
 
         harness.animate_ms(700);
@@ -179,7 +179,7 @@ mod tests {
                 Spinner::new().with_props(Properties::one(ContentColor::new(palette::css::PURPLE)));
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 spinner,
                 Size::new(30.0, 30.0),
             );
@@ -190,7 +190,7 @@ mod tests {
             let spinner = NewWidget::new(Spinner::new());
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 spinner,
                 Size::new(30.0, 30.0),
             );

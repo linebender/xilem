@@ -343,7 +343,7 @@ mod tests {
     use super::*;
     use crate::core::StyleProperty;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::TextArea;
 
     #[test]
@@ -353,11 +353,8 @@ mod tests {
                 .with_style(StyleProperty::FontSize(14.0))
                 .with_auto_id(),
         ));
-        let mut harness = TestHarness::create_with_size(
-            default_property_set(),
-            text_input,
-            Size::new(150.0, 40.0),
-        );
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), text_input, Size::new(150.0, 40.0));
 
         assert_render_snapshot!(harness, "text_input_outline");
 
@@ -393,11 +390,8 @@ mod tests {
             .with_placeholder("HELLO WORLD"),
         );
 
-        let mut harness = TestHarness::create_with_size(
-            default_property_set(),
-            text_input,
-            Size::new(150.0, 40.0),
-        );
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), text_input, Size::new(150.0, 40.0));
 
         assert_render_snapshot!(harness, "text_input_placeholder");
     }
@@ -413,11 +407,8 @@ mod tests {
             )
             .with_clip(true),
         );
-        let mut harness = TestHarness::create_with_size(
-            default_property_set(),
-            text_input,
-            Size::new(80.0, 30.0),
-        );
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), text_input, Size::new(80.0, 30.0));
 
         assert_render_snapshot!(harness, "text_input_clip");
     }

@@ -189,7 +189,7 @@ mod tests {
     use crate::properties::types::CrossAxisAlignment;
     use crate::properties::types::{AsUnit, Length};
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::{Flex, SizedBox, TextArea};
 
     #[test]
@@ -210,7 +210,7 @@ mod tests {
             .with_auto_id();
 
         let mut harness = TestHarness::create_with_size(
-            default_property_set(),
+            test_property_set(),
             root_widget,
             Size::new(200.0, 40.0),
         );
@@ -249,7 +249,7 @@ mod tests {
             .with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 120.0));
+            TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 120.0));
 
         assert_render_snapshot!(harness, "prose_alignment_flex");
     }

@@ -5,7 +5,7 @@ use assert_matches::assert_matches;
 use masonry_core::core::{NewWidget, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_none};
 
-use crate::theme::default_property_set;
+use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 
 #[test]
@@ -16,7 +16,7 @@ fn needs_anim_flag() {
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child).record(), parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
-    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let mut harness = TestHarness::create(test_property_set(), grandparent);
     harness.flush_records_of(target_tag);
     harness.flush_records_of(parent_tag);
 

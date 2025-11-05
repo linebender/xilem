@@ -6,7 +6,7 @@ use masonry_core::core::{ChildrenIds, NewWidget, Widget, WidgetPod, WidgetTag};
 use masonry_testing::{ModularWidget, Record, TestHarness, TestWidgetExt};
 use vello::kurbo::{Affine, Point, Size, Vec2};
 
-use crate::theme::default_property_set;
+use crate::theme::test_property_set;
 use crate::widgets::SizedBox;
 
 #[test]
@@ -42,7 +42,7 @@ fn request_compose() {
         .children_fn(|state| ChildrenIds::from_slice(&[state.child.id()]));
     let parent = NewWidget::new_with_tag(parent.record(), parent_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
     harness.flush_records_of(parent_tag);
 
     // Changing pos should lead to a layout and a compose pass.
@@ -89,7 +89,7 @@ fn scroll_pixel_snap() {
         })
         .with_auto_id();
 
-    let harness = TestHarness::create(default_property_set(), parent);
+    let harness = TestHarness::create(test_property_set(), parent);
 
     // Origin should be rounded to (0., 1.) by pixel-snapping.
     let origin = harness.get_widget(child_tag).ctx().window_origin();

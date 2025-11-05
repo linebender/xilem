@@ -11,7 +11,7 @@ use vello::peniko::Color;
 
 use crate::properties::Background;
 use crate::properties::types::{Length, MainAxisAlignment};
-use crate::theme::default_property_set;
+use crate::theme::test_property_set;
 use crate::widgets::{Flex, SizedBox};
 
 #[test]
@@ -22,7 +22,7 @@ fn request_paint() {
     let parent = NewWidget::new_with_tag(ModularWidget::new_parent(child).record(), parent_tag);
     let grandparent = NewWidget::new(ModularWidget::new_parent(parent));
 
-    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let mut harness = TestHarness::create(test_property_set(), grandparent);
     let _ = harness.render();
     harness.flush_records_of(target_tag);
     harness.flush_records_of(parent_tag);
@@ -100,7 +100,7 @@ fn paint_order() {
     );
 
     let mut harness = TestHarness::create_with_size(
-        default_property_set(),
+        test_property_set(),
         grandparent,
         Size::new(SQUARE_SIZE * 3., SQUARE_SIZE * 3.),
     );
@@ -146,7 +146,7 @@ fn paint_clipping() {
     );
 
     let mut harness = TestHarness::create_with_size(
-        default_property_set(),
+        test_property_set(),
         parent,
         Size::new(SQUARE_SIZE * 2., SQUARE_SIZE * 2.),
     );
