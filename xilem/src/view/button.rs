@@ -2,12 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use std::any::type_name;
+use std::marker::PhantomData;
 
 use masonry::core::ArcStr;
 pub use masonry::core::PointerButton;
 use masonry::widgets::{self, ButtonPress};
 
-use crate::core::{MessageContext, Mut, View, ViewMarker, ViewPathTracker};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 use crate::view::{Label, label};
 use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
@@ -33,12 +34,13 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// ```
 /// use xilem::{view::{button, label}, FontWeight};
 /// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     count: i32,
 /// }
 ///
-/// # fn view() -> impl WidgetView<State> {
+/// # fn view() -> impl WidgetView<Edit<State>> {
 /// let label = label("Increase").weight(FontWeight::BOLD);
 ///
 /// button(label, |state: &mut State| {
@@ -53,8 +55,9 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// use xilem::{view::{button, label, flex_row, FlexExt}, FontWeight};
 /// # use xilem::WidgetView;
 /// # type State = u32;
+/// # use xilem::core::Edit;
 ///
-/// # fn view() -> impl WidgetView<State> {
+/// # fn view() -> impl WidgetView<Edit<State>> {
 /// let children = flex_row((
 ///     label("👍").flex(1.0),
 ///     label("Like").weight(FontWeight::BOLD),
@@ -63,20 +66,28 @@ use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 /// button(children, |_: &mut State| {})
 /// # }
 /// ```
-pub fn button<State, Action, V: WidgetView<State, Action>>(
+pub fn button<
+    State: ViewArgument,
+    Action,
+    V: WidgetView<State, Action>,
+    F: Fn(Arg<'_, State>) -> Action + Send + 'static,
+>(
     child: V,
-    callback: impl Fn(&mut State) -> Action + Send + 'static,
+    callback: F,
 ) -> Button<
-    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    State,
+    Action,
+    impl for<'a> Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
     V,
 > {
     Button {
         child,
-        callback: move |state: &mut State, button| match button {
+        callback: move |state: Arg<'_, State>, button| match button {
             None | Some(PointerButton::Primary) => MessageResult::Action(callback(state)),
             _ => MessageResult::Nop,
         },
         disabled: false,
+        phantom: PhantomData,
     }
 }
 
@@ -85,11 +96,16 @@ pub fn button<State, Action, V: WidgetView<State, Action>>(
 /// This is equivalent to `button(label(text), callback)`, and is useful for
 /// making buttons quickly from string literals.
 /// For more advanced text styling, prefer [`button`].
-pub fn text_button<State, Action>(
+pub fn text_button<State: ViewArgument, Action>(
     text: impl Into<ArcStr>,
-    callback: impl Fn(&mut State) -> Action + Send + 'static,
+    callback: impl Fn(Arg<'_, State>) -> Action + Send + Sync + 'static,
 ) -> Button<
-    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    State,
+    Action,
+    impl for<'a> Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action>
+    + Send
+    + Sync
+    + 'static,
     Label,
 > {
     button(label(text), callback)
@@ -105,17 +121,25 @@ pub fn text_button<State, Action>(
 /// Similarly, there is not currently long-press support.
 ///
 /// For more documentation and examples, see [`button`].
-pub fn button_any_pointer<State, Action, V: WidgetView<State, Action>>(
+pub fn button_any_pointer<State: ViewArgument, Action, V: WidgetView<State, Action>>(
     child: V,
-    callback: impl Fn(&mut State, Option<PointerButton>) -> Action + Send + 'static,
+    callback: impl Fn(Arg<'_, State>, Option<PointerButton>) -> Action + Send + Sync + 'static,
 ) -> Button<
-    impl for<'a> Fn(&'a mut State, Option<PointerButton>) -> MessageResult<Action> + Send + 'static,
+    State,
+    Action,
+    impl for<'a> Fn(Arg<'a, State>, Option<PointerButton>) -> MessageResult<Action>
+    + Send
+    + Sync
+    + 'static,
     V,
 > {
     Button {
         child,
-        callback: move |state: &mut State, button| MessageResult::Action(callback(state, button)),
+        callback: move |state: Arg<'_, State>, button| {
+            MessageResult::Action(callback(state, button))
+        },
         disabled: false,
+        phantom: PhantomData,
     }
 }
 
@@ -123,13 +147,14 @@ pub fn button_any_pointer<State, Action, V: WidgetView<State, Action>>(
 ///
 /// See `button`'s documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Button<F, V> {
+pub struct Button<State, Action, F, V> {
     child: V,
     callback: F,
     disabled: bool,
+    phantom: PhantomData<fn(State) -> Action>,
 }
 
-impl<F, V> Button<F, V> {
+impl<State, Action, F, V> Button<State, Action, F, V> {
     /// Set the disabled state of the widget.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
@@ -139,16 +164,22 @@ impl<F, V> Button<F, V> {
 
 const BUTTON_CONTENT_VIEW_ID: ViewId = ViewId::new(0);
 
-impl<F, V> ViewMarker for Button<F, V> {}
-impl<F, V, State, Action> View<State, Action, ViewCtx> for Button<F, V>
+impl<State, Action, F, V> ViewMarker for Button<State, Action, F, V> {}
+impl<F, V, State, Action> View<State, Action, ViewCtx> for Button<State, Action, F, V>
 where
+    State: ViewArgument,
+    Action: 'static,
     V: WidgetView<State, Action>,
-    F: Fn(&mut State, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
+    F: Fn(Arg<'_, State>, Option<PointerButton>) -> MessageResult<Action> + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Button>;
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (child, child_state) = ctx.with_id(BUTTON_CONTENT_VIEW_ID, |ctx| {
             View::<State, Action, _>::build(&self.child, ctx, app_state)
         });
@@ -168,7 +199,7 @@ where
         state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -207,7 +238,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         match message.take_first() {
             Some(BUTTON_CONTENT_VIEW_ID) => self.child.message(

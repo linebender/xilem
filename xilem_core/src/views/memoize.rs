@@ -5,7 +5,9 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
-use crate::{MessageContext, MessageResult, Mut, View, ViewMarker, ViewPathTracker};
+use crate::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker,
+};
 
 /// A view which supports Memoization.
 ///
@@ -21,6 +23,7 @@ pub struct Memoize<Data, InitView, State, Action, Context> {
 impl<Data, InitView, State, Action, Context> Debug
     for Memoize<Data, InitView, State, Action, Context>
 where
+    State: ViewArgument,
     Data: Debug,
 {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -45,7 +48,7 @@ It's not possible in Rust currently to check whether the (content of the) callba
 /// (From the Xilem implementation)
 ///
 /// ```ignore
-/// fn memoized_button(count: u32) -> impl WidgetView<i32> {
+/// fn memoized_button(count: u32) -> impl WidgetView<Edit<i32>> {
 ///     memoize(
 ///         count, // if this changes, the closure below is reevaluated
 ///         |count| button(format!("clicked {count} times"), |count| { count += 1; }),
@@ -57,8 +60,9 @@ pub fn memoize<State, Action, Context, Data, V, InitView>(
     init_view: InitView,
 ) -> Memoize<Data, InitView, State, Action, Context>
 where
+    State: ViewArgument,
     Data: PartialEq + 'static,
-    // TODO(DJMcNab): Also accept `&mut State` in this argument closure
+    // TODO(DJMcNab): Also accept `Arg<'_, State>` in this argument closure
     InitView: Fn(&Data) -> V + 'static,
     V: View<State, Action, Context>,
     Context: ViewPathTracker,
@@ -88,7 +92,7 @@ impl<Data, ViewFn, State, Action, Context> ViewMarker
 impl<State, Action, Context, Data, V, ViewFn> View<State, Action, Context>
     for Memoize<Data, ViewFn, State, Action, Context>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker + 'static,
     Data: PartialEq + 'static,
@@ -99,7 +103,11 @@ where
 
     type Element = V::Element;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)(&self.data);
         let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {
@@ -116,7 +124,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         if core::mem::take(&mut view_state.dirty) || prev.data != self.data {
             let view = (self.init_view)(&self.data);
@@ -136,7 +144,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let message_result =
             view_state
@@ -180,7 +188,7 @@ impl<InitView, State, Action> Debug for Frozen<InitView, State, Action> {
 /// (From the Xilem implementation)
 ///
 /// ```ignore
-/// fn frozen_button() -> impl WidgetView<i32> {
+/// fn frozen_button() -> impl WidgetView<Edit<i32>> {
 ///     frozen(|| button("doesn't access any external state", |count| { count += 1; })),
 /// }
 /// ```
@@ -188,7 +196,7 @@ pub fn frozen<State, Action, Context, V, InitView>(
     init_view: InitView,
 ) -> Frozen<InitView, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context>,
@@ -207,7 +215,7 @@ impl<InitView, State, Action> ViewMarker for Frozen<InitView, State, Action> {}
 impl<State, Action, Context, V, InitView> View<State, Action, Context>
     for Frozen<InitView, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker,
     V: View<State, Action, Context>,
@@ -217,7 +225,11 @@ where
 
     type ViewState = MemoizeState<V, V::ViewState>;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let view = (self.init_view)();
         let (element, view_state) = view.build(ctx, app_state);
         let memoize_state = MemoizeState {
@@ -234,7 +246,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         if core::mem::take(&mut view_state.dirty) {
             let view = (self.init_view)();
@@ -265,7 +277,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let message_result =
             view_state

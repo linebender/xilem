@@ -7,6 +7,7 @@ use winit::error::EventLoopError;
 use xilem::core::lens;
 use xilem::view::{MainAxisAlignment, flex_col, flex_row, label, text_button};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 
 #[derive(Default)]
 struct AppState {
@@ -14,17 +15,17 @@ struct AppState {
     global_count: i32,
 }
 
-fn modular_counter(count: &mut i32) -> impl WidgetView<i32> + use<> {
+fn modular_counter(count: &mut i32) -> impl WidgetView<Edit<i32>> + use<> {
     flex_col((
         label(format!("modularized count: {count}")),
-        text_button("+", |count| *count += 1),
-        text_button("-", |count| *count -= 1),
+        text_button("+", |count: &mut i32| *count += 1),
+        text_button("-", |count: &mut i32| *count -= 1),
     ))
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
     flex_row((
-        lens(modular_counter, |state: &mut AppState| {
+        lens(modular_counter, |state: &mut AppState, ()| {
             &mut state.modularized_count
         }),
         text_button(

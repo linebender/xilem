@@ -8,8 +8,8 @@ use masonry::properties::types::Length;
 use masonry::widgets;
 
 use crate::core::{
-    AppendVec, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View, ViewElement,
-    ViewMarker, ViewSequence,
+    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View,
+    ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -46,7 +46,7 @@ pub use masonry::widgets::GridParams;
 /// .spacing(GRID_GAP)
 /// ```
 /// Also see Calculator example [here](https://github.com/linebender/xilem/blob/main/xilem/examples/calc.rs) to learn more about grid layout.
-pub fn grid<State, Action, Seq: GridSequence<State, Action>>(
+pub fn grid<State: ViewArgument, Action, Seq: GridSequence<State, Action>>(
     sequence: Seq,
     width: i32,
     height: i32,
@@ -106,7 +106,7 @@ impl<Seq, State, Action> ViewMarker for Grid<Seq, State, Action> {}
 
 impl<State, Action, Seq> View<State, Action, ViewCtx> for Grid<Seq, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Seq: GridSequence<State, Action>,
 {
@@ -114,7 +114,11 @@ where
 
     type ViewState = GridState<Seq::SeqState>;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let mut elements = AppendVec::default();
         let mut widget = widgets::Grid::with_dimensions(self.width, self.height);
         widget = widget.with_spacing(self.spacing);
@@ -138,7 +142,7 @@ where
         GridState { seq_state, scratch }: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         if prev.height != self.height {
             widgets::Grid::set_height(&mut element, self.height);
@@ -172,7 +176,7 @@ where
         GridState { seq_state, scratch }: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let mut splice = GridSplice::new(element, scratch);
         let result = self
@@ -296,18 +300,20 @@ impl ElementSplice<GridElement> for GridSplice<'_, '_> {
 }
 
 /// `GridSequence` is what allows an input to the grid that contains all the grid elements.
-pub trait GridSequence<State, Action = ()>:
+pub trait GridSequence<State: ViewArgument, Action = ()>:
     ViewSequence<State, Action, ViewCtx, GridElement>
 {
 }
 
-impl<Seq, State, Action> GridSequence<State, Action> for Seq where
-    Seq: ViewSequence<State, Action, ViewCtx, GridElement>
+impl<Seq, State, Action> GridSequence<State, Action> for Seq
+where
+    Seq: ViewSequence<State, Action, ViewCtx, GridElement>,
+    State: ViewArgument,
 {
 }
 
 /// A trait which extends a [`WidgetView`] with methods to provide parameters for a grid item
-pub trait GridExt<State, Action>: WidgetView<State, Action> {
+pub trait GridExt<State: ViewArgument, Action>: WidgetView<State, Action> {
     /// Applies [`impl Into<GridParams>`](`GridParams`) to this view. This allows the view
     /// to be placed as a child within a [`Grid`] [`View`].
     ///
@@ -315,9 +321,9 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// ```
     /// use masonry::widgets::GridParams;
     /// use xilem::view::{text_button, prose, grid, GridExt};
-    /// # use xilem::{WidgetView};
+    /// # use xilem::{WidgetView, core::Edit};
     ///
-    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<Edit<State>> {
     /// grid((
     ///     text_button("click me", |_| ()).grid_item(GridParams::new(0, 0, 2, 1)),
     ///     prose("a prose").grid_item(GridParams::new(1, 1, 1, 1)),
@@ -326,7 +332,6 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// ```
     fn grid_item(self, params: impl Into<GridParams>) -> GridItem<Self, State, Action>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
     {
@@ -342,9 +347,9 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// ```
     /// use masonry::widgets::GridParams;
     /// use xilem::{view::{text_button, prose, grid, GridExt}};
-    /// # use xilem::{WidgetView};
+    /// # use xilem::{WidgetView, core::Edit};
     ///
-    /// # fn view<State: 'static>() -> impl WidgetView<State> {
+    /// # fn view<State: 'static>() -> impl WidgetView<Edit<State>> {
     /// grid((
     ///     text_button("click me", |_| ()).grid_pos(0, 0),
     ///     prose("a prose").grid_pos(1, 1),
@@ -353,7 +358,6 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     /// ```
     fn grid_pos(self, x: i32, y: i32) -> GridItem<Self, State, Action>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
     {
@@ -361,7 +365,7 @@ pub trait GridExt<State, Action>: WidgetView<State, Action> {
     }
 }
 
-impl<State, Action, V: WidgetView<State, Action>> GridExt<State, Action> for V {}
+impl<State: ViewArgument, Action, V: WidgetView<State, Action>> GridExt<State, Action> for V {}
 
 /// A child widget within a [`Grid`] view.
 pub struct GridElement {
@@ -407,7 +411,7 @@ pub fn grid_item<V, State, Action>(
     params: impl Into<GridParams>,
 ) -> GridItem<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -422,7 +426,7 @@ impl<V, State, Action> ViewMarker for GridItem<V, State, Action> {}
 
 impl<State, Action, V> View<State, Action, ViewCtx> for GridItem<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: WidgetView<State, Action>,
 {
@@ -430,7 +434,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (pod, state) = self.view.build(ctx, app_state);
         (
             GridElement {
@@ -447,7 +455,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         {
             if self.params != prev.params {
@@ -478,7 +486,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let mut child = widgets::Grid::child_mut(&mut element.parent, element.idx);
         self.view

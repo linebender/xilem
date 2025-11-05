@@ -5,7 +5,9 @@ use std::marker::PhantomData;
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{MessageContext, MessageResult, Mut, View, ViewElement, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
 use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
 use crate::{AttributeValue, DomView, IntoAttributeValue, ViewCtx};
@@ -300,7 +302,7 @@ impl<V, State, Action> Attr<V, State, Action> {
 impl<V, State, Action> ViewMarker for Attr<V, State, Action> {}
 impl<V, State, Action> View<State, Action, ViewCtx> for Attr<V, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action, Element: WithModifier<Attributes>>,
     for<'a> <V::Element as ViewElement>::Mut<'a>: WithModifier<Attributes>,
@@ -309,7 +311,11 @@ where
 
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (mut element, state) =
             ctx.with_size_hint::<Attributes, _>(1, |ctx| self.inner.build(ctx, app_state));
         Attributes::push(&mut element.modifier(), self.modifier.clone());
@@ -322,7 +328,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         Attributes::rebuild(element, 1, |mut element| {
             self.inner.rebuild(
@@ -350,7 +356,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.inner.message(view_state, message, element, app_state)
     }

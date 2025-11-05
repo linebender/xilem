@@ -12,7 +12,7 @@ use xilem::view::{
     FlexSpacer, checkbox, flex_col, flex_row, indexed_stack, progress_bar, sized_box, text_button,
 };
 use xilem::{Color, WidgetView, WindowOptions, Xilem};
-use xilem_core::lens;
+use xilem_core::{Edit, lens};
 
 const SPACER_WIDTH: Length = Length::const_px(10.);
 
@@ -32,7 +32,7 @@ enum GalleryTab {
     Checkbox,
 }
 
-fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
+fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Edit<Option<f64>>> {
     flex_col((
         progress_bar(data),
         checkbox(
@@ -53,16 +53,16 @@ fn progress_bar_view(data: Option<f64>) -> impl WidgetView<Option<f64>> {
     ))
 }
 
-fn checkbox_view(data: bool) -> impl WidgetView<bool> {
-    checkbox("a simple checkbox", data, |data, new_state| {
+fn checkbox_view(data: bool) -> impl WidgetView<Edit<bool>> {
+    checkbox("a simple checkbox", data, |data: &mut bool, new_state| {
         *data = new_state;
     })
 }
 
 /// Wrap `inner` in a box with a border
 fn border_box<State: 'static, Action: 'static>(
-    inner: impl WidgetView<State, Action>,
-) -> impl WidgetView<State, Action> {
+    inner: impl WidgetView<Edit<State>, Action>,
+) -> impl WidgetView<Edit<State>, Action> {
     sized_box(flex_row((
         FlexSpacer::Flex(1.),
         flex_col((FlexSpacer::Flex(1.), inner, FlexSpacer::Flex(1.))),
@@ -74,7 +74,7 @@ fn border_box<State: 'static, Action: 'static>(
 }
 
 /// Top-level view
-fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<> {
+fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<Edit<WidgetGallery>> + use<> {
     // Use a `sized_box` to pad the window contents
     sized_box(
         flex_col((
@@ -90,12 +90,12 @@ fn app_logic(data: &mut WidgetGallery) -> impl WidgetView<WidgetGallery> + use<>
             )),
             indexed_stack((
                 lens(
-                    |progress| border_box(progress_bar_view(*progress)),
-                    |data: &mut WidgetGallery| &mut data.progress,
+                    |progress: &mut Option<f64>| border_box(progress_bar_view(*progress)),
+                    |data: &mut WidgetGallery, ()| &mut data.progress,
                 ),
                 lens(
-                    |checked| border_box(checkbox_view(*checked)),
-                    |data: &mut WidgetGallery| &mut data.checked,
+                    |checked: &mut bool| border_box(checkbox_view(*checked)),
+                    |data: &mut WidgetGallery, ()| &mut data.checked,
                 ),
             ))
             .active(data.tab as usize),

@@ -10,6 +10,7 @@ use winit::error::EventLoopError;
 use xilem::style::Style as _;
 use xilem::view::{button, checkbox, flex_col, flex_row, label, text_input};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 
 struct Task {
     description: String,
@@ -41,7 +42,7 @@ impl TaskList {
     }
 }
 
-fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
+fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<> {
     let input_box = text_input(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {
@@ -94,7 +95,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
 
     let filter_tasks = |label, filter| {
         // TODO: replace with combo-buttons
-        checkbox(
+        checkbox::<_, Edit<TaskList>, _>(
             label,
             task_list.filter == filter,
             move |state: &mut TaskList, _| state.filter = filter,

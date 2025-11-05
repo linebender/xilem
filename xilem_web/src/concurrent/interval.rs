@@ -6,7 +6,9 @@ use std::marker::PhantomData;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker,
+};
 use crate::{OptionalAction, ViewCtx};
 
 /// Start an interval which invokes `callback` every `ms` milliseconds
@@ -24,9 +26,9 @@ pub struct Interval<Callback, State, Action> {
 /// # Examples
 ///
 /// ```
-/// use xilem_web::{core::fork, concurrent::interval, elements::html::div, interfaces::Element};
+/// use xilem_web::{core::{fork, Edit}, concurrent::interval, elements::html::div, interfaces::Element};
 ///
-/// fn timer(seconds: &mut u32) -> impl Element<u32> {
+/// fn timer(seconds: &mut u32) -> impl Element<Edit<u32>> {
 ///     fork(
 ///         div(format!("{seconds} seconds have passed, since creating this view")),
 ///         interval(
@@ -46,10 +48,10 @@ pub fn interval<State, Action, OA, Callback>(
     callback: Callback,
 ) -> Interval<Callback, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
-    Callback: Fn(&mut State) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>) -> OA + 'static,
 {
     Interval {
         ms,
@@ -93,16 +95,16 @@ impl<Callback, State, Action> ViewMarker for Interval<Callback, State, Action> {
 
 impl<State, Action, Callback, OA> View<State, Action, ViewCtx> for Interval<Callback, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
-    Callback: Fn(&mut State) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>) -> OA + 'static,
 {
     type Element = NoElement;
 
     type ViewState = IntervalState;
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let interval_fn = Closure::new(move || thunk.push_message(()));
         let state = IntervalState {
@@ -119,7 +121,7 @@ where
         view_state: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         if prev.ms != self.ms {
             clear_interval(view_state.interval_handle);
@@ -141,7 +143,7 @@ where
         _: &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(message.remaining_path().is_empty());
         message.take_message::<()>().unwrap_throw();

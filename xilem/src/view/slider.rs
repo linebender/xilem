@@ -1,29 +1,39 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::marker::PhantomData;
+
 use masonry::widgets;
-use xilem_core::{MessageResult, Mut, View, ViewMarker};
+use xilem_core::{Arg, MessageResult, Mut, View, ViewArgument, ViewMarker};
 
 use crate::core::MessageContext;
-use crate::{Pod, ViewCtx};
+use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that displays a [`Slider`] widget.
-pub struct Slider<F> {
+pub struct Slider<State, Action, F> {
     min: f64,
     max: f64,
     value: f64,
     on_change: F,
     step: Option<f64>,
     disabled: bool,
+    phantom: PhantomData<fn(State) -> Action>,
 }
 
 /// Creates a slider widget for selecting a value from a range.
-pub fn slider<State, Action>(
+pub fn slider<
+    State: ViewArgument,
+    Action,
+    F: Fn(Arg<'_, State>, f64) -> Action + Send + Sync + 'static,
+>(
     min: f64,
     max: f64,
     value: f64,
-    on_change: impl Fn(&mut State, f64) -> Action + Send + Sync + 'static,
-) -> Slider<impl Fn(&mut State, f64) -> Action + Send + Sync + 'static> {
+    on_change: F,
+) -> Slider<State, Action, F>
+where
+    Slider<State, Action, F>: WidgetView<State, Action>,
+{
     Slider {
         min,
         max,
@@ -31,10 +41,11 @@ pub fn slider<State, Action>(
         on_change,
         step: None,
         disabled: false,
+        phantom: PhantomData,
     }
 }
 
-impl<F> Slider<F> {
+impl<State, Action, F> Slider<State, Action, F> {
     /// Sets the stepping interval of the slider.
     pub fn step(mut self, step: f64) -> Self {
         if step > 0.0 {
@@ -49,17 +60,17 @@ impl<F> Slider<F> {
     }
 }
 
-impl<F> ViewMarker for Slider<F> {}
-impl<F, State, Action> View<State, Action, ViewCtx> for Slider<F>
+impl<State, Action, F> ViewMarker for Slider<State, Action, F> {}
+impl<F, State, Action> View<State, Action, ViewCtx> for Slider<State, Action, F>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
-    F: Fn(&mut State, f64) -> Action + Send + Sync + 'static,
+    F: Fn(Arg<'_, State>, f64) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Slider>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         (
             ctx.with_action_widget(|ctx| {
                 let mut widget = widgets::Slider::new(self.min, self.max, self.value);
@@ -80,7 +91,7 @@ where
         (): &mut Self::ViewState,
         _: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -110,7 +121,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageContext,
         _: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         if message.take_first().is_some() {
             tracing::warn!("Got unexpected id path in Slider::message");

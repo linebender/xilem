@@ -13,6 +13,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
+use xilem_web::core::Edit;
 use xilem_web::core::one_of::Either;
 use xilem_web::elements::html;
 use xilem_web::interfaces::Element;
@@ -24,7 +25,7 @@ struct AppState {
     show_input: bool,
 }
 
-fn app_logic(app_state: &mut AppState) -> impl Element<AppState> + use<> {
+fn app_logic(app_state: &mut AppState) -> impl Element<Edit<AppState>> + use<> {
     html::div(if app_state.show_input {
         let focus = Rc::clone(&app_state.focus);
         Either::A(html::div((

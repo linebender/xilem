@@ -3,6 +3,7 @@
 
 //! A simple example showing the interaction between SVG and event handling
 
+use xilem_web::core::Edit;
 use xilem_web::elements::svg::{g, svg, text};
 use xilem_web::interfaces::*;
 use xilem_web::modifiers::style as s;
@@ -51,7 +52,7 @@ impl GrabState {
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl DomView<AppState> + use<> {
+fn app_logic(state: &mut AppState) -> impl DomView<Edit<AppState>> + use<> {
     let v = (0..10)
         .map(|i| {
             Rect::from_origin_size((10.0 * i as f64, 150.0), (8.0, 8.0))

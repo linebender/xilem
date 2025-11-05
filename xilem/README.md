@@ -73,13 +73,14 @@ A simple incrementing counter application looks like:
 use winit::error::EventLoopError;
 use xilem::view::{Axis, text_button, flex, label};
 use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+use xilem::core::Edit;
 
 #[derive(Default)]
 struct Counter {
     num: i32,
 }
 
-fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
+fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
     flex(Axis::Vertical, (
         label(format!("{}", data.num)),
         text_button("increment", |data: &mut Counter| data.num += 1),
@@ -140,7 +141,7 @@ This is new syntax in the 2024 edition, and so it might be unfamiliar.
 Here's a snippet from the Xilem examples:
 
 ```rust
-fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
    // ...
 }
 ```

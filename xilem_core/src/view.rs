@@ -10,7 +10,7 @@ use core::ops::Deref;
 
 use crate::environment::Environment;
 use crate::message::MessageResult;
-use crate::{MessageContext, Mut, ViewElement};
+use crate::{Arg, MessageContext, Mut, ViewArgument, ViewElement};
 
 /// A type which can be a [`View`]. Imposes no requirements on the underlying type.
 /// Should be implemented alongside every `View` implementation:
@@ -56,7 +56,9 @@ pub trait ViewMarker {}
 /// impl<...> ViewMarker for Button<...> {}
 /// impl<...> View<...> for Button<...> {...}
 /// ```
-pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
+pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
+    ViewMarker + 'static
+{
     /// The element type which this view operates on.
     type Element: ViewElement;
     /// State that is used over the lifetime of the retained representation of the view.
@@ -72,7 +74,11 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
     type ViewState;
 
     /// Create the corresponding Element value.
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState);
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState);
 
     /// Update `element` based on the difference between `self` and `prev`.
     fn rebuild(
@@ -81,7 +87,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     );
 
     /// Handle `element` being removed from the tree.
@@ -104,7 +110,7 @@ pub trait View<State, Action, Context: ViewPathTracker>: ViewMarker + 'static {
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
 
     // fn debug_name?
@@ -169,13 +175,18 @@ pub trait ViewPathTracker {
 impl<V: ?Sized> ViewMarker for Box<V> {}
 impl<State, Action, Context, V> View<State, Action, Context> for Box<V>
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = V::ViewState;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.deref().build(ctx, app_state)
     }
 
@@ -185,7 +196,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.deref()
             .rebuild(prev, view_state, ctx, element, app_state);
@@ -205,7 +216,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.deref()
             .message(view_state, message, element, app_state)
@@ -227,13 +238,18 @@ impl<V: ?Sized> ViewMarker for Arc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, V> View<State, Action, Context> for Arc<V>
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = RcState<V::ViewState>;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx, app_state);
         (
             element,
@@ -250,7 +266,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         #![expect(clippy::use_self, reason = "`Arc::ptr_eq` is the canonical form")]
         if core::mem::take(&mut view_state.dirty) || !Arc::ptr_eq(self, prev) {
@@ -274,7 +290,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()
@@ -290,13 +306,18 @@ impl<V: ?Sized> ViewMarker for Rc<V> {}
 /// An implementation of [`View`] which only runs rebuild if the states are different
 impl<State, Action, Context, V> View<State, Action, Context> for Rc<V>
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + ?Sized,
 {
     type Element = V::Element;
     type ViewState = RcState<V::ViewState>;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (element, view_state) = self.deref().build(ctx, app_state);
         (
             element,
@@ -313,7 +334,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         #![expect(clippy::use_self, reason = "`Rc::ptr_eq` is the canonical form")]
         if core::mem::take(&mut view_state.dirty) || !Rc::ptr_eq(self, prev) {
@@ -337,7 +358,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let message_result =
             self.deref()

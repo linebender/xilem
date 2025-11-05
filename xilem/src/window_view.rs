@@ -4,15 +4,16 @@
 use masonry::app::RenderRoot;
 use masonry::peniko::Color;
 use masonry_winit::app::{NewWindow, Window, WindowId};
+use xilem_core::Edit;
 
-use crate::core::{AnyViewState, MessageContext, Mut, View, ViewElement, ViewMarker};
+use crate::core::{AnyViewState, Arg, MessageContext, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, ViewCtx, WidgetView, WindowOptions};
 
 /// A view representing a window.
-pub struct WindowView<State> {
+pub struct WindowView<State: 'static> {
     pub(crate) id: WindowId,
     options: WindowOptions<State>,
-    root_widget_view: Box<AnyWidgetView<State, ()>>,
+    root_widget_view: Box<AnyWidgetView<Edit<State>, ()>>,
     /// The base color of the window.
     base_color: Color,
 }
@@ -24,7 +25,7 @@ pub struct WindowView<State> {
 /// state somewhere.
 ///
 /// `title` initializes [`WindowOptions`].
-pub fn window<V: WidgetView<State>, State: 'static>(
+pub fn window<V: WidgetView<Edit<State>>, State: 'static>(
     id: WindowId,
     title: impl Into<String>,
     root_view: V,
@@ -63,15 +64,18 @@ impl ViewElement for PodWindow {
 
 impl<State> ViewMarker for WindowView<State> where State: 'static {}
 
-impl<State> View<State, (), ViewCtx> for WindowView<State>
-where
-    State: 'static,
-{
+// TODO: Reconsider how this works with ViewArgument.
+// There are *reasonable* arguments for making this be `View<()>`, i.e. the root state is just another local.
+impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
     type Element = PodWindow;
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, Edit<State>>,
+    ) -> (Self::Element, Self::ViewState) {
         let (root_widget, view_state) = self.root_widget_view.build(ctx, app_state);
         let initial_attributes = self.options.build_initial_attrs();
         (
@@ -93,7 +97,7 @@ where
         root_widget_view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         window: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, Edit<State>>,
     ) {
         self.options.rebuild(&prev.options, window.handle());
         if self.base_color != prev.base_color {
@@ -127,7 +131,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         window: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, Edit<State>>,
     ) -> xilem_core::MessageResult<()> {
         window.render_root().edit_base_layer(|mut root| {
             self.root_widget_view

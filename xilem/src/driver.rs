@@ -21,7 +21,7 @@ use crate::core::{
 use crate::window_view::WindowView;
 use crate::{AppState, ViewCtx};
 
-pub struct MasonryDriver<State, Logic> {
+pub struct MasonryDriver<State: 'static, Logic> {
     state: State,
     logic: Logic,
     windows: HashMap<WindowId, Window<State>>,
@@ -32,13 +32,13 @@ pub struct MasonryDriver<State, Logic> {
     scratch_id_path: Vec<ViewId>,
 }
 
-struct Window<State> {
+struct Window<State: 'static> {
     view: WindowView<State>,
     view_ctx: ViewCtx,
     view_state: AnyViewState,
 }
 
-impl<State: 'static, Logic, WindowIter> MasonryDriver<State, Logic>
+impl<State, Logic, WindowIter> MasonryDriver<State, Logic>
 where
     State: 'static,
     Logic: FnMut(&mut State) -> WindowIter,

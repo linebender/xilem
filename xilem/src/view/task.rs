@@ -12,8 +12,8 @@ use tokio::task::JoinHandle;
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
-    MessageContext, MessageProxy, MessageResult, Mut, NoElement, View, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageContext, MessageProxy, MessageResult, Mut, NoElement, View, ViewArgument, ViewId,
+    ViewMarker, ViewPathTracker,
 };
 
 /// Launch a task which will run until the view is no longer in the tree.
@@ -27,13 +27,17 @@ use crate::core::{
 /// cannot capture.
 // TODO: More thorough documentation.
 /// See [`run_once`](crate::core::run_once) for details.
-pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
+pub fn task<M, F, H, State, Action, Fut>(
+    init_future: F,
+    on_event: H,
+) -> Task<State, Action, F, H, M>
 where
     // TODO: Accept the state in this function
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
+    State: ViewArgument,
 {
     const {
         assert!(
@@ -53,12 +57,16 @@ where
 ///
 /// This is [`task`] without the capturing rules.
 /// See `task` for full documentation.
-pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F, H, M>
+pub fn task_raw<M, F, H, State, Action, Fut>(
+    init_future: F,
+    on_event: H,
+) -> Task<State, Action, F, H, M>
 where
     F: Fn(MessageProxy<M>) -> Fut,
     Fut: Future<Output = ()> + Send + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
+    State: ViewArgument,
 {
     Task {
         init_future,
@@ -67,25 +75,27 @@ where
     }
 }
 
-pub struct Task<F, H, M> {
+pub struct Task<State, Action, F, H, M> {
     init_future: F,
     on_event: H,
-    message: PhantomData<fn() -> M>,
+    message: PhantomData<fn(State) -> (Action, M)>,
 }
 
-impl<F, H, M> ViewMarker for Task<F, H, M> {}
-impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<F, H, M>
+impl<State, Action, F, H, M> ViewMarker for Task<State, Action, F, H, M> {}
+impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<State, Action, F, H, M>
 where
+    State: ViewArgument,
+    Action: 'static,
     F: Fn(MessageProxy<M>) -> Fut + 'static,
     Fut: Future<Output = ()> + Send + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug + Send + 'static,
 {
     type Element = NoElement;
 
     type ViewState = JoinHandle<()>;
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
 
         let proxy = ctx.proxy();
@@ -101,7 +111,7 @@ where
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         // Nothing to do
     }
@@ -120,7 +130,7 @@ where
         _: &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

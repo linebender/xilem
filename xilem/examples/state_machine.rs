@@ -9,6 +9,7 @@ use xilem::core::one_of::{OneOf, OneOf3};
 use xilem::style::Style as _;
 use xilem::view::{flex_col, label, prose, sized_box, spinner, text_button};
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 
 /// The state of the entire application.
 ///
@@ -28,7 +29,7 @@ enum IsEven {
     Success,
 }
 
-fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
+fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<Edit<StateMachine>> + use<> {
     match app_data.state {
         // The first time we use `OneOf` in a conditional statement, we need
         // to specify the number of `OneOf` variants used - 3 in this case.
@@ -52,14 +53,17 @@ fn state_machine(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> +
 
 /// A button component which transitions to a specified `target_state`
 /// and appends its value to the history when pressed.
-fn sequence_button(value: &'static str, target_state: IsEven) -> impl WidgetView<StateMachine> {
+fn sequence_button(
+    value: &'static str,
+    target_state: IsEven,
+) -> impl WidgetView<Edit<StateMachine>> {
     text_button(value, move |app_data: &mut StateMachine| {
         app_data.state = target_state;
         app_data.history.push_str(value);
     })
 }
 
-fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<StateMachine> + use<> {
+fn app_logic(app_data: &mut StateMachine) -> impl WidgetView<Edit<StateMachine>> + use<> {
     flex_col((
         text_button("Reset", |app_data: &mut StateMachine| {
             app_data.history.clear();

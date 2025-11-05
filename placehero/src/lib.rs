@@ -23,7 +23,7 @@ use megalodon::entities::{Context, Instance, Status};
 use megalodon::error::{Kind, OwnError};
 use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf3, OneOf6};
-use xilem::core::{NoElement, View, fork, lens, map_action, map_state};
+use xilem::core::{Edit, NoElement, View, fork, lens, map_action, map_state};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
@@ -81,7 +81,7 @@ enum MainState {
     New(PlaceheroWithLogin),
 }
 
-fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
+fn select_app(state: &mut MainState) -> impl WidgetView<Edit<MainState>> + use<> {
     match state {
         MainState::Selecting => OneOf3::A(
             flex_col((
@@ -101,13 +101,13 @@ fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
             ))
             .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
         ),
-        MainState::Old(_) => OneOf::B(lens(app_logic, |state| {
+        MainState::Old(_) => OneOf::B(lens(app_logic, |state: &mut MainState, ()| {
             let MainState::Old(placehero) = state else {
                 unreachable!()
             };
             placehero
         })),
-        MainState::New(_) => OneOf::C(lens(login_flow::app_logic, |state| {
+        MainState::New(_) => OneOf::C(lens(login_flow::app_logic, |state: &mut MainState, ()| {
             let MainState::New(placehero) = state else {
                 unreachable!()
             };
@@ -160,7 +160,7 @@ impl Default for Placehero {
 }
 
 impl Placehero {
-    fn sidebar(&mut self) -> impl WidgetView<Self, Navigation> + use<> {
+    fn sidebar(&mut self) -> impl WidgetView<Edit<Self>, Navigation> + use<> {
         if let Some(instance) = &self.instance {
             let back = if self.show_context.is_some() {
                 // TODO: Make the ⬅️ arrow not be available to screen readers.
@@ -198,7 +198,7 @@ impl Placehero {
         }
     }
 
-    fn main_view(&mut self) -> impl WidgetView<Self, Navigation> + use<> {
+    fn main_view(&mut self) -> impl WidgetView<Edit<Self>, Navigation> + use<> {
         if let Some(show_context) = self.show_context.as_ref() {
             if let Some(context) = self.context.as_ref() {
                 // TODO: Display the status until the entire thread loads; this is hard because
@@ -223,7 +223,7 @@ impl Placehero {
                 // In the current edition of the app, the timeline is never removed
                 // If it ever is, we'll need to be more careful here.
                 // The patterns are still in flux.
-                |this: &mut Self| this.timeline.as_mut().unwrap(),
+                |this: &mut Self, ()| this.timeline.as_mut().unwrap(),
             ))
         } else {
             OneOf::F(prose("No statuses yet loaded"))
@@ -231,7 +231,7 @@ impl Placehero {
     }
 }
 
-fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
+fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Edit<Placehero>> + use<> {
     Avatars::provide(fork(
         map_action(
             split(app_state.sidebar(), app_state.main_view()).split_point(0.2),
@@ -275,7 +275,7 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
 
 fn load_contexts(
     mastodon: Mastodon,
-) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
+) -> impl View<Edit<Placehero>, (), ViewCtx, Element = NoElement> + use<> {
     worker_raw(
         move |result, mut recv: UnboundedReceiver<String>| {
             let mastodon = mastodon.clone();
@@ -319,7 +319,7 @@ fn load_contexts(
 
 fn load_instance(
     mastodon: Mastodon,
-) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
+) -> impl View<Edit<Placehero>, (), ViewCtx, Element = NoElement> + use<> {
     task_raw(
         move |result| {
             let mastodon = mastodon.clone();
@@ -344,7 +344,7 @@ fn load_instance(
 
 fn load_account(
     mastodon: Mastodon,
-) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
+) -> impl View<Edit<Placehero>, (), ViewCtx, Element = NoElement> + use<> {
     worker_raw(
         move |result, mut recv: UnboundedReceiver<String>| {
             let mastodon = mastodon.clone();

@@ -16,6 +16,7 @@ use xilem::core::fork;
 use xilem::core::one_of::Either;
 use xilem::view::{FlexSequence, FlexSpacer, flex_col, flex_row, label, task, text_button};
 use xilem::{WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 
 /// The state of the entire application.
 ///
@@ -105,7 +106,7 @@ fn get_formatted_duration(dur: Duration) -> String {
     format!("{hours}:{minutes:0>2}:{seconds:0>4.1}")
 }
 
-fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
+fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
     fork(
         flex_col((
             FlexSpacer::Fixed(5.px()),
@@ -136,7 +137,7 @@ fn app_logic(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
 }
 
 /// Creates a list of items that shows the lap number, split time, and total cumulative time.
-fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Stopwatch> + use<> {
+fn laps_section(data: &mut Stopwatch) -> impl FlexSequence<Edit<Stopwatch>> + use<> {
     let mut items = Vec::new();
     let mut total_dur = Duration::ZERO;
     let current_lap = data.completed_lap_splits.len();
@@ -159,7 +160,7 @@ fn single_lap(
     lap_id: usize,
     split_dur: Duration,
     total_dur: Duration,
-) -> impl WidgetView<Stopwatch> {
+) -> impl WidgetView<Edit<Stopwatch>> {
     flex_row((
         FlexSpacer::Flex(1.0),
         label(format!("Lap {}", lap_id + 1)),
@@ -172,7 +173,7 @@ fn single_lap(
     .must_fill_major_axis(true)
 }
 
-fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
+fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
     if data.active {
         Either::A(text_button("Stop", |data: &mut Stopwatch| {
             data.stop();
@@ -184,7 +185,7 @@ fn start_stop_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<>
     }
 }
 
-fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Stopwatch> + use<> {
+fn lap_reset_button(data: &mut Stopwatch) -> impl WidgetView<Edit<Stopwatch>> + use<> {
     if data.active {
         Either::A(text_button("  Lap  ", |data: &mut Stopwatch| {
             data.lap();

@@ -6,7 +6,8 @@
 use hidden::OneOfState;
 
 use crate::{
-    MessageContext, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewId, ViewMarker,
+    ViewPathTracker,
 };
 
 /// This trait allows, specifying a type as `ViewElement`, which should never be constructed or used.
@@ -214,7 +215,7 @@ impl<A, B, C, D, E, F, G, H, I> ViewMarker for OneOf<A, B, C, D, E, F, G, H, I> 
 impl<State, Action, Context, A, B, C, D, E, F, G, H, I> View<State, Action, Context>
     for OneOf<A, B, C, D, E, F, G, H, I>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Context: ViewPathTracker
         + OneOfCtx<
@@ -255,7 +256,11 @@ where
     >;
 
     #[doc(hidden)]
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let generation = 0;
         let (element, state) = ctx.with_id(ViewId::new(generation), |ctx| match self {
             Self::A(v) => {
@@ -311,7 +316,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         let id = ViewId::new(view_state.generation);
         // If both elements are of the same type, do a simple rebuild
@@ -554,7 +559,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         mut element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let start = message
             .take_first()
@@ -600,19 +605,22 @@ where
 #[doc(hidden)]
 mod hidden {
     use super::PhantomElementCtx;
-    use crate::{MessageContext, Mut, View, ViewMarker};
+    use crate::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
 
     #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
     #[derive(Debug)]
     pub enum Never {}
 
     impl ViewMarker for Never {}
-    impl<State, Action, Context: PhantomElementCtx> View<State, Action, Context> for Never {
+    impl<State, Action, Context: PhantomElementCtx> View<State, Action, Context> for Never
+    where
+        State: ViewArgument,
+    {
         type Element = Context::PhantomElement;
 
         type ViewState = Self;
 
-        fn build(&self, _: &mut Context, _: &mut State) -> (Self::Element, Self::ViewState) {
+        fn build(&self, _: &mut Context, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
             match *self {}
         }
 
@@ -622,7 +630,7 @@ mod hidden {
             _: &mut Self::ViewState,
             _: &mut Context,
             _: Mut<'_, Self::Element>,
-            _: &mut State,
+            _: Arg<'_, State>,
         ) {
             match *self {}
         }
@@ -636,7 +644,7 @@ mod hidden {
             _: &mut Self::ViewState,
             _: &mut MessageContext,
             _: Mut<'_, Self::Element>,
-            _: &mut State,
+            _: Arg<'_, State>,
         ) -> crate::MessageResult<Action> {
             match *self {}
         }

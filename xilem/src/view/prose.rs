@@ -1,16 +1,18 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+use std::marker::PhantomData;
+
 use masonry::core::{ArcStr, NewWidget, Properties, StyleProperty};
 use masonry::parley::FontWeight;
 use masonry::properties::{ContentColor, DisabledContentColor, LineBreaking};
 use masonry::widgets;
 
-use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::{Color, MessageResult, Pod, TextAlign, View, ViewCtx};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::{Color, MessageResult, Pod, TextAlign, ViewCtx};
 
 /// A view which displays selectable text.
-pub fn prose(content: impl Into<ArcStr>) -> Prose {
+pub fn prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> {
     Prose {
         content: content.into(),
         text_color: None,
@@ -19,6 +21,7 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
         text_size: masonry::theme::TEXT_SIZE_NORMAL,
         line_break_mode: LineBreaking::WordWrap,
         weight: FontWeight::NORMAL,
+        phantom: PhantomData,
     }
 }
 
@@ -28,13 +31,13 @@ pub fn prose(content: impl Into<ArcStr>) -> Prose {
 /// Note that setting [`text_alignment`](Prose::text_alignment) on the result
 /// will be meaningless.
 #[doc(alias = "span")]
-pub fn inline_prose(content: impl Into<ArcStr>) -> Prose {
+pub fn inline_prose<State, Action>(content: impl Into<ArcStr>) -> Prose<State, Action> {
     prose(content).line_break_mode(LineBreaking::Overflow)
 }
 
 /// The [`View`] created by [`prose`] or [`inline_prose`].
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Prose {
+pub struct Prose<State, Action> {
     content: ArcStr,
 
     text_color: Option<Color>,
@@ -43,11 +46,12 @@ pub struct Prose {
     text_size: f32,
     line_break_mode: LineBreaking,
     weight: FontWeight,
+    phantom: PhantomData<fn(State) -> Action>,
     // TODO: disabled: bool,
     // TODO: add more attributes of `masonry::widgets::Prose`
 }
 
-impl Prose {
+impl<State, Action> Prose<State, Action> {
     /// Set the text's color.
     ///
     /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
@@ -94,12 +98,12 @@ fn line_break_clips(linebreaking: LineBreaking) -> bool {
     matches!(linebreaking, LineBreaking::Clip | LineBreaking::WordWrap)
 }
 
-impl ViewMarker for Prose {}
-impl<State, Action> View<State, Action, ViewCtx> for Prose {
+impl<State, Action> ViewMarker for Prose<State, Action> {}
+impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx> for Prose<State, Action> {
     type Element = Pod<widgets::Prose>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let text_area = widgets::TextArea::new_immutable(&self.content)
             .with_text_alignment(self.text_alignment)
             .with_style(StyleProperty::FontSize(self.text_size))
@@ -130,7 +134,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         let mut text_area = widgets::Prose::text_mut(&mut element);
 
@@ -182,7 +186,7 @@ impl<State, Action> View<State, Action, ViewCtx> for Prose {
         _view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        _app_state: &mut State,
+        _app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         tracing::error!(
             ?message,

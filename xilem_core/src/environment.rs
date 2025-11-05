@@ -6,7 +6,10 @@
 use anymore::AnyDebug;
 use hashbrown::{HashMap, hash_map::Entry};
 
-use crate::{MessageContext, MessageResult, Mut, View, ViewId, ViewMarker, ViewPathTracker};
+use crate::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
+    ViewPathTracker,
+};
 
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
 use core::{any::TypeId, marker::PhantomData};
@@ -154,7 +157,8 @@ pub fn provides<State, Action, Context, InitialContext, ChildView, Ctx>(
     child: ChildView,
 ) -> Provides<State, Action, Context, InitialContext, ChildView>
 where
-    InitialContext: Fn(&mut State) -> Context,
+    State: ViewArgument,
+    InitialContext: Fn(Arg<'_, State>) -> Context,
     ChildView: View<State, Action, Ctx>,
     Ctx: ViewPathTracker,
     Context: Resource,
@@ -190,6 +194,7 @@ pub struct ProvidesState<ChildState> {
 impl<State, Action, Context, InitialContext, ChildView> ViewMarker
     for Provides<State, Action, Context, InitialContext, ChildView>
 where
+    State: ViewArgument,
     Context: Resource,
 {
 }
@@ -197,7 +202,8 @@ where
 impl<State, Action, Context, InitialContext, Ctx: ViewPathTracker, ChildView>
     View<State, Action, Ctx> for Provides<State, Action, Context, InitialContext, ChildView>
 where
-    InitialContext: Fn(&mut State) -> Context,
+    State: ViewArgument,
+    InitialContext: Fn(Arg<'_, State>) -> Context,
     ChildView: View<State, Action, Ctx>,
     Context: Resource,
     Self: 'static,
@@ -206,9 +212,13 @@ where
 
     type ViewState = ProvidesState<ChildView::ViewState>;
 
-    fn build(&self, ctx: &mut Ctx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Ctx,
+        mut app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         // Prepare the initial state value
-        let value = (self.initial_context)(app_state);
+        let value = (self.initial_context)(State::reborrow_mut(&mut app_state));
         let environment_item = EnvironmentItem {
             change_listeners: Vec::new(),
             value: Box::new(value),
@@ -231,7 +241,8 @@ where
                 old_value.value
             );
         }
-        let (child_element, child_state) = self.child.build(ctx, app_state);
+        let (child_element, child_state) =
+            self.child.build(ctx, State::reborrow_mut(&mut app_state));
 
         // Restore the prior value into the environment
         let env = ctx.environment();
@@ -258,7 +269,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         // Use our value in the child rebuild.
         let env = ctx.environment();
@@ -319,7 +330,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         // Use our value in the child message.
         let slot =
@@ -370,7 +381,8 @@ pub fn with_context<State, Action, Context, Child, ChildView, Ctx>(
     child: Child,
 ) -> WithContext<State, Action, Context, Child, ChildView>
 where
-    Child: Fn(&mut Context, &mut State) -> ChildView,
+    State: ViewArgument,
+    Child: Fn(&mut Context, Arg<'_, State>) -> ChildView,
     ChildView: View<State, Action, Ctx>,
     Ctx: ViewPathTracker,
     Context: Resource,
@@ -407,13 +419,15 @@ const WITH_CONTEXT_CHILD: ViewId = ViewId::new(0);
 impl<State, Action, Context, Child, ChildView> ViewMarker
     for WithContext<State, Action, Context, Child, ChildView>
 where
+    State: ViewArgument,
     Context: Resource,
 {
 }
 impl<State, Action, Context, Ctx: ViewPathTracker, Child, ChildView> View<State, Action, Ctx>
     for WithContext<State, Action, Context, Child, ChildView>
 where
-    Child: Fn(&mut Context, &mut State) -> ChildView,
+    State: ViewArgument,
+    Child: Fn(&mut Context, Arg<'_, State>) -> ChildView,
     ChildView: View<State, Action, Ctx>,
     Context: Resource,
     Self: 'static,
@@ -422,7 +436,11 @@ where
 
     type ViewState = WithContextState<ChildView::ViewState, ChildView>;
 
-    fn build(&self, ctx: &mut Ctx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Ctx,
+        mut app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let path: Arc<[ViewId]> = ctx.view_path().into();
         ctx.with_id(WITH_CONTEXT_CHILD, |ctx| {
             let env = ctx.environment();
@@ -488,8 +506,8 @@ where
                 None
             };
 
-            let child_view = (self.child)(context, app_state);
-            let (child_element, child_state) = child_view.build(ctx, app_state);
+            let child_view = (self.child)(context, State::reborrow_mut(&mut app_state));
+            let (child_element, child_state) = child_view.build(ctx, State::reborrow_mut(&mut app_state));
 
             let state = WithContextState {
                 prev: child_view,
@@ -507,7 +525,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Ctx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        mut app_state: Arg<'_, State>,
     ) {
         ctx.with_id(WITH_CONTEXT_CHILD, |ctx| {
             // Use our value in the child rebuild.
@@ -524,14 +542,14 @@ where
                 .value
                 .downcast_mut::<Context>()
                 .expect("Environment's slots should have the correct types.");
-            let child_view = (self.child)(context, app_state);
+            let child_view = (self.child)(context, State::reborrow_mut(&mut app_state));
 
             child_view.rebuild(
                 &view_state.prev,
                 &mut view_state.child_state,
                 ctx,
                 element,
-                app_state,
+                State::reborrow_mut(&mut app_state),
             );
             view_state.prev = child_view;
         });
@@ -561,7 +579,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let Some(first) = message.take_first() else {
             match message.take_message::<Rebuild>() {
@@ -608,11 +626,12 @@ pub fn on_action_with_context<State, Action, Context, OnAction, Res, ChildView, 
     child: ChildView,
 ) -> OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction>
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     // Experiment:
     OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction>:
         View<State, Action, Context>,
-    OnAction: Fn(&mut State, &mut Res, ChildAction) -> Action,
+    OnAction: Fn(Arg<'_, State>, &mut Res, ChildAction) -> Action,
 {
     OnActionWithContext {
         child,
@@ -638,17 +657,22 @@ impl<State, Action, Context, OnAction, Res, ChildView, ChildAction> ViewMarker
 impl<State, Action, Context, OnAction, Res, ChildView, ChildAction> View<State, Action, Context>
     for OnActionWithContext<State, Action, Context, OnAction, Res, ChildView, ChildAction>
 where
+    State: ViewArgument,
     Context: ViewPathTracker,
     Res: Resource,
     Self: 'static,
     ChildView: View<State, ChildAction, Context>,
-    OnAction: Fn(&mut State, &mut Res, ChildAction) -> Action,
+    OnAction: Fn(Arg<'_, State>, &mut Res, ChildAction) -> Action,
 {
     type Element = ChildView::Element;
 
     type ViewState = OnActionWithContextState<ChildView::ViewState>;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let (element, child_state) = self.child.build(ctx, app_state);
         let env = ctx.environment();
         let pos = env.get_slot_for_type::<Res>();
@@ -674,7 +698,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.child.rebuild(
             &prev.child,
@@ -700,11 +724,14 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        mut app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
-        let prev_res = self
-            .child
-            .message(&mut view_state.child_state, message, element, app_state);
+        let prev_res = self.child.message(
+            &mut view_state.child_state,
+            message,
+            element,
+            State::reborrow_mut(&mut app_state),
+        );
         // Use our value in the child rebuild.
 
         let env = &mut message.environment;
@@ -721,6 +748,8 @@ where
             .downcast_mut::<Res>()
             .expect("Environment's slots should have the correct types.");
 
-        prev_res.map(|child_action| (self.on_action)(app_state, resource, child_action))
+        prev_res.map(|child_action| {
+            (self.on_action)(State::reborrow_mut(&mut app_state), resource, child_action)
+        })
     }
 }
