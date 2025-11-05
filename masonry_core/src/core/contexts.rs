@@ -1350,10 +1350,8 @@ impl_context_method!(
         /// For further details see [`ErasedAction`].
         pub fn submit_untyped_action(&mut self, action: ErasedAction) {
             trace!("submit_untyped_action");
-            self.global_state.emit_signal(RenderRootSignal::Action(
-                Box::new(action),
-                self.widget_state.id,
-            ));
+            self.global_state
+                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
         }
 
         /// Set the IME cursor area.
