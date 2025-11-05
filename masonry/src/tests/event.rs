@@ -470,3 +470,27 @@ fn accessibility_focus() {
     });
     assert_eq!(harness.focused_widget_id(), None);
 }
+
+#[test]
+fn downcast_untyped_action() {
+    let target_tag = WidgetTag::new("arbitrary_submitter");
+
+    #[derive(Debug)]
+    struct ArbitraryAction;
+
+    let arbitrary_submitter = ModularWidget::new(()).pointer_event_fn(|_, ctx, _, _| {
+        ctx.submit_untyped_action(Box::new(ArbitraryAction));
+    });
+
+    let widget = NewWidget::new_with_tag(arbitrary_submitter, target_tag);
+
+    let mut harness = TestHarness::create(default_property_set(), widget);
+    let target_id = harness.get_widget(target_tag).id();
+
+    harness.mouse_move_to(target_id);
+
+    assert_matches!(
+        harness.pop_action::<ArbitraryAction>(),
+        Some((ArbitraryAction, _))
+    );
+}
