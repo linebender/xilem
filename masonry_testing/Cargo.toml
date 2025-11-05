@@ -16,7 +16,7 @@ default-target = "x86_64-unknown-linux-gnu"
 targets = []
 
 [features]
-default = []
+default = ["masonry_core/default"]
 
 [dependencies]
 accesskit_consumer.workspace = true
