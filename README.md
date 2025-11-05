@@ -21,16 +21,35 @@ It provides a retained widget tree and runs event handling and update passes on 
 It lets users create a lightweight view tree, and changes the rendered app based on changes to the tree.
 It has a web backend and a Masonry backend.
 
-## Project structure
-
-![Xilem project layers](docs/assets/xilem-layers.svg)
-
 Xilem and Masonry are built on top of:
 
 - **winit** for window creation.
 - **Vello and wgpu** for 2D graphics.
 - **Parley and Fontique** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
 - **AccessKit** for plugging into accessibility APIs.
+
+`masonry/` and `xilem/` are the respective entry points of these projects for new users. 
+See `ARCHITECTURE.md` for details about the repository structure.
+
+**Note for new users:** If you're not sure what to use between Xilem and Masonry, you probably want Xilem. In general, if you're trying to make an app with minimum hassle, you probably want Xilem. Xilem is a UI framework, whereas Masonry is a toolkit for building UI frameworks (including Xilem).
+
+
+## Screenshots
+
+**TODO**
+
+
+<figure align="center">
+
+<img style="height: auto;" width="866" height="540" src="https://private-user-images.githubusercontent.com/8573618/510272364-1f4f8f98-c61b-446f-8b8e-486e01b54397.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjIzNjUzNDYsIm5iZiI6MTc2MjM2NTA0NiwicGF0aCI6Ii84NTczNjE4LzUxMDI3MjM2NC0xZjRmOGY5OC1jNjFiLTQ0NmYtOGI4ZS00ODZlMDFiNTQzOTcucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI1MTEwNSUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNTExMDVUMTc1MDQ2WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9MGI3ZGE0NjQ2MmI2NDI5OGY4ZTI1ZmQ5MTNmYmE3MTEzYjcwODRkYTQ5Y2NjODc1NzgyMmM3MWJlMTI3NTZmMCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QifQ.l5-Vsm5fIoKcueVYKkdVq5bF8L9m0aOTJIsnEXihpds">
+
+<figcaption>
+
+The `to_do_mvc` example.
+
+</figcaption>
+</figure>
+
 
 ## Precise Capturing
 
