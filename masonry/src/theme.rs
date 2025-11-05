@@ -22,7 +22,7 @@ use crate::widgets::{Button, Checkbox, Label, ProgressBar, Spinner, TextArea, Te
 ///
 /// If the app driver does some kind beginning-of-frame clearing,
 /// it should clear with this color by default.
-pub const BACKGROUND_COLOR: Color = Color::from_rgb8(0x22, 0x22, 0x22);
+pub const BACKGROUND_COLOR: Color = Color::from_rgb8(0x1D, 0x1D, 0x1D);
 
 pub const BORDER_WIDTH: f64 = 1.;
 
