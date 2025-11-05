@@ -6,9 +6,13 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
+use masonry::properties::types::Length;
+use masonry::theme::{DEFAULT_GAP, ZYNC_800};
 use winit::error::EventLoopError;
 use xilem::style::Style as _;
-use xilem::view::{button, checkbox, flex_col, flex_row, label, text_input};
+use xilem::view::{
+    FlexExt, FlexSpacer, button, checkbox, flex_col, flex_row, label, text_button, text_input,
+};
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 use xilem_core::Edit;
 
@@ -43,6 +47,7 @@ impl TaskList {
 }
 
 fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<> {
+    let header_text = label("todos").text_size(80.);
     let input_box = text_input(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {
@@ -56,8 +61,8 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
         task_list.add_task();
     });
 
-    let first_line = flex_col((
-        input_box,
+    let input_line = flex_row((
+        input_box.flex(1.0),
         button(
             label("Add task".to_string()).text_size(16.),
             |task_list: &mut TaskList| {
@@ -84,11 +89,15 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
                     },
                 )
                 .text_size(16.);
-                let delete_button_label = label("Delete").text_size(16.);
-                let delete_button = button(delete_button_label, move |data: &mut TaskList| {
+                let delete_button = text_button("Delete", move |data: &mut TaskList| {
                     data.tasks.remove(i);
-                });
-                Some(flex_row((checkbox, delete_button)))
+                })
+                .padding(2.0);
+                Some(
+                    flex_row((checkbox, FlexSpacer::Flex(1.), delete_button))
+                        .padding(DEFAULT_GAP.get())
+                        .border(ZYNC_800, 1.0),
+                )
             }
         })
         .collect::<Vec<_>>();
@@ -110,7 +119,17 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
         ))
     });
 
-    flex_col((first_line, tasks, footer)).padding(50.0)
+    flex_col((
+        header_text,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        input_line,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        tasks,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        footer,
+    ))
+    .gap(Length::px(4.))
+    .padding(50.0)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {
