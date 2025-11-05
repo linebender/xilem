@@ -208,11 +208,8 @@ mod tests {
         };
         let image_widget = NewWidget::new(Image::new(image_data));
 
-        let mut harness = TestHarness::create_with_size(
-            test_property_set(),
-            image_widget,
-            Size::new(40., 60.),
-        );
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), image_widget, Size::new(40., 60.));
         assert_render_snapshot!(harness, "image_tall_paint");
     }
 

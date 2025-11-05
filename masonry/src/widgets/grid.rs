@@ -372,8 +372,7 @@ mod tests {
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_1x1");
 
@@ -432,8 +431,7 @@ mod tests {
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 
@@ -473,8 +471,7 @@ mod tests {
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness =
-            TestHarness::create_with_size(test_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 

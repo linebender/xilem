@@ -209,11 +209,8 @@ mod tests {
             .with_child(SizedBox::new(prose).width(60.px()).with_auto_id())
             .with_auto_id();
 
-        let mut harness = TestHarness::create_with_size(
-            test_property_set(),
-            root_widget,
-            Size::new(200.0, 40.0),
-        );
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), root_widget, Size::new(200.0, 40.0));
 
         assert_render_snapshot!(harness, "prose_clipping");
     }
