@@ -48,46 +48,39 @@
 #![no_std]
 // TODO: Remove any items listed as "Deferred"
 #![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
+
 extern crate alloc;
 
 pub use anymore;
 
+mod any_view;
 mod context;
-pub use context::MessageContext;
-
 mod deferred;
-pub use deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
-
+mod element;
 mod environment;
-pub use environment::{
+mod message;
+mod sequence;
+mod state;
+mod view;
+mod views;
+
+pub use self::any_view::{AnyView, AnyViewState};
+pub use self::context::MessageContext;
+pub use self::deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
+pub use self::element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
+pub use self::environment::{
     Environment, EnvironmentItem, OnActionWithContext, Provides, Rebuild, Resource, Slot,
     WithContext, on_action_with_context, provides, with_context,
 };
-
-mod view;
-pub use view::{View, ViewId, ViewMarker, ViewPathTracker};
-
-mod views;
-pub use views::{
+pub use self::message::{DynMessage, MessageResult, SendMessage};
+pub use self::sequence::{
+    AppendVec, Count, ElementSplice, ViewSequence, WithoutElements, without_elements,
+};
+pub use self::state::{Arg, Edit, Read, ViewArgument};
+pub use self::view::{View, ViewId, ViewMarker, ViewPathTracker};
+pub use self::views::{
     Fork, Frozen, Lens, MapMessage, MapState, Memoize, OrphanView, RunOnce, fork, frozen, lens,
     map_action, map_message, map_state, memoize, one_of, run_once, run_once_raw,
-};
-
-mod message;
-pub use message::{DynMessage, MessageResult, SendMessage};
-
-mod element;
-pub use element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
-
-mod any_view;
-pub use any_view::{AnyView, AnyViewState};
-
-mod state;
-pub use state::{Arg, Edit, Read, ViewArgument};
-
-mod sequence;
-pub use sequence::{
-    AppendVec, Count, ElementSplice, ViewSequence, WithoutElements, without_elements,
 };
 
 pub mod docs;
