@@ -207,12 +207,21 @@ impl<T0: ViewArgument, T1: ViewArgument> ViewArgument for (T0, T1) {
 }
 
 // We use manual impls for 0, 1 and 2 to show the pattern
+
 viewargument_tuple!(T0, T1, T2);
 viewargument_tuple!(T0, T1, T2, T3);
 viewargument_tuple!(T0, T1, T2, T3, T4);
 viewargument_tuple!(T0, T1, T2, T3, T4, T5);
 viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6);
 viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7);
+// 8 items (above) is likely the absolute maximum that anyone should be reasonably using.
+// Instead, they should make a custom struct to encapsulate these arguments.
+// However, we still support more, to avoid cliff edges.
+// Certainly if we had variadic generics, we wouldn't artificially limit it here.
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11);
 
 /// Internal macro to implement [`ViewArgument`] for tuples with the given generic parameter names.
 macro_rules! viewargument_tuple {
