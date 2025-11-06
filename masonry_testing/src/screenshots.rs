@@ -24,12 +24,8 @@ pub(crate) fn get_image_diff(
     new_image: &RgbImage,
     max_screenshot_tolerance: u32,
 ) -> Option<RgbImage> {
-    // TODO - Handle this case more gracefully.
-    assert_eq!(
-        (ref_image.width(), ref_image.height()),
-        (new_image.width(), new_image.height()),
-        "New image (right) has different size from old image (left)."
-    );
+    let ref_size = (ref_image.width(), ref_image.height());
+    let new_size = (new_image.width(), new_image.height());
 
     let mut max_distance: u32 = 0;
     for (p1, p2) in ref_image.pixels().zip(new_image.pixels()) {
@@ -38,7 +34,7 @@ pub(crate) fn get_image_diff(
         max_distance = std::cmp::max(max_distance, new_max);
     }
 
-    if max_distance <= max_screenshot_tolerance {
+    if max_distance <= max_screenshot_tolerance && ref_size == new_size {
         return None;
     }
 
