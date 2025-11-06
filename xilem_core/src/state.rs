@@ -10,15 +10,18 @@
 ///
 /// This trait is used to talk about "reference" versions of states.
 ///
-/// This is implemented for [`Edit<T>`], [`Read<T>`], and tuples thereof.
+/// This is implemented for [`Edit<T>`], [`Read<T>`], and tuples of other implementations (of up to length 8).
 /// It can also be implemented manually, which allows names to be given to fields.
+/// Note that if you need more than 8 items, you can either use a manual implementation, or nest tuples.
+/// Also note that `ViewArgument` is implemented for `()`, which *could* be useful for components
+/// which don't use any state, although the ergonomics of that aren't great yet.
 ///
 /// # Examples
 ///
 /// In these examples, the Action and Context parameters to `View` are elided.
 ///
 /// - `View<Edit<f32>>` will read and write one `f32` value.
-/// - `View<(Edit<f32>, Range<f32>)>` will read and write one `f32` value, and read an `f32` range.
+/// - `View<(Edit<f32>, Read<Range<f32>>)>` will read and write one `f32` value, and read an `f32` range.
 /// - `View<MyParameters<'static>>` will perform the operations described in `MyParameters`.
 ///
 /// `MyParameters` in the example would look something like:
@@ -203,17 +206,41 @@ impl<T0: ViewArgument, T1: ViewArgument> ViewArgument for (T0, T1) {
     }
 }
 
-// TODO: Generate 2+ with a macro; maybe 1+, but then again for understandability purposes, having at least one
-// outside of the macro is appealing..
-impl<T0: ViewArgument, T1: ViewArgument, T2: ViewArgument> ViewArgument for (T0, T1, T2) {
-    type Params<'a> = (T0::Params<'a>, T1::Params<'a>, T2::Params<'a>);
-    fn reborrow_mut<'input, 'a: 'input>(
-        (t0, t1, t2): &'input mut Self::Params<'a>,
-    ) -> Self::Params<'input> {
-        (
-            T0::reborrow_mut(t0),
-            T1::reborrow_mut(t1),
-            T2::reborrow_mut(t2),
-        )
-    }
+// We use manual impls for 0, 1 and 2 to show the pattern
+
+viewargument_tuple!(T0, T1, T2);
+viewargument_tuple!(T0, T1, T2, T3);
+viewargument_tuple!(T0, T1, T2, T3, T4);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7);
+// 8 items (above) is likely the absolute maximum that anyone should be reasonably using.
+// Instead, they should make a custom struct to encapsulate these arguments.
+// However, we still support more, to avoid cliff edges.
+// Certainly if we had variadic generics, we wouldn't artificially limit it here.
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
+viewargument_tuple!(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11);
+
+/// Internal macro to implement [`ViewArgument`] for tuples with the given generic parameter names.
+macro_rules! viewargument_tuple {
+    (
+        $($name: ident),+
+    ) => {
+        impl<$($name: ViewArgument),+> ViewArgument for ($($name,)+) {
+            type Params<'a> = ($($name::Params<'a>,)+);
+
+            #[expect(non_snake_case, reason = "Reusing same ident for convenience.")]
+            fn reborrow_mut<'input, 'a: 'input>(
+                ($($name,)+): &'input mut Self::Params<'a>,
+            ) -> Self::Params<'input> {
+                (
+                    $($name::reborrow_mut($name),)+
+                )
+            }
+        }
+    };
 }
+// Allow using the macro above its definition.
+use viewargument_tuple;
