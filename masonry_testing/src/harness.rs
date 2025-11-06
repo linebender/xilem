@@ -15,6 +15,7 @@ use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
+use masonry_core::vello::peniko::Fill;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -28,16 +29,16 @@ use masonry_core::core::{
     WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use masonry_core::kurbo::{Point, Size, Vec2};
+use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
-use masonry_core::vello;
 use masonry_core::vello::util::{RenderContext, block_on_wgpu};
 use masonry_core::vello::wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,
     TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat,
     TextureUsages, TextureViewDescriptor,
 };
+use masonry_core::vello::{self, Scene};
 
 use crate::screenshots::get_image_diff;
 use crate::{Record, Recorder};
@@ -139,6 +140,7 @@ pub struct TestHarness<W: Widget> {
     vello_renderer: Option<vello::Renderer>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
+    root_padding: u32,
     background_color: Color,
     panic_on_rewrite_saturation: bool,
     screenshot_tolerance: u32,
@@ -156,17 +158,24 @@ pub struct TestHarness<W: Widget> {
 #[non_exhaustive]
 pub struct TestHarnessParams {
     /// The size of the virtual window the harness renders into for snapshot testing.
-    /// Defaults to [`Self::DEFAULT_SIZE`].
+    /// Defaults to [`TestHarnessParams::DEFAULT_SIZE`].
     pub window_size: Size,
     /// The background color of the virtual window.
-    /// Defaults to [`Self::DEFAULT_BACKGROUND_COLOR`].
+    /// Defaults to [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
-    /// The padding between the virtual window and the root widget.
+    /// Extra padding added to screenshots in [`assert_render_snapshot!`].
     ///
-    /// Defaults to zero, but [`Self::ROOT_PADDING`] is recommended.
-    pub root_padding: f64,
+    /// Currently defaults to zero, but we plan to change this
+    /// to [`TestHarnessParams::ROOT_PADDING`] soon.
+    /// This is useful:
+    ///
+    /// 1) For individual widgets, as they will often be designed with content outside their
+    ///    layout box (e.g. drop shadows, focus indicators).
+    /// 2) For full apps, as it allows (manual) validation that none of the app content is cut off by
+    ///    the window border.
+    pub root_padding: u32,
     /// The maximum difference between two pixel channels before the harness will fail a screenshot test.
-    /// Defaults to [`Self::DEFAULT_SCREENSHOT_TOLERANCE`].
+    /// Defaults to [`TestHarnessParams::DEFAULT_SCREENSHOT_TOLERANCE`].
     pub screenshot_tolerance: u32,
     /// The scale factor widgets are rendered at.
     /// Defaults to 1.0.
@@ -189,6 +198,8 @@ pub struct TestHarnessParams {
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
 /// and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
+/// This rendering will have extra padding which would not be present in a real app,
+/// as documented in [`TestHarnessParams::root_padding`].
 ///
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
@@ -230,7 +241,7 @@ impl TestHarnessParams {
     pub const DEFAULT: Self = Self {
         window_size: Self::DEFAULT_SIZE,
         background_color: Self::DEFAULT_BACKGROUND_COLOR,
-        root_padding: 0.,
+        root_padding: 0,
         screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
         panic_on_rewrite_saturation: true,
@@ -247,7 +258,9 @@ impl TestHarnessParams {
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
 
     /// Recommended root padding for tests.
-    pub const ROOT_PADDING: f64 = 5.0;
+    ///
+    /// To be set as [`TestHarnessParams::root_padding`]
+    pub const ROOT_PADDING: u32 = 5;
 
     /// One kibibyte. Used in [`TestHarnessParams::max_screenshot_size`].
     pub const KIBIBYTE: u32 = 1024;
@@ -346,6 +359,7 @@ impl<W: Widget> TestHarness<W> {
             mouse_state,
             window_size,
             background_color: params.background_color,
+            root_padding: params.root_padding,
             screenshot_tolerance: params.screenshot_tolerance,
             panic_on_rewrite_saturation: params.panic_on_rewrite_saturation,
             max_screenshot_size: params.max_screenshot_size,
@@ -458,13 +472,29 @@ impl<W: Widget> TestHarness<W> {
     }
 
     // --- MARK: RENDER
+    /// Renders the window into an image and updates the `accesskit_consumer` tree.
+    ///
+    /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
+    ///
+    /// The returned image also does not apply [`TestHarnessParams::root_padding`].
+    /// To get an image which uses that, use [`render_with_padding`](Self::render_with_padding) with the required padding.
+    // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
+    // Those could avoid actually performing a real render.
+    pub fn render(&mut self) -> RgbaImage {
+        // No padding
+        self.render_with_padding(0)
+    }
+
     // TODO - We add way too many dependencies in this code
     // TODO - Should be async?
     /// Renders the window into an image and updates the `accesskit_consumer` tree.
     ///
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
-    pub fn render(&mut self) -> RgbaImage {
-        let (scene, tree_update) = self.render_root.redraw();
+    /// The returned image has padding of `padding` on all sides.
+    ///
+    /// This padded area is currently indicated with a different background color.
+    pub fn render_with_padding(&mut self, padding: u32) -> RgbaImage {
+        let (contents_scene, tree_update) = self.render_root.redraw();
         let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
@@ -498,12 +528,11 @@ impl<W: Widget> TestHarness<W> {
             .expect("Got non-Send/Sync error from creating renderer")
         });
 
-        // TODO - fix window_size
         let (width, height) = (self.window_size.width, self.window_size.height);
 
         // Avoid having a zero-sized image
-        let width = width.max(1);
-        let height = height.max(1);
+        let width = width.max(1) + padding * 2;
+        let height = height.max(1) + padding * 2;
 
         let render_params = vello::RenderParams {
             base_color: self.background_color,
@@ -528,6 +557,35 @@ impl<W: Widget> TestHarness<W> {
             view_formats: &[],
         });
         let view = target.create_view(&TextureViewDescriptor::default());
+
+        let scene = if padding != 0 {
+            let mut scene = Scene::new();
+            // 25% opacity of 50% grey provides a border of where the actual widget content is.
+            // Alternatively, maybe we should use a stronger color here?
+            let padding_color = Color::from_rgba8(127, 127, 127, 64);
+            // We draw the border first, so that any content is above the background color.
+            for [x0, y0, x1, y1] in [
+                [0, 0, padding, height],                              // Left edge
+                [width - padding, 0, width, height],                  // Right edge
+                [padding, 0, width - padding, padding],               // Top edge
+                [padding, height - padding, width - padding, height], // Bottom edge
+            ] {
+                scene.fill(
+                    Fill::EvenOdd,
+                    Affine::IDENTITY,
+                    padding_color,
+                    None,
+                    &Rect::new(x0 as f64, y0 as f64, x1 as f64, y1 as f64),
+                );
+            }
+            scene.append(
+                &contents_scene,
+                Some(Affine::translate((padding as f64, padding as f64))),
+            );
+            scene
+        } else {
+            contents_scene
+        };
         renderer
             .render_to_texture(device, queue, &scene, &view, &render_params)
             .expect("Got non-Send/Sync error from rendering");
@@ -1064,7 +1122,7 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        let new_image: DynamicImage = self.render().into();
+        let new_image: DynamicImage = self.render_with_padding(self.root_padding).into();
 
         let screenshots_folder = PathBuf::from(manifest_dir).join("screenshots");
         std::fs::create_dir_all(&screenshots_folder).unwrap();
