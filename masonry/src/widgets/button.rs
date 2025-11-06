@@ -323,7 +323,7 @@ mod tests {
     use crate::properties::ContentColor;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::{ACCENT_COLOR, default_property_set};
+    use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
 
     #[test]
@@ -334,7 +334,7 @@ mod tests {
         let mut params = TestHarnessParams::DEFAULT;
         params.window_size = window_size;
         params.root_padding = 10.;
-        let mut harness = TestHarness::create_with(default_property_set(), widget, params);
+        let mut harness = TestHarness::create_with(test_property_set(), widget, params);
         let button_id = harness.root_id();
 
         assert_render_snapshot!(harness, "button_hello");
@@ -377,11 +377,8 @@ mod tests {
 
             let button = NewWidget::new(Button::new(label));
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                button,
-                Size::new(50.0, 50.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -389,11 +386,8 @@ mod tests {
         let image_2 = {
             let button = NewWidget::new(Button::with_text("Hello world"));
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                button,
-                Size::new(50.0, 50.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut button| {
                 let mut label = Button::child_mut(&mut button);
@@ -418,8 +412,7 @@ mod tests {
         let button = NewWidget::new(Button::with_text("Some random text"));
 
         let window_size = Size::new(200.0, 80.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), button, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), button, window_size);
 
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
@@ -462,8 +455,7 @@ mod tests {
         let mut test_params = TestHarnessParams::default();
         test_params.window_size = Size::new(300.0, 300.0);
         test_params.screenshot_tolerance = 32;
-        let mut harness =
-            TestHarness::create_with(default_property_set(), root_widget, test_params);
+        let mut harness = TestHarness::create_with(test_property_set(), root_widget, test_params);
 
         harness.edit_root_widget(|mut grid| {
             {
@@ -514,7 +506,7 @@ mod tests {
         let mut button = Button::new(child).with_auto_id();
         button.properties.insert(Padding::all(10.));
         let button_id = button.id();
-        let mut harness = TestHarness::create(default_property_set(), button);
+        let mut harness = TestHarness::create(test_property_set(), button);
 
         harness.mouse_move_to_unchecked(child_id);
         let button = harness.get_widget_with_id(button_id);

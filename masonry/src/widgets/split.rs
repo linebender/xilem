@@ -604,7 +604,7 @@ where
 mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Label;
 
     #[test]
@@ -616,8 +616,7 @@ mod tests {
         ).split_axis(Axis::Horizontal).draggable(false).with_auto_id();
 
         let window_size = Size::new(150.0, 150.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "split_columns");
     }
@@ -631,8 +630,7 @@ mod tests {
         ).split_axis(Axis::Vertical).draggable(false).with_auto_id();
 
         let window_size = Size::new(150.0, 150.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "split_rows");
     }
@@ -654,11 +652,8 @@ mod tests {
             .solid_bar(true)
             .with_auto_id();
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                widget,
-                Size::new(100.0, 100.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
 
             harness.render()
         };
@@ -670,11 +665,8 @@ mod tests {
             )
             .with_auto_id();
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                widget,
-                Size::new(100.0, 100.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
 
             harness.edit_root_widget(|mut splitter| {
                 Split::set_split_point(&mut splitter, 0.3);

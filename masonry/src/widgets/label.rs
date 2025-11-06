@@ -415,7 +415,7 @@ mod tests {
     use crate::properties::types::CrossAxisAlignment;
     use crate::properties::types::{AsUnit, Length};
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::{ACCENT_COLOR, default_property_set};
+    use crate::theme::{ACCENT_COLOR, test_property_set};
     use crate::widgets::{Flex, SizedBox};
 
     #[test]
@@ -423,7 +423,7 @@ mod tests {
         let label = Label::new("Hello").with_auto_id();
 
         let window_size = Size::new(100.0, 40.0);
-        let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), label, window_size);
 
         assert_render_snapshot!(harness, "label_hello");
     }
@@ -441,7 +441,7 @@ mod tests {
             );
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), label, Size::new(200.0, 200.0));
+            TestHarness::create_with_size(test_property_set(), label, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "label_styled_label");
     }
@@ -453,7 +453,7 @@ mod tests {
             .with_props(Properties::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
-        let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), label, window_size);
 
         assert_render_snapshot!(harness, "label_underline_label");
     }
@@ -465,7 +465,7 @@ mod tests {
             .with_props(Properties::new().with(LineBreaking::WordWrap));
 
         let window_size = Size::new(100.0, 40.0);
-        let mut harness = TestHarness::create_with_size(default_property_set(), label, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), label, window_size);
 
         assert_render_snapshot!(harness, "label_strikethrough_label");
     }
@@ -496,7 +496,7 @@ mod tests {
             .with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), flex, Size::new(200.0, 200.0));
+            TestHarness::create_with_size(test_property_set(), flex, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "label_label_alignment_flex");
     }
@@ -535,7 +535,7 @@ mod tests {
             .with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 200.0));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 200.0));
 
         assert_render_snapshot!(harness, "label_line_break_modes");
     }
@@ -554,7 +554,7 @@ mod tests {
                 );
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
+                TestHarness::create_with_size(test_property_set(), label, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -565,7 +565,7 @@ mod tests {
                 .with_auto_id();
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), label, Size::new(50.0, 50.0));
+                TestHarness::create_with_size(test_property_set(), label, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut label| {
                 label.insert_prop(ContentColor::new(ACCENT_COLOR));

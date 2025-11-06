@@ -205,7 +205,7 @@ mod tests {
 
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::{core::Properties, palette};
 
     #[test]
@@ -213,8 +213,7 @@ mod tests {
         let widget = NewWidget::new(ProgressBar::new(None));
 
         let window_size = Size::new(150.0, 60.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_indeterminate");
     }
@@ -223,8 +222,7 @@ mod tests {
     fn _0_percent_progressbar() {
         let widget = NewWidget::new(ProgressBar::new(Some(0.)));
         let window_size = Size::new(150.0, 60.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_0_percent");
     }
@@ -233,8 +231,7 @@ mod tests {
     fn _25_percent_progressbar() {
         let widget = NewWidget::new(ProgressBar::new(Some(0.25)));
         let window_size = Size::new(150.0, 60.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_25_percent");
     }
@@ -243,8 +240,7 @@ mod tests {
     fn _50_percent_progressbar() {
         let widget = NewWidget::new(ProgressBar::new(Some(0.5)));
         let window_size = Size::new(150.0, 60.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_50_percent");
     }
@@ -253,8 +249,7 @@ mod tests {
     fn _75_percent_progressbar() {
         let widget = NewWidget::new(ProgressBar::new(Some(0.75)));
         let window_size = Size::new(150.0, 60.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_75_percent");
     }
@@ -263,8 +258,7 @@ mod tests {
     fn _100_percent_progressbar() {
         let widget = NewWidget::new(ProgressBar::new(Some(1.)));
         let window_size = Size::new(150.0, 60.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "progress_bar_100_percent");
     }
@@ -276,7 +270,7 @@ mod tests {
                 .with_props(Properties::new().with(BarColor(palette::css::PURPLE)));
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), bar, Size::new(60.0, 20.0));
+                TestHarness::create_with_size(test_property_set(), bar, Size::new(60.0, 20.0));
 
             harness.render()
         };
@@ -285,7 +279,7 @@ mod tests {
             let bar = NewWidget::new(ProgressBar::new(None));
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), bar, Size::new(60.0, 20.0));
+                TestHarness::create_with_size(test_property_set(), bar, Size::new(60.0, 20.0));
 
             harness.edit_root_widget(|mut bar| {
                 ProgressBar::set_progress(&mut bar, Some(0.5));

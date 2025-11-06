@@ -1056,7 +1056,7 @@ mod tests {
     use crate::core::{KeyboardEvent, Modifiers, Properties};
     use crate::palette;
     use crate::testing::TestHarness;
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     // Tests of alignment happen in Prose.
 
     #[test]
@@ -1067,7 +1067,7 @@ mod tests {
             );
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
+                TestHarness::create_with_size(test_property_set(), area, Size::new(60.0, 40.0));
 
             harness.render()
         };
@@ -1078,7 +1078,7 @@ mod tests {
             );
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
+                TestHarness::create_with_size(test_property_set(), area, Size::new(60.0, 40.0));
 
             let without_wrapping = harness.render();
 
@@ -1118,7 +1118,7 @@ mod tests {
                 Properties::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
-            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
+            let mut harness = TestHarness::create_with(test_property_set(), area, test_params);
 
             harness.render()
         };
@@ -1129,7 +1129,7 @@ mod tests {
                 Properties::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
-            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
+            let mut harness = TestHarness::create_with(test_property_set(), area, test_params);
 
             harness.edit_root_widget(|mut area| {
                 TextArea::reset_text(&mut area, "Test string");
@@ -1207,7 +1207,7 @@ mod tests {
                 TextArea::new_editable("hello world").with_insert_newline(scenario.insert_newline),
             );
 
-            let mut harness = TestHarness::create(default_property_set(), area);
+            let mut harness = TestHarness::create(test_property_set(), area);
             let text_id = harness.root_id();
 
             harness.focus_on(Some(text_id));

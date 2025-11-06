@@ -287,15 +287,14 @@ impl Widget for IndexedStack {
 mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Button;
 
     #[test]
     fn test_indexed_stack_basics() {
         let widget = IndexedStack::new().with_auto_id();
         let window_size = Size::new(50.0, 50.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "indexed_stack_empty");
 
@@ -326,8 +325,7 @@ mod tests {
             .with_active_child(1)
             .with_auto_id();
         let window_size = Size::new(50.0, 50.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "indexed_stack_initial_builder");
 

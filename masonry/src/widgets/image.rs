@@ -165,7 +165,7 @@ mod tests {
 
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
 
     /// Painting an empty image shouldn't crash.
     #[test]
@@ -181,7 +181,7 @@ mod tests {
         };
 
         let image_widget = NewWidget::new(Image::new(image_data));
-        let mut harness = TestHarness::create(default_property_set(), image_widget);
+        let mut harness = TestHarness::create(test_property_set(), image_widget);
         let _ = harness.render();
     }
 
@@ -208,11 +208,8 @@ mod tests {
         };
         let image_widget = NewWidget::new(Image::new(image_data));
 
-        let mut harness = TestHarness::create_with_size(
-            default_property_set(),
-            image_widget,
-            Size::new(40., 60.),
-        );
+        let mut harness =
+            TestHarness::create_with_size(test_property_set(), image_widget, Size::new(40., 60.));
         assert_render_snapshot!(harness, "image_tall_paint");
     }
 
@@ -230,7 +227,7 @@ mod tests {
             let image_widget = NewWidget::new(Image::new(image_data.clone()));
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 image_widget,
                 Size::new(40.0, 60.0),
             );
@@ -249,7 +246,7 @@ mod tests {
             let image_widget = NewWidget::new(Image::new(other_image_data));
 
             let mut harness = TestHarness::create_with_size(
-                default_property_set(),
+                test_property_set(),
                 image_widget,
                 Size::new(40.0, 60.0),
             );
@@ -279,7 +276,7 @@ mod tests {
 
         let image_widget = NewWidget::new(Image::new(image_data.clone()));
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), image_widget, harness_size);
+            TestHarness::create_with_size(test_property_set(), image_widget, harness_size);
 
         // Contain.
         harness.edit_root_widget(|mut image| {

@@ -175,7 +175,7 @@ fn log_size_warnings(size: Size) {
 mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Label;
 
     // TODO - Add more unit tests
@@ -184,7 +184,7 @@ mod tests {
     fn centered() {
         let widget = Align::centered(Label::new("hello").with_auto_id()).with_auto_id();
 
-        let mut harness = TestHarness::create(default_property_set(), widget);
+        let mut harness = TestHarness::create(test_property_set(), widget);
 
         assert_render_snapshot!(harness, "align_centered");
     }
@@ -193,7 +193,7 @@ mod tests {
     fn right() {
         let widget = Align::right(Label::new("hello").with_auto_id()).with_auto_id();
 
-        let mut harness = TestHarness::create(default_property_set(), widget);
+        let mut harness = TestHarness::create(test_property_set(), widget);
 
         assert_render_snapshot!(harness, "align_right");
     }
@@ -202,7 +202,7 @@ mod tests {
     fn left() {
         let widget = Align::left(Label::new("hello").with_auto_id()).with_auto_id();
 
-        let mut harness = TestHarness::create(default_property_set(), widget);
+        let mut harness = TestHarness::create(test_property_set(), widget);
 
         assert_render_snapshot!(harness, "align_left");
     }
