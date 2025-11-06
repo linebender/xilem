@@ -162,5 +162,14 @@ pub fn default_text_styles(styles: &mut StyleSet) {
 /// This should still be kept relatively close to `default_property_set()` so that screenshots look like end user apps.
 #[cfg(test)]
 pub(crate) fn test_property_set() -> DefaultProperties {
-    default_property_set()
+    let mut properties = default_property_set();
+
+    const TEXT_COLOR: Color = Color::from_rgb8(0xf0, 0xf0, 0xea);
+    properties.insert::<Checkbox, _>(CheckmarkColor { color: TEXT_COLOR });
+    properties.insert::<TextArea<false>, _>(ContentColor::new(TEXT_COLOR));
+    properties.insert::<TextArea<false>, _>(CaretColor { color: TEXT_COLOR });
+    properties.insert::<Label, _>(ContentColor::new(TEXT_COLOR));
+    properties.insert::<Spinner, _>(ContentColor::new(TEXT_COLOR));
+
+    properties
 }
