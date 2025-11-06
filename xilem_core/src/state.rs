@@ -10,9 +10,9 @@
 ///
 /// This trait is used to talk about "reference" versions of states.
 ///
-/// This is implemented for [`Edit<T>`], [`Read<T>`], and tuples of other implementations (of up to length 8).
+/// This is implemented for [`Edit<T>`], [`Read<T>`], and tuples of other implementations (of up to length 12).
 /// It can also be implemented manually, which allows names to be given to fields.
-/// Note that if you need more than 8 items, you can either use a manual implementation, or nest tuples.
+/// Note that if you need more than 12 items, you can either use a manual implementation, or nest tuples.
 /// Also note that `ViewArgument` is implemented for `()`, which *could* be useful for components
 /// which don't use any state, although the ergonomics of that aren't great yet.
 ///
