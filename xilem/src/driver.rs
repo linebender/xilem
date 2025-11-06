@@ -7,13 +7,13 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
 use std::sync::Arc;
 
+use masonry::app::FocusFallbackPolicy;
 use masonry::core::{ErasedAction, WidgetId};
 use masonry::peniko::Blob;
 use masonry_winit::app::{
     AppDriver, DriverCtx, MasonryState, MasonryUserEvent, NewWindow, WindowId,
 };
 
-use crate::any_view::DynWidget;
 use crate::core::{
     AnyViewState, DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage,
     View, ViewId, ViewPathTracker,
@@ -312,17 +312,15 @@ where
         let fonts = std::mem::take(&mut self.fonts);
 
         for root in state.roots() {
-            if let Some(root_widget) = root.get_layer_root(0).downcast::<DynWidget>() {
-                let fallback = root_widget.inner().inner_id();
-                root.set_focus_fallback(Some(fallback));
-            }
-
             // Register all provided fonts
             for font in &fonts {
                 // We currently don't do anything with the resulting family information,
                 // because we don't have an easy way to return this to the application.
                 drop(root.register_fonts(font.clone()));
             }
+
+            // Provide an initial sensible fallback for Xilem apps: first text input in the tree.
+            let _ = root.set_focus_fallback_policy(FocusFallbackPolicy::FirstTextInput);
         }
     }
 

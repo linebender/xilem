@@ -100,6 +100,18 @@ In that case, if no widget is focused, text events will get to the fallback widg
 
 The focus fallback isn't considered as "focused" and will not get [`FocusChanged`] events or be visually marked as focused.
 
+Frameworks can compute a reasonable fallback using helper policies.
+`RenderRoot` exposes `compute_focus_fallback(policy)` and `set_focus_fallback_policy(policy)` to assist in selecting and setting a target.
+
+Available policies include:
+- `FirstTextInput`: Pick the first interactive widget that accepts text input in depth‑first pre‑order under the base layer root.
+- `FirstFocusable`: Pick the first interactive widget that accepts focus under the base layer root.
+- `AnchorSubtreeFirst(inner)`: Prefer the subtree under the current focus anchor using the inner policy, then fall back to the base layer root.
+- `Tagged(name)`: Use the widget with a given tag if it is interactive.
+
+These helpers are opt‑in and do not change Masonry's default behavior.
+If no fallback is set and no widget is focused, text events do not go anywhere.
+
 
 ## Disabled
 
