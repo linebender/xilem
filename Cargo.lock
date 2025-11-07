@@ -804,7 +804,7 @@ dependencies = [
 
 [[package]]
 name = "counter"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
@@ -814,7 +814,7 @@ dependencies = [
 
 [[package]]
 name = "counter_custom_element"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
@@ -1061,7 +1061,7 @@ dependencies = [
 
 [[package]]
 name = "fetch"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "console_log",
@@ -2253,7 +2253,7 @@ dependencies = [
 
 [[package]]
 name = "mathml_svg"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
@@ -2952,7 +2952,7 @@ checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
 
 [[package]]
 name = "placehero"
-version = "0.4.0"
+version = "0.0.0"
 dependencies = [
  "anyhow",
  "blurhash",
@@ -3272,7 +3272,7 @@ checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 
 [[package]]
 name = "raw_dom_access"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "console_log",
@@ -3945,7 +3945,7 @@ checksum = "0193cc4331cfd2f3d2011ef287590868599a2f33c3e69bc22c1a3d3acf9e02fb"
 
 [[package]]
 name = "svgdraw"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
@@ -3955,7 +3955,7 @@ dependencies = [
 
 [[package]]
 name = "svgtoy"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "wasm-bindgen",
@@ -4194,7 +4194,7 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "todomvc"
-version = "0.1.0"
+version = "0.0.0"
 dependencies = [
  "console_error_panic_hook",
  "serde",
