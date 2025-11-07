@@ -333,7 +333,7 @@ mod tests {
         let window_size = Size::new(100.0, 40.0);
         let mut params = TestHarnessParams::DEFAULT;
         params.window_size = window_size;
-        params.padding_pixels = TestHarnessParams::DEFAULT_PADDING_PIXELS;
+        params.padding_pixels = TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS;
         let mut harness = TestHarness::create_with(test_property_set(), widget, params);
         let button_id = harness.root_id();
 
