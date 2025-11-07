@@ -77,7 +77,7 @@ impl Count {
 ///  - An `Option` of a `ViewSequence` value.
 ///    The elements of the inner sequence will be inserted into the
 ///    sequence if the value is `Some`, and removed once the value is `None`.
-///  - A [`Vec`] of `ViewSequence` values.
+///  - A [`Vec`](alloc::vec::Vec) of `ViewSequence` values.
 ///    Note that this will have persistent allocation with size proportional
 ///    to the *longest* `Vec` which is ever provided in the View tree, as this
 ///    uses a generational indexing scheme.

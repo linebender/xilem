@@ -11,6 +11,11 @@ use crate::environment::Environment;
 /// and removed from the start of the path if necessary in [`View::message`].
 /// The value of `ViewId`s are only meaningful for the `View` or `ViewSequence` added them
 /// to the path, and can be used to store indices and/or generations.
+///
+/// [`View`]: crate::View
+/// [`View::build`]: crate::View::build
+/// [`View::rebuild`]: crate::View::rebuild
+/// [`View::message`]: crate::View::message
 // TODO: maybe also provide debugging information to give e.g. a useful stack trace?
 // TODO: Rethink name, as 'Id' suggests global uniqueness
 pub struct ViewId(u64);
@@ -38,6 +43,10 @@ impl ViewId {
 /// and this context may be used to store auxiliary data.
 /// For example, this context could be used to store a mapping from the
 /// id of widget to view path, to enable event routing.
+///
+/// [`View::build`]: crate::View::build
+/// [`View::rebuild`]: crate::View::rebuild
+/// [`View::message`]: crate::View::message
 pub trait ViewPathTracker {
     /// Access the [`Environment`] associated with this context.
     ///

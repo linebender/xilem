@@ -32,7 +32,7 @@ pub trait ElementSplice<Element: ViewElement> {
 
 /// An append only `Vec`.
 ///
-/// This will be passed to [`ViewSequence::seq_build`] to
+/// This will be passed to [`ViewSequence::seq_build`](crate::ViewSequence::seq_build) to
 /// build the list of initial elements whilst materializing the sequence.
 #[derive(Debug)]
 pub struct AppendVec<T> {
