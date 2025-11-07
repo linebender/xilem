@@ -53,34 +53,41 @@ extern crate alloc;
 
 pub use anymore;
 
-mod any_view;
-mod context;
-mod deferred;
+mod message_proxy;
 mod element;
+mod element_splice;
 mod environment;
 mod message;
-mod sequence;
-mod state;
+mod message_context;
 mod view;
+mod view_argument;
+mod view_ctx;
+mod view_sequence;
+
+// TODO - Make views (and view_sequences?) pub.
+mod view_sequences;
 mod views;
 
-pub use self::any_view::{AnyView, AnyViewState};
-pub use self::context::MessageContext;
-pub use self::deferred::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
+pub use self::message_proxy::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 pub use self::element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
+pub use self::element_splice::{AppendVec, ElementSplice};
 pub use self::environment::{
     Environment, EnvironmentItem, OnActionWithContext, Provides, Rebuild, Resource, Slot,
     WithContext, on_action_with_context, provides, with_context,
 };
 pub use self::message::{DynMessage, MessageResult, SendMessage};
-pub use self::sequence::{
-    AppendVec, Count, ElementSplice, ViewSequence, WithoutElements, without_elements,
-};
-pub use self::state::{Arg, Edit, Read, ViewArgument};
-pub use self::view::{View, ViewId, ViewMarker, ViewPathTracker};
+pub use self::message_context::MessageContext;
+pub use self::view::{View, ViewMarker};
+pub use self::view_argument::{Arg, Edit, Read, ViewArgument};
+pub use self::view_ctx::{ViewId, ViewPathTracker};
+pub use self::view_sequence::{Count, ViewSequence};
+pub use self::view_sequences::{WithoutElements, without_elements};
 pub use self::views::{
     Fork, Frozen, Lens, MapMessage, MapState, Memoize, OrphanView, RunOnce, fork, frozen, lens,
     map_action, map_message, map_state, memoize, one_of, run_once, run_once_raw,
 };
+
+// TODO - Remove this re-export and rewrite code importing it
+pub use self::views::{AnyView, AnyViewState};
 
 pub mod docs;
