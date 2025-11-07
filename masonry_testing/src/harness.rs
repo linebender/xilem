@@ -571,6 +571,16 @@ impl<W: Widget> TestHarness<W> {
         self.set_render_padding(1, Color::BLACK);
     }
 
+    /// Set the padding to use the upcoming default padding.
+    ///
+    /// This is a pre-configured wrapper around [`set_render_padding`](Self::set_render_padding).
+    pub fn use_future_default_padding(&mut self) {
+        self.set_render_padding(
+            TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS,
+            TestHarnessParams::DEFAULT_PADDING_COLOR,
+        );
+    }
+
     // TODO - We add way too many dependencies in this code
     // TODO - Should be async?
     /// Renders the window into an image and updates the `accesskit_consumer` tree.
