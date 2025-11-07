@@ -14,7 +14,7 @@ doc = false
 bench = false
 
 [dependencies]
-console_error_panic_hook = "0.1"
+console_error_panic_hook = "0.1.7"
 console_log = "1.0.0"
 log = "0.4.28"
 web-sys = "0.3.81"

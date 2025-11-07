@@ -17,7 +17,7 @@ bench = false
 workspace = true
 
 [dependencies]
-console_error_panic_hook = "0.1"
+console_error_panic_hook = "0.1.7"
 console_log = { version = "1.0.0", features = ["color"] }
 futures = "0.3.31"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
