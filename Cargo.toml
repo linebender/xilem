@@ -55,6 +55,8 @@ parley = { version = "0.6.0", features = ["accesskit"] }
 peniko = "0.5.0"
 winit = "0.30.12"
 tracing = { version = "0.1.41", default-features = false }
+tracing-wasm = "0.2.1"
+console_error_panic_hook = "0.1.7"
 ui-events = { version = "0.2.0", default-features = false, features = ["kurbo"] }
 ui-events-winit = { version = "0.2.0", default-features = false }
 smallvec = "1.15.1"
