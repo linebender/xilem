@@ -472,28 +472,17 @@ impl<W: Widget> TestHarness<W> {
     }
 
     // --- MARK: RENDER
-    /// Renders the window into an image and updates the `accesskit_consumer` tree.
-    ///
-    /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
-    ///
-    /// The returned image also does not apply [`TestHarnessParams::root_padding`].
-    /// To get an image which uses that, use [`render_with_padding`](Self::render_with_padding) with the required padding.
-    // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
-    // Those could avoid actually performing a real render.
-    pub fn render(&mut self) -> RgbaImage {
-        // No padding
-        self.render_with_padding(0)
-    }
-
     // TODO - We add way too many dependencies in this code
     // TODO - Should be async?
     /// Renders the window into an image and updates the `accesskit_consumer` tree.
     ///
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
-    /// The returned image has padding of `padding` on all sides.
-    ///
+    /// The returned image has padding of the [`TestHarnessParams::root_padding`] this harness
+    /// was created with on all sides.
     /// This padded area is currently indicated with a different background color.
-    pub fn render_with_padding(&mut self, padding: u32) -> RgbaImage {
+    // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
+    // Those could avoid actually performing a real render.
+    pub fn render(&mut self) -> RgbaImage {
         let (contents_scene, tree_update) = self.render_root.redraw();
         let tree_update = tree_update.unwrap();
         self.access_tree
@@ -530,6 +519,7 @@ impl<W: Widget> TestHarness<W> {
 
         let (width, height) = (self.window_size.width, self.window_size.height);
 
+        let padding = self.root_padding;
         // Avoid having a zero-sized image
         let width = width.max(1) + padding * 2;
         let height = height.max(1) + padding * 2;
@@ -1122,7 +1112,7 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        let new_image: DynamicImage = self.render_with_padding(self.root_padding).into();
+        let new_image: DynamicImage = self.render().into();
 
         let screenshots_folder = PathBuf::from(manifest_dir).join("screenshots");
         std::fs::create_dir_all(&screenshots_folder).unwrap();
