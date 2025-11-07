@@ -53,12 +53,12 @@ extern crate alloc;
 
 pub use anymore;
 
-mod message_proxy;
 mod element;
 mod element_splice;
 mod environment;
 mod message;
 mod message_context;
+mod message_proxy;
 mod view;
 mod view_argument;
 mod view_ctx;
@@ -68,7 +68,6 @@ mod view_sequence;
 mod view_sequences;
 mod views;
 
-pub use self::message_proxy::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 pub use self::element::{AnyElement, Mut, NoElement, SuperElement, ViewElement};
 pub use self::element_splice::{AppendVec, ElementSplice};
 pub use self::environment::{
@@ -77,6 +76,7 @@ pub use self::environment::{
 };
 pub use self::message::{DynMessage, MessageResult, SendMessage};
 pub use self::message_context::MessageContext;
+pub use self::message_proxy::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 pub use self::view::{View, ViewMarker};
 pub use self::view_argument::{Arg, Edit, Read, ViewArgument};
 pub use self::view_ctx::{ViewId, ViewPathTracker};
