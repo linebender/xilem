@@ -163,7 +163,7 @@ pub struct TestHarnessParams {
     /// The background color of the virtual window.
     /// Defaults to [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
-    /// Extra padding added to screenshots in [`assert_render_snapshot!`].
+    /// Extra padding added to screenshots in [`assert_render_snapshot`].
     ///
     /// Currently defaults to zero, but we plan to change this
     /// to [`TestHarnessParams::ROOT_PADDING`] soon.
@@ -173,6 +173,8 @@ pub struct TestHarnessParams {
     ///    layout box (e.g. drop shadows, focus indicators).
     /// 2) For full apps, as it allows (manual) validation that none of the app content is cut off by
     ///    the window border.
+    ///
+    /// [`assert_render_snapshot`]: crate::assert_render_snapshot
     pub root_padding: u32,
     /// The maximum difference between two pixel channels before the harness will fail a screenshot test.
     /// Defaults to [`TestHarnessParams::DEFAULT_SCREENSHOT_TOLERANCE`].
