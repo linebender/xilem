@@ -140,7 +140,8 @@ pub struct TestHarness<W: Widget> {
     vello_renderer: Option<vello::Renderer>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
-    root_padding: u32,
+    padding_pixels: u32,
+    padding_color: Color,
     background_color: Color,
     panic_on_rewrite_saturation: bool,
     screenshot_tolerance: u32,
@@ -165,17 +166,16 @@ pub struct TestHarnessParams {
     pub background_color: Color,
     /// Extra padding added to screenshots in [`assert_render_snapshot`].
     ///
-    /// Currently defaults to zero, but we plan to change this
-    /// to [`TestHarnessParams::ROOT_PADDING`] soon.
-    /// This is useful:
+    /// For full documentation on padding in screenshots, see [`TestHarness::set_render_padding`].
     ///
-    /// 1) For individual widgets, as they will often be designed with content outside their
-    ///    layout box (e.g. drop shadows, focus indicators).
-    /// 2) For full apps, as it allows (manual) validation that none of the app content is cut off by
-    ///    the window border.
+    /// Defaults to [`TestHarnessParams::DEFAULT_PADDING_PIXELS`].
     ///
     /// [`assert_render_snapshot`]: crate::assert_render_snapshot
-    pub root_padding: u32,
+    pub padding_pixels: u32,
+    /// The color to use for [padding added to screenshots](TestHarness::set_render_padding).
+    ///
+    /// Defaults to [`TestHarnessParams::DEFAULT_PADDING_COLOR`]
+    pub padding_color: Color,
     /// The maximum difference between two pixel channels before the harness will fail a screenshot test.
     /// Defaults to [`TestHarnessParams::DEFAULT_SCREENSHOT_TOLERANCE`].
     pub screenshot_tolerance: u32,
@@ -201,7 +201,7 @@ pub struct TestHarnessParams {
 /// This macro takes a test harness and a name, renders the current state of the app,
 /// and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
 /// This rendering will have extra padding which would not be present in a real app,
-/// as documented in [`TestHarnessParams::root_padding`].
+/// as documented in [`TestHarness::set_render_padding`].
 ///
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
@@ -243,7 +243,8 @@ impl TestHarnessParams {
     pub const DEFAULT: Self = Self {
         window_size: Self::DEFAULT_SIZE,
         background_color: Self::DEFAULT_BACKGROUND_COLOR,
-        root_padding: 0,
+        padding_pixels: 0,
+        padding_color: Self::DEFAULT_PADDING_COLOR,
         screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
         panic_on_rewrite_saturation: true,
@@ -256,13 +257,38 @@ impl TestHarnessParams {
     /// Default error tolerance for screenshot tests.
     pub const DEFAULT_SCREENSHOT_TOLERANCE: u32 = 16;
 
-    /// Default background color for tests.
+    /// <div style="margin:2px 0"><span style="background-color: #292929;padding:0 0.7em;margin-right:0.5em;border:1px solid"></span>
+    /// Default background color for tests.</div>
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
 
-    /// Recommended root padding for tests.
+    /// Recommended root padding for screenshot tests.
     ///
-    /// To be set as [`TestHarnessParams::root_padding`]
-    pub const ROOT_PADDING: u32 = 5;
+    /// This default is targeted for the most common kind of tests, which are
+    /// single-widget tests.
+    /// For these tests, the padding is present to validate that nothing
+    /// unexpected is drawn outside of the widget's bounds.
+    ///
+    /// We're in a transition period, meaning that this default value is currently zero.
+    /// We expect to change this value to [`TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS`] soon.
+    ///
+    /// See [`TestHarness::set_render_padding`] for full documentation of Masonry Testing's padding.
+    pub const DEFAULT_PADDING_PIXELS: u32 = 0;
+
+    /// The number of pixels which should be used for screenshot tests.
+    pub const FUTURE_DEFAULT_PADDING_PIXELS: u32 = 5;
+
+    /// <div style="margin:2px 0"><span style="background-color: #a6c8ff;padding:0 0.7em;margin-right:0.5em;border:1px solid"></span>
+    /// The default color for padding in screenshot tests.</div>
+    ///
+    /// This default is targeted for the most common kind of tests, which are
+    /// single-widget tests.
+    /// For these tests, the padding is present to validate that nothing
+    /// unexpected is drawn outside of the widget's bounds.
+    /// As such, this color is chosen so that it's clear that it was not added by the
+    /// widget, and not clashing too harshly with the default background color.
+    ///
+    /// See [`TestHarness::set_render_padding`] for full documentation of Masonry Testing's padding.
+    pub const DEFAULT_PADDING_COLOR: Color = Color::from_rgba8(0xa6, 0xc8, 0xff, 0xff);
 
     /// One kibibyte. Used in [`TestHarnessParams::max_screenshot_size`].
     pub const KIBIBYTE: u32 = 1024;
@@ -361,7 +387,8 @@ impl<W: Widget> TestHarness<W> {
             mouse_state,
             window_size,
             background_color: params.background_color,
-            root_padding: params.root_padding,
+            padding_pixels: params.padding_pixels,
+            padding_color: params.padding_color,
             screenshot_tolerance: params.screenshot_tolerance,
             panic_on_rewrite_saturation: params.panic_on_rewrite_saturation,
             max_screenshot_size: params.max_screenshot_size,
@@ -474,13 +501,83 @@ impl<W: Widget> TestHarness<W> {
     }
 
     // --- MARK: RENDER
+
+    /// Configure the padding used for rendering, including [render snapshots][`assert_render_snapshot`].
+    ///
+    /// The `padding_pixels` parameter is the physical pixels of padding in each direction,
+    /// i.e. the dimensions of the rendering will be the [window size](Self::window_size)
+    /// plus twice the padding pixels in each axis.
+    ///
+    /// The padding is intended for images saved using [`assert_render_snapshot`](crate::assert_render_snapshot),
+    /// but also applies to the image output by [`Self::render`].
+    /// To configure the padding, you should call this function before a call to either of those.
+    /// Note that the padding the harness starts with can also be configured by setting the
+    /// [`TestHarnessParams::padding_pixels`] and [`TestHarnessParams::padding_color`] the harness is created with.
+    ///
+    /// This padding is used for several purposes, which can each be configured in different ways:
+    ///
+    /// <!-- TODO: There are reasonable arguments for making this the default,
+    /// as we also expect Masonry Testing to be used by end-users. -->
+    /// - Screenshots of applications, for which you should call [`use_page_image_padding`](Self::use_page_image_padding).
+    ///   This is applicable for both integration tests and "hero images" for documentation.
+    /// - Detecting unwanted overdraw in widgets. The harness is configured for this by default; see
+    ///   [`DEFAULT_PADDING_COLOR`](TestHarnessParams::DEFAULT_PADDING_COLOR).
+    /// - Validating the intentional "overdrawn" content of a widget, such as its focus indicator or box shadow.
+    ///   For screenshot tests of this kind, you should call [`use_widget_overdraw_padding`](Self::use_widget_overdraw_padding).
+    /// - Screenshots of widgets for documentation. The tests which create these should
+    ///   call [`use_widget_image_padding`](Self::use_widget_image_padding).
+    ///
+    /// [`assert_render_snapshot`]: crate::assert_render_snapshot
+    pub fn set_render_padding(&mut self, padding_pixels: u32, color: Color) {
+        self.padding_pixels = padding_pixels;
+        self.padding_color = color;
+    }
+
+    /// Set the padding to be suitable for images in documentation of a widget.
+    ///
+    /// This padding is designed to allow widgets to be seen in-context, so the padding
+    /// is slightly larger than the default.
+    /// The padding area will be the same color as the background colour.
+    ///
+    /// This is a pre-configured wrapper around [`set_render_padding`](Self::set_render_padding).
+    pub fn use_widget_image_padding(&mut self) {
+        // TODO: Maybe we want like 6 pixels vertically and 8 horizontally?
+        // TODO: Do we also want a black border beyond the padding - see also `use_page_image_padding`.
+        self.set_render_padding(8, Color::TRANSPARENT);
+    }
+
+    /// Set the padding to be used for tests of intentional widget overdraw,
+    /// i.e. where a widget is intended to draw outside of its bounds.
+    ///
+    /// This can be used for tests of focus indicators or box shadows.
+    ///
+    /// This is a pre-configured wrapper around [`set_render_padding`](Self::set_render_padding).
+    pub fn use_widget_overdraw_padding(&mut self) {
+        self.set_render_padding(
+            TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS,
+            Color::TRANSPARENT,
+        );
+    }
+
+    /// Set the padding to be suitable for rendering a full page for testing.
+    ///
+    /// When testing an application, you want your screenshot tests to be as
+    /// representative of the app's content as possible.
+    /// As such, the padding added by this method is minimal; it is only being used
+    /// to provide a border to delineate where the page ends.
+    ///
+    /// This is a pre-configured wrapper around [`set_render_padding`](Self::set_render_padding).
+    pub fn use_page_image_padding(&mut self) {
+        self.set_render_padding(1, Color::BLACK);
+    }
+
     // TODO - We add way too many dependencies in this code
     // TODO - Should be async?
     /// Renders the window into an image and updates the `accesskit_consumer` tree.
     ///
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
-    /// The returned image has padding of the [`TestHarnessParams::root_padding`] this harness
-    /// was created with on all sides.
+    /// The returned image has padding based on this harness's current padding parameters.
+    /// See [`set_render_padding`](Self::set_render_padding) for full details.
     /// This padded area is currently indicated with a different background color.
     // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
     // Those could avoid actually performing a real render.
@@ -521,7 +618,7 @@ impl<W: Widget> TestHarness<W> {
 
         let (width, height) = (self.window_size.width, self.window_size.height);
 
-        let padding = self.root_padding;
+        let padding = self.padding_pixels;
         // Avoid having a zero-sized image
         let width = width.max(1) + padding * 2;
         let height = height.max(1) + padding * 2;
@@ -552,9 +649,6 @@ impl<W: Widget> TestHarness<W> {
 
         let scene = if padding != 0 {
             let mut scene = Scene::new();
-            // 25% opacity of 50% grey provides a border of where the actual widget content is.
-            // Alternatively, maybe we should use a stronger color here?
-            let padding_color = Color::from_rgba8(127, 127, 127, 64);
             // We draw the border first, so that any content is above the background color.
             for [x0, y0, x1, y1] in [
                 [0, 0, padding, height],                              // Left edge
@@ -565,7 +659,7 @@ impl<W: Widget> TestHarness<W> {
                 scene.fill(
                     Fill::EvenOdd,
                     Affine::IDENTITY,
-                    padding_color,
+                    self.padding_color,
                     None,
                     &Rect::new(x0 as f64, y0 as f64, x1 as f64, y1 as f64),
                 );
