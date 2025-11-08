@@ -14,20 +14,20 @@ use masonry::widgets::{self, CheckboxToggled};
 /// An element which can be in checked and unchecked state.
 ///
 /// # Example
-/// ```ignore
+/// ```
 /// use xilem::view::checkbox;
+/// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     value: bool,
 /// }
 ///
-/// // ...
-///
-/// let new_state = false;
-///
-/// checkbox("A simple checkbox", app_state.value, |app_state: Arg<'_, State>, new_state: bool| {
-/// *app_state.value = new_state;
+/// # fn view(app_state: &mut State) -> impl WidgetView<Edit<State>> {
+/// checkbox("A simple checkbox", app_state.value, |app_state: &mut State,  new_state: bool| {
+///     app_state.value = new_state;
 /// })
+/// # }
 /// ```
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
