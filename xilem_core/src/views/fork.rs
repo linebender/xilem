@@ -3,9 +3,10 @@
 
 use core::marker::PhantomData;
 
+use crate::view_sequences::NoElements;
 use crate::{
     AppendVec, Arg, MessageContext, Mut, NoElement, View, ViewArgument, ViewId, ViewMarker,
-    ViewPathTracker, ViewSequence, sequence::NoElements,
+    ViewPathTracker, ViewSequence,
 };
 
 /// Create a view which acts as `active_view`, whilst also running `alongside_view`, without inserting it into the tree.
