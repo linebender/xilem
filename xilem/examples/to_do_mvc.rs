@@ -92,7 +92,7 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<
                 let delete_button = text_button("Delete", move |data: &mut TaskList| {
                     data.tasks.remove(i);
                 })
-                .padding(2.0);
+                .padding(5.0);
                 Some(
                     flex_row((checkbox, FlexSpacer::Flex(1.), delete_button))
                         .padding(DEFAULT_GAP.get())
