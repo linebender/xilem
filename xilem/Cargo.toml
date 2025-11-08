@@ -14,6 +14,9 @@ exclude = [
     "/resources/data/emoji_names/",
 ]
 
+[features]
+compile-stress-test = []
+
 [package.metadata.docs.rs]
 all-features = true
 # There are no platform specific docs.
@@ -61,6 +64,10 @@ winit = { features = ["android-native-activity"], workspace = true }
 
 [lints]
 workspace = true
+
+[[bench]]
+name = "stress_test"
+harness = false
 
 [[example]]
 name = "mason"
