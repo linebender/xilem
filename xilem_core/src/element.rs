@@ -3,8 +3,6 @@
 
 //! The types which can be used as elements in a [`View`](crate::View)
 
-// TODO - Rename back to `Element`
-
 /// A type which can be used as the `Element` associated type for a [`View`](crate::View).
 ///
 /// It is expected that most libraries using `xilem_core` will have a generic

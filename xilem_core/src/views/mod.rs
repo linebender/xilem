@@ -3,7 +3,6 @@
 
 mod any_view;
 mod fork;
-mod impl_arc;
 mod impl_box;
 mod impl_rc;
 mod lens;
