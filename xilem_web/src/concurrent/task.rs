@@ -5,8 +5,8 @@ use std::future::Future;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use futures::FutureExt;
-use futures::channel::oneshot;
+use futures_channel::oneshot;
+use futures_util::FutureExt;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
 
