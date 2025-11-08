@@ -4,7 +4,7 @@
 //! This example shows how (external) tasks can send messages
 //! to be able to change the app state.
 
-use futures::{FutureExt, select};
+use futures_util::{FutureExt, select};
 use gloo_timers::future::TimeoutFuture;
 use xilem_web::concurrent::{ShutdownSignal, TaskProxy, task};
 use xilem_web::core::one_of::Either;
