@@ -28,7 +28,7 @@ Xilem and Masonry are built on top of:
 - **Parley and Fontique** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
 - **AccessKit** for plugging into accessibility APIs.
 
-`masonry/` and `xilem/` are the respective entry points of these projects for new users. 
+[`masonry/`](masonry/) and [`xilem/`](xilem/) are the respective entry points of these projects for new users. 
 See `ARCHITECTURE.md` for details about the repository structure.
 
 **Note for new users:** If you're not sure what to use between Xilem and Masonry, you probably want Xilem. In general, if you're trying to make an app with minimum hassle, you probably want Xilem. Xilem is a UI framework, whereas Masonry is a toolkit for building UI frameworks (including Xilem).
