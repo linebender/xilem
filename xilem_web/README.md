@@ -66,6 +66,21 @@ pub fn main() {
 <!-- cargo-rdme end -->
 <!-- markdownlint-enable MD053 -->
 
+## Precise Capturing
+
+Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
+This is new syntax in the 2024 edition, and so it might be unfamiliar.
+For example, take this line in the example above:
+
+```rust
+fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<Edit<u32>> + use<> {
+```
+
+The precise capturing syntax in this case indicates that the returned view does not make use of the lifetime of `clicks`.
+This is required because the view types in Xilem must be `'static`, but as of the 2024 edition, when `impl Trait` is used
+for return types, Rust assumes that the return value will use the parameter's lifetimes.
+That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
+
 ## Minimum supported Rust Version (MSRV)
 
 This version of Xilem Web has been verified to compile with **Rust 1.88** and later.
