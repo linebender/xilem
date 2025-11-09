@@ -367,12 +367,41 @@ fn reparent_cycle() {
 }
 
 #[test]
-#[should_panic(expected = "reparenting of root nodes is currently not supported")]
-fn reparent_root() {
+fn reparent_root_into_other_root() {
     let mut arena = TreeArena::new();
     add_tree(&mut arena, Node(0, '0', vec![]));
     add_tree(&mut arena, Node(1, '1', vec![]));
+    // Move root 0 under root 1.
     arena.reparent(0_u64, 1_u64);
+    #[rustfmt::skip]
+    assert_eq!(to_nodes(&arena), vec![
+        Node(1, '1', vec![
+            Node(0, '0', vec![]),
+        ]),
+    ]);
+}
+
+#[test]
+fn reparent_root_into_non_root() {
+    let mut arena = TreeArena::new();
+    #[rustfmt::skip]
+    add_tree(
+        &mut arena,
+        Node(10, 'A', vec![
+            Node(11, 'B', vec![]),
+        ]),
+    );
+    add_tree(&mut arena, Node(20, 'C', vec![])); // another root
+    // Move root 20 under node 11 (non-root).
+    arena.reparent(20_u64, 11_u64);
+    #[rustfmt::skip]
+    assert_eq!(to_nodes(&arena), vec![
+        Node(10, 'A', vec![
+            Node(11, 'B', vec![
+                Node(20, 'C', vec![]),
+            ]),
+        ]),
+    ]);
 }
 
 #[derive(PartialEq, Debug)]
