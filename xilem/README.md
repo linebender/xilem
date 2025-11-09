@@ -151,11 +151,19 @@ This is required because the view types in Xilem must be `'static`, but as of th
 for return types, Rust assumes that the return value will use the parameter's lifetimes.
 That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
 
+## Feature flags
+
+The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+
+- `default`: Enables the default features of [`masonry`][masonry] and [`masonry_winit`][masonry_winit].
+
 [accesskit_docs]: masonry::accesskit
 [AccessKit]: https://accesskit.dev/
 [Druid]: https://crates.io/crates/druid
 [Fontique]: https://crates.io/crates/fontique
 [Masonry]: https://crates.io/crates/masonry
+[masonry_core]: https://crates.io/crates/masonry_core
+[masonry_winit]: https://crates.io/crates/masonry_winit
 [Parley]: https://crates.io/crates/parley
 [skrifa]: https://crates.io/crates/skrifa
 [swash]: https://crates.io/crates/swash

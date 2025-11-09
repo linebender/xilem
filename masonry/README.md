@@ -176,9 +176,11 @@ Running this will open a window that looks like this:
 
 The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 
+- `default`: Enables the default features of [`masonry_core`][masonry_core], [`masonry_testing`][masonry_testing]
+  (if enabled via the `testing` feature) and [`vello`].
 - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
-- `testing`: Re-exports the test harness from [`masonry_testing`].
+- `testing`: Re-exports the test harness from [`masonry_testing`][masonry_testing].
 
 ## Debugging features
 
@@ -190,6 +192,8 @@ Masonry apps currently ship with several debugging features built in:
 
 If you want to use your own subscriber, simply set it before starting masonry - in this case masonry will not set a subscriber.
 
+[masonry_core]: https://crates.io/crates/masonry_core
+[masonry_testing]: https://crates.io/crates/masonry_testing
 [masonry_winit]: https://crates.io/crates/masonry_winit
 [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 [tracing_tracy]: https://crates.io/crates/tracing-tracy

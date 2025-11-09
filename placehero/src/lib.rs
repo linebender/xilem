@@ -11,9 +11,13 @@
 //! This link survives even if you log out of one and into the other, even in different sessions.
 //! If this doesn't apply to you, we recommend not using Placehero.
 //!
-//! Features:
+//! # Feature flags
 //!
-//! - None
+//! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+//!
+//! - `default`: Enables the default features of [`xilem`][xilem].
+//!
+//! [xilem]: https://crates.io/crates/xilem
 
 #![expect(clippy::todo, reason = "Landing intentionally in-progress work.")]
 

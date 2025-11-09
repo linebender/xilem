@@ -67,6 +67,14 @@ For examples of this crate in use
 - To test applications: see the tests in Masonry's examples.
 - To test widgets: see the `tests` module in each widget in Masonry.
 
+## Feature flags
+
+The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+
+- `default`: Enables the default features of [`masonry_core`][masonry_core].
+
+[masonry_core]: https://crates.io/crates/masonry_core
+
 <!-- cargo-rdme end -->
 
 ## Minimum supported Rust Version (MSRV)
