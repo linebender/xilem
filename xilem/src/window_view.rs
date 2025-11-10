@@ -7,7 +7,7 @@ use masonry::theme::BACKGROUND_COLOR;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 use xilem_core::Edit;
 
-use crate::core::{AnyViewState, Arg, MessageContext, Mut, View, ViewElement, ViewMarker};
+use crate::core::{Arg, MessageContext, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, ViewCtx, WidgetView, WindowOptions};
 
 /// A view representing a window.
@@ -18,6 +18,8 @@ pub struct WindowView<State: 'static> {
     /// The base color of the window.
     base_color: Color,
 }
+
+pub(crate) type WindowViewState = <Box<AnyWidgetView<(), ()>> as View<(), (), ViewCtx>>::ViewState;
 
 /// A view representing a window.
 ///
@@ -72,7 +74,7 @@ impl<State> ViewMarker for WindowView<State> where State: 'static {}
 impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
     type Element = PodWindow;
 
-    type ViewState = AnyViewState;
+    type ViewState = WindowViewState;
 
     fn build(
         &self,
@@ -150,7 +152,7 @@ where
     pub(crate) fn rebuild_root_widget(
         &self,
         prev: &Self,
-        root_widget_view_state: &mut AnyViewState,
+        root_widget_view_state: &mut WindowViewState,
         ctx: &mut ViewCtx,
         render_root: &mut RenderRoot,
         app_state: &mut State,
