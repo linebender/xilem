@@ -6,15 +6,15 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use masonry::properties::types::Length;
-use masonry::theme::{DEFAULT_GAP, ZYNC_800};
-use winit::error::EventLoopError;
+use xilem::core::Edit;
+use xilem::masonry::properties::types::Length;
+use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
 use xilem::style::Style as _;
 use xilem::view::{
     FlexExt, FlexSpacer, button, checkbox, flex_col, flex_row, label, text_button, text_input,
 };
+use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
-use xilem_core::Edit;
 
 struct Task {
     description: String,
