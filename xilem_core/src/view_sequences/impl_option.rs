@@ -7,7 +7,10 @@ use crate::{
 };
 
 /// The state used to implement `ViewSequence` for `Option<impl ViewSequence>`
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 #[derive(Debug)]
 pub struct OptionSeqState<InnerState> {
     /// The current state.

@@ -8,7 +8,10 @@ use core::ops::Deref;
 use crate::message::MessageResult;
 use crate::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 #[derive(Debug)]
 pub struct RcState<ViewState> {
     pub(crate) view_state: ViewState,

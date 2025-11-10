@@ -607,7 +607,10 @@ mod hidden {
     use super::PhantomElementCtx;
     use crate::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
 
-    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    #[expect(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
     #[derive(Debug)]
     pub enum Never {}
 
@@ -650,7 +653,10 @@ mod hidden {
         }
     }
     /// The state used to implement `View` for `OneOfN`
-    #[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+    #[expect(
+        unnameable_types,
+        reason = "Implementation detail, public because of trait visibility rules"
+    )]
     #[derive(Debug)]
     pub struct OneOfState<A, B, C, D, E, F, G, H, I> {
         /// The current state of the inner view or view sequence.
