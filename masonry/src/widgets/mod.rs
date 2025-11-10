@@ -6,6 +6,7 @@
 mod align;
 mod button;
 mod checkbox;
+mod content_host;
 mod flex;
 mod grid;
 mod image;
@@ -28,6 +29,7 @@ mod zstack;
 pub use self::align::Align;
 pub use self::button::{Button, ButtonPress};
 pub use self::checkbox::{Checkbox, CheckboxToggled};
+pub use self::content_host::ContentHost;
 pub use self::flex::{Flex, FlexParams};
 pub use self::grid::{Grid, GridParams};
 pub use self::image::Image;
