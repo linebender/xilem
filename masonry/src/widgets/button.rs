@@ -331,10 +331,8 @@ mod tests {
         let widget = NewWidget::new(Button::with_text("Hello"));
 
         let window_size = Size::new(100.0, 40.0);
-        let mut params = TestHarnessParams::DEFAULT;
-        params.window_size = window_size;
-        params.padding_pixels = TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS;
-        let mut harness = TestHarness::create_with(test_property_set(), widget, params);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
+        harness.use_future_default_padding();
         let button_id = harness.root_id();
 
         assert_render_snapshot!(harness, "button_hello");
@@ -379,6 +377,7 @@ mod tests {
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
+            harness.use_future_default_padding();
 
             harness.render()
         };
@@ -388,6 +387,7 @@ mod tests {
 
             let mut harness =
                 TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
+            harness.use_future_default_padding();
 
             harness.edit_root_widget(|mut button| {
                 let mut label = Button::child_mut(&mut button);
@@ -413,6 +413,7 @@ mod tests {
 
         let window_size = Size::new(200.0, 80.0);
         let mut harness = TestHarness::create_with_size(test_property_set(), button, window_size);
+        harness.use_future_default_padding();
 
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
@@ -456,6 +457,8 @@ mod tests {
         test_params.window_size = Size::new(300.0, 300.0);
         test_params.screenshot_tolerance = 32;
         let mut harness = TestHarness::create_with(test_property_set(), root_widget, test_params);
+        // Widget padded internally.
+        harness.use_no_padding();
 
         harness.edit_root_widget(|mut grid| {
             {
