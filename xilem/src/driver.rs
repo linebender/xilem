@@ -15,10 +15,10 @@ use masonry_winit::app::{
 
 use crate::any_view::DynWidget;
 use crate::core::{
-    AnyViewState, DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage,
-    View, ViewId, ViewPathTracker,
+    DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
+    ViewPathTracker,
 };
-use crate::window_view::WindowView;
+use crate::window_view::{WindowView, WindowViewState};
 use crate::{AppState, ViewCtx};
 
 pub struct MasonryDriver<State: 'static, Logic> {
@@ -35,7 +35,7 @@ pub struct MasonryDriver<State: 'static, Logic> {
 struct Window<State: 'static> {
     view: WindowView<State>,
     view_ctx: ViewCtx,
-    view_state: AnyViewState,
+    view_state: WindowViewState,
 }
 
 impl<State, Logic, WindowIter> MasonryDriver<State, Logic>

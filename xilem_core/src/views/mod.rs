@@ -12,7 +12,7 @@ mod memoize;
 mod orphan;
 mod run_once;
 
-pub use self::any_view::{AnyView, AnyViewState};
+pub use self::any_view::AnyView;
 pub use self::fork::{Fork, fork};
 pub use self::lens::{Lens, lens};
 pub use self::map_message::{MapMessage, map_action, map_message};

@@ -86,6 +86,6 @@ pub use self::views::{
 };
 
 // TODO - Remove this re-export and rewrite code importing it
-pub use self::views::{AnyView, AnyViewState};
+pub use self::views::AnyView;
 
 pub mod docs;
