@@ -82,8 +82,8 @@ where
 
 /// Convert 0-100 to 0-255 u8 value.
 fn perc_to_u8(value: f64) -> u8 {
-    #[allow(clippy::cast_possible_truncation, reason = "This is Fine")]
-    return (value * 2.56).clamp(0.0, 255.0).round() as u8;
+    #![expect(clippy::cast_possible_truncation, reason = "This will never truncate")]
+    (value * 2.56).clamp(0.0, 255.0).round() as u8
 }
 
 // --- Main UI Logic ---

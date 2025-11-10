@@ -6,7 +6,6 @@
     reason = "This is a utility module, which means that some exposed items aren't used in all instantiations"
 )]
 #![deny(unreachable_pub)]
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 #![expect(clippy::missing_assert_message, reason = "Deferred: Noisy")]
 
 use xilem_core::*;
@@ -76,9 +75,10 @@ impl ViewElement for TestElement {
 /// The const generic parameter is used for testing `AnyView`
 pub(super) struct OperationView<const N: u32>(pub(super) u32);
 
-#[allow(clippy::manual_non_exhaustive)]
-// non_exhaustive is crate level, but this is to "protect" against
-// the parent tests from constructing this
+#[allow(
+    clippy::manual_non_exhaustive,
+    reason = "Unlike `#[non_exhaustive]`, this patterns stops the crate's tests from constructing this."
+)]
 pub(super) struct Action {
     pub(super) id: u32,
     _priv: (),

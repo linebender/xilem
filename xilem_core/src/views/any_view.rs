@@ -177,7 +177,6 @@ where
 
 /// The state used by [`AnyView`].
 #[doc(hidden)]
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
 #[derive(Debug)]
 pub struct AnyViewState {
     inner_state: Box<dyn Any>,

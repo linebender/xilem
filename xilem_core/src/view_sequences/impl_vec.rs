@@ -16,7 +16,10 @@ use crate::{
 ///
 // This is managed in [`create_generational_view_id`] and [`view_id_to_index_generation`]
 #[doc(hidden)]
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 #[derive(Debug)]
 pub struct VecViewState<InnerState> {
     // We use two vectors here because the `inner_states` is the
@@ -43,7 +46,10 @@ fn create_generational_view_id(index: usize, generation: u32) -> ViewId {
 
 /// Undoes [`create_generational_view_id`]
 fn view_id_to_index_generation(view_id: ViewId) -> (usize, u32) {
-    #![allow(clippy::cast_possible_truncation)]
+    #![expect(
+        clippy::cast_possible_truncation,
+        reason = "Explicitly splits u64 into two u32s"
+    )]
     let view_id = view_id.routing_id();
     let id_low_ix = view_id as u32;
     let id_high_gen = (view_id >> 32) as u32;
@@ -130,7 +136,6 @@ where
         }
         let n = self.len();
         let prev_n = prev.len();
-        #[allow(clippy::comparison_chain)]
         if n < prev_n {
             let to_teardown = prev[n..].iter();
             // Keep the generations

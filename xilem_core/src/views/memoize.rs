@@ -77,7 +77,10 @@ where
     }
 }
 
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 #[derive(Debug)]
 pub struct MemoizeState<V, VState> {
     view: V,

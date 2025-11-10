@@ -46,8 +46,6 @@
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![forbid(unsafe_code)]
 #![no_std]
-// TODO: Remove any items listed as "Deferred"
-#![expect(clippy::allow_attributes_without_reason, reason = "Deferred: Noisy")]
 
 extern crate alloc;
 
