@@ -5,7 +5,7 @@ use core::marker::PhantomData;
 
 use crate::element::NoElement;
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageContext, MessageResult, ViewArgument, ViewElement,
+    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
     ViewPathTracker, ViewSequence,
 };
 
@@ -129,7 +129,7 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _elements: &mut impl ElementSplice<Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

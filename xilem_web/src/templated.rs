@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::{Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{DomView, PodMut, ViewCtx};
 
 /// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
@@ -81,7 +81,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

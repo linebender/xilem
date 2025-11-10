@@ -10,7 +10,7 @@ pub use masonry::widgets::FlexParams;
 use masonry::widgets::{self};
 
 use crate::core::{
-    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
     ViewArgument, ViewElement, ViewId, ViewMarker, ViewPathTracker, ViewSequence,
 };
 use crate::{AnyWidgetView, Pod, ViewCtx, WidgetView};
@@ -310,7 +310,7 @@ where
     fn message(
         &self,
         FlexState { seq_state, scratch }: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -665,7 +665,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -731,7 +731,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for FlexSpacer {
     fn message(
         &self,
         _: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
         _: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -936,7 +936,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

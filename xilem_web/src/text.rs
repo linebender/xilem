@@ -3,7 +3,7 @@
 
 use wasm_bindgen::JsCast;
 
-use crate::core::{Arg, MessageContext, MessageResult, Mut, OrphanView, ViewArgument};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, OrphanView, ViewArgument};
 use crate::{Pod, PodFlags, ViewCtx};
 
 // strings -> text nodes

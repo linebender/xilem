@@ -5,9 +5,7 @@ use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::mem::size_of;
 
-use crate::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker,
-};
+use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 
 /// A view which supports Memoization.
 ///
@@ -145,7 +143,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -278,7 +276,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

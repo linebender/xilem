@@ -4,7 +4,7 @@
 //! Support for sequences of views with a shared element type.
 
 use crate::{
-    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, SuperElement, View, ViewArgument,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, SuperElement, View, ViewArgument,
     ViewElement, ViewMarker, ViewPathTracker,
 };
 
@@ -158,7 +158,7 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
@@ -219,7 +219,7 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

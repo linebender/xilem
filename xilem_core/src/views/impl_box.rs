@@ -5,7 +5,7 @@ use alloc::boxed::Box;
 use core::ops::Deref;
 
 use crate::message::MessageResult;
-use crate::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 
 impl<V: ?Sized> ViewMarker for Box<V> {}
 impl<State, Action, Context, V> View<State, Action, Context> for Box<V>
@@ -49,7 +49,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

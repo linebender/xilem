@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use masonry::widgets;
 use xilem_core::{Arg, MessageResult, Mut, View, ViewArgument, ViewMarker};
 
-use crate::core::MessageContext;
+use crate::core::MessageCtx;
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that displays a [`Slider`] widget.
@@ -119,7 +119,7 @@ where
     fn message(
         &self,
         (): &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

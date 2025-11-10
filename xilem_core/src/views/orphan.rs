@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
     ViewPathTracker,
 };
 
@@ -44,7 +44,7 @@ pub trait OrphanView<V, State: ViewArgument, Action>: ViewPathTracker + Sized {
     fn orphan_message(
         view: &V,
         view_state: &mut Self::OrphanViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::OrphanElement>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
@@ -128,7 +128,7 @@ impl_orphan_view_for!(usize);
 /// These [`OrphanView`] implementations can e.g. be used in a vector graphics context, as for example seen in `xilem_web` within svg nodes
 mod kurbo {
     use super::OrphanView;
-    use crate::{Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker};
+    use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker};
     impl_orphan_view_for!(kurbo::PathSeg);
     impl_orphan_view_for!(kurbo::Arc);
     impl_orphan_view_for!(kurbo::BezPath);

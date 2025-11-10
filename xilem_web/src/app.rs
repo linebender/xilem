@@ -7,7 +7,7 @@ use std::rc::Rc;
 use wasm_bindgen::UnwrapThrowExt;
 use xilem_core::Edit;
 
-use crate::core::{AppendVec, MessageContext, MessageResult, ViewId};
+use crate::core::{AppendVec, MessageCtx, MessageResult, ViewId};
 use crate::elements::DomChildrenSplice;
 use crate::{AnyPod, DomFragment, DynMessage, ViewCtx};
 
@@ -128,7 +128,7 @@ where
             {
                 let env = std::mem::take(&mut inner.ctx.environment);
                 let mut message_context =
-                    MessageContext::new(env, (*message.id_path).into(), message.body);
+                    MessageCtx::new(env, (*message.id_path).into(), message.body);
                 let mut dom_children_splice = DomChildrenSplice::new(
                     &mut inner.fragment_append_scratch,
                     &mut inner.elements,
