@@ -13,6 +13,7 @@
 
 // TODO - Move this code out of masonry.
 
+use std::error::Error;
 use std::fmt;
 use std::fs::File;
 use std::time::UNIX_EPOCH;
@@ -25,19 +26,20 @@ use tracing_subscriber::fmt::time::UtcTime;
 use tracing_subscriber::prelude::*;
 
 #[cfg(not(target_arch = "wasm32"))]
-/// Initialise tracing for a non-web platform with the given `default_level`.
-fn default_tracing_subscriber_native(default_level: LevelFilter) -> impl Subscriber {
+/// Get the tracing subscriber we wish to set-up for a non-web platform with the given `default_level`.
+///
+/// Returns the subscriber, and the error in case of a (recoverable) error.
+fn default_tracing_subscriber_native(
+    default_level: LevelFilter,
+) -> (impl Subscriber, Option<Box<dyn Error>>) {
     // Use EnvFilter to allow the user to override the log level without recompiling.
     let env_filter_builder = EnvFilter::builder()
         .with_default_directive(default_level.into())
         .with_env_var("RUST_LOG");
-    if let Some(err) = env_filter_builder.from_env().err() {
-        #[allow(clippy::print_stderr, reason = "Can only use stderr")]
-        {
-            // We print this message to stderr because tracing hasn't been set up yet
-            eprintln!("Failed to parse RUST_LOG environment variable: {:#}", err);
-        }
-    }
+    let err = env_filter_builder
+        .from_env()
+        .err()
+        .map(|err| format!("failed to parse RUST_LOG environment variable: {err:#}").into());
     let env_filter = env_filter_builder.from_env_lossy();
 
     // This format is more concise than even the 'Compact' default:
@@ -76,7 +78,7 @@ fn default_tracing_subscriber_native(default_level: LevelFilter) -> impl Subscri
             // We print this message to stderr (rather than through `tracing`), because:
             // 1) Tracing hasn't been set up yet
             // 2) The tracing logs could have been configured to eat this message, and we think this is still important to have visible.
-            // 3) This message is only sent in debug mode, so won't be exposed to users.
+            // 3) This message is only sent in debug mode, so won't be exposed to end-users.
             eprintln!("---");
             eprintln!("Writing full logs to {}", tmp_path.display());
             eprintln!("---");
@@ -101,12 +103,14 @@ fn default_tracing_subscriber_native(default_level: LevelFilter) -> impl Subscri
     #[cfg(feature = "tracy")]
     let registry = registry.with(tracing_tracy::TracyLayer::default());
 
-    registry
+    (registry, err)
 }
 
 #[cfg(target_arch = "wasm32")]
 /// Initialise tracing for the web with the given `max_level`.
-fn default_tracing_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
+fn default_tracing_subscriber_wasm(
+    max_level: LevelFilter,
+) -> (impl Subscriber, Option<Box<dyn Error>>) {
     // Note - tracing-wasm might not work in headless Node.js. Probably doesn't matter anyway,
     // because this is a GUI framework, so wasm targets will virtually always be browsers.
 
@@ -121,11 +125,16 @@ fn default_tracing_subscriber_wasm(max_level: LevelFilter) -> impl Subscriber {
         )
         .build();
 
-    tracing_subscriber::Registry::default().with(tracing_wasm::WASMLayer::new(config))
+    (
+        tracing_subscriber::Registry::default().with(tracing_wasm::WASMLayer::new(config)),
+        None,
+    )
 }
 
 /// Constructs a default tracing subscriber with a given `max_level` filter.
-pub fn default_tracing_subscriber(max_level: LevelFilter) -> impl Subscriber {
+pub fn default_tracing_subscriber(
+    max_level: LevelFilter,
+) -> (impl Subscriber, Option<Box<dyn Error>>) {
     #[cfg(not(target_arch = "wasm32"))]
     {
         default_tracing_subscriber_native(max_level)
@@ -147,7 +156,7 @@ impl fmt::Display for TracingSubscriberHasBeenSetError {
     }
 }
 
-impl std::error::Error for TracingSubscriberHasBeenSetError {}
+impl Error for TracingSubscriberHasBeenSetError {}
 
 /// Verify that a tracing subscriber has not been set before or return with an error.
 fn verify_subscriber_has_not_been_set() -> Result<(), TracingSubscriberHasBeenSetError> {
@@ -168,10 +177,13 @@ pub fn try_init_test_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
 
     verify_subscriber_has_not_been_set()?;
 
-    let subscriber = default_tracing_subscriber(default_level);
+    let (subscriber, err) = default_tracing_subscriber(default_level);
 
     // We may ignore potential errors here because we already checked that no subscriber has been set.
     let _ = tracing::subscriber::set_global_default(subscriber);
+    if let Some(err) = err {
+        tracing::error!(err, "Logging init had recoverable error");
+    }
 
     Ok(())
 }
@@ -189,10 +201,13 @@ pub fn try_init_tracing() -> Result<(), TracingSubscriberHasBeenSetError> {
 
     verify_subscriber_has_not_been_set()?;
 
-    let subscriber = default_tracing_subscriber(default_level);
+    let (subscriber, err) = default_tracing_subscriber(default_level);
 
     // We may ignore potential errors here because we already checked that no subscriber has been set.
     let _ = tracing::subscriber::set_global_default(subscriber);
+    if let Some(err) = err {
+        tracing::error!("Initialising logging encountered recoverable error: {err}");
+    }
 
     Ok(())
 }
