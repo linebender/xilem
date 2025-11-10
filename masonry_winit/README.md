@@ -89,18 +89,8 @@ fn main() {
 
 (See the Masonry documentation for more detailed examples.)
 
-## Feature flags
-
-The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
-
-- `default`: Enables the default features of [`masonry_core`][masonry_core].
-- `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
-  This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
-
 [Masonry's documentation]: https://docs.rs/masonry
 [Masonry]: https://crates.io/crates/masonry
-[masonry_core]: https://crates.io/crates/masonry_core
-[tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 <!-- cargo-rdme end -->
 
