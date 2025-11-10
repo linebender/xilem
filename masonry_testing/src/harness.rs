@@ -265,6 +265,8 @@ impl TestHarnessParams {
     ///
     /// This default is targeted for the most common kind of tests, which are
     /// single-widget tests.
+    // TODO: Is it true that single-widget is the most common? Maybe we need (even...) more constructors,
+    // like TestHarness::for_page/TestHarness::for_widget?
     /// For these tests, the padding is present to validate that nothing
     /// unexpected is drawn outside of the widget's bounds.
     ///
@@ -547,16 +549,13 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Set the padding to be used for tests of intentional widget overdraw,
-    /// i.e. where a widget is intended to draw outside of its bounds.
+    /// i.e. where a widget is intended to draw up to `width` pixels outside of its bounds.
     ///
     /// This can be used for tests of focus indicators or box shadows.
     ///
     /// This is a pre-configured wrapper around [`set_render_padding`](Self::set_render_padding).
-    pub fn use_widget_overdraw_padding(&mut self) {
-        self.set_render_padding(
-            TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS,
-            Color::TRANSPARENT,
-        );
+    pub fn use_widget_overdraw_padding(&mut self, width: u32) {
+        self.set_render_padding(width, Color::TRANSPARENT);
     }
 
     /// Set the padding to be suitable for rendering a full page for testing.
@@ -579,6 +578,13 @@ impl<W: Widget> TestHarness<W> {
             TestHarnessParams::FUTURE_DEFAULT_PADDING_PIXELS,
             TestHarnessParams::DEFAULT_PADDING_COLOR,
         );
+    }
+
+    /// Set the harness to not use padding in renders.
+    ///
+    /// This is a pre-configured wrapper around [`set_render_padding`](Self::set_render_padding).
+    pub fn use_no_padding(&mut self) {
+        self.set_render_padding(0, TestHarnessParams::DEFAULT_PADDING_COLOR);
     }
 
     // TODO - We add way too many dependencies in this code
