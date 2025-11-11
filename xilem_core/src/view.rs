@@ -107,5 +107,62 @@ pub trait View<State: ViewArgument, Action, Context: ViewPathTracker>:
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
 
+    /// A view that "extracts" state from a [`View<ParentState,_,_>`] to [`View<ChildState,_,_>`].
+    /// This allows modularization of views based on their state.
+    ///
+    /// See [`map_state`](`crate::map_state`)
+    fn map_state<ParentState, F>(
+        self,
+        f: F,
+    ) -> crate::MapState<Self, F, ParentState, State, Action, Context>
+    where
+        ParentState: ViewArgument,
+        Action: 'static,
+        Context: 'static,
+        Self: Sized,
+        F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, State> + 'static,
+    {
+        crate::map_state(self, f)
+    }
+
+    /// A view which maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`], whilst allowing the kind of [`MessageResult`] to be changed.
+    ///
+    /// See [`map_message`](`crate::map_message`)
+    fn map_message<ParentAction, F>(
+        self,
+        f: F,
+    ) -> crate::MapMessage<Self, State, ParentAction, Action, Context, F>
+    where
+        ParentAction: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
+    {
+        crate::map_message(self, f)
+    }
+
+    /// A view that maps a child [`View<State,ChildAction,_>`] to [`View<State,ParentAction,_>`] while providing mutable access to `State` in the map function.
+    ///
+    /// See [`map_action`](`crate::map_action`)
+    fn map_action<ParentAction, F>(
+        self,
+        f: F,
+    ) -> crate::MapMessage<
+        Self,
+        State,
+        ParentAction,
+        Action,
+        Context,
+        impl Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
+    >
+    where
+        ParentAction: 'static,
+        Action: 'static,
+        Self: Sized,
+        F: Fn(Arg<'_, State>, Action) -> ParentAction + 'static,
+    {
+        crate::map_action(self, f)
+    }
+
     // fn debug_name?
 }

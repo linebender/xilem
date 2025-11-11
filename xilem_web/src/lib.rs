@@ -114,7 +114,7 @@ pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{AnyView, Arg, MapMessage, MapState, MessageResult, View, ViewArgument, ViewSequence};
+use core::{AnyView, Arg, View, ViewArgument, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -191,41 +191,6 @@ pub trait DomView<State: ViewArgument, Action = ()>:
         F: Fn(&Self::DomNode) + 'static,
     {
         before_teardown(self, callback)
-    }
-
-    /// See [`map_state`](`core::map_state`)
-    fn map_state<ParentState, F>(
-        self,
-        f: F,
-    ) -> MapState<Self, F, ParentState, State, Action, ViewCtx>
-    where
-        ParentState: ViewArgument,
-        Action: 'static,
-        Self: Sized,
-        F: for<'a> Fn(Arg<'a, ParentState>, &'a ()) -> Arg<'a, State> + 'static,
-    {
-        core::map_state(self, f)
-    }
-
-    /// See [`map_action`](`core::map_action`)
-    fn map_action<ParentAction, F>(
-        self,
-        f: F,
-    ) -> MapMessage<
-        Self,
-        State,
-        ParentAction,
-        Action,
-        ViewCtx,
-        impl Fn(Arg<'_, State>, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
-    >
-    where
-        ParentAction: 'static,
-        Action: 'static,
-        Self: Sized,
-        F: Fn(Arg<'_, State>, Action) -> ParentAction + 'static,
-    {
-        core::map_action(self, f)
     }
 }
 
