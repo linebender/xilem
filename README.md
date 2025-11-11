@@ -21,9 +21,8 @@ It provides a retained widget tree and runs event handling and update passes on 
 It lets users create a lightweight view tree, and changes the rendered app based on changes to the tree.
 It has a web backend and a Masonry backend.
 
-## Project structure
-
-![Xilem project layers](docs/assets/xilem-layers.svg)
+[`masonry/`](masonry/) and [`xilem/`](xilem/) are the respective entry points of these projects for new users. 
+See `ARCHITECTURE.md` for details about the repository structure.
 
 Xilem and Masonry are built on top of:
 
@@ -32,22 +31,44 @@ Xilem and Masonry are built on top of:
 - **Parley and Fontique** for [the text stack](https://github.com/linebender/parley#the-Parley-text-stack).
 - **AccessKit** for plugging into accessibility APIs.
 
-## Precise Capturing
+**Note for new users:** If you're not sure what to use between Xilem and Masonry, you probably want Xilem. In general, if you're trying to make an app with minimum hassle, you probably want Xilem. Xilem is a UI framework, whereas Masonry is a toolkit for building UI frameworks (including Xilem).
 
-Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
-This is new syntax in the 2024 edition, and so it might be unfamiliar.
-Here's a snippet from the Xilem examples:
 
-```rust
-fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
-   // ...
-}
-```
+## Screenshots
 
-The precise capturing syntax in this case indicates that the returned view does not make use of the lifetime of `data`.
-This is required because the view types in Xilem must be `'static`, but as of the 2024 edition, when `impl Trait` is used
-for return types, Rust assumes that the return value will use the parameter's lifetimes.
-That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
+<figure align="center">
+
+<img style="height: auto;" width="1488" height="1011" src="docs/screenshot_chess_app.png">
+
+<figcaption>
+
+*From https://github.com/StefanSalewski/xilem-chess/*
+
+</figcaption>
+</figure>
+
+<figure align="center">
+
+<img style="height: auto;" width="677" height="759" src="docs/screenshot_calc_masonry.png">
+
+<figcaption>
+
+*The `calc_masonry` example.*
+
+</figcaption>
+</figure>
+
+<figure align="center">
+
+<img style="height: auto;" width="1175" height="862" src="docs/screenshot_to_do_mvc.png">
+
+<figcaption>
+
+*The `to_do_mvc` example.*
+
+</figcaption>
+</figure>
+
 
 ## Prerequisites
 
