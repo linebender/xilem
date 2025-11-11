@@ -4,22 +4,20 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=tree_arena
 
-//! This crate contains two implementations of a tree for use in [Masonry], one safe and the other unsafe. The safe tree is known to work, and serves as the baseline implementation and is used by default.
+//! This crate contains two implementations of a tree for use in [Masonry][], one safe and the other unsafe. The safe tree is known to work, and serves as the baseline implementation and is used by default.
 //! The unsafe tree leverages a hashmap as an arena and is designed for higher performance: it leverages unsafe code to achieve this. The unsafe tree is not yet fully tested, and is not used by default.
 //!
 //! The safe tree is the priority. This means:
 //!
 //! * The safe version may have features / APIs that the unsafe version doesn't yet have.
-//!
-//! * If both versions are at feature parity, [Masonry] can switch on the unsafe version for best performance.
-//!
-//! * Otherwise, [Masonry] uses the safe version.
+//! * If both versions are at feature parity, [Masonry][] can switch on the unsafe version for best performance.
+//! * Otherwise, [Masonry][] uses the safe version.
 //!
 //! # Architecture
 //!
 //! ## Safe Tree
 //!
-//! The safe tree contains a root `TreeArena` which owns the root nodes as `Vec<TreeNode<T>>`, and a`parents_map` tracking the parent of every node.
+//! The safe tree contains a root `TreeArena` which owns the root nodes as `Vec<TreeNode<T>>`, and a `parents_map` tracking the parent of every node.
 //! Each `TreeNode` subsequently owns its own children as `Vec<TreeNode<T>>`. This model of ownership is thus checked by the rust compiler,
 //! but has the downside of requiring passing through every ancestor node to access the descendant -
 //! this requires an O(depth) determination of whether the node is a descendant, followed by O(children) time at each level to traverse the path to the child.
@@ -28,11 +26,9 @@
 //!
 //! The unsafe tree arena contains a `DataMap` which **owns** all nodes. The `DataMap` contains:
 //!
-//! * A `HashMap` associating `NodeId` with `Box<UnsafeCell<TreeNode<T>>>`, owning the node data, (boxed to prevent movement of the node when the `HashMap` is resized and `UnsafeCell` to express the interior mutability)
-//!
-//! * A `HashMap` associating `NodeId` with `Option<NodeId>`, containing the parent information for the nodes
-//!
-//! * `Box<UnsafeCell<Vec<NodeId>>>` containing the roots of the tree
+//! * A `HashMap` associating `NodeId` with `Box<UnsafeCell<TreeNode<T>>>`, owning the node data (boxed to prevent movement of the node when the `HashMap` is resized and `UnsafeCell` to express the interior mutability);
+//! * A `HashMap` associating `NodeId` with `Option<NodeId>`, containing the parent information for the nodes;
+//! * `Box<UnsafeCell<Vec<NodeId>>>` containing the roots of the tree.
 //!
 //! It is possible to get shared (immutable) access or exclusive (mutable) access to the tree. These return `ArenaRef<'arena, T>` or `ArenaMut<'arena, T>` respectively.
 //! We do this by leveraging a hash map to store the nodes: from this we can obtain either shared or exclusive access to nodes.

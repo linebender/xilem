@@ -21,14 +21,16 @@ Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
-[core::Widget]: https://docs.rs/masonry_core/latest/masonry_core/core/widget/trait.Widget.html
 [ui_events]: https://crates.io/crates/ui-events
 [vello]: https://crates.io/crates/vello
 [accesskit]: https://crates.io/crates/accesskit
-[core::WidgetMut]: https://docs.rs/masonry_core/latest/masonry_core/core/widget_mut/struct.WidgetMut.html
+
 [core::Widget::Action]: https://docs.rs/masonry_core/latest/masonry_core/core/widget/trait.Widget.html#associatedtype.Action
+[core::Widget]: https://docs.rs/masonry_core/latest/masonry_core/core/widget/trait.Widget.html
+[core::WidgetMut]: https://docs.rs/masonry_core/latest/masonry_core/core/widget_mut/struct.WidgetMut.html
 [doc::pass_system]: https://docs.rs/masonry_core/latest/masonry_core/doc/internals_01_pass_system/index.html
 
+<!-- markdownlint-disable MD053 -->
 <!-- cargo-rdme start -->
 
 Masonry Core provides the base GUI engine for Masonry.
@@ -55,7 +57,7 @@ directly where possible (instead of depending on `masonry`).
 This will allow applications using your library to have greater compilation parallelism.
 Cases where this apply include:
 
-- Writing an alternative driver for Masonry (alike to [Masonry Winit]).
+- Writing an alternative driver for Masonry (alike to [Masonry Winit][]).
 - Witing a library containing one or more custom widget (such as a 2d mapping widget).
 
 Masonry Core can also be used by by applications wishing to not use Masonry's provided
@@ -70,7 +72,7 @@ not aware of any projects using Masonry Core as described in this paragraph.
 
 The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 
-- `default`: Enables the default features of [`vello`].
+- `default`: Enables the default features of [Vello][vello].
 - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 
@@ -79,6 +81,7 @@ The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/fe
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
 <!-- cargo-rdme end -->
+<!-- markdownlint-enable MD053 -->
 
 ## Minimum supported Rust Version (MSRV)
 

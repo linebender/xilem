@@ -28,7 +28,7 @@
 //! This will allow applications using your library to have greater compilation parallelism.
 //! Cases where this apply include:
 //!
-//! - Writing an alternative driver for Masonry (alike to [Masonry Winit]).
+//! - Writing an alternative driver for Masonry (alike to [Masonry Winit][]).
 //! - Witing a library containing one or more custom widget (such as a 2d mapping widget).
 //!
 //! Masonry Core can also be used by by applications wishing to not use Masonry's provided
@@ -43,7 +43,7 @@
 //!
 //! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 //!
-//! - `default`: Enables the default features of [`vello`].
+//! - `default`: Enables the default features of [Vello][vello].
 //! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
 //!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
 //!

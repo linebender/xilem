@@ -20,10 +20,12 @@ Full documentation at https://github.com/orium/cargo-rdme -->
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
 
+[xilem]: ../xilem/README.md
+
 <!-- markdownlint-disable MD053 -->
 <!-- cargo-rdme start -->
 
-A mastodon client written in Xilem.
+A mastodon client written in [Xilem][xilem].
 
 We're assuming that all Mastodon servers supported are trusted (and so it's not a
 privacy violation for them to know that two accounts you log in to are linked).
@@ -34,9 +36,7 @@ If this doesn't apply to you, we recommend not using Placehero.
 
 The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 
-- `default`: Enables the default features of [`xilem`][xilem].
-
-[xilem]: https://crates.io/crates/xilem
+- `default`: Enables the default features of [Xilem][xilem].
 
 <!-- cargo-rdme end -->
 <!-- markdownlint-enable MD053 -->
