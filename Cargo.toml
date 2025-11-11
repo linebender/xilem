@@ -39,16 +39,16 @@ repository = "https://github.com/linebender/xilem"
 
 [workspace.dependencies]
 
-masonry = { version = "0.4.0", path = "masonry" }
-masonry_core = { version = "0.4.0", path = "masonry_core" }
-masonry_testing = { version = "0.4.0", path = "masonry_testing" }
-masonry_winit = { version = "0.4.0", path = "masonry_winit" }
+masonry = { version = "0.4.0", path = "masonry", default-features = false }
+masonry_core = { version = "0.4.0", path = "masonry_core", default-features = false }
+masonry_testing = { version = "0.4.0", path = "masonry_testing", default-features = false }
+masonry_winit = { version = "0.4.0", path = "masonry_winit", default-features = false }
 xilem_core = { version = "0.4.0", path = "xilem_core" }
-xilem = { version = "0.4.0", path = "xilem" }
+xilem = { version = "0.4.0", path = "xilem", default-features = false }
 tree_arena = { version = "0.2.0", path = "tree_arena" }
 
 anymore = "1.0.0"
-vello = "0.6.0"
+vello = { version = "0.6.0", default-features = false, features = ["wgpu"] }
 kurbo = "0.12.0"
 parley = { version = "0.6.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.

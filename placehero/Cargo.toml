@@ -5,6 +5,9 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = ["xilem/default"]
+
 [dependencies]
 reqwest = { workspace = true }
 html5gum = "0.8.0"

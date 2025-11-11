@@ -31,6 +31,9 @@ debuggable = true
 # Needed for http_cats
 name = "android.permission.INTERNET"
 
+[features]
+default = ["masonry/default", "masonry_winit/default"]
+
 [dependencies]
 xilem_core.workspace = true
 masonry.workspace = true
