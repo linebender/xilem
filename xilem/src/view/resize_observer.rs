@@ -25,6 +25,36 @@ use crate::{Pod, ViewCtx, WidgetView};
 /// an [expanded](crate::view::SizedBox::expand) `sized_box`.
 ///
 /// See the documentation on the underlying [`ResizeObserver`](widgets::ResizeObserver) for more information.
+///
+/// # Example
+///
+/// To create a responsive version of a page, you can use `resize_observer`.
+///
+/// ```rust,no_run
+/// # use xilem::{WidgetView, core::Edit, view::{resize_observer, flex, sized_box, Axis}, masonry::kurbo::Size};
+///
+/// struct State {
+///     available_size: Size,
+/// }
+///
+/// # fn my_component(state: &mut State) -> impl WidgetView<Edit<State>> {
+/// resize_observer(
+///     |state: &mut State, size: Size| state.available_size = size,
+///     sized_box(flex(
+///         // Horizontal on wide screens,
+///         if state.available_size.width > 1000. {
+///             Axis::Horizontal
+///         } else {
+///             Axis::Vertical
+///         },
+///         (
+///             // ...
+///         ),
+///     ))
+///     .expand()
+/// )
+/// # }
+/// ```
 pub fn resize_observer<State, Action, V, F>(
     on_resize: F,
     inner: V,
@@ -52,7 +82,10 @@ pub struct ResizeObserver<V, F, State, Action = ()> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-const RESIZE_OBSERVER_CONTENT_VIEW_ID: ViewId = ViewId::new(0);
+/// Use a distinctive number here, to be able to catch bugs.
+/// In case the generational-id view path in `View::Message` leads to the wrong view
+/// This is a randomly generated 32 bit number.
+const RESIZE_OBSERVER_CONTENT_VIEW_ID: ViewId = ViewId::new(0xa9e5_69bf);
 
 impl<V, F, State, Action> ViewMarker for ResizeObserver<V, F, State, Action> {}
 impl<V, F, State, Action> View<State, Action, ViewCtx> for ResizeObserver<V, F, State, Action>
@@ -145,7 +178,10 @@ where
                 }
             },
             _ => {
-                tracing::warn!("Got unexpected id path in `ResizeObserver::message`.");
+                tracing::warn!(
+                    ?message,
+                    "Got unexpected id path in `ResizeObserver::message`."
+                );
                 MessageResult::Stale
             }
         }
