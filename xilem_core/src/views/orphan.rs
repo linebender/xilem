@@ -94,7 +94,7 @@ macro_rules! impl_orphan_view_for {
             fn message(
                 &self,
                 view_state: &mut Self::ViewState,
-                message: &mut MessageContext,
+                message: &mut MessageCtx,
                 element: Mut<'_, Self::Element>,
                 app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {

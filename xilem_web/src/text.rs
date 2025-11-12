@@ -51,7 +51,7 @@ macro_rules! impl_string_view {
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _message: &mut MessageContext,
+                _message: &mut MessageCtx,
                 _element: Mut<'_, Self::OrphanElement>,
                 _app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {
@@ -110,7 +110,7 @@ macro_rules! impl_to_string_view {
             fn orphan_message(
                 _view: &$ty,
                 _view_state: &mut Self::OrphanViewState,
-                _message: &mut MessageContext,
+                _message: &mut MessageCtx,
                 _element: Mut<'_, Self::OrphanElement>,
                 _app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {

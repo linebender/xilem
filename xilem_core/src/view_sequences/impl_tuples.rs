@@ -180,7 +180,7 @@ macro_rules! impl_view_tuple {
             fn seq_message(
                 &self,
                 seq_state: &mut Self::SeqState,
-                message: &mut MessageContext,
+                message: &mut MessageCtx,
                 elements: &mut impl ElementSplice<Element>,
                 mut app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {

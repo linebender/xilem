@@ -5,7 +5,7 @@ use crate::{DynMessage, Environment, ViewId};
 use alloc::{boxed::Box, vec::Vec};
 use anymore::AnyDebug;
 
-/// The `MessageContext` is used in [`View::message`](crate::View::message).
+/// The `MessageCtx` is used in [`View::message`](crate::View::message).
 ///
 /// It contains the full current "target" path for message routing, along with
 /// where we are along that path.
@@ -122,7 +122,7 @@ impl MessageCtx {
         }
     }
 
-    /// Unwrap this `MessageContext` into its constituent parts.
+    /// Unwrap this `MessageCtx` into its constituent parts.
     pub fn finish(self) -> (Environment, Vec<ViewId>, Option<DynMessage>) {
         let Self {
             environment,

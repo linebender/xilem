@@ -528,7 +528,7 @@ macro_rules! define_element {
             fn message(
                 &self,
                 element_state: &mut Self::ViewState,
-                message: &mut MessageContext,
+                message: &mut MessageCtx,
                 element: Mut<'_, Self::Element>,
                 app_state: Arg<'_, State>,
             ) -> MessageResult<Action> {
@@ -543,7 +543,7 @@ macro_rules! define_elements {
         use std::marker::PhantomData;
         use super::{build_element, rebuild_element, teardown_element, message_element, DomViewSequence, ElementState};
         use crate::{
-            core::{MessageResult, Mut,  ViewMarker, MessageContext},
+            core::{MessageResult, Mut,  ViewMarker, MessageCtx},
             DomFragment, Pod, View, Arg, ViewArgument, ViewCtx,
         };
         $(define_element!(crate::$ns, $element_def);)*
