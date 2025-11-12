@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use crate::{
-    AppendVec, Arg, Count, ElementSplice, MessageContext, MessageResult, ViewArgument, ViewElement,
+    AppendVec, Arg, Count, ElementSplice, MessageCtx, MessageResult, ViewArgument, ViewElement,
     ViewId, ViewPathTracker, ViewSequence,
 };
 
@@ -155,7 +155,7 @@ where
     fn seq_message(
         &self,
         seq_state: &mut Self::SeqState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         elements: &mut impl ElementSplice<Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

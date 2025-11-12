@@ -8,7 +8,7 @@ use masonry::core::ArcStr;
 pub use masonry::core::PointerButton;
 use masonry::widgets::{self, ButtonPress};
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 use crate::view::{Label, label};
 use crate::{MessageResult, Pod, ViewCtx, ViewId, WidgetView};
 
@@ -236,7 +236,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

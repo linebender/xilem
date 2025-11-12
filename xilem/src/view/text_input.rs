@@ -11,7 +11,7 @@ use masonry::properties::{
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 use crate::view::Prop;
 use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as _};
 
@@ -367,7 +367,7 @@ impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
     fn message(
         &self,
         _: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

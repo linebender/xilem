@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 use crate::{MessageResult, Pod, ViewCtx, WidgetView};
 
 /// A view which puts `child` into a scrollable region.
@@ -77,7 +77,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

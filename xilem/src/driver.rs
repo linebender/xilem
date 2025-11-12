@@ -15,7 +15,7 @@ use masonry_winit::app::{
 
 use crate::any_view::DynWidget;
 use crate::core::{
-    DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
+    DynMessage, MessageCtx, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
     ViewPathTracker,
 };
 use crate::window_view::{WindowView, WindowViewState};
@@ -241,7 +241,7 @@ where
             // If this is not an action from a real widget, dispatch it using the path it contains.
             let (path, message) = *action.downcast::<MessagePackage>().unwrap();
             id_path.extend_from_slice(&path);
-            let mut message_context = MessageContext::new(
+            let mut message_context = MessageCtx::new(
                 std::mem::take(window.view_ctx.environment()),
                 id_path,
                 message.into(),
@@ -259,7 +259,7 @@ where
             res
         } else if let Some(path) = window.view_ctx.get_id_path(widget_id) {
             id_path.extend_from_slice(path);
-            let mut message_context = MessageContext::new(
+            let mut message_context = MessageCtx::new(
                 std::mem::take(window.view_ctx.environment()),
                 id_path,
                 DynMessage(action),

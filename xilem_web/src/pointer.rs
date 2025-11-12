@@ -11,8 +11,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt, throw_str};
 use web_sys::PointerEvent;
 
 use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
 use crate::interfaces::Element;
 use crate::{DomView, ViewCtx};
@@ -207,7 +206,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

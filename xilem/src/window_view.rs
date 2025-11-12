@@ -7,7 +7,7 @@ use masonry::theme::BACKGROUND_COLOR;
 use masonry_winit::app::{NewWindow, Window, WindowId};
 use xilem_core::Edit;
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewElement, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewElement, ViewMarker};
 use crate::{AnyWidgetView, ViewCtx, WidgetView, WindowOptions};
 
 /// A view representing a window.
@@ -134,7 +134,7 @@ impl<State> View<Edit<State>, (), ViewCtx> for WindowView<State> {
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         window: Mut<'_, Self::Element>,
         app_state: Arg<'_, Edit<State>>,
     ) -> xilem_core::MessageResult<()> {

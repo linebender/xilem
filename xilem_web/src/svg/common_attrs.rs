@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 use peniko::{Brush, kurbo};
 
 use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
 };
 use crate::modifiers::{AttributeModifier, Attributes, Modifier, WithModifier};
 use crate::{DomView, ViewCtx};
@@ -171,7 +171,7 @@ where
     fn message(
         &self,
         child_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -303,7 +303,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

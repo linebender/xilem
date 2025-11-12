@@ -9,7 +9,7 @@ use masonry::widgets;
 pub use masonry::widgets::ChildAlignment;
 
 use crate::core::{
-    AppendVec, Arg, ElementSplice, MessageContext, MessageResult, Mut, SuperElement, View,
+    AppendVec, Arg, ElementSplice, MessageCtx, MessageResult, Mut, SuperElement, View,
     ViewArgument, ViewElement, ViewMarker, ViewSequence,
 };
 use crate::{Pod, ViewCtx, WidgetView};
@@ -140,7 +140,7 @@ where
     fn message(
         &self,
         ZStackState { seq_state, scratch }: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -256,7 +256,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

@@ -73,7 +73,7 @@ pub use self::environment::{
     WithContext, on_action_with_context, provides, with_context,
 };
 pub use self::message::{DynMessage, MessageResult, SendMessage};
-pub use self::message_context::MessageContext;
+pub use self::message_context::MessageCtx;
 pub use self::message_proxy::{AsyncCtx, MessageProxy, PhantomView, ProxyError, RawProxy};
 pub use self::view::{View, ViewMarker};
 pub use self::view_argument::{Arg, Edit, Read, ViewArgument};

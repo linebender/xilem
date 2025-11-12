@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use masonry::core::{HasProperty, Property};
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view that adds a property `P` or overrides a previously defined property `P`
@@ -78,7 +78,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> xilem_core::MessageResult<Action> {

@@ -9,7 +9,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 
 use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewId, ViewMarker,
+    Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewId, ViewMarker,
     ViewPathTracker,
 };
 use crate::{OptionalAction, ViewCtx};
@@ -242,7 +242,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         (): Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

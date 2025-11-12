@@ -7,7 +7,7 @@ use alloc::boxed::Box;
 use core::any::Any;
 
 use crate::{
-    AnyElement, Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewId,
+    AnyElement, Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewId,
     ViewMarker, ViewPathTracker,
 };
 
@@ -57,7 +57,7 @@ pub trait AnyView<State: ViewArgument, Action, Context, Element: ViewElement> {
     fn dyn_message(
         &self,
         dyn_state: &mut AnyViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Element::Mut<'_>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
@@ -152,7 +152,7 @@ where
     fn dyn_message(
         &self,
         dyn_state: &mut AnyViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: DynamicElement::Mut<'_>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -233,7 +233,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -292,7 +292,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -349,7 +349,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -406,7 +406,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

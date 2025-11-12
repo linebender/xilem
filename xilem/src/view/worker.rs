@@ -13,7 +13,7 @@ use xilem_core::Resource;
 use crate::ViewCtx;
 use crate::core::anymore::AnyDebug;
 use crate::core::{
-    Arg, MessageContext, MessageProxy, MessageResult, Mut, NoElement, View, ViewArgument, ViewId,
+    Arg, MessageCtx, MessageProxy, MessageResult, Mut, NoElement, View, ViewArgument, ViewId,
     ViewMarker, ViewPathTracker,
 };
 
@@ -245,7 +245,7 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

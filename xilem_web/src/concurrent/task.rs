@@ -13,9 +13,7 @@ use wasm_bindgen_futures::spawn_local;
 use crate::ViewCtx;
 use crate::context::MessageThunk;
 use crate::core::anymore::AnyDebug;
-use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker,
-};
+use crate::core::{Arg, MessageCtx, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker};
 
 /// Spawn an async task to update state asynchronously
 ///
@@ -185,7 +183,7 @@ where
     fn message(
         &self,
         _: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

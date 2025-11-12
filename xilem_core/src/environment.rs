@@ -7,8 +7,7 @@ use anymore::AnyDebug;
 use hashbrown::{HashMap, hash_map::Entry};
 
 use crate::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
 
 use alloc::{boxed::Box, sync::Arc, vec::Vec};
@@ -328,7 +327,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -577,7 +576,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -722,7 +721,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         mut app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

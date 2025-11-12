@@ -5,9 +5,7 @@ use core::any::type_name;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 
-use crate::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker,
-};
+use crate::{Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewMarker, ViewPathTracker};
 
 /// The View for [`lens`].
 ///
@@ -161,7 +159,7 @@ where
     fn message(
         &self,
         (child, child_view_state): &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, ParentState>,
     ) -> MessageResult<Action> {

@@ -8,8 +8,7 @@ use masonry::properties::types::{AsUnit, Length};
 use masonry::widgets::{self, ceil_length};
 
 use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker,
-    ViewPathTracker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewId, ViewMarker, ViewPathTracker,
 };
 use crate::{Pod, ViewCtx, WidgetView};
 
@@ -276,7 +275,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

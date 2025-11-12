@@ -6,7 +6,7 @@
 use hidden::OneOfState;
 
 use crate::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewId, ViewMarker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewId, ViewMarker,
     ViewPathTracker,
 };
 
@@ -557,7 +557,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -605,7 +605,7 @@ where
 #[doc(hidden)]
 mod hidden {
     use super::PhantomElementCtx;
-    use crate::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+    use crate::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 
     #[expect(
         unnameable_types,
@@ -645,7 +645,7 @@ mod hidden {
         fn message(
             &self,
             _: &mut Self::ViewState,
-            _: &mut MessageContext,
+            _: &mut MessageCtx,
             _: Mut<'_, Self::Element>,
             _: Arg<'_, State>,
         ) -> crate::MessageResult<Action> {

@@ -5,7 +5,7 @@ use crate::{DynMessage, Environment, ViewId};
 use alloc::{boxed::Box, vec::Vec};
 use anymore::AnyDebug;
 
-/// The `MessageContext` is used in [`View::message`](crate::View::message).
+/// The `MessageCtx` is used in [`View::message`](crate::View::message).
 ///
 /// It contains the full current "target" path for message routing, along with
 /// where we are along that path.
@@ -13,7 +13,7 @@ use anymore::AnyDebug;
 /// allowing the resources for the current view tree location to be accessed.
 // TODO: Is it OK for this debug to be load bearing? It probably shouldn't be a derive.
 #[derive(Debug)]
-pub struct MessageContext {
+pub struct MessageCtx {
     // TODO: Just plain pub?
     pub(crate) environment: Environment,
     full_id_path: Vec<ViewId>,
@@ -21,7 +21,7 @@ pub struct MessageContext {
     message: Option<DynMessage>,
 }
 
-impl MessageContext {
+impl MessageCtx {
     /// Remove the first element from the id path which this message needs to be routed to.
     ///
     /// This mirrors [`ViewPathTracker::with_id`](crate::ViewPathTracker::with_id).
@@ -106,7 +106,7 @@ impl MessageContext {
 }
 
 /// Methods used by implementations of the Xilem pattern, not directly by View implementations.
-impl MessageContext {
+impl MessageCtx {
     /// Create a new message context.
     ///
     /// End-users of Xilem do not need to use this function.
@@ -122,7 +122,7 @@ impl MessageContext {
         }
     }
 
-    /// Unwrap this `MessageContext` into its constituent parts.
+    /// Unwrap this `MessageCtx` into its constituent parts.
     pub fn finish(self) -> (Environment, Vec<ViewId>, Option<DynMessage>) {
         let Self {
             environment,
@@ -139,7 +139,7 @@ mod tests {
     use alloc::vec;
     use alloc::vec::Vec;
 
-    use crate::{DynMessage, Environment, MessageContext, ViewId};
+    use crate::{DynMessage, Environment, MessageCtx, ViewId};
 
     #[test]
     fn take_path_full_path() {
@@ -149,7 +149,7 @@ mod tests {
             .map(ViewId::new)
             .collect::<Vec<_>>();
 
-        let mut ctx = MessageContext::new(env, path.clone(), DynMessage::new(()));
+        let mut ctx = MessageCtx::new(env, path.clone(), DynMessage::new(()));
         for element in &path {
             let next = ctx.take_first().unwrap();
             assert_eq!(next, *element);
@@ -175,7 +175,7 @@ mod tests {
         let env = Environment::new();
         let path = vec![ViewId::new(1)];
 
-        let mut ctx = MessageContext::new(env, path.clone(), DynMessage::new(()));
+        let mut ctx = MessageCtx::new(env, path.clone(), DynMessage::new(()));
         ctx.take_message::<()>();
     }
 
@@ -184,7 +184,7 @@ mod tests {
         let env = Environment::new();
         let path = vec![];
 
-        let mut ctx = MessageContext::new(env, path.clone(), DynMessage::new(()));
+        let mut ctx = MessageCtx::new(env, path.clone(), DynMessage::new(()));
         let took = ctx.take_message::<u32>();
         assert!(took.is_none());
         let () = *ctx.take_message::<()>().unwrap();
@@ -196,7 +196,7 @@ mod tests {
         let env = Environment::new();
         let path = vec![];
 
-        let mut ctx = MessageContext::new(env, path.clone(), DynMessage::new(()));
+        let mut ctx = MessageCtx::new(env, path.clone(), DynMessage::new(()));
         let () = *ctx.take_message::<()>().unwrap();
         ctx.take_message::<()>();
     }
@@ -206,7 +206,7 @@ mod tests {
         let env = Environment::new();
         let path = vec![];
 
-        let mut ctx = MessageContext::new(env, path.clone(), DynMessage::new(10_u32));
+        let mut ctx = MessageCtx::new(env, path.clone(), DynMessage::new(10_u32));
         ctx.maybe_take_message::<u32>(|x| {
             assert_eq!(*x, 10);
             false

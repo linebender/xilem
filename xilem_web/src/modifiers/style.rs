@@ -11,7 +11,7 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
 use super::{Modifier, WithModifier};
 use crate::core::{
-    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+    Arg, MessageCtx, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
 };
 use crate::diff::{Diff, diff_iters};
 use crate::vecmap::VecMap;
@@ -513,7 +513,7 @@ where
     fn message(
         &self,
         (_, view_state): &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -612,7 +612,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
@@ -741,7 +741,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {

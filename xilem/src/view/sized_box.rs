@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 
 use masonry::widgets;
 
-use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::core::{Arg, MessageCtx, Mut, View, ViewArgument, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A widget with predefined size.
@@ -158,7 +158,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         app_state: Arg<'_, State>,
     ) -> crate::MessageResult<Action> {

@@ -7,8 +7,8 @@ use std::io::stdin;
 use std::path::PathBuf;
 
 use xilem_core::{
-    AnyElement, AnyView, Arg, Edit, Environment, MessageContext, Mut, SuperElement, View,
-    ViewArgument, ViewElement, ViewId, ViewMarker, ViewPathTracker,
+    AnyElement, AnyView, Arg, Edit, Environment, MessageCtx, Mut, SuperElement, View, ViewArgument,
+    ViewElement, ViewId, ViewMarker, ViewPathTracker,
 };
 
 #[derive(Debug)]
@@ -206,7 +206,7 @@ impl<State: ViewArgument, Action> View<State, Action, ViewCtx> for File {
     fn message(
         &self,
         _view_state: &mut Self::ViewState,
-        _message: &mut MessageContext,
+        _message: &mut MessageCtx,
         _element: Mut<'_, Self::Element>,
         _app_state: Arg<'_, State>,
     ) -> xilem_core::MessageResult<Action> {
