@@ -5,8 +5,8 @@ use std::sync::Arc;
 
 use masonry::core::WidgetMut;
 use masonry::widgets;
-use vello::Scene;
 use vello::kurbo::Size;
+use vello::Scene;
 use xilem_core::MessageContext;
 
 use crate::core::{Mut, ViewMarker};
@@ -87,11 +87,14 @@ impl<State, Action> View<State, Action, ViewCtx> for Canvas {
         prev: &Self,
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
-        element: Mut<'_, Self::Element>,
+        mut element: Mut<'_, Self::Element>,
         _state: &mut State,
     ) {
         if !Arc::ptr_eq(&self.draw, &prev.draw) {
-            widgets::Canvas::set_painter_arc(element, self.draw.clone());
+            widgets::Canvas::set_painter_arc(&mut element, self.draw.clone());
+        }
+        if self.alt_text != prev.alt_text {
+            element.set_alt_text(&mut self.alt_text.clone());
         }
     }
 
