@@ -4,11 +4,11 @@
 use std::any::type_name;
 use std::marker::PhantomData;
 use vello::kurbo::Size;
-use xilem_core::{Arg, MessageResult, ViewArgument, ViewId, ViewPathTracker};
+use xilem_core::{Arg, MessageCtx, MessageResult, ViewArgument, ViewId, ViewPathTracker};
 
 use masonry::widgets::{self, LayoutChanged};
 
-use crate::core::{MessageContext, Mut, View, ViewMarker};
+use crate::core::{Mut, View, ViewMarker};
 use crate::{Pod, ViewCtx, WidgetView};
 
 /// A view which calls the `on_resize` callback whenever the size of its child changes.
@@ -155,7 +155,7 @@ where
     fn message(
         &self,
         view_state: &mut Self::ViewState,
-        message: &mut MessageContext,
+        message: &mut MessageCtx,
         mut element: Mut<'_, Self::Element>,
         mut app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
