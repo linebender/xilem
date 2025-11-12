@@ -6,7 +6,7 @@
 
 //! Masonry is a foundational framework for building GUI libraries in Rust.
 //!
-//! The developers of Masonry are developing [Xilem], a reactive UI library built on top of Masonry.
+//! The developers of Masonry are developing [Xilem][], a reactive UI library built on top of Masonry.
 //! Masonry's API is geared towards creating GUI libraries; if you are creating an application, we recommend also considering Xilem.
 //!
 //! Masonry gives you a platform-independent manager, which owns and maintains a widget tree.
@@ -25,7 +25,7 @@
 //! Masonry can be used with any windowing library which allows the window content to be rendered using `wgpu`.
 //! There are currently two backends for using Masonry to create operating system windows:
 //!
-//! - [masonry_winit] for most platforms.
+//! - [Masonry Winit][masonry_winit] for most platforms.
 //! - `masonry_android_view` for Android. This can currently be found in the [Android View repository](https://github.com/rust-mobile/android-view),
 //!   and is not yet generally usable.
 //!
@@ -33,7 +33,7 @@
 //!
 //! # Example
 //!
-//! The to-do-list example looks like this, using `masonry_winit` as the backend:
+//! The to-do-list example looks like this, using Masonry Winit as the backend:
 //!
 //! ```rust
 //! use masonry::core::{ErasedAction, NewWidget, Properties, Widget, WidgetId, WidgetTag};
@@ -149,11 +149,11 @@
 //!
 //! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
 //!
-//! - `default`: Enables the default features of [`masonry_core`][masonry_core], [`masonry_testing`][masonry_testing]
-//!   (if enabled via the `testing` feature) and [`vello`].
+//! - `default`: Enables the default features of [Masonry Core][masonry_core], [Masonry Testing][masonry_testing]
+//!   (if enabled via the `testing` feature), and [Vello][vello].
 //! - `tracy`: Enables creating output for the [Tracy](https://github.com/wolfpld/tracy) profiler using [`tracing-tracy`][tracing_tracy].
 //!   This can be used by installing Tracy and connecting to a Masonry with this feature enabled.
-//! - `testing`: Re-exports the test harness from [`masonry_testing`][masonry_testing].
+//! - `testing`: Re-exports the test harness from [Masonry Testing][masonry_testing].
 //!
 //! # Debugging features
 //!
@@ -165,15 +165,12 @@
 //!
 //! If you want to use your own subscriber, simply set it before starting masonry - in this case masonry will not set a subscriber.
 //!
-//! [masonry_core]: https://crates.io/crates/masonry_core
-//! [masonry_testing]: https://crates.io/crates/masonry_testing
 //! [masonry_winit]: https://crates.io/crates/masonry_winit
 //! [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 //! [tracing_tracy]: https://crates.io/crates/tracing-tracy
-//!
 #![cfg_attr(
     not(docsrs),
-    doc = "**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
+    doc = "\n**Warning: This documentation is meant to be read on docs.rs. Screenshots may fail to load otherwise.**\n\n"
 )]
 // Screenshot generated in the unit test for the `to_do_list` example.
 #![doc = util::include_screenshot_reference!("to-do-screenshot", "example_to_do_list_initial.png")]

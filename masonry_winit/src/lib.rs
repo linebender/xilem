@@ -4,9 +4,9 @@
 // After you edit the crate's doc comment, run this command, then check README.md for any missing links
 // cargo rdme --workspace-project=masonry_winit
 
-//! This is the [Winit][winit] backend for the [Masonry] GUI framework.
+//! This is the [Winit][winit] backend for the [Masonry][] GUI framework.
 //!
-//! See [Masonry's documentation] for more details, examples and resources.
+//! See [Masonry's documentation][] for more details, examples and resources.
 //!
 //! # Example
 //!

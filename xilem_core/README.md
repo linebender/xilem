@@ -24,15 +24,16 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 
 [`alloc`]: https://doc.rust-lang.org/stable/alloc/
 [`memoize`]: https://docs.rs/xilem_core/latest/xilem_core/views/memoize/fn.memoize.html
+[`lens`]: https://docs.rs/xilem_core/latest/xilem_core/views/lens/fn.lens.html
 [`View`]: https://docs.rs/xilem_core/latest/xilem_core/view/trait.View.html
-[Zulip]: #community
 
+<!-- markdownlint-disable MD053 -->
 <!-- cargo-rdme start -->
 
 Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit) and [Xilem Web][] (a web frontend framework).
 If you are using Xilem, [its documentation][xilem docs] will probably be more helpful for you. <!-- TODO: In the long-term, we probably also need a book? -->
 
-Xilem apps will interact with some of the functions from this crate, in particular [`memoize`][].
+Xilem apps will interact with some of the functions from this crate, particularly fundamental views such as [`memoize`][] and [`lens`][].
 Xilem apps which use custom widgets (and therefore must implement custom views), will implement the [`View`][] trait.
 
 If you wish to implement the Xilem pattern in a different domain (such as for a terminal user interface), this crate can be used to do so.
@@ -57,9 +58,9 @@ Xilem Core supports running with `#![no_std]`, but does require [`alloc`][] to b
 [Xilem]: https://crates.io/crates/xilem
 [Xilem Web]: https://crates.io/crates/xilem_web
 [xilem docs]: https://docs.rs/xilem/latest/xilem/
-[Zulip]: https://xi.zulipchat.com/#narrow/stream/354396-xilem
 
 <!-- cargo-rdme end -->
+<!-- markdownlint-enable MD053 -->
 
 ## Minimum supported Rust Version (MSRV)
 

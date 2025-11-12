@@ -28,9 +28,9 @@ See https://linebender.org/blog/doc-include/ for related discussion. -->
 
 <!-- cargo-rdme start -->
 
-This is the [Winit][winit] backend for the [Masonry] GUI framework.
+This is the [Winit][winit] backend for the [Masonry][] GUI framework.
 
-See [Masonry's documentation] for more details, examples and resources.
+See [Masonry's documentation][] for more details, examples and resources.
 
 ## Example
 

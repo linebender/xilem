@@ -7,7 +7,7 @@
 //! Xilem Core provides primitives which are used by [Xilem][] (a cross-platform GUI toolkit) and [Xilem Web][] (a web frontend framework).
 //! If you are using Xilem, [its documentation][xilem docs] will probably be more helpful for you. <!-- TODO: In the long-term, we probably also need a book? -->
 //!
-//! Xilem apps will interact with some of the functions from this crate, in particular [`memoize`][].
+//! Xilem apps will interact with some of the functions from this crate, particularly fundamental views such as [`memoize`][] and [`lens`][].
 //! Xilem apps which use custom widgets (and therefore must implement custom views), will implement the [`View`][] trait.
 //!
 //! If you wish to implement the Xilem pattern in a different domain (such as for a terminal user interface), this crate can be used to do so.
@@ -32,7 +32,6 @@
 //! [Xilem]: https://crates.io/crates/xilem
 //! [Xilem Web]: https://crates.io/crates/xilem_web
 //! [xilem docs]: https://docs.rs/xilem/latest/xilem/
-//! [Zulip]: https://xi.zulipchat.com/#narrow/stream/354396-xilem
 
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
