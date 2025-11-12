@@ -158,8 +158,15 @@ impl<ChildA, ChildB, State, Action> Split<ChildA, ChildB, State, Action> {
     }
 }
 
-const CHILD1_VIEW_ID: ViewId = ViewId::new(0);
-const CHILD2_VIEW_ID: ViewId = ViewId::new(1);
+// Use a distinctive number here, to be able to catch bugs.
+// These were selected based on a random multiple (less than 1000) of 40960000.
+// That base is chosen so that there are at least three trailing zeroes in both the hex
+// and decimal forms, making the +1 obvious.
+
+/// This is a randomly generated ID - 27361280000 in decimal.
+const CHILD1_VIEW_ID: ViewId = ViewId::new(0x65edc0000);
+/// This is a randomly generated ID - 27361280001 in decimal.
+const CHILD2_VIEW_ID: ViewId = ViewId::new(0x65edc0001);
 
 impl<ChildA, ChildB, State, Action> ViewMarker for Split<ChildA, ChildB, State, Action> {}
 impl<ChildA, ChildB, State, Action> View<State, Action, ViewCtx>

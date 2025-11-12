@@ -82,10 +82,9 @@ pub struct ResizeObserver<V, F, State, Action = ()> {
     phantom: PhantomData<fn() -> (State, Action)>,
 }
 
-/// Use a distinctive number here, to be able to catch bugs.
-/// In case the generational-id view path in `View::Message` leads to the wrong view
-/// This is a randomly generated 32 bit number.
-const RESIZE_OBSERVER_CONTENT_VIEW_ID: ViewId = ViewId::new(0xa9e5_69bf);
+// Use a distinctive number here, to be able to catch bugs.
+/// This is a randomly generated 32 bit number - 2850384319 in decimal.
+const RESIZE_OBSERVER_CONTENT_VIEW_ID: ViewId = ViewId::new(0xa9e569bf);
 
 impl<V, F, State, Action> ViewMarker for ResizeObserver<V, F, State, Action> {}
 impl<V, F, State, Action> View<State, Action, ViewCtx> for ResizeObserver<V, F, State, Action>

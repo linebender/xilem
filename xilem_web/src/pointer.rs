@@ -16,8 +16,9 @@ use crate::core::{
 use crate::interfaces::Element;
 use crate::{DomView, ViewCtx};
 
-/// Use a distinctive number here, to be able to catch bugs.
-/// In case the generational-id view path in `View::Message` lead to a wrong view
+// Use a distinctive number here, to be able to catch bugs.
+// In case the generational-id view path in `View::Message` lead to a wrong view
+/// This is a randomly generated 32 bit number - 305418260 in decimal.
 const POINTER_VIEW_ID: ViewId = ViewId::new(0x1234_5014);
 
 /// A view that allows stateful handling of [`PointerEvent`]s with [`PointerMsg`]
