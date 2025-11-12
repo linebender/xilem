@@ -41,9 +41,9 @@ use crate::{MessageResult, Pod, View, ViewCtx};
 ///     );
 /// });
 /// ```
-pub fn canvas(draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static) -> Canvas {
+pub fn canvas(draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>) -> Canvas {
     Canvas {
-        draw: Arc::new(draw),
+        draw,
         alt_text: None,
     }
 }
