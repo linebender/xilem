@@ -21,7 +21,7 @@ use crate::{MessageResult, Pod, View, ViewCtx};
 ///
 /// ```
 /// use xilem::view::canvas;
-/// use vello::{
+/// use xilem::vello::{
 ///     kurbo::{Affine, Rect},
 ///     peniko::{Color, Fill},
 ///     Scene,
