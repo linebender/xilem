@@ -55,15 +55,15 @@ impl Canvas {
 impl Canvas {
     /// Update the draw function
     pub fn set_painter(
-        this: WidgetMut<'_, Self>,
+        mut this: &mut WidgetMut<'_, Self>,
         draw: impl Fn(&mut Scene, Size) + Send + Sync + 'static,
     ) {
-        Self::set_painter_arc(this, Arc::new(draw));
+        Self::set_painter_arc(&mut this, Arc::new(draw));
     }
 
     /// Update the draw function
     pub fn set_painter_arc(
-        mut this: WidgetMut<'_, Self>,
+        this: &mut WidgetMut<'_, Self>,
         draw: Arc<dyn Fn(&mut Scene, Size) + Send + Sync + 'static>,
     ) {
         this.widget.draw = draw;
