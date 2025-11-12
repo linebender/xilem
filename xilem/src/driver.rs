@@ -15,8 +15,7 @@ use masonry_winit::app::{
 
 use crate::any_view::DynWidget;
 use crate::core::{
-    DynMessage, MessageCtx, MessageResult, ProxyError, RawProxy, SendMessage, View,
-    ViewId,
+    DynMessage, MessageCtx, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
     ViewPathTracker,
 };
 use crate::window_view::{WindowView, WindowViewState};
