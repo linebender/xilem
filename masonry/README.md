@@ -198,6 +198,7 @@ Masonry apps currently ship with several debugging features built in:
 
 If you want to use your own subscriber, simply set it before starting masonry - in this case masonry will not set a subscriber.
 
+[masonry_winit]: https://crates.io/crates/masonry_winit
 [Xilem]: https://github.com/linebender/xilem/tree/main/xilem
 [tracing_tracy]: https://crates.io/crates/tracing-tracy
 
