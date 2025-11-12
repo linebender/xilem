@@ -15,13 +15,13 @@ use masonry_winit::app::{
 
 use crate::any_view::DynWidget;
 use crate::core::{
-    AnyViewState, DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage,
-    View, ViewId, ViewPathTracker,
+    DynMessage, MessageContext, MessageResult, ProxyError, RawProxy, SendMessage, View, ViewId,
+    ViewPathTracker,
 };
-use crate::window_view::WindowView;
+use crate::window_view::{WindowView, WindowViewState};
 use crate::{AppState, ViewCtx};
 
-pub struct MasonryDriver<State, Logic> {
+pub struct MasonryDriver<State: 'static, Logic> {
     state: State,
     logic: Logic,
     windows: HashMap<WindowId, Window<State>>,
@@ -32,13 +32,13 @@ pub struct MasonryDriver<State, Logic> {
     scratch_id_path: Vec<ViewId>,
 }
 
-struct Window<State> {
+struct Window<State: 'static> {
     view: WindowView<State>,
     view_ctx: ViewCtx,
-    view_state: AnyViewState,
+    view_state: WindowViewState,
 }
 
-impl<State: 'static, Logic, WindowIter> MasonryDriver<State, Logic>
+impl<State, Logic, WindowIter> MasonryDriver<State, Logic>
 where
     State: 'static,
     Logic: FnMut(&mut State) -> WindowIter,
@@ -121,11 +121,7 @@ impl Debug for MasonryProxy {
 struct WindowProxy(WindowId, Arc<MasonryProxy>);
 
 impl RawProxy for WindowProxy {
-    fn send_message(
-        &self,
-        path: Arc<[ViewId]>,
-        message: xilem_core::SendMessage,
-    ) -> Result<(), xilem_core::ProxyError> {
+    fn send_message(&self, path: Arc<[ViewId]>, message: SendMessage) -> Result<(), ProxyError> {
         self.1.send_message(self.0, path, message)
     }
 
@@ -227,7 +223,7 @@ where
     fn on_action(
         &mut self,
         window_id: WindowId,
-        masonry_ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
+        masonry_ctx: &mut DriverCtx<'_, '_>,
         widget_id: WidgetId,
         action: ErasedAction,
     ) {
@@ -316,7 +312,7 @@ where
         let fonts = std::mem::take(&mut self.fonts);
 
         for root in state.roots() {
-            if let Some(root_widget) = root.get_root_widget().downcast::<DynWidget>() {
+            if let Some(root_widget) = root.get_layer_root(0).downcast::<DynWidget>() {
                 let fallback = root_widget.inner().inner_id();
                 root.set_focus_fallback(Some(fallback));
             }
@@ -330,11 +326,7 @@ where
         }
     }
 
-    fn on_close_requested(
-        &mut self,
-        window_id: WindowId,
-        ctx: &mut masonry_winit::app::DriverCtx<'_, '_>,
-    ) {
+    fn on_close_requested(&mut self, window_id: WindowId, ctx: &mut DriverCtx<'_, '_>) {
         let view = &self.windows.get(&window_id).unwrap().view;
         view.on_close(&mut self.state);
         self.run_logic(ctx);

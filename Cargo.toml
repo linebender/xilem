@@ -25,11 +25,11 @@ members = [
 
 [workspace.package]
 # Xilem version, also used by other packages which want to mimic Xilem's version.
-# Right now those packages include: xilem_core, xilem_web, masonry, masonry_winit.
+# Right now those packages include: xilem_core, xilem_web, masonry, masonry_core, masonry_testing, masonry_winit.
 #
 # NOTE: When bumping this, remember to also bump the aforementioned other packages'
 #       version in the dependencies section of this file.
-version = "0.3.0"
+version = "0.4.0"
 
 edition = "2024"
 # Keep in sync with RUST_MIN_VER in .github/workflows/ci.yml, with the relevant README.md files.
@@ -39,38 +39,41 @@ repository = "https://github.com/linebender/xilem"
 
 [workspace.dependencies]
 
-masonry = { version = "0.3.0", path = "masonry" }
-masonry_core = { version = "0.3.0", path = "masonry_core" }
-masonry_testing = { version = "0.3.0", path = "masonry_testing" }
-masonry_winit = { version = "0.3.0", path = "masonry_winit" }
-xilem_core = { version = "0.3.0", path = "xilem_core" }
-tree_arena = { version = "0.1.0", path = "tree_arena" }
+masonry = { version = "0.4.0", path = "masonry", default-features = false }
+masonry_core = { version = "0.4.0", path = "masonry_core", default-features = false }
+masonry_testing = { version = "0.4.0", path = "masonry_testing", default-features = false }
+masonry_winit = { version = "0.4.0", path = "masonry_winit", default-features = false }
+xilem_core = { version = "0.4.0", path = "xilem_core" }
+xilem = { version = "0.4.0", path = "xilem", default-features = false }
+tree_arena = { version = "0.2.0", path = "tree_arena" }
 
 anymore = "1.0.0"
-vello = "0.6.0"
+vello = { version = "0.6.0", default-features = false, features = ["wgpu"] }
 kurbo = "0.12.0"
 parley = { version = "0.6.0", features = ["accesskit"] }
 # TODO: Use no_std correctly in Xilem Web.
 peniko = "0.5.0"
 winit = "0.30.12"
 tracing = { version = "0.1.41", default-features = false }
-ui-events = "0.1.0"
-ui-events-winit = "0.1.0"
+tracing-wasm = "0.2.1"
+console_error_panic_hook = "0.1.7"
+ui-events = { version = "0.2.0", default-features = false, features = ["kurbo"] }
+ui-events-winit = { version = "0.2.0", default-features = false }
 smallvec = "1.15.1"
-hashbrown = "0.15.5"
+hashbrown = "0.16.0"
 dpi = "0.1.2"
 image = { version = "0.25.8", default-features = false }
 web-time = "1.1.0"
-bitflags = "2.9.4"
-accesskit = "0.21.0"
-accesskit_winit = { version = "0.29.0", default-features = false, features = [
+bitflags = "2.10.0"
+accesskit = "0.21.1"
+accesskit_winit = { version = "0.29.2", default-features = false, features = [
     "accesskit_unix",
     "tokio",
     "rwh_06",
 ] }
-accesskit_consumer = "0.30.0"
-time = "0.3.43"
-reqwest = { version = "0.12.23", default-features = false, features = [
+accesskit_consumer = "0.31.0"
+time = "0.3.44"
+reqwest = { version = "0.12.24", default-features = false, features = [
     # We use rustls as Android doesn't ship with openssl
     # and this is likely to be easiest to get working.
     "rustls-tls",
@@ -83,7 +86,7 @@ reqwest = { version = "0.12.23", default-features = false, features = [
 # (And cargo doesn't let us have platform specific lints here)
 rust.unsafe_code = "deny"
 
-# LINEBENDER LINT SET - Cargo.toml - v6
+# LINEBENDER LINT SET - Cargo.toml - v7
 # See https://linebender.org/wiki/canonical-lints/
 rust.keyword_idents_2024 = "forbid"
 rust.non_ascii_idents = "forbid"
@@ -99,12 +102,14 @@ rust.unreachable_pub = "warn"
 rust.unused_import_braces = "warn"
 rust.unused_lifetimes = "warn"
 rust.unused_macro_rules = "warn"
+rust.unused_qualifications = "warn"
 
 clippy.too_many_arguments = "allow"
 
 clippy.allow_attributes_without_reason = "warn"
 clippy.cast_possible_truncation = "warn"
 clippy.collection_is_never_read = "warn"
+clippy.default_trait_access = "warn"
 clippy.dbg_macro = "warn"
 clippy.debug_assert_with_mut_call = "warn"
 clippy.doc_markdown = "warn"

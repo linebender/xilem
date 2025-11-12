@@ -12,6 +12,11 @@
 
 </div>
 
+<!-- We use cargo-rdme to update the README with the contents of lib.rs.
+To edit the following section, update it in lib.rs, then run:
+cargo rdme --workspace-project=placehero
+Full documentation at https://github.com/orium/cargo-rdme -->
+
 <!-- Intra-doc links used in lib.rs should be evaluated here.
 See https://linebender.org/blog/doc-include/ for related discussion. -->
 
@@ -25,9 +30,13 @@ privacy violation for them to know that two accounts you log in to are linked).
 This link survives even if you log out of one and into the other, even in different sessions.
 If this doesn't apply to you, we recommend not using Placehero.
 
-Features:
+## Feature flags
 
-- None
+The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+
+- `default`: Enables the default features of [`xilem`][xilem].
+
+[xilem]: https://crates.io/crates/xilem
 
 <!-- cargo-rdme end -->
 <!-- markdownlint-enable MD053 -->

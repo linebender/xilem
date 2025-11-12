@@ -1,7 +1,5 @@
 [package]
 name = "fetch"
-version = "0.1.0"
-publish = false
 license.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -17,11 +15,11 @@ bench = false
 workspace = true
 
 [dependencies]
-console_error_panic_hook = "0.1"
-console_log = "1"
+console_error_panic_hook = "0.1.7"
+console_log = "1.0.0"
 gloo-net = { version = "0.6.0", default-features = false, features = ["http", "json", "serde"] }
-log = "0.4"
-serde = { version = "1", features = ["derive"] }
-web-sys = { version = "0.3.78", features = ["Event", "HtmlInputElement"] }
-wasm-bindgen = "0.2.101"
+log = "0.4.28"
+serde = { version = "1.0.228", features = ["derive"] }
+web-sys = { version = "0.3.81", features = ["Event", "HtmlInputElement"] }
+wasm-bindgen = "0.2.104"
 xilem_web = { path = "../.." }

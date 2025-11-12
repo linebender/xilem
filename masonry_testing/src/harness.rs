@@ -15,6 +15,7 @@ use image::{DynamicImage, ImageFormat, ImageReader, Rgba, RgbaImage};
 use masonry_core::accesskit::{Action, ActionRequest, Node, Role, Tree, TreeUpdate};
 use masonry_core::anymore::AnyDebug;
 use masonry_core::core::keyboard::{Code, Key, KeyState, NamedKey};
+use masonry_core::vello::peniko::Fill;
 use oxipng::{Options, optimize_from_memory};
 use tracing::debug;
 
@@ -23,21 +24,21 @@ use masonry_core::app::{
 };
 use masonry_core::core::{
     CursorIcon, DefaultProperties, ErasedAction, FromDynWidget, Handled, Ime, KeyboardEvent,
-    Modifiers, NewWidget, PointerButton, PointerEvent, PointerId, PointerInfo, PointerState,
-    PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget, WidgetId, WidgetMut, WidgetRef,
-    WidgetTag, WindowEvent,
+    Modifiers, NewWidget, PointerButton, PointerButtonEvent, PointerEvent, PointerId, PointerInfo,
+    PointerScrollEvent, PointerState, PointerType, PointerUpdate, ScrollDelta, TextEvent, Widget,
+    WidgetId, WidgetMut, WidgetRef, WidgetTag, WindowEvent,
 };
 use masonry_core::dpi::{LogicalPosition, LogicalSize, PhysicalPosition, PhysicalSize};
-use masonry_core::kurbo::{Point, Size, Vec2};
+use masonry_core::kurbo::{Affine, Point, Rect, Size, Vec2};
 use masonry_core::peniko::{Blob, Color};
 use masonry_core::util::Duration;
-use masonry_core::vello;
 use masonry_core::vello::util::{RenderContext, block_on_wgpu};
 use masonry_core::vello::wgpu::{
     BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Extent3d, MapMode,
     TexelCopyBufferInfo, TexelCopyBufferLayout, TextureDescriptor, TextureDimension, TextureFormat,
     TextureUsages, TextureViewDescriptor,
 };
+use masonry_core::vello::{self, Scene};
 
 use crate::screenshots::get_image_diff;
 use crate::{Record, Recorder};
@@ -139,6 +140,7 @@ pub struct TestHarness<W: Widget> {
     vello_renderer: Option<vello::Renderer>,
     mouse_state: PointerState,
     window_size: PhysicalSize<u32>,
+    root_padding: u32,
     background_color: Color,
     panic_on_rewrite_saturation: bool,
     screenshot_tolerance: u32,
@@ -156,13 +158,26 @@ pub struct TestHarness<W: Widget> {
 #[non_exhaustive]
 pub struct TestHarnessParams {
     /// The size of the virtual window the harness renders into for snapshot testing.
-    /// Defaults to [`Self::DEFAULT_SIZE`].
+    /// Defaults to [`TestHarnessParams::DEFAULT_SIZE`].
     pub window_size: Size,
     /// The background color of the virtual window.
-    /// Defaults to [`Self::DEFAULT_BACKGROUND_COLOR`].
+    /// Defaults to [`TestHarnessParams::DEFAULT_BACKGROUND_COLOR`].
     pub background_color: Color,
+    /// Extra padding added to screenshots in [`assert_render_snapshot`].
+    ///
+    /// Currently defaults to zero, but we plan to change this
+    /// to [`TestHarnessParams::ROOT_PADDING`] soon.
+    /// This is useful:
+    ///
+    /// 1) For individual widgets, as they will often be designed with content outside their
+    ///    layout box (e.g. drop shadows, focus indicators).
+    /// 2) For full apps, as it allows (manual) validation that none of the app content is cut off by
+    ///    the window border.
+    ///
+    /// [`assert_render_snapshot`]: crate::assert_render_snapshot
+    pub root_padding: u32,
     /// The maximum difference between two pixel channels before the harness will fail a screenshot test.
-    /// Defaults to [`Self::DEFAULT_SCREENSHOT_TOLERANCE`].
+    /// Defaults to [`TestHarnessParams::DEFAULT_SCREENSHOT_TOLERANCE`].
     pub screenshot_tolerance: u32,
     /// The scale factor widgets are rendered at.
     /// Defaults to 1.0.
@@ -185,6 +200,8 @@ pub struct TestHarnessParams {
 ///
 /// This macro takes a test harness and a name, renders the current state of the app,
 /// and stores the rendered image to `<CRATE-ROOT>/screenshots/<TEST-NAME>.png`.
+/// This rendering will have extra padding which would not be present in a real app,
+/// as documented in [`TestHarnessParams::root_padding`].
 ///
 /// If a screenshot already exists, the rendered value is compared against this screenshot.
 /// The assert passes if both are equal; otherwise, a diff file is created.
@@ -226,6 +243,7 @@ impl TestHarnessParams {
     pub const DEFAULT: Self = Self {
         window_size: Self::DEFAULT_SIZE,
         background_color: Self::DEFAULT_BACKGROUND_COLOR,
+        root_padding: 0,
         screenshot_tolerance: Self::DEFAULT_SCREENSHOT_TOLERANCE,
         scale_factor: 1.0,
         panic_on_rewrite_saturation: true,
@@ -240,6 +258,11 @@ impl TestHarnessParams {
 
     /// Default background color for tests.
     pub const DEFAULT_BACKGROUND_COLOR: Color = Color::from_rgb8(0x29, 0x29, 0x29);
+
+    /// Recommended root padding for tests.
+    ///
+    /// To be set as [`TestHarnessParams::root_padding`]
+    pub const ROOT_PADDING: u32 = 5;
 
     /// One kibibyte. Used in [`TestHarnessParams::max_screenshot_size`].
     pub const KIBIBYTE: u32 = 1024;
@@ -294,7 +317,7 @@ impl<W: Widget> TestHarness<W> {
             params.window_size.height as _,
         );
 
-        // If there is no default tracing subscriber, we set our own. If one has
+        // If no tracing subscriber has been set before, we set our own. If one has
         // already been set, we get an error which we swallow.
         // Having a default subscriber is helpful for tests; swallowing errors means
         // we don't panic if the user has already set one, or a test creates multiple
@@ -338,6 +361,7 @@ impl<W: Widget> TestHarness<W> {
             mouse_state,
             window_size,
             background_color: params.background_color,
+            root_padding: params.root_padding,
             screenshot_tolerance: params.screenshot_tolerance,
             panic_on_rewrite_saturation: params.panic_on_rewrite_saturation,
             max_screenshot_size: params.max_screenshot_size,
@@ -440,6 +464,11 @@ impl<W: Widget> TestHarness<W> {
                 RenderRootSignal::Exit => (),
                 RenderRootSignal::ShowWindowMenu(_) => (),
                 RenderRootSignal::WidgetSelectedInInspector(_) => (),
+                RenderRootSignal::NewLayer(root, pos) => self.render_root.add_layer(root, pos),
+                RenderRootSignal::RemoveLayer(root_id) => self.render_root.remove_layer(root_id),
+                RenderRootSignal::RepositionLayer(root_id, new_pos) => {
+                    self.render_root.reposition_layer(root_id, new_pos);
+                }
             }
         }
     }
@@ -450,8 +479,13 @@ impl<W: Widget> TestHarness<W> {
     /// Renders the window into an image and updates the `accesskit_consumer` tree.
     ///
     /// The returned image contains a bitmap (an array of pixels) as an 8-bits-per-channel RGB image.
+    /// The returned image has padding of the [`TestHarnessParams::root_padding`] this harness
+    /// was created with on all sides.
+    /// This padded area is currently indicated with a different background color.
+    // TODO: There are some users of this function which just use it assert that `paint`/`compose` doesn't crash.
+    // Those could avoid actually performing a real render.
     pub fn render(&mut self) -> RgbaImage {
-        let (scene, tree_update) = self.render_root.redraw();
+        let (contents_scene, tree_update) = self.render_root.redraw();
         let tree_update = tree_update.unwrap();
         self.access_tree
             .update_and_process_changes(tree_update, &mut NoOpTreeChangeHandler);
@@ -485,12 +519,12 @@ impl<W: Widget> TestHarness<W> {
             .expect("Got non-Send/Sync error from creating renderer")
         });
 
-        // TODO - fix window_size
         let (width, height) = (self.window_size.width, self.window_size.height);
 
+        let padding = self.root_padding;
         // Avoid having a zero-sized image
-        let width = width.max(1);
-        let height = height.max(1);
+        let width = width.max(1) + padding * 2;
+        let height = height.max(1) + padding * 2;
 
         let render_params = vello::RenderParams {
             base_color: self.background_color,
@@ -515,6 +549,35 @@ impl<W: Widget> TestHarness<W> {
             view_formats: &[],
         });
         let view = target.create_view(&TextureViewDescriptor::default());
+
+        let scene = if padding != 0 {
+            let mut scene = Scene::new();
+            // 25% opacity of 50% grey provides a border of where the actual widget content is.
+            // Alternatively, maybe we should use a stronger color here?
+            let padding_color = Color::from_rgba8(127, 127, 127, 64);
+            // We draw the border first, so that any content is above the background color.
+            for [x0, y0, x1, y1] in [
+                [0, 0, padding, height],                              // Left edge
+                [width - padding, 0, width, height],                  // Right edge
+                [padding, 0, width - padding, padding],               // Top edge
+                [padding, height - padding, width - padding, height], // Bottom edge
+            ] {
+                scene.fill(
+                    Fill::EvenOdd,
+                    Affine::IDENTITY,
+                    padding_color,
+                    None,
+                    &Rect::new(x0 as f64, y0 as f64, x1 as f64, y1 as f64),
+                );
+            }
+            scene.append(
+                &contents_scene,
+                Some(Affine::translate((padding as f64, padding as f64))),
+            );
+            scene
+        } else {
+            contents_scene
+        };
         renderer
             .render_to_texture(device, queue, &scene, &view, &render_params)
             .expect("Got non-Send/Sync error from rendering");
@@ -596,30 +659,30 @@ impl<W: Widget> TestHarness<W> {
     /// Send a [`Down`](PointerEvent::Down) event to the window.
     pub fn mouse_button_press(&mut self, button: PointerButton) {
         self.mouse_state.buttons.insert(button);
-        self.process_pointer_event(PointerEvent::Down {
+        self.process_pointer_event(PointerEvent::Down(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
             button: button.into(),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send an [`Up`](PointerEvent::Up) event to the window.
     pub fn mouse_button_release(&mut self, button: PointerButton) {
         self.mouse_state.buttons.remove(button);
-        self.process_pointer_event(PointerEvent::Up {
+        self.process_pointer_event(PointerEvent::Up(PointerButtonEvent {
             pointer: PRIMARY_MOUSE,
             button: button.into(),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send a [`Scroll`](PointerEvent::Scroll) event to the window.
     pub fn mouse_wheel(&mut self, Vec2 { x, y }: Vec2) {
-        self.process_pointer_event(PointerEvent::Scroll {
+        self.process_pointer_event(PointerEvent::Scroll(PointerScrollEvent {
             pointer: PRIMARY_MOUSE,
             delta: ScrollDelta::PixelDelta(PhysicalPosition { x, y }),
             state: self.mouse_state.clone(),
-        });
+        }));
     }
 
     /// Send events that lead to a given widget being clicked.
@@ -661,12 +724,37 @@ impl<W: Widget> TestHarness<W> {
         }
         if self
             .render_root
-            .get_root_widget()
+            .get_layer_root(0)
             .find_widget_under_pointer(widget_center)
             .map(|w| w.id())
             != Some(id)
         {
             panic!("Widget {id} is not visible");
+        }
+
+        self.mouse_move(widget_center);
+    }
+
+    /// Use [`mouse_move`](Self::mouse_move) to set the internal mouse pos to the center of the given widget.
+    ///
+    /// This does fewer checks than [`mouse_move_to`](Self::mouse_move_to), which in most cases should be preferred.
+    /// However, `mouse_move_to` does not allow moving to non-interactive widgets, which can sometimes be desirable.
+    ///
+    /// TODO: In the long term, this method should still check if the widget is visible, without requiring it to be interactive.
+    /// At that point, it might make sense to rename this to `mouse_move_to`, deleting the distinction.
+    ///
+    /// # Panics
+    ///
+    /// - If the widget is not found in the tree.
+    /// - If the widget is stashed.
+    #[track_caller]
+    pub fn mouse_move_to_unchecked(&mut self, id: WidgetId) {
+        let widget = self.get_widget_with_id(id);
+        let local_widget_center = (widget.ctx().size() / 2.0).to_vec2().to_point();
+        let widget_center = widget.ctx().window_transform() * local_widget_center;
+
+        if widget.ctx().is_stashed() {
+            panic!("Widget {id} is stashed");
         }
 
         self.mouse_move(widget_center);
@@ -774,12 +862,12 @@ impl<W: Widget> TestHarness<W> {
 
     /// Return a [`WidgetRef`] to the root widget.
     pub fn root_widget(&self) -> WidgetRef<'_, W> {
-        self.render_root.get_root_widget().downcast().unwrap()
+        self.render_root.get_layer_root(0).downcast().unwrap()
     }
 
     /// Return the [`WidgetId`] of the root widget.
     pub fn root_id(&self) -> WidgetId {
-        self.render_root.get_root_widget().id()
+        self.render_root.get_layer_root(0).id()
     }
 
     /// Return a [`WidgetRef`] to the widget with the given id.
@@ -837,7 +925,7 @@ impl<W: Widget> TestHarness<W> {
     /// Return a [`WidgetRef`] to the [focused widget](masonry_core::doc::masonry_concepts#text-focus).
     pub fn focused_widget(&self) -> Option<WidgetRef<'_, dyn Widget>> {
         self.render_root
-            .get_root_widget()
+            .get_layer_root(0)
             .find_widget_by_id(self.render_root.focused_widget()?)
     }
 
@@ -870,14 +958,14 @@ impl<W: Widget> TestHarness<W> {
             }
         }
 
-        inspect(self.render_root.get_root_widget(), &mut f);
+        inspect(self.render_root.get_layer_root(0), &mut f);
     }
 
     /// Get a [`WidgetMut`] to the root widget.
     ///
     /// Because of how `WidgetMut` works, it can only be passed to a user-provided callback.
     pub fn edit_root_widget<R>(&mut self, f: impl FnOnce(WidgetMut<'_, W>) -> R) -> R {
-        let ret = self.render_root.edit_root_widget(|mut root| {
+        let ret = self.render_root.edit_base_layer(|mut root| {
             let root = root.downcast::<W>();
             f(root)
         });
@@ -970,7 +1058,7 @@ impl<W: Widget> TestHarness<W> {
     }
 
     /// Return the title of the simulated window.
-    pub fn title(&self) -> std::string::String {
+    pub fn title(&self) -> String {
         self.title.clone()
     }
 

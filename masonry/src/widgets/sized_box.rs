@@ -246,6 +246,10 @@ impl HasProperty<Padding> for SizedBox {}
 impl Widget for SizedBox {
     type Action = NoAction;
 
+    fn accepts_pointer_interaction(&self) -> bool {
+        false
+    }
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         if let Some(ref mut child) = self.child {
             ctx.register_child(child);
@@ -352,7 +356,7 @@ mod tests {
     use crate::palette;
     use crate::properties::types::{AsUnit, Gradient, UnitPoint};
     use crate::testing::{TestHarness, assert_failing_render_snapshot, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Label;
 
     // TODO - Add WidgetMut tests
@@ -387,8 +391,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_empty_box");
     }
@@ -403,8 +406,7 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_label_box_no_size");
     }
@@ -422,8 +424,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_label_box_with_size");
     }
@@ -439,8 +440,7 @@ mod tests {
         let widget = SizedBox::new(Label::new("hello").with_auto_id()).with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_label_box_with_padding");
     }
@@ -456,8 +456,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_label_box_with_solid_background");
     }
@@ -484,8 +483,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_empty_box_with_gradient_background");
     }
@@ -512,8 +510,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_radial_gradient_background");
     }
@@ -540,8 +537,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_sweep_gradient_background");
     }
@@ -560,8 +556,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "sized_box_label_box_with_background_and_padding");
     }
@@ -585,8 +580,7 @@ mod tests {
             .with_props(box_props);
 
         let window_size = Size::new(100.0, 100.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_failing_render_snapshot!(harness, "sized_box_empty_box");
     }

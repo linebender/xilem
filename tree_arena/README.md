@@ -16,7 +16,7 @@
 
 <!-- We use cargo-rdme to update the README with the contents of lib.rs.
 To edit the following section, update it in lib.rs, then run:
-cargo rdme --workspace-project=tree_arena --heading-base-level=0
+cargo rdme --workspace-project=tree_arena
 Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
@@ -40,7 +40,7 @@ The safe tree is the priority. This means:
 ### Safe Tree
 
 The safe tree contains a root `TreeArena` which owns the root nodes as `Vec<TreeNode<T>>`, and a`parents_map` tracking the parent of every node.
-Each `TreeNode` subsequently owns its own children as `Vec<TreeNode<T>>`. This model of owneship is thus checked by the rust compiler,
+Each `TreeNode` subsequently owns its own children as `Vec<TreeNode<T>>`. This model of ownership is thus checked by the rust compiler,
 but has the downside of requiring passing through every ancestor node to access the descendant -
 this requires an O(depth) determination of whether the node is a descendant, followed by O(children) time at each level to traverse the path to the child.
 

@@ -3,16 +3,16 @@
 
 use accesskit::ActionRequest;
 use assert_matches::assert_matches;
+use masonry_core::core::keyboard::{Key, NamedKey};
+use masonry_core::core::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use masonry_core::core::{AccessEvent, NewWidget, TextEvent, Widget, WidgetTag};
 use masonry_testing::{
     ModularWidget, Record, TestHarness, TestWidgetExt, assert_any, assert_debug_panics,
 };
-use ui_events::keyboard::{Key, NamedKey};
-use ui_events::pointer::{PointerButton, PointerEvent, PointerInfo, PointerType};
 use vello::kurbo::Size;
 
 use crate::properties::types::AsUnit;
-use crate::theme::default_property_set;
+use crate::theme::test_property_set;
 use crate::widgets::{Button, Flex, SizedBox, TextArea};
 
 // POINTER EVENTS
@@ -33,7 +33,7 @@ fn pointer_event() {
 
     let button = NewWidget::new_with_tag(Button::with_text("button").record(), button_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), button);
+    let mut harness = TestHarness::create(test_property_set(), button);
     let button_id = harness.get_widget(button_tag).id();
 
     harness.flush_records_of(button_tag);
@@ -56,7 +56,7 @@ fn pointer_event_bubbling() {
     let grandparent =
         NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let mut harness = TestHarness::create(test_property_set(), grandparent);
     let button_id = harness.get_widget(button_tag).id();
 
     harness.flush_records_of(button_tag);
@@ -78,7 +78,7 @@ fn pointer_capture_and_cancel() {
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target, target_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), target);
+    let mut harness = TestHarness::create(test_property_set(), target);
 
     let target_id = harness.get_widget(target_tag).id();
 
@@ -101,7 +101,7 @@ fn synthetic_cancel() {
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target.record(), target_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), target);
+    let mut harness = TestHarness::create(test_property_set(), target);
 
     let target_id = harness.get_widget(target_tag).id();
 
@@ -127,7 +127,7 @@ fn pointer_capture_suppresses_neighbors() {
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target, target_tag);
 
-    let other = SizedBox::empty().size(10.px(), 10.px());
+    let other = Button::with_text("");
     let other = NewWidget::new_with_tag(other.record(), other_tag);
 
     let parent = Flex::column()
@@ -135,7 +135,7 @@ fn pointer_capture_suppresses_neighbors() {
         .with_child(other)
         .with_auto_id();
 
-    let mut harness = TestHarness::create(default_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
     harness.flush_records_of(other_tag);
 
     let target_id = harness.get_widget(target_tag).id();
@@ -169,7 +169,7 @@ fn try_capture_pointer_on_pointer_move() {
         })
         .with_auto_id();
 
-    let mut harness = TestHarness::create(default_property_set(), widget);
+    let mut harness = TestHarness::create(test_property_set(), widget);
 
     assert_debug_panics!(
         harness.mouse_move((10.0, 10.0)),
@@ -186,7 +186,7 @@ fn try_capture_pointer_on_text_event() {
         })
         .with_auto_id();
 
-    let mut harness = TestHarness::create(default_property_set(), widget);
+    let mut harness = TestHarness::create(test_property_set(), widget);
     let id = harness.root_id();
     harness.focus_on(Some(id));
 
@@ -203,7 +203,7 @@ fn pointer_cancel_on_window_blur() {
     let target = create_capture_target();
     let target = NewWidget::new_with_tag(target.record(), target_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), target);
+    let mut harness = TestHarness::create(test_property_set(), target);
 
     let target_id = harness.get_widget(target_tag).id();
 
@@ -238,7 +238,7 @@ fn click_anchors_focus() {
         .with_child(NewWidget::new(Button::with_text("")))
         .with_auto_id();
 
-    let mut harness = TestHarness::create(default_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
 
     let child_3_id = harness.get_widget(child_3).id();
     let child_4_id = harness.get_widget(child_4).id();
@@ -253,7 +253,9 @@ fn click_anchors_focus() {
     assert_eq!(harness.focused_widget_id(), Some(child_4_id));
 
     // Clicking another non-focusable widget clears focus.
-    harness.mouse_click_on(other_id);
+    harness.mouse_move_to_unchecked(other_id);
+    harness.mouse_button_press(PointerButton::Primary);
+    harness.mouse_button_release(PointerButton::Primary);
     assert_eq!(harness.focused_widget_id(), None);
 }
 
@@ -265,7 +267,7 @@ fn text_event() {
 
     let target = NewWidget::new_with_tag(TextArea::new_editable("").record(), target_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), target);
+    let mut harness = TestHarness::create(test_property_set(), target);
     let target_id = harness.get_widget(target_tag).id();
     harness.flush_records_of(target_tag);
 
@@ -294,7 +296,7 @@ fn text_event_bubbling() {
     let grandparent =
         NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let mut harness = TestHarness::create(test_property_set(), grandparent);
     let target_id = harness.get_widget(target_tag).id();
 
     harness.focus_on(Some(target_id));
@@ -321,7 +323,7 @@ fn text_event_fallback() {
         .with_child(other)
         .with_auto_id();
 
-    let mut harness = TestHarness::create(default_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
     let target_id = harness.get_widget(target_tag).id();
     let other_id = harness.get_widget(other_tag).id();
     harness.flush_records_of(target_tag);
@@ -359,7 +361,7 @@ fn tab_focus() {
         .with_child(NewWidget::new_with_tag(Button::with_text(""), child_5))
         .with_auto_id();
 
-    let mut harness = TestHarness::create(default_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
 
     let child_1_id = harness.get_widget(child_1).id();
     let child_2_id = harness.get_widget(child_2).id();
@@ -403,7 +405,7 @@ fn access_event_bubbling() {
     let grandparent =
         NewWidget::new_with_tag(ModularWidget::new_parent(parent).record(), grandparent_tag);
 
-    let mut harness = TestHarness::create(default_property_set(), grandparent);
+    let mut harness = TestHarness::create(test_property_set(), grandparent);
     let target_id = harness.get_widget(target_tag).id();
 
     // Send random event
@@ -440,7 +442,7 @@ fn accessibility_focus() {
         .with_child(NewWidget::new(Button::with_text("")))
         .with_auto_id();
 
-    let mut harness = TestHarness::create(default_property_set(), parent);
+    let mut harness = TestHarness::create(test_property_set(), parent);
     let child_2_id = harness.get_widget(child_2).id();
     let child_3_id = harness.get_widget(child_3).id();
 
@@ -467,4 +469,28 @@ fn accessibility_focus() {
         data: None,
     });
     assert_eq!(harness.focused_widget_id(), None);
+}
+
+#[test]
+fn downcast_untyped_action() {
+    let target_tag = WidgetTag::new("arbitrary_submitter");
+
+    #[derive(Debug)]
+    struct ArbitraryAction;
+
+    let arbitrary_submitter = ModularWidget::new(()).pointer_event_fn(|_, ctx, _, _| {
+        ctx.submit_untyped_action(Box::new(ArbitraryAction));
+    });
+
+    let widget = NewWidget::new_with_tag(arbitrary_submitter, target_tag);
+
+    let mut harness = TestHarness::create(test_property_set(), widget);
+    let target_id = harness.get_widget(target_tag).id();
+
+    harness.mouse_move_to(target_id);
+
+    assert_matches!(
+        harness.pop_action::<ArbitraryAction>(),
+        Some((ArbitraryAction, _))
+    );
 }

@@ -7,11 +7,11 @@
 
 use masonry::properties::types::{CrossAxisAlignment, MainAxisAlignment};
 use xilem::core::{MessageResult, map_action};
-use xilem::view::{button, flex_col, flex_row, label};
+use xilem::view::{flex_col, flex_row, label, text_button};
 use xilem::winit::dpi::LogicalSize;
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
-use xilem_core::{lens, map_message};
+use xilem_core::{Edit, lens, map_message};
 
 #[derive(Default)]
 struct AppState {
@@ -26,11 +26,11 @@ enum CountMessage {
 
 // `map_action()` is basically how elm works, i.e. provide a message that the parent view has to handle to update the state.
 // In this case the parent adjusts the count that is given to this view according to the message
-fn elm_counter<T: 'static>(count: i32) -> impl WidgetView<T, CountMessage> {
+fn elm_counter<T: 'static>(count: i32) -> impl WidgetView<Edit<T>, CountMessage> {
     flex_col((
         label(format!("elm count: {count}")),
-        button("+", |_| CountMessage::Increment),
-        button("-", |_| CountMessage::Decrement),
+        text_button("+", |_| CountMessage::Increment),
+        text_button("-", |_| CountMessage::Decrement),
     ))
 }
 
@@ -43,29 +43,29 @@ enum CounterChanged {
 
 // `map_message` is the most flexible but also most verbose way to modularize the views by action.
 // It's very similar to `map_action`, but it also allows to change the `MessageResult` for the parent view
-fn map_message_counter(count: i32) -> impl WidgetView<i32, CounterChanged> {
+fn map_message_counter(count: i32) -> impl WidgetView<Edit<i32>, CounterChanged> {
     flex_row((
         flex_col((
             label(format!("map_message count: {count}")),
-            button("+", |count| {
+            text_button("+", |count: &mut i32| {
                 *count += 1;
                 CounterChanged::Changed
             }),
-            button("-", |count| {
+            text_button("-", |count: &mut i32| {
                 *count -= 1;
                 CounterChanged::Changed
             }),
         )),
         flex_col((
-            button("reset all", |_| CounterChanged::Reset),
-            button("do nothing (and don't rebuild the view tree)", |_| {
+            text_button("reset all", |_| CounterChanged::Reset),
+            text_button("do nothing (and don't rebuild the view tree)", |_| {
                 CounterChanged::Nop
             }),
         )),
     ))
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
     flex_row((
         map_action(
             elm_counter(state.map_action_count),
@@ -76,8 +76,8 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
         ),
         map_message(
             lens(
-                |count| map_message_counter(*count),
-                |state: &mut AppState| &mut state.map_message_count,
+                |count: &mut i32| map_message_counter(*count),
+                |state: &mut AppState, ()| &mut state.map_message_count,
             ),
             |state: &mut AppState, message| {
                 match message {

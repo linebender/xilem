@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use wasm_bindgen::UnwrapThrowExt;
 
-use crate::core::{MessageContext, MessageResult, Mut, View, ViewMarker};
+use crate::core::{Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewMarker};
 use crate::{DomView, PodMut, ViewCtx};
 
 /// This view creates an internally cached deep-clone of the underlying DOM node. When the inner view is created again, this will be done more efficiently.
@@ -15,7 +15,7 @@ pub struct Templated<V>(Rc<V>);
 impl<V> ViewMarker for Templated<V> {}
 impl<State, Action, V> View<State, Action, ViewCtx> for Templated<V>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     V: DomView<State, Action>,
 {
@@ -23,15 +23,20 @@ where
 
     type ViewState = <Rc<V> as View<State, Action, ViewCtx>>::ViewState;
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        mut app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let type_id = TypeId::of::<Self>();
         let (element, view_state) = if let Some((template_node, view)) = ctx.templates.get(&type_id)
         {
             let prev = view.clone();
             let prev = prev.downcast_ref::<Rc<V>>().unwrap_throw();
             let node = template_node.clone_node_with_deep(true).unwrap_throw();
-            let (mut el, mut state) =
-                ctx.with_hydration_node(node, |ctx| prev.build(ctx, app_state));
+            let (mut el, mut state) = ctx.with_hydration_node(node, |ctx| {
+                prev.build(ctx, State::reborrow_mut(&mut app_state))
+            });
             el.apply_changes();
             let pod_mut = PodMut::new(&mut el.node, &mut el.props, &mut el.flags, None, false);
             self.0.rebuild(prev, &mut state, ctx, pod_mut, app_state);
@@ -59,7 +64,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.0.rebuild(&prev.0, view_state, ctx, element, app_state);
     }
@@ -78,7 +83,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.0.message(view_state, message, element, app_state)
     }
@@ -105,7 +110,7 @@ where
 ///         .collect::<Vec<_>>()
 /// }
 /// ```
-pub fn templated<State, Action, E>(view: impl Into<Rc<E>>) -> Templated<E>
+pub fn templated<State: ViewArgument, Action, E>(view: impl Into<Rc<E>>) -> Templated<E>
 where
     E: DomView<State, Action>,
 {

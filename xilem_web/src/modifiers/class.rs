@@ -6,7 +6,9 @@ use std::marker::PhantomData;
 
 use wasm_bindgen::{JsCast, UnwrapThrowExt};
 
-use crate::core::{MessageContext, MessageResult, Mut, View, ViewElement, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewMarker,
+};
 use crate::diff::{Diff, diff_iters};
 use crate::modifiers::{Modifier, WithModifier};
 use crate::vecmap::VecMap;
@@ -335,7 +337,7 @@ impl<E, C, T, A> Class<E, C, T, A> {
 impl<V, C, State, Action> ViewMarker for Class<V, C, State, Action> {}
 impl<V, C, State, Action> View<State, Action, ViewCtx> for Class<V, C, State, Action>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     C: ClassIter,
     V: DomView<State, Action, Element: WithModifier<Classes>>,
@@ -345,7 +347,11 @@ where
 
     type ViewState = (usize, V::ViewState);
 
-    fn build(&self, ctx: &mut ViewCtx, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut ViewCtx,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         let add_class_iter = self.classes.add_class_iter();
         let (mut e, s) = ctx.with_size_hint::<Classes, _>(add_class_iter.size_hint().0, |ctx| {
             self.el.build(ctx, app_state)
@@ -360,7 +366,7 @@ where
         (len, view_state): &mut Self::ViewState,
         ctx: &mut ViewCtx,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         Classes::rebuild(element, *len, |mut elem| {
             self.el
@@ -388,7 +394,7 @@ where
         (_, view_state): &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.el.message(view_state, message, element, app_state)
     }

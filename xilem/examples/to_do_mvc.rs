@@ -6,9 +6,14 @@
 // On Windows platform, don't show a console when opening the app.
 #![windows_subsystem = "windows"]
 
-use winit::error::EventLoopError;
+use xilem::core::Edit;
+use xilem::masonry::properties::types::Length;
+use xilem::masonry::theme::{DEFAULT_GAP, ZYNC_800};
 use xilem::style::Style as _;
-use xilem::view::{button, checkbox, flex_col, flex_row, text_input};
+use xilem::view::{
+    FlexExt, FlexSpacer, button, checkbox, flex_col, flex_row, label, text_button, text_input,
+};
+use xilem::winit::error::EventLoopError;
 use xilem::{EventLoop, EventLoopBuilder, InsertNewline, WidgetView, WindowOptions, Xilem};
 
 struct Task {
@@ -41,24 +46,29 @@ impl TaskList {
     }
 }
 
-fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
+fn app_logic(task_list: &mut TaskList) -> impl WidgetView<Edit<TaskList>> + use<> {
+    let header_text = label("todos").text_size(80.);
     let input_box = text_input(
         task_list.next_task.clone(),
         |task_list: &mut TaskList, new_value| {
             task_list.next_task = new_value;
         },
     )
+    .text_size(16.)
     .placeholder("What needs to be done?")
     .insert_newline(InsertNewline::OnShiftEnter)
     .on_enter(|task_list: &mut TaskList, _| {
         task_list.add_task();
     });
 
-    let first_line = flex_col((
-        input_box,
-        button("Add task".to_string(), |task_list: &mut TaskList| {
-            task_list.add_task();
-        }),
+    let input_line = flex_row((
+        input_box.flex(1.0),
+        button(
+            label("Add task".to_string()).text_size(16.),
+            |task_list: &mut TaskList| {
+                task_list.add_task();
+            },
+        ),
     ));
 
     let tasks = task_list
@@ -77,18 +87,24 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
                     move |data: &mut TaskList, checked| {
                         data.tasks[i].done = checked;
                     },
-                );
-                let delete_button = button("Delete", move |data: &mut TaskList| {
+                )
+                .text_size(16.);
+                let delete_button = text_button("Delete", move |data: &mut TaskList| {
                     data.tasks.remove(i);
-                });
-                Some(flex_row((checkbox, delete_button)))
+                })
+                .padding(5.0);
+                Some(
+                    flex_row((checkbox, FlexSpacer::Flex(1.), delete_button))
+                        .padding(DEFAULT_GAP.get())
+                        .border(ZYNC_800, 1.0),
+                )
             }
         })
         .collect::<Vec<_>>();
 
     let filter_tasks = |label, filter| {
         // TODO: replace with combo-buttons
-        checkbox(
+        checkbox::<_, Edit<TaskList>, _>(
             label,
             task_list.filter == filter,
             move |state: &mut TaskList, _| state.filter = filter,
@@ -103,7 +119,17 @@ fn app_logic(task_list: &mut TaskList) -> impl WidgetView<TaskList> + use<> {
         ))
     });
 
-    flex_col((first_line, tasks, footer)).padding(50.0)
+    flex_col((
+        header_text,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        input_line,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        tasks,
+        FlexSpacer::Fixed(DEFAULT_GAP),
+        footer,
+    ))
+    .gap(Length::px(4.))
+    .padding(50.0)
 }
 
 fn run(event_loop: EventLoopBuilder) -> Result<(), EventLoopError> {

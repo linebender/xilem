@@ -1,6 +1,10 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+//! The types defined in this module *still* don't implement an arena.
+//! Items are stored in a hashmap (and then boxed!) instead of in a buffer.
+//! A future version will likely use some kind of slotmap.
+
 #![allow(unsafe_code, reason = "Purpose is unsafe abstraction")]
 use std::cell::UnsafeCell;
 

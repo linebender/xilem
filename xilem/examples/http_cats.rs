@@ -18,10 +18,11 @@ use xilem::core::fork;
 use xilem::core::one_of::OneOf3;
 use xilem::style::Style as _;
 use xilem::view::{
-    FlexSpacer, ZStackExt, button, flex_col, flex_row, image, inline_prose, portal, prose,
-    sized_box, spinner, split, worker, zstack,
+    FlexSpacer, ZStackExt, flex_col, flex_row, image, inline_prose, portal, prose, sized_box,
+    spinner, split, text_button, worker, zstack,
 };
 use xilem::{EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette};
+use xilem_core::Edit;
 
 /// The main state of the application.
 struct HttpCats {
@@ -49,7 +50,7 @@ enum ImageState {
 }
 
 impl HttpCats {
-    fn view(&mut self) -> impl WidgetView<Self> + use<> {
+    fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
         let left_column = portal(
             flex_col((
                 prose("Status"),
@@ -146,7 +147,7 @@ async fn image_from_url(url: &str) -> anyhow::Result<ImageData> {
 }
 
 impl Status {
-    fn list_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
+    fn list_view(&mut self) -> impl WidgetView<Edit<HttpCats>> + use<> {
         let code = self.code;
         flex_row((
             // TODO: Reduce allocations here?
@@ -155,7 +156,7 @@ impl Status {
             FlexSpacer::Flex(1.),
             // TODO: Spinner if image pending?
             // TODO: Tick if image loaded?
-            button("Select", move |state: &mut HttpCats| {
+            text_button("Select", move |state: &mut HttpCats| {
                 let status = state
                     .statuses
                     .iter_mut()
@@ -173,7 +174,7 @@ impl Status {
         ))
     }
 
-    fn details_view(&mut self) -> impl WidgetView<HttpCats> + use<> {
+    fn details_view(&mut self) -> impl WidgetView<Edit<HttpCats>> + use<> {
         let image = match &self.image {
             ImageState::NotRequested => OneOf3::A(
                 prose("Failed to start fetching image. This is a bug!")

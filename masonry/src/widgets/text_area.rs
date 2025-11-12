@@ -16,9 +16,9 @@ use vello::peniko::Fill;
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, BrushIndex, ChildrenIds, CursorIcon, EventCtx, Ime,
-    LayoutCtx, PaintCtx, PointerButton, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, StyleProperty, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
-    render_text,
+    LayoutCtx, PaintCtx, PointerButton, PointerButtonEvent, PointerEvent, PointerUpdate,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, StyleProperty, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, render_text,
 };
 use crate::properties::{
     CaretColor, ContentColor, DisabledContentColor, SelectionColor, UnfocusedSelectionColor,
@@ -493,37 +493,39 @@ impl<const EDITABLE: bool> Widget for TextArea<EDITABLE> {
         }
 
         match event {
-            PointerEvent::Down { button, state, .. } => {
-                if matches!(button, None | Some(PointerButton::Primary)) {
-                    let cursor_pos = ctx.local_position(state.position);
-                    let (fctx, lctx) = ctx.text_contexts();
-                    let mut drv = self.editor.driver(fctx, lctx);
-                    match state.count {
-                        2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
-                        3 => {
-                            drv.select_hard_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32);
-                        }
-                        _ => {
-                            if state.modifiers.shift() {
-                                drv.shift_click_extension(cursor_pos.x as f32, cursor_pos.y as f32);
-                            } else {
-                                drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
-                            }
+            PointerEvent::Down(PointerButtonEvent {
+                button: None | Some(PointerButton::Primary),
+                state,
+                ..
+            }) => {
+                let cursor_pos = ctx.local_position(state.position);
+                let (fctx, lctx) = ctx.text_contexts();
+                let mut drv = self.editor.driver(fctx, lctx);
+                match state.count {
+                    2 => drv.select_word_at_point(cursor_pos.x as f32, cursor_pos.y as f32),
+                    3 => {
+                        drv.select_hard_line_at_point(cursor_pos.x as f32, cursor_pos.y as f32);
+                    }
+                    _ => {
+                        if state.modifiers.shift() {
+                            drv.shift_click_extension(cursor_pos.x as f32, cursor_pos.y as f32);
+                        } else {
+                            drv.move_to_point(cursor_pos.x as f32, cursor_pos.y as f32);
                         }
                     }
-                    let new_generation = self.editor.generation();
-                    if new_generation != self.rendered_generation {
-                        ctx.request_render();
-                        ctx.set_ime_area(self.ime_area());
-                        self.rendered_generation = new_generation;
-                    }
-                    ctx.request_focus();
-                    ctx.capture_pointer();
                 }
+                let new_generation = self.editor.generation();
+                if new_generation != self.rendered_generation {
+                    ctx.request_render();
+                    ctx.set_ime_area(self.ime_area());
+                    self.rendered_generation = new_generation;
+                }
+                ctx.request_focus();
+                ctx.capture_pointer();
             }
-            PointerEvent::Move(u) => {
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if ctx.is_active() {
-                    let cursor_pos = ctx.local_position(u.current.position);
+                    let cursor_pos = ctx.local_position(current.position);
                     let (fctx, lctx) = ctx.text_contexts();
                     self.editor
                         .driver(fctx, lctx)
@@ -1054,7 +1056,7 @@ mod tests {
     use crate::core::{KeyboardEvent, Modifiers, Properties};
     use crate::palette;
     use crate::testing::TestHarness;
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     // Tests of alignment happen in Prose.
 
     #[test]
@@ -1065,7 +1067,7 @@ mod tests {
             );
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
+                TestHarness::create_with_size(test_property_set(), area, Size::new(60.0, 40.0));
 
             harness.render()
         };
@@ -1076,7 +1078,7 @@ mod tests {
             );
 
             let mut harness =
-                TestHarness::create_with_size(default_property_set(), area, Size::new(60.0, 40.0));
+                TestHarness::create_with_size(test_property_set(), area, Size::new(60.0, 40.0));
 
             let without_wrapping = harness.render();
 
@@ -1116,7 +1118,7 @@ mod tests {
                 Properties::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
-            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
+            let mut harness = TestHarness::create_with(test_property_set(), area, test_params);
 
             harness.render()
         };
@@ -1127,7 +1129,7 @@ mod tests {
                 Properties::new().with(ContentColor::new(palette::css::AZURE)),
             );
 
-            let mut harness = TestHarness::create_with(default_property_set(), area, test_params);
+            let mut harness = TestHarness::create_with(test_property_set(), area, test_params);
 
             harness.edit_root_widget(|mut area| {
                 TextArea::reset_text(&mut area, "Test string");
@@ -1205,7 +1207,7 @@ mod tests {
                 TextArea::new_editable("hello world").with_insert_newline(scenario.insert_newline),
             );
 
-            let mut harness = TestHarness::create(default_property_set(), area);
+            let mut harness = TestHarness::create(test_property_set(), area);
             let text_id = harness.root_id();
 
             harness.focus_on(Some(text_id));

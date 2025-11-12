@@ -1,7 +1,5 @@
 [package]
 name = "counter_custom_element"
-version = "0.1.0"
-publish = false
 license.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -17,7 +15,7 @@ bench = false
 workspace = true
 
 [dependencies]
-console_error_panic_hook = "0.1"
-wasm-bindgen = "0.2.101"
-web-sys = "0.3.78"
+console_error_panic_hook = "0.1.7"
+wasm-bindgen = "0.2.104"
+web-sys = "0.3.81"
 xilem_web = { path = "../.." }

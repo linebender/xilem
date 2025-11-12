@@ -9,7 +9,10 @@ use std::{
 use megalodon::entities::{Attachment, attachment::AttachmentType};
 use xilem::{
     Blob, ImageFormat, WidgetView,
-    core::one_of::{OneOf, OneOf4},
+    core::{
+        ViewArgument,
+        one_of::{OneOf, OneOf4},
+    },
     masonry::{
         peniko::{ImageAlphaType, ImageData},
         properties::types::AsUnit,
@@ -22,7 +25,7 @@ use crate::actions::Navigation;
 /// Render a single media attachment for use in a status.
 ///
 /// This currently doesn't perform any caching.
-pub(crate) fn attachment<State: 'static>(
+pub(crate) fn attachment<State: ViewArgument>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     match attachment.r#type {
@@ -41,7 +44,7 @@ pub(crate) fn attachment<State: 'static>(
 /// This view currently does not cache the blurhash, or take any other steps to
 /// avoid recalculating the image.
 /// We haven't ran into this being a performance issue.
-fn maybe_blurhash<State: 'static>(
+fn maybe_blurhash<State: ViewArgument>(
     attachment: &Attachment,
 ) -> Option<impl WidgetView<State, Navigation> + use<State>> {
     let start = Instant::now();
@@ -88,7 +91,7 @@ fn maybe_blurhash<State: 'static>(
 }
 
 /// Show some useful info for audio attachments.
-fn audio_attachment<State: 'static>(
+fn audio_attachment<State: ViewArgument>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     flex_col((
@@ -104,7 +107,7 @@ fn audio_attachment<State: 'static>(
 }
 
 /// Show some useful info for audio attachments.
-fn video_attachment<State: 'static>(
+fn video_attachment<State: ViewArgument>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     flex_col((
@@ -120,7 +123,7 @@ fn video_attachment<State: 'static>(
 }
 
 /// Show some useful info for audio attachments.
-fn image_attachment<State: 'static>(
+fn image_attachment<State: ViewArgument>(
     attachment: &Attachment,
 ) -> impl WidgetView<State, Navigation> + use<State> {
     flex_col((

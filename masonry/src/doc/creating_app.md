@@ -12,9 +12,6 @@
 
 </div>
 
-
-**TODO - Add screenshots - see [#501](https://github.com/linebender/xilem/issues/501)**
-
 This tutorial explains how to build a simple Masonry app, step by step.
 Though it isn't representative of how we expect Masonry to be used, it does cover the basic architecture.
 
@@ -256,6 +253,10 @@ fn main() {
     .unwrap();
 }
 ```
+
+Running this will open a window that looks like this:
+
+![Screenshot of the to-do-list example][to-do-screenshot]
 
 All the Masonry examples follow this structure:
 

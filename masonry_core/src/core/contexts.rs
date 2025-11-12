@@ -1350,10 +1350,8 @@ impl_context_method!(
         /// For further details see [`ErasedAction`].
         pub fn submit_untyped_action(&mut self, action: ErasedAction) {
             trace!("submit_untyped_action");
-            self.global_state.emit_signal(RenderRootSignal::Action(
-                Box::new(action),
-                self.widget_state.id,
-            ));
+            self.global_state
+                .emit_signal(RenderRootSignal::Action(action, self.widget_state.id));
         }
 
         /// Set the IME cursor area.
@@ -1428,6 +1426,31 @@ impl_context_method!(
             trace!("show_window_menu");
             self.global_state
                 .emit_signal(RenderRootSignal::ShowWindowMenu(position));
+        }
+
+        /// Create a new layer at a specified position.
+        pub fn create_layer<W: Widget + ?Sized>(
+            &mut self,
+            root_widget: NewWidget<W>,
+            position: Point,
+        ) {
+            trace!("create_layer");
+            self.global_state
+                .emit_signal(RenderRootSignal::NewLayer(root_widget.erased(), position));
+        }
+
+        /// Remove the layer with the specified widget as root.
+        pub fn remove_layer(&mut self, root_widget_id: WidgetId) {
+            trace!("remove_layer");
+            self.global_state
+                .emit_signal(RenderRootSignal::RemoveLayer(root_widget_id));
+        }
+
+        /// Reposition the layer with the specified widget as root.
+        pub fn reposition_layer(&mut self, root_widget_id: WidgetId, position: Point) {
+            trace!("reposition_layer");
+            self.global_state
+                .emit_signal(RenderRootSignal::RepositionLayer(root_widget_id, position));
         }
     }
 );

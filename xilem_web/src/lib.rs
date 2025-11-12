@@ -1,16 +1,45 @@
 // Copyright 2023 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// https://linebender.org/blog/doc-include
-//! <!-- This license link is in a .rustdoc-hidden section, but we may as well give the correct link -->
-//! [LICENSE]: https://github.com/linebender/xilem/blob/main/xilem_web/LICENSE
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
+// cargo rdme --workspace-project=xilem_web
+
+//! This is a prototype implementation of the Xilem architecture (through [Xilem Core][]) using DOM elements as Xilem elements (unfortunately the two concepts have the same name).
 //!
-//! <!-- intra-doc-links go here -->
+//! # Quickstart
 //!
-//! <style>
-//! .rustdoc-hidden { display: none; }
-//! </style>
-#![doc = include_str!("../README.md")]
+//! The easiest way to start, is to use [Trunk][] within some of the examples (see the `web_examples/` directory).
+//! Run `trunk serve`, then navigate the browser to the link provided (usually <http://localhost:8080>).
+//!
+//! ## Example
+//!
+//! A minimal example to run an application with `xilem_web`:
+//!
+//! ```rust,no_run
+//! use xilem_web::{
+//!     document_body,
+//!     elements::html::{button, div, p},
+//!     interfaces::{Element as _, HtmlDivElement},
+//!     App,
+//!     core::Edit,
+//! };
+//!
+//! fn app_logic(clicks: &mut u32) -> impl HtmlDivElement<Edit<u32>> + use<> {
+//!     div((
+//!         button(format!("clicked {clicks} times")).on_click(|clicks: &mut u32, _event| *clicks += 1),
+//!         (*clicks >= 5).then_some(p("Huzzah, clicked at least 5 times")),
+//!     ))
+//! }
+//!
+//! pub fn main() {
+//!     let clicks = 0;
+//!     App::new(document_body(), clicks, app_logic).run();
+//! }
+//! ```
+//!
+//! [Trunk]: https://trunkrs.dev/
+//! [Xilem Core]: xilem_core
+
 // LINEBENDER LINT SET - lib.rs - v3
 // See https://linebender.org/wiki/canonical-lints/
 // These lints shouldn't apply to examples or tests.
@@ -85,7 +114,7 @@ pub use templated::{Templated, templated};
 
 pub use xilem_core as core;
 
-use core::{AnyView, MapMessage, MapState, MessageResult, View, ViewSequence};
+use core::{AnyView, Arg, View, ViewArgument, ViewSequence};
 
 /// A trait used for type erasure of [`DomNode`]s
 /// It is e.g. used in [`AnyPod`]
@@ -111,7 +140,7 @@ pub trait DomNode: AnyNode {
 pub type AnyDomView<State, Action = ()> = dyn AnyView<State, Action, ViewCtx, AnyPod>;
 
 /// The central [`View`] derived trait to represent DOM nodes in `xilem_web`, it's the base for all [`View`]s in `xilem_web`
-pub trait DomView<State, Action = ()>:
+pub trait DomView<State: ViewArgument, Action = ()>:
     View<State, Action, ViewCtx, Element = Pod<Self::DomNode>>
 {
     type DomNode: DomNode;
@@ -120,15 +149,14 @@ pub trait DomView<State, Action = ()>:
     ///
     /// # Examples
     /// ```
-    /// use xilem_web::{elements::html::div, DomView};
+    /// use xilem_web::{elements::html::div, DomView, core::ViewArgument};
     ///
-    /// # fn view<State: 'static>() -> impl DomView<State> {
+    /// # fn view<State: ViewArgument>() -> impl DomView<State> {
     /// div("a label").boxed()
     /// # }
     /// ```
     fn boxed(self) -> Box<AnyDomView<State, Action>>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
     {
@@ -138,7 +166,6 @@ pub trait DomView<State, Action = ()>:
     /// See [`after_build`](`after_update::after_build`)
     fn after_build<F>(self, callback: F) -> AfterBuild<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
@@ -149,7 +176,6 @@ pub trait DomView<State, Action = ()>:
     /// See [`after_rebuild`](`after_update::after_rebuild`)
     fn after_rebuild<F>(self, callback: F) -> AfterRebuild<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
@@ -160,52 +186,15 @@ pub trait DomView<State, Action = ()>:
     /// See [`before_teardown`](`after_update::before_teardown`)
     fn before_teardown<F>(self, callback: F) -> BeforeTeardown<State, Action, Self, F>
     where
-        State: 'static,
         Action: 'static,
         Self: Sized,
         F: Fn(&Self::DomNode) + 'static,
     {
         before_teardown(self, callback)
     }
-
-    /// See [`map_state`](`core::map_state`)
-    fn map_state<ParentState, F>(
-        self,
-        f: F,
-    ) -> MapState<Self, F, ParentState, State, Action, ViewCtx>
-    where
-        State: 'static,
-        ParentState: 'static,
-        Self: Sized,
-        F: Fn(&mut ParentState) -> &mut State + 'static,
-    {
-        core::map_state(self, f)
-    }
-
-    /// See [`map_action`](`core::map_action`)
-    fn map_action<ParentAction, F>(
-        self,
-        f: F,
-    ) -> MapMessage<
-        Self,
-        State,
-        ParentAction,
-        Action,
-        ViewCtx,
-        impl Fn(&mut State, MessageResult<Action>) -> MessageResult<ParentAction> + 'static,
-    >
-    where
-        State: 'static,
-        ParentAction: 'static,
-        Action: 'static,
-        Self: Sized,
-        F: Fn(&mut State, Action) -> ParentAction + 'static,
-    {
-        core::map_action(self, f)
-    }
 }
 
-impl<V, State, Action, N> DomView<State, Action> for V
+impl<V, State: ViewArgument, Action, N> DomView<State, Action> for V
 where
     V: View<State, Action, ViewCtx, Element = Pod<N>>,
     N: DomNode,
@@ -219,13 +208,17 @@ where
 /// # Examples
 ///
 /// ```
-/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<i32> {
+/// # use xilem_web::core::Edit;
+/// fn huzzah(clicks: i32) -> impl xilem_web::DomFragment<Edit<i32>> {
 ///     (clicks >= 5).then_some("Huzzah, clicked at least 5 times")
 /// }
 /// ```
-pub trait DomFragment<State, Action = ()>: ViewSequence<State, Action, ViewCtx, AnyPod> {}
+pub trait DomFragment<State: ViewArgument, Action = ()>:
+    ViewSequence<State, Action, ViewCtx, AnyPod>
+{
+}
 
-impl<V, State, Action> DomFragment<State, Action> for V where
+impl<V, State: ViewArgument, Action> DomFragment<State, Action> for V where
     V: ViewSequence<State, Action, ViewCtx, AnyPod>
 {
 }

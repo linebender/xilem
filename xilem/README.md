@@ -16,7 +16,7 @@
 
 <!-- We use cargo-rdme to update the README with the contents of lib.rs.
 To edit the following section, update it in lib.rs, then run:
-cargo rdme --workspace-project=xilem --heading-base-level=0
+cargo rdme --workspace-project=xilem
 Full documentation at https://github.com/orium/cargo-rdme -->
 
 <!-- Intra-doc links used in lib.rs should be evaluated here.
@@ -71,18 +71,19 @@ A simple incrementing counter application looks like:
 
 ```rust
 use winit::error::EventLoopError;
-use xilem::view::{Axis, button, flex, label};
+use xilem::view::{Axis, text_button, flex, label};
 use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+use xilem::core::Edit;
 
 #[derive(Default)]
 struct Counter {
     num: i32,
 }
 
-fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
+fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
     flex(Axis::Vertical, (
         label(format!("{}", data.num)),
-        button("increment", |data: &mut Counter| data.num += 1),
+        text_button("increment", |data: &mut Counter| data.num += 1),
     ))
 }
 
@@ -140,7 +141,7 @@ This is new syntax in the 2024 edition, and so it might be unfamiliar.
 Here's a snippet from the Xilem examples:
 
 ```rust
-fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
    // ...
 }
 ```
@@ -150,11 +151,19 @@ This is required because the view types in Xilem must be `'static`, but as of th
 for return types, Rust assumes that the return value will use the parameter's lifetimes.
 That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
 
+## Feature flags
+
+The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+
+- `default`: Enables the default features of [`masonry`][masonry] and [`masonry_winit`][masonry_winit].
+
 [accesskit_docs]: masonry::accesskit
 [AccessKit]: https://accesskit.dev/
 [Druid]: https://crates.io/crates/druid
 [Fontique]: https://crates.io/crates/fontique
 [Masonry]: https://crates.io/crates/masonry
+[masonry_core]: https://crates.io/crates/masonry_core
+[masonry_winit]: https://crates.io/crates/masonry_winit
 [Parley]: https://crates.io/crates/parley
 [skrifa]: https://crates.io/crates/skrifa
 [swash]: https://crates.io/crates/swash

@@ -239,7 +239,7 @@ pub fn run_with(
     app_driver: impl AppDriver + 'static,
     default_properties: DefaultProperties,
 ) -> Result<(), EventLoopError> {
-    // If there is no default tracing subscriber, we set our own. If one has
+    // If no tracing subscriber has been set before, we set our own. If one has
     // already been set, we get an error which we swallow.
     // By now, we're about to take control of the event loop. The user is unlikely
     // to try to set their own subscriber once the event loop has started.
@@ -304,23 +304,19 @@ impl ApplicationHandler<MasonryUserEvent> for MainState<'_> {
     // warning is very likely to be handled for mobile and we in particular want to make sure
     // external event loops can let masonry handle these callbacks.
 
-    fn about_to_wait(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_about_to_wait(event_loop);
     }
 
-    fn new_events(
-        &mut self,
-        event_loop: &winit::event_loop::ActiveEventLoop,
-        cause: winit::event::StartCause,
-    ) {
+    fn new_events(&mut self, event_loop: &ActiveEventLoop, cause: winit::event::StartCause) {
         self.masonry_state.handle_new_events(event_loop, cause);
     }
 
-    fn exiting(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn exiting(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_exiting(event_loop);
     }
 
-    fn memory_warning(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn memory_warning(&mut self, event_loop: &ActiveEventLoop) {
         self.masonry_state.handle_memory_warning(event_loop);
     }
 }
@@ -333,8 +329,7 @@ impl MasonryState<'_> {
     ) -> Self {
         let render_cx = RenderContext::new();
 
-        let (signal_sender, signal_receiver) =
-            std::sync::mpsc::channel::<(WindowId, RenderRootSignal)>();
+        let (signal_sender, signal_receiver) = mpsc::channel::<(WindowId, RenderRootSignal)>();
 
         MasonryState {
             is_suspended: true,
@@ -663,7 +658,9 @@ impl MasonryState<'_> {
                 is_synthetic: true,
                 ..
             }
-        ) && let Some(wet) = window.event_reducer.reduce(&event)
+        ) && let Some(wet) = window
+            .event_reducer
+            .reduce(window.handle.scale_factor(), &event)
         {
             match wet {
                 WindowEventTranslation::Keyboard(k) => {
@@ -900,6 +897,11 @@ impl MasonryState<'_> {
                         widget_name.into()
                     };
                     info!("Widget selected in inspector: {widget_id} - {display_name}");
+                }
+                RenderRootSignal::NewLayer(root, pos) => window.render_root.add_layer(root, pos),
+                RenderRootSignal::RemoveLayer(root_id) => window.render_root.remove_layer(root_id),
+                RenderRootSignal::RepositionLayer(root_id, new_pos) => {
+                    window.render_root.reposition_layer(root_id, new_pos);
                 }
             }
         }

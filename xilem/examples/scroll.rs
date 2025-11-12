@@ -8,10 +8,11 @@ use vello::peniko::color::AlphaColor;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    CrossAxisAlignment, GridExt, MainAxisAlignment, button, flex_col, flex_row, grid, label,
-    portal, sized_box,
+    CrossAxisAlignment, GridExt, MainAxisAlignment, flex_col, flex_row, grid, label, portal,
+    sized_box, text_button,
 };
 use xilem::{EventLoop, WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 use xilem_core::one_of::Either;
 
 #[derive(Debug, Clone, Copy, Default)]
@@ -50,7 +51,7 @@ fn color_block(
     col_idx: i32,
     vertical_count: i32,
     horizontal_count: i32,
-) -> impl WidgetView<AppState> + use<> {
+) -> impl WidgetView<Edit<AppState>> + use<> {
     let row_idx = row_idx as f32;
     let col_idx = col_idx as f32;
     let vertical_count = vertical_count as f32;
@@ -67,7 +68,7 @@ fn color_block(
         ]))
 }
 
-fn grid_blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
+fn grid_blocks(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
     let (vertical_count, horizontal_count) = (state.vertical_count, state.horizontal_count);
 
     grid(
@@ -85,7 +86,7 @@ fn grid_blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     .spacing(10.px())
 }
 
-fn flex_blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
+fn flex_blocks(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
     let (vertical_count, horizontal_count) = (state.vertical_count, state.horizontal_count);
 
     flex_col(
@@ -103,17 +104,17 @@ fn flex_blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     )
 }
 
-fn blocks(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
+fn blocks(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
     match state.blocks_layout {
         BlocksLayout::Grid => Either::A(grid_blocks(state)),
         BlocksLayout::Flex => Either::B(flex_blocks(state)),
     }
 }
 
-fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
+fn app_logic(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
     let blocks_layout_switch = flex_row((
         label("Switch layout:"),
-        button(
+        text_button(
             format!("{:?}", state.blocks_layout),
             |state: &mut AppState| {
                 let next = match state.blocks_layout {
@@ -126,15 +127,15 @@ fn app_logic(state: &mut AppState) -> impl WidgetView<AppState> + use<> {
     ));
     let vertical_controls = flex_row((
         label("Vertical blocks (rows):"),
-        button("-", |appstate: &mut AppState| appstate.vertical_count -= 1),
-        button("+", |appstate: &mut AppState| appstate.vertical_count += 1),
+        text_button("-", |appstate: &mut AppState| appstate.vertical_count -= 1),
+        text_button("+", |appstate: &mut AppState| appstate.vertical_count += 1),
     ));
     let horizontal_controls = flex_row((
         label("Horizontal blocks (columns):"),
-        button("-", |appstate: &mut AppState| {
+        text_button("-", |appstate: &mut AppState| {
             appstate.horizontal_count -= 1;
         }),
-        button("+", |appstate: &mut AppState| {
+        text_button("+", |appstate: &mut AppState| {
             appstate.horizontal_count += 1;
         }),
     ));

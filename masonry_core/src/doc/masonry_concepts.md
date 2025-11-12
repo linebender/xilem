@@ -8,7 +8,7 @@
 > 💡 Tip
 >
 > This file is intended to be read in rustdoc.
-> Use `cargo doc --open --package masonry_winit --no-deps`.
+> Use `cargo doc --open --package masonry --no-deps` and open the `doc` module.
 
 </div>
 
@@ -168,12 +168,24 @@ The bounding rects of the widget tree form a kind of "bounding volume hierarchy"
 
 <!-- TODO - Add section about clip paths and pointer detection. -->
 
-
-## Layout rect
+### Layout rect
 
 Previous versions of Masonry had a concept of a widget's "layout rect", composed of its self-declared size and the position attributed by its parent.
 
 However, given that widgets can have arbitrary transforms, the concept of an axis-aligned layout rect doesn't really make sense anymore.
+
+
+## Layers
+
+A Masonry application is composed of layers.
+
+Layers are top-level items in a [`RenderRoot`], drawn on top of each other.
+
+There is always at least one layer, called the "base layer".
+It's the one in which almost all content (buttons, texts, images) will be drawn.
+
+Other layers can represent tooltips, menus, dialogs, etc.
+They are created with a pre-set position and are drawn on top of the base layer.
 
 
 ## Safety rails
@@ -218,3 +230,4 @@ DPI-aware pixel snapping is a future feature.
 [`Widget::accepts_focus`]: crate::core::Widget::accepts_focus
 [`EventCtx::request_focus`]: crate::core::EventCtx::request_focus
 [`Widget::on_pointer_event`]: crate::core::Widget::on_pointer_event
+[`RenderRoot`]: crate::app::RenderRoot

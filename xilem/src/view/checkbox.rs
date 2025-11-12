@@ -1,43 +1,52 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::core::{MessageContext, Mut, ViewMarker};
-use crate::{MessageResult, Pod, View, ViewCtx};
+use std::marker::PhantomData;
 
-use masonry::core::ArcStr;
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
+use crate::{MessageResult, Pod, ViewCtx};
+
+use masonry::core::{ArcStr, NewWidget};
+use masonry::parley::StyleProperty;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::widgets::{self, CheckboxToggled};
 
 /// An element which can be in checked and unchecked state.
 ///
 /// # Example
-/// ```ignore
+/// ```
 /// use xilem::view::checkbox;
+/// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     value: bool,
 /// }
 ///
-/// // ...
-///
-/// let new_state = false;
-///
-/// checkbox("A simple checkbox", app_state.value, |app_state: &mut State, new_state: bool| {
-/// *app_state.value = new_state;
+/// # fn view(app_state: &mut State) -> impl WidgetView<Edit<State>> {
+/// checkbox("A simple checkbox", app_state.value, |app_state: &mut State,  new_state: bool| {
+///     app_state.value = new_state;
 /// })
+/// # }
 /// ```
 pub fn checkbox<F, State, Action>(
     label: impl Into<ArcStr>,
     checked: bool,
     callback: F,
-) -> Checkbox<F>
+) -> Checkbox<State, Action, F>
 where
-    F: Fn(&mut State, bool) -> Action + Send + 'static,
+    F: Fn(Arg<'_, State>, bool) -> Action + Send + 'static,
+    State: ViewArgument,
 {
     Checkbox {
         label: label.into(),
         callback,
         checked,
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
+        weight: FontWeight::NORMAL,
+        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         disabled: false,
+        phantom: PhantomData,
     }
 }
 
@@ -45,14 +54,40 @@ where
 ///
 /// See `checkbox` documentation for more context.
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct Checkbox<F> {
+pub struct Checkbox<State, Action, F> {
     label: ArcStr,
     checked: bool,
     callback: F,
+    text_size: f32,
+    weight: FontWeight,
+    font: FontStack<'static>,
     disabled: bool,
+    phantom: PhantomData<fn(State) -> Action>,
 }
 
-impl<F> Checkbox<F> {
+impl<State, Action, F> Checkbox<State, Action, F> {
+    /// Sets text size of the checkbox label.
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
+        self
+    }
+
+    /// Sets font weight of the checkbox label.
+    pub fn weight(mut self, weight: FontWeight) -> Self {
+        self.weight = weight;
+        self
+    }
+
+    /// Set the [font stack](FontStack) the checkbox label will use.
+    ///
+    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// for a character, a system font will be used (if the system fonts are enabled).
+    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.font = font.into();
+        self
+    }
+
     /// Set the disabled state of the widget.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
@@ -60,17 +95,27 @@ impl<F> Checkbox<F> {
     }
 }
 
-impl<F> ViewMarker for Checkbox<F> {}
-impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<F>
+impl<State, Action, F> ViewMarker for Checkbox<State, Action, F> {}
+impl<F, State, Action> View<State, Action, ViewCtx> for Checkbox<State, Action, F>
 where
-    F: Fn(&mut State, bool) -> Action + Send + Sync + 'static,
+    State: ViewArgument,
+    Action: 'static,
+    F: Fn(Arg<'_, State>, bool) -> Action + Send + Sync + 'static,
 {
     type Element = Pod<widgets::Checkbox>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
+        let label = widgets::Label::new(self.label.clone())
+            .with_style(StyleProperty::FontSize(self.text_size))
+            .with_style(StyleProperty::FontWeight(self.weight))
+            .with_style(StyleProperty::FontStack(self.font.clone()));
+
         ctx.with_leaf_action_widget(|ctx| {
-            let mut pod = ctx.create_pod(widgets::Checkbox::new(self.checked, self.label.clone()));
+            let mut pod = ctx.create_pod(widgets::Checkbox::from_label(
+                self.checked,
+                NewWidget::new(label),
+            ));
             pod.new_widget.options.disabled = self.disabled;
             pod
         })
@@ -82,7 +127,7 @@ where
         (): &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         if prev.disabled != self.disabled {
             element.ctx.set_disabled(self.disabled);
@@ -92,6 +137,17 @@ where
         }
         if prev.checked != self.checked {
             widgets::Checkbox::set_checked(&mut element, self.checked);
+        }
+
+        let mut label = widgets::Checkbox::label_mut(&mut element);
+        if prev.text_size != self.text_size {
+            widgets::Label::insert_style(&mut label, StyleProperty::FontSize(self.text_size));
+        }
+        if prev.weight != self.weight {
+            widgets::Label::insert_style(&mut label, StyleProperty::FontWeight(self.weight));
+        }
+        if prev.font != self.font {
+            widgets::Label::insert_style(&mut label, StyleProperty::FontStack(self.font.clone()));
         }
     }
 
@@ -109,7 +165,7 @@ where
         (): &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

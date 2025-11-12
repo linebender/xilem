@@ -244,6 +244,10 @@ impl HasProperty<Padding> for Grid {}
 impl Widget for Grid {
     type Action = NoAction;
 
+    fn accepts_pointer_interaction(&self) -> bool {
+        false
+    }
+
     fn register_children(&mut self, ctx: &mut RegisterCtx<'_>) {
         for child in self.children.iter_mut() {
             ctx.register_child(&mut child.widget);
@@ -357,7 +361,7 @@ mod tests {
     use super::*;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Button;
 
     #[test]
@@ -368,8 +372,7 @@ mod tests {
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_1x1");
 
@@ -428,8 +431,7 @@ mod tests {
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 
@@ -469,8 +471,7 @@ mod tests {
             GridParams::new(0, 0, 1, 1),
         ));
         let window_size = Size::new(200.0, 200.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
         // Snapshot with the single widget.
         assert_render_snapshot!(harness, "grid_initial_2x2");
 

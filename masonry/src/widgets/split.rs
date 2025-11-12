@@ -10,8 +10,9 @@ use vello::kurbo::{Line, Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, CursorIcon, EventCtx, FromDynWidget,
-    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, QueryCtx,
-    RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut, WidgetPod,
+    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate,
+    PropertiesMut, PropertiesRef, QueryCtx, RegisterCtx, TextEvent, Widget, WidgetId, WidgetMut,
+    WidgetPod,
 };
 use crate::peniko::Color;
 use crate::properties::types::{AsUnit, Length};
@@ -395,7 +396,7 @@ where
     ) {
         if self.draggable {
             match event {
-                PointerEvent::Down { state, .. } => {
+                PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                     let pos = ctx.local_position(state.position);
                     if self.bar_hit_test(ctx.size(), pos) {
                         ctx.set_handled();
@@ -407,9 +408,9 @@ where
                         } - self.bar_position(ctx.size());
                     }
                 }
-                PointerEvent::Move(u) => {
+                PointerEvent::Move(PointerUpdate { current, .. }) => {
                     if ctx.is_active() {
-                        let pos = ctx.local_position(u.current.position);
+                        let pos = ctx.local_position(current.position);
                         // If widget has pointer capture, assume always it's hovered
                         let effective_pos = match self.split_axis {
                             Axis::Horizontal => Point {
@@ -603,7 +604,7 @@ where
 mod tests {
     use super::*;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::Label;
 
     #[test]
@@ -615,8 +616,7 @@ mod tests {
         ).split_axis(Axis::Horizontal).draggable(false).with_auto_id();
 
         let window_size = Size::new(150.0, 150.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "split_columns");
     }
@@ -630,8 +630,7 @@ mod tests {
         ).split_axis(Axis::Vertical).draggable(false).with_auto_id();
 
         let window_size = Size::new(150.0, 150.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), widget, window_size);
 
         assert_render_snapshot!(harness, "split_rows");
     }
@@ -653,11 +652,8 @@ mod tests {
             .solid_bar(true)
             .with_auto_id();
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                widget,
-                Size::new(100.0, 100.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
 
             harness.render()
         };
@@ -669,11 +665,8 @@ mod tests {
             )
             .with_auto_id();
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                widget,
-                Size::new(100.0, 100.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), widget, Size::new(100.0, 100.0));
 
             harness.edit_root_widget(|mut splitter| {
                 Split::set_split_point(&mut splitter, 0.3);

@@ -10,10 +10,11 @@ use winit::dpi::LogicalSize;
 use winit::error::EventLoopError;
 use xilem::style::Style;
 use xilem::view::{
-    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, any_button, button, flex_row, grid,
-    label, sized_box,
+    Flex, FlexSequence, FlexSpacer, GridExt, GridSequence, button, flex_row, grid, label,
+    sized_box, text_button,
 };
 use xilem::{Color, EventLoop, EventLoopBuilder, WidgetView, WindowOptions, Xilem, palette};
+use xilem_core::{Edit, ViewArgument};
 
 #[derive(Copy, Clone)]
 enum MathOperator {
@@ -191,7 +192,7 @@ impl Calculator {
     }
 }
 
-fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
+fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Edit<Calculator>> {
     let mut views: Vec<_> = vec![];
     for (i, num) in nums.iter().enumerate() {
         views.push(digit_button(num).grid_pos(i as i32, row));
@@ -201,7 +202,7 @@ fn num_row(nums: [&'static str; 3], row: i32) -> impl GridSequence<Calculator> {
 
 const DISPLAY_FONT_SIZE: f32 = 30.;
 const GRID_GAP: Length = Length::const_px(2.);
-fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
+fn app_logic(data: &mut Calculator) -> impl WidgetView<Edit<Calculator>> + use<> {
     grid(
         (
             // Display
@@ -253,7 +254,9 @@ fn app_logic(data: &mut Calculator) -> impl WidgetView<Calculator> + use<> {
 }
 
 /// Creates a horizontal centered flex row designed for the display portion of the calculator.
-pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex<Seq, State> {
+pub fn centered_flex_row<State: ViewArgument, Seq: FlexSequence<State>>(
+    sequence: Seq,
+) -> Flex<Seq, State> {
     flex_row(sequence)
         .cross_axis_alignment(CrossAxisAlignment::Center)
         .main_axis_alignment(MainAxisAlignment::Start)
@@ -262,20 +265,20 @@ pub fn centered_flex_row<State, Seq: FlexSequence<State>>(sequence: Seq) -> Flex
 
 /// Returns a label intended to be used in the calculator's top display.
 /// The default text size is out of proportion for this use case.
-fn display_label(text: &str) -> impl WidgetView<Calculator> + use<> {
+fn display_label(text: &str) -> impl WidgetView<Edit<Calculator>> + use<> {
     label(text).text_size(DISPLAY_FONT_SIZE)
 }
 
 /// Returns a button contained in an expanded box. Useful for the buttons so that
 /// they take up all available space in flex containers.
 fn expanded_button(
-    content: impl WidgetView<Calculator>,
+    content: impl WidgetView<Edit<Calculator>>,
     callback: impl Fn(&mut Calculator) + Send + Sync + 'static,
-) -> impl WidgetView<Calculator> {
+) -> impl WidgetView<Edit<Calculator>> {
     const BLUE: Color = Color::from_rgb8(0x00, 0x8d, 0xdd);
 
     sized_box(
-        any_button(content, callback)
+        button(content, callback)
             .background_color(BLUE)
             .corner_radius(10.)
             .border_color(Color::TRANSPARENT)
@@ -286,7 +289,7 @@ fn expanded_button(
 
 /// Returns an expanded button that triggers the calculator's operator handler,
 /// `on_entered_operator()`.
-fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
+fn operator_button(math_operator: MathOperator) -> impl WidgetView<Edit<Calculator>> {
     expanded_button(
         label(math_operator.as_str()),
         move |data: &mut Calculator| {
@@ -296,11 +299,11 @@ fn operator_button(math_operator: MathOperator) -> impl WidgetView<Calculator> {
 }
 
 /// A button which adds `digit` to the current input when pressed
-fn digit_button(digit: &'static str) -> impl WidgetView<Calculator> {
+fn digit_button(digit: &'static str) -> impl WidgetView<Edit<Calculator>> {
     const GRAY: Color = Color::from_rgb8(0x3a, 0x3a, 0x3a);
 
     sized_box(
-        button(digit, |data: &mut Calculator| {
+        text_button(digit, |data: &mut Calculator| {
             data.on_entered_digit(digit);
         })
         .background_color(GRAY)

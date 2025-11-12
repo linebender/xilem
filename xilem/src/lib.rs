@@ -1,6 +1,9 @@
 // Copyright 2024 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
+// cargo rdme --workspace-project=xilem
+
 //! Xilem is a UI toolkit. It combines ideas from `Flutter`, `SwiftUI`, and `Elm`.
 //! Like all of these, it uses lightweight view objects, diffing them to provide
 //! minimal updates to a retained UI. Like `SwiftUI`, it is strongly typed.
@@ -20,24 +23,25 @@
 //!
 //! There is also a [blog post][xilem_blog] from when Xilem was first introduced.
 //!
-//! ## Example
+//! # Example
 //!
 //! A simple incrementing counter application looks like:
 //!
 //! ```rust,no_run
 //! use winit::error::EventLoopError;
-//! use xilem::view::{Axis, button, flex, label};
+//! use xilem::view::{Axis, text_button, flex, label};
 //! use xilem::{EventLoop, WindowOptions, WidgetView, Xilem};
+//! use xilem::core::Edit;
 //!
 //! #[derive(Default)]
 //! struct Counter {
 //!     num: i32,
 //! }
 //!
-//! fn app_logic(data: &mut Counter) -> impl WidgetView<Counter> + use<> {
+//! fn app_logic(data: &mut Counter) -> impl WidgetView<Edit<Counter>> + use<> {
 //!     flex(Axis::Vertical, (
 //!         label(format!("{}", data.num)),
-//!         button("increment", |data: &mut Counter| data.num += 1),
+//!         text_button("increment", |data: &mut Counter| data.num += 1),
 //!     ))
 //! }
 //!
@@ -61,11 +65,11 @@
 //!
 //! **Note: The linked examples are for the `main` branch of Xilem. If you are using a released version, please view the examples in the tag for that release.**
 //!
-//! ## Reactive layer
+//! # Reactive layer
 //!
 //! The core concepts of the reactive layer are explained in [Xilem Core][xilem_core].
 //!
-//! ## View elements
+//! # View elements
 //!
 //! The primitives your `Xilem` app’s view tree will generally be constructed from:
 //!
@@ -88,7 +92,7 @@
 //! * [`lens`][crate::core::lens]: an adapter for using a component from a field of the current state.
 //! * [`memoize`][crate::core::memoize]: allows you to avoid recreating views you know won't have changed, based on a key.
 //!
-//! ## Precise Capturing
+//! # Precise Capturing
 //!
 //! Throughout Xilem you will find usage of `+ use<>` in return types, which is the Rust syntax for [Precise Capturing](https://doc.rust-lang.org/stable/std/keyword.use.html#precise-capturing).
 //! This is new syntax in the 2024 edition, and so it might be unfamiliar.
@@ -96,8 +100,8 @@
 //!
 //! ```rust,no_run
 //! # struct EmojiPagination;
-//! # use xilem::WidgetView;
-//! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+//! # use xilem::{WidgetView, core::Edit};
+//! fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
 //!    // ...
 //!    # xilem::view::label("Not meaningful!")
 //! }
@@ -108,11 +112,19 @@
 //! for return types, Rust assumes that the return value will use the parameter's lifetimes.
 //! That is a simplifying assumption for most Rust code, but this is mismatched with how Xilem works.
 //!
+//! # Feature flags
+//!
+//! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+//!
+//! - `default`: Enables the default features of [`masonry`][masonry] and [`masonry_winit`][masonry_winit].
+//!
 //! [accesskit_docs]: masonry::accesskit
 //! [AccessKit]: https://accesskit.dev/
 //! [Druid]: https://crates.io/crates/druid
 //! [Fontique]: https://crates.io/crates/fontique
 //! [Masonry]: https://crates.io/crates/masonry
+//! [masonry_core]: https://crates.io/crates/masonry_core
+//! [masonry_winit]: https://crates.io/crates/masonry_winit
 //! [Parley]: https://crates.io/crates/parley
 //! [skrifa]: https://crates.io/crates/skrifa
 //! [swash]: https://crates.io/crates/swash
@@ -184,7 +196,7 @@ pub use widget_view::{WidgetView, WidgetViewSequence};
 pub use window_view::{PodWindow, WindowView, window};
 
 // FIXME - Remove these re-exports.
-pub(crate) use xilem_core::{MessageResult, View, ViewId};
+pub(crate) use xilem_core::{MessageResult, ViewId};
 
 #[cfg(windows)]
 pub use window_options::WindowOptionsExtWindows;

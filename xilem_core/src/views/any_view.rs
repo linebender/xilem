@@ -7,8 +7,8 @@ use alloc::boxed::Box;
 use core::any::Any;
 
 use crate::{
-    AnyElement, MessageContext, MessageResult, Mut, View, ViewElement, ViewId, ViewMarker,
-    ViewPathTracker,
+    AnyElement, Arg, MessageContext, MessageResult, Mut, View, ViewArgument, ViewElement, ViewId,
+    ViewMarker, ViewPathTracker,
 };
 
 /// A view which can have any view type where the [`View::Element`] is compatible with
@@ -26,12 +26,12 @@ use crate::{
 ///
 /// Libraries using `xilem_core` are expected to have a type alias for their own `AnyView`, which specifies
 /// the `Context` and `Element` types.
-pub trait AnyView<State, Action, Context, Element: ViewElement> {
+pub trait AnyView<State: ViewArgument, Action, Context, Element: ViewElement> {
     /// Get an [`Any`] reference to `self`.
     fn as_any(&self) -> &dyn Any;
 
     /// Type erased [`View::build`].
-    fn dyn_build(&self, ctx: &mut Context, app_state: &mut State) -> (Element, AnyViewState);
+    fn dyn_build(&self, ctx: &mut Context, app_state: Arg<'_, State>) -> (Element, AnyViewState);
 
     /// Type erased [`View::rebuild`].
     fn dyn_rebuild(
@@ -40,7 +40,7 @@ pub trait AnyView<State, Action, Context, Element: ViewElement> {
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, Element>,
         element: Element::Mut<'_>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     );
 
     /// Type erased [`View::teardown`].
@@ -59,13 +59,14 @@ pub trait AnyView<State, Action, Context, Element: ViewElement> {
         dyn_state: &mut AnyViewState,
         message: &mut MessageContext,
         element: Element::Mut<'_>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action>;
 }
 
 impl<State, Action, Context, DynamicElement, V> AnyView<State, Action, Context, DynamicElement>
     for V
 where
+    State: ViewArgument,
     DynamicElement: AnyElement<V::Element, Context>,
     Context: ViewPathTracker,
     V: View<State, Action, Context> + 'static,
@@ -78,7 +79,7 @@ where
     fn dyn_build(
         &self,
         ctx: &mut Context,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> (DynamicElement, AnyViewState) {
         let generation = 0;
         let (element, view_state) =
@@ -98,7 +99,7 @@ where
         ctx: &mut Context,
         prev: &dyn AnyView<State, Action, Context, DynamicElement>,
         mut element: DynamicElement::Mut<'_>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         if let Some(prev) = prev.as_any().downcast_ref() {
             // If we were previously of this type, then do a normal rebuild
@@ -153,7 +154,7 @@ where
         dyn_state: &mut AnyViewState,
         message: &mut MessageContext,
         element: DynamicElement::Mut<'_>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         let state = dyn_state
             .inner_state
@@ -176,7 +177,10 @@ where
 
 /// The state used by [`AnyView`].
 #[doc(hidden)]
-#[allow(unnameable_types)] // reason: Implementation detail, public because of trait visibility rules
+#[expect(
+    unnameable_types,
+    reason = "Implementation detail, public because of trait visibility rules"
+)]
 #[derive(Debug)]
 pub struct AnyViewState {
     inner_state: Box<dyn Any>,
@@ -187,6 +191,7 @@ pub struct AnyViewState {
 impl<State, Action, Context, Element> ViewMarker for dyn AnyView<State, Action, Context, Element> {}
 impl<State, Action, Context, Element> View<State, Action, Context> for dyn AnyView<State, Action, Context, Element>
 where
+    State: ViewArgument,
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
     Context: ViewPathTracker + 'static,
@@ -197,7 +202,11 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 
@@ -207,7 +216,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
@@ -226,7 +235,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.dyn_message(view_state, message, element, app_state)
     }
@@ -241,6 +250,7 @@ impl<State, Action, Context, Element> ViewMarker
 impl<State, Action, Context, Element> View<State, Action, Context>
     for dyn AnyView<State, Action, Context, Element> + Send
 where
+    State: ViewArgument,
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
     Context: ViewPathTracker + 'static,
@@ -251,7 +261,11 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 
@@ -261,7 +275,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
@@ -280,7 +294,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.dyn_message(view_state, message, element, app_state)
     }
@@ -293,6 +307,7 @@ impl<State, Action, Context, Element> ViewMarker
 impl<State, Action, Context, Element> View<State, Action, Context>
     for dyn AnyView<State, Action, Context, Element> + Send + Sync
 where
+    State: ViewArgument,
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
     Context: ViewPathTracker + 'static,
@@ -303,7 +318,11 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 
@@ -313,7 +332,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
@@ -332,7 +351,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.dyn_message(view_state, message, element, app_state)
     }
@@ -345,6 +364,7 @@ impl<State, Action, Context, Element> ViewMarker
 impl<State, Action, Context, Element> View<State, Action, Context>
     for dyn AnyView<State, Action, Context, Element> + Sync
 where
+    State: ViewArgument,
     // Element must be `static` so it can be downcasted
     Element: ViewElement + 'static,
     Context: ViewPathTracker + 'static,
@@ -355,7 +375,11 @@ where
 
     type ViewState = AnyViewState;
 
-    fn build(&self, ctx: &mut Context, app_state: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(
+        &self,
+        ctx: &mut Context,
+        app_state: Arg<'_, State>,
+    ) -> (Self::Element, Self::ViewState) {
         self.dyn_build(ctx, app_state)
     }
 
@@ -365,7 +389,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut Context,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) {
         self.dyn_rebuild(view_state, ctx, prev, element, app_state);
     }
@@ -384,7 +408,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         self.dyn_message(view_state, message, element, app_state)
     }

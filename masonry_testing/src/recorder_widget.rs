@@ -41,7 +41,7 @@ use masonry_core::vello::Scene;
 /// let recording = Recording::default();
 /// let widget = Label::new("Hello").record(&recording);
 ///
-/// TestHarness::create(Default::default(), widget);
+/// TestHarness::create(DefaultProperties::default(), widget);
 /// assert_matches!(recording.next().unwrap(), Record::RC);
 /// assert_matches!(recording.next().unwrap(), Record::U(Update::WidgetAdded));
 /// ```

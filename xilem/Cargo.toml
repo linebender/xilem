@@ -31,6 +31,9 @@ debuggable = true
 # Needed for http_cats
 name = "android.permission.INTERNET"
 
+[features]
+default = ["masonry/default", "masonry_winit/default"]
+
 [dependencies]
 xilem_core.workspace = true
 masonry.workspace = true
@@ -38,7 +41,7 @@ masonry_winit.workspace = true
 winit.workspace = true
 tracing.workspace = true
 vello.workspace = true
-tokio = { version = "1.47.1", features = ["rt", "rt-multi-thread", "time", "sync"] }
+tokio = { version = "1.48.0", features = ["rt", "rt-multi-thread", "time", "sync"] }
 
 [dev-dependencies]
 # Used for `variable_clock`
@@ -50,7 +53,7 @@ image = { workspace = true, features = ["jpeg"] }
 
 # Make wgpu use tracing for its spans.
 profiling = { version = "1.0.17", features = ["profile-with-tracing"] }
-anyhow = "1.0.99"
+anyhow = "1.0.100"
 
 [target.'cfg(target_os = "android")'.dev-dependencies]
 winit = { features = ["android-native-activity"], workspace = true }

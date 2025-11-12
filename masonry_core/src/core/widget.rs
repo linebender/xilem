@@ -134,7 +134,9 @@ pub type ChildrenIds = SmallVec<[WidgetId; 16]>;
 /// widget should only be mutated either during a method call or through a [`WidgetMut`](crate::core::WidgetMut).
 #[allow(unused_variables, reason = "Default impls don't use method arguments")]
 pub trait Widget: AsDynWidget + Any {
-    /// The action type that will widget will submit.
+    /// The action type that this widget will submit, through [`EventCtx::submit_action`]
+    /// (or the method of the same name on a different context).
+    /// The type of actions submitted by this widget will be validated against this type.
     ///
     /// If this widget never submits action, this can be an empty type
     /// such as [`NoAction`](crate::core::NoAction).

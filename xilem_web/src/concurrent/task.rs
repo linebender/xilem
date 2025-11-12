@@ -5,15 +5,17 @@ use std::future::Future;
 use std::marker::PhantomData;
 use std::rc::Rc;
 
-use futures::FutureExt;
-use futures::channel::oneshot;
+use futures_channel::oneshot;
+use futures_util::FutureExt;
 use wasm_bindgen::UnwrapThrowExt;
 use wasm_bindgen_futures::spawn_local;
 
 use crate::ViewCtx;
 use crate::context::MessageThunk;
 use crate::core::anymore::AnyDebug;
-use crate::core::{MessageContext, MessageResult, Mut, NoElement, View, ViewMarker};
+use crate::core::{
+    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewMarker,
+};
 
 /// Spawn an async task to update state asynchronously
 ///
@@ -29,12 +31,13 @@ pub fn task<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Task<F,
 where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug,
+    State: ViewArgument,
 {
     const {
         assert!(
-            core::mem::size_of::<F>() == 0,
+            size_of::<F>() == 0,
             "`task` will not be ran again when its captured variables are updated.\n\
             To ignore this warning, use `task_raw`."
         );
@@ -54,7 +57,8 @@ pub fn task_raw<M, F, H, State, Action, Fut>(init_future: F, on_event: H) -> Tas
 where
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
+    State: ViewArgument,
 {
     Task {
         init_future,
@@ -133,18 +137,18 @@ impl<F, H, M> ViewMarker for Task<F, H, M> {}
 
 impl<State, Action, F, H, M, Fut> View<State, Action, ViewCtx> for Task<F, H, M>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     F: Fn(TaskProxy, ShutdownSignal) -> Fut + 'static,
     Fut: Future<Output = ()> + 'static,
-    H: Fn(&mut State, M) -> Action + 'static,
+    H: Fn(Arg<'_, State>, M) -> Action + 'static,
     M: AnyDebug,
 {
     type Element = NoElement;
 
     type ViewState = TaskState;
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let thunk = ctx.message_thunk();
         let (shutdown_signal, abort_handle) = ShutdownSignal::new();
         let view_state = TaskState {
@@ -163,7 +167,7 @@ where
         _: &mut Self::ViewState,
         _: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         // Nothing to do
     }
@@ -183,7 +187,7 @@ where
         _: &mut Self::ViewState,
         message: &mut MessageContext,
         _element: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

@@ -54,7 +54,7 @@ impl<W: Widget + FromDynWidget + ?Sized> AnyElement<Pod<W>, ViewCtx> for Pod<Dyn
 }
 
 /// A widget whose only child can be dynamically replaced.
-#[allow(
+#[expect(
     unnameable_types,
     reason = "This is an implementation detail of `AnyWidgetView`"
 )]

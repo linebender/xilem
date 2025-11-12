@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use xilem::core::one_of::Either;
 use xilem::core::{
-    MessageProxy, MessageResult, NoElement, Resource, View, fork, map_message,
+    MessageProxy, MessageResult, NoElement, Resource, View, ViewArgument, fork, map_message,
     on_action_with_context, provides, with_context,
 };
 use xilem::masonry::peniko::{ImageAlphaType, ImageData};
@@ -45,10 +45,10 @@ impl Avatars {
     ///
     /// Requires that this View is within a [`Self::provide`] call.
     // TODO: ArcStr for URL?
-    pub(crate) fn avatar<State: 'static, Action: 'static>(
+    pub(crate) fn avatar<State: ViewArgument, Action: 'static>(
         url: String,
     ) -> impl WidgetView<State, Action> + use<State, Action> {
-        with_context(move |this: &mut Self, _: &mut State| {
+        with_context(move |this: &mut Self, _| {
             let width = 50.px();
             let height = 50.px();
             if let Some(maybe_image) = this.icons.get(&url) {
@@ -85,7 +85,7 @@ impl Avatars {
     ) -> impl WidgetView<State, Action, Element = Child::Element>
     where
         Child: WidgetView<State, Action>,
-        State: 'static,
+        State: ViewArgument,
         Action: 'static,
     {
         provides(
@@ -100,12 +100,12 @@ impl Avatars {
     fn worker<State, Action>()
     -> impl View<State, Action, ViewCtx, Element = NoElement> + use<State, Action>
     where
-        State: 'static,
+        State: ViewArgument,
         Action: 'static,
     {
         map_message(
             on_action_with_context(
-                |_: &mut State, this: &mut Self, response| {
+                |_, this: &mut Self, response| {
                     let ret = this.icons.insert(response.url, Some(response.image));
                     if !matches!(ret, Some(None)) {
                         tracing::warn!("Potentially loaded or tried to load same avatar twice.");
@@ -132,7 +132,7 @@ impl Avatars {
                             });
                         }
                     },
-                    |_: &mut State, this: &mut Self, tx| {
+                    |_, this: &mut Self, tx| {
                         if this.requester.is_some() {
                             tracing::warn!(
                                 "Unexpectedly got a second worker for requesting avatars."
@@ -140,7 +140,7 @@ impl Avatars {
                         }
                         this.requester = Some(tx);
                     },
-                    |_: &mut State, response| response,
+                    |_, response| response,
                 ),
             ),
             // Convert to the user-defined action type by ignoring any action we actually submit.

@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use megalodon::entities::Status;
+use xilem::core::{Arg, ViewArgument};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, button, flex_col,
-    flex_row, inline_prose, label, prose,
+    CrossAxisAlignment, FlexExt, FlexSequence, FlexSpacer, MainAxisAlignment, flex_col, flex_row,
+    inline_prose, label, prose, text_button,
 };
 use xilem::{FontWeight, TextAlign};
 
@@ -26,7 +27,7 @@ mod media;
 // TODO: Determine our UX for boosting/reblogging.
 // In particular, do we want to have the same design as "normal" Mastodon, where the
 // avatar for the booster is shown in the "child" avatar.
-fn base_status<State: 'static>(
+fn base_status<State: ViewArgument>(
     status: &Status,
 ) -> impl FlexSequence<State, Navigation> + use<State> {
     // TODO: This really should be Arced or something.
@@ -38,7 +39,7 @@ fn base_status<State: 'static>(
     (
         // Account info/message time
         flex_row((
-            Avatars::avatar(status.account.avatar_static.clone()),
+            Avatars::avatar::<State, _>(status.account.avatar_static.clone()),
             flex_col((
                 inline_prose(status.account.display_name.as_str())
                     .weight(FontWeight::SEMI_BOLD)
@@ -53,7 +54,7 @@ fn base_status<State: 'static>(
             .main_axis_alignment(MainAxisAlignment::Start)
             .gap(1.px()),
             FlexSpacer::Flex(1.0),
-            button("Open Profile", move |_| {
+            text_button("Open Profile", move |_| {
                 // TODO: We already actually just have the "account" here, so maybe
                 // short-circuit re-loading the account?
                 Navigation::LoadUser(acct_clone.clone())
@@ -74,7 +75,7 @@ fn base_status<State: 'static>(
             label(format!("💬 {}", status.replies_count)).flex(1.0),
             label(format!("🔄 {}", status.reblogs_count)).flex(1.0),
             label(format!("⭐ {}", status.favourites_count)).flex(1.0),
-            button("View Replies", move |_| {
+            text_button("View Replies", move |_: Arg<'_, State>| {
                 Navigation::LoadContext(status_clone.clone())
             }),
         ))

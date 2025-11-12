@@ -180,7 +180,7 @@ macro_rules! overwrite_bool_modifier_view {
         impl<V, State, Action> $crate::core::View<State, Action, $crate::ViewCtx>
             for $modifier<V, State, Action>
         where
-            State: 'static,
+            State: $crate::core::ViewArgument,
             Action: 'static,
             V: $crate::DomView<
                     State,
@@ -197,7 +197,7 @@ macro_rules! overwrite_bool_modifier_view {
             fn build(
                 &self,
                 ctx: &mut $crate::ViewCtx,
-                app_state: &mut State,
+                app_state: $crate::core::Arg<'_, State>,
             ) -> (Self::Element, Self::ViewState) {
                 use $crate::modifiers::WithModifier;
                 let (mut el, state) = self.inner.build(ctx, app_state);
@@ -212,7 +212,7 @@ macro_rules! overwrite_bool_modifier_view {
                 view_state: &mut Self::ViewState,
                 ctx: &mut $crate::ViewCtx,
                 mut element: $crate::core::Mut<'_, Self::Element>,
-                app_state: &mut State,
+                app_state: $crate::core::Arg<'_, State>,
             ) {
                 use $crate::modifiers::WithModifier;
                 element.modifier().modifier.0.rebuild(1);
@@ -241,7 +241,7 @@ macro_rules! overwrite_bool_modifier_view {
                 view_state: &mut Self::ViewState,
                 message: &mut $crate::core::MessageContext,
                 element: $crate::core::Mut<'_, Self::Element>,
-                app_state: &mut State,
+                app_state: $crate::core::Arg<'_, State>,
             ) -> $crate::core::MessageResult<Action> {
                 self.inner.message(view_state, message, element, app_state)
             }

@@ -8,8 +8,9 @@ use std::f64::consts::{PI, TAU};
 use winit::error::EventLoopError;
 use xilem::core::one_of::Either;
 use xilem::style::Style as _;
-use xilem::view::{GridExt as _, button, grid, label, sized_box, transformed};
+use xilem::view::{GridExt as _, grid, label, sized_box, text_button, transformed};
 use xilem::{Affine, Color, EventLoop, Vec2, WidgetView, WindowOptions, Xilem};
+use xilem_core::Edit;
 
 struct TransformsGame {
     rotation: f64,
@@ -18,7 +19,7 @@ struct TransformsGame {
 }
 
 impl TransformsGame {
-    fn view(&mut self) -> impl WidgetView<Self> + use<> {
+    fn view(&mut self) -> impl WidgetView<Edit<Self>> + use<> {
         let rotation_correct = (self.rotation % TAU).abs() < 0.001;
         let scale_correct = self.scale >= 0.99 && self.scale <= 1.01;
         let translation_correct = self.translation.x == 0.0 && self.translation.y == 0.0;
@@ -59,36 +60,36 @@ impl TransformsGame {
         .scale(self.scale);
 
         let controls = (
-            button("↶", |this: &mut Self| {
+            text_button("↶", |this: &mut Self| {
                 this.rotation -= PI * 0.125;
             })
             .grid_pos(0, 0),
-            button("↑", |this: &mut Self| {
+            text_button("↑", |this: &mut Self| {
                 this.translation.y -= 10.0;
             })
             .grid_pos(1, 0),
-            button("↷", |this: &mut Self| {
+            text_button("↷", |this: &mut Self| {
                 this.rotation += PI * 0.125;
             })
             .grid_pos(2, 0),
-            button("←", |this: &mut Self| {
+            text_button("←", |this: &mut Self| {
                 this.translation.x -= 10.0;
             })
             .grid_pos(0, 1),
-            button("→", |this: &mut Self| {
+            text_button("→", |this: &mut Self| {
                 this.translation.x += 10.0;
             })
             .grid_pos(2, 1),
-            button("-", |this: &mut Self| {
+            text_button("-", |this: &mut Self| {
                 // 2 ^ (1/3) for 3 clicks to reach the target.
                 this.scale /= 1.2599210498948732;
             })
             .grid_pos(0, 2),
-            button("↓", |this: &mut Self| {
+            text_button("↓", |this: &mut Self| {
                 this.translation.y += 10.0;
             })
             .grid_pos(1, 2),
-            button("+", |this: &mut Self| {
+            text_button("+", |this: &mut Self| {
                 this.scale *= 1.2599210498948732;
             })
             .grid_pos(2, 2),

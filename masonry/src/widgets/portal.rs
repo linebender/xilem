@@ -11,8 +11,9 @@ use vello::kurbo::{Point, Rect, Size, Vec2};
 
 use crate::core::{
     AccessCtx, AccessEvent, Axis, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, FromDynWidget,
-    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef,
-    RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
+    LayoutCtx, NewWidget, NoAction, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut,
+    PropertiesRef, RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetId,
+    WidgetMut, WidgetPod,
 };
 use crate::widgets::ScrollBar;
 
@@ -270,7 +271,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
         let content_size = self.content_size;
 
         match *event {
-            PointerEvent::Scroll { delta, .. } => {
+            PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
                 let delta = match delta {
@@ -385,7 +386,7 @@ impl<W: Widget + FromDynWidget + ?Sized> Widget for Portal<W> {
                     self.viewport_pos.y / (content_size - portal_size).height;
                 scrollbar_ctx.request_render();
 
-                std::mem::drop(scrollbar_ctx);
+                drop(scrollbar_ctx);
 
                 let (scrollbar, mut scrollbar_ctx) =
                     ctx.get_raw_mut(&mut self.scrollbar_horizontal);
@@ -508,7 +509,7 @@ mod tests {
     use super::*;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::{Button, Flex, SizedBox};
 
     fn button(text: &'static str) -> impl Widget {
@@ -556,7 +557,7 @@ mod tests {
         .with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(400., 400.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(400., 400.));
 
         assert_render_snapshot!(harness, "portal_button_list_no_scroll");
 
@@ -598,7 +599,7 @@ mod tests {
         .with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(200., 200.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(200., 200.));
         let button_id = harness.get_widget(button_tag).id();
 
         harness.scroll_into_view(button_id);

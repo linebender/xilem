@@ -9,16 +9,16 @@ use std::sync::Arc;
 use accesskit::{Node, Role};
 use masonry_core::core::HasProperty;
 use tracing::{Span, trace, trace_span};
-use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::{Affine, Size};
 use vello::peniko::Color;
 
 use crate::core::keyboard::{Key, NamedKey};
+use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx, NewWidget, PaintCtx,
-    PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget,
-    WidgetId, WidgetMut, WidgetPod,
+    PointerButtonEvent, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
+    UpdateCtx, Widget, WidgetId, WidgetMut, WidgetPod,
 };
 use crate::properties::{
     ActiveBackground, Background, BorderColor, BorderWidth, BoxShadow, CornerRadius,
@@ -112,13 +112,13 @@ impl Widget for Button {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { .. } => {
+            PointerEvent::Down(..) => {
                 ctx.capture_pointer();
                 // Changes in pointer capture impact appearance, but not accessibility node
                 ctx.request_paint_only();
                 trace!("Button {:?} pressed", ctx.widget_id());
             }
-            PointerEvent::Up { button, .. } => {
+            PointerEvent::Up(PointerButtonEvent { button, .. }) => {
                 if ctx.is_active() && ctx.is_hovered() {
                     ctx.submit_action::<Self::Action>(ButtonPress { button: *button });
                     trace!("Button {:?} released", ctx.widget_id());
@@ -323,16 +323,18 @@ mod tests {
     use crate::properties::ContentColor;
     use crate::properties::types::AsUnit;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::{ACCENT_COLOR, default_property_set};
-    use crate::widgets::{Grid, GridParams, Label};
+    use crate::theme::{ACCENT_COLOR, test_property_set};
+    use crate::widgets::{Flex, Grid, GridParams, Label, SizedBox};
 
     #[test]
     fn simple_button() {
         let widget = NewWidget::new(Button::with_text("Hello"));
 
         let window_size = Size::new(100.0, 40.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, window_size);
+        let mut params = TestHarnessParams::DEFAULT;
+        params.window_size = window_size;
+        params.root_padding = TestHarnessParams::ROOT_PADDING;
+        let mut harness = TestHarness::create_with(test_property_set(), widget, params);
         let button_id = harness.root_id();
 
         assert_render_snapshot!(harness, "button_hello");
@@ -375,11 +377,8 @@ mod tests {
 
             let button = NewWidget::new(Button::new(label));
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                button,
-                Size::new(50.0, 50.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
 
             harness.render()
         };
@@ -387,11 +386,8 @@ mod tests {
         let image_2 = {
             let button = NewWidget::new(Button::with_text("Hello world"));
 
-            let mut harness = TestHarness::create_with_size(
-                default_property_set(),
-                button,
-                Size::new(50.0, 50.0),
-            );
+            let mut harness =
+                TestHarness::create_with_size(test_property_set(), button, Size::new(50.0, 50.0));
 
             harness.edit_root_widget(|mut button| {
                 let mut label = Button::child_mut(&mut button);
@@ -416,8 +412,7 @@ mod tests {
         let button = NewWidget::new(Button::with_text("Some random text"));
 
         let window_size = Size::new(200.0, 80.0);
-        let mut harness =
-            TestHarness::create_with_size(default_property_set(), button, window_size);
+        let mut harness = TestHarness::create_with_size(test_property_set(), button, window_size);
 
         harness.edit_root_widget(|mut button| {
             button.insert_prop(BorderColor { color: red });
@@ -460,8 +455,7 @@ mod tests {
         let mut test_params = TestHarnessParams::default();
         test_params.window_size = Size::new(300.0, 300.0);
         test_params.screenshot_tolerance = 32;
-        let mut harness =
-            TestHarness::create_with(default_property_set(), root_widget, test_params);
+        let mut harness = TestHarness::create_with(test_property_set(), root_widget, test_params);
 
         harness.edit_root_widget(|mut grid| {
             {
@@ -503,4 +497,61 @@ mod tests {
         });
         assert_failing_render_snapshot!(harness, "button_shadows");
     }
+
+    /// We document that several other non-interactive widgets in Masonry can be correctly used as children in buttons.
+    ///
+    /// We validate that each of these actually are correctly supported.
+    fn validate_noninteractive_child<W: Widget>(child: NewWidget<W>) {
+        let child_id = child.id();
+        let mut button = Button::new(child).with_auto_id();
+        button.properties.insert(Padding::all(10.));
+        let button_id = button.id();
+        let mut harness = TestHarness::create(test_property_set(), button);
+
+        harness.mouse_move_to_unchecked(child_id);
+        let button = harness.get_widget_with_id(button_id);
+        assert!(
+            button.ctx().is_hovered(),
+            "The child shouldn't prevent hover."
+        );
+        harness.mouse_button_press(PointerButton::Primary);
+        let button = harness.get_widget_with_id(button_id);
+        assert!(
+            button.ctx().is_pointer_capture_target(),
+            "A non-interactive child shouldn't prevent pointer capture."
+        );
+        harness.mouse_button_release(PointerButton::Primary);
+        let (_, event_id) = harness
+            .pop_action::<<Button as Widget>::Action>()
+            .expect("There should be an action.");
+        assert_eq!(
+            event_id, button_id,
+            "The event should come from the button."
+        );
+    }
+
+    #[test]
+    fn label_child() {
+        let child = Label::new("Some text").with_auto_id();
+        validate_noninteractive_child(child);
+    }
+
+    #[test]
+    fn sized_box_child() {
+        let child = SizedBox::empty()
+            .width(50.px())
+            .height(50.px())
+            .with_auto_id();
+        validate_noninteractive_child(child);
+    }
+
+    #[test]
+    fn flex_child() {
+        let child = Flex::row()
+            .with_child(Label::new("Some text").with_auto_id())
+            .with_auto_id();
+        validate_noninteractive_child(child);
+    }
+    // We could imagine more involved tests, e.g. a button with an icon
+    // or a with a keyboard shortcut indicator.
 }

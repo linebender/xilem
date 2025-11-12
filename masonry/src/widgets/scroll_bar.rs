@@ -8,8 +8,8 @@ use vello::kurbo::{Point, Rect, Size};
 
 use crate::core::{
     AccessCtx, AccessEvent, AllowRawMut, Axis, BoxConstraints, ChildrenIds, EventCtx, LayoutCtx,
-    NoAction, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut,
+    NoAction, PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut,
+    PropertiesRef, RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::theme;
 use crate::util::{fill_color, include_screenshot, stroke};
@@ -129,7 +129,7 @@ impl Widget for ScrollBar {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Down { state, .. } => {
+            PointerEvent::Down(PointerButtonEvent { state, .. }) => {
                 ctx.capture_pointer();
 
                 let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
@@ -147,20 +147,20 @@ impl Widget for ScrollBar {
                 };
                 ctx.request_render();
             }
-            PointerEvent::Move(u) => {
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if let Some(grab_anchor) = self.grab_anchor {
                     let cursor_min_length = theme::SCROLLBAR_MIN_SIZE;
                     self.cursor_progress = self.progress_from_mouse_pos(
                         ctx.size(),
                         cursor_min_length,
                         grab_anchor,
-                        ctx.local_position(u.current.position),
+                        ctx.local_position(current.position),
                     );
                     self.moved = true;
                 }
                 ctx.request_render();
             }
-            PointerEvent::Up { .. } | PointerEvent::Cancel(..) => {
+            PointerEvent::Up(..) | PointerEvent::Cancel(..) => {
                 self.grab_anchor = None;
                 ctx.request_render();
             }
@@ -267,14 +267,14 @@ mod tests {
     use super::*;
     use crate::core::PointerButton;
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
 
     #[test]
     fn simple_scrollbar() {
         let widget = NewWidget::new(ScrollBar::new(Axis::Vertical, 200.0, 600.0));
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(50.0, 200.0));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(50.0, 200.0));
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_default");
@@ -301,7 +301,7 @@ mod tests {
         let widget = NewWidget::new(ScrollBar::new(Axis::Horizontal, 200.0, 600.0));
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 50.0));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 50.0));
         let scrollbar_id = harness.root_id();
 
         assert_render_snapshot!(harness, "scrollbar_horizontal");

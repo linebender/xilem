@@ -8,7 +8,7 @@ use alloc::sync::Arc;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 
-use crate::{NoElement, SendMessage, View, ViewId, ViewPathTracker};
+use crate::{NoElement, SendMessage, View, ViewArgument, ViewId, ViewPathTracker};
 
 /// A `Context` for a [`View`] implementation which supports
 /// asynchronous message reporting.
@@ -106,6 +106,7 @@ pub trait PhantomView<State, Action, Context>:
     View<State, Action, Context, Element = NoElement>
 where
     Context: ViewPathTracker,
+    State: ViewArgument,
 {
 }
 
@@ -113,6 +114,7 @@ impl<State, Action, Context, V> PhantomView<State, Action, Context> for V
 where
     V: View<State, Action, Context, Element = NoElement>,
     Context: ViewPathTracker,
+    State: ViewArgument,
 {
 }
 

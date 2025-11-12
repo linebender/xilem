@@ -38,3 +38,7 @@ Demonstration of the grid layout.
 ![](screenshots/simple_image__tests__initial_screenshot.png)
 
 Simple image example.
+
+## `layers`
+
+Demonstration of the layer system with a simple tooltip.

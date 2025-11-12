@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use masonry::core::{ArcStr, NewWidget, Properties};
+use masonry::parley::StyleProperty;
+use masonry::parley::style::{FontStack, FontWeight};
 use masonry::properties::{
     CaretColor, ContentColor, DisabledContentColor, PlaceholderColor, SelectionColor,
     UnfocusedSelectionColor,
@@ -9,7 +11,7 @@ use masonry::properties::{
 use masonry::widgets::{self, TextAction};
 use vello::peniko::Color;
 
-use crate::core::{MessageContext, Mut, View, ViewMarker};
+use crate::core::{Arg, MessageContext, Mut, View, ViewArgument, ViewMarker};
 use crate::view::Prop;
 use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as _};
 
@@ -17,7 +19,8 @@ use crate::{InsertNewline, MessageResult, Pod, TextAlign, ViewCtx, WidgetView as
 // is that if the user forgets to hook up the modify the state's contents in the callback,
 // the text_input will always be reset to the initial state. This will be very annoying for the user.
 
-type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send + Sync + 'static>;
+type Callback<State, Action> =
+    Box<dyn Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static>;
 
 /// A view which displays editable text.
 ///
@@ -43,12 +46,13 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 /// ```
 /// # use xilem::view::text_input;
 /// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// struct State {
 ///     content: String,
 /// }
 ///
-/// fn view(state: &mut State) -> impl WidgetView<State> {
+/// fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
 ///     text_input(state.content.clone(), |state: &mut State, input: String| {
 ///         state.content = input;
 ///     })
@@ -60,12 +64,13 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 /// ```
 /// use xilem::{view::text_input, InsertNewline};
 /// # use xilem::WidgetView;
+/// # use xilem::core::Edit;
 ///
 /// # struct State {
 /// #    content: String,
 /// # }
 ///
-/// # fn view(state: &mut State) -> impl WidgetView<State> {
+/// # fn view(state: &mut State) -> impl WidgetView<Edit<State>> {
 /// text_input(state.content.clone(), |state: &mut State, input: String| {
 ///     state.content = input;
 /// })
@@ -74,7 +79,8 @@ type Callback<State, Action> = Box<dyn Fn(&mut State, String) -> Action + Send +
 /// ```
 pub fn text_input<F, State, Action>(contents: String, on_changed: F) -> TextInput<State, Action>
 where
-    F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
+    F: Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static,
+    State: ViewArgument,
 {
     TextInput {
         contents,
@@ -84,6 +90,9 @@ where
         disabled_text_color: None,
         placeholder: ArcStr::default(),
         text_alignment: TextAlign::default(),
+        text_size: masonry::theme::TEXT_SIZE_NORMAL,
+        weight: FontWeight::NORMAL,
+        font: FontStack::List(std::borrow::Cow::Borrowed(&[])),
         insert_newline: InsertNewline::default(),
         disabled: false,
         // Since we don't support setting the word wrapping, we can default to
@@ -94,7 +103,7 @@ where
 
 /// The [`View`] created by [`text_input`].
 #[must_use = "View values do nothing unless provided to Xilem."]
-pub struct TextInput<State, Action> {
+pub struct TextInput<State: ViewArgument, Action> {
     contents: String,
     on_changed: Callback<State, Action>,
     on_enter: Option<Callback<State, Action>>,
@@ -102,13 +111,16 @@ pub struct TextInput<State, Action> {
     disabled_text_color: Option<Color>,
     placeholder: ArcStr,
     text_alignment: TextAlign,
+    text_size: f32,
+    weight: FontWeight,
+    font: FontStack<'static>,
     insert_newline: InsertNewline,
     disabled: bool,
     clip: bool,
     // TODO: add more attributes of `masonry::widgets::TextInput`
 }
 
-impl<State: 'static, Action: 'static> TextInput<State, Action> {
+impl<State: ViewArgument, Action: 'static> TextInput<State, Action> {
     /// Set the text's color.
     ///
     /// This overwrites the default `ContentColor` property for the inner `TextArea` widget.
@@ -166,6 +178,28 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
         self
     }
 
+    /// Sets text size.
+    #[doc(alias = "font_size")]
+    pub fn text_size(mut self, text_size: f32) -> Self {
+        self.text_size = text_size;
+        self
+    }
+
+    /// Sets font weight.
+    pub fn weight(mut self, weight: FontWeight) -> Self {
+        self.weight = weight;
+        self
+    }
+
+    /// Set the [font stack](FontStack) this label will use.
+    ///
+    /// A font stack allows for providing fallbacks. If there is no matching font
+    /// for a character, a system font will be used (if the system fonts are enabled).
+    pub fn font(mut self, font: impl Into<FontStack<'static>>) -> Self {
+        self.font = font.into();
+        self
+    }
+
     /// Configures how this text area handles the user pressing Enter <kbd>↵</kbd>.
     ///
     /// See also [`on_enter`](Self::on_enter), which provides a callback for enter
@@ -181,7 +215,7 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     /// will never be called.
     pub fn on_enter<F>(mut self, on_enter: F) -> Self
     where
-        F: Fn(&mut State, String) -> Action + Send + Sync + 'static,
+        F: Fn(Arg<'_, State>, String) -> Action + Send + Sync + 'static,
     {
         self.on_enter = Some(Box::new(on_enter));
         self
@@ -210,16 +244,21 @@ impl<State: 'static, Action: 'static> TextInput<State, Action> {
     }
 }
 
-impl<State, Action> ViewMarker for TextInput<State, Action> {}
-impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput<State, Action> {
+impl<State: ViewArgument, Action> ViewMarker for TextInput<State, Action> {}
+impl<State: ViewArgument, Action: 'static> View<State, Action, ViewCtx>
+    for TextInput<State, Action>
+{
     type Element = Pod<widgets::TextInput>;
     type ViewState = ();
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         // TODO: Maybe we want a shared TextArea View?
         let text_area = widgets::TextArea::new_editable(&self.contents)
             .with_text_alignment(self.text_alignment)
-            .with_insert_newline(self.insert_newline);
+            .with_insert_newline(self.insert_newline)
+            .with_style(StyleProperty::FontSize(self.text_size))
+            .with_style(StyleProperty::FontWeight(self.weight))
+            .with_style(StyleProperty::FontStack(self.font.clone()));
 
         // TODO - Replace this with properties on the TextInput view
         // once we implement property inheritance or something like it.
@@ -251,7 +290,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         _: &mut Self::ViewState,
         _ctx: &mut ViewCtx,
         mut element: Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         // TODO - Replace this with properties on the TextInput view
         if self.text_color != prev.text_color {
@@ -293,6 +332,21 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
             widgets::TextArea::reset_text(&mut text_area, &self.contents);
         }
 
+        if prev.text_size != self.text_size {
+            widgets::TextArea::insert_style(
+                &mut text_area,
+                StyleProperty::FontSize(self.text_size),
+            );
+        }
+        if prev.weight != self.weight {
+            widgets::TextArea::insert_style(&mut text_area, StyleProperty::FontWeight(self.weight));
+        }
+        if prev.font != self.font {
+            widgets::TextArea::insert_style(
+                &mut text_area,
+                StyleProperty::FontStack(self.font.clone()),
+            );
+        }
         if prev.text_alignment != self.text_alignment {
             widgets::TextArea::set_text_alignment(&mut text_area, self.text_alignment);
         }
@@ -315,7 +369,7 @@ impl<State: 'static, Action: 'static> View<State, Action, ViewCtx> for TextInput
         _: &mut Self::ViewState,
         message: &mut MessageContext,
         _: Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         debug_assert!(
             message.remaining_path().is_empty(),

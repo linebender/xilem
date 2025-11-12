@@ -3,6 +3,7 @@
 
 use megalodon::entities::{Context, Status};
 use xilem::WidgetView;
+use xilem::core::Edit;
 use xilem::masonry::properties::types::AsUnit;
 use xilem::masonry::util::debug_panic;
 use xilem::palette::css;
@@ -24,7 +25,7 @@ pub(crate) fn thread(
     // The hard part there would be locking the scroll properly (i.e. once the thread loads)
     thread: &Context,
     // TODO: Think about allowing composing a reply.
-) -> impl WidgetView<Placehero, Navigation> + use<> {
+) -> impl WidgetView<Edit<Placehero>, Navigation> + use<> {
     let mut ancestor_views = Vec::new();
     let mut previous_parent = None;
     for ancestor in &thread.ancestors {
@@ -71,7 +72,7 @@ pub(crate) fn thread(
 ///
 /// These are rendered without a containing box, and with an adjoining "reply indicator"
 /// (which is currently known to be terrible!).
-fn thread_ancestor(status: &Status) -> impl WidgetView<Placehero, Navigation> + use<> {
+fn thread_ancestor(status: &Status) -> impl WidgetView<Edit<Placehero>, Navigation> + use<> {
     sized_box(
         flex_row((
             // An awful left-side border.

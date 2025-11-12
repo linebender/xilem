@@ -225,7 +225,7 @@ mod tests {
     use crate::properties::types::AsUnit;
     use crate::properties::{Background, BorderColor, BorderWidth};
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
     use crate::widgets::{Label, SizedBox};
 
     #[test]
@@ -259,7 +259,7 @@ mod tests {
             )
             .with_auto_id();
 
-        let mut harness = TestHarness::create(default_property_set(), widget);
+        let mut harness = TestHarness::create(test_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignment_default");
 
         let all_cases = [
@@ -303,7 +303,7 @@ mod tests {
             )
             .with_auto_id();
 
-        let mut harness = TestHarness::create(default_property_set(), widget);
+        let mut harness = TestHarness::create(test_property_set(), widget);
         assert_render_snapshot!(harness, "zstack_alignments_self_aligned");
     }
 }

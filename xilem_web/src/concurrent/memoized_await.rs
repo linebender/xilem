@@ -9,7 +9,8 @@ use wasm_bindgen::{JsCast, UnwrapThrowExt};
 use wasm_bindgen_futures::spawn_local;
 
 use crate::core::{
-    MessageContext, MessageResult, Mut, NoElement, View, ViewId, ViewMarker, ViewPathTracker,
+    Arg, MessageContext, MessageResult, Mut, NoElement, View, ViewArgument, ViewId, ViewMarker,
+    ViewPathTracker,
 };
 use crate::{OptionalAction, ViewCtx};
 
@@ -66,15 +67,15 @@ where
 /// # Examples
 ///
 /// ```
-/// use xilem_web::{core::fork, concurrent::memoized_await, elements::html::div, interfaces::Element};
+/// use xilem_web::{core::{fork, Edit}, concurrent::memoized_await, elements::html::div, interfaces::Element};
 ///
-/// fn app_logic(state: &mut i32) -> impl Element<i32> {
+/// fn app_logic(state: &mut i32) -> impl Element<Edit<i32>> {
 ///     fork(
 ///         div(*state),
 ///         memoized_await(
 ///             10,
 ///             |count| std::future::ready(*count),
-///             |state, output| *state = output,
+///             |state: &mut i32, output| *state = output,
 ///         )
 ///     )
 /// }
@@ -85,14 +86,14 @@ pub fn memoized_await<State, Action, OA, InitFuture, Data, Callback, F, FOut>(
     callback: Callback,
 ) -> MemoizedAwait<State, Action, OA, InitFuture, Data, Callback, F, FOut>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     Data: PartialEq + 'static,
     FOut: std::fmt::Debug + 'static,
     F: Future<Output = FOut> + 'static,
     InitFuture: Fn(&Data) -> F + 'static,
     OA: OptionalAction<Action> + 'static,
-    Callback: Fn(&mut State, FOut) -> OA + 'static,
+    Callback: Fn(Arg<'_, State>, FOut) -> OA + 'static,
 {
     MemoizedAwait {
         init_future,
@@ -167,20 +168,20 @@ impl<State, Action, OA, InitFuture, Data, CB, F, FOut> ViewMarker
 impl<State, Action, InitFuture, F, FOut, Data, CB, OA> View<State, Action, ViewCtx>
     for MemoizedAwait<State, Action, OA, InitFuture, Data, CB, F, FOut>
 where
-    State: 'static,
+    State: ViewArgument,
     Action: 'static,
     OA: OptionalAction<Action> + 'static,
     InitFuture: Fn(&Data) -> F + 'static,
     FOut: std::fmt::Debug + 'static,
     Data: PartialEq + 'static,
     F: Future<Output = FOut> + 'static,
-    CB: Fn(&mut State, FOut) -> OA + 'static,
+    CB: Fn(Arg<'_, State>, FOut) -> OA + 'static,
 {
     type Element = NoElement;
 
     type ViewState = MemoizedAwaitState;
 
-    fn build(&self, ctx: &mut ViewCtx, _: &mut State) -> (Self::Element, Self::ViewState) {
+    fn build(&self, ctx: &mut ViewCtx, _: Arg<'_, State>) -> (Self::Element, Self::ViewState) {
         let mut state = MemoizedAwaitState::default();
 
         if self.debounce_ms > 0 {
@@ -198,7 +199,7 @@ where
         view_state: &mut Self::ViewState,
         ctx: &mut ViewCtx,
         (): Mut<'_, Self::Element>,
-        _: &mut State,
+        _: Arg<'_, State>,
     ) {
         let debounce_has_changed_and_update_is_scheduled = view_state.schedule_update
             && (prev.reset_debounce_on_update != self.reset_debounce_on_update
@@ -243,7 +244,7 @@ where
         view_state: &mut Self::ViewState,
         message: &mut MessageContext,
         (): Mut<'_, Self::Element>,
-        app_state: &mut State,
+        app_state: Arg<'_, State>,
     ) -> MessageResult<Action> {
         assert_eq!(
             message.remaining_path().len(),

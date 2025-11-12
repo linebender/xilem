@@ -1,6 +1,9 @@
 // Copyright 2025 the Xilem Authors
 // SPDX-License-Identifier: Apache-2.0
 
+// After you edit the crate's doc comment, run this command, then check README.md for any missing links
+// cargo rdme --workspace-project=placehero
+
 //! A mastodon client written in Xilem.
 //!
 //! We're assuming that all Mastodon servers supported are trusted (and so it's not a
@@ -8,9 +11,13 @@
 //! This link survives even if you log out of one and into the other, even in different sessions.
 //! If this doesn't apply to you, we recommend not using Placehero.
 //!
-//! Features:
+//! # Feature flags
 //!
-//! - None
+//! The following crate [feature flags](https://doc.rust-lang.org/cargo/reference/features.html#dependency-features) are available:
+//!
+//! - `default`: Enables the default features of [`xilem`][xilem].
+//!
+//! [xilem]: https://crates.io/crates/xilem
 
 #![expect(clippy::todo, reason = "Landing intentionally in-progress work.")]
 
@@ -20,12 +27,12 @@ use megalodon::entities::{Context, Instance, Status};
 use megalodon::error::{Kind, OwnError};
 use megalodon::{Megalodon, mastodon};
 use xilem::core::one_of::{Either, OneOf, OneOf3, OneOf6};
-use xilem::core::{NoElement, View, fork, lens, map_action, map_state};
+use xilem::core::{Edit, NoElement, View, fork, lens, map_action, map_state};
 use xilem::masonry::properties::types::AsUnit;
 use xilem::tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use xilem::view::{
-    CrossAxisAlignment, FlexExt, button, flex_col, flex_row, label, prose, sized_box, spinner,
-    split, task_raw, text_input, worker_raw,
+    CrossAxisAlignment, FlexExt, flex_col, flex_row, label, prose, sized_box, spinner, split,
+    task_raw, text_button, text_input, worker_raw,
 };
 use xilem::winit::error::EventLoopError;
 use xilem::{EventLoopBuilder, ViewCtx, WidgetView, WindowOptions, Xilem, tokio};
@@ -78,7 +85,7 @@ enum MainState {
     New(PlaceheroWithLogin),
 }
 
-fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
+fn select_app(state: &mut MainState) -> impl WidgetView<Edit<MainState>> + use<> {
     match state {
         MainState::Selecting => OneOf3::A(
             flex_col((
@@ -87,10 +94,10 @@ fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
                     .text_alignment(xilem::TextAlign::Center)
                     .flex(CrossAxisAlignment::Center),
                 flex_row((
-                    button("Browse Anonymously", |state: &mut MainState| {
+                    text_button("Browse Anonymously", |state: &mut MainState| {
                         *state = MainState::Old(Placehero::default());
                     }),
-                    button("Log In", |state: &mut MainState| {
+                    text_button("Log In", |state: &mut MainState| {
                         *state = MainState::New(PlaceheroWithLogin::new());
                     }),
                 ))
@@ -98,13 +105,13 @@ fn select_app(state: &mut MainState) -> impl WidgetView<MainState> + use<> {
             ))
             .main_axis_alignment(xilem::view::MainAxisAlignment::Center),
         ),
-        MainState::Old(_) => OneOf::B(lens(app_logic, |state| {
+        MainState::Old(_) => OneOf::B(lens(app_logic, |state: &mut MainState, ()| {
             let MainState::Old(placehero) = state else {
                 unreachable!()
             };
             placehero
         })),
-        MainState::New(_) => OneOf::C(lens(login_flow::app_logic, |state| {
+        MainState::New(_) => OneOf::C(lens(login_flow::app_logic, |state: &mut MainState, ()| {
             let MainState::New(placehero) = state else {
                 unreachable!()
             };
@@ -157,11 +164,11 @@ impl Default for Placehero {
 }
 
 impl Placehero {
-    fn sidebar(&mut self) -> impl WidgetView<Self, Navigation> + use<> {
+    fn sidebar(&mut self) -> impl WidgetView<Edit<Self>, Navigation> + use<> {
         if let Some(instance) = &self.instance {
             let back = if self.show_context.is_some() {
                 // TODO: Make the ⬅️ arrow not be available to screen readers.
-                Either::A(button("⬅️ Back to Timeline", |_: &mut Self| {
+                Either::A(text_button("⬅️ Back to Timeline", |_: &mut Self| {
                     Navigation::Home
                 }))
             } else {
@@ -179,7 +186,7 @@ impl Placehero {
                     .disabled(self.loading_timeline),
                     self.loading_timeline
                         .then(|| sized_box(spinner()).width(50.px()).height(50.px())),
-                    button("Go", |state: &mut Self| {
+                    text_button("Go", |state: &mut Self| {
                         Navigation::LoadUser(state.timeline_box_contents.clone())
                     }),
                 ))))
@@ -195,7 +202,7 @@ impl Placehero {
         }
     }
 
-    fn main_view(&mut self) -> impl WidgetView<Self, Navigation> + use<> {
+    fn main_view(&mut self) -> impl WidgetView<Edit<Self>, Navigation> + use<> {
         if let Some(show_context) = self.show_context.as_ref() {
             if let Some(context) = self.context.as_ref() {
                 // TODO: Display the status until the entire thread loads; this is hard because
@@ -220,7 +227,7 @@ impl Placehero {
                 // In the current edition of the app, the timeline is never removed
                 // If it ever is, we'll need to be more careful here.
                 // The patterns are still in flux.
-                |this: &mut Self| this.timeline.as_mut().unwrap(),
+                |this: &mut Self, ()| this.timeline.as_mut().unwrap(),
             ))
         } else {
             OneOf::F(prose("No statuses yet loaded"))
@@ -228,7 +235,7 @@ impl Placehero {
     }
 }
 
-fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
+fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Edit<Placehero>> + use<> {
     Avatars::provide(fork(
         map_action(
             split(app_state.sidebar(), app_state.main_view()).split_point(0.2),
@@ -272,7 +279,7 @@ fn app_logic(app_state: &mut Placehero) -> impl WidgetView<Placehero> + use<> {
 
 fn load_contexts(
     mastodon: Mastodon,
-) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
+) -> impl View<Edit<Placehero>, (), ViewCtx, Element = NoElement> + use<> {
     worker_raw(
         move |result, mut recv: UnboundedReceiver<String>| {
             let mastodon = mastodon.clone();
@@ -316,7 +323,7 @@ fn load_contexts(
 
 fn load_instance(
     mastodon: Mastodon,
-) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
+) -> impl View<Edit<Placehero>, (), ViewCtx, Element = NoElement> + use<> {
     task_raw(
         move |result| {
             let mastodon = mastodon.clone();
@@ -341,7 +348,7 @@ fn load_instance(
 
 fn load_account(
     mastodon: Mastodon,
-) -> impl View<Placehero, (), ViewCtx, Element = NoElement> + use<> {
+) -> impl View<Edit<Placehero>, (), ViewCtx, Element = NoElement> + use<> {
     worker_raw(
         move |result, mut recv: UnboundedReceiver<String>| {
             let mastodon = mastodon.clone();

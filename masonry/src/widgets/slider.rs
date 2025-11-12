@@ -7,15 +7,15 @@ use std::any::TypeId;
 
 use accesskit::{ActionData, Node, Role};
 use tracing::{Span, trace_span};
-use ui_events::pointer::PointerButton;
 use vello::Scene;
 use vello::kurbo::{Circle, Point, Rect, Size};
 
 use crate::core::keyboard::{Key, NamedKey};
+use crate::core::pointer::PointerButton;
 use crate::core::{
     AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, EventCtx, HasProperty, LayoutCtx,
-    PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, TextEvent, Update,
-    UpdateCtx, Widget, WidgetId, WidgetMut,
+    PaintCtx, PointerButtonEvent, PointerEvent, PointerUpdate, PropertiesMut, PropertiesRef,
+    RegisterCtx, TextEvent, Update, UpdateCtx, Widget, WidgetId, WidgetMut,
 };
 use crate::properties::{Background, BarColor, ThumbColor, ThumbRadius, TrackThickness};
 use crate::theme;
@@ -154,11 +154,11 @@ impl Widget for Slider {
             return;
         }
         match event {
-            PointerEvent::Down {
+            PointerEvent::Down(PointerButtonEvent {
                 button: Some(PointerButton::Primary),
                 state,
                 ..
-            } => {
+            }) => {
                 ctx.request_focus();
                 ctx.capture_pointer();
                 let local_pos = ctx.local_position(state.position);
@@ -171,9 +171,9 @@ impl Widget for Slider {
                     ctx.submit_action::<f64>(self.value);
                 }
             }
-            PointerEvent::Move(e) => {
+            PointerEvent::Move(PointerUpdate { current, .. }) => {
                 if ctx.is_active() {
-                    let local_pos = ctx.local_position(e.current.position);
+                    let local_pos = ctx.local_position(current.position);
                     if self.update_value_from_position(
                         local_pos.x,
                         ctx.size().width,
@@ -185,10 +185,10 @@ impl Widget for Slider {
                     ctx.request_render();
                 }
             }
-            PointerEvent::Up {
+            PointerEvent::Up(PointerButtonEvent {
                 button: Some(PointerButton::Primary),
                 ..
-            } => {
+            }) => {
                 if ctx.is_active() {
                     ctx.release_pointer();
                 }
@@ -465,13 +465,13 @@ mod tests {
     use super::*;
     use crate::core::{PointerButton, TextEvent};
     use crate::testing::{TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::theme::test_property_set;
 
     #[test]
     fn slider_initial_state() {
         let widget = Slider::new(0.0, 100.0, 25.0).with_auto_id();
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
 
         assert_render_snapshot!(harness, "slider_initial_state");
     }
@@ -480,7 +480,7 @@ mod tests {
     fn slider_drag_interaction() {
         let widget = Slider::new(0.0, 100.0, 25.0).with_auto_id();
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
         let slider_id = harness.root_id();
 
         assert_render_snapshot!(harness, "slider_drag_initial_at_25");
@@ -509,7 +509,7 @@ mod tests {
     fn slider_keyboard_interaction() {
         let widget = Slider::new(0.0, 100.0, 50.0).with_step(10.0).with_auto_id();
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
         let slider_id = harness.root_id();
 
         harness.focus_on(Some(slider_id));
@@ -527,7 +527,7 @@ mod tests {
         let mut widget = Slider::new(0.0, 100.0, 50.0).with_auto_id();
         widget.options.disabled = true;
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(200.0, 32.0));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(200.0, 32.0));
 
         assert_render_snapshot!(harness, "slider_disabled");
         assert!(harness.pop_action::<f64>().is_none());

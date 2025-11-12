@@ -9,21 +9,23 @@ use xilem::core::map_state;
 use xilem::style::Style as _;
 use xilem::view::{
     FlexExt, FlexSpacer, GridExt, button, flex_col, flex_row, grid, label, prose, sized_box,
+    text_button,
 };
 use xilem::{
     Color, EventLoop, EventLoopBuilder, TextAlign, WidgetView, WindowOptions, Xilem, palette,
 };
+use xilem_core::Edit;
 
-fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
     flex_col((
         FlexSpacer::Fixed(50.px()), // Padding because of the info bar on Android
         flex_row((
             // TODO: Expose that this is a "zoom out" button accessibly
-            button("🔍-", |data: &mut EmojiPagination| {
+            text_button("🔍-", |data: &mut EmojiPagination| {
                 data.size = (data.size + 1).min(5);
             }),
             // TODO: Expose that this is a "zoom in" button accessibly
-            button("🔍+", |data: &mut EmojiPagination| {
+            text_button("🔍+", |data: &mut EmojiPagination| {
                 data.size = (data.size - 1).max(2);
             }),
         )),
@@ -34,7 +36,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
                 (data.size * data.size) as usize,
                 data.emoji.len(),
             ),
-            |state: &mut EmojiPagination| &mut state.start_index,
+            |state: &mut EmojiPagination, ()| &mut state.start_index,
         ),
         data.last_selected
             .map(|idx| label(format!("Selected: {}", data.emoji[idx].display)).text_size(40.)),
@@ -43,7 +45,7 @@ fn app_logic(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + u
     .must_fill_major_axis(true)
 }
 
-fn picker(data: &mut EmojiPagination) -> impl WidgetView<EmojiPagination> + use<> {
+fn picker(data: &mut EmojiPagination) -> impl WidgetView<Edit<EmojiPagination>> + use<> {
     let mut grid_items = vec![];
     'outer: for y in 0..data.size as usize {
         let row_idx = data.start_index + y * data.size as usize;
@@ -94,24 +96,30 @@ fn paginate(
     current_start: usize,
     count_per_page: usize,
     max_count: usize,
-) -> impl WidgetView<usize> {
+) -> impl WidgetView<Edit<usize>> {
     let current_end = (current_start + count_per_page).min(max_count);
     let percentage_start = (current_start * 100) / max_count;
     let percentage_end = (current_end * 100) / max_count;
 
     flex_row((
         // TODO: Expose that this is a previous page button to accessibility
-        button(label("⬅️").text_size(24.0), move |data| {
-            *data = current_start.saturating_sub(count_per_page);
-        })
+        button(
+            label("⬅️").text_size(24.0),
+            move |page_number: &mut usize| {
+                *page_number = current_start.saturating_sub(count_per_page);
+            },
+        )
         .disabled(current_start == 0),
         label(format!("{percentage_start}% - {percentage_end}%")),
-        button(label("➡️").text_size(24.0), move |data| {
-            let new_idx = current_start + count_per_page;
-            if new_idx < max_count {
-                *data = new_idx;
-            }
-        })
+        button(
+            label("➡️").text_size(24.0),
+            move |page_number: &mut usize| {
+                let new_idx = current_start + count_per_page;
+                if new_idx < max_count {
+                    *page_number = new_idx;
+                }
+            },
+        )
         .disabled(current_end == max_count),
     ))
 }

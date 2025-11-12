@@ -1,7 +1,5 @@
 [package]
 name = "spawn_tasks"
-version = "0.0.0" # not versioned
-publish = false
 license.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -19,7 +17,7 @@ workspace = true
 [dependencies]
 console_error_panic_hook = "0.1.7"
 console_log = { version = "1.0.0", features = ["color"] }
-futures = "0.3.31"
+futures-util = "0.3.31"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 log = "0.4.28"
 xilem_web = { path = "../.." }

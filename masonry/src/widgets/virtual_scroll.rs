@@ -10,9 +10,9 @@ use vello::kurbo::{Point, Size, Vec2};
 
 use crate::core::keyboard::{Key, KeyState, NamedKey};
 use crate::core::{
-    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, LayoutCtx,
-    NewWidget, PaintCtx, PointerEvent, PropertiesMut, PropertiesRef, RegisterCtx, ScrollDelta,
-    TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
+    AccessCtx, AccessEvent, BoxConstraints, ChildrenIds, ComposeCtx, EventCtx, KeyboardEvent,
+    LayoutCtx, NewWidget, PaintCtx, PointerEvent, PointerScrollEvent, PropertiesMut, PropertiesRef,
+    RegisterCtx, ScrollDelta, TextEvent, Update, UpdateCtx, Widget, WidgetMut, WidgetPod,
 };
 use crate::util::debug_panic;
 
@@ -524,7 +524,7 @@ impl Widget for VirtualScroll {
         event: &PointerEvent,
     ) {
         match event {
-            PointerEvent::Scroll { delta, .. } => {
+            PointerEvent::Scroll(PointerScrollEvent { delta, .. }) => {
                 // TODO - Remove reference to scale factor.
                 // See https://github.com/linebender/xilem/issues/1264
                 let delta = match delta {
@@ -545,23 +545,33 @@ impl Widget for VirtualScroll {
         _props: &mut PropertiesMut<'_>,
         event: &TextEvent,
     ) {
-        match event {
-            TextEvent::Keyboard(key_event) => {
-                // To get to this state, you currently need to press "tab" to focus this widget in the example.
-                if matches!(key_event.state, KeyState::Down) {
-                    // We use an unreasonably large delta (logical pixels) here to allow testing that the case where the
-                    // scrolling "jumps" the area is handled correctly.
-                    // In future, this manual testing would be achieved through use of a scrollbar.
-                    let delta = 20000.;
-                    if matches!(key_event.key, Key::Named(NamedKey::PageDown)) {
-                        self.scroll_offset_from_anchor += delta;
-                        self.event_post_scroll(ctx);
-                    }
-                    if matches!(key_event.key, Key::Named(NamedKey::PageUp)) {
-                        self.scroll_offset_from_anchor -= delta;
-                        self.event_post_scroll(ctx);
-                    }
-                }
+        // We use an unreasonably large delta (logical pixels) here to allow testing that the case
+        // where the scrolling "jumps" the area is handled correctly.
+        // In future, this manual testing would be achieved through use of a scrollbar.
+        const DELTA: f64 = 20000.;
+
+        // To get to this state, you currently need to press "tab" to focus this widget in the
+        // example.
+        let TextEvent::Keyboard(keyboard_event) = event else {
+            return;
+        };
+
+        match keyboard_event {
+            KeyboardEvent {
+                state: KeyState::Down,
+                key: Key::Named(NamedKey::PageDown),
+                ..
+            } => {
+                self.scroll_offset_from_anchor += DELTA;
+                self.event_post_scroll(ctx);
+            }
+            KeyboardEvent {
+                state: KeyState::Down,
+                key: Key::Named(NamedKey::PageUp),
+                ..
+            } => {
+                self.scroll_offset_from_anchor -= DELTA;
+                self.event_post_scroll(ctx);
             }
             _ => {}
         }
@@ -1030,15 +1040,13 @@ fn opt_iter_difference(
 mod tests {
     use std::collections::HashSet;
 
-    use dpi::PhysicalPosition;
+    use kurbo::{Size, Vec2};
     use parley::StyleProperty;
-    use vello::kurbo::Size;
 
-    use crate::core::{
-        NewWidget, PointerEvent, PointerState, ScrollDelta, Widget, WidgetId, WidgetMut,
-    };
-    use crate::testing::{PRIMARY_MOUSE, TestHarness, assert_render_snapshot};
-    use crate::theme::default_property_set;
+    use crate::core::{NewWidget, Widget, WidgetId, WidgetMut};
+    use crate::testing::{TestHarness, assert_render_snapshot};
+    use crate::theme::test_property_set;
+    use crate::vello::kurbo;
     use crate::widgets::{Label, VirtualScroll, VirtualScrollAction};
 
     use super::opt_iter_difference;
@@ -1083,7 +1091,7 @@ mod tests {
         let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1114,11 +1122,7 @@ mod tests {
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_moved");
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 25. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 25. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         assert_render_snapshot!(harness, "virtual_scroll_scrolled");
     }
@@ -1130,7 +1134,7 @@ mod tests {
         let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1159,11 +1163,7 @@ mod tests {
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
@@ -1174,7 +1174,7 @@ mod tests {
         let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1203,11 +1203,7 @@ mod tests {
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
@@ -1218,7 +1214,7 @@ mod tests {
         let widget = VirtualScroll::new(0).with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1247,11 +1243,7 @@ mod tests {
         });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 200. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 200. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
     }
 
@@ -1264,7 +1256,7 @@ mod tests {
             .with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1306,22 +1298,14 @@ mod tests {
             original_range = widget.active_range.clone();
         }
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: -50. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: -50. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_ne!(widget.anchor_index, MIN);
             assert_ne!(widget.active_range, original_range);
         }
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 60. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 60. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
@@ -1339,7 +1323,7 @@ mod tests {
             .with_auto_id();
 
         let mut harness =
-            TestHarness::create_with_size(default_property_set(), widget, Size::new(100., 200.));
+            TestHarness::create_with_size(test_property_set(), widget, Size::new(100., 200.));
         let virtual_scroll_id = harness.root_id();
         fn driver(action: VirtualScrollAction, mut scroll: WidgetMut<'_, VirtualScroll>) {
             VirtualScroll::will_handle_action(&mut scroll, &action);
@@ -1383,22 +1367,14 @@ mod tests {
             assert_render_snapshot!(harness, "virtual_scroll_limited_up_bottom");
         }
         harness.mouse_move_to(virtual_scroll_id);
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: 5. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: 5. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
             assert_ne!(widget.anchor_index, MAX);
             assert_ne!(widget.active_range, original_range);
         }
-        harness.process_pointer_event(PointerEvent::Scroll {
-            pointer: PRIMARY_MOUSE,
-            delta: ScrollDelta::PixelDelta(PhysicalPosition::<f64> { x: 0., y: -6. }),
-            state: PointerState::default(),
-        });
+        harness.mouse_wheel(Vec2 { x: 0., y: -6. });
         drive_to_fixpoint(&mut harness, virtual_scroll_id, driver);
         {
             let widget = harness.root_widget();
