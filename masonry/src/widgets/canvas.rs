@@ -85,6 +85,8 @@ impl Canvas {
 
 // --- MARK: IMPL WIDGET ---
 impl Widget for Canvas {
+    type Action = NoAction;
+
     fn on_pointer_event(
         &mut self,
         _ctx: &mut EventCtx<'_>,
@@ -163,11 +165,6 @@ impl Widget for Canvas {
     fn get_debug_text(&self) -> Option<String> {
         self.alt_text.clone()
     }
-
-    type Action
-        = NoAction
-    where
-        Self: Sized;
 }
 
 // --- MARK: TESTS ---
